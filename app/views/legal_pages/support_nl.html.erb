@@ -1,0 +1,57 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<div class="legal-page">
+<h1>Steun WetWijzer</h1>
+
+    <div class="highlight">
+        <p><strong>WetWijzer</strong> maakt Belgische wetgeving en rechtspraak gratis doorzoekbaar met AI. Het platform wordt gerund door &eacute;&eacute;n persoon &mdash; een advocaat die gelooft dat de wet niet achter een betaalmuur thuishoort. Om dit project draaiende te houden, hebben we uw steun nodig.</p>
+    </div>
+
+    <h2>Waarom uw steun belangrijk is</h2>
+    <p>WetWijzer kost geld om te draaien: serverkosten, AI-kosten voor elke chatbotvraag, opslagruimte voor 185.000+ gerechtelijke uitspraken, en de voortdurende ontwikkeling van nieuwe functies. Zonder inkomsten is het onmogelijk om het platform gratis toegankelijk te houden.</p>
+
+    <h2>&#x2B50; Neem een WetWijzer Pro-abonnement</h2>
+    <p>De beste manier om WetWijzer te steunen is door <strong>Pro-abonnee</strong> te worden. Voor slechts <strong>&euro;2,99/maand</strong> krijgt u:</p>
+    <ul>
+        <li>&#x2B50; Toegang tot <strong>alle intelligentieniveaus</strong> (Geniaal, Meesterbrein, Alwetend)</li>
+        <li>&#x1F4AC; <strong>15 gratis chatbot-credits per maand</strong> (voor Pro-gebruikers)</li>
+        <li>&#x1F4DC; Zoeken in <strong>parlementaire documenten</strong> via de chatbot</li>
+        <li>&#x1F916; Toegang tot <strong>alle AI-modellen</strong> (GPT-5, Claude Opus 4, o4-mini, ...)</li>
+    </ul>
+    <% if Rails.application.config.chatbot_enabled %>
+    <p><%= link_to pricing_path, class: "inline-flex items-center px-4 py-2 text-white rounded-lg font-semibold transition hover:opacity-90", style: "background: var(--accent-600-solid);" do %>
+        <svg class="w-4 h-4 mr-2 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1z"/></svg>
+        Bekijk WetWijzer Pro
+    <% end %></p>
+    <% end %>
+
+    <h2>&#x2615; Doneer via Ko-fi</h2>
+    <p>Wilt u WetWijzer steunen zonder abonnement? Via <strong>Ko-fi</strong> kunt u een eenmalige donatie doen. Elke bijdrage &mdash; hoe klein ook &mdash; helpt de serverkosten te dekken en het platform online te houden.</p>
+    <p>
+        <a href="https://ko-fi.com/wetwijzerlisloi" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-4 py-2 bg-[#FF5E5B] hover:bg-[#e54542] text-white rounded-lg font-semibold transition">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z"/></svg>
+            Doneer via Ko-fi
+        </a>
+    </p>
+
+    <h2>&#x1F4BB; Koop Praxis</h2>
+    <p><a href="https://praxislegal.be" target="_blank" rel="noopener">Praxis</a> is praktijkbeheersoftware voor Belgische advocaten: dossierbeheer, cli&euml;ntenbeheer, facturatie en AI-assistent &mdash; alles in &eacute;&eacute;n desktopapplicatie. Elk Praxis-abonnement helpt de gratis juridische informatieplatformen (WetWijzer, LisLoi, GesetzGuide, LexLibera) in stand te houden.</p>
+    <p>
+        <a href="https://praxislegal.be" target="_blank" rel="noopener" class="inline-flex items-center px-4 py-2 text-white rounded-lg font-semibold transition hover:opacity-90" style="background: linear-gradient(135deg, #c9a962, #b8943a);">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            Ontdek Praxis
+        </a>
+    </p>
+
+    <h2>&#x1F4E2; Vertel het verder</h2>
+    <p>Geen budget? U kunt WetWijzer ook steunen door het woord te verspreiden:</p>
+    <ul>
+        <li>&#x1F517; Deel <a href="https://wetwijzer.be">wetwijzer.be</a> met collega&rsquo;s, studenten en vrienden</li>
+        <li>&#x2B50; Geef ons een ster op <a href="https://github.com/WetWijzer-LisLoi/WetWijzer" target="_blank" rel="noopener">GitHub</a></li>
+        <li>&#x1F4AC; Vermeld WetWijzer op sociale media of in vakpublicaties</li>
+        <li>&#x1F4DD; Geef ons feedback via <a href="mailto:<%= contact_email %>"><%= contact_email %></a></li>
+    </ul>
+
+    <h2>&#x2764;&#xFE0F; Bedankt</h2>
+    <p>WetWijzer bestaat dankzij de steun van onze Pro-abonnees, donateurs en gebruikers. Elke bijdrage &mdash; financieel of niet &mdash; helpt ons de Belgische wet toegankelijk te houden voor iedereen.</p>
+
+</div>

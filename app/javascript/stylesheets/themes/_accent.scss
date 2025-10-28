@@ -1,0 +1,438 @@
+@use 'sass:map';
+
+// Accent Theme Variables - Generated from SCSS Maps
+// ===================================================
+// Theme data is defined once in $themes maps below.
+// The @each loops generate all .theme-* CSS custom property blocks,
+// eliminating the previous 820 lines of hand-maintained repetition.
+//
+// To add a new theme: add an entry to $vibrant-themes or $professional-themes.
+// To change a color: edit the map value - all reference/badge/border variables update automatically.
+
+// ============================================================================
+// ROOT DEFAULTS (blue)
+// ============================================================================
+:root {
+  --accent-50: #eff6ff;
+  --accent-100: #dbeafe;
+  --accent-400: #60a5fa;
+  --accent-500: #3b82f6;
+  --accent-600: #2563eb;
+  --accent-700: #1d4ed8;
+  --accent-900: #1e3a8a;
+  --page-bg: #ffffff;
+  --accent-active-bg: #eff6ff;
+  --surface-header-bg: #ffffff;
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  --swatch-color: var(--accent-500);
+  --text-muted: #4b5563; // gray-600 - passes 4.5:1 on all tinted light bgs
+  --card-radius: 1rem;   // default: rounded cards (vibrant/fun themes)
+}
+
+:root.dark {
+  --accent-50: #1e3a5f;
+  --accent-100: #1e3a8a;
+  --accent-400: #60a5fa;
+  --accent-500: #38bdf8;
+  --accent-600: #7dd3fc;
+  --accent-700: #bae6fd;
+  --accent-900: #0c1e3a;
+  --page-bg: #080d19; /* darker than midnight for card separation */
+  --accent-active-bg: rgba(56, 189, 248, 0.20);
+  --surface-header-bg: #0f172a; /* midnight for header surfaces */
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  --swatch-color: var(--accent-500);
+  --link-color: var(--accent-500);
+  --link-hover-color: var(--accent-400);
+  --badge-bg: rgba(56, 189, 248, 0.20);
+  --badge-text: #38bdf8;
+  --badge-border: rgba(56, 189, 248, 0.40);
+  --border-divider: rgba(56, 189, 248, 0.10);
+  --border-card: rgba(56, 189, 248, 0.30);
+  --border-separator: rgba(56, 189, 248, 0.40);
+  --border-header: rgba(56, 189, 248, 0.50);
+  --text-muted: #d1d5db; // gray-300 - passes 4.5:1 on dark bgs
+  --accent-600-solid: #2563eb; /* blue-600 - keeps saturated bg for white text */
+  --accent-700-solid: #1d4ed8; /* blue-700 */
+}
+
+// ============================================================================
+// THEME: original (production default - blue accents, white bg)
+// ============================================================================
+.theme-original {
+  --accent-400: #60a5fa;
+  --accent-500: #3b82f6;
+  --accent-600: #2563eb;
+  --accent-700: #1d4ed8;
+  --page-bg: #ffffff;
+  --accent-active-bg: #eff6ff;
+  --surface-header-bg: #ffffff;
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  --swatch-color: #ffffff;
+}
+
+.theme-original.dark, .dark.theme-original {
+  --accent-400: #60a5fa;
+  --accent-500: #38bdf8;
+  --accent-600: #7dd3fc;
+  --accent-700: #bae6fd;
+  --page-bg: #080d19;
+  --accent-active-bg: rgba(56, 189, 248, 0.10);
+  --surface-header-bg: #0f172a;
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  --swatch-color: #0f172a;
+  --accent-600-solid: #2563eb; /* blue-600 */
+  --accent-700-solid: #1d4ed8; /* blue-700 */
+}
+
+// ============================================================================
+// VIBRANT THEMES - bright, fun color palettes
+// ============================================================================
+// Map: name → (accent shades, page bg, dark overrides, badge colors, border-base)
+//   accent-400, accent-500, accent-600, accent-700
+//   page-bg (light), page-bg-dark
+//   dark accent overrides (400, 500, 600, 700)
+//   badge light: bg, text, border
+//   border-base-rgb (for opacity variants in dark mode)
+
+$vibrant-themes: (
+  "blue": (
+    light: (400: #60a5fa, 500: #3b82f6, 600: #2563eb, 700: #1d4ed8, bg: #eff6ff),
+    dark:  (400: #60a5fa, 500: #38bdf8, 600: #7dd3fc, 700: #bae6fd, bg: #080d19, active-alpha: 0.15, active-rgb: "56, 189, 248"),
+    badge-light: (bg: #dbeafe, text: #1e40af, border: #bfdbfe),
+    badge-dark-rgb: "96, 165, 250",
+    border-rgb: "59, 130, 246"
+  ),
+  "rose": (
+    light: (400: #fb7185, 500: #f43f5e, 600: #e11d48, 700: #be123c, bg: #fff1f2),
+    dark:  (400: #fb7185, 500: #fda4af, 600: #fecdd3, 700: #ffe4e6, bg: #080d19, active-alpha: 0.12, active-rgb: "251, 113, 133"),
+    badge-light: (bg: #ffe4e6, text: #9f1239, border: #fecdd3),
+    badge-dark-rgb: "251, 113, 133",
+    border-rgb: "244, 63, 94"
+  ),
+  "amber": (
+    light: (400: #f59e0b, 500: #d97706, 600: #b45309, 700: #92400e, bg: #fffbeb),
+    dark:  (400: #f59e0b, 500: #fbbf24, 600: #fcd34d, 700: #fde68a, bg: #080d19, active-alpha: 0.12, active-rgb: "251, 191, 36"),
+    badge-light: (bg: #fef3c7, text: #92400e, border: #fde68a),
+    badge-dark-rgb: "251, 191, 36",
+    border-rgb: "217, 119, 6"
+  ),
+  "emerald": (
+    light: (400: #34d399, 500: #10b981, 600: #059669, 700: #047857, bg: #ecfdf5),
+    dark:  (400: #34d399, 500: #6ee7b7, 600: #a7f3d0, 700: #d1fae5, bg: #080d19, active-alpha: 0.12, active-rgb: "110, 231, 183"),
+    badge-light: (bg: #d1fae5, text: #065f46, border: #a7f3d0),
+    badge-dark-rgb: "52, 211, 153",
+    border-rgb: "16, 185, 129"
+  ),
+  "violet": (
+    light: (400: #a78bfa, 500: #8b5cf6, 600: #7c3aed, 700: #6d28d9, bg: #f5f3ff),
+    dark:  (400: #a78bfa, 500: #c4b5fd, 600: #ddd6fe, 700: #ede9fe, bg: #080d19, active-alpha: 0.12, active-rgb: "196, 181, 253"),
+    badge-light: (bg: #ede9fe, text: #5b21b6, border: #ddd6fe),
+    badge-dark-rgb: "167, 139, 250",
+    border-rgb: "139, 92, 246"
+  ),
+  "fuchsia": (
+    light: (400: #e879f9, 500: #d946ef, 600: #c026d3, 700: #a21caf, bg: #fdf4ff),
+    dark:  (400: #e879f9, 500: #f0abfc, 600: #f5d0fe, 700: #fae8ff, bg: #080d19, active-alpha: 0.12, active-rgb: "232, 121, 249"),
+    badge-light: (bg: #fae8ff, text: #86198f, border: #f5d0fe),
+    badge-dark-rgb: "232, 121, 249",
+    border-rgb: "217, 70, 239"
+  ),
+  "pink": (
+    light: (400: #f472b6, 500: #ec4899, 600: #db2777, 700: #be185d, bg: #fdf2f8),
+    dark:  (400: #f472b6, 500: #f9a8d4, 600: #fbcfe8, 700: #fce7f3, bg: #080d19, active-alpha: 0.12, active-rgb: "244, 114, 182"),
+    badge-light: (bg: #fce7f3, text: #9d174d, border: #fbcfe8),
+    badge-dark-rgb: "244, 114, 182",
+    border-rgb: "236, 72, 153"
+  )
+);
+
+@each $name, $config in $vibrant-themes {
+  $light: map.get($config, light);
+  $dark: map.get($config, dark);
+  $badge-light: map.get($config, badge-light);
+  $badge-dark-rgb: map.get($config, badge-dark-rgb);
+  $border-rgb: map.get($config, border-rgb);
+
+  .theme-#{$name} {
+    --accent-400: #{map.get($light, 400)};
+    --accent-500: #{map.get($light, 500)};
+    --accent-600: #{map.get($light, 600)};
+    --accent-700: #{map.get($light, 700)};
+    --page-bg: #{map.get($light, bg)};
+    --accent-active-bg: #{map.get($light, bg)};
+    --surface-header-bg: var(--page-bg);
+    --table-th-bg: var(--accent-active-bg);
+    --table-row-hover-bg: var(--accent-active-bg);
+    --swatch-color: var(--accent-500);
+    --badge-bg: #{map.get($badge-light, bg)};
+    --badge-text: #{map.get($badge-light, text)};
+    --badge-border: #{map.get($badge-light, border)};
+  }
+
+  .theme-#{$name}.dark, .dark.theme-#{$name} {
+    --accent-400: #{map.get($dark, 400)};
+    --accent-500: #{map.get($dark, 500)};
+    --accent-600: #{map.get($dark, 600)};
+    --accent-700: #{map.get($dark, 700)};
+    --accent-50: #{map.get($dark, bg)};
+    --accent-100: #{map.get($dark, bg)};
+    --accent-200: rgba(#{map.get($dark, active-rgb)}, 0.30);
+    --accent-300: rgba(#{map.get($dark, active-rgb)}, 0.40);
+    --accent-800: #{map.get($dark, bg)};
+    --accent-900: #{map.get($dark, bg)};
+    --page-bg: #{map.get($dark, bg)};
+    --accent-active-bg: rgba(#{map.get($dark, active-rgb)}, #{map.get($dark, active-alpha)});
+    --surface-header-bg: #0f172a; /* midnight - lighter than page-bg for card separation */
+    --link-color: #{map.get($dark, 500)};
+    --link-hover-color: #{map.get($dark, 400)};
+    --badge-bg: rgba(#{$badge-dark-rgb}, 0.20);
+    --badge-text: #{map.get($dark, 400)};
+    --badge-border: rgba(#{$badge-dark-rgb}, 0.40);
+    --border-divider: rgba(#{$border-rgb}, 0.10);
+    --border-card: rgba(#{$border-rgb}, 0.30);
+    --border-separator: rgba(#{$border-rgb}, 0.40);
+    --border-header: rgba(#{$border-rgb}, 0.50);
+    // WCAG AA: brighten muted text for colored dark backgrounds (Story 2.3)
+    --text-muted: #d1d5db; // gray-300 - passes 4.5:1 on all vibrant dark bgs
+    // Solid accent: keep light-mode values for button backgrounds with white text
+    --accent-600-solid: #{map.get($light, 600)};
+    --accent-700-solid: #{map.get($light, 700)};
+  }
+}
+
+// ============================================================================
+// PROFESSIONAL THEMES - muted, neutral palettes
+// ============================================================================
+
+$professional-themes: (
+  "slate": (
+    light: (400: #9ca3af, 500: #6b7280, 600: #4b5563, 700: #374151, bg: #ffffff, active: #f9fafb, header: #ffffff, th: #f3f4f6, hover: #f9fafb),
+    dark:  (400: #cbd5e1, 500: #94a3b8, 600: #94a3b8, 700: #cbd5e1, bg: #080d19, active-rgb: "148, 163, 184", active-alpha: 0.10),
+    swatch-light: #6b7280,
+    swatch-dark: #1e293b
+  ),
+  "indigo": (
+    light: (400: #a5b4fc, 500: #818cf8, 600: #6366f1, 700: #4f46e5, bg: #f5f7ff, active: #eef2ff, header: null, th: null, hover: null),
+    dark:  (400: #a5b4fc, 500: #818cf8, 600: #a5b4fc, 700: #c7d2fe, bg: #080d19, active-rgb: "129, 140, 248", active-alpha: 0.15),
+    swatch-light: null,
+    swatch-dark: #4f46e5
+  ),
+  "sky": (
+    light: (400: #38bdf8, 500: #0ea5e9, 600: #0284c7, 700: #0369a1, bg: #f0f9ff, active: #e0f2fe, header: null, th: null, hover: null),
+    dark:  (400: #7dd3fc, 500: #38bdf8, 600: #38bdf8, 700: #7dd3fc, bg: #080d19, active-rgb: "56, 189, 248", active-alpha: 0.15),
+    swatch-light: null,
+    swatch-dark: #0ea5e9
+  ),
+  "teal": (
+    light: (400: #2dd4bf, 500: #14b8a6, 600: #0d9488, 700: #0f766e, bg: #f0fdfa, active: #ccfbf1, header: null, th: null, hover: null),
+    dark:  (400: #5eead4, 500: #2dd4bf, 600: #2dd4bf, 700: #5eead4, bg: #080d19, active-rgb: "45, 212, 191", active-alpha: 0.15),
+    swatch-light: null,
+    swatch-dark: #14b8a6
+  ),
+  "cyan": (
+    light: (400: #22d3ee, 500: #06b6d4, 600: #0891b2, 700: #0e7490, bg: #ecfeff, active: #cffafe, header: null, th: null, hover: null),
+    dark:  (400: #67e8f9, 500: #22d3ee, 600: #22d3ee, 700: #67e8f9, bg: #080d19, active-rgb: "34, 211, 238", active-alpha: 0.15),
+    swatch-light: null,
+    swatch-dark: #06b6d4
+  ),
+  "green": (
+    light: (400: #4ade80, 500: #22c55e, 600: #16a34a, 700: #15803d, bg: #f0fdf4, active: #dcfce7, header: null, th: null, hover: null),
+    dark:  (400: #86efac, 500: #4ade80, 600: #4ade80, 700: #86efac, bg: #080d19, active-rgb: "74, 222, 128", active-alpha: 0.15),
+    swatch-light: null,
+    swatch-dark: #22c55e
+  ),
+  "purple": (
+    light: (400: #c084fc, 500: #a855f7, 600: #9333ea, 700: #7e22ce, bg: #faf5ff, active: #f3e8ff, header: null, th: null, hover: null),
+    dark:  (400: #d8b4fe, 500: #c084fc, 600: #c084fc, 700: #d8b4fe, bg: #080d19, active-rgb: "192, 132, 252", active-alpha: 0.15),
+    swatch-light: null,
+    swatch-dark: #a855f7
+  ),
+  "red": (
+    light: (400: #f87171, 500: #ef4444, 600: #dc2626, 700: #b91c1c, bg: #fef2f2, active: #fee2e2, header: null, th: null, hover: null),
+    dark:  (400: #fca5a5, 500: #f87171, 600: #f87171, 700: #fca5a5, bg: #080d19, active-rgb: "248, 113, 113", active-alpha: 0.15),
+    swatch-light: null,
+    swatch-dark: #dc2626
+  )
+);
+
+@each $name, $config in $professional-themes {
+  $light: map.get($config, light);
+  $dark: map.get($config, dark);
+  $swatch-light: map.get($config, swatch-light);
+  $swatch-dark: map.get($config, swatch-dark);
+
+  .theme-#{$name} {
+    --accent-400: #{map.get($light, 400)};
+    --accent-500: #{map.get($light, 500)};
+    --accent-600: #{map.get($light, 600)};
+    --accent-700: #{map.get($light, 700)};
+    --page-bg: #{map.get($light, bg)};
+    $active-val: map.get($light, active);
+    @if $active-val {
+      --accent-active-bg: #{$active-val};
+    } @else {
+      --accent-active-bg: #{map.get($light, bg)};
+    }
+    --surface-header-bg: var(--page-bg);
+    --table-th-bg: var(--accent-active-bg);
+    --table-row-hover-bg: var(--accent-active-bg);
+    @if $swatch-light {
+      --swatch-color: #{$swatch-light};
+    } @else {
+      --swatch-color: var(--accent-500);
+    }
+    // Neutral professional badges
+    --badge-bg: #f3f4f6;
+    --badge-text: #374151;
+    --badge-border: #e5e7eb;
+    // Rectangular cards for professional themes
+    --card-radius: 0;
+  }
+
+  .theme-#{$name}.dark, .dark.theme-#{$name} {
+    --page-bg: #{map.get($dark, bg)};
+    --accent-active-bg: rgba(#{map.get($dark, active-rgb)}, #{map.get($dark, active-alpha)});
+    --accent-50: #{map.get($dark, bg)};
+    --accent-100: #{map.get($dark, bg)};
+    --accent-200: rgba(#{map.get($dark, active-rgb)}, 0.30);
+    --accent-300: rgba(#{map.get($dark, active-rgb)}, 0.40);
+    --accent-800: #{map.get($dark, bg)};
+    --accent-900: #{map.get($dark, bg)};
+    --surface-header-bg: #0f172a; /* midnight - lighter than page-bg for card separation */
+    @if $swatch-dark {
+      --swatch-color: #{$swatch-dark};
+    }
+    // Dark-mode accent overrides for WCAG AA contrast (Story 2.3)
+    $dark-400: map.get($dark, 400);
+    $dark-500: map.get($dark, 500);
+    $dark-600: map.get($dark, 600);
+    $dark-700: map.get($dark, 700);
+    @if $dark-400 { --accent-400: #{$dark-400}; }
+    @if $dark-500 { --accent-500: #{$dark-500}; }
+    @if $dark-600 { --accent-600: #{$dark-600}; }
+    @if $dark-700 { --accent-700: #{$dark-700}; }
+    @if $dark-500 { --link-color: #{$dark-500}; }
+    @if $dark-400 { --link-hover-color: #{$dark-400}; }
+    // Neutral dark badges
+    --badge-bg: #374151;
+    --badge-text: #d1d5db;
+    --badge-border: #4b5563;
+    // Border colors with opacity
+    --border-divider: rgba(#{map.get($dark, active-rgb)}, 0.10);
+    --border-card: rgba(#{map.get($dark, active-rgb)}, 0.30);
+    --border-separator: rgba(#{map.get($dark, active-rgb)}, 0.40);
+    --border-header: rgba(#{map.get($dark, active-rgb)}, 0.50);
+    // WCAG AA: muted text contrast for dark professional themes
+    --text-muted: #d1d5db; // gray-300 - passes 4.5:1 on dark bgs
+    // Solid accent: keep light-mode values for button backgrounds with white text
+    --accent-600-solid: #{map.get($light, 600)};
+    --accent-700-solid: #{map.get($light, 700)};
+  }
+}
+
+// ============================================================================
+// REFERENCE COLORS - shared by theme family
+// ============================================================================
+
+// Professional themes: muted neutral palette
+.theme-slate {
+  --ref-1: #1f2937; --ref-2: #374151; --ref-3: #4b5563; --ref-4: #6b7280;
+  --ref-5: #374151; --ref-6: #1f2937; --ref-7: #4b5563; --ref-8: #374151;
+  --ref-9: #1f2937; --ref-10: #4b5563; --ref-11: #374151; --ref-12: #1f2937;
+  --ref-13: #4b5563; --ref-14: #374151; --ref-15: #1f2937; --ref-16: #4b5563;
+  --ref-17: #374151; --ref-18: #1f2937; --ref-19: #4b5563; --ref-20: #374151;
+  --list-marker: var(--ref-2);
+  --section-symbol: var(--ref-3);
+  --special-marker: var(--ref-5);
+}
+
+.theme-slate.dark, .dark.theme-slate {
+  --ref-1: #e5e7eb; --ref-2: #d1d5db; --ref-3: #9ca3af; --ref-4: #6b7280;
+  --ref-5: #d1d5db; --ref-6: #e5e7eb; --ref-7: #9ca3af; --ref-8: #d1d5db;
+  --ref-9: #e5e7eb; --ref-10: #9ca3af; --ref-11: #d1d5db; --ref-12: #e5e7eb;
+  --ref-13: #9ca3af; --ref-14: #d1d5db; --ref-15: #e5e7eb; --ref-16: #9ca3af;
+  --ref-17: #d1d5db; --ref-18: #e5e7eb; --ref-19: #9ca3af; --ref-20: #d1d5db;
+}
+
+// Professional themes (non-slate): colorful but muted
+.theme-indigo, .theme-sky, .theme-teal, .theme-cyan,
+.theme-green, .theme-purple, .theme-red {
+  --ref-1: #1e40af; --ref-2: #334155; --ref-3: #3730a3; --ref-4: #374151;
+  --ref-5: #5b21b6; --ref-6: #155e75; --ref-7: #44403c; --ref-8: #3f3f46;
+  --ref-9: #075985; --ref-10: #115e59; --ref-11: #065f46; --ref-12: #14532d;
+  --ref-13: #4d7c0f; --ref-14: #92400e; --ref-15: #9a3412; --ref-16: #991b1b;
+  --ref-17: #881337; --ref-18: #831843; --ref-19: #701a75; --ref-20: #581c87;
+  --list-marker: var(--ref-2);
+  --section-symbol: var(--ref-3);
+  --special-marker: var(--ref-5);
+}
+
+.theme-indigo.dark, .dark.theme-indigo,
+.theme-sky.dark, .dark.theme-sky,
+.theme-teal.dark, .dark.theme-teal,
+.theme-cyan.dark, .dark.theme-cyan,
+.theme-green.dark, .dark.theme-green,
+.theme-purple.dark, .dark.theme-purple,
+.theme-red.dark, .dark.theme-red {
+  --ref-1: #60a5fa; --ref-2: #94a3b8; --ref-3: #818cf8; --ref-4: #9ca3af;
+  --ref-5: #a78bfa; --ref-6: #22d3ee; --ref-7: #a8a29e; --ref-8: #a1a1aa;
+  --ref-9: #38bdf8; --ref-10: #2dd4bf; --ref-11: #34d399; --ref-12: #4ade80;
+  --ref-13: #a3e635; --ref-14: #fbbf24; --ref-15: #fb923c; --ref-16: #f87171;
+  --ref-17: #fb7185; --ref-18: #f472b6; --ref-19: #e879f9; --ref-20: #c084fc;
+}
+
+// Vibrant/fun themes: bright reference colors
+.theme-original, .theme-blue, .theme-rose, .theme-amber,
+.theme-emerald, .theme-violet, .theme-fuchsia, .theme-pink {
+  --ref-1: #2563eb; --ref-2: #16a34a; --ref-3: #9333ea; --ref-4: #dc2626;
+  --ref-5: #ca8a04; --ref-6: #db2777; --ref-7: #4f46e5; --ref-8: #0d9488;
+  --ref-9: #ea580c; --ref-10: #0891b2; --ref-11: #e11d48; --ref-12: #059669;
+  --ref-13: #7c3aed; --ref-14: #d97706; --ref-15: #65a30d; --ref-16: #0284c7;
+  --ref-17: #c026d3; --ref-18: #f43f5e; --ref-19: #3b82f6; --ref-20: #22c55e;
+  --list-marker: var(--ref-1);
+  --section-symbol: var(--ref-7);
+  --special-marker: var(--ref-3);
+}
+
+.theme-original.dark, .dark.theme-original,
+.theme-blue.dark, .dark.theme-blue,
+.theme-rose.dark, .dark.theme-rose,
+.theme-amber.dark, .dark.theme-amber,
+.theme-emerald.dark, .dark.theme-emerald,
+.theme-violet.dark, .dark.theme-violet,
+.theme-fuchsia.dark, .dark.theme-fuchsia,
+.theme-pink.dark, .dark.theme-pink {
+  --ref-1: #60a5fa; --ref-2: #4ade80; --ref-3: #c084fc; --ref-4: #f87171;
+  --ref-5: #facc15; --ref-6: #f472b6; --ref-7: #818cf8; --ref-8: #2dd4bf;
+  --ref-9: #fb923c; --ref-10: #22d3ee; --ref-11: #fb7185; --ref-12: #34d399;
+  --ref-13: #a78bfa; --ref-14: #fbbf24; --ref-15: #a3e635; --ref-16: #38bdf8;
+  --ref-17: #e879f9; --ref-18: #fda4af; --ref-19: #93c5fd; --ref-20: #86efac;
+}
+
+// ============================================================================
+// WCAG 2.1 AA - Muted text contrast override (Story 2.3)
+// ============================================================================
+// On vibrant dark themes, gray-400 (#9ca3af) fails 4.5:1 against colored page bgs
+// (e.g. rose-900, amber-900). This rule upgrades gray-400/500 text to use the
+// theme-aware --text-muted variable, which is set to gray-300 on vibrant dark themes.
+.dark .text-gray-400,
+.dark .text-gray-500 {
+  color: var(--text-muted) !important;
+}
+
+// ============================================================================
+// WCAG 2.1 AA - Dark-mode button contrast (accent-bg + white text)
+// ============================================================================
+// In dark mode, --accent-600/700 resolve to very bright pastels (e.g. #7dd3fc,
+// #fecdd3) which make white text unreadable. These "solid" variants keep the
+// original rich, saturated accent colors that work with white text in ANY mode.
+:root {
+  --accent-600-solid: var(--accent-600);
+  --accent-700-solid: var(--accent-700);
+}
+

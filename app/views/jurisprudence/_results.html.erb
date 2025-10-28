@@ -1,0 +1,162 @@
+<%= turbo_frame_tag "jurisprudence_results",
+      data: {
+        turbo_action: 'advance'
+      } do %>
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+    <% if @cases.empty? %>
+      <div class="p-12 text-center">
+        <svg class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/>
+        </svg>
+        <p class="text-lg text-gray-500 dark:text-gray-300">
+          <%= case I18n.locale when :fr then 'Aucun arrêt trouvé' when :de then 'Keine Urteile gefunden' when :en then 'No cases found' else 'Geen arresten gevonden' end %>
+        </p>
+        <p class="text-sm text-gray-400 dark:text-gray-300/70 mt-2">
+          <%= case I18n.locale when :fr then "Essayez d'élargir vos critères de recherche" when :de then 'Versuchen Sie, Ihre Suchkriterien zu erweitern' when :en then 'Try broadening your search criteria' else 'Probeer uw zoekcriteria te verruimen' end %>
+        </p>
+      </div>
+    <% else %>
+      <div class="divide-y divide-gray-100 dark:divide-sky/20">
+        <% @cases.each do |c| %>
+          <%
+            # Translate subject matter
+            subject_labels = {
+              'arbeidsrecht' => { nl: 'Arbeidsrecht', fr: 'Droit du travail' },
+              'bestuursrecht' => { nl: 'Bestuursrecht', fr: 'Droit administratif' },
+              'burgerlijk_recht' => { nl: 'Burgerlijk recht', fr: 'Droit civil' },
+              'fiscaal_recht' => { nl: 'Fiscaal recht', fr: 'Droit fiscal' },
+              'grondwettelijk' => { nl: 'Grondwettelijk', fr: 'Constitutionnel' },
+              'sociaal_recht' => { nl: 'Sociaal recht', fr: 'Droit social' },
+              'strafrecht' => { nl: 'Strafrecht', fr: 'Droit pénal' },
+              'vennootschapsrecht' => { nl: 'Vennootschapsrecht', fr: 'Droit des sociétés' }
+            }
+            subject_colors = {
+              'arbeidsrecht' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+              'bestuursrecht' => 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-blue-400-300',
+              'burgerlijk_recht' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+              'fiscaal_recht' => 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
+              'grondwettelijk' => 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300',
+              'sociaal_recht' => 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
+              'strafrecht' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+              'vennootschapsrecht' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300'
+            }
+            subjects = c[:subject_matter].to_s.split(',').map(&:strip).reject(&:empty?)
+            locale = case I18n.locale when :fr then :fr when :de then :nl when :en then :nl else :nl end
+            court_display = c[:court].to_s.split('/').first.strip
+          %>
+          <a href="<%= jurisprudence_path(c[:case_number]) %>"
+             data-turbo-frame="_top"
+             class="block px-5 py-4 hover:bg-gray-50/80 dark:hover:bg-sky/5 transition-colors duration-150 group">
+
+            <!-- Row 1: Court name + date -->
+            <div class="flex items-start justify-between gap-3 mb-1.5">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <!-- Court level indicator -->
+                <%= court_level_indicator(court_display) %>
+                <!-- Court name as primary title -->
+                <h3 class="font-semibold text-gray-900 dark:text-blue-400 text-[15px] leading-snug group-hover:text-(--accent-600) dark:group-hover:text-(--accent-400) transition-colors truncate">
+                  <%= court_display.presence || ecli_court_title(c[:case_number]) %>
+                </h3>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <!-- Date -->
+                <span class="text-sm text-gray-500 dark:text-gray-300/80 tabular-nums whitespace-nowrap">
+                  <%= c[:decision_date] %>
+                </span>
+                <!-- Language badge -->
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wide capitalize <%= c[:language_id].to_s == '1' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' : 'bg-(--accent-100,#dbeafe) text-(--accent-700) dark:bg-(--accent-900,#1e3a5f)/30 dark:text-(--accent-400)' %>">
+                  <%= c[:language_id].to_s == '1' ? 'NL' : 'FR' %>
+                </span>
+                <!-- Arrow -->
+                <svg class="w-4 h-4 text-gray-300 group-hover:text-(--accent-500) dark:group-hover:text-(--accent-400) transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Row 2: ECLI number (monospace, subtle) -->
+            <p class="text-xs font-mono text-gray-400 dark:text-gray-300/50 mb-2 truncate pl-7">
+              <%= c[:case_number] %>
+            </p>
+
+            <!-- Row 3: Subject matter badges -->
+            <% if subjects.any? %>
+              <div class="flex flex-wrap gap-1.5 mb-2 pl-7">
+                <% subjects.first(3).each do |subj| %>
+                  <% label = subject_labels[subj]&.dig(locale) || subj.humanize %>
+                  <% color = subject_colors[subj] || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' %>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium <%= color %>">
+                    <%= label %>
+                  </span>
+                <% end %>
+              </div>
+            <% end %>
+
+            <!-- Row 4: Summary -->
+            <% summary_text = clean_jurisprudence_summary(c[:summary]).to_s.gsub(/\s+/, ' ').strip %>
+            <% if summary_text.present? && summary_text.length > 10 %>
+              <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed pl-7 line-clamp-2">
+                <%= summary_text.truncate(250) %>
+              </p>
+            <% elsif c[:appellant].present? && c[:appellant].to_s.length > 3 %>
+              <p class="text-sm text-gray-500 dark:text-gray-300/70 italic pl-7 truncate">
+                <%= c[:appellant].to_s.truncate(120) %>
+              </p>
+            <% end %>
+          </a>
+        <% end %>
+      </div>
+    <% end %>
+
+    <!-- Pagination -->
+    <% if @total_pages > 1 %>
+      <% filter_params = { q: @query, court: @court, year: @year, date_from: @date_from, date_to: @date_to, lang: @lang, subject: @subject, sort: @sort, per_page: @per_page }.compact %>
+      <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="text-sm text-gray-600 dark:text-gray-300">
+            <%= case I18n.locale when :fr then 'Page' when :de then 'Seite' when :en then 'Page' else 'Pagina' end %> <span class="font-semibold"><%= @page %></span> <%= case I18n.locale when :fr then 'sur' when :de then 'von' when :en then 'of' else 'van' end %> <span class="font-semibold"><%= @total_pages %></span>
+            <span class="text-gray-400 dark:text-gray-300/60 ml-2">(<%= number_with_delimiter(@total_count) %> <%= case I18n.locale when :fr then 'résultats' when :de then 'Ergebnisse' when :en then 'results' else 'resultaten' end %>)</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <% if @page > 1 %>
+              <a href="<%= jurisprudence_index_path(filter_params.merge(page: 1)) %>"
+                 data-turbo-frame="jurisprudence_results"
+                 class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-sky/10 rounded-lg transition-colors">«</a>
+              <a href="<%= jurisprudence_index_path(filter_params.merge(page: @page - 1)) %>"
+                 data-turbo-frame="jurisprudence_results"
+                 class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-sky/10 rounded-lg transition-colors">‹</a>
+            <% end %>
+            <% 
+              pages_to_show = [1]
+              ([@page - 2, 2].max..[@page + 2, @total_pages - 1].min).each { |p| pages_to_show << p }
+              pages_to_show << @total_pages if @total_pages > 1
+              pages_to_show = pages_to_show.uniq.sort
+              prev_page = 0
+            %>
+            <% pages_to_show.each do |p| %>
+              <% if p > prev_page + 1 %>
+                <span class="px-2 text-gray-400">…</span>
+              <% end %>
+              <% if p == @page %>
+                <span class="px-4 py-2 bg-(--accent-600-solid) text-white text-sm font-medium rounded-lg shadow-lg shadow-(--accent-600)/25"><%= p %></span>
+              <% else %>
+                <a href="<%= jurisprudence_index_path(filter_params.merge(page: p)) %>"
+                   data-turbo-frame="jurisprudence_results"
+                   class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-sky/10 rounded-lg transition-colors"><%= p %></a>
+              <% end %>
+              <% prev_page = p %>
+            <% end %>
+            <% if @page < @total_pages %>
+              <a href="<%= jurisprudence_index_path(filter_params.merge(page: @page + 1)) %>"
+                 data-turbo-frame="jurisprudence_results"
+                 class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-sky/10 rounded-lg transition-colors">›</a>
+              <a href="<%= jurisprudence_index_path(filter_params.merge(page: @total_pages)) %>"
+                 data-turbo-frame="jurisprudence_results"
+                 class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-sky/10 rounded-lg transition-colors">»</a>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>

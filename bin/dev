@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+require 'rbconfig'
+
+# Use the current Ruby interpreter to run bin/rails for better Windows compatibility
+rails_path = File.expand_path('rails', __dir__)
+exec RbConfig.ruby, rails_path, 'server', *ARGV

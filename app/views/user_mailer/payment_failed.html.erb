@@ -1,0 +1,24 @@
+<h2><%= t('mailer.payment_failed.greeting', name: @user.name || @user.email) %></h2>
+
+<p><%= t('mailer.payment_failed.body') %></p>
+
+<div class="danger-box">
+  <strong style="color: #dc2626;"><%= t('mailer.payment_failed.status_label') %></strong>
+  <p style="margin: 6px 0 0; color: #991b1b;"><%= t('mailer.payment_failed.status_past_due') %></p>
+  <% if @decline_reason.present? %>
+    <p style="margin: 10px 0 0; font-size: 13px; color: #6b7280;">
+      <%= t('mailer.payment_failed.decline_reason') %> <em><%= @decline_reason %></em>
+    </p>
+  <% end %>
+</div>
+
+<p><%= t('mailer.payment_failed.action_needed') %></p>
+
+<div class="button-wrapper">
+  <a href="<%= @update_payment_url %>" class="button" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); background-color: #2563eb; color: #ffffff !important; text-decoration: none; padding: 15px 40px; border-radius: 10px; font-weight: 700; font-size: 15px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);"><%= t('mailer.payment_failed.update_button') %></a>
+</div>
+
+<div class="divider"></div>
+
+<p style="font-size: 13px; color: #94a3b8;"><%= t('mailer.payment_failed.auto_retry') %></p>
+<p style="font-size: 13px; color: #94a3b8;"><%= t('mailer.payment_failed.contact') %></p>

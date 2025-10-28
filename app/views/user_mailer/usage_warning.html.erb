@@ -1,0 +1,18 @@
+<h2>⚠️ <%= t('mailer.usage_warning.title') %></h2>
+
+<p><%= t('mailer.usage_warning.greeting', name: @user.name || @user.email) %></p>
+
+<p><%= t('mailer.usage_warning.body', percent: @usage_percent) %></p>
+
+<div class="warning-box">
+  <div style="background: #e5e7eb; border-radius: 9999px; height: 22px; overflow: hidden; margin-bottom: 10px;">
+    <div style="background: linear-gradient(90deg, #f59e0b, #ef4444); height: 100%; border-radius: 9999px; width: <%= @usage_percent %>%;"></div>
+  </div>
+  <p style="text-align: center; font-weight: 700; margin: 0; font-size: 15px;"><%= @usage_percent %>% <%= t('mailer.usage_warning.used') %></p>
+</div>
+
+<p><%= t('mailer.usage_warning.upgrade_prompt') %></p>
+
+<div class="button-wrapper">
+  <a href="<%= @upgrade_url %>" class="button" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); background-color: #2563eb; color: #ffffff !important; text-decoration: none; padding: 15px 40px; border-radius: 10px; font-weight: 700; font-size: 15px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);"><%= t('mailer.usage_warning.upgrade_button') %> →</a>
+</div>

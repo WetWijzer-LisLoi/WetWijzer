@@ -1,0 +1,653 @@
+<% cleaned_title = clean_parliamentary_title_display(@document[:title], @document[:dossier_number]) %>
+<% parl_label = { 'chamber' => 'Kamer', 'senate' => 'Senaat' }[@document[:parliament]] || @document[:parliament]&.capitalize %>
+<% type_prefix = @document[:document_type].present? ? @document[:document_type].gsub('_', ' ').capitalize : nil %>
+<% full_title = type_prefix && !cleaned_title.downcase.start_with?(type_prefix.downcase) ? "#{type_prefix} #{cleaned_title}" : cleaned_title %>
+<% @title = "#{parl_label} - #{full_title}" %>
+<% dekamer_lang = I18n.locale == :nl ? 'nl' : 'fr' %>
+<% if @document[:parliament] == 'senate'
+     source_url = @document[:url].present? ? @document[:url] : "https://www.senate.be/www/?MIval=index_senate&MENUID=22101&LANG=#{dekamer_lang}"
+     source_label = 'senate.be'
+   else
+     source_url = @document[:legislature].present? ? "https://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=#{dekamer_lang}&cfm=/site/wwwcfm/flwb/flwbn.cfm?legislat=#{@document[:legislature]}&dossierID=#{@document[:dossier_number]}" : nil
+     source_label = 'dekamer.be'
+   end %>
+
+<%# Chatbot context: enables the floating widget to offer document analysis %>
+<meta name="chatbot-context"
+      data-context-type="parliamentary"
+      data-doc-title="<%= strip_tags(full_title.to_s).truncate(200) %>"
+      data-doc-parliament="<%= parl_label %>"
+      data-doc-type="<%= @document[:document_type]&.gsub('_', ' ')&.capitalize %>"
+      data-doc-number="<%= @document[:dossier_number] %>">
+
+<style nonce="<%= content_security_policy_nonce %>">
+  /* Tighten short intro lines - full paragraphs keep normal spacing */
+  #parl-content p.mb-3 { margin-bottom: 0.5rem; }
+  #parl-content h3, #parl-content h4 { margin-top: 1.75rem; }
+  /* Restore normal paragraph spacing after first heading appears */
+  #parl-content h3 ~ p.mb-3,
+  #parl-content h4 ~ p.mb-3 { margin-bottom: 0.75rem; }
+</style>
+
+<!-- Breadcrumb -->
+<nav class="mb-4 text-sm text-gray-500 dark:text-gray-300/70 no-print" aria-label="Breadcrumb">
+  <ol class="flex items-center gap-1 flex-wrap">
+    <li>
+      <a href="<%= root_path %>" class="hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors">
+        <% case I18n.locale when :fr %>Accueil<% when :de %>Startseite<% when :en %>Home<% else %>Home<% end %>
+      </a>
+    </li>
+    <li class="text-gray-300 dark:text-gray-600">›</li>
+    <li>
+      <a href="<%= parliamentary_work_path %>" class="hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors">
+        <% case I18n.locale when :fr %>Travaux préparatoires<% when :de %>Gesetzgebungsvorarbeiten<% when :en %>Parliamentary works<% else %>Parlementaire voorbereidingen<% end %>
+      </a>
+    </li>
+    <% if @document[:parliament].present? %>
+      <li class="text-gray-300 dark:text-gray-600">›</li>
+      <li>
+        <a href="<%= parliamentary_work_path(parliament: @document[:parliament]) %>" class="hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors">
+          <%= parl_label %>
+        </a>
+      </li>
+    <% end %>
+    <li class="text-gray-300 dark:text-gray-600">›</li>
+    <li class="text-gray-700 dark:text-gray-300 font-medium truncate max-w-[200px] sm:max-w-none">
+      <%= @document[:dossier_number] %>
+    </li>
+  </ol>
+</nav>
+
+<!-- Page Header -->
+<div class="mb-6">
+  <div class="bg-linear-to-r from-(--accent-500)/5 to-(--accent-500)/10 dark:from-(--accent-500)/10 dark:to-(--accent-500)/20 rounded-xl p-4 md:p-6">
+    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+      <div class="flex items-center gap-3">
+        <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-(--accent-500)">
+          <%= full_title %>
+        </h1>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 no-print">
+        <%# PDF download link %>
+        <% if @document[:pdf_url].present? %>
+          <a href="<%= @document[:pdf_url] %>" target="_blank" rel="noopener"
+             class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-300) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
+             title="<%= case I18n.locale when :fr then 'Télécharger le PDF officiel' when :de then 'Offizielle PDF herunterladen' when :en then 'Download official PDF' else 'Officiële PDF downloaden' end %>">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span class="hidden sm:inline">PDF</span>
+          </a>
+        <% end %>
+        <%# Dekamer dossier link %>
+        <% if source_url %>
+          <a href="<%= source_url %>" target="_blank" rel="noopener"
+             class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-300) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
+             title="<%= case I18n.locale when :fr then 'Voir le dossier sur ' + source_label when :de then 'Dossier auf ' + source_label + ' anzeigen' when :en then 'View dossier on ' + source_label else 'Bekijk dossier op ' + source_label end %>">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+            <span class="hidden sm:inline"><%= source_label %></span>
+          </a>
+        <% end %>
+        <%# Print button %>
+        <button type="button"
+                data-controller="print" data-action="click->print#fire"
+                class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-300) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
+                title="<%= case I18n.locale when :fr then 'Imprimer' when :de then 'Drucken' when :en then 'Print' else 'Afdrukken' end %>">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content Area -->
+<div class="w-full space-y-6">
+  <!-- Document Metadata -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
+    <div class="p-4 md:p-6">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-3">
+        <% case I18n.locale when :fr %>Détails du document<% when :de %>Dokumentdetails<% when :en %>Document details<% else %>Documentdetails<% end %>
+      </h2>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-(--accent-100) dark:bg-(--accent-900)/30 text-(--accent-800) dark:text-(--accent-200)">
+          🏛️ <%= parl_label %>
+        </span>
+        <% if @document[:legislature].present? %>
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300">
+            <% case I18n.locale when :fr %>Législature<% when :de %>Legislaturperiode<% when :en %>Legislature<% else %>Legislatuur<% end %> <%= @document[:legislature] %>
+          </span>
+        <% end %>
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300">
+          📁 <%= @document[:dossier_number] %>
+        </span>
+        <% if @document[:document_type].present? %>
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300">
+            <%= @document[:document_type].gsub('_', ' ').capitalize %>
+          </span>
+        <% end %>
+        <% if @document[:document_date].present? %>
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300">
+            📅 <%= @document[:document_date] %>
+          </span>
+        <% end %>
+        <% if @document[:language].present? %>
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300">
+            🌐 <%= @document[:language]&.upcase %>
+          </span>
+        <% end %>
+      </div>
+
+      <% if @dossier_meta %>
+        <%# Dossier metadata from dekamer.be fiche %>
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <%# Status badge %>
+          <% if @dossier_meta[:status].present? %>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-medium text-gray-500 dark:text-gray-300/70 min-w-[80px]">Status</span>
+              <% status_text = @dossier_meta[:status] %>
+              <% if status_text.include?('AANGENOMEN') || status_text.include?('BEKRACHTIGD') %>
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
+                  ✅ <%= status_text %>
+                </span>
+              <% elsif status_text.include?('VERWORPEN') %>
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300">
+                  ❌ <%= status_text %>
+                </span>
+              <% elsif status_text.include?('HANGEND') %>
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300">
+                  ⏳ <%= status_text %>
+                </span>
+              <% elsif status_text.include?('VERVALLEN') || status_text.include?('INGETROKKEN') %>
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                  ⊘ <%= status_text %>
+                </span>
+              <% else %>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300">
+                  <%= status_text %>
+                </span>
+              <% end %>
+            </div>
+          <% end %>
+
+          <%# Vote result - prominent card %>
+          <% if @dossier_meta[:vote_result].present? %>
+            <%
+              vote_text = @dossier_meta[:vote_result]
+              is_adopted = vote_text.match?(/AANGENOMEN|ADOPTÉE|ADOPTÉ/i)
+              is_rejected = vote_text.match?(/VERWORPEN|REJETÉE|REJETÉ/i)
+              vote_color = is_adopted ? 'emerald' : is_rejected ? 'red' : 'amber'
+            %>
+            <div class="sm:col-span-2 mt-2">
+              <div class="flex items-center gap-3 p-3 rounded-xl border-2
+                          <%= is_adopted ? 'bg-emerald-50 dark:bg-emerald-900/15 border-emerald-200 dark:border-emerald-700/40' :
+                              is_rejected ? 'bg-red-50 dark:bg-red-900/15 border-red-200 dark:border-red-700/40' :
+                              'bg-amber-50 dark:bg-amber-900/15 border-amber-200 dark:border-amber-700/40' %>">
+                <div class="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg
+                            <%= is_adopted ? 'bg-emerald-100 dark:bg-emerald-800/40' :
+                                is_rejected ? 'bg-red-100 dark:bg-red-800/40' :
+                                'bg-amber-100 dark:bg-amber-800/40' %>">
+                  <%= is_adopted ? '✅' : is_rejected ? '❌' : '🗳️' %>
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-sm font-bold
+                                <%= is_adopted ? 'text-emerald-800 dark:text-emerald-300' :
+                                    is_rejected ? 'text-red-800 dark:text-red-300' :
+                                    'text-amber-800 dark:text-amber-300' %>">
+                      <%= is_adopted ? (case I18n.locale when :fr then 'Adoptée' when :de then 'Angenommen' when :en then 'Adopted' else 'Aangenomen' end) :
+                          is_rejected ? (case I18n.locale when :fr then 'Rejetée' when :de then 'Abgelehnt' when :en then 'Rejected' else 'Verworpen' end) :
+                          vote_text %>
+                    </span>
+                    <% if @dossier_meta[:vote_date].present? %>
+                      <span class="text-xs text-gray-500 dark:text-gray-300/60">
+                        📅 <%= @dossier_meta[:vote_date] %>
+                      </span>
+                    <% end %>
+                  </div>
+                  <% if is_adopted || is_rejected %>
+                    <div class="mt-1.5 w-full h-1.5 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 max-w-[200px]">
+                      <div class="h-full rounded-full transition-all duration-500
+                                  <%= is_adopted ? 'bg-emerald-500' : 'bg-red-500' %>"
+                           style="width: <%= is_adopted ? '100' : '100' %>%"></div>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+
+          <%# Roll-call vote details (naamstemmingen) %>
+          <% if @vote_details.present? %>
+            <div class="sm:col-span-2 mt-3">
+              <% @vote_details.each do |vote| %>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-700/50 overflow-hidden" data-controller="toggle voter-avatar">
+                  <button type="button" data-action="click->toggle#toggle"
+                          class="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800/80 transition-colors cursor-pointer gap-3">
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 mb-0.5">
+                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-300 shrink-0">
+                          🗳️ <%= case I18n.locale when :fr then 'Vote nominatif' when :de then 'Namentliche Abstimmung' when :en then 'Roll-call vote' else 'Naamstemmingen' end %>
+                        </span>
+                        <span class="text-xs text-gray-500 dark:text-gray-300/60 shrink-0"><%= vote[:vote_date] %></span>
+                      </div>
+                      <% if vote[:title].present? %>
+                        <p class="text-xs text-gray-500 dark:text-gray-300/50 leading-snug text-justify"><%= vote[:title] %></p>
+                      <% end %>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs font-medium shrink-0">
+                      <span class="text-emerald-600 dark:text-emerald-400">👍 <%= vote[:yes_count] %></span>
+                      <span class="text-red-600 dark:text-red-400">👎 <%= vote[:no_count] %></span>
+                      <span class="text-amber-600 dark:text-amber-400">🤷 <%= vote[:abstention_count] %></span>
+                      <svg class="w-4 h-4 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    </div>
+                  </button>
+                  <div class="vote-panel hidden" data-toggle-target="content">
+                    <% if vote[:title].present? %>
+                      <div class="px-3 pt-3">
+                        <p class="text-sm text-gray-700 dark:text-gray-300/80 leading-relaxed text-justify select-all"><%= vote[:title] %></p>
+                      </div>
+                    <% end %>
+                    <%# Vote bar visualization with inline labels %>
+                    <div class="px-3 pt-3">
+                      <% total = [vote[:yes_count].to_i + vote[:no_count].to_i + vote[:abstention_count].to_i, 1].max %>
+                      <% yes_pct = (vote[:yes_count].to_f / total * 100).round(1) %>
+                      <% no_pct = (vote[:no_count].to_f / total * 100).round(1) %>
+                      <% abs_pct = (vote[:abstention_count].to_f / total * 100).round(1) %>
+                      <div class="w-full h-6 rounded-full overflow-hidden flex bg-gray-200 dark:bg-gray-700 text-[10px] font-bold leading-6 text-white">
+                        <% if yes_pct > 0 %>
+                          <div class="h-full bg-emerald-500 transition-all text-center truncate" style="width: <%= yes_pct %>%"
+                               title="<%= case I18n.locale when :fr then 'Pour' when :de then 'Ja' when :en then 'Yes' else 'Ja' end %>: <%= vote[:yes_count] %>">
+                            <%= yes_pct >= 15 ? vote[:yes_count] : '' %>
+                          </div>
+                        <% end %>
+                        <% if no_pct > 0 %>
+                          <div class="h-full bg-red-500 transition-all text-center truncate" style="width: <%= no_pct %>%"
+                               title="<%= case I18n.locale when :fr then 'Contre' when :de then 'Nein' when :en then 'No' else 'Neen' end %>: <%= vote[:no_count] %>">
+                            <%= no_pct >= 15 ? vote[:no_count] : '' %>
+                          </div>
+                        <% end %>
+                        <% if abs_pct > 0 %>
+                          <div class="h-full bg-amber-400 transition-all text-center truncate" style="width: <%= abs_pct %>%"
+                               title="<%= case I18n.locale when :fr then 'Abstention' when :de then 'Enthaltung' when :en then 'Abstention' else 'Onthouding' end %>: <%= vote[:abstention_count] %>">
+                            <%= abs_pct >= 15 ? vote[:abstention_count] : '' %>
+                          </div>
+                        <% end %>
+                      </div>
+                    </div>
+
+                    <div class="p-3 space-y-4">
+                      <% [['yes', '👍 Ja / Oui', 'emerald'], ['no', '👎 Neen / Non', 'red'], ['abstention', '🤷 Onthouding / Abstention', 'amber']].each do |choice, label, color| %>
+                        <% parties = vote[:voters_by_party][choice] %>
+                        <% next if parties.blank? %>
+                        <div>
+                          <h4 class="text-xs font-bold text-<%= color %>-700 dark:text-<%= color %>-400 mb-2 capitalize tracking-wide"><%= label %> (<%= vote[:voters][choice].size %>)</h4>
+                          <% parties.sort_by { |party, _| party }.each do |party, mps| %>
+                            <div class="mb-2">
+                              <span class="text-xs font-semibold text-gray-600 dark:text-gray-300/80"><%= party %> (<%= mps.size %>)</span>
+                              <div class="flex flex-wrap gap-1.5 mt-1">
+                                <% mps.each do |mp| %>
+                                  <a href="/mps/<%= mp[:dekamer_key] %>?legislature=<%= @document[:legislature] %>"
+                                     class="group relative inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium
+                                            bg-<%= color %>-50 dark:bg-<%= color %>-900/20 text-<%= color %>-800 dark:text-<%= color %>-300
+                                            hover:bg-<%= color %>-100 dark:hover:bg-<%= color %>-900/40 transition-colors"
+                                     title="<%= ParliamentaryHelper.format_mp_name(mp[:name]) %> (<%= mp[:party] %>)">
+                                    <%# Mini avatar %>
+                                    <% key = mp[:dekamer_key] %>
+                                    <% leg = @document[:legislature] %>
+                                    <img src="https://www.dekamer.be/site/wwwroot/images/cv/ksegna_<%= leg %>/<%= key %>.jpg"
+                                         class="w-5 h-5 rounded-full object-cover shrink-0 voter-avatar-fallback"
+                                         data-key="<%= key %>" data-leg="<%= leg %>"
+                                         alt="">
+                                    <span class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style="display:none; background: <%= ParliamentaryHelper::PARTY_COLORS[mp[:party]] || '#888' %>"><%= mp[:name][0] %></span>
+                                    <span class="truncate max-w-[180px]"><%= ParliamentaryHelper.format_mp_name(mp[:name]) %></span>
+                                  </a>
+                                <% end %>
+                              </div>
+                            </div>
+                          <% end %>
+                        </div>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <%# Commission %>
+          <% if @dossier_meta[:commission].present? %>
+            <div class="flex items-start gap-2 sm:col-span-2">
+              <span class="text-xs font-medium text-gray-500 dark:text-gray-300/70 min-w-[80px] mt-0.5">
+                <% case I18n.locale when :fr %>Commission<% when :de %>Ausschuss<% when :en %>Committee<% else %>Commissie<% end %>
+              </span>
+              <span class="text-sm text-gray-800 dark:text-gray-300"><%= @dossier_meta[:commission] %></span>
+            </div>
+          <% end %>
+
+          <%# Authors %>
+          <% if @dossier_meta[:auteurs].present? %>
+            <div class="flex items-start gap-2 sm:col-span-2">
+              <span class="text-xs font-medium text-gray-500 dark:text-gray-300/70 min-w-[80px] mt-0.5">
+                <% case I18n.locale when :de %>Autor(en)<% when :en %>Author(s)<% else %>Auteur(s)<% end %>
+              </span>
+              <span class="text-sm text-gray-800 dark:text-gray-300"><%= @dossier_meta[:auteurs] %></span>
+            </div>
+          <% end %>
+
+          <%# Rapporteurs %>
+          <% if @dossier_meta[:rapporteurs].present? %>
+            <div class="flex items-start gap-2 sm:col-span-2">
+              <span class="text-xs font-medium text-gray-500 dark:text-gray-300/70 min-w-[80px] mt-0.5">Rapporteur(s)</span>
+              <span class="text-sm text-gray-800 dark:text-gray-300"><%= @dossier_meta[:rapporteurs] %></span>
+            </div>
+          <% end %>
+
+          <%# Eurovoc tags %>
+          <% if @dossier_meta[:eurovoc_tags].present? %>
+            <div class="flex items-start gap-2 sm:col-span-2">
+              <span class="text-xs font-medium text-gray-500 dark:text-gray-300/70 min-w-[80px] mt-0.5">
+                <% case I18n.locale when :fr %>Sujets<% when :de %>Themen<% when :en %>Topics<% else %>Onderwerpen<% end %>
+              </span>
+              <div class="flex flex-wrap gap-1.5">
+                <% @dossier_meta[:eurovoc_tags].split(' | ').each do |tag| %>
+                  <a href="<%= parliamentary_work_path(q: tag.strip) %>" class="inline-block px-2 py-0.5 text-xs rounded-md bg-sky-50 dark:bg-sky/10 text-sky-700 dark:text-blue-400 border border-sky-200 dark:border-gray-600/20 hover:bg-sky-100 dark:hover:bg-sky/20 hover:border-sky-300 dark:hover:border-sky/30 transition-colors"><%= tag.strip %></a>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%# Related legislation with title %>
+      <% if @related_law %>
+        <div class="border-l-4 border-(--accent-400) dark:border-(--accent-600) bg-(--accent-500)/5 dark:bg-gray-900 rounded-r-lg p-3">
+          <h3 class="text-xs font-medium text-gray-500 dark:text-gray-300/70 mb-1">
+            <% case I18n.locale when :fr %>Législation associée<% when :de %>Zugehörige Gesetzgebung<% when :en %>Related legislation<% else %>Gerelateerde wetgeving<% end %>
+          </h3>
+          <a href="<%= show_law_path(@related_law[:numac]) %>"
+             class="text-sm font-medium text-(--accent-700) dark:text-(--accent-300) hover:underline leading-snug">
+            <svg class="w-3.5 h-3.5 inline-block mr-1 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg><%= @related_law[:title] %>
+          </a>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Dossier documents navigation %>
+  <% if @siblings.present? && @siblings.length > 1 %>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
+      <div class="p-4 md:p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-3">
+          📁 Dossier <%= @document[:legislature] %>-<%= @document[:dossier_number] %>
+          <span class="text-sm font-normal text-gray-500 dark:text-gray-300/70">(<%= @siblings.length %> <% case I18n.locale when :fr %>documents<% when :de %>Dokumente<% when :en %>documents<% else %>documenten<% end %>)</span>
+        </h2>
+        <%# Visual timeline of dossier documents %>
+        <div class="relative ml-3">
+          <% @siblings.each_with_index do |sib, idx| %>
+            <% is_current = sib[:id] == @document[:id] %>
+            <% is_last = idx == @siblings.length - 1 %>
+            <%
+              doc_type = sib[:document_type].to_s.downcase
+              type_icon = case doc_type
+                          when /wetsontwerp|projet/ then '📋'
+                          when /amendement/ then '✏️'
+                          when /verslag|rapport/ then '📊'
+                          when /tekst.*aangenomen|texte.*adopt/ then '✅'
+                          when /advies|avis/ then ''
+                          when /memorie|exposé/ then '📝'
+                          else '📄'
+                          end
+              type_color = case doc_type
+                           when /wetsontwerp|projet/ then 'border-(--accent-400) bg-(--accent-50,#eff6ff) dark:bg-(--accent-900,#1e3a5f)/20'
+                           when /amendement/ then 'border-purple-400 bg-purple-50 dark:bg-purple-900/20'
+                           when /verslag|rapport/ then 'border-orange-400 bg-orange-50 dark:bg-orange-900/20'
+                           when /tekst.*aangenomen|texte.*adopt/ then 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'
+                           else 'border-gray-300 bg-gray-50 dark:bg-gray-800/30'
+                           end
+            %>
+            <div class="flex items-stretch gap-3 relative">
+              <%# Timeline connector %>
+              <div class="flex flex-col items-center">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 border-2 <%= is_current ? 'border-(--accent-500) bg-(--accent-500)/15 dark:bg-(--accent-500)/25 ring-2 ring-(--accent-300) dark:ring-(--accent-700)' : type_color %>">
+                  <%= type_icon %>
+                </div>
+                <% unless is_last %>
+                  <div class="w-0.5 flex-1 min-h-[8px] <%= is_current ? 'bg-(--accent-400)' : 'bg-gray-200 dark:bg-gray-700' %>"></div>
+                <% end %>
+              </div>
+
+              <%# Document info %>
+              <div class="pb-3 flex-1 min-w-0 -mt-0.5">
+                <% if is_current %>
+                  <div class="px-3 py-1.5 rounded-lg bg-(--accent-500)/10 dark:bg-(--accent-900)/30 border border-(--accent-500)/20">
+                    <span class="text-sm font-bold text-(--accent-700) dark:text-(--accent-300)"><%= sib[:document_number] %></span>
+                    <span class="text-sm font-medium text-(--accent-700) dark:text-(--accent-300) capitalize ml-1"><%= sib[:document_type]&.gsub('_', ' ') %></span>
+                    <span class="text-xs text-(--accent-500) ml-1">★</span>
+                  </div>
+                <% else %>
+                  <a href="<%= parliamentary_path(sib[:id]) %>"
+                     class="block px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <span class="text-sm font-medium text-gray-600 dark:text-gray-300/80"><%= sib[:document_number] %></span>
+                    <span class="text-sm text-gray-700 dark:text-gray-300 capitalize ml-1"><%= sib[:document_type]&.gsub('_', ' ') %></span>
+                  </a>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        <% if source_url %>
+          <div class="mt-3 pt-3">
+            <a href="<%= source_url %>" target="_blank" rel="noopener"
+               class="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-300/60 hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+              </svg>
+              <% case I18n.locale when :fr %>Voir le dossier complet sur dekamer.be<% when :de %>Vollständiges Dossier auf dekamer.be<% when :en %>Full dossier on dekamer.be<% else %>Volledig dossier op dekamer.be<% end %>
+            </a>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Voting summary card %>
+  <% voting = extract_voting_summary(@document[:content], @document[:language] || 'nl') %>
+  <% if voting %>
+    <% party_data = hemicycle_party_data(@document[:legislature]&.to_i, voting[:parties]) %>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
+      <div class="p-4 md:p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-3">
+          🗳️ <% case I18n.locale when :fr %>Votes<% when :de %>Abstimmungen<% when :en %>Votes<% else %>Stemmingen<% end %>
+          <% if voting[:final_result] %>
+            <% result_color = voting[:final_result].match?(/aangenomen|adopté/i) ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' %>
+            <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= result_color %>">
+              <%= voting[:final_result].capitalize %>
+            </span>
+          <% end %>
+        </h2>
+
+        <%# Hemicycle SVG %>
+        <% if party_data.any? %>
+          <div data-controller="hemicycle"
+               data-hemicycle-parties-value="<%= party_data.to_json %>"
+               data-hemicycle-members-value="<%= voting[:members].to_json %>"
+               data-hemicycle-votes-value="<%= voting[:votes].to_json %>"
+               data-hemicycle-result-value="<%= voting[:final_result] || '' %>"
+               class="mb-4">
+          </div>
+        <% end %>
+
+        <%# Parties involved with colored dots %>
+        <% if voting[:parties].any? %>
+          <div class="mb-4">
+            <h3 class="text-xs font-medium text-gray-500 dark:text-gray-300/70 mb-2">
+              <% case I18n.locale when :fr %>Partis impliqués<% when :de %>Beteiligte Parteien<% when :en %>Parties involved<% else %>Betrokken partijen<% end %>
+            </h3>
+            <div class="flex flex-wrap gap-1.5">
+              <% voting[:parties].each do |party| %>
+                <% color = ParliamentaryHelper::PARTY_COLORS[party] || '#888' %>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-900/60 text-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+                  <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: <%= color %>"></span>
+                  <%= party %>
+                </span>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <%# Members with party %>
+        <% if voting[:members].any? %>
+          <div class="mb-4">
+            <h3 class="text-xs font-medium text-gray-500 dark:text-gray-300/70 mb-2">
+              <% case I18n.locale when :fr %>Intervenants<% when :de %>Redner<% when :en %>Speakers<% else %>Sprekers<% end %>
+              <span class="text-gray-400 dark:text-gray-300/50 font-normal">(<%= voting[:members].length %>)</span>
+            </h3>
+            <div class="flex flex-wrap gap-1.5">
+              <% voting[:members].each do |member| %>
+                <% color = ParliamentaryHelper::PARTY_COLORS[member[:party]] || '#888' %>
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300">
+                  <span class="w-2 h-2 rounded-full shrink-0" style="background-color: <%= color %>"></span>
+                  <span class="font-medium"><%= member[:name] %></span>
+                  <span class="text-gray-400 dark:text-gray-300/50">(<%= member[:party] %>)</span>
+                </span>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <%# Article/amendment vote results %>
+        <% if voting[:votes].any? %>
+          <details class="group">
+            <summary class="cursor-pointer text-xs font-medium text-gray-500 dark:text-gray-300/70 hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors select-none">
+              <% case I18n.locale when :fr %>Détail des votes<% when :de %>Abstimmungsdetails<% when :en %>Vote details<% else %>Stemdetail<% end %>
+              (<%= voting[:votes].length %> <% case I18n.locale when :fr %>votes<% when :de %>Abstimmungen<% when :en %>votes<% else %>stemmingen<% end %>)
+            </summary>
+            <div class="mt-2 space-y-1 max-h-64 overflow-y-auto">
+              <% voting[:votes].each do |vote| %>
+                <% is_adopted = vote[:result].match?(/aangenomen|eenparig|adopté/i) %>
+                <% is_rejected = vote[:result].match?(/verworpen|rejeté/i) %>
+                <% vote_class = is_adopted ? 'text-green-700 dark:text-green-400' : is_rejected ? 'text-red-700 dark:text-red-400' : 'text-gray-700 dark:text-gray-300' %>
+                <% icon = is_adopted ? '+' : is_rejected ? '-' : '&bull;' %>
+                <div class="flex items-start gap-2 text-xs py-0.5">
+                  <span class="<%= vote_class %> font-bold min-w-4"><%= icon %></span>
+                  <span class="font-medium text-gray-600 dark:text-gray-300/80 min-w-16"><%= vote[:ref] %></span>
+                  <span class="<%= vote_class %>"><%= vote[:result] %></span>
+                </div>
+              <% end %>
+            </div>
+          </details>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Full Text Content -->
+  <% if @document[:content].present? %>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
+      <div class="p-4 md:p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-4">
+          <% case I18n.locale when :fr %>Texte intégral<% when :de %>Volltext<% when :en %>Full text<% else %>Volledige tekst<% end %>
+        </h2>
+        <div id="parl-content" class="max-w-none">
+          <div class="text-base text-gray-700 dark:text-gray-300 leading-relaxed" style="text-align: justify;">
+<%= format_parliamentary_html(clean_parliamentary_content(@document[:content].to_s, target_language: @document[:language])) %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
+      <div class="p-8 text-center">
+        <svg class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <p class="text-lg font-medium text-gray-500 dark:text-gray-400 mb-2">
+          <% case I18n.locale when :fr %>Texte intégral non disponible<% when :de %>Volltext nicht verfügbar<% when :en %>Full text not available<% else %>Volledige tekst niet beschikbaar<% end %>
+        </p>
+        <p class="text-sm text-gray-400 dark:text-gray-500 mb-4">
+          <% case I18n.locale when :fr %>Le texte de ce document n'a pas encore été extrait. Consultez le document officiel via le lien ci-dessous.<% when :de %>Der Text dieses Dokuments wurde noch nicht extrahiert. Konsultieren Sie das offizielle Dokument über den untenstehenden Link.<% when :en %>The text of this document has not yet been extracted. Consult the official document via the link below.<% else %>De tekst van dit document is nog niet geëxtraheerd. Raadpleeg het officiële document via onderstaande link.<% end %>
+        </p>
+        <% if @document[:pdf_url].present? %>
+          <a href="<%= @document[:pdf_url] %>" target="_blank" rel="noopener"
+             class="inline-flex items-center gap-2 px-5 py-2.5 bg-(--accent-600-solid) hover:bg-(--accent-700-solid) text-white font-medium rounded-xl text-sm transition-colors shadow-lg shadow-(--accent-600)/25">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <% case I18n.locale when :fr %>Télécharger le PDF officiel<% when :de %>Offizielle PDF herunterladen<% when :en %>Download official PDF<% else %>Officiële PDF downloaden<% end %>
+          </a>
+        <% elsif source_url.present? %>
+          <a href="<%= source_url %>" target="_blank" rel="noopener"
+             class="inline-flex items-center gap-2 px-5 py-2.5 bg-(--accent-600-solid) hover:bg-(--accent-700-solid) text-white font-medium rounded-xl text-sm transition-colors shadow-lg shadow-(--accent-600)/25">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            <% case I18n.locale when :fr %>Voir sur <%= source_label %><% when :de %>Auf <%= source_label %> ansehen<% when :en %>View on <%= source_label %><% else %>Bekijk op <%= source_label %><% end %>
+          </a>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Ask chatbot -->
+  <% if Rails.application.config.chatbot_enabled %>
+  <div class="p-4 bg-linear-to-r from-(--accent-50) to-(--accent-100)/30 dark:from-(--accent-900)/20 dark:to-midnight rounded-xl">
+    <div class="flex items-center gap-4">
+      <div class="shrink-0">
+        <svg class="w-8 h-8 text-(--accent-600) dark:text-(--accent-400)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h3 class="font-medium text-gray-900 dark:text-(--accent-500)">
+          <% case I18n.locale when :fr %>Questions sur ce document?<% when :de %>Fragen zu diesem Dokument?<% when :en %>Questions about this document?<% else %>Vragen over dit document?<% end %>
+        </h3>
+        <p class="text-sm text-gray-600 dark:text-gray-300/80">
+          <% case I18n.locale when :fr %>Posez vos questions à notre assistant IA juridique<% when :de %>Stellen Sie Ihre Fragen an unseren juristischen KI-Assistenten<% when :en %>Ask our legal AI assistant<% else %>Stel uw vragen aan onze juridische AI-assistent<% end %>
+        </p>
+      </div>
+      <a href="<%= chatbot_path(source: 'parliamentary') %>"
+         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-300) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150">
+        <% case I18n.locale when :fr %>Ouvrir le chatbot<% when :de %>Chatbot öffnen<% when :en %>Open chatbot<% else %>Open chatbot<% end %>
+      </a>
+    </div>
+  </div>
+  <% end %>
+</div>
+
+<%# Schema.org Structured Data (JSON-LD) %>
+<% content_for :head do %>
+<script type="application/ld+json">
+<%= raw({
+  "@context": "https://schema.org",
+  "@type": "CreativeWork",
+  "additionalType": "https://schema.org/Legislation",
+  "name": full_title,
+  "description": "#{parl_label} - #{@document[:document_type]&.gsub('_', ' ')&.capitalize} #{@document[:document_date]}",
+  "datePublished": @document[:document_date].to_s,
+  "inLanguage": @document[:language].present? ? @document[:language].downcase : 'nl',
+  "author": {
+    "@type": "Organization",
+    "name": parl_label
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WetWijzer",
+    "url": "https://wetwijzer.be"
+  },
+  "url": request.original_url,
+  "identifier": @document[:dossier_number],
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "WetWijzer",
+    "url": "https://wetwijzer.be"
+  }
+}.compact.to_json) %>
+</script>
+<% end %>
+
+
+

@@ -1,0 +1,14 @@
+<%= t('mailer.payment_failed.greeting', name: @user.name || @user.email) %>
+
+<%= t('mailer.payment_failed.body') %>
+
+<%= t('mailer.payment_failed.status_label') %>: <%= t('mailer.payment_failed.status_past_due') %>
+<% if @decline_reason.present? %><%= t('mailer.payment_failed.decline_reason') %> <%= @decline_reason %><% end %>
+
+<%= t('mailer.payment_failed.action_needed') %>
+
+<%= t('mailer.payment_failed.update_button') %>: <%= @update_payment_url %>
+
+<%= t('mailer.payment_failed.auto_retry') %>
+
+<%= t('mailer.payment_failed.contact') %>

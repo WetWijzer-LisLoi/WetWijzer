@@ -1,0 +1,476 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<div class="legal-page">
+<h1>Frequently Asked Questions (FAQ)</h1>
+    <p class="last-updated">Last updated: 9 June 2026</p>
+
+    <div class="toc">
+        <strong>Contents</strong>
+        <ul>
+            <li><a href="#section-1">1. General</a></li>
+            <li><a href="#section-2">2. Account and registration</a></li>
+            <li><a href="#section-3">3. AI chatbot</a></li>
+            <li><a href="#section-4">4. Credits and payments</a></li>
+            <li><a href="#section-5">5. WetWijzer Pro</a></li>
+            <li><a href="#section-6">6. Case law and personal data</a></li>
+            <li><a href="#section-7">7. Privacy and data protection</a></li>
+            <li><a href="#section-8">8. AI performance and benchmarks</a></li>
+            <li><a href="#section-9">9. Technical</a></li>
+            <li><a href="#section-10">10. Contact and support</a></li>
+        </ul>
+    </div>
+
+    <h2 id="section-1">1. General</h2>
+
+    <details>
+        <summary>What is WetWijzer?</summary>
+        <div>
+            <p>WetWijzer is an unofficial search and information platform for Belgian legislation. It offers searchable databases of laws, decrees, ordinances, case law and parliamentary documents, supplemented by an AI chatbot that answers questions about Belgian law.</p>
+            <p>The service is also available as <a href="https://lisloi.be">LisLoi</a> (French) and <a href="https://gesetzguide.be">GesetzGuide</a> (German) and <a href="https://lexlibera.be">LexLibera</a> (English).</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Is WetWijzer an official government initiative?</summary>
+        <div><p>No. WetWijzer is independent of the Belgian government, the judiciary, the Belgian Bar Associations and all other official bodies. The information on the platform originates from public sources such as the Belgian Official Gazette, Justel, Reflex, JuPortal and EUR-Lex.</p></div>
+    </details>
+
+    <details>
+        <summary>Is the information on WetWijzer legal advice?</summary>
+        <div><p><strong>No.</strong> All information on WetWijzer, including responses from the AI chatbot, is provided for general informational purposes only. No attorney-client relationship is created. Always consult a qualified lawyer for your specific situation.</p></div>
+    </details>
+
+    <details>
+        <summary>Is WetWijzer free to use?</summary>
+        <div><p>Searching the legislation database is entirely free and requires no account. Upon registration you receive <strong><%= RegistrationsController::STARTER_CREDITS %> free starter credits</strong>. Additional credits can be purchased, or you can subscribe to WetWijzer Pro for extended functionality.</p></div>
+    </details>
+
+    <details>
+        <summary>In which languages is WetWijzer available?</summary>
+        <div><p>The interface is available in Dutch, French, German and English. The AI chatbot responds in the language you select. The legislation database contains texts in their original publication language.</p></div>
+    </details>
+
+    <h2 id="section-2">2. Account and registration</h2>
+
+    <details>
+        <summary>Do I need an account?</summary>
+        <div>
+            <p>Searching the legislation database does not require an account. An account is required to use the chatbot. An account is needed to:</p>
+            <ul>
+                <li>Use higher intelligence levels (Genius and above)</li>
+                <li>Purchase credits</li>
+                <li>Subscribe to WetWijzer Pro</li>
+                <li>Save bookmarks</li>
+                <li>Permanently store preferences</li>
+                <li>Save conversations to your profile</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>What information is required for registration?</summary>
+        <div><p>Only an email address and password. Your name is optional. We do not ask for phone number, address or any other personal data.</p></div>
+    </details>
+
+    <details>
+        <summary>How do I delete my account?</summary>
+        <div>
+            <p>You can delete your account via the account page. After confirmation, your account will be scheduled for permanent deletion after 30 days. During this period, you can contact us to cancel the deletion. After 30 days, all personal data is irreversibly erased.</p>
+            <p>Unused credits are not refunded upon deletion.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>What happens if I do not confirm my email?</summary>
+        <div><p>Unconfirmed accounts are automatically deleted after 72 hours. You can re-register afterwards.</p></div>
+    </details>
+
+    <h2 id="section-3">3. AI chatbot</h2>
+
+    <details>
+        <summary>How does the AI chatbot work?</summary>
+        <div>
+            <p>The chatbot uses Retrieval-Augmented Generation (RAG): your question is first matched against the Belgian legislation database to find relevant legal articles, then a large language model (LLM) formulates a response based on those sources.</p>
+            <p>This improves accuracy compared to a standard chatbot, but does not eliminate all risks of inaccuracy.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>What are the intelligence levels?</summary>
+        <div>
+            <table>
+                <tr><th>Level</th><th>Credits</th><th>Default model</th><th>Suited for</th><th>Access</th></tr>
+                <tr><td>Smart</td><td>1</td><td>GPT-5 Mini / Mistral Small</td><td>Quick lookups</td><td>Free</td></tr>
+                <tr><td>Genius</td><td>3</td><td>o4-mini / Claude 4.5 Haiku</td><td>In-depth legal analysis</td><td>Pro only Recommended</td></tr>
+                <tr><td>Mastermind</td><td>5</td><td>GPT-5 / Claude Sonnet 4 / GPT-5.4</td><td>Maximum accuracy</td><td>Pro only</td></tr>
+                <tr><td>Omniscient</td><td>10</td><td>Claude Opus 4 / GPT-5.5</td><td>Unique perspective, premium analysis</td><td>Pro only</td></tr>
+            </table>
+            <p>New users receive <%= RegistrationsController::STARTER_CREDITS %> free starter credits. Genius, Mastermind and Omniscient are exclusive to Pro subscribers.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>How is reasoning depth determined?</summary>
+        <div>
+            <p>Reasoning depth is automatically built into each intelligence level - you don't need to configure anything. Each level uses the optimal reasoning setting for its model:</p>
+            <ul>
+                <li><strong>Smart:</strong> quick thinking (smaller models perform better without deep reasoning)</li>
+                <li><strong>Genius:</strong> balanced thinking (o4-mini and Claude 4.5 Haiku perform optimally at this level)</li>
+                <li><strong>Mastermind:</strong> balanced thinking (GPT-5 and Claude Sonnet 4 perform optimally at this level)</li>
+                <li><strong>Omniscient:</strong> Claude Opus 4 and GPT-5.5 always operate at maximum capacity</li>
+            </ul>
+            <p>There are <strong>no extra credits</strong> for reasoning depth - costs are fully included in the per-level credit price.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Can I trust the chatbot responses?</summary>
+        <div>
+            <p><strong>No, not without verification.</strong> The AI chatbot may:</p>
+            <ul>
+                <li>Present incorrect information as fact ("hallucinations")</li>
+                <li>Cite outdated legislation</li>
+                <li>Misinterpret legal concepts</li>
+                <li>Reference non-existent laws or articles</li>
+            </ul>
+            <p>Always verify responses against official sources or consult a legal professional. The brilliant level generally provides more accurate answers than the simple level.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>What is the difference between the chatbot and Google?</summary>
+        <div>
+            <p>The WetWijzer chatbot is specifically connected to the Belgian legislation database. Unlike a generic search engine:</p>
+            <ul>
+                <li>The chatbot searches the full text of Belgian laws, decrees and ordinances directly</li>
+                <li>The chatbot cites specific legal articles with source references</li>
+                <li>The chatbot formulates a coherent answer instead of a list of links</li>
+                <li>Anyone can search the case law database, and Pro users can additionally search parliamentary documents</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Are my chatbot conversations stored?</summary>
+        <div>
+            <p><strong>Only on our server, and only if you are logged in.</strong> For logged-in users, conversations are stored encrypted (AES-256) on our server. For non-logged-in visitors, conversations are held exclusively in your browser's working memory - they disappear as soon as you leave the page or close your browser. <strong>No localStorage, sessionStorage or other browser persistence</strong> is used.</p>
+            <p>Our analytics database records exclusively metadata (legal domain, language, intelligence level, credits) - never the content of your questions.</p>
+            <p>See our <a href="/privacy-policy">privacy policy (section 3.4)</a> for full details.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Where are my questions processed?</summary>
+        <div><p><strong>All AI models</strong> process your questions within the EU. OpenAI models (GPT-5 Mini, GPT-5.4, GPT-5, GPT-5.5, o4-mini) run on Azure OpenAI in Sweden Central (Sweden). Claude models (Opus 4, 4.5 Haiku, 3.5 Sonnet) run on Azure AI Services and AWS Bedrock, also within the EU. All processing remains within the EU/EEA.</p></div>
+    </details>
+
+    <h2 id="section-4">4. Credits and payments</h2>
+
+    <details>
+        <summary>What are credits?</summary>
+        <div>
+            <p>Credits are digital units that allow you to use the AI chatbot. Each question costs a fixed number of credits depending on the intelligence level:</p>
+            <table>
+                <tr><th>Level</th><th>Credits per question</th></tr>
+                <tr><td>Smart</td><td>1</td></tr>
+                <tr><td>Genius</td><td>3</td></tr>
+                <tr><td>Mastermind</td><td>5</td></tr>
+                <tr><td>Omniscient</td><td>10</td></tr>
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>How many free credits do I receive?</summary>
+        <div><p>Every new user receives <strong><%= RegistrationsController::STARTER_CREDITS %> free starter credits</strong> upon registration. Additional credits can be purchased. Genius, Mastermind and Omniscient require a Pro subscription.</p></div>
+    </details>
+
+    <details>
+        <summary>Do credits expire?</summary>
+            <p>No. All credits are permanent and never expire, regardless of whether they come from your monthly Pro allocation, purchased packs, or starter credits.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Can I get a refund on credits?</summary>
+        <div><p>Credits are non-refundable. In the event of a technical error causing credits to be deducted incorrectly, you can contact us at <a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a> and we will manually credit them back.</p></div>
+    </details>
+
+    <details>
+        <summary>What payment methods are accepted?</summary>
+        <div><p>Via Stripe, common payment methods are accepted including credit card (Visa, Mastercard), Bancontact, iDEAL and other European payment methods. We do not store any credit card or payment details; this is handled entirely by Stripe.</p></div>
+    </details>
+
+    <h2 id="section-5">5. WetWijzer Pro</h2>
+
+    <details>
+        <summary>What does WetWijzer Pro offer?</summary>
+        <div>
+            <table>
+                <tr><th>Feature</th><th>Free account</th><th>WetWijzer Pro (&euro;2.99/month)</th></tr>
+                <tr><td>Legislation search</td><td>Unlimited</td><td>Unlimited</td></tr>
+                <tr><td>Chatbot credits</td><td><%= RegistrationsController::STARTER_CREDITS %> starter credits</td><td><strong>15 per month</strong> + purchasable top-ups</td></tr>
+                <tr><td>Intelligence levels</td><td>Smart</td><td><strong>All 4 levels</strong> incl. Genius, Mastermind and Omniscient</td></tr>
+                <tr><td>AI models</td><td>GPT-5 Mini</td><td><strong>All models</strong> (GPT-5, GPT-5.4, GPT-5.5, Claude Opus 4, Claude 4.5 Haiku, o4-mini, etc.)</td></tr>
+                <tr><td>Case law database</td><td>✅ 185,000+ pseudonymised judgments</td><td>✅ 185,000+ pseudonymised judgments</td></tr>
+                <tr><td>Parliamentary documents</td><td>Browsing available</td><td><strong>Browsing + AI chatbot search</strong></td></tr>
+                <tr><td>Praxis SSO integration</td><td>Not available</td><td>Available</td></tr>
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>Why should I upgrade to Pro?</summary>
+        <div>
+            <p>WetWijzer Pro is designed for anyone who regularly conducts legal research:</p>
+            <ul>
+                <li><strong>Premium AI:</strong> Genius (o4-mini / Claude 4.5 Haiku) scores excellently on our benchmark. Mastermind (GPT-5 / Claude Sonnet 4) delivers maximum accuracy. Omniscient (Claude Opus 4 / GPT-5.5) offers the ultimate analysis.</li>
+                <li><strong>All AI models:</strong> Pro subscribers get access to all AI models, including GPT-5, GPT-5.4, GPT-5.5, Claude Opus 4, Claude 4.5 Haiku, o4-mini and more. Compare results and choose the optimal model for your specific question.</li>
+                <li><strong>Case law:</strong> the case law database (185,000+ pseudonymised judgments) is freely accessible to everyone, no account required.</li>
+                <li><strong>Parliamentary documents:</strong> have the chatbot also search Chamber, Senate, Flemish Parliament and Walloon Parliament documents for the legislative history behind a law.</li>
+                <li><strong>Affordable:</strong> 15 free credits per month plus purchasable top-ups.</li>
+                <li><strong>Low price:</strong> &euro;2.99 per month is a fraction of the cost of comparable legal databases.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Who is WetWijzer Pro intended for?</summary>
+        <div>
+            <ul>
+                <li><strong>Lawyers and legal professionals:</strong> quickly look up legal articles and relevant case law.</li>
+                <li><strong>Law students:</strong> exam preparation, thesis research, and exploring legal concepts with an AI assistant that searches the complete Belgian legislation.</li>
+                <li><strong>In-house counsel and compliance officers:</strong> quickly find specific regulations and consult legislative history.</li>
+                <li><strong>Notaries, property professionals and civil servants:</strong> rapid access to current legal texts and relevant judgments.</li>
+                <li><strong>Interested citizens:</strong> for a deeper understanding of which laws apply to a specific situation.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>How much does WetWijzer Pro cost?</summary>
+        <div>
+            <p>&euro;2.99 per month, VAT included. The subscription renews monthly and can be cancelled at any time. No annual contract or notice period.</p>
+            <p>For comparison: commercial legal databases such as Jura or Strada lex typically cost hundreds of euros per month.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Can I try Pro before subscribing?</summary>
+        <div><p>With the <%= RegistrationsController::STARTER_CREDITS %> free starter credits, you can test the chatbot at Smart. The case law database is freely accessible to everyone, no account needed. Pro adds Genius, Mastermind and Omniscient, plus parliamentary documents via the chatbot. Since Pro is cancellable monthly with no notice period, you can try it risk-free for just &euro;2.99.</p></div>
+    </details>
+
+    <details>
+        <summary>How do I cancel my Pro subscription?</summary>
+        <div><p>You can cancel at any time via your account page. The subscription remains active until the end of the current billing period. No refund is given for early cancellation, but you retain all Pro features until the end of the period.</p></div>
+    </details>
+
+    <details>
+        <summary>What happens to my credits if I cancel?</summary>
+        <div><p>All credits remain available, even after cancelling your Pro subscription. You will no longer receive your monthly 15 free credits, and you lose access to Genius, Mastermind and Omniscient and parliamentary documents via the chatbot. The case law database remains freely accessible to everyone.</p></div>
+    </details>
+
+    <details>
+        <summary>Do I receive an invoice?</summary>
+        <div><p>Yes. After each payment you receive an invoice by email. Business clients with a Belgian VAT number receive invoices via the PEPPOL network in compliance with Belgian mandatory B2B e-invoicing legislation.</p></div>
+    </details>
+
+    <h2 id="section-6">6. Case law and personal data</h2>
+
+    <details>
+        <summary>What does the case law database contain?</summary>
+        <div><p>The case law database contains published judicial decisions from Belgian courts, sourced from JuPortal. All decisions are automatically pseudonymised before publication on our platform.</p></div>
+    </details>
+
+    <details>
+        <summary>What does pseudonymisation of judgments mean?</summary>
+        <div>
+            <p>We process all judicial decisions automatically using Named Entity Recognition (NER) in Dutch and French. This system:</p>
+            <ul>
+                <li><strong>Replaces personal names with initials</strong> &mdash; e.g. "Jan Peeters" becomes "J. P."</li>
+                <li><strong>Removes or masks</strong> email addresses, phone numbers, national register numbers and IBAN numbers</li>
+            </ul>
+            <p>As a result, in most judgments you will see only initials instead of full names.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>I recognise my initials in a judgment. Are those my personal data?</summary>
+        <div>
+            <p>When you find initials in a judgment (e.g. "J. P."), this is the result of our pseudonymisation. Initials alone are generally not directly identifiable to a natural person. However, they do constitute a <strong>pseudonym</strong> within the meaning of the GDPR: combined with the surrounding context of the judgment (date, court, facts), a party involved may potentially recognise themselves.</p>
+            <p>If you recognise yourself in a pseudonymised judgment and wish it to be further modified or removed from the platform, you can submit a request (see below).</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>I found my full name in a judgment. How is that possible?</summary>
+        <div>
+            <p>Despite our automatic NER processing, it can happen that certain names were not correctly detected and therefore <strong>not pseudonymised</strong>. This can occur with:</p>
+            <ul>
+                <li>Unusual name structures or spellings</li>
+                <li>Names that coincide with common words</li>
+                <li>Technical processing errors when parsing the original document</li>
+            </ul>
+            <p><strong>We regret this.</strong> It is a shortcoming of the automated process, not a deliberate choice. You can submit a removal request and we will mask your data as soon as possible.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>How do I request removal of my personal data from a judgment?</summary>
+        <div>
+            <p>Send an email to <a href="mailto:privacy@wetwijzer.be">privacy@wetwijzer.be</a> with:</p>
+            <ul>
+                <li>Your name</li>
+                <li>The ECLI number of the judgment (found at the top of the judgment on our website)</li>
+                <li>A description of the personal data found (initials, full name, address, etc.)</li>
+            </ul>
+            <p>We process your request within <strong>30 days</strong> in accordance with Art. 17 GDPR. Possible measures include:</p>
+            <ul>
+                <li>Additional pseudonymisation of remaining personal data</li>
+                <li>Complete removal of the judgment from our platform</li>
+            </ul>
+            <p class="small">We are not the original publisher of the judgment. Removal from our platform does not mean the judgment is removed from the original source (JuPortal). For removal at source, you should contact the relevant court or JuPortal.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Why are judgments not indexed by search engines?</summary>
+        <div>
+            <p>Judicial decisions contain potentially sensitive personal data. Although the case law database is freely accessible to everyone, we take the following measures to handle this data responsibly:</p>
+            <ul>
+                <li>Judgments are not indexed by search engines (noindex, robots.txt)</li>
+                <li>All judgments are automatically pseudonymised (NER)</li>
+                <li>In case of abuse, access can be revoked</li>
+            </ul>
+        </div>
+    </details>
+
+    <h2 id="section-7">7. Privacy and data protection</h2>
+
+    <details>
+        <summary>What data does WetWijzer collect?</summary>
+        <div>
+            <p>We collect minimal data:</p>
+            <ul>
+                <li><strong>Without account:</strong> standard server logs (IP address, User-Agent) for security purposes, retained for 90 days. <strong>No localStorage, sessionStorage or other browser persistence is used.</strong></li>
+                <li><strong>With account:</strong> email address, optional name, language preference, credit usage, bookmarks and UI preferences (server storage)</li>
+                <li><strong>Chatbot usage:</strong> metadata only (legal domain, language, intelligence level, credits). Never the content of your questions.</li>
+            </ul>
+            <p>See our full <a href="/privacy-policy">privacy policy</a>.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Can the administrator see what I ask the chatbot?</summary>
+        <div>
+            <div><p><strong>No.</strong> Our analytics database (<code>chatbot_analytics</code>) contains no column for question text. Your question is processed in server memory only long enough to send it to Azure, then discarded. A one-way <strong>SHA-256 hash</strong> (truncated to 12 characters) is logged for debugging - this is irreversible and cannot be used to reconstruct your question. The operator can only see <em>that</em> a question was asked, in which legal domain and in which language.</p></div>
+            <div><p><strong>Exception - Report:</strong> When you click the <em>Report</em> (🚩) button on a response, both your question and the answer are sent to the administrator for quality review. This is clearly indicated in the interface before you confirm. Reporting is entirely voluntary.</p></div>
+        </div>
+    </details>
+
+    <details>
+        <summary>Does WetWijzer use cookies?</summary>
+        <div>
+            <p>When you are logged in, a session cookie is set (<code>_wetwijzer_session</code>) to maintain your login. The chatbot requires an account. No anonymous cookies are set.</p>
+            <p><strong>No browser storage:</strong> WetWijzer does not use localStorage, sessionStorage or similar techniques. Non-logged-in visitors leave no trace in the browser whatsoever. We do not use tracking cookies, advertising cookies or Google Analytics.</p>
+            <p>For website statistics we use Umami, a privacy-friendly open-source solution that places no cookies and collects no personal data.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Where is my data stored?</summary>
+        <div>
+            <p>All your data is processed within the EU/EEA:</p>
+            <ul>
+                <li><strong>Application servers:</strong> Germany (Hetzner)</li>
+                <li><strong>AI processing (standard):</strong> Sweden (Azure OpenAI)</li>
+                <li><strong>Payments:</strong> Ireland (Stripe)</li>
+                <li><strong>Email:</strong> Switzerland (Migadu, adequacy decision)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>What are my rights under the GDPR?</summary>
+        <div>
+            <p>You have the right to access, rectification, erasure, restriction, portability and objection. You can exercise these rights by sending an email to <a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a> or by deleting your account via the account page. We respond within 30 days.</p>
+            <p>You may also file a complaint with the <a href="https://www.dataprotectionauthority.be">Belgian Data Protection Authority</a>.</p>
+        </div>
+    </details>
+
+    <h2 id="section-8">8. AI performance and benchmarks</h2>
+
+    <details>
+        <summary>How well do the AI models perform?</summary>
+        <div>
+            <p>We regularly test all AI models on 15 legal questions across 13 Belgian legal domains. Here are the full results from our latest benchmark (May 2026):</p>
+            <table>
+                <tr><th>#</th><th>Model + Reasoning</th><th>Score</th><th>Easy</th><th>Medium</th><th>Hard</th><th>Speed</th><th>Recommendation</th></tr>
+                <tr class="row--success"><td>1</td><td><strong>GPT-5 / 🔬 Deep</strong></td><td><strong>4.64/5</strong></td><td>5.00</td><td>4.50</td><td><strong>4.00</strong></td><td>~87s</td><td>Best absolute quality</td></tr>
+                <tr class="row--success"><td>2</td><td><strong>GPT-5 / ⚖️ Balanced</strong></td><td><strong>4.53/5</strong></td><td>5.00</td><td>4.33</td><td><strong>4.00</strong></td><td>~43s</td><td><strong>BEST VALUE</strong></td></tr>
+                <tr class="row--success"><td>3</td><td><strong>GPT-5 / Quick</strong></td><td><strong>4.53/5</strong></td><td>5.00</td><td>4.50</td><td>3.67</td><td>~37s</td><td>Cheapest premium</td></tr>
+                <tr class="row--success"><td>4</td><td><strong>Claude Opus 4</strong></td><td><strong>4.53/5</strong></td><td>5.00</td><td><strong>4.67</strong></td><td>3.33</td><td>~27s</td><td>Best on medium questions</td></tr>
+                <tr><td>5</td><td>o4-mini / ⚖️ Balanced</td><td>4.20/5</td><td>4.50</td><td>4.33</td><td>3.33</td><td>~15s</td><td>Fast reasoning model</td></tr>
+                <tr><td>6</td><td>o4-mini / 🔬 Deep</td><td>4.20/5</td><td>4.33</td><td>4.50</td><td>3.33</td><td>~20s</td><td>No gain over Balanced</td></tr>
+                <tr class="row--success"><td>7</td><td><strong>GPT-5 mini / Quick</strong></td><td><strong>4.13/5</strong></td><td>4.50</td><td>4.50</td><td>2.67</td><td>~20s</td><td><strong>BEST FREE</strong></td></tr>
+                <tr><td>8</td><td>o4-mini / Quick</td><td>4.07/5</td><td>4.50</td><td>4.33</td><td>2.67</td><td>~10s</td><td>Fastest model</td></tr>
+                <tr><td>9</td><td>GPT-5 mini / ⚖️ Balanced</td><td>3.93/5</td><td>4.00</td><td>4.50</td><td>2.67</td><td>~25s</td><td>⚠️ Worse than Quick</td></tr>
+                <tr class="row--danger"><td>10</td><td>GPT-5 mini / 🔬 Deep</td><td><strong>3.60/5</strong></td><td>3.83</td><td>4.50</td><td><strong>1.33</strong></td><td>~35s</td><td>🔴 <strong>AVOID</strong></td></tr>
+            </table>
+            <p class="small">Benchmark: 195 API calls, 125 minutes, May 2026. Automated scoring on legal accuracy (1–5 scale).</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Which combination is recommended?</summary>
+        <div>
+            <p><strong>Best value:</strong> Smart (1 credit) &mdash; scores 4.13/5, excellent for daily questions.</p>
+            <p><strong>Best quality:</strong> Genius (3 credits) &mdash; o4-mini and Claude 4.5 Haiku with balanced thinking. Our top recommendation for value.</p>
+            <p><strong>Maximum accuracy:</strong> Mastermind (5 credits) &mdash; GPT-5 and Claude Sonnet 4 deliver the highest accuracy on complex legal questions.</p>
+            <p><strong>Different perspective:</strong> Omniscient (10 credits) &mdash; Claude Opus 4 and GPT-5.5 offer the ultimate analysis from two leading AI families.</p>
+        </div>
+    </details>
+
+    <h2 id="section-9">9. Technical</h2>
+
+    <details>
+        <summary>Is WetWijzer open source?</summary>
+        <div><p>Yes. The source code is available on <a href="https://github.com/WetWijzer-LisLoi/WetWijzer">GitHub</a> under the MIT licence. Anyone can view, verify and contribute to the code.</p></div>
+    </details>
+
+    <details>
+        <summary>Which browsers are supported?</summary>
+        <div><p>WetWijzer works in all modern browsers: Chrome, Firefox, Safari and Edge. Internet Explorer is not supported.</p></div>
+    </details>
+
+    <details>
+        <summary>What is the relationship with Praxis Legal?</summary>
+        <div><p>Praxis Legal Practice Suite is a desktop application for law firms. Praxis users can link their account to WetWijzer for SSO authentication and shared credit management. Both services are managed by the same data controller. The integration is optional and available to Pro subscribers.</p></div>
+    </details>
+
+    <details>
+        <summary>How current is the legislation database?</summary>
+        <div><p>The database is regularly updated based on the Belgian Official Gazette and other official sources. We strive for currency but cannot guarantee that all texts contain the most recent consolidated version. When in doubt, always check the official publication via <a href="https://www.ejustice.just.fgov.be">Justel</a>.</p></div>
+    </details>
+
+    <h2 id="section-10">10. Contact and support</h2>
+
+    <details>
+        <summary>How can I get in touch?</summary>
+        <div>
+            <ul>
+                <li><strong>General questions:</strong> <a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a></li>
+                <li><strong>Privacy requests and removal of personal data from case law:</strong> <a href="mailto:privacy@wetwijzer.be">privacy@wetwijzer.be</a></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Can I financially support WetWijzer?</summary>
+        <div><p>Yes. In addition to buying credits or a Pro subscription, you can make a voluntary donation via <a href="https://ko-fi.com/wetwijzerlisloi">Ko-fi</a>. Donations are non-refundable and not tax-deductible. Every contribution helps keep the legislation database freely accessible.</p></div>
+    </details>
+
+    <details>
+        <summary>I found a bug. Where can I report it?</summary>
+        <div><p>You can report bugs by email (<a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a>) or by creating an issue on our <a href="https://github.com/WetWijzer-LisLoi/WetWijzer/issues">GitHub repository</a>. For security vulnerabilities, please contact us at <a href="mailto:security@wetwijzer.be">security@wetwijzer.be</a> (see also our <a href="/.well-known/security.txt">security.txt</a> file).</p></div>
+    </details>
+</div>

@@ -1,0 +1,57 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<div class="legal-page">
+<h1>Soutenez LisLoi</h1>
+
+    <div class="highlight">
+        <p><strong>LisLoi</strong> rend la l&eacute;gislation et la jurisprudence belges librement consultables gr&acirc;ce &agrave; l&rsquo;IA. La plateforme est g&eacute;r&eacute;e par une seule personne &mdash; un avocat convaincu que la loi ne devrait pas &ecirc;tre derri&egrave;re un mur payant. Pour maintenir ce projet en ligne, nous avons besoin de votre soutien.</p>
+    </div>
+
+    <h2>Pourquoi votre soutien compte</h2>
+    <p>LisLoi co&ucirc;te de l&rsquo;argent &agrave; faire tourner : co&ucirc;ts de serveur, co&ucirc;ts IA pour chaque question du chatbot, stockage de plus de 185.000 d&eacute;cisions de justice, et le d&eacute;veloppement continu de nouvelles fonctionnalit&eacute;s. Sans revenus, il est impossible de garder la plateforme gratuite.</p>
+
+    <h2>&#x2B50; Abonnez-vous &agrave; LisLoi Pro</h2>
+    <p>La meilleure fa&ccedil;on de soutenir LisLoi est de devenir <strong>abonn&eacute; Pro</strong>. Pour seulement <strong>&euro;2,99/mois</strong>, vous obtenez :</p>
+    <ul>
+        <li>&#x2B50; Acc&egrave;s &agrave; <strong>tous les niveaux d&rsquo;intelligence</strong> (G&eacute;nial, Ma&icirc;tre, Omniscient)</li>
+        <li>&#x1F4AC; <strong>15 cr&eacute;dits chatbot gratuits par mois</strong> (inclus dans l'abonnement)</li>
+        <li>&#x1F4DC; Recherche dans les <strong>documents parlementaires</strong> via le chatbot</li>
+        <li>&#x1F916; Acc&egrave;s &agrave; <strong>tous les mod&egrave;les IA</strong> (GPT-5, Claude Opus 4, o4-mini, ...)</li>
+    </ul>
+    <% if Rails.application.config.chatbot_enabled %>
+    <p><%= link_to pricing_path, class: "inline-flex items-center px-4 py-2 text-white rounded-lg font-semibold transition hover:opacity-90", style: "background: var(--accent-600-solid);" do %>
+        <svg class="w-4 h-4 mr-2 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1z"/></svg>
+        D&eacute;couvrir LisLoi Pro
+    <% end %></p>
+    <% end %>
+
+    <h2>&#x2615; Faites un don via Ko-fi</h2>
+    <p>Vous souhaitez soutenir LisLoi sans abonnement ? Via <strong>Ko-fi</strong>, vous pouvez faire un don ponctuel. Chaque contribution &mdash; aussi petite soit-elle &mdash; aide &agrave; couvrir les co&ucirc;ts des serveurs et &agrave; maintenir la plateforme en ligne.</p>
+    <p>
+        <a href="https://ko-fi.com/wetwijzerlisloi" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-4 py-2 bg-[#FF5E5B] hover:bg-[#e54542] text-white rounded-lg font-semibold transition">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z"/></svg>
+            Faire un don via Ko-fi
+        </a>
+    </p>
+
+    <h2>&#x1F4BB; Achetez Praxis</h2>
+    <p><a href="https://praxislegal.be" target="_blank" rel="noopener">Praxis</a> est un logiciel de gestion de cabinet pour les avocats belges : gestion de dossiers, gestion de clients, facturation et assistant IA &mdash; tout en une seule application. Chaque abonnement Praxis aide &agrave; maintenir les plateformes juridiques gratuites (WetWijzer, LisLoi, GesetzGuide, LexLibera).</p>
+    <p>
+        <a href="https://praxislegal.be" target="_blank" rel="noopener" class="inline-flex items-center px-4 py-2 text-white rounded-lg font-semibold transition hover:opacity-90" style="background: linear-gradient(135deg, #c9a962, #b8943a);">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            D&eacute;couvrir Praxis
+        </a>
+    </p>
+
+    <h2>&#x1F4E2; Passez le mot</h2>
+    <p>Pas de budget ? Vous pouvez aussi soutenir LisLoi en faisant conna&icirc;tre le projet :</p>
+    <ul>
+        <li>&#x1F517; Partagez <a href="https://lisloi.be">lisloi.be</a> avec vos coll&egrave;gues, &eacute;tudiants et amis</li>
+        <li>&#x2B50; Donnez-nous une &eacute;toile sur <a href="https://github.com/WetWijzer-LisLoi/WetWijzer" target="_blank" rel="noopener">GitHub</a></li>
+        <li>&#x1F4AC; Mentionnez LisLoi sur les r&eacute;seaux sociaux ou dans les publications professionnelles</li>
+        <li>&#x1F4DD; Envoyez-nous vos commentaires &agrave; <a href="mailto:<%= contact_email %>"><%= contact_email %></a></li>
+    </ul>
+
+    <h2>&#x2764;&#xFE0F; Merci</h2>
+    <p>LisLoi existe gr&acirc;ce au soutien de nos abonn&eacute;s Pro, donateurs et utilisateurs. Chaque contribution &mdash; financi&egrave;re ou non &mdash; nous aide &agrave; garder le droit belge accessible &agrave; tous.</p>
+
+</div>

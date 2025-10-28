@@ -1,0 +1,648 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<% content_for :head do %>
+<style>
+  .ai-security-hero {
+    background: linear-gradient(135deg, #0d1b2a 0%, #1b2838 50%, #0a1628 100%);
+    border-radius: 12px;
+    padding: 40px 30px;
+    margin: 0 0 35px 0;
+    text-align: center;
+    color: #e0e7ef;
+    position: relative;
+    overflow: hidden;
+  }
+  .ai-security-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 30% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 50%, rgba(16, 185, 129, 0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .ai-security-hero .shield-icon {
+    font-size: 3.5rem;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .ai-security-hero h2 {
+    color: #f0f4f8 !important;
+    border: none !important;
+    margin: 0 0 10px 0 !important;
+    font-size: 1.6rem !important;
+    font-weight: 700;
+    padding: 0 !important;
+  }
+  .ai-security-hero p {
+    color: #94a3b8;
+    font-size: 1rem;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  .security-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 20px 0 30px 0;
+  }
+  .security-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    background: #fafbfc;
+    transition: box-shadow 0.2s;
+  }
+  .security-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .security-card .card-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .security-card h4 {
+    margin: 0 0 6px 0 !important;
+    font-size: 0.95rem !important;
+    color: var(--tw-prose-headings, #1e293b) !important;
+  }
+  .security-card p {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.4;
+  }
+  .pledge-box {
+    background: #ecfdf5;
+    border: 2px solid #10b981;
+    border-radius: 10px;
+    padding: 24px;
+    margin: 25px 0;
+  }
+  .pledge-box h3 {
+    color: #065f46 !important;
+    margin-top: 0 !important;
+    font-size: 1.15rem !important;
+  }
+  .pledge-box ul { margin-bottom: 0; }
+  .pledge-box li { margin: 6px 0; }
+  .cert-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 15px 0;
+  }
+  .cert-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #334155;
+  }
+  .flow-diagram {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 24px;
+    margin: 20px 0;
+    text-align: center;
+  }
+  .flow-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: #334155;
+  }
+  .flow-step {
+    background: #e0f2fe;
+    border: 1px solid #7dd3fc;
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-align: center;
+    min-width: 90px;
+  }
+  .flow-step .step-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+  .flow-arrow { color: #94a3b8; font-size: 1.2rem; }
+  .dark .ai-security-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  }
+  .dark .security-card {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  .dark .security-card h4 { color: #e2e8f0 !important; }
+  .dark .security-card p { color: #94a3b8; }
+  .dark .pledge-box {
+    background: #064e3b;
+    border-color: #10b981;
+    color: #d1fae5;
+  }
+  .dark .pledge-box h3 { color: #6ee7b7 !important; }
+  .dark .cert-badge {
+    background: #1e293b;
+    border-color: #475569;
+    color: #cbd5e1;
+  }
+  .dark .flow-diagram { background: #1e293b; border-color: #334155; }
+  .dark .flow-step { background: #1e3a5f; border-color: #3b82f6; color: #e2e8f0; }
+  .dark .flow-steps { color: #e2e8f0; }
+  .dark .flow-arrow { color: #64748b; }
+</style>
+<% end %>
+
+<div class="legal-page">
+<h1>AI Security & Privacy</h1>
+    <p class="last-updated">Last updated: June 9, 2026</p>
+
+    <!-- HERO -->
+    <div class="ai-security-hero">
+        <span class="shield-icon">🛡️</span>
+        <h2>Your Legal Questions Stay Private</h2>
+        <p>When you ask WetWijzer a legal question, your conversation is protected by zero-knowledge encryption, EU data residency, and a strict no-training policy. Saved conversations are encrypted in your browser before reaching our server - we only store unreadable ciphertext.</p>
+    </div>
+
+    <!-- AT A GLANCE -->
+    <h2>At a Glance</h2>
+    <div class="security-grid">
+        <div class="security-card">
+            <span class="card-icon">🔒</span>
+            <h4>Zero-Knowledge Encryption</h4>
+            <p>Saved conversations are encrypted in your browser (AES-256-GCM) before transmission - our server receives only unreadable ciphertext</p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">🔐</span>
+            <h4>TLS 1.2+ In Transit</h4>
+            <p>Every message travels through encrypted channels - nobody can intercept your questions on the wire</p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">🇪🇺</span>
+            <h4>EU-Only Processing</h4>
+            <p>All AI processing happens exclusively within the EU - France, Sweden, and Germany</p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">🚫</span>
+            <h4>Zero Training</h4>
+            <p>None of our AI providers use your prompts or answers to train, retrain, or improve any AI model</p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">🗂️</span>
+            <h4>Saving Is Optional</h4>
+            <p>Anonymous sessions are never stored. Logged-in users can save conversations - always zero-knowledge encrypted with your own key</p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">👤</span>
+            <h4>Mathematically Unreadable</h4>
+            <p>Our server does not possess your encryption key - even in a data breach or court order, your conversations are mathematically unreadable</p>
+        </div>
+    </div>
+
+    <!-- PLEDGE -->
+    <div class="pledge-box">
+        <h3>🤝 Our Privacy Pledge</h3>
+        <ul>
+            <li><strong>We cannot read your saved conversations</strong> - they are encrypted in your browser with a key we do not possess (zero-knowledge AES-256-GCM)</li>
+            <li><strong>We do not log your question text</strong> - only anonymous metadata (language, response time, credit cost) is stored; a truncated SHA-256 hash is used solely for debugging</li>
+            <li><strong>We never sell your data</strong> - not to advertisers, not to data brokers, not to anyone</li>
+            <li><strong>We never share your data</strong> - your questions are sent only to your selected AI provider for processing, nothing else</li>
+            <li><strong>We never profile you</strong> - we don't build behavioral profiles, interest graphs, or marketing segments</li>
+            <li><strong>Every access is logged</strong> - an append-only audit trail records every attempt to access conversation data outside normal operation</li>
+        </ul>
+    </div>
+
+    <!-- HOW YOUR QUESTION TRAVELS -->
+    <h2>1. How Your Question Travels</h2>
+    <p>When you type a legal question and press "Send", here is the exact journey your message takes:</p>
+
+    <div class="flow-diagram">
+        <div class="flow-steps">
+            <div class="flow-step"><span class="step-icon">💻</span>Your Browser</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step"><span class="step-icon">🔐</span>TLS 1.3</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step"><span class="step-icon">🇩🇪</span>Our Server<br><small>(Hetzner, Germany)</small></div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step"><span class="step-icon">🔐</span>TLS 1.2+</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step"><span class="step-icon">🇪🇺</span>AI Provider<br><small>(France / Sweden / Germany)</small></div>
+        </div>
+        <p style="margin-top: 15px; font-size: 0.85rem; color: #64748b;">Your question is encrypted at every hop. The answer returns through the same encrypted channel.</p>
+    </div>
+
+    <h3>Step-by-step:</h3>
+    <ol>
+        <li><strong>Your browser → Our server:</strong> Your question is encrypted using <strong>TLS 1.3</strong> (the latest standard). This means even your internet provider cannot see what you typed.</li>
+        <li><strong>Our server:</strong> We match your question against our local law database to find relevant articles. We log <em>metadata only</em> (language, credit cost, response time) - <strong>never the question text</strong>.</li>
+        <li><strong>Our server → AI Provider:</strong> Your question plus the relevant law articles are sent to the selected AI provider (Mistral AI in France, Azure OpenAI in Sweden, or AWS Bedrock in Germany) over a <strong>TLS 1.2+</strong> encrypted connection. Each connection uses API key authentication - isolated from other customers.</li>
+        <li><strong>The AI provider processes your question:</strong> The AI model generates a response. Your data is encrypted at rest with <strong>AES-256</strong>. After processing, none of our providers retain your prompts or responses for training purposes.</li>
+        <li><strong>The answer returns:</strong> The AI response travels back through the same encrypted path to your browser.</li>
+    </ol>
+
+    <!-- WHAT OUR AI PROVIDERS GUARANTEE -->
+    <h2>2. What Our AI Providers Guarantee</h2>
+    <p>We use <strong>three enterprise-grade AI providers</strong>, all processing data exclusively within the EU. None of them use consumer APIs - this matters enormously for your privacy:</p>
+
+    <h3>2.1 Your Data Is Never Used for Training</h3>
+    <p>All three providers contractually guarantee that your data is never used for model training:</p>
+    <div class="highlight">
+        <p><strong>Microsoft Azure OpenAI (Sweden):</strong> "Your prompts (inputs), completions (outputs), embeddings, and training data are NOT available to other customers, NOT available to OpenAI, NOT used to improve OpenAI models, NOT used to train, retrain, or improve any Microsoft or third-party foundation models."</p>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 0;">- <a href="https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy" target="_blank" rel="noopener">Microsoft Azure OpenAI Data, Privacy, and Security Documentation</a></p>
+    </div>
+    <div class="highlight" style="margin-top: 15px;">
+        <p><strong>Mistral AI (France):</strong> Mistral AI is a French company subject to EU law. Under their API Terms of Service, data submitted via their API is not used for training or improving their models.</p>
+    </div>
+    <div class="highlight" style="margin-top: 15px;">
+        <p><strong>Amazon Web Services Bedrock (Germany):</strong> AWS Bedrock guarantees that customer data is not used to train or improve any foundation models. Your data stays within the eu-central-1 (Frankfurt) region.</p>
+    </div>
+    <p>These guarantees are backed by legally binding <strong>Data Processing Agreements (DPAs)</strong> with each provider, enforceable under EU law.</p>
+
+    <h3>2.2 Encryption Standards</h3>
+    <table>
+        <tr>
+            <th>Protection Layer</th>
+            <th>Standard</th>
+            <th>What It Means</th>
+        </tr>
+        <tr>
+            <td><strong>Zero-Knowledge Encryption</strong></td>
+            <td>AES-256-GCM (Web Crypto API)</td>
+            <td>Saved conversations are encrypted in your browser before transmission. Our server receives and stores only unreadable ciphertext - without the key to decipher it</td>
+        </tr>
+        <tr>
+            <td><strong>Encryption in Transit</strong></td>
+            <td>TLS 1.2 or higher</td>
+            <td>All data between our server and each AI provider is encrypted in the communication channel - impossible to intercept</td>
+        </tr>
+        <tr>
+            <td><strong>Encryption at Rest (AI Provider)</strong></td>
+            <td>AES-256 (FIPS 140-2)</td>
+            <td>Any temporary data at AI provider infrastructure is encrypted with 256-bit AES - the same standard used by governments and banks worldwide</td>
+        </tr>
+        <tr>
+            <td><strong>Key Management</strong></td>
+            <td>Client-side PBKDF2 + AES-GCM</td>
+            <td>Your encryption key is derived from your password via 600,000 PBKDF2 iterations. The key never leaves your browser - we only store a password-wrapped version of the master key</td>
+        </tr>
+        <tr>
+            <td><strong>Network Isolation</strong></td>
+            <td>Regional deployments</td>
+            <td>All AI instances are deployed in EU regions - Mistral AI in France, Azure OpenAI in Sweden Central, and AWS Bedrock in Frankfurt, Germany</td>
+        </tr>
+    </table>
+
+    <h3>2.3 Abuse Monitoring</h3>
+    <p>Azure OpenAI performs automated content safety monitoring by default. This means:</p>
+    <ul>
+        <li>Prompts and completions <em>may</em> be temporarily stored (up to 30 days) for automated abuse detection</li>
+        <li>This storage is <strong>encrypted</strong> and <strong>logically isolated</strong> from other customers</li>
+        <li>Human review only occurs when automated systems flag potential policy violations</li>
+        <li>This data is <strong>never used for model training</strong></li>
+    </ul>
+    <p>Mistral AI and AWS Bedrock have similar content safety mechanisms, all operating under EU data protection law.</p>
+    <div class="legal-notice">
+        <p><strong>Transparency note:</strong> We are transparent about these provider behaviors. For most legal questions, this is entirely irrelevant - content safety filters are designed to detect harmful content (violence, illegal activity), not legal research queries. Your employment law or tenancy question will never be flagged.</p>
+    </div>
+
+    <h3>2.4 EU Data Residency</h3>
+    <p>All three AI providers process data exclusively within the European Union:</p>
+    <ul>
+        <li><strong>Mistral AI:</strong> Operates from France - a European company subject to French and EU law</li>
+        <li><strong>Azure OpenAI:</strong> Regional deployment in Sweden Central - the strictest data residency option Azure offers. We do <strong>not</strong> use "Global Standard" or "Global Provisioned" deployments</li>
+        <li><strong>AWS Bedrock:</strong> Deployed in eu-central-1 (Frankfurt, Germany) - data never leaves the EU region</li>
+        <li>All three countries (France, Sweden, Germany) are EU member states and subject to GDPR</li>
+    </ul>
+
+    <!-- COMPLIANCE -->
+    <h2>3. Certifications & Compliance</h2>
+    <p>Our AI providers inherit extensive compliance portfolios from their respective platforms:</p>
+
+    <div class="cert-badges">
+        <span class="cert-badge">✅ ISO 27001</span>
+        <span class="cert-badge">✅ ISO 27017</span>
+        <span class="cert-badge">✅ ISO 27018</span>
+        <span class="cert-badge">✅ SOC 2 Type II</span>
+        <span class="cert-badge">✅ GDPR</span>
+        <span class="cert-badge">✅ HIPAA</span>
+        <span class="cert-badge">✅ CSA STAR</span>
+    </div>
+
+    <table>
+        <tr>
+            <th>Certification</th>
+            <th>What It Covers</th>
+        </tr>
+        <tr>
+            <td><strong>ISO/IEC 27001</strong></td>
+            <td>International standard for information security management systems (ISMS) - covers policies, procedures, and controls</td>
+        </tr>
+        <tr>
+            <td><strong>ISO/IEC 27017</strong></td>
+            <td>Cloud-specific security controls - additional safeguards specifically designed for cloud computing environments</td>
+        </tr>
+        <tr>
+            <td><strong>ISO/IEC 27018</strong></td>
+            <td>Protection of personal data in the cloud - the international code of practice for cloud privacy</td>
+        </tr>
+        <tr>
+            <td><strong>SOC 2 Type II</strong></td>
+            <td>Independent third-party audit verifying security, availability, confidentiality, and privacy controls are effective over time</td>
+        </tr>
+        <tr>
+            <td><strong>GDPR</strong></td>
+            <td>Full compliance with the EU General Data Protection Regulation, backed by Microsoft's Data Protection Addendum</td>
+        </tr>
+    </table>
+    <p class="small">Microsoft certifications are independently audited and publicly verifiable via the <a href="https://servicetrust.microsoft.com/" target="_blank" rel="noopener">Microsoft Service Trust Portal</a>. AWS certifications are available via the <a href="https://aws.amazon.com/compliance/" target="_blank" rel="noopener">AWS Compliance Center</a>.</p>
+
+    <!-- WHAT WE STORE -->
+    <h2>4. What We Store (and What We Don't)</h2>
+
+    <h3>4.1 What We Store</h3>
+    <table>
+        <tr>
+            <th>Data</th>
+            <th>Example</th>
+            <th>Duration</th>
+            <th>Purpose</th>
+        </tr>
+        <tr>
+            <td>Language selected</td>
+            <td>NL / FR / EN / DE</td>
+            <td>Indefinite (anonymized)</td>
+            <td>Service statistics</td>
+        </tr>
+        <tr>
+            <td>Legal domain chosen</td>
+            <td>"Legislation" / "Case law"</td>
+            <td>Indefinite (anonymized)</td>
+            <td>Service optimization</td>
+        </tr>
+        <tr>
+            <td>Intelligence level chosen</td>
+            <td>Malin / Maître</td>
+            <td>Indefinite (anonymized)</td>
+            <td>Capacity planning</td>
+        </tr>
+        <tr>
+            <td>Credits deducted</td>
+            <td>1, 4, 6–8 ou 10</td>
+            <td>Account lifetime</td>
+            <td>Billing</td>
+        </tr>
+        <tr>
+            <td>Response time</td>
+            <td>2.3 seconds</td>
+            <td>Indefinite (anonymized)</td>
+            <td>Performance monitoring</td>
+        </tr>
+        <tr>
+            <td>Conversation context</td>
+            <td>Follow-up question window</td>
+            <td><strong>Session duration</strong></td>
+            <td>Enable follow-up questions</td>
+        </tr>
+    </table>
+
+    <h3>4.2 What We Do NOT Store</h3>
+    <div class="highlight--success">
+        <p><strong>How it works in practice:</strong> When you ask a question, our server generates a <strong>one-way SHA-256 hash</strong> (truncated to 12 characters) of your question text - purely for log correlation and debugging. This hash is irreversible: nobody can reconstruct your question from it. The raw question text is held in server memory only long enough to send it to the AI provider, then discarded. Your IP address is also hashed with SHA-256 plus a server-side salt, making it equally irreversible.</p>
+    </div>
+    <table>
+        <tr>
+            <th>Data</th>
+            <th>Stored?</th>
+            <th>How</th>
+        </tr>
+        <tr>
+            <td><strong>Your question text</strong></td>
+            <td>❌ Never</td>
+            <td>Only a truncated SHA-256 hash (12 chars) is logged - the original text cannot be recovered</td>
+        </tr>
+        <tr>
+            <td><strong>The AI's answer</strong></td>
+            <td>❌ Never</td>
+            <td>Only token counts (input/output) are recorded for billing - no answer content</td>
+        </tr>
+        <tr>
+            <td><strong>Source articles referenced</strong></td>
+            <td>❌ Never</td>
+            <td>Only the count of sources is logged (e.g. "3 sources"), not which articles</td>
+        </tr>
+        <tr>
+            <td><strong>Your IP address</strong></td>
+            <td>❌ Never in plaintext</td>
+            <td>Stored as a salted SHA-256 hash - irreversible, cannot be traced back to you</td>
+        </tr>
+        <tr>
+            <td><strong>Conversation history</strong></td>
+            <td>🔒 Zero-knowledge encrypted</td>
+            <td>For non-logged-in visitors: lives only in your browser's working memory &mdash; disappears when you leave the page. <strong>No localStorage or sessionStorage</strong> is used. For logged-in users: stored as zero-knowledge encrypted ciphertext on our server (AES-256-GCM) &mdash; we cannot decrypt it</td>
+        </tr>
+    </table>
+    <p class="small">* Exception: when you click "Report" (🚩) on a chatbot response, your question and the answer are sent to the administrator for quality review. This is clearly indicated in the interface before you confirm.</p>
+
+    <!-- OUR OWN INFRASTRUCTURE -->
+    <h2>5. Our Own Server Security</h2>
+    <p>Your data isn't just safe at our AI providers - our own infrastructure is hardened too:</p>
+    <table>
+        <tr>
+            <th>Measure</th>
+            <th>Implementation</th>
+        </tr>
+        <tr>
+            <td><strong>Server location</strong></td>
+            <td>Hetzner, Germany (EU) - ISO 27001 certified data center</td>
+        </tr>
+        <tr>
+            <td><strong>HTTPS everywhere</strong></td>
+            <td>TLS 1.3 with HSTS (HTTP Strict Transport Security) - browsers refuse unencrypted connections</td>
+        </tr>
+        <tr>
+            <td><strong>Password storage</strong></td>
+            <td>bcrypt with salt - even in a data breach, passwords cannot be reversed</td>
+        </tr>
+        <tr>
+            <td><strong>2FA secrets</strong></td>
+            <td>AES-256 encrypted in the database</td>
+        </tr>
+        <tr>
+            <td><strong>Security headers</strong></td>
+            <td>CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy</td>
+        </tr>
+        <tr>
+            <td><strong>Rate limiting</strong></td>
+            <td>Brute-force protection - account locks after 5 failed login attempts</td>
+        </tr>
+        <tr>
+            <td><strong>IP anonymization</strong></td>
+            <td>IP addresses stored as SHA-256 hashes (not reversible)</td>
+        </tr>
+        <tr>
+            <td><strong>Analytics</strong></td>
+            <td>Self-hosted Umami - no Google Analytics, no cookies, no tracking</td>
+        </tr>
+    </table>
+
+    <!-- DATA FLOW SUMMARY -->
+    <h2>6. Complete Data Flow Summary</h2>
+    <table>
+        <tr>
+            <th>From</th>
+            <th>To</th>
+            <th>Data Sent</th>
+            <th>Encryption</th>
+            <th>Retention</th>
+        </tr>
+        <tr>
+            <td>Your browser</td>
+            <td>Our server (Germany)</td>
+            <td>Your question</td>
+            <td>TLS 1.3</td>
+            <td>Session duration (context only)</td>
+        </tr>
+        <tr>
+            <td>Our server</td>
+            <td>AI Provider (France / Sweden / Germany)</td>
+            <td>Question + relevant articles</td>
+            <td>TLS 1.2+</td>
+            <td>Not retained for training</td>
+        </tr>
+        <tr>
+            <td>AI Provider</td>
+            <td>Our server</td>
+            <td>AI response</td>
+            <td>TLS 1.2+</td>
+            <td>Not retained</td>
+        </tr>
+        <tr>
+            <td>Our server</td>
+            <td>Your browser</td>
+            <td>AI response + source links</td>
+            <td>TLS 1.3</td>
+            <td>Browser working memory only (disappears on page leave). No localStorage.</td>
+        </tr>
+    </table>
+
+    <!-- COMPARISON -->
+    <h2>7. How We Compare</h2>
+    <p>Unlike consumer AI chatbots, WetWijzer uses enterprise-grade AI providers with strict EU data residency:</p>
+    <table>
+        <tr>
+            <th>Feature</th>
+            <th>Consumer ChatGPT</th>
+            <th>WetWijzer (Multi-Provider)</th>
+        </tr>
+        <tr>
+            <td>Uses your data for training</td>
+            <td>Yes (unless opted out)</td>
+            <td><strong>Never</strong></td>
+        </tr>
+        <tr>
+            <td>Data shared with OpenAI</td>
+            <td>Yes</td>
+            <td><strong>No - fully isolated per provider</strong></td>
+        </tr>
+        <tr>
+            <td>Data leaves the EU</td>
+            <td>Yes (US servers)</td>
+            <td><strong>No - EU-only (France, Sweden, Germany)</strong></td>
+        </tr>
+        <tr>
+            <td>Enterprise DPA (legally binding)</td>
+            <td>Not for free tier</td>
+            <td><strong>Yes - DPA with each provider</strong></td>
+        </tr>
+        <tr>
+            <td>ISO 27001 / SOC 2 certified</td>
+            <td>Varies</td>
+            <td><strong>Yes - independently audited</strong></td>
+        </tr>
+        <tr>
+            <td>Operator can read your questions</td>
+            <td>Depends on provider</td>
+            <td><strong>No &mdash; saved conversations are zero-knowledge encrypted; question text is never stored in plaintext</strong></td>
+        </tr>
+    </table>
+
+    <!-- WARNING -->
+    <h2>8. A Note of Common Sense</h2>
+    <div class="warning">
+        <p><strong>⚠️ Despite all these protections, we advise:</strong></p>
+        <ul>
+            <li>Do not share personal identification documents (ID numbers, social security numbers) in chatbot conversations</li>
+            <li>Do not share confidential business data or trade secrets</li>
+            <li>The chatbot provides <strong>informational guidance</strong>, not legal advice - always consult a qualified lawyer for important legal decisions</li>
+        </ul>
+    </div>
+
+    <h3>8.1 Tor, VPN & Proxy Users</h3>
+    <div class="warning">
+        <p><strong>🧅 Important notice for Tor Browser, VPN, and proxy users:</strong></p>
+        <p>WetWijzer is designed for <strong>EU-based users</strong>. If your connection appears to originate from <strong>outside the EU</strong>, you will be asked to complete a one-time security challenge (<a href="/privacy-policy#section-10-3">ALTCHA proof-of-work</a>) before accessing the platform.</p>
+    </div>
+    <p>This affects you if you use:</p>
+    <ul>
+        <li><strong>Tor Browser:</strong> Tor exit nodes are almost always located outside the EU (commonly in the US, Canada, or Asia). Our server sees the exit node's IP address, not yours - which means it looks like a non-EU visit.</li>
+        <li><strong>VPN services:</strong> If your VPN exit server is located outside the EU/EEA/Switzerland/UK, you will trigger the same geo-security check.</li>
+        <li><strong>Corporate proxies:</strong> Some corporate proxy chains route traffic through non-EU gateways.</li>
+    </ul>
+    <h4>What this means in practice:</h4>
+    <table>
+        <tr>
+            <th>Scenario</th>
+            <th>Geo-Check?</th>
+            <th>Can You Use the Chatbot?</th>
+        </tr>
+        <tr>
+            <td>Regular browser, EU IP address</td>
+            <td>❌ No check needed</td>
+            <td>✅ Yes, immediately</td>
+        </tr>
+        <tr>
+            <td>VPN with EU exit (e.g. Netherlands, Germany)</td>
+            <td>❌ No check needed</td>
+            <td>✅ Yes</td>
+        </tr>
+        <tr>
+            <td>VPN with non-EU exit (e.g. US, Singapore)</td>
+            <td>✅ One-time ALTCHA challenge</td>
+            <td>✅ Yes, after verification</td>
+        </tr>
+        <tr>
+            <td>Tor Browser (random exit node)</td>
+            <td>✅ ALTCHA challenge (likely)</td>
+            <td>✅ Yes, after verification</td>
+        </tr>
+    </table>
+    <div class="legal-notice">
+        <p><strong>Privacy note for Tor users:</strong> We respect your right to browse anonymously. The geo-security check does not de-anonymize you - it only verifies you are human through a proof-of-work challenge that runs entirely on our own server. No data is sent to third parties. However, be aware that when using Tor, your traffic exits through a <strong>third-party relay node</strong> that you do not control. While TLS encryption protects the content of your chatbot questions from the exit node operator, the exit node can see which website you are visiting (wetwijzer.be). This is a property of Tor itself, not of our platform.</p>
+    </div>
+    <p><strong>Recommendation:</strong> If you use a VPN for privacy and want to avoid the geo-check entirely, select an <strong>EU-based exit server</strong> (e.g. Netherlands, Germany, France, Sweden). This also ensures your connection to our server stays within the EU network backbone.</p>
+
+    <!-- FURTHER READING -->
+    <h2>9. Further Reading</h2>
+    <ul>
+        <li><a href="/privacy-policy">WetWijzer Privacy Policy</a> - our comprehensive GDPR-compliant privacy policy</li>
+        <li><a href="https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy" target="_blank" rel="noopener">Azure OpenAI Data, Privacy, and Security</a> - Microsoft's official documentation</li>
+        <li><a href="https://mistral.ai/terms/#terms-of-service" target="_blank" rel="noopener">Mistral AI Terms of Service</a> - Mistral's data processing commitments</li>
+        <li><a href="https://aws.amazon.com/bedrock/security-compliance/" target="_blank" rel="noopener">AWS Bedrock Security & Compliance</a> - Amazon's security documentation</li>
+        <li><a href="https://servicetrust.microsoft.com/" target="_blank" rel="noopener">Microsoft Service Trust Portal</a> - verify compliance certifications</li>
+        <li><a href="https://www.microsoft.com/licensing/docs/view/Microsoft-Products-and-Services-Data-Protection-Addendum-DPA" target="_blank" rel="noopener">Microsoft Data Protection Addendum (DPA)</a> - the legally binding data protection contract</li>
+    </ul>
+
+    <div class="legal-notice">
+        <p><strong>Questions about our AI security?</strong></p>
+        <p>Contact us at <a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a> - we're happy to explain any aspect of our security architecture in detail.</p>
+    </div>
+</div>

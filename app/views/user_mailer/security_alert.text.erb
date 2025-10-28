@@ -1,0 +1,13 @@
+🔒 <%= t("mailer.security_alert.#{@event_type}.title") %>
+
+<%= t('mailer.security_alert.greeting', name: @user.name || @user.email) %>
+
+<%= t("mailer.security_alert.#{@event_type}.message") %>
+
+<%= t('mailer.security_alert.time') %>: <%= Time.current.strftime('%d/%m/%Y %H:%M %Z') %>
+<% if @ip_address %><%= t('mailer.security_alert.ip_address') %>: <%= @ip_address %><% end %>
+<% if @user_agent %><%= t('mailer.security_alert.device') %>: <%= @user_agent.truncate(60) %><% end %>
+
+<%= t('mailer.security_alert.not_you') %>
+
+<%= t('mailer.security_alert.review_button') %>: <%= account_url %>

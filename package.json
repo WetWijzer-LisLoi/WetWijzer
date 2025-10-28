@@ -1,0 +1,29 @@
+{
+  "name": "app",
+  "private": "true",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@hotwired/stimulus": "^3.2.2",
+    "@hotwired/turbo-rails": "^8.0.23",
+    "@stimulus-components/auto-submit": "^6.0.0",
+    "@tailwindcss/forms": "^0.5.11",
+    "@tailwindcss/postcss": "^4.3.0",
+    "@tailwindcss/vite": "^4.3.0",
+    "autoprefixer": "^10.5.0",
+    "flatpickr": "^4.6.13",
+    "lodash.debounce": "^4.0.8",
+    "postcss": "^8.5.15",
+    "sass": "^1.100.0",
+    "stimulus-use": "^0.52.3",
+    "stimulus-vite-helpers": "^3.1.0",
+    "tailwindcss": "^4.3.0"
+  },
+  "devDependencies": {
+    "vite": "^8.0.14",
+    "vite-plugin-ruby": "^5.2.2"
+  }
+}

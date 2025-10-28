@@ -1,0 +1,21 @@
+<h2><%= t('mailer.subscription_welcome.greeting', name: @user.name || @user.email) %> 🎉</h2>
+
+<p><%= t('mailer.subscription_welcome.body') %></p>
+
+<div class="success-box">
+  <strong><%= t('mailer.subscription_welcome.whats_included') %></strong>
+  <ul style="margin: 10px 0 0; padding-left: 20px; line-height: 1.8;">
+    <li><%= t('mailer.subscription_welcome.feature_credits') %></li>
+    <li><%= t('mailer.subscription_welcome.feature_models') %></li>
+    <li><%= t('mailer.subscription_welcome.feature_jurisprudence') %></li>
+    <li><%= t('mailer.subscription_welcome.feature_support') %></li>
+  </ul>
+</div>
+
+<div class="button-wrapper">
+  <a href="<%= @chatbot_url %>" class="button" style="display: inline-block; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); background-color: #22c55e; color: #ffffff !important; text-decoration: none; padding: 15px 40px; border-radius: 10px; font-weight: 700; font-size: 15px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);"><%= t('mailer.subscription_welcome.button') %> →</a>
+</div>
+
+<div class="divider"></div>
+
+<p style="font-size: 13px; color: #94a3b8; text-align: center;"><%= t('mailer.subscription_welcome.thanks') %></p>

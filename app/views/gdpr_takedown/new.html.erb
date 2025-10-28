@@ -1,0 +1,142 @@
+<% @title = case I18n.locale when :fr then 'Demande de suppression de données personnelles' when :de then 'Antrag auf Löschung personenbezogener Daten' when :en then 'Personal data removal request' else 'Verwijderingsverzoek persoonsgegevens' end %>
+
+<div class="max-w-2xl mx-auto">
+  <!-- Header -->
+  <div class="mb-6">
+    <div class="bg-amber-50/80 dark:bg-amber-900/20 rounded-xl p-6 border border-amber-200/50 dark:border-amber-800/30">
+      <div class="flex items-start gap-4">
+        <div class="shrink-0 w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+          <svg class="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-gray-900 dark:text-(--accent-500)">
+            <% case I18n.locale
+               when :fr %>
+              ⚖️ Demande de suppression de données personnelles
+            <% when :de %>
+              ⚖️ Antrag auf Löschung personenbezogener Daten
+            <% when :en %>
+              ⚖️ Personal data removal request
+            <% else %>
+              ⚖️ Verwijderingsverzoek persoonsgegevens
+            <% end %>
+          </h1>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-300/80">
+            <% case I18n.locale
+               when :fr %>
+              Avez-vous trouvé des données personnelles dans une décision pseudonymisée sur notre plateforme ?
+              Soumettez votre demande de suppression ici (Art. 17 RGPD). Nous répondrons dans les <strong>30 jours</strong>.
+            <% when :de %>
+              Haben Sie personenbezogene Daten in einer pseudonymisierten Entscheidung auf unserer Plattform gefunden?
+              Reichen Sie hier Ihren Löschantrag ein (Art. 17 DSGVO). Wir antworten innerhalb von <strong>30 Tagen</strong>.
+            <% when :en %>
+              Have you found personal data in a pseudonymised ruling on our platform?
+              Submit your removal request here (Art. 17 GDPR). We will respond within <strong>30 days</strong>.
+            <% else %>
+              Heeft u persoonsgegevens aangetroffen in een gepseudonimiseerd arrest op ons platform?
+              Dien hier uw verwijderingsverzoek in (Art. 17 AVG). Wij reageren binnen <strong>30 dagen</strong>.
+            <% end %>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+    <%= form_with(model: @takedown_request, url: gdpr_takedown_path, class: "space-y-5") do |f| %>
+
+      <% if @takedown_request.errors.any? %>
+        <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800/30">
+          <p class="text-sm font-medium text-red-800 dark:text-red-200">
+            <%= case I18n.locale when :fr then 'Veuillez corriger les erreurs suivantes :' when :de then 'Bitte korrigieren Sie die folgenden Fehler:' when :en then 'Please correct the following errors:' else 'Gelieve onderstaande fouten te corrigeren:' end %>
+          </p>
+          <ul class="mt-2 text-sm text-red-700 dark:text-red-300 list-disc list-inside">
+            <% @takedown_request.errors.full_messages.each do |msg| %>
+              <li><%= msg %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <!-- Name -->
+      <div>
+        <label for="gdpr_takedown_request_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <%= case I18n.locale when :fr then 'Votre nom complet *' when :de then 'Ihr vollständiger Name *' when :en then 'Your full name *' else 'Uw volledige naam *' end %>
+        </label>
+        <%= f.text_field :name, required: true, maxlength: 200,
+            class: "w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-300 focus:ring-2 focus:ring-(--accent-500) focus:border-transparent transition-colors",
+            placeholder: case I18n.locale when :fr then 'Prénom Nom' when :de then 'Vorname Nachname' when :en then 'First name Last name' else 'Voornaam Achternaam' end %>
+      </div>
+
+      <!-- Email -->
+      <div>
+        <label for="gdpr_takedown_request_email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <%= case I18n.locale when :fr then 'Adresse e-mail *' when :de then 'E-Mail-Adresse *' when :en then 'Email address *' else 'E-mailadres *' end %>
+        </label>
+        <%= f.email_field :email, required: true,
+            class: "w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-300 focus:ring-2 focus:ring-(--accent-500) focus:border-transparent transition-colors",
+            placeholder: 'email@example.com' %>
+        <p class="mt-1 text-xs text-gray-500 dark:text-gray-300/60">
+          <%= case I18n.locale when :fr then 'Nous utilisons cette adresse uniquement pour vous répondre.' when :de then 'Wir verwenden diese Adresse ausschließlich, um Ihnen zu antworten.' when :en then 'We use this address solely to respond to you.' else 'Wij gebruiken dit adres uitsluitend om u te antwoorden.' end %>
+        </p>
+      </div>
+
+      <!-- ECLI -->
+      <div>
+        <label for="gdpr_takedown_request_ecli" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <%= case I18n.locale when :fr then 'Numéro ECLI de la décision *' when :de then 'ECLI-Nummer der Entscheidung *' when :en then 'ECLI number of the ruling *' else 'ECLI-nummer van het arrest *' end %>
+        </label>
+        <%= f.text_field :ecli, required: true, maxlength: 100,
+            class: "w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-300 focus:ring-2 focus:ring-(--accent-500) focus:border-transparent font-mono text-sm transition-colors",
+            placeholder: 'ECLI:BE:...' %>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label for="gdpr_takedown_request_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <%= case I18n.locale when :fr then 'Description des données personnelles trouvées *' when :de then 'Beschreibung der gefundenen personenbezogenen Daten *' when :en then 'Description of personal data found *' else 'Beschrijving van de aangetroffen persoonsgegevens *' end %>
+        </label>
+        <%= f.text_area :description, required: true, maxlength: 5000, rows: 5,
+            class: "w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-300 focus:ring-2 focus:ring-(--accent-500) focus:border-transparent transition-colors",
+            placeholder: case I18n.locale
+              when :fr then "Décrivez quelles données personnelles vous avez trouvées (p.ex. votre nom complet, adresse, numéro de téléphone) et où dans le texte."
+              when :de then "Beschreiben Sie, welche personenbezogenen Daten Sie gefunden haben (z.B. Ihr vollständiger Name, Adresse, Telefonnummer) und wo im Text."
+              when :en then "Describe which personal data you found (e.g. your full name, address, phone number) and where in the text."
+              else "Beschrijf welke persoonsgegevens u heeft aangetroffen (bv. uw volledige naam, adres, telefoonnummer) en waar in de tekst."
+              end %>
+        <p class="mt-1 text-xs text-gray-500 dark:text-gray-300/60">
+          <%= case I18n.locale when :fr then 'Max. 5000 caractères' when :de then 'Max. 5000 Zeichen' when :en then 'Max. 5,000 characters' else 'Max. 5000 tekens' end %>
+        </p>
+      </div>
+
+      <!-- Submit -->
+      <div class="pt-2">
+        <%= f.submit(
+          case I18n.locale when :fr then 'Soumettre la demande de suppression' when :de then 'Löschantrag einreichen' when :en then 'Submit removal request' else 'Verwijderingsverzoek indienen' end,
+          class: "w-full px-6 py-3 bg-(--accent-600-solid) hover:bg-(--accent-700-solid) text-white font-medium rounded-lg shadow-sm transition-colors duration-150 cursor-pointer focus:ring-2 focus:ring-(--accent-500) focus:ring-offset-2"
+        ) %>
+      </div>
+
+      <!-- Privacy note -->
+      <p class="text-xs text-center text-gray-500 dark:text-gray-300/60">
+        <% case I18n.locale
+           when :fr %>
+          Vos données sont utilisées exclusivement pour le traitement de cette demande.
+          Voir notre <a href="/privacy-fr.html#section-3-6" class="underline hover:text-(--accent-600)">politique de confidentialité</a>.
+        <% when :de %>
+          Ihre Daten werden ausschließlich zur Bearbeitung dieses Antrags verwendet.
+          Siehe unsere <a href="/privacy-nl.html#section-3-6" class="underline hover:text-(--accent-600)">Datenschutzerklärung</a>.
+        <% when :en %>
+          Your data is used exclusively for processing this request.
+          See our <a href="/privacy-nl.html#section-3-6" class="underline hover:text-(--accent-600)">privacy policy</a>.
+        <% else %>
+          Uw gegevens worden uitsluitend gebruikt voor de behandeling van dit verzoek.
+          Zie ons <a href="/privacy-nl.html#section-3-6" class="underline hover:text-(--accent-600)">privacybeleid</a>.
+        <% end %>
+      </p>
+    <% end %>
+  </div>
+</div>

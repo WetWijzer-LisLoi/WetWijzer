@@ -1,0 +1,13 @@
+Nieuw GDPR verwijderingsverzoek ontvangen:
+
+Naam: <%= @request.name %>
+E-mail: <%= @request.email %>
+ECLI: <%= @request.ecli %>
+Ingediend: <%= @request.created_at&.strftime('%d/%m/%Y %H:%M') || 'Onbekend' %>
+
+Beschrijving:
+<%= @request.description %>
+
+---
+Dit verzoek moet binnen 30 dagen worden behandeld (Art. 17 AVG).
+IP-hash: <%= @request.ip_hash %>

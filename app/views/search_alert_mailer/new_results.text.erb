@@ -1,0 +1,19 @@
+<%= I18n.t('search_alerts.mailer.new_results.title', count: @laws.size) %>
+
+<%= I18n.t('search_alerts.mailer.new_results.intro', query: @alert.query) %>
+
+<% @laws.first(10).each_with_index do |law, i| %>
+<%= i + 1 %>. <%= truncate(law.title, length: 100) %>
+   <%= law.publication_date&.strftime('%d/%m/%Y') %> - NUMAC <%= law.numac %>
+   <%= law_url(law) %>
+
+<% end %>
+<% if @laws.size > 10 %>
+<%= I18n.t('search_alerts.mailer.new_results.more_results', count: @laws.size - 10) %>
+<% end %>
+
+<%= I18n.t('search_alerts.mailer.new_results.view_all') %>: <%= @search_url %>
+
+---
+<%= I18n.t('search_alerts.mailer.new_results.frequency', frequency: I18n.t("search_alerts.frequency.#{@alert.frequency}")) %>
+<%= I18n.t('search_alerts.mailer.unsubscribe') %>: <%= @unsubscribe_url %>

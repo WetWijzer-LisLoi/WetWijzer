@@ -1,0 +1,27 @@
+<h2><%= t('mailer.subscription_cancelled.greeting', name: @user.name || @user.email) %></h2>
+
+<p><%= t('mailer.subscription_cancelled.body') %></p>
+
+<div class="info-box">
+  <p style="margin: 0;"><%= t('mailer.subscription_cancelled.access_until') %></p>
+  <% if @period_end %>
+    <p style="margin: 6px 0 0; font-weight: 700; font-size: 16px;"><%= I18n.l(@period_end, format: :long) rescue @period_end&.strftime('%d/%m/%Y') %></p>
+  <% end %>
+</div>
+
+<p><%= t('mailer.subscription_cancelled.keep_free') %></p>
+
+<% if @cancellation_reason.present? %>
+  <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 20px; margin: 20px 0;">
+    <p style="margin: 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;"><%= t('mailer.subscription_cancelled.your_feedback') %></p>
+    <p style="margin: 8px 0 0; font-style: italic; color: #64748b; font-size: 14px;">"<%= @cancellation_reason %>"</p>
+  </div>
+<% end %>
+
+<div class="button-wrapper">
+  <a href="<%= @resubscribe_url %>" class="button-secondary" style="display: inline-block; background-color: #f3f4f6; color: #374151 !important; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 14px; border: 1px solid #d1d5db;"><%= t('mailer.subscription_cancelled.resubscribe_button') %></a>
+</div>
+
+<div class="divider"></div>
+
+<p style="font-size: 13px; color: #94a3b8; text-align: center;"><%= t('mailer.subscription_cancelled.farewell') %></p>

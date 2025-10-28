@@ -1,0 +1,11 @@
+<% if defined?(@laws) && params[:title].present? && @laws&.empty? %>
+  <div class="text-xs text-gray-600 dark:text-gray-400 mt-2">
+    <span class="text-amber-600 dark:text-amber-400 font-medium">
+      <% if params[:exact_match] == '1' %>
+        <%= t(:search_hints_no_results_with_exact) %>
+      <% else %>
+        <%= t(:search_hints_no_results_without_exact) %>
+      <% end %>
+    </span>
+  </div>
+<% end %>

@@ -1,0 +1,223 @@
+/* ============================================================================
+ * FUN THEMES - Use accent color for exdecs
+ * ============================================================================ */
+
+/* Fun themes - Executive decision cards use accent color */
+.theme-blue .exdec-card,
+.theme-rose .exdec-card,
+.theme-amber .exdec-card,
+.theme-emerald .exdec-card,
+.theme-violet .exdec-card,
+.theme-fuchsia .exdec-card,
+.theme-pink .exdec-card {
+  background-color: var(--badge-bg) !important;
+  border-color: var(--badge-border) !important;
+}
+
+.theme-blue .exdec-header,
+.theme-rose .exdec-header,
+.theme-amber .exdec-header,
+.theme-emerald .exdec-header,
+.theme-violet .exdec-header,
+.theme-fuchsia .exdec-header,
+.theme-pink .exdec-header {
+  background-color: color-mix(in srgb, var(--accent-500) 15%, white) !important;
+  border-color: color-mix(in srgb, var(--accent-500) 30%, white) !important;
+}
+
+.theme-blue .exdec-content,
+.theme-rose .exdec-content,
+.theme-amber .exdec-content,
+.theme-emerald .exdec-content,
+.theme-violet .exdec-content,
+.theme-fuchsia .exdec-content,
+.theme-pink .exdec-content {
+  background-color: color-mix(in srgb, var(--accent-500) 5%, white) !important;
+}
+
+/* Fun themes dark mode */
+.theme-blue.dark .exdec-card,
+.dark .theme-blue .exdec-card,
+.theme-rose.dark .exdec-card,
+.dark .theme-rose .exdec-card,
+.theme-amber.dark .exdec-card,
+.dark .theme-amber .exdec-card,
+.theme-emerald.dark .exdec-card,
+.dark .theme-emerald .exdec-card,
+.theme-violet.dark .exdec-card,
+.dark .theme-violet .exdec-card,
+.theme-fuchsia.dark .exdec-card,
+.dark .theme-fuchsia .exdec-card,
+.theme-pink.dark .exdec-card,
+.dark .theme-pink .exdec-card {
+  background-color: color-mix(in srgb, var(--accent-500) 15%, transparent) !important;
+  border-color: color-mix(in srgb, var(--accent-500) 30%, transparent) !important;
+}
+
+.theme-blue.dark .exdec-header,
+.dark .theme-blue .exdec-header,
+.theme-rose.dark .exdec-header,
+.dark .theme-rose .exdec-header,
+.theme-amber.dark .exdec-header,
+.dark .theme-amber .exdec-header,
+.theme-emerald.dark .exdec-header,
+.dark .theme-emerald .exdec-header,
+.theme-violet.dark .exdec-header,
+.dark .theme-violet .exdec-header,
+.theme-fuchsia.dark .exdec-header,
+.dark .theme-fuchsia .exdec-header,
+.theme-pink.dark .exdec-header,
+.dark .theme-pink .exdec-header {
+  background-color: color-mix(in srgb, var(--accent-500) 20%, transparent) !important;
+  border-color: color-mix(in srgb, var(--accent-500) 40%, transparent) !important;
+}
+
+.theme-blue.dark .exdec-content,
+.dark .theme-blue .exdec-content,
+.theme-rose.dark .exdec-content,
+.dark .theme-rose .exdec-content,
+.theme-amber.dark .exdec-content,
+.dark .theme-amber .exdec-content,
+.theme-emerald.dark .exdec-content,
+.dark .theme-emerald .exdec-content,
+.theme-violet.dark .exdec-content,
+.dark .theme-violet .exdec-content,
+.theme-fuchsia.dark .exdec-content,
+.dark .theme-fuchsia .exdec-content,
+.theme-pink.dark .exdec-content,
+.dark .theme-pink .exdec-content {
+  background-color: color-mix(in srgb, var(--accent-500) 10%, transparent) !important;
+}
+
+/* Fun themes - NUMAC links */
+.theme-blue .link-exdec-numac,
+.theme-rose .link-exdec-numac,
+.theme-amber .link-exdec-numac,
+.theme-emerald .link-exdec-numac,
+.theme-violet .link-exdec-numac,
+.theme-fuchsia .link-exdec-numac,
+.theme-pink .link-exdec-numac {
+  color: var(--accent-700) !important;
+}
+
+.theme-blue .link-exdec-numac:hover,
+.theme-rose .link-exdec-numac:hover,
+.theme-amber .link-exdec-numac:hover,
+.theme-emerald .link-exdec-numac:hover,
+.theme-violet .link-exdec-numac:hover,
+.theme-fuchsia .link-exdec-numac:hover,
+.theme-pink .link-exdec-numac:hover {
+  color: var(--accent-800) !important;
+}
+
+.theme-blue.dark .link-exdec-numac,
+.dark .theme-blue .link-exdec-numac,
+.theme-rose.dark .link-exdec-numac,
+.dark .theme-rose .link-exdec-numac,
+.theme-amber.dark .link-exdec-numac,
+.dark .theme-amber .link-exdec-numac,
+.theme-emerald.dark .link-exdec-numac,
+.dark .theme-emerald .link-exdec-numac,
+.theme-violet.dark .link-exdec-numac,
+.dark .theme-violet .link-exdec-numac,
+.theme-fuchsia.dark .link-exdec-numac,
+.dark .theme-fuchsia .link-exdec-numac,
+.theme-pink.dark .link-exdec-numac,
+.dark .theme-pink .link-exdec-numac {
+  color: var(--accent-400) !important;
+}
+
+.theme-blue.dark .link-exdec-numac:hover,
+.dark .theme-blue .link-exdec-numac:hover,
+.theme-rose.dark .link-exdec-numac:hover,
+.dark .theme-rose .link-exdec-numac:hover,
+.theme-amber.dark .link-exdec-numac:hover,
+.dark .theme-amber .link-exdec-numac:hover,
+.theme-emerald.dark .link-exdec-numac:hover,
+.dark .theme-emerald .link-exdec-numac:hover,
+.theme-violet.dark .link-exdec-numac:hover,
+.dark .theme-violet .link-exdec-numac:hover,
+.theme-fuchsia.dark .link-exdec-numac:hover,
+.dark .theme-fuchsia .link-exdec-numac:hover,
+.theme-pink.dark .link-exdec-numac:hover,
+.dark .theme-pink .link-exdec-numac:hover {
+  color: var(--accent-300) !important;
+}
+
+/* Fun themes - Toggle buttons and badges */
+.theme-blue .btn-toggle-exdecs,
+.theme-blue .badge-exdec-count,
+.theme-rose .btn-toggle-exdecs,
+.theme-rose .badge-exdec-count,
+.theme-amber .btn-toggle-exdecs,
+.theme-amber .badge-exdec-count,
+.theme-emerald .btn-toggle-exdecs,
+.theme-emerald .badge-exdec-count,
+.theme-violet .btn-toggle-exdecs,
+.theme-violet .badge-exdec-count,
+.theme-fuchsia .btn-toggle-exdecs,
+.theme-fuchsia .badge-exdec-count,
+.theme-pink .btn-toggle-exdecs,
+.theme-pink .badge-exdec-count {
+  background-color: var(--badge-bg);
+  color: var(--badge-text);
+}
+
+.theme-blue .btn-toggle-exdecs:hover,
+.theme-rose .btn-toggle-exdecs:hover,
+.theme-amber .btn-toggle-exdecs:hover,
+.theme-emerald .btn-toggle-exdecs:hover,
+.theme-violet .btn-toggle-exdecs:hover,
+.theme-fuchsia .btn-toggle-exdecs:hover,
+.theme-pink .btn-toggle-exdecs:hover {
+  filter: brightness(0.95);
+}
+
+.theme-blue.dark .btn-toggle-exdecs,
+.dark .theme-blue .btn-toggle-exdecs,
+.theme-blue.dark .badge-exdec-count,
+.dark .theme-blue .badge-exdec-count,
+.theme-rose.dark .btn-toggle-exdecs,
+.dark .theme-rose .btn-toggle-exdecs,
+.theme-rose.dark .badge-exdec-count,
+.dark .theme-rose .badge-exdec-count,
+.theme-amber.dark .btn-toggle-exdecs,
+.dark .theme-amber .btn-toggle-exdecs,
+.theme-amber.dark .badge-exdec-count,
+.dark .theme-amber .badge-exdec-count,
+.theme-emerald.dark .btn-toggle-exdecs,
+.dark .theme-emerald .btn-toggle-exdecs,
+.theme-emerald.dark .badge-exdec-count,
+.dark .theme-emerald .badge-exdec-count,
+.theme-violet.dark .btn-toggle-exdecs,
+.dark .theme-violet .btn-toggle-exdecs,
+.theme-violet.dark .badge-exdec-count,
+.dark .theme-violet .badge-exdec-count,
+.theme-fuchsia.dark .btn-toggle-exdecs,
+.dark .theme-fuchsia .btn-toggle-exdecs,
+.theme-fuchsia.dark .badge-exdec-count,
+.dark .theme-fuchsia .badge-exdec-count,
+.theme-pink.dark .btn-toggle-exdecs,
+.dark .theme-pink .btn-toggle-exdecs,
+.theme-pink.dark .badge-exdec-count,
+.dark .theme-pink .badge-exdec-count {
+  background-color: var(--badge-bg);
+  color: var(--badge-text);
+}
+
+.theme-blue.dark .btn-toggle-exdecs:hover,
+.dark .theme-blue .btn-toggle-exdecs:hover,
+.theme-rose.dark .btn-toggle-exdecs:hover,
+.dark .theme-rose .btn-toggle-exdecs:hover,
+.theme-amber.dark .btn-toggle-exdecs:hover,
+.dark .theme-amber .btn-toggle-exdecs:hover,
+.theme-emerald.dark .btn-toggle-exdecs:hover,
+.dark .theme-emerald .btn-toggle-exdecs:hover,
+.theme-violet.dark .btn-toggle-exdecs:hover,
+.dark .theme-violet .btn-toggle-exdecs:hover,
+.theme-fuchsia.dark .btn-toggle-exdecs:hover,
+.dark .theme-fuchsia .btn-toggle-exdecs:hover,
+.theme-pink.dark .btn-toggle-exdecs:hover,
+.dark .theme-pink .btn-toggle-exdecs:hover {
+  filter: brightness(1.05);
+}

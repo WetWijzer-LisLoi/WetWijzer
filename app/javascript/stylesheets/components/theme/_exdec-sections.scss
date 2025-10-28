@@ -1,0 +1,199 @@
+/* ============================================================================
+ * EXDEC SECTIONS IN ARTICLES - Refined styling
+ * ============================================================================ */
+
+/* Exdec section container - theme-aware borders and backgrounds */
+article [data-controller="collapse"]:has(.badge-exdec-count) {
+  border-color: var(--accent-300);
+  background-color: color-mix(in srgb, var(--accent-50) 50%, transparent);
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dark article [data-controller="collapse"]:has(.badge-exdec-count) {
+  border-color: color-mix(in srgb, var(--accent-500) 30%, transparent);
+  background-color: color-mix(in srgb, var(--accent-500) 5%, transparent);
+}
+
+article [data-controller="collapse"]:has(.badge-exdec-count):hover {
+  border-color: var(--accent-400);
+  background-color: color-mix(in srgb, var(--accent-50) 70%, transparent);
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+}
+
+.dark article [data-controller="collapse"]:has(.badge-exdec-count):hover {
+  border-color: color-mix(in srgb, var(--accent-500) 40%, transparent);
+  background-color: color-mix(in srgb, var(--accent-500) 8%, transparent);
+}
+
+/* Professional themes - Minimal exdec section styling */
+.theme-slate article [data-controller="collapse"]:has(.badge-exdec-count),
+.theme-indigo article [data-controller="collapse"]:has(.badge-exdec-count),
+.theme-sky article [data-controller="collapse"]:has(.badge-exdec-count),
+.theme-teal article [data-controller="collapse"]:has(.badge-exdec-count),
+.theme-cyan article [data-controller="collapse"]:has(.badge-exdec-count),
+.theme-green article [data-controller="collapse"]:has(.badge-exdec-count),
+.theme-purple article [data-controller="collapse"]:has(.badge-exdec-count),
+.theme-red article [data-controller="collapse"]:has(.badge-exdec-count) {
+  border-color: rgb(209, 213, 219) !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.theme-slate.dark article [data-controller="collapse"]:has(.badge-exdec-count),
+.theme-indigo.dark article [data-controller="collapse"]:has(.badge-exdec-count),
+.theme-sky.dark article [data-controller="collapse"]:has(.badge-exdec-count),
+.theme-teal.dark article [data-controller="collapse"]:has(.badge-exdec-count),
+.theme-cyan.dark article [data-controller="collapse"]:has(.badge-exdec-count),
+.theme-green.dark article [data-controller="collapse"]:has(.badge-exdec-count),
+.theme-purple.dark article [data-controller="collapse"]:has(.badge-exdec-count),
+.theme-red.dark article [data-controller="collapse"]:has(.badge-exdec-count),
+.dark .theme-slate article [data-controller="collapse"]:has(.badge-exdec-count),
+.dark .theme-indigo article [data-controller="collapse"]:has(.badge-exdec-count),
+.dark .theme-sky article [data-controller="collapse"]:has(.badge-exdec-count),
+.dark .theme-teal article [data-controller="collapse"]:has(.badge-exdec-count),
+.dark .theme-cyan article [data-controller="collapse"]:has(.badge-exdec-count),
+.dark .theme-green article [data-controller="collapse"]:has(.badge-exdec-count),
+.dark .theme-purple article [data-controller="collapse"]:has(.badge-exdec-count),
+.dark .theme-red article [data-controller="collapse"]:has(.badge-exdec-count) {
+  border-color: rgb(75, 85, 99) !important;
+  background-color: transparent !important;
+}
+
+/* Exdec card styling - refined */
+.exdec-card {
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.exdec-card:hover {
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Professional themes - Minimal exdec card styling */
+.theme-slate .exdec-card,
+.theme-indigo .exdec-card,
+.theme-sky .exdec-card,
+.theme-teal .exdec-card,
+.theme-cyan .exdec-card,
+.theme-green .exdec-card,
+.theme-purple .exdec-card,
+.theme-red .exdec-card {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+.theme-slate .exdec-card:hover,
+.theme-indigo .exdec-card:hover,
+.theme-sky .exdec-card:hover,
+.theme-teal .exdec-card:hover,
+.theme-cyan .exdec-card:hover,
+.theme-green .exdec-card:hover,
+.theme-purple .exdec-card:hover,
+.theme-red .exdec-card:hover {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  transform: none !important;
+}
+
+/* Exdec header styling - theme accent on NUMAC link */
+.link-exdec-numac {
+  color: var(--accent-600);
+  font-weight: 600;
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+  transition: all 0.15s ease;
+}
+
+.link-exdec-numac:hover {
+  color: var(--accent-700);
+  text-decoration: underline;
+}
+
+.dark .link-exdec-numac {
+  color: var(--accent-400);
+}
+
+.dark .link-exdec-numac:hover {
+  color: var(--accent-300);
+}
+
+/* Professional themes - Minimal NUMAC link */
+.theme-slate .link-exdec-numac,
+.theme-indigo .link-exdec-numac,
+.theme-sky .link-exdec-numac,
+.theme-teal .link-exdec-numac,
+.theme-cyan .link-exdec-numac,
+.theme-green .link-exdec-numac,
+.theme-purple .link-exdec-numac,
+.theme-red .link-exdec-numac {
+  color: var(--accent-600) !important;
+  font-weight: 600 !important;
+}
+
+.theme-slate.dark .link-exdec-numac,
+.theme-indigo.dark .link-exdec-numac,
+.theme-sky.dark .link-exdec-numac,
+.theme-teal.dark .link-exdec-numac,
+.theme-cyan.dark .link-exdec-numac,
+.theme-green.dark .link-exdec-numac,
+.theme-purple.dark .link-exdec-numac,
+.theme-red.dark .link-exdec-numac,
+.dark .theme-slate .link-exdec-numac,
+.dark .theme-indigo .link-exdec-numac,
+.dark .theme-sky .link-exdec-numac,
+.dark .theme-teal .link-exdec-numac,
+.dark .theme-cyan .link-exdec-numac,
+.dark .theme-green .link-exdec-numac,
+.dark .theme-purple .link-exdec-numac,
+.dark .theme-red .link-exdec-numac {
+  color: var(--accent-400) !important;
+}
+
+/* Exdec header background - subtle theme tint */
+.exdec-header {
+  background-color: color-mix(in srgb, var(--accent-50) 30%, rgb(249, 250, 251));
+  border-color: var(--accent-200);
+  transition: all 0.15s ease;
+}
+
+.dark .exdec-header {
+  background-color: color-mix(in srgb, var(--accent-500) 8%, rgba(31, 41, 55, 0.2));
+  border-color: color-mix(in srgb, var(--accent-500) 30%, transparent);
+}
+
+/* Professional themes - Neutral exdec header */
+.theme-slate .exdec-header,
+.theme-indigo .exdec-header,
+.theme-sky .exdec-header,
+.theme-teal .exdec-header,
+.theme-cyan .exdec-header,
+.theme-green .exdec-header,
+.theme-purple .exdec-header,
+.theme-red .exdec-header {
+  background-color: rgb(249, 250, 251) !important;
+  border-color: rgb(229, 231, 235) !important;
+}
+
+.theme-slate.dark .exdec-header,
+.theme-indigo.dark .exdec-header,
+.theme-sky.dark .exdec-header,
+.theme-teal.dark .exdec-header,
+.theme-cyan.dark .exdec-header,
+.theme-green.dark .exdec-header,
+.theme-purple.dark .exdec-header,
+.theme-red.dark .exdec-header,
+.dark .theme-slate .exdec-header,
+.dark .theme-indigo .exdec-header,
+.dark .theme-sky .exdec-header,
+.dark .theme-teal .exdec-header,
+.dark .theme-cyan .exdec-header,
+.dark .theme-green .exdec-header,
+.dark .theme-purple .exdec-header,
+.dark .theme-red .exdec-header {
+  background-color: rgba(31, 41, 55, 0.2) !important;
+  border-color: rgb(75, 85, 99) !important;
+}
+
+/* Exdec content background */
+.exdec-content {
+  transition: all 0.15s ease;
+}

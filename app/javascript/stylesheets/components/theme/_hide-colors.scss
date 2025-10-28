@@ -1,0 +1,27 @@
+/* ============================================================================
+ * HIDE COLORS MODE - Remove theme colors from exdecs and buttons
+ * ============================================================================ */
+
+/* When colors are hidden, make exdec badges grayscale */
+.ww-hide-ref-colors .badge-exdec-count {
+  background-color: rgb(243, 244, 246) !important; /* gray-100 */
+  color: rgb(75, 85, 99) !important; /* gray-600 */
+}
+
+.ww-hide-ref-colors.dark .badge-exdec-count {
+  background-color: rgba(75, 85, 99, 0.3) !important; /* gray-600/30 */
+  color: rgb(156, 163, 175) !important; /* gray-400 */
+}
+
+/* When colors are hidden, make exdec toggle buttons grayscale */
+.ww-hide-ref-colors .btn-toggle-exdecs {
+  background-color: rgb(243, 244, 246) !important; /* gray-100 */
+  color: rgb(75, 85, 99) !important; /* gray-600 */
+  border-color: rgb(229, 231, 235) !important; /* gray-200 */
+}
+
+.ww-hide-ref-colors.dark .btn-toggle-exdecs {
+  background-color: rgba(75, 85, 99, 0.2) !important; /* gray-600/20 */
+  color: rgb(156, 163, 175) !important; /* gray-400 */
+  border-color: rgb(75, 85, 99) !important; /* gray-600 */
+}

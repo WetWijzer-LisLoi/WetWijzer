@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <!--[if mso]><style>body{font-family:Arial,sans-serif}</style><![endif]-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      /* Reset and base styles */
+      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+      
+      /* Base body styling */
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.7;
+        color: #1f2937;
+        background-color: #f0f4f8;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+      }
+
+      /* Outer wrapper for centering */
+      .email-wrapper {
+        width: 100%;
+        background-color: #f0f4f8;
+        padding: 40px 0;
+      }
+      
+      /* Container */
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+      
+      /* Header – premium gradient with subtle mesh */
+      .header {
+        background: linear-gradient(135deg, #0a0f1e 0%, #0f2340 25%, #1a3a6b 50%, #1e4c8a 75%, #2563eb 100%);
+        text-align: center;
+        padding: 44px 30px 40px;
+        position: relative;
+      }
+      .header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+          radial-gradient(ellipse at 20% 50%, rgba(37, 99, 235, 0.15) 0%, transparent 60%),
+          radial-gradient(ellipse at 80% 20%, rgba(56, 189, 248, 0.1) 0%, transparent 50%),
+          url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      }
+      .header-content {
+        position: relative;
+        z-index: 1;
+      }
+      /* Logo icon – WetWijzer shield */
+      .logo-icon {
+        display: inline-block;
+        margin-bottom: 14px;
+      }
+      .header h1 {
+        color: #ffffff;
+        margin: 0;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+      }
+      .header .tagline {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 12px;
+        margin-top: 8px;
+        font-weight: 500;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+      }
+      
+      /* Decorative divider between header and content */
+      .header-divider {
+        height: 3px;
+        background: linear-gradient(90deg, #1d4ed8 0%, #38bdf8 30%, #60a5fa 50%, #38bdf8 70%, #1d4ed8 100%);
+      }
+      
+      /* Content area */
+      .content {
+        padding: 40px 36px 32px;
+      }
+      .content h2 {
+        color: #111827;
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0 0 16px;
+        letter-spacing: -0.3px;
+      }
+      .content p {
+        color: #374151;
+        font-size: 15px;
+        margin: 0 0 16px;
+        line-height: 1.7;
+      }
+      .content a {
+        color: #2563eb;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+      
+      /* Primary button */
+      .button-wrapper {
+        text-align: center;
+        margin: 32px 0;
+      }
+      .button {
+        display: inline-block;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: #ffffff !important;
+        text-decoration: none;
+        padding: 15px 40px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 15px;
+        letter-spacing: 0.3px;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35), 0 2px 6px rgba(37, 99, 235, 0.2);
+        transition: all 0.2s;
+      }
+      .button:hover {
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+      }
+      
+      /* Secondary button */
+      .button-secondary {
+        display: inline-block;
+        background-color: #f3f4f6;
+        color: #374151 !important;
+        text-decoration: none;
+        padding: 12px 28px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        border: 1px solid #d1d5db;
+      }
+      
+      /* Info box */
+      .info-box {
+        background: linear-gradient(135deg, #eff6ff 0%, #f0f7ff 100%);
+        border-left: 4px solid #2563eb;
+        padding: 16px 20px;
+        margin: 20px 0;
+        border-radius: 0 12px 12px 0;
+        font-size: 13px;
+        color: #1e40af;
+      }
+      .info-box p {
+        color: #1e40af;
+        margin: 0;
+      }
+      
+      /* Warning box */
+      .warning-box {
+        background: linear-gradient(135deg, #fffbeb 0%, #fefce8 100%);
+        border-left: 4px solid #f59e0b;
+        padding: 16px 20px;
+        margin: 20px 0;
+        border-radius: 0 12px 12px 0;
+        font-size: 14px;
+        color: #92400e;
+      }
+      
+      /* Success box */
+      .success-box {
+        background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+        border-left: 4px solid #22c55e;
+        padding: 16px 20px;
+        margin: 20px 0;
+        border-radius: 0 12px 12px 0;
+        font-size: 14px;
+        color: #166534;
+      }
+      
+      /* Danger box (for security alerts) */
+      .danger-box {
+        background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%);
+        border-left: 4px solid #dc2626;
+        padding: 16px 20px;
+        margin: 20px 0;
+        border-radius: 0 12px 12px 0;
+        font-size: 14px;
+        color: #991b1b;
+      }
+      
+      /* Divider */
+      .divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #e5e7eb 20%, #e5e7eb 80%, transparent);
+        margin: 28px 0;
+      }
+      
+      /* Footer – refined with legal flair */
+      .footer {
+        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+        padding: 28px 36px;
+        border-top: 1px solid #e2e8f0;
+        text-align: center;
+      }
+      .footer-brand {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e3a5f;
+        margin-bottom: 2px;
+      }
+      .footer-tagline {
+        font-size: 11px;
+        color: #94a3b8;
+        margin: 0 0 10px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+      .footer p {
+        font-size: 12px;
+        color: #94a3b8;
+        margin: 4px 0;
+        line-height: 1.5;
+      }
+      .footer-links {
+        margin: 12px 0 8px;
+      }
+      .footer-links a {
+        color: #2563eb;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 500;
+        margin: 0 6px;
+      }
+      .footer-links a:hover {
+        text-decoration: underline;
+      }
+      .footer-links .dot {
+        color: #cbd5e1;
+        font-size: 10px;
+      }
+      .footer-unsubscribe {
+        margin-top: 16px;
+        padding-top: 12px;
+        border-top: 1px solid #e2e8f0;
+      }
+      .footer-unsubscribe p {
+        font-size: 11px;
+        color: #b0b8c4;
+      }
+      
+      /* Dark mode support */
+      @media (prefers-color-scheme: dark) {
+        body, .email-wrapper {
+          background-color: #080d19 !important;
+        }
+        .email-container {
+          background-color: #0f172a !important;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4) !important;
+        }
+        .header {
+          background: linear-gradient(135deg, #050810 0%, #0a1628 25%, #0f2847 50%, #143a6b 75%, #1d4ed8 100%) !important;
+        }
+        .content {
+          color: #e2e8f0 !important;
+        }
+        .content h2 {
+          color: #f1f5f9 !important;
+        }
+        .content p {
+          color: #cbd5e1 !important;
+        }
+        .content a {
+          color: #60a5fa !important;
+        }
+        .header-divider {
+          background: linear-gradient(90deg, #1d4ed8 0%, #38bdf8 50%, #1d4ed8 100%) !important;
+        }
+        .footer {
+          background: linear-gradient(180deg, #0c1322 0%, #080d19 100%) !important;
+          border-top-color: rgba(56, 189, 248, 0.15) !important;
+        }
+        .footer-brand {
+          color: #e2e8f0 !important;
+        }
+        .footer-tagline {
+          color: #64748b !important;
+        }
+        .footer p {
+          color: #64748b !important;
+        }
+        .footer-links a {
+          color: #60a5fa !important;
+        }
+        .footer-links .dot {
+          color: #334155 !important;
+        }
+        .footer-unsubscribe {
+          border-top-color: rgba(56, 189, 248, 0.1) !important;
+        }
+        .footer-unsubscribe p {
+          color: #475569 !important;
+        }
+        .info-box {
+          background: rgba(37, 99, 235, 0.12) !important;
+          border-left-color: #60a5fa !important;
+        }
+        .info-box, .info-box p {
+          color: #93c5fd !important;
+        }
+        .warning-box {
+          background: rgba(245, 158, 11, 0.12) !important;
+          border-left-color: #fbbf24 !important;
+          color: #fcd34d !important;
+        }
+        .success-box {
+          background: rgba(34, 197, 94, 0.12) !important;
+          border-left-color: #4ade80 !important;
+          color: #86efac !important;
+        }
+        .danger-box {
+          background: rgba(220, 38, 38, 0.12) !important;
+          border-left-color: #f87171 !important;
+          color: #fca5a5 !important;
+        }
+        .button {
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+        }
+        .button-secondary {
+          background-color: #1e293b !important;
+          color: #e2e8f0 !important;
+          border-color: #334155 !important;
+        }
+        .divider {
+          background: linear-gradient(90deg, transparent, #1e293b 20%, #1e293b 80%, transparent) !important;
+        }
+        .logo-icon {
+          background: rgba(255, 255, 255, 0.06) !important;
+        }
+      }
+      
+      /* Responsive */
+      @media screen and (max-width: 640px) {
+        .email-wrapper {
+          padding: 16px 8px !important;
+        }
+        .email-container {
+          border-radius: 12px;
+        }
+        .content {
+          padding: 28px 24px 24px;
+        }
+        .header {
+          padding: 30px 20px 28px;
+        }
+        .header h1 {
+          font-size: 24px;
+        }
+        .footer {
+          padding: 24px 20px;
+        }
+      }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0;">
+    <div class="email-wrapper">
+      <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+          <div class="header-content">
+            <!-- WetWijzer shield logo -->
+            <div class="logo-icon">
+              <svg width="48" height="48" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#1E3A8A;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#0F172A;stop-opacity:1" />
+                  </linearGradient>
+                  <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#60A5FA;stop-opacity:1" />
+                  </linearGradient>
+                </defs>
+                <path d="M16 2 L28 7 L28 14 C28 22 22 28 16 30 C10 28 4 22 4 14 L4 7 Z" fill="url(#shieldGrad)" stroke="#1E3A8A" stroke-width="0.5"/>
+                <rect x="6" y="6.5" width="20" height="1.5" rx="0.75" fill="url(#accentGrad)" opacity="0.8"/>
+                <text x="16" y="21" font-family="Georgia, serif" font-size="13" font-weight="700" text-anchor="middle" fill="#FFFFFF" letter-spacing="0.5" opacity="0.95">WW</text>
+                <path d="M16 2 L28 7 L28 10 C28 10 24 8 16 8 C8 8 4 10 4 10 L4 7 Z" fill="rgba(255,255,255,0.08)"/>
+              </svg>
+            </div>
+            <h1><%= site_name %></h1>
+            <% tagline = case I18n.locale
+               when :fr then 'Recherche législative belge'
+               when :de then 'Belgische Rechtsrecherche'
+               when :en then 'Belgian legal research'
+               else 'Belgische wetgevingszoekmachine'
+             end %>
+            <p class="tagline"><%= tagline %></p>
+          </div>
+        </div>
+        
+        <!-- Gradient divider -->
+        <div class="header-divider"></div>
+
+        <!-- Content -->
+        <div class="content">
+          <%= yield %>
+        </div>
+
+        <!-- Divider before footer -->
+        <div style="padding: 0 36px;"><div class="divider" style="margin: 0;"></div></div>
+        
+        <!-- Footer -->
+        <div class="footer">
+          <div class="footer-brand">⚖️ <%= site_name %></div>
+          <p class="footer-tagline"><%= tagline %></p>
+          <p>&copy; <%= Date.current.year %> &mdash; <%= case I18n.locale
+              when :fr then 'Tous droits réservés'
+              when :de then 'Alle Rechte vorbehalten'
+              when :en then 'All rights reserved'
+              else 'Alle rechten voorbehouden'
+            end %></p>
+          <div class="footer-links">
+            <a href="<%= root_url %>"><%= site_name %></a>
+            <span class="dot">·</span>
+            <a href="<%= root_url %>privacy-policy"><%= case I18n.locale when :fr then 'Confidentialité' when :de then 'Datenschutz' when :en then 'Privacy' else 'Privacy' end %></a>
+            <span class="dot">·</span>
+            <a href="<%= root_url %>terms-of-service"><%= case I18n.locale when :fr then 'Conditions' when :de then 'AGB' when :en then 'Terms' else 'Voorwaarden' end %></a>
+          </div>
+          <div class="footer-unsubscribe">
+            <% unsubscribe_note = case I18n.locale
+               when :fr then "Cet email a été envoyé car vous avez un compte chez #{site_name}."
+               when :de then "Diese E-Mail wurde gesendet, weil Sie ein Konto bei #{site_name} haben."
+               when :en then "This email was sent because you have an account with #{site_name}."
+               else "Deze e-mail is verzonden omdat u een account heeft bij #{site_name}."
+             end %>
+            <p><%= unsubscribe_note %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

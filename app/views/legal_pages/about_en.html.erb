@@ -1,0 +1,41 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<div class="legal-page">
+<h1>About Me</h1>
+
+    <div class="flex gap-4 items-start mb-8">
+        <%# Circular photo with gold ring - matching chatbot about section %>
+        <div class="flex-shrink-0">
+            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full p-[2px]" style="background: linear-gradient(135deg, #c9a962, #e8d5a3, #c9a962);">
+                <img src="/images/gauthier-berth.jpg"
+                     alt="Gauthier Berth"
+                     class="w-full h-full rounded-full object-cover border-2 border-white dark:border-gray-800"
+                     loading="lazy">
+            </div>
+        </div>
+        <div>
+            <h2 class="mt-0 mb-1">Mr. Gauthier Berth</h2>
+            <p class="text-(--accent-600) dark:text-(--accent-400) font-semibold text-sm mb-0.5">Founder of WetWijzer, LisLoi, GesetzGuide and LexLibera</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Attorney at the Dutch-speaking Bar of Brussels &mdash; <a href="https://www.advocaat.be/nl/zoek-een-advocaat/advocaat/63fee2a5-637a-4839-a5a6-c833482f1e3a" target="_blank" rel="noopener" class="underline hover:text-gray-600 dark:hover:text-gray-300">profile on advocaat.be</a> · <a href="https://www.linkedin.com/in/gauthier-b-017447138/" target="_blank" rel="noopener" class="underline hover:text-gray-600 dark:hover:text-gray-300">LinkedIn</a></p>
+        </div>
+    </div>
+
+    <h2>Why <%= site_name %> exists</h2>
+    <p>Belgian legislation and case law are public information, but in practice they are difficult to access. Official databases are complex, slow and poorly searchable. Legal knowledge platforms cost hundreds of euros per month.</p>
+    <p><%= site_name %> makes Belgian legislation and case law <strong>freely searchable with AI</strong>, in four languages. The AI chatbot responds in any language. Because the law should not be behind a paywall.</p>
+
+    <h2>How it works</h2>
+    <ul>
+        <li><strong>Open source:</strong> <%= site_name %> is open source software (<a href="https://github.com/WetWijzer-LisLoi/WetWijzer">GitHub</a>)</li>
+        <li><strong>No legal advice:</strong> <%= site_name %> is an information platform, not a law firm</li>
+        <li><strong>Privacy first:</strong> No tracking, no ads, European hosting</li>
+        <li><strong>Four languages:</strong> <a href="https://wetwijzer.be">WetWijzer.be</a> (NL), <a href="https://lisloi.be">LisLoi.be</a> (FR), <a href="https://gesetzguide.be">GesetzGuide.be</a> (DE), <a href="https://lexlibera.be">LexLibera.be</a> (EN) &mdash; the AI chatbot responds in any language</li>
+    </ul>
+
+    <h2>How <%= site_name %> is funded</h2>
+    <p><%= site_name %> is funded by <a href="https://praxislegal.be/en/">Praxis</a>, practice management software for Belgian law firms, and by <strong>WetWijzer Pro</strong> subscriptions and chatbot credits. Every Praxis subscription helps keep the free legal information platforms running.</p>
+    <p>You can also support <%= site_name %> directly via <a href="https://ko-fi.com/wetwijzerlisloi" target="_blank" rel="noopener">Ko-fi</a>.</p>
+
+    <h2>Contact</h2>
+    <p>Contact me via my <a href="https://www.advocaat.be/nl/zoek-een-advocaat/advocaat/63fee2a5-637a-4839-a5a6-c833482f1e3a" target="_blank" rel="noopener">advocaat.be profile</a> or via <a href="https://www.linkedin.com/in/gauthier-b-017447138/" target="_blank" rel="noopener">LinkedIn</a>.</p>
+
+</div>

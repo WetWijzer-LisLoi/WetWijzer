@@ -1,0 +1,1278 @@
+@import "tailwindcss";
+/* @tailwindcss/forms removed - TW3 legacy plugin that conflicts with our custom checkbox/radio reset */
+@import 'flatpickr/dist/flatpickr.min.css';
+@import 'themes/accent';
+@import 'components/theme-components';
+@import 'components/global-border-fixes';
+
+/* ===========================================
+ * Dark mode: use .dark class, NOT @media prefers-color-scheme
+ * This is critical - WetWijzer uses JS to toggle .dark class on <html>
+ * =========================================== */
+@variant dark (&:where(.dark, .dark *));
+
+/* ===========================================
+ * TW4 compat: border utility no longer sets border-color
+ * Restore TW3 behavior where `border` implies a default color
+ * =========================================== */
+@layer base {
+  *, *::before, *::after {
+    border-color: var(--color-gray-200, #e5e7eb);
+  }
+
+  /* TW4 changed buttons to cursor:default - restore pointer for interactive elements */
+  button, [role="button"], a, label[for], select, summary,
+  input[type="submit"], input[type="reset"], input[type="button"], input[type="checkbox"], input[type="radio"] {
+    cursor: pointer;
+  }
+
+  /* ===========================================
+   * Form Element Base Reset
+   * Replaces @tailwindcss/forms plugin (removed as TW3 legacy)
+   * =========================================== */
+  input[type="text"],
+  input[type="password"],
+  input[type="email"],
+  input[type="number"],
+  input[type="url"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="month"],
+  input[type="week"],
+  input[type="time"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="color"],
+  select,
+  textarea {
+    appearance: none;
+    background-color: #fff;
+    border: 1px solid var(--color-gray-300, #d1d5db);
+    border-radius: 0;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: inherit;
+  }
+
+  input[type="text"]:focus,
+  input[type="password"]:focus,
+  input[type="email"]:focus,
+  input[type="number"]:focus,
+  input[type="url"]:focus,
+  input[type="date"]:focus,
+  input[type="datetime-local"]:focus,
+  input[type="month"]:focus,
+  input[type="week"]:focus,
+  input[type="time"]:focus,
+  input[type="search"]:focus,
+  input[type="tel"]:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--accent-500, #3b82f6);
+    box-shadow: 0 0 0 1px var(--accent-500, #3b82f6);
+  }
+
+  .dark input[type="text"],
+  .dark input[type="password"],
+  .dark input[type="email"],
+  .dark input[type="number"],
+  .dark input[type="url"],
+  .dark input[type="date"],
+  .dark input[type="datetime-local"],
+  .dark input[type="month"],
+  .dark input[type="week"],
+  .dark input[type="time"],
+  .dark input[type="search"],
+  .dark input[type="tel"],
+  .dark input[type="color"],
+  .dark select,
+  .dark textarea {
+    background-color: transparent;
+    border-color: var(--color-gray-600, #4b5563);
+  }
+
+  /* ===========================================
+   * Global Checkbox & Radio Reset
+   * 
+   * The @tailwindcss/forms plugin sometimes fails to fully strip
+   * the native browser checkbox chrome in TW4, causing artefacts
+   * like the "ace" text (from internal browser UI) to bleed through.
+   * This rule ensures every checkbox/radio in the app is properly reset.
+   * =========================================== */
+  input[type="checkbox"],
+  input[type="radio"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    padding: 0;
+    margin: 0;
+    vertical-align: middle;
+    border: 1px solid var(--color-gray-300, #d1d5db);
+    background-color: #fff;
+    background-origin: border-box;
+    flex-shrink: 0;
+    color: var(--accent-600, #2563eb);
+    user-select: none;
+    --checkbox-size: 1rem;
+  }
+
+  input[type="checkbox"] {
+    border-radius: 0.25rem;
+  }
+
+  input[type="radio"] {
+    border-radius: 50%;
+  }
+
+  /* Checked state */
+  input[type="checkbox"]:checked,
+  input[type="radio"]:checked {
+    background-color: var(--accent-600, #2563eb);
+    border-color: var(--accent-600, #2563eb);
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  input[type="checkbox"]:checked {
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+  }
+
+  input[type="radio"]:checked {
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
+  }
+
+  /* Focus ring */
+  input[type="checkbox"]:focus,
+  input[type="radio"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent-500, #3b82f6);
+  }
+
+  /* Disabled state */
+  input[type="checkbox"]:disabled,
+  input[type="radio"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Dark mode */
+  .dark input[type="checkbox"],
+  .dark input[type="radio"] {
+    background-color: transparent;
+    border-color: var(--color-gray-600, #4b5563);
+  }
+
+  .dark input[type="checkbox"]:checked,
+  .dark input[type="radio"]:checked {
+    background-color: var(--accent-500, #3b82f6);
+    border-color: var(--accent-500, #3b82f6);
+  }
+
+  .dark input[type="checkbox"]:focus,
+  .dark input[type="radio"]:focus {
+    box-shadow: 0 0 0 2px var(--color-gray-900, #111827), 0 0 0 4px var(--accent-400, #60a5fa);
+  }
+
+  /* Don't style checkboxes that are sr-only (screen reader only / hidden) */
+  input[type="checkbox"].sr-only,
+  input[type="radio"].sr-only {
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    border-width: 0;
+  }
+}
+
+/* ===========================================
+ * Tailwind v4 Theme Configuration
+ * Replaces tailwind.config.js theme.extend
+ * =========================================== */
+@theme {
+  --color-midnight: #0f172a;
+  --color-navy: #1e293b;
+  --color-mist: #cbd5e1;
+  --color-sky: #38bdf8;
+
+  /* Restore TW3-equivalent shadow values (TW4 shifted sizes down by one step) */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+  --shadow-lg: 0 6px 12px -2px rgb(0 0 0 / 0.07), 0 3px 5px -3px rgb(0 0 0 / 0.05);
+  --shadow-xl: 0 16px 20px -4px rgb(0 0 0 / 0.08), 0 6px 8px -5px rgb(0 0 0 / 0.06);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+
+  --shadow-outline-blue: 0 0 0 3px rgba(191, 219, 254, 0.5);
+
+  /* Restore TW3-equivalent rounded values (TW4 shifted sizes down by one step) */
+  --radius-xs: 0.125rem;   /* 2px - was rounded-sm in TW3 */
+  --radius-sm: 0.25rem;    /* 4px - was rounded in TW3 */
+  --radius-md: 0.375rem;   /* 6px - was rounded-md in TW3 */
+  --radius-lg: 0.5rem;     /* 8px */
+  --radius-xl: 0.75rem;    /* 12px */
+  --radius-2xl: 1rem;      /* 16px */
+  --radius-3xl: 1.5rem;    /* 24px */
+
+  /* Restore TW3-equivalent blur values */
+  --blur-xs: 2px;
+  --blur-sm: 4px;
+  --blur-md: 8px;
+  --blur-lg: 12px;
+  --blur-xl: 16px;
+  --blur-2xl: 24px;
+  --blur-3xl: 40px;
+}
+
+/* ===========================================
+ * Custom theme variants (replaces plugin)
+ * =========================================== */
+@custom-variant theme-slate (&:is(.theme-slate *));
+@custom-variant theme-indigo (&:is(.theme-indigo *));
+@custom-variant theme-sky (&:is(.theme-sky *));
+@custom-variant theme-teal (&:is(.theme-teal *));
+@custom-variant theme-cyan (&:is(.theme-cyan *));
+@custom-variant theme-green (&:is(.theme-green *));
+@custom-variant theme-purple (&:is(.theme-purple *));
+@custom-variant theme-red (&:is(.theme-red *));
+@custom-variant theme-original (&:is(.theme-original *));
+@custom-variant theme-blue (&:is(.theme-blue *));
+@custom-variant theme-rose (&:is(.theme-rose *));
+@custom-variant theme-amber (&:is(.theme-amber *));
+@custom-variant theme-emerald (&:is(.theme-emerald *));
+@custom-variant theme-violet (&:is(.theme-violet *));
+@custom-variant theme-fuchsia (&:is(.theme-fuchsia *));
+@custom-variant theme-pink (&:is(.theme-pink *));
+
+/* ===========================================
+ * Content sources (replaces tailwind.config content)
+ * =========================================== */
+@source "../../views/**/*.erb";
+@source "../../helpers/**/*.rb";
+@source "../../components/**/*.{rb,erb}";
+
+@source "../**/*.js";
+
+/* ===========================================
+ * TW4 Missing Utility Fix: table-cell
+ * TW4 content detection fails to pick up `table-cell` from .erb templates.
+ * Force generation of the responsive variants needed by _law.html.erb columns.
+ * =========================================== */
+@utility table-cell {
+  display: table-cell;
+}
+
+/* ===========================================
+ * WCAG 2.1 AA Focus Styles
+ * =========================================== */
+@layer base {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible,
+  [role="button"]:focus-visible,
+  [role="link"]:focus-visible,
+  [role="menuitem"]:focus-visible {
+    outline: 2px solid var(--accent-500, #2563eb);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  
+  .dark a:focus-visible,
+  .dark button:focus-visible,
+  .dark input:focus-visible,
+  .dark select:focus-visible,
+  .dark textarea:focus-visible,
+  .dark [tabindex]:focus-visible,
+  .dark [role="button"]:focus-visible,
+  .dark [role="link"]:focus-visible,
+  .dark [role="menuitem"]:focus-visible {
+    outline-color: var(--accent-400, #60a5fa);
+  }
+}
+
+/* ===========================================
+ * Abolished Article Styling
+ * =========================================== */
+.abolished-article {
+  @apply text-red-600 dark:text-red-400;
+  
+  strong {
+    @apply text-gray-900 dark:text-white font-bold;
+  }
+  
+  .article-number {
+    color: var(--color-gray-900) !important;
+  }
+  
+  a {
+    @apply text-red-600 hover:underline dark:text-red-400;
+  }
+}
+
+.dark .abolished-article .article-number {
+  color: var(--color-gray-100) !important;
+}
+
+@layer base {
+  body {
+    background-color: var(--page-bg);
+    @apply text-gray-800 transition-colors duration-300;
+  }
+  .dark body {
+    @apply text-gray-300;
+  }
+  .dark a:not(.reference a):not(.reference *) {
+    @apply text-sky hover:opacity-80;
+  }
+  .dark .reference a {
+    color: inherit !important;
+    text-decoration: none;
+  }
+  .dark .reference a:hover {
+    text-decoration: underline;
+  }
+  .dark .prose {
+    @apply text-gray-300;
+  }
+  
+  .theme-link {
+    color: var(--link-color);
+  }
+  .theme-link:hover {
+    color: var(--link-hover-color);
+  }
+  
+  .theme-badge {
+    background-color: var(--badge-bg);
+    color: var(--badge-text);
+    border-color: var(--badge-border);
+  }
+  
+  td span.inline-flex.items-center.justify-center {
+    font-weight: 400;
+  }
+  
+  td span.inline-flex.items-center.px-2 {
+    font-weight: 400;
+  }
+  
+  .theme-hover {
+    background-color: var(--accent-active-bg);
+  }
+
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    @apply text-white;
+  }
+  
+  .reference-link {
+    color: var(--accent-600);
+    @apply dark:text-sky no-underline font-normal hover:underline;
+    font-size: 0.8em;
+    line-height: 0;
+    position: relative;
+    top: -0.4em;
+    margin: 0 1px;
+  }
+  
+  .references {
+    @apply mt-6 pt-0;
+    
+    .references-container {
+      @apply space-y-2;
+      
+      h4 {
+        @apply font-medium text-gray-700 dark:text-gray-300 mb-2 text-sm uppercase tracking-wider;
+      }
+      
+      .reference-item {
+        @apply text-sm text-gray-600 dark:text-gray-400 flex items-start;
+        
+        sup {
+          @apply mr-1 text-xs text-gray-500 dark:text-gray-500;
+          line-height: 1;
+          position: relative;
+          top: -0.1em;
+        }
+      }
+    }
+  }
+  
+  .article-content {
+    @apply leading-normal text-justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    
+    p {
+      @apply mb-4;
+    }
+    
+    b, strong {
+      @apply font-semibold;
+    }
+    
+    b {
+      @apply text-gray-900 dark:text-white;
+    }
+    
+    p + p {
+      @apply mt-6;
+    }
+  }
+}
+
+.page {
+  @apply relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white transition ease-in-out duration-150 dark:bg-gray-800 dark:border-gray-800 dark:text-gray-300;
+
+  &:hover {
+    @apply text-gray-500 dark:bg-sky/20;
+  }
+
+  &:focus {
+    @apply outline-hidden ring-2 ring-offset-2;
+    --tw-ring-color: var(--accent-300);
+  }
+
+  &:active {
+    @apply bg-gray-100 text-gray-700;
+  }
+}
+
+.page--link {
+  @apply -ml-px relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm leading-5 font-medium text-gray-700 transition ease-in-out duration-150 dark:bg-gray-800 dark:border-gray-800 dark:text-gray-300;
+
+  &:focus {
+    @apply z-10 outline-hidden ring-2 ring-offset-2;
+    --tw-ring-color: var(--accent-300);
+  }
+
+  &:active {
+    @apply bg-gray-100 text-gray-700;
+  }
+
+  &:hover,
+  &.active {
+    background-color: var(--accent-100);
+    color: var(--accent-800);
+    @apply dark:bg-sky dark:text-midnight;
+  }
+}
+
+.dark .page a svg {
+  stroke: #bdc3c7;
+}
+
+/* Table styles */
+table {
+  @apply w-full border-collapse;
+  
+  th, td {
+    @apply p-3 text-left text-sm;
+  }
+  
+  th {
+    background-color: var(--table-th-bg);
+    @apply text-gray-700 font-semibold;
+  }
+  
+  tbody tr {
+    @apply bg-white dark:bg-transparent;
+  }
+  
+  tbody tr:hover {
+    background-color: var(--table-row-hover-bg);
+  }
+}
+
+.article-content {
+  table {
+    @apply my-8;
+    
+    th, td {
+      @apply border border-gray-300 dark:border-gray-600;
+    }
+    
+    & + * {
+      @apply mt-8;
+    }
+    
+    table {
+      @apply border-0 m-0;
+      
+      th, td {
+        @apply border border-gray-200 dark:border-gray-500;
+      }
+      
+      tr:nth-child(even) {
+        @apply bg-white dark:bg-gray-900/80;
+      }
+    }
+  }
+}
+
+.dark table {
+  th {
+    @apply text-gray-300;
+  }
+  
+  td {
+    @apply text-gray-300;
+  }
+  
+  tr:hover {
+    background-color: var(--table-row-hover-bg);
+  }
+}
+
+html, body {
+  background-color: var(--page-bg);
+}
+
+/* =============================================
+ * Loading UX: Skeleton Shimmer and Top Progress Bar
+ * ============================================= */
+@keyframes ww-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+
+.animate-fade-out {
+  animation: fade-out 0.3s ease-out forwards;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: rgba(203, 213, 225, 0.5);
+}
+
+.dark .skeleton {
+  background-color: rgba(30, 41, 59, 0.55);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 60%;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  animation: ww-shimmer 1.2s infinite;
+}
+
+@keyframes ww-progress {
+  0%   { left: -30%; width: 30%; }
+  50%  { left: 35%;  width: 30%; }
+  100% { left: 100%; width: 40%; }
+}
+
+.progress-top {
+  position: relative;
+  height: 2px;
+  overflow: hidden;
+}
+
+.progress-top::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40%;
+  background: currentColor;
+  opacity: 0.9;
+  border-radius: 9999px;
+  animation: ww-progress 1.1s ease-in-out infinite;
+}
+
+/* =============================================
+ * Section Headings
+ * ============================================= */
+@layer components {
+  .section-heading {
+    @apply bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md -ml-2 px-2 pt-1 pb-2;
+  }
+
+  .section-heading > h2 {
+    @apply bg-transparent border-0;
+    padding: 0 !important;
+  }
+
+  .section-heading .references {
+    @apply mt-2 p-0;
+  }
+}
+
+/* =============================================
+ * Filters layout
+ * ============================================= */
+@layer components {
+  .filters-outer {
+    @apply w-full flex justify-center;
+  }
+
+  .filters-grid {
+    @apply inline-grid grid-cols-1 md:grid-cols-3 justify-items-start text-left;
+    @apply gap-y-8 gap-x-10 md:gap-y-12 md:gap-x-20;
+    @apply mx-auto md:w-full md:max-w-5xl;
+  }
+
+  .filters-group {
+    @apply space-y-4 md:space-y-3;
+  }
+}
+
+/* =============================================
+ * Flatpickr Dark Mode Styling
+ * ============================================= */
+.dark .flatpickr-calendar {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+.dark .flatpickr-months {
+  background: #1e293b;
+}
+
+.dark .flatpickr-current-month .flatpickr-monthDropdown-months,
+.dark .flatpickr-current-month .numInputWrapper input {
+  background: #334155;
+  color: #bdc3c7;
+}
+
+.dark .flatpickr-current-month .flatpickr-monthDropdown-months:hover,
+.dark .flatpickr-current-month .numInputWrapper input:hover {
+  background: #475569;
+}
+
+.dark .flatpickr-weekdays {
+  background: #1e293b;
+}
+
+.dark span.flatpickr-weekday {
+  color: #94a3b8;
+}
+
+.dark .flatpickr-day {
+  color: #bdc3c7;
+}
+
+.dark .flatpickr-day:hover,
+.dark .flatpickr-day:focus {
+  background: #334155;
+  border-color: #334155;
+}
+
+.dark .flatpickr-day.today {
+  border-color: var(--accent-500);
+}
+
+.dark .flatpickr-day.selected,
+.dark .flatpickr-day.startRange,
+.dark .flatpickr-day.endRange {
+  background: var(--accent-600);
+  border-color: var(--accent-600);
+  color: #fff;
+}
+
+.dark .flatpickr-day.selected:hover,
+.dark .flatpickr-day.startRange:hover,
+.dark .flatpickr-day.endRange:hover {
+  background: var(--accent-700);
+  border-color: var(--accent-700);
+}
+
+.dark .flatpickr-months .flatpickr-prev-month:hover svg,
+.dark .flatpickr-months .flatpickr-next-month:hover svg {
+  fill: var(--accent-500);
+}
+
+.dark .flatpickr-months .flatpickr-prev-month svg,
+.dark .flatpickr-months .flatpickr-next-month svg {
+  fill: #94a3b8;
+}
+
+/* ===========================================
+ * Print Styles
+ * =========================================== */
+@media print {
+  .animate-spin,
+  .animate-spin *,
+  [data-articles-loading-target],
+  [data-articles-loading-target] * {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  svg {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  
+  header,
+  footer,
+  button,
+  .btn,
+  .btn-toggle-active,
+  .btn-toggle-inactive,
+  nav,
+  .sticky,
+  .fixed,
+  [data-action],
+  [onclick],
+  [data-controller="theme-selector"],
+  [data-controller="dark-mode"],
+  #scroll-to-top,
+  #global-scroll-to-top,
+  .no-print {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  * {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+  
+  .flex.gap-2 {
+    display: flex !important;
+    gap: 8px !important;
+  }
+  
+  .flex-1 {
+    flex: 1 !important;
+    border: 1px solid #ccc !important;
+    padding: 6px !important;
+    font-size: 9pt !important;
+  }
+  
+  .bg-gradient-to-r {
+    background: none !important;
+    padding: 0 !important;
+    border: none !important;
+    margin-bottom: 10px !important;
+  }
+  
+  @page {
+    margin: 1cm;
+    size: landscape;
+  }
+  
+  body {
+    font-size: 10pt !important;
+    line-height: 1.4 !important;
+  }
+}
+
+/* Article numbers: plain text, no badge */
+.article-number {
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  color: inherit !important;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: inherit !important;
+  text-decoration: none;
+}
+
+.article-number:hover {
+  text-decoration: underline;
+}
+
+/* =============================================
+ * Intelligence Level Range Slider
+ * ============================================= */
+.intelligence-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--accent-500, #2563eb) 0%,
+    var(--accent-300, #93c5fd) 100%
+  );
+  outline: none;
+  transition: background 0.2s ease;
+}
+
+.intelligence-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent-600, #2563eb);
+  border: 3px solid white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.intelligence-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 2px var(--accent-200, #bfdbfe);
+}
+
+.intelligence-range::-webkit-slider-thumb:active {
+  transform: scale(1.05);
+}
+
+.intelligence-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent-600, #2563eb);
+  border: 3px solid white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.intelligence-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--accent-500, #2563eb),
+    var(--accent-300, #93c5fd)
+  );
+}
+
+.dark .intelligence-range {
+  background: linear-gradient(
+    to right,
+    var(--accent-600, #2563eb) 0%,
+    var(--accent-800, #1e40af) 100%
+  );
+}
+
+.dark .intelligence-range::-webkit-slider-thumb {
+  background: var(--accent-500, #3b82f6);
+  border-color: var(--color-midnight, #0f172a);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--accent-700, #1d4ed8);
+}
+
+.dark .intelligence-range::-moz-range-thumb {
+  background: var(--accent-500, #3b82f6);
+  border-color: var(--color-midnight, #0f172a);
+}
+
+.dark .intelligence-range::-moz-range-track {
+  background: linear-gradient(
+    to right,
+    var(--accent-600, #2563eb),
+    var(--accent-800, #1e40af)
+  );
+}
+
+/* =============================================
+ * Page Entrance Animation - "Jump Up"
+ * Elements slide up and fade in on page load.
+ * Stagger children via CSS custom property --entrance-delay.
+ * Respects prefers-reduced-motion.
+ * ============================================= */
+@keyframes entrance-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-entrance {
+  opacity: 0;
+  animation: entrance-slide-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--entrance-delay, 0s);
+}
+
+/* Stagger children automatically */
+.animate-entrance-stagger > * {
+  opacity: 0;
+  animation: entrance-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-entrance-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.animate-entrance-stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.animate-entrance-stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.animate-entrance-stagger > *:nth-child(4) { animation-delay: 0.2s; }
+.animate-entrance-stagger > *:nth-child(5) { animation-delay: 0.25s; }
+.animate-entrance-stagger > *:nth-child(6) { animation-delay: 0.3s; }
+.animate-entrance-stagger > *:nth-child(7) { animation-delay: 0.35s; }
+.animate-entrance-stagger > *:nth-child(8) { animation-delay: 0.4s; }
+.animate-entrance-stagger > *:nth-child(n+9) { animation-delay: 0.45s; }
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .animate-entrance,
+  .animate-entrance-stagger > * {
+    opacity: 1;
+    animation: none;
+    transform: none;
+  }
+}
+
+/* =============================================
+ * Global Search - Tabbed Autocomplete Dropdown
+ * ============================================= */
+
+/* Container */
+.gs-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 4px 10px -3px rgba(0,0,0,0.05);
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+.dark .gs-dropdown {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3), 0 4px 10px -3px rgba(0,0,0,0.2);
+}
+
+/* Backdrop overlay */
+.gs-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+/* ── Tabs ── */
+.gs-tabs {
+  display: flex;
+  gap: 0;
+  padding: 6px 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.gs-tabs::-webkit-scrollbar { display: none; }
+
+.dark .gs-tabs {
+  border-bottom-color: #334155;
+}
+
+.gs-tab {
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #6b7280;
+  border: none;
+  background: none;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+  margin-bottom: -1px;
+}
+
+.gs-tab:hover {
+  color: var(--accent-600, #2563eb);
+}
+
+.dark .gs-tab {
+  color: #9ca3af;
+}
+.dark .gs-tab:hover {
+  color: var(--accent-400, #60a5fa);
+}
+
+.gs-tab-active {
+  color: var(--accent-600, #2563eb);
+  border-bottom-color: var(--accent-600, #2563eb);
+  font-weight: 600;
+}
+
+.dark .gs-tab-active {
+  color: var(--accent-400, #60a5fa);
+  border-bottom-color: var(--accent-400, #60a5fa);
+}
+
+.gs-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 9999px;
+  background: var(--accent-100, #dbeafe);
+  color: var(--accent-700, #1d4ed8);
+}
+
+.dark .gs-tab-count {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--accent-300, #93c5fd);
+}
+
+/* ── Section labels ── */
+.gs-section-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+}
+
+.dark .gs-section-label {
+  color: #6b7280;
+}
+
+/* ── Result items ── */
+.gs-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 0.375rem;
+  transition: background-color 0.1s ease;
+  text-decoration: none !important;
+  color: inherit !important;
+}
+
+.gs-item:hover,
+.gs-item-active {
+  background: #f3f4f6;
+}
+
+.dark .gs-item:hover,
+.dark .gs-item-active {
+  background: #334155;
+}
+
+.gs-item-title {
+  font-size: 0.875rem;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .gs-item-title {
+  color: #f3f4f6;
+}
+
+.gs-item-sub {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .gs-item-sub {
+  color: #6b7280;
+}
+
+/* Mobile: full-width dropdown */
+@media (max-width: 639px) {
+  .gs-dropdown {
+    border-radius: 0.5rem;
+    max-height: 60vh;
+  }
+}
+
+/* =============================================
+ * Chatbot Message Animations
+ * ============================================= */
+@keyframes chatbot-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-fade-in {
+  animation: chatbot-fade-in 0.35s ease-out;
+}
+
+/* =============================================
+ * Chatbot Empty State - fills the void with
+ * centered content and a decorative bg
+ * ============================================= */
+.chatbot-messages {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* When no real conversation messages exist, center the welcome block */
+.chatbot-messages--empty {
+  justify-content: center;
+  align-items: center;
+  /* Subtle radial glow behind center content */
+  background:
+    radial-gradient(ellipse at 50% 40%, var(--accent-50, #eff6ff) 0%, transparent 70%),
+    var(--color-gray-50, #f9fafb);
+}
+
+.dark .chatbot-messages--empty {
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(59, 130, 246, 0.04) 0%, transparent 70%),
+    #080d19;
+}
+
+/* Watermark: faint scales-of-justice behind welcome content */
+.chatbot-messages--empty::before {
+  content: "";
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  height: 220px;
+  opacity: 0.04;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 2L1 7l2.4 1.2L12 12.6l8.6-4.4L23 7 12 2zM3.4 8.2l-.4.2v6.4l.2.1L12 19.2l8.8-4.3.2-.1V8.4l-.4-.2L12 12.6 3.4 8.2z'/%3E%3Cpath d='M5.5 10.5l-2 1v3.4L12 19l8.5-4.1v-3.4l-2-1v2.4L12 16.4l-6.5-3.5v-2.4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.dark .chatbot-messages--empty::before {
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 2L1 7l2.4 1.2L12 12.6l8.6-4.4L23 7 12 2zM3.4 8.2l-.4.2v6.4l.2.1L12 19.2l8.8-4.3.2-.1V8.4l-.4-.2L12 12.6 3.4 8.2z'/%3E%3Cpath d='M5.5 10.5l-2 1v3.4L12 19l8.5-4.1v-3.4l-2-1v2.4L12 16.4l-6.5-3.5v-2.4z'/%3E%3C/svg%3E");
+}
+
+/* Welcome wrapper - centers with breathing room */
+.chatbot-welcome-wrap {
+  width: 100%;
+  max-width: 95%;
+  z-index: 1;  /* sit above the watermark */
+}
+
+/* =============================================
+ * Sample Questions Panel (Chatbot)
+ * ============================================= */
+.sample-questions-panel {
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-200) transparent;
+}
+
+/* In empty state, let the panel breathe more */
+.chatbot-messages--empty .sample-questions-panel {
+  max-height: 50vh;
+}
+
+.sample-questions-panel::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sample-questions-panel::-webkit-scrollbar-thumb {
+  background: var(--accent-200);
+  border-radius: 2px;
+}
+
+.dark .sample-questions-panel::-webkit-scrollbar-thumb {
+  background: var(--accent-800);
+}
+
+.sample-cat-btn:hover {
+  background-color: var(--accent-50) !important;
+  color: var(--accent-600) !important;
+  border-color: var(--accent-200) !important;
+}
+
+.dark .sample-cat-btn:hover {
+  background-color: rgba(var(--accent-500-rgb, 59, 130, 246), 0.1) !important;
+}
+
+.sample-question-btn:hover {
+  background-color: var(--accent-50);
+}
+
+.dark .sample-question-btn:hover {
+  background-color: rgba(var(--accent-500-rgb, 59, 130, 246), 0.08);
+}
+
+.sample-category-body {
+  transition: max-height 0.2s ease;
+}
+
+.sample-category-group + .sample-category-group {
+  border-top: 1px solid var(--border-light, #e5e7eb);
+  padding-top: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.dark .sample-category-group + .sample-category-group {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+

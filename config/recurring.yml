@@ -1,0 +1,9 @@
+# config/recurring.yml
+# Recurring background jobs for WetWijzer
+# These run on the :async queue adapter (in-process) in production.
+
+# Check PEPPOL delivery status for invoices sent via Octopus
+peppol_status_check:
+  class: PeppolStatusJob
+  schedule: every 4 hours
+  queue: default

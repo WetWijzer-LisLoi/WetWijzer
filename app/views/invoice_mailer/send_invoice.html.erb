@@ -1,0 +1,139 @@
+<%# Greeting %>
+<% name = @user.name.presence || @user.email %>
+<% case @locale
+   when :fr then %>
+  <p>Cher/Chère <%= name %>,</p>
+  <p>Veuillez trouver ci-joint votre facture de <%= @site_name %>.</p>
+<% when :de then %>
+  <p>Sehr geehrte/r <%= name %>,</p>
+  <p>Anbei erhalten Sie Ihre Rechnung von <%= @site_name %>.</p>
+<% when :en then %>
+  <p>Dear <%= name %>,</p>
+  <p>Please find attached your invoice from <%= @site_name %>.</p>
+<% else %>
+  <p>Beste <%= name %>,</p>
+  <p>Hierbij ontvangt u uw factuur van <%= @site_name %>.</p>
+<% end %>
+
+<%# Invoice details table %>
+<div class="info-box" style="border-left-color: #2563eb;">
+  <table style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td style="padding: 4px 12px 4px 0; font-size: 14px; color: #64748b; font-weight: 500;">
+        <% case @locale
+           when :fr then %>Numéro de facture:<%
+           when :de then %>Rechnungsnummer:<%
+           when :en then %>Invoice number:<%
+           else %>Factuurnummer:<%
+           end %>
+      </td>
+      <td style="padding: 4px 0; font-size: 14px;"><strong><%= @invoice_number %></strong></td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 12px 4px 0; font-size: 14px; color: #64748b; font-weight: 500;">
+        <% case @locale
+           when :fr then %>Montant:<%
+           when :de then %>Betrag:<%
+           when :en then %>Amount:<%
+           else %>Bedrag:<%
+           end %>
+      </td>
+      <td style="padding: 4px 0; font-size: 14px;"><span style="font-size: 28px; font-weight: bold; color: #2563eb;">€ <%= number_with_precision(@total, precision: 2, delimiter: '.', separator: ',') %></span></td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 12px 4px 0; font-size: 14px; color: #64748b; font-weight: 500;">
+        <% case @locale
+           when :fr then %>Communication structurée:<%
+           when :de then %>Strukturierte Mitteilung:<%
+           when :en then %>Structured communication:<%
+           else %>OGM:<%
+           end %>
+      </td>
+      <td style="padding: 4px 0; font-size: 14px;"><%= @invoice.ogm %></td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 12px 4px 0; font-size: 14px; color: #64748b; font-weight: 500;">
+        <% case @locale
+           when :fr then %>Date:<%
+           when :de then %>Datum:<%
+           when :en then %>Date:<%
+           else %>Datum:<%
+           end %>
+      </td>
+      <td style="padding: 4px 0; font-size: 14px;"><%= l(@invoice.created_at.to_date, format: :long) rescue @invoice.created_at.strftime('%d/%m/%Y') %></td>
+    </tr>
+  </table>
+</div>
+
+<%# PDF attached notice %>
+<% case @locale
+   when :fr then %>
+  <p>La facture est jointe en PDF.</p>
+<% when :de then %>
+  <p>Die Rechnung ist als PDF beigefügt.</p>
+<% when :en then %>
+  <p>The invoice is attached as a PDF.</p>
+<% else %>
+  <p>De factuur is bijgevoegd als PDF.</p>
+<% end %>
+
+<%# UBL XML attachment notice for B2B %>
+<% if @is_b2b && @invoice.xml_exists? %>
+  <% case @locale
+     when :fr then %>
+    <p><em>La facture électronique (UBL/XML) pour PEPPOL est également jointe.</em></p>
+  <% when :de then %>
+    <p><em>Die elektronische Rechnung (UBL/XML) für PEPPOL ist ebenfalls beigefügt.</em></p>
+  <% when :en then %>
+    <p><em>The electronic invoice (UBL/XML) for PEPPOL is also attached.</em></p>
+  <% else %>
+    <p><em>De elektronische factuur (UBL/XML) voor PEPPOL is eveneens bijgevoegd.</em></p>
+  <% end %>
+<% end %>
+
+<%# PEPPOL delivery confirmation badge %>
+<% if @peppol_sent %>
+  <div>
+    <span style="display: inline-block; background: #dcfce7; color: #15803d; border: 1px solid #86efac; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; margin-top: 8px;">
+      <% case @locale
+         when :fr then %>✅ Également envoyé via PEPPOL<%
+         when :de then %>✅ Auch über PEPPOL gesendet<%
+         when :en then %>✅ Also sent via PEPPOL<%
+         else %>✅ Ook verzonden via PEPPOL<%
+         end %>
+    </span>
+  </div>
+<% end %>
+
+<%# Closing %>
+<% case @locale
+   when :fr then %>
+  <p>Cordialement,<br>
+  <strong>L'équipe <%= @site_name %></strong></p>
+<% when :de then %>
+  <p>Mit freundlichen Grüßen,<br>
+  <strong>Team <%= @site_name %></strong></p>
+<% when :en then %>
+  <p>Kind regards,<br>
+  <strong>The <%= @site_name %> Team</strong></p>
+<% else %>
+  <p>Met vriendelijke groeten,<br>
+  <strong>Team <%= @site_name %></strong></p>
+<% end %>
+
+<p style="font-size: 12px; color: #9ca3af; margin-top: 20px;">
+  <% case @locale
+     when :fr then %>
+    Ceci est un message généré automatiquement. Ne répondez pas à cet e-mail.<br>
+    Questions sur votre facture? Contactez-nous via <a href="mailto:<%= @billing_email %>" style="color: #2563eb;"><%= @billing_email %></a>
+  <% when :de then %>
+    Dies ist eine automatisch generierte Nachricht. Antworten Sie nicht auf diese E-Mail.<br>
+    Fragen zu Ihrer Rechnung? Kontaktieren Sie uns über <a href="mailto:<%= @billing_email %>" style="color: #2563eb;"><%= @billing_email %></a>
+  <% when :en then %>
+    This is an automatically generated message. Please do not reply to this email.<br>
+    Questions about your invoice? Contact us at <a href="mailto:<%= @billing_email %>" style="color: #2563eb;"><%= @billing_email %></a>
+  <% else %>
+    Dit is een automatisch gegenereerd bericht. Antwoord niet op deze e-mail.<br>
+    Vragen over uw factuur? Contacteer ons via <a href="mailto:<%= @billing_email %>" style="color: #2563eb;"><%= @billing_email %></a>
+  <% end %>
+</p>

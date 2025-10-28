@@ -1,0 +1,8 @@
+<%= t('mailer.subscription_welcome.title', default: 'Welcome to Pro!') %>
+
+<%= t('mailer.subscription_welcome.greeting', name: @user.name || @user.email, default: "Hello #{@user.name || @user.email}") %>
+
+<%= t('mailer.subscription_welcome.body', default: 'Your Pro subscription is now active. You have access to all intelligence tiers, case law, and parliamentary documents.') %>
+
+<%= t('mailer.subscription_welcome.chatbot_link', default: 'Start using the chatbot:') %>
+<%= @chatbot_url %>

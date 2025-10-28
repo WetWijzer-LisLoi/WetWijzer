@@ -1,0 +1,228 @@
+# Concordantietabel Strafwetboek (1867) → Nieuw Strafwetboek (2024)
+# Wet 29/02/2024 (Boek I & II) - B.S. 08/04/2024
+# Inwerkingtreding 01/09/2026
+# Bron: Belgisch Staatsblad, officiële wettekst
+# Format: [oud_art, nieuw_art]
+# Volgorde: oplopend artikelnummer oud Sw.
+old_numac: "1867060850"
+new_numac: "2024002088"
+
+label_nl: "Strafwetboek (1867) → Nieuw Strafwetboek"
+label_fr: "Code pénal (1867) → Nouveau Code pénal"
+source_nl: "Wet 29/02/2024 (B.S. 08/04/2024) · In werking 01/09/2026"
+source_fr: "Loi 29/02/2024 (M.B. 08/04/2024) · En vigueur 01/09/2026"
+transition_nl: "Lex mitior: voor feiten vóór 01/09/2026 past de rechter de mildste wet toe (oud of nieuw). Per dossier te beoordelen."
+transition_fr: "Lex mitior: pour les faits antérieurs au 01/09/2026, le juge applique la loi la plus douce (ancien ou nouveau code). À vérifier au cas par cas."
+
+# Strafniveaus: Art. 36 nieuw Sw. (hoofdstraffen natuurlijke personen)
+# De klassieke driedeling misdaad/wanbedrijf/overtreding wordt vervangen
+# door 8 niveaus. N1-6 = correctioneel, N7-8 = crimineel.
+strafniveaus:
+  legal_basis: "Art. 36 nieuw Sw. (Wet 29/02/2024 tot invoering Boek I nieuw Strafwetboek, B.S. 08/04/2024)"
+  legal_basis_url: "/laws/2024002052"
+  levels:
+    - level: 1
+      label_nl: "Niveau 1 - Geen gevangenisstraf"
+      label_fr: "Niveau 1 - Pas d'emprisonnement"
+      gevangenisstraf_nl: "Uitgesloten als hoofdstraf"
+      gevangenisstraf_fr: "Exclue comme peine principale"
+      beschrijving_nl: "Geldboete, werkstraf, probatiestraf of elektronisch toezicht. Gevangenisstraf kan niet worden opgelegd."
+      beschrijving_fr: "Amende, peine de travail, probation ou surveillance électronique. L'emprisonnement ne peut être prononcé."
+    - level: 2
+      label_nl: "Niveau 2 - 6 maanden tot 3 jaar"
+      label_fr: "Niveau 2 - 6 mois à 3 ans"
+      gevangenisstraf_nl: "6 maanden – 3 jaar"
+      gevangenisstraf_fr: "6 mois – 3 ans"
+      beschrijving_nl: "Gevangenisstraf is ultimum remedium: de rechter moet motiveren waarom een alternatieve straf (werkstraf, probatie, elektronisch toezicht) niet volstaat."
+      beschrijving_fr: "L'emprisonnement est l'ultimum remedium: le juge doit motiver pourquoi une peine alternative (travail, probation, surveillance électronique) ne suffit pas."
+    - level: 3
+      label_nl: "Niveau 3 - 3 tot 5 jaar"
+      label_fr: "Niveau 3 - 3 à 5 ans"
+      gevangenisstraf_nl: "3 – 5 jaar"
+      gevangenisstraf_fr: "3 – 5 ans"
+      beschrijving_nl: "Correctionele gevangenisstraf. Alternatieve straffen blijven mogelijk."
+      beschrijving_fr: "Emprisonnement correctionnel. Les peines alternatives restent possibles."
+    - level: 4
+      label_nl: "Niveau 4 - 5 tot 10 jaar"
+      label_fr: "Niveau 4 - 5 à 10 ans"
+      gevangenisstraf_nl: "5 – 10 jaar"
+      gevangenisstraf_fr: "5 – 10 ans"
+      beschrijving_nl: "Correctionele gevangenisstraf. Behandeling onder vrijheidsberoving mogelijk als alternatief."
+      beschrijving_fr: "Emprisonnement correctionnel. Traitement sous privation de liberté possible comme alternative."
+    - level: 5
+      label_nl: "Niveau 5 - 10 tot 15 jaar"
+      label_fr: "Niveau 5 - 10 à 15 ans"
+      gevangenisstraf_nl: "10 – 15 jaar"
+      gevangenisstraf_fr: "10 – 15 ans"
+      beschrijving_nl: "Correctionele gevangenisstraf. Hoogste correctioneel niveau."
+      beschrijving_fr: "Emprisonnement correctionnel. Niveau correctionnel le plus élevé."
+    - level: 6
+      label_nl: "Niveau 6 - 15 tot 20 jaar"
+      label_fr: "Niveau 6 - 15 à 20 ans"
+      gevangenisstraf_nl: "15 – 20 jaar"
+      gevangenisstraf_fr: "15 – 20 ans"
+      beschrijving_nl: "Correctionele gevangenisstraf. Grensgebied met criminele straffen."
+      beschrijving_fr: "Emprisonnement correctionnel. Zone frontière avec les peines criminelles."
+    - level: 7
+      label_nl: "Niveau 7 - 20 tot 30 jaar"
+      label_fr: "Niveau 7 - 20 à 30 ans"
+      gevangenisstraf_nl: "20 – 30 jaar"
+      gevangenisstraf_fr: "20 – 30 ans"
+      beschrijving_nl: "Criminele straf (opsluiting). Assisenzaken of gecorrectionaliseerd."
+      beschrijving_fr: "Peine criminelle (réclusion). Assises ou correctionnalisé."
+    - level: 8
+      label_nl: "Niveau 8 - Levenslang"
+      label_fr: "Niveau 8 - Perpétuité"
+      gevangenisstraf_nl: "Levenslange opsluiting"
+      gevangenisstraf_fr: "Réclusion à perpétuité"
+      beschrijving_nl: "Zwaarste straf. Behandeling onder vrijheidsberoving (18-20 jaar) kan als alternatief."
+      beschrijving_fr: "Peine la plus lourde. Traitement sous privation de liberté (18-20 ans) possible comme alternative."
+
+sections:
+  # --- Titel III: Openbare trouw (art. 193-214) ---
+  - heading_nl: "Valsheid in geschriften (art. 193-214)"
+    heading_fr: "Faux en écritures (art. 193-214)"
+    entries:
+      - ["Art. 193", "Art. 247 (N3)"]
+      - ["Art. 194", "Art. 248 (N3)"]
+      - ["Art. 195", "Art. 249 (N3)"]
+      - ["Art. 196", "Art. 250 (N3-4)"]
+      - ["Art. 197", "Art. 251 (N3)"]
+      - ["Art. 210", "Art. 252 (N3)"]
+      - ["Art. 211", "Art. 253 (N3-4)"]
+      - ["Art. 212", "Art. 254 (N4)"]
+      - ["Art. 213", "Art. 255 (N3)"]
+      - ["Art. 214", "Art. 256 (N3)"]
+
+  # --- Titel IV: Openbare orde - Ambtsmisdrijven (art. 240-252) ---
+  - heading_nl: "Ambtsmisdrijven (art. 240-252)"
+    heading_fr: "Infractions commises par des fonctionnaires (art. 240-252)"
+    entries:
+      - ["Art. 240", "Art. 261 (N3)"]
+      - ["Art. 241", "Art. 262 (N3)"]
+      - ["Art. 242", "Art. 263 (N4)"]
+      - ["Art. 243", "Art. 264 (N4)"]
+      - ["Art. 246", "Art. 268 (N3)"]
+      - ["Art. 247", "Art. 269 (N3-4)"]
+      - ["Art. 248", "Art. 270 (N4)"]
+      - ["Art. 249", "Art. 271 (N5)"]
+      - ["Art. 250", "Art. 272 (N3)"]
+      - ["Art. 251", "Art. 273 (N3-4)"]
+      - ["Art. 252", "Art. 274 (N5)"]
+
+  # --- Titel IV: Openbare orde - Weerspannigheid en smaad (art. 269-282) ---
+  - heading_nl: "Weerspannigheid en smaad (art. 269-282)"
+    heading_fr: "Rébellion et outrage (art. 269-282)"
+    entries:
+      - ["Art. 269", "Art. 279 (N2)"]
+      - ["Art. 270", "Art. 280 (N2)"]
+      - ["Art. 271", "Art. 281 (N2-3)"]
+      - ["Art. 272", "Art. 282 (N3)"]
+      - ["Art. 273", "Art. 283 (N3)"]
+      - ["Art. 274", "Art. 284 (N3)"]
+      - ["Art. 275", "Art. 285 (N1)"]
+      - ["Art. 276", "Art. 286 (N1)"]
+      - ["Art. 277", "Art. 287 (N1-2)"]
+      - ["Art. 278", "Art. 288 (N2)"]
+      - ["Art. 279", "Art. 289 (N2)"]
+      - ["Art. 280", "Art. 290 (N2)"]
+      - ["Art. 281", "Art. 291 (N2)"]
+      - ["Art. 282", "Art. 291 (N2)"]
+
+  # --- Titel IX: Bedreigingen (art. 327-330) ---
+  - heading_nl: "Bedreigingen (art. 327-330)"
+    heading_fr: "Menaces (art. 327-330)"
+    entries:
+      - ["Art. 327", "Art. 334 (N2)"]
+      - ["Art. 328", "Art. 335 (N2-3)"]
+      - ["Art. 329", "Art. 335 (N2-3)"]
+      - ["Art. 330", "Art. 336 (N3)"]
+
+  # --- Titel VII: Zedenmisdrijven (art. 372-380) ---
+  - heading_nl: "Zedenmisdrijven (art. 372-380)"
+    heading_fr: "Infractions sexuelles (art. 372-380)"
+    entries:
+      - ["Art. 372 (hervormd 2022)", "Art. 364 e.v. (N3-5)"]
+      - ["Art. 375 (hervormd 2022)", "Art. 369 e.v. (N4-8)"]
+      - ["Art. 379-380", "Art. 375-378 (N3-5)"]
+
+  # --- Titel VIII: Doodslag en moord (art. 393-397) ---
+  - heading_nl: "Doodslag en moord (art. 393-397)"
+    heading_fr: "Homicide et assassinat (art. 393-397)"
+    entries:
+      - ["Art. 393", "Art. 348 (N7)"]
+      - ["Art. 394", "Art. 349 (N8)"]
+      - ["Art. 395", "Art. 350 (N7-8)"]
+      - ["Art. 396", "Art. 351 (N7-8)"]
+      - ["Art. 397", "Art. 352 (N7-8)"]
+
+  # --- Titel VIII: Slagen en verwondingen (art. 392, 398-401) ---
+  - heading_nl: "Opzettelijke slagen en verwondingen (art. 398-401)"
+    heading_fr: "Coups et blessures volontaires (art. 398-401)"
+    entries:
+      - ["Art. 392", "- (vervallen)"]
+      - ["Art. 398", "Art. 340 (N2)"]
+      - ["Art. 399", "Art. 341 (N3)"]
+      - ["Art. 400", "Art. 342 (N4)"]
+      - ["Art. 401", "Art. 343 (N5)"]
+
+  # --- Titel VIII: Belaging (art. 442bis) ---
+  - heading_nl: "Belaging (art. 442bis)"
+    heading_fr: "Harcèlement (art. 442bis)"
+    entries:
+      - ["Art. 442bis", "Art. 338 (N2)"]
+
+  # --- Titel IX: Diefstal (art. 461-475) ---
+  - heading_nl: "Diefstal (art. 461-475)"
+    heading_fr: "Vol (art. 461-475)"
+    entries:
+      - ["Art. 461", "Art. 464"]
+      - ["Art. 463", "Art. 466 (N2)"]
+      - ["Art. 467", "Art. 467 (N3)"]
+      - ["Art. 468", "Art. 469 (N3)"]
+      - ["Art. 469", "Art. 470 (N3)"]
+      - ["Art. 471", "Art. 472 (N4)"]
+      - ["Art. 472", "Art. 473 (N4)"]
+      - ["Art. 473", "Art. 474 (N4-5)"]
+      - ["Art. 474", "Art. 475 (N5)"]
+      - ["Art. 475", "Art. 476 (N5)"]
+
+  # --- Titel IX: Misbruik van vertrouwen en heling (art. 491-505bis) ---
+  - heading_nl: "Misbruik van vertrouwen en heling (art. 491-505bis)"
+    heading_fr: "Abus de confiance et recel (art. 491-505bis)"
+    entries:
+      - ["Art. 491", "Art. 486 (N2)"]
+      - ["Art. 492", "Art. 487 (N3)"]
+      - ["Art. 493", "Art. 488 (N3)"]
+      - ["Art. 496", "Art. 479 (N3)"]
+      - ["Art. 496 (verzwaard)", "Art. 480 (N4)"]
+      - ["Art. 504bis", "Art. 481 (N3)"]
+      - ["Art. 504ter", "Art. 482 (N3)"]
+      - ["Art. 504quater", "Art. 483-484 (N3-4)"]
+      - ["Art. 505", "Art. 490 (N3)"]
+      - ["Art. 505bis", "Art. 491 (N3)"]
+
+  # --- Titel IX: Vernieling en beschadiging (art. 510-525) ---
+  - heading_nl: "Vernieling en beschadiging (art. 510-525)"
+    heading_fr: "Destruction et dégradation (art. 510-525)"
+    entries:
+      - ["Art. 510-520", "Art. 497-506 (N2-5)"]
+      - ["Art. 521-525", "Art. 507-511 (N4-6)"]
+
+  # --- Titel IXbis: Informaticamisdrijven (art. 314bis, 550bis-550ter) ---
+  - heading_nl: "Informaticamisdrijven (art. 314bis, 550bis-ter)"
+    heading_fr: "Infractions informatiques (art. 314bis, 550bis-ter)"
+    entries:
+      - ["Art. 314bis", "Art. 525 (N2-3)"]
+      - ["Art. 550bis", "Art. 523 (N2-3)"]
+      - ["Art. 550ter", "Art. 524 (N2-3)"]
+
+  # --- Bijzondere wetgeving: Drugswet ---
+  - heading_nl: "Drugs en verdovende middelen (Drugswet 24/02/1921)"
+    heading_fr: "Drogues et stupéfiants (Loi Drogues 24/02/1921)"
+    entries:
+      - ["Drugswet art. 2bis §1", "Art. 514 (N2)"]
+      - ["Drugswet art. 2bis §2", "Art. 515 (N3)"]
+      - ["Drugswet art. 2bis §2 (verzwaard)", "Art. 516 (N4)"]
+      - ["Drugswet art. 2bis §3", "Art. 517 (N5)"]
+      - ["Drugswet art. 2bis §4", "Art. 518 (N4)"]
