@@ -1,0 +1,155 @@
+<% fr = I18n.locale == :fr %>
+
+<div class="max-w-4xl mx-auto">
+  <div class="mb-6">
+    <a href="<%= tools_path %>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">← <%= fr ? 'Tous les outils' : 'Alle tools' %></a>
+  </div>
+
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      ⏳ <%= fr ? 'Calculateur de prescription' : 'Verjaringstermijnen' %>
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      <%= fr ? '28 types de délais de prescription belges avec base légale' : '28 Belgische verjaringstermijnen met wettelijke basis' %>
+    </p>
+  </div>
+
+  <!-- Calculator Form -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+    <%= form_with url: tools_limitations_path, method: :get, local: true, class: 'space-y-4' do %>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= fr ? 'Type de créance/action' : 'Type vordering/actie' %> *
+          </label>
+          <select name="type" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" required>
+            <option value=""><%= fr ? '-- Choisir --' : '-- Kies --' %></option>
+            <% @categories.each do |cat_key, cat_info| %>
+              <optgroup label="<%= fr ? cat_info[:name_fr] : cat_info[:name_nl] %>">
+                <% @limitations.select { |_k, v| v[:category] == cat_key.to_s }.each do |key, lim| %>
+                  <option value="<%= key %>" <%= 'selected' if params[:type] == key.to_s %>>
+                    <%= fr ? lim[:name_fr] : lim[:name_nl] %> (<%= lim[:years] %> <%= fr ? 'ans' : 'jaar' %>)
+                  </option>
+                <% end %>
+              </optgroup>
+            <% end %>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= fr ? 'Date de départ' : 'Startdatum' %> *
+          </label>
+          <input type="date" name="start_date" value="<%= params[:start_date] || Date.current.to_s %>"
+                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" required>
+          <p class="text-xs text-gray-500 mt-1"><%= fr ? 'Date du fait générateur' : 'Datum van het schadeveroorzakend feit' %></p>
+        </div>
+      </div>
+      <button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-md">
+        <%= fr ? 'Calculer' : 'Berekenen' %>
+      </button>
+    <% end %>
+  </div>
+
+  <% if @error %>
+    <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+      <p class="text-red-800 dark:text-red-200"><%= @error %></p>
+    </div>
+  <% end %>
+
+  <% if @result %>
+    <!-- Result -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4"><%= fr ? 'Résultat' : 'Resultaat' %></h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center">
+          <p class="text-sm text-gray-500 dark:text-gray-400"><%= fr ? 'Type' : 'Type' %></p>
+          <p class="text-lg font-bold text-gray-900 dark:text-white"><%= fr ? @result[:name_fr] : @result[:name_nl] %></p>
+        </div>
+        <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center">
+          <p class="text-sm text-gray-500 dark:text-gray-400"><%= fr ? 'Délai' : 'Termijn' %></p>
+          <p class="text-2xl font-bold text-purple-600 dark:text-purple-400"><%= @result[:years] %> <%= fr ? 'ans' : 'jaar' %></p>
+        </div>
+        <div class="<%= @result[:expired] ? 'bg-red-50 dark:bg-red-900/30' : 'bg-green-50 dark:bg-green-900/30' %> rounded-lg p-4 text-center">
+          <p class="text-sm <%= @result[:expired] ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' %>">
+            <%= @result[:expired] ? (fr ? 'PRESCRIT' : 'VERJAARD') : (fr ? 'Échéance' : 'Vervaldatum') %>
+          </p>
+          <p class="text-2xl font-bold <%= @result[:expired] ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' %>">
+            <%= I18n.l(@result[:expiry_date], format: :short) %>
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="text-sm text-gray-600 dark:text-gray-400">
+          <p><strong><%= fr ? 'Date de départ:' : 'Startdatum:' %></strong> <%= I18n.l(@result[:start_date], format: :long) %></p>
+          <p><strong><%= fr ? 'Base légale:' : 'Wettelijke basis:' %></strong> <%= @result[:basis] %></p>
+        </div>
+        <div class="text-sm">
+          <% if @result[:expired] %>
+            <p class="text-red-600 dark:text-red-400">
+              ⚠️ <%= fr ? "Prescrit depuis #{(-@result[:days_remaining]).abs} jours" : "Verjaard sinds #{(-@result[:days_remaining]).abs} dagen" %>
+            </p>
+          <% else %>
+            <p class="text-green-600 dark:text-green-400">
+              ✓ <%= fr ? "Encore #{@result[:days_remaining]} jours restants" : "Nog #{@result[:days_remaining]} dagen resterend" %>
+            </p>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          ⚠️ <%= fr ? 'Ce calcul est indicatif. Consultez un juriste pour les cas spécifiques. Les interruptions et suspensions peuvent affecter le délai.' : 'Deze berekening is indicatief. Raadpleeg een jurist voor specifieke gevallen. Stuiting en schorsing kunnen de termijn beïnvloeden.' %>
+        </p>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Reference Table -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+    <div class="p-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+      <h2 class="font-semibold text-gray-900 dark:text-white"><%= fr ? 'Tous les délais de prescription (28)' : 'Alle verjaringstermijnen (28)' %></h2>
+    </div>
+    
+    <% @categories.each do |cat_key, cat_info| %>
+      <% cat_items = @limitations.select { |_k, v| v[:category] == cat_key.to_s } %>
+      <% next if cat_items.empty? %>
+      <div class="border-b border-gray-200 dark:border-gray-700 last:border-0">
+        <div class="px-4 py-2 bg-gray-100 dark:bg-gray-750 font-medium text-sm text-gray-700 dark:text-gray-300">
+          <%= fr ? cat_info[:name_fr] : cat_info[:name_nl] %>
+        </div>
+        <div class="divide-y divide-gray-100 dark:divide-gray-700">
+          <% cat_items.each do |key, lim| %>
+            <div class="px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <div>
+                <p class="font-medium text-gray-900 dark:text-white"><%= fr ? lim[:name_fr] : lim[:name_nl] %></p>
+                <p class="text-xs text-gray-500 dark:text-gray-400"><%= lim[:basis] %></p>
+              </div>
+              <div class="text-right">
+                <span class="px-3 py-1 text-sm font-bold rounded-full 
+                  <% if lim[:years] <= 1 %>bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300
+                  <% elsif lim[:years] <= 5 %>bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300
+                  <% elsif lim[:years] <= 10 %>bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300
+                  <% else %>bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300
+                  <% end %>">
+                  <%= lim[:years] %> <%= fr ? 'ans' : 'jaar' %>
+                </span>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Quick links -->
+  <div class="mt-6 flex flex-wrap justify-center gap-4 text-sm">
+    <a href="<%= tools_deadline_calculator_path %>" class="text-blue-600 dark:text-blue-400 hover:underline">
+      📅 <%= fr ? 'Calculateur de dates' : 'Datumcalculator' %>
+    </a>
+    <a href="<%= tools_interest_calculator_path %>" class="text-blue-600 dark:text-blue-400 hover:underline">
+      💰 <%= fr ? 'Intérêts légaux' : 'Wettelijke rente' %>
+    </a>
+  </div>
+</div>

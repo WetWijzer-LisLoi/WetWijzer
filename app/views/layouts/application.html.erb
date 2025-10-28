@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="<%= I18n.locale %>" class="<%= 'dark' if params[:dark_mode] == 'dark' %> no-js">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= @title %></title>
+    
+    <%# Open Graph meta tags for social sharing (WhatsApp, Facebook, LinkedIn, etc.) %>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="<%= I18n.locale == :fr ? 'LisLoi' : 'WetWijzer' %>" />
+    <meta property="og:title" content="<%= @title %>" />
+    <meta property="og:description" content="<%= @meta_description || t(:meta_description) %>" />
+    <meta property="og:url" content="<%= request.original_url %>" />
+    <meta property="og:image" content="<%= I18n.locale == :fr ? 'https://lisloi.be/images/og-lisloi.png' : 'https://wetwijzer.be/images/og-wetwijzer.png' %>" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="<%= I18n.locale == :fr ? 'fr_BE' : 'nl_BE' %>" />
+    
+    <%# Twitter/X card meta tags %>
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="<%= @title %>" />
+    <meta name="twitter:description" content="<%= @meta_description || t(:meta_description) %>" />
+    <meta name="twitter:image" content="<%= I18n.locale == :fr ? 'https://lisloi.be/images/og-lisloi.png' : 'https://wetwijzer.be/images/og-wetwijzer.png' %>" />
+
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    
+    <%# Remove no-js class as early as possible to enable JS-enhanced features %>
+    <script>document.documentElement.classList.remove('no-js');</script>
+
+    <%= turbo_refreshes_with method: :morph, scroll: :preserve  %>
+    <%= favicon_link_tag "#{t(:favicon)}?v=20251112" %>
+    <%= vite_client_tag %>
+    <script>
+      // Early Turbo progress setup + minimal fallback so feedback shows on first interaction
+      (function () {
+        // If Turbo becomes available, set its progress bar delay to 0 immediately
+        var _Turbo = null;
+        Object.defineProperty(window, 'Turbo', {
+          configurable: true,
+          get: function () { return _Turbo; },
+          set: function (val) {
+            _Turbo = val;
+            try {
+              if (_Turbo && _Turbo.config && _Turbo.config.drive) {
+                _Turbo.config.drive.progressBarDelay = 0;
+              } else if (typeof _Turbo.setProgressBarDelay === 'function') {
+                // Fallback for older Turbo versions
+                _Turbo.setProgressBarDelay(0);
+              }
+            } catch (_) {}
+          }
+        });
+
+        // Minimal fallback top bar before Turbo/app bundle is ready
+        var started = false;
+        function showFallback() {
+          if (started) return; started = true;
+          var bar = document.createElement('div');
+          bar.id = 'fallback-progress-bar';
+          bar.setAttribute('aria-hidden', 'true');
+          bar.style.position = 'fixed';
+          bar.style.top = '0';
+          bar.style.left = '0';
+          bar.style.height = '3px';
+          bar.style.width = '20%';
+          bar.style.background = '#2563eb';
+          bar.style.boxShadow = '0 0 10px rgba(37,99,235,.7)';
+          bar.style.transition = 'width .3s ease';
+          bar.style.zIndex = '99999';
+          (document.body || document.documentElement).appendChild(bar);
+          setTimeout(function(){ bar.style.width = '80%'; }, 50);
+        }
+        function hideFallback() {
+          var bar = document.getElementById('fallback-progress-bar');
+          if (!bar) return;
+          bar.style.width = '100%';
+          setTimeout(function(){ if (bar && bar.parentNode) bar.parentNode.removeChild(bar); }, 150);
+        }
+
+        // Start fallback on first internal navigation intent
+        document.addEventListener('submit', function (e) {
+          var form = e.target;
+          if (!form || form.hasAttribute('data-turbo') && form.getAttribute('data-turbo') === 'false') return;
+          // Only show for top-frame or full-page submissions
+          var tf = form.getAttribute('data-turbo-frame');
+          if (!tf || tf === '_top') showFallback();
+        }, { capture: true });
+
+        document.addEventListener('click', function (e) {
+          var a = e.target && e.target.closest && e.target.closest('a[href]');
+          if (!a) return;
+          try {
+            var url = new URL(a.getAttribute('href'), window.location.href);
+            if (a.target === '_blank' || url.origin !== window.location.origin) return;
+            showFallback();
+          } catch (_) { /* ignore */ }
+        }, { capture: true });
+
+        // When Turbo takes over and renders, clear the fallback
+        document.addEventListener('turbo:load', hideFallback);
+        document.addEventListener('turbo:render', hideFallback);
+      })();
+    </script>
+    <%= vite_javascript_tag 'application', 'data-turbo-track': 'reload' %>
+    <script>
+      // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+      // Only apply localStorage theme if JS is enabled (otherwise use URL param from server)
+      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    </script>
+    
+    <style>
+      /* Hide JS-only UI elements when JavaScript is disabled */
+      .no-js .progress-top,
+      .no-js [data-controller="theme-selector"],
+      .no-js [data-controller="filters-toggle"] button[data-action*="filters-toggle"],
+      .no-js [data-controller="jump-select"],
+      .no-js [data-sidebar-toggle-floating],
+      .no-js turbo-frame:not([src]) {
+        display: none !important;
+      }
+      
+      /* Show noscript content */
+      .no-js noscript {
+        display: block !important;
+      }
+      
+      /* Make filter panel visible by default when JS is disabled */
+      .no-js #filters-panel {
+        display: block !important;
+      }
+      
+      /* Make sidebar visible by default on larger screens when JS is disabled */
+      @media (min-width: 768px) {
+        .no-js [data-sidebar-toggle-target="sidebar"] {
+          display: block !important;
+        }
+      }
+      
+      /* Hide all loading indicators when JS is disabled */
+      .no-js .loading-skeleton,
+      .no-js [role="status"][aria-live],
+      .no-js [data-controller="frame-status"],
+      .no-js [data-frame-status-results],
+      .no-js #search-status-mount,
+      .no-js turbo-frame[src] > div:first-child:has(.progress-top),
+      .no-js turbo-frame[src] > div:first-child:has([aria-live="polite"]) {
+        display: none !important;
+      }
+      
+      /* Hide empty turbo frames that would show loading content */
+      .no-js turbo-frame[src]:empty::before {
+        content: none !important;
+      }
+      
+      /* Print styles - inline to ensure they work */
+      @media print {
+        /* Page margins - minimal to hide browser header/footer */
+        @page {
+          margin: 0.4in;
+          margin-top: 0.2in;
+          margin-bottom: 0.3in;
+        }
+        
+        /* Custom page number in footer - bottom right, x/total format */
+        @page {
+          @bottom-right {
+            content: counter(page) " / " counter(pages);
+            font-size: 9pt;
+            color: #666;
+          }
+        }
+        
+        header, footer, button, .btn, .no-print,
+        [data-controller="theme-selector"],
+        [data-controller="dark-mode"],
+        [data-controller="sidebar-toggle"],
+        [data-sidebar-toggle-target="sidebar"],
+        [data-sidebar-toggle-target="panel"],
+        #toc-sidebar-panel,
+        #toc-card-sidebar,
+        aside,
+        #global-scroll-to-top {
+          display: none !important;
+          visibility: hidden !important;
+          width: 0 !important;
+          height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+          position: absolute !important;
+          left: -9999px !important;
+        }
+        
+        svg {
+          display: none !important;
+          width: 0 !important;
+          height: 0 !important;
+        }
+        
+        * {
+          background: white !important;
+          box-shadow: none !important;
+          color: black !important;
+        }
+        
+        body {
+          font-size: 10pt !important;
+          color: black !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        /* Show print-only header */
+        .print-only-header {
+          display: block !important;
+          color: #666 !important;
+          font-size: 9pt !important;
+          margin-bottom: 12px !important;
+          padding-bottom: 8px !important;
+          border-bottom: 1px solid #ccc !important;
+        }
+        
+        /* All links black in print, no underline */
+        a, a:visited, a:hover, a:active {
+          color: black !important;
+          text-decoration: none !important;
+        }
+        
+        /* Article formatting for print - continuous flow */
+        article, [data-article-scope] {
+          border: none !important;
+          padding: 4px 0 !important;
+          margin-bottom: 4px !important;
+          display: block !important;
+          border-top: 1px solid #ccc !important;
+        }
+        
+        /* First article no top border */
+        article:first-child, [data-article-scope]:first-child {
+          border-top: none !important;
+        }
+        
+        /* Reduce spacing for Wijzigingen sections */
+        .references-section {
+          margin-top: 4px !important;
+          margin-bottom: 0 !important;
+          padding-left: 12px !important;
+          padding-bottom: 0 !important;
+          border-left: 2px solid #999 !important;
+        }
+        
+        /* Wijzigingen header - smaller, not bold */
+        .references-section h4 {
+          font-size: 9pt !important;
+          font-weight: normal !important;
+          font-style: italic !important;
+          color: #666 !important;
+          margin-bottom: 2px !important;
+        }
+        
+/* Reference numbers [1] and all reference text in gray */
+        .ref-marker,
+        .references-section,
+        .references-section * {
+          color: #666 !important;
+        }
+        
+        /* Reference rows - reduce spacing */
+        .references-section > div > div {
+          margin-bottom: 2px !important;
+        }
+        
+        /* Section headings (HOOFDSTUK, TITEL, etc.) - bold and larger */
+        .section-heading {
+          margin-top: 16px !important;
+          margin-bottom: 8px !important;
+          border-top: none !important;
+        }
+        
+        .section-heading h2 {
+          font-size: 12pt !important;
+          font-weight: bold !important;
+          text-transform: uppercase !important;
+        }
+        
+        /* Bold article numbers (Art. X) - use existing .article-number class */
+        .article-number {
+          font-weight: bold !important;
+        }
+        
+        /* No bold for collapse headers */
+        [data-controller="collapse"] h3,
+        [data-controller="collapse"] button {
+          font-weight: normal !important;
+        }
+        
+        /* Section cards styling for print */
+        #document-info-card,
+        #title-card,
+        #main-toc-card,
+        #updated-laws-card,
+        #exdecs-card,
+        #tekst {
+          border: none !important;
+          box-shadow: none !important;
+          margin-bottom: 20px !important;
+          padding-bottom: 12px !important;
+          border-bottom: 1px solid #ccc !important;
+        }
+        
+        /* Show section header buttons in print (they contain h2) */
+        #document-info-card > div > button,
+        #title-card > div > button,
+        #main-toc-card > div > button,
+        #updated-laws-card > div > button,
+        #exdecs-card > div > button {
+          display: block !important;
+          visibility: visible !important;
+          width: auto !important;
+          height: auto !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: visible !important;
+          position: static !important;
+          left: auto !important;
+          border: none !important;
+          background: none !important;
+        }
+        
+        /* Section headers - clean, no box */
+        #document-info-card h2,
+        #title-card h2,
+        #main-toc-card h2,
+        #updated-laws-card h2,
+        #exdecs-card h2,
+        #tekst h2 {
+          display: block !important;
+          visibility: visible !important;
+          font-size: 11pt !important;
+          font-weight: bold !important;
+          margin-bottom: 8px !important;
+          text-transform: uppercase !important;
+          color: black !important;
+          border: none !important;
+          background: none !important;
+          padding: 0 !important;
+        }
+        
+        /* Hide collapse icons in section headers */
+        #document-info-card > div > button svg,
+        #title-card > div > button svg,
+        #main-toc-card > div > button svg,
+        #updated-laws-card > div > button svg,
+        #exdecs-card > div > button svg {
+          display: none !important;
+        }
+        
+        /* Hide copy buttons in print */
+        [data-controller="clipboard"] {
+          display: none !important;
+        }
+        
+        /* Show all collapsed content in print */
+        [data-collapse-target="content"],
+        .is-collapsed [data-collapse-target="content"],
+        [data-controller~="collapse"] [data-collapse-target="content"],
+        [data-controller~="collapse"].is-collapsed [data-collapse-target="content"] {
+          display: block !important;
+          max-height: none !important;
+          overflow: visible !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          height: auto !important;
+          margin-top: 16px !important;
+          margin-bottom: 8px !important;
+        }
+        
+        /* TOC navigation - remove scroll constraints for print */
+        .toc-navigation {
+          max-height: none !important;
+          overflow: visible !important;
+        }
+        
+        /* TOC print styling - clean hierarchy without bullets */
+        .toc-navigation ul {
+          list-style: none !important;
+          padding-left: 0 !important;
+          margin: 0 !important;
+        }
+        
+        .toc-navigation li {
+          list-style: none !important;
+          margin: 0 !important;
+          padding: 2px 0 !important;
+        }
+        
+        .toc-navigation .toc-link {
+          display: block !important;
+          color: black !important;
+          text-decoration: none !important;
+          padding: 1px 0 !important;
+        }
+        
+        /* Preserve indentation hierarchy */
+        .toc-navigation .pl-0 { padding-left: 0 !important; }
+        .toc-navigation .pl-2 { padding-left: 8px !important; }
+        .toc-navigation .pl-3 { padding-left: 12px !important; }
+        .toc-navigation .pl-6 { padding-left: 24px !important; }
+        .toc-navigation .pl-9 { padding-left: 36px !important; }
+        
+        /* Font weights for hierarchy */
+        .toc-navigation .font-semibold { font-weight: 600 !important; }
+        .toc-navigation .font-medium { font-weight: 500 !important; }
+        .toc-navigation .font-normal { font-weight: 400 !important; }
+        
+        /* Show warning if articles still loading (only if parent is visible) */
+        .print-loading-warning {
+          display: block !important;
+          color: red !important;
+          font-weight: bold !important;
+          font-size: 14pt !important;
+          padding: 20px !important;
+          border: 2px solid red !important;
+          margin: 20px 0 !important;
+        }
+        
+        /* Hide warning if parent indicator is hidden (articles loaded) */
+        .hidden .print-loading-warning,
+        .opacity-0 .print-loading-warning {
+          display: none !important;
+        }
+      }
+      
+      /* Hide warning in normal view */
+      .print-loading-warning {
+        display: none;
+      }
+    </style>
+
+  </head>
+  <body data-controller="keyboard-shortcuts">
+    <% if ENV['STAGING_BANNER'] == 'true' %>
+      <div class="bg-amber-500 text-amber-950 text-center py-1.5 px-4 text-sm font-medium">
+        🚧 <%= I18n.locale == :fr ? "Environnement de test - Les fonctionnalités peuvent ne pas fonctionner correctement" : "Testomgeving - Functionaliteit kan onvolledig zijn" %>
+      </div>
+    <% end %>
+    <div class="min-h-screen flex flex-col" data-controller="turbo-cache">
+      <%= render "layouts/header" %>
+      <%= render "layouts/email_verification_banner" %>
+      <main class="container mx-auto p-4 flex-1">
+        <%= yield %>
+      </main>
+      <%= render "layouts/footer" %>
+    </div>
+    
+    <%# No cookie banner needed - we don't set cookies for anonymous users %>
+    
+    <script>
+      (function() {
+        // Only show on compare page
+        if (!window.location.pathname.includes('/compare')) return;
+        
+        // Create button dynamically to ensure it's a direct child of body
+        var btn = document.createElement('button');
+        btn.id = 'global-scroll-to-top';
+        btn.type = 'button';
+        btn.title = '<%= I18n.locale == :fr ? "Retour en haut" : "Naar boven" %>';
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>';
+        btn.style.cssText = 'position:fixed;bottom:24px;z-index:9999;padding:8px;border-radius:9999px;box-shadow:0 4px 6px rgba(0,0,0,0.1);background-color:var(--accent-500);color:white;border:none;cursor:pointer;opacity:0;pointer-events:none;transition:opacity 0.2s;';
+        btn.onclick = function() { window.scrollTo({ top: 0, behavior: 'smooth' }); };
+        document.body.appendChild(btn);
+        
+        function position() {
+          var main = document.querySelector('main.container');
+          if (main) {
+            var rect = main.getBoundingClientRect();
+            // Position button's left edge 8px to the right of content box
+            btn.style.left = (rect.right + 8) + 'px';
+            btn.style.right = 'auto';
+          } else {
+            btn.style.right = '24px';
+            btn.style.left = 'auto';
+          }
+        }
+        
+        function toggle() {
+          position();
+          if (window.scrollY > 300) {
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+          } else {
+            btn.style.opacity = '0';
+            btn.style.pointerEvents = 'none';
+          }
+        }
+        
+        window.addEventListener('scroll', toggle, { passive: true });
+        window.addEventListener('resize', position);
+        position();
+        toggle();
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,35 @@
+/* Domain-specific tag styling */
+.domain-tag {
+  font-style: italic;
+}
+
+/* Colors chosen to be readable in light and dark themes; adjust as desired */
+.domain-opgeheven {
+  color: #b91c1c; /* red-700 */
+}
+.domain-ingevoegd {
+  color: #059669; /* green-600 */
+}
+
+/* You can add more specific styles per tag as needed
+.domain-w {}
+.domain-l {}
+.domain-ord {}
+.domain-opnieuw {}
+.domain-kb {}
+.domain-hersteld {}
+.domain-dvr {}
+.domain-ar {}
+.domain-nota {}
+*/
+
+/* Per-tag colors (light theme) */
+.domain-w { color: #2563eb; }       /* blue-600 */
+.domain-l { color: #7c3aed; }       /* violet-600 */
+.domain-ord { color: #d97706; }     /* amber-600 */
+.domain-opnieuw { color: #4f46e5; } /* indigo-600 */
+.domain-kb { color: #0d9488; }      /* teal-600 */
+.domain-hersteld { color: #10b981; }/* emerald-500 */
+.domain-dvr { color: #c026d3; }     /* fuchsia-600 */
+.domain-ar { color: #e11d48; }      /* rose-600 */
+.domain-nota { color: #475569; }    /* slate-600 */

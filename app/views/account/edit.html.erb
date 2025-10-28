@@ -1,0 +1,93 @@
+<%= content_for :title, t('account.edit_profile') %>
+
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md mx-auto">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+      <%= t('account.edit_profile') %>
+    </h1>
+
+    <% if flash[:alert] %>
+      <div class="mb-4 p-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-lg">
+        <%= flash[:alert] %>
+      </div>
+    <% end %>
+
+    <%= form_with url: account_path, method: :patch, class: "space-y-6" do |f| %>
+      <!-- Name -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <%= t('account.profile_info') %>
+        </h2>
+        
+        <div class="mb-4">
+          <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('auth.name') %>
+          </label>
+          <input type="text" 
+                 name="name" 
+                 id="name" 
+                 value="<%= @user.name %>"
+                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                 placeholder="<%= t('auth.name') %>">
+        </div>
+        
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+          <strong><%= t('auth.email') %>:</strong> <%= @user.email %>
+          <p class="text-xs mt-1"><%= t('account.email_cannot_change') %></p>
+        </div>
+      </div>
+
+      <!-- Change Password -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <%= t('account.change_password') %>
+        </h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <%= t('account.leave_blank_password') %>
+        </p>
+        
+        <div class="space-y-4">
+          <div>
+            <label for="current_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <%= t('account.current_password') %>
+            </label>
+            <input type="password" 
+                   name="current_password" 
+                   id="current_password"
+                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+          
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <%= t('account.new_password') %>
+            </label>
+            <input type="password" 
+                   name="password" 
+                   id="password"
+                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+          
+          <div>
+            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <%= t('account.confirm_password') %>
+            </label>
+            <input type="password" 
+                   name="password_confirmation" 
+                   id="password_confirmation"
+                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <%= link_to account_path, class: "text-gray-600 dark:text-gray-400 hover:underline" do %>
+          ← <%= t('common.cancel') %>
+        <% end %>
+        
+        <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
+          <%= t('common.save') %>
+        </button>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,224 @@
+<% fr = I18n.locale == :fr %>
+
+<div class="max-w-4xl mx-auto">
+  <div class="mb-8 text-center">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      🛠️ <%= fr ? 'Outils juridiques belges' : 'Belgische juridische tools' %>
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      <%= fr ? 'Calculateurs et outils pratiques pour les professionnels du droit' : 'Calculators en praktische tools voor juridische professionals' %>
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Date Calculator -->
+    <a href="<%= tools_deadline_calculator_path %>" 
+       class="group bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
+      <div class="flex items-start gap-4">
+        <div class="text-4xl">📅</div>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+            <%= fr ? 'Calculateur de dates' : 'Datumcalculator' %>
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <%= fr ? 'Délais légaux, jours entre dates, jours ouvrables' : 'Wettelijke termijnen, dagen tussen data, werkdagen' %>
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded"><%= fr ? 'Délais d\'appel' : 'Beroepstermijnen' %></span>
+            <span class="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded"><%= fr ? 'Vacances judiciaires' : 'Gerechtelijke vakantie' %></span>
+            <span class="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">iCal</span>
+          </div>
+        </div>
+      </div>
+    </a>
+
+    <!-- Interest Calculator -->
+    <a href="<%= tools_interest_calculator_path %>" 
+       class="group bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-amber-500 dark:hover:border-amber-400 transition-colors">
+      <div class="flex items-start gap-4">
+        <div class="text-4xl">💰</div>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400">
+            <%= fr ? 'Calculateur d\'intérêts' : 'Rentecalculator' %>
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <%= fr ? 'Intérêts légaux belges (civil, fiscal, social)' : 'Belgische wettelijke rente (burgerlijk, fiscaal, sociaal)' %>
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="px-2 py-0.5 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded">Art. 1153 <%= fr ? 'CC' : 'BW' %></span>
+            <span class="px-2 py-0.5 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded">2020-2026</span>
+          </div>
+        </div>
+      </div>
+    </a>
+
+    <!-- Court Finder -->
+    <a href="<%= tools_court_finder_path %>" 
+       class="group bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-400 transition-colors">
+      <div class="flex items-start gap-4">
+        <div class="text-4xl">🏛️</div>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400">
+            <%= fr ? 'Trouver le tribunal' : 'Rechtbank vinden' %>
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <%= fr ? 'Quel tribunal est compétent pour votre affaire?' : 'Welke rechtbank is bevoegd voor uw zaak?' %>
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded"><%= fr ? 'Par matière' : 'Per materie' %></span>
+            <span class="px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded"><%= fr ? 'Par montant' : 'Per bedrag' %></span>
+          </div>
+        </div>
+      </div>
+    </a>
+
+    <!-- Statute of Limitations -->
+    <a href="<%= tools_limitations_path %>" 
+       class="group bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-orange-500 dark:hover:border-orange-400 transition-colors">
+      <div class="flex items-start gap-4">
+        <div class="text-4xl">⏳</div>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400">
+            <%= fr ? 'Prescription' : 'Verjaring' %>
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <%= fr ? '28 délais de prescription avec base légale' : '28 verjaringstermijnen met wettelijke basis' %>
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="px-2 py-0.5 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded"><%= fr ? 'Civil' : 'Burgerlijk' %></span>
+            <span class="px-2 py-0.5 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded"><%= fr ? 'Pénal' : 'Strafrecht' %></span>
+            <span class="px-2 py-0.5 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded"><%= fr ? 'Fiscal' : 'Fiscaal' %></span>
+          </div>
+        </div>
+      </div>
+    </a>
+
+    <!-- Conclusion Calendar -->
+    <a href="<%= tools_conclusion_calendar_path %>" 
+       class="group bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors">
+      <div class="flex items-start gap-4">
+        <div class="text-4xl">📋</div>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+            <%= fr ? 'Calendrier conclusions' : 'Conclusiekalender' %>
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <%= fr ? 'Générer un calendrier de conclusions automatique' : 'Genereer automatisch een conclusiekalender' %>
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="px-2 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded"><%= fr ? 'Par procédure' : 'Per procedure' %></span>
+            <span class="px-2 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded"><%= fr ? 'Imprimable' : 'Afdrukbaar' %></span>
+          </div>
+        </div>
+      </div>
+    </a>
+
+    <!-- Court Fees -->
+    <a href="<%= tools_court_fees_path %>" 
+       class="group bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-cyan-500 dark:hover:border-cyan-400 transition-colors">
+      <div class="flex items-start gap-4">
+        <div class="text-4xl">🧾</div>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400">
+            <%= fr ? 'Droits de rôle' : 'Rolrechten' %>
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <%= fr ? 'Frais de justice par juridiction' : 'Gerechtskosten per rechtbank' %>
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="px-2 py-0.5 text-xs bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 rounded">2024-2025</span>
+            <span class="px-2 py-0.5 text-xs bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 rounded"><%= fr ? 'Expédition' : 'Expeditie' %></span>
+          </div>
+        </div>
+      </div>
+    </a>
+
+    <!-- Document Checklist -->
+    <a href="<%= tools_checklist_path %>" 
+       class="group bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-teal-500 dark:hover:border-teal-400 transition-colors">
+      <div class="flex items-start gap-4">
+        <div class="text-4xl">✅</div>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400">
+            <%= fr ? 'Checklists documents' : 'Documentchecklists' %>
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <%= fr ? 'Documents requis par type de procédure' : 'Vereiste documenten per procedure' %>
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="px-2 py-0.5 text-xs bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded"><%= fr ? 'Civil' : 'Burgerlijk' %></span>
+            <span class="px-2 py-0.5 text-xs bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded"><%= fr ? 'Travail' : 'Arbeids' %></span>
+            <span class="px-2 py-0.5 text-xs bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded"><%= fr ? 'Commercial' : 'Handels' %></span>
+          </div>
+        </div>
+      </div>
+    </a>
+
+    <!-- Legal Glossary -->
+    <a href="<%= tools_glossary_path %>" 
+       class="group bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-green-500 dark:hover:border-green-400 transition-colors">
+      <div class="flex items-start gap-4">
+        <div class="text-4xl">📚</div>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400">
+            <%= fr ? 'Glossaire juridique' : 'Juridisch woordenboek' %>
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <%= fr ? '115+ termes juridiques bilingues NL↔FR' : '115+ tweetalige juridische termen NL↔FR' %>
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded">NL → FR</span>
+            <span class="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded">FR → NL</span>
+          </div>
+        </div>
+      </div>
+    </a>
+
+    <!-- Holidays -->
+    <a href="<%= tools_holidays_path(Date.current.year) %>" 
+       class="group bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-red-500 dark:hover:border-red-400 transition-colors">
+      <div class="flex items-start gap-4">
+        <div class="text-4xl">📆</div>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400">
+            <%= fr ? 'Jours fériés' : 'Feestdagen' %> <%= Date.current.year %>
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <%= fr ? 'Calendrier des jours fériés belges officiels' : 'Kalender van officiële Belgische feestdagen' %>
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="px-2 py-0.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded"><%= fr ? 'Pâques' : 'Pasen' %></span>
+            <span class="px-2 py-0.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded"><%= fr ? 'Ascension' : 'Hemelvaart' %></span>
+          </div>
+        </div>
+      </div>
+    </a>
+
+    <!-- Jurisprudence link -->
+    <a href="<%= rechtspraak_path %>" 
+       class="group bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors">
+      <div class="flex items-start gap-4">
+        <div class="text-4xl">⚖️</div>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+            <%= fr ? 'Jurisprudence' : 'Rechtspraak' %>
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <%= fr ? 'Rechercher dans la jurisprudence belge' : 'Zoeken in Belgische rechtspraak' %>
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="px-2 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded"><%= fr ? 'Cassation' : 'Cassatie' %></span>
+            <span class="px-2 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded"><%= fr ? "Conseil d'État" : 'Raad van State' %></span>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Info -->
+  <div class="mt-8 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl text-center">
+    <p class="text-sm text-gray-600 dark:text-gray-400">
+      <%= fr ? 'Ces outils sont fournis à titre indicatif. Consultez toujours un professionnel du droit.' : 'Deze tools zijn indicatief. Raadpleeg altijd een juridisch professional.' %>
+    </p>
+  </div>
+</div>

@@ -1,0 +1,147 @@
+<%= content_for :title, t('pricing.title') %>
+
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+        <%= t('pricing.title') %>
+      </h1>
+      <p class="text-xl text-gray-600 dark:text-gray-400">
+        <%= t('pricing.subtitle') %>
+      </p>
+    </div>
+
+    <!-- Billing Toggle -->
+    <div class="flex justify-center mb-8">
+      <div class="bg-gray-200 dark:bg-gray-700 p-1 rounded-full inline-flex">
+        <button type="button" id="monthly-btn" onclick="setBilling('monthly')" class="px-6 py-2 rounded-full text-sm font-semibold transition billing-btn active">
+          <%= t('pricing.billing_toggle.monthly') %>
+        </button>
+        <button type="button" id="yearly-btn" onclick="setBilling('yearly')" class="px-6 py-2 rounded-full text-sm font-semibold transition billing-btn">
+          <%= t('pricing.billing_toggle.yearly') %>
+          <span class="ml-1 text-xs text-green-600 dark:text-green-400">-17%</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Pricing Cards -->
+    <div class="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+      
+      <!-- Free Tier -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
+        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          <%= t('pricing.free.name') %>
+        </h3>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">
+          <%= t('pricing.free.description') %>
+        </p>
+        <div class="mb-6">
+          <span class="text-4xl font-bold text-gray-900 dark:text-white">
+            <%= t('pricing.free.price') %>
+          </span>
+        </div>
+        <ul class="space-y-3 mb-8">
+          <% t('pricing.free.features').each do |feature| %>
+            <li class="flex items-center text-gray-600 dark:text-gray-400">
+              <svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <%= feature %>
+            </li>
+          <% end %>
+        </ul>
+        <% if logged_in? %>
+          <span class="block w-full py-3 px-4 text-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold">
+            <%= t('pricing.current_plan') %>
+          </span>
+        <% else %>
+          <%= link_to signup_path, class: "block w-full py-3 px-4 text-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition" do %>
+            <%= t('pricing.get_started') %>
+          <% end %>
+        <% end %>
+      </div>
+
+      <!-- Professional Tier (Highlighted) -->
+      <div class="bg-blue-600 rounded-2xl shadow-xl p-8 transform scale-105 relative">
+        <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+          <span class="bg-yellow-400 text-yellow-900 text-sm font-bold px-4 py-1 rounded-full">
+            <%= t('pricing.popular') %>
+          </span>
+        </div>
+        <h3 class="text-2xl font-bold text-white mb-2">
+          <%= t('pricing.professional.name') %>
+        </h3>
+        <p class="text-blue-100 mb-4">
+          <%= t('pricing.professional.description') %>
+        </p>
+        <div class="bg-blue-500 rounded-lg px-3 py-2 mb-4 inline-block">
+          <span class="text-yellow-300 font-semibold text-sm">✨ <%= t('pricing.professional.trial_info') %></span>
+        </div>
+        <div class="mb-6">
+          <div id="price-monthly" class="price-display">
+            <span class="text-4xl font-bold text-white"><%= t('pricing.professional.price_monthly') %></span>
+            <span class="text-blue-200"><%= t('pricing.professional.period_monthly') %></span>
+          </div>
+          <div id="price-yearly" class="price-display hidden">
+            <span class="text-4xl font-bold text-white"><%= t('pricing.professional.price_yearly') %></span>
+            <span class="text-blue-200"><%= t('pricing.professional.period_yearly') %></span>
+            <div class="text-sm text-yellow-300 mt-1"><%= t('pricing.professional.yearly_savings') %></div>
+          </div>
+        </div>
+        <ul class="space-y-3 mb-8">
+          <% t('pricing.professional.features').each do |feature| %>
+            <li class="flex items-center text-white">
+              <svg class="w-5 h-5 text-blue-200 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <%= feature %>
+            </li>
+          <% end %>
+        </ul>
+        <% if logged_in? && current_user.subscription&.professional? %>
+          <span class="block w-full py-3 px-4 text-center rounded-lg bg-blue-500 text-white font-semibold">
+            <%= t('pricing.current_plan') %>
+          </span>
+        <% else %>
+          <a href="#" id="checkout-btn" onclick="goToCheckout()" class="block w-full py-3 px-4 text-center rounded-lg bg-white text-blue-600 font-semibold hover:bg-blue-50 transition">
+            <%= t('pricing.start_trial') %>
+          </a>
+        <% end %>
+      </div>
+
+    </div>
+
+    <!-- FAQ or additional info -->
+    <div class="mt-16 text-center">
+      <p class="text-gray-600 dark:text-gray-400">
+        Vragen? Neem contact op via <a href="mailto:info@wetwijzer.be" class="text-blue-600 hover:underline">info@wetwijzer.be</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .billing-btn { color: #6b7280; }
+  .billing-btn.active { background-color: white; color: #1d4ed8; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .dark .billing-btn.active { background-color: #374151; color: white; }
+  .hidden { display: none; }
+</style>
+
+<script>
+  let currentBilling = 'monthly';
+  
+  function setBilling(type) {
+    currentBilling = type;
+    
+    document.getElementById('monthly-btn').classList.toggle('active', type === 'monthly');
+    document.getElementById('yearly-btn').classList.toggle('active', type === 'yearly');
+    
+    document.getElementById('price-monthly').classList.toggle('hidden', type !== 'monthly');
+    document.getElementById('price-yearly').classList.toggle('hidden', type !== 'yearly');
+  }
+  
+  function goToCheckout() {
+    window.location.href = '<%= checkout_path(tier: "professional") %>?interval=' + currentBilling;
+  }
+</script>

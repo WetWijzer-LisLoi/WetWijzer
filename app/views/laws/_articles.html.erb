@@ -1,0 +1,408 @@
+<% if articles.present? %>
+  <div class="bg-white dark:bg-navy rounded-xl shadow-lg border border-gray-200 dark:border-[var(--accent-500)]/30">
+    <div class="p-6" data-controller="collapse article-preferences" 
+         data-collapse-expanded-value="true"
+         data-article-preferences-show-colors-value="<%= defined?(@show_colors) ? @show_colors : true %>"
+         data-article-preferences-show-exdecs-value="<%= defined?(@show_exdecs) ? @show_exdecs : true %>">
+      <button type="button" class="w-full flex items-center justify-between text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--accent-500)]" data-action="click->collapse#toggle" data-collapse-target="button" aria-label="<%= t('aria.toggle_articles') %>" aria-expanded="true">
+        <h2 class="text-xl font-bold text-gray-800 dark:text-[var(--accent-500)]">
+          <%= t(:articles_text).capitalize() %>
+        </h2>
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor" data-collapse-target="icon">
+          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
+        </svg>
+      </button>
+      
+      <div data-collapse-target="content">
+        <%# View preference toggles %>
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-2"
+             data-controller="article-exdecs-loader"
+             data-article-exdecs-loader-url-value="<%= article_exdecs_law_path(params[:numac], language_id: @language_id) %>">
+          <%# Left side: view toggles %>
+          <div class="flex flex-wrap items-center gap-2">
+            <%# Toggle colored references %>
+            <% show_colors = defined?(@show_colors) ? @show_colors : true %>
+            <% show_exdecs = defined?(@show_exdecs) ? @show_exdecs : true %>
+            <% has_references = any_articles_have_references?(articles) %>
+            
+            <%# Loading spinner %>
+            <div data-article-preferences-target="spinner" class="hidden">
+              <svg class="animate-spin h-5 w-5 text-[var(--accent-600)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+            
+            <%# Toggle colored references (only show if articles have references) %>
+            <% if has_references %>
+              <button type="button"
+                    class="btn-toggle-active"
+                    data-action="click->article-preferences#toggleColors"
+                    data-colors-toggle
+                    title="<%= t('articles.hide_colors_tooltip') %>">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                  <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                </svg>
+                <%= t('articles.hide_colors') %>
+              </button>
+              
+              <%# Toggle reference highlighting (client-side only via localStorage) %>
+              <button type="button"
+                    class="btn-toggle-active"
+                    data-action="click->article-preferences#toggleHighlight"
+                    data-highlight-toggle
+                    title="<%= t('articles.hide_highlight_tooltip') %>">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M15.243 3.343a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-9 9a1 1 0 01-.39.242l-3.5 1.167a1 1 0 01-1.264-1.264l1.167-3.5a1 1 0 01.242-.39l9-9zM14 6.414L6.414 14l-.667 2 .253.253 2-.667L15.586 8 14 6.414zM16 5l1.586 1.586L19 5.172 17.414 3.586 16 5z"/>
+                  <path d="M3 19h6v2H3v-2z"/>
+                </svg>
+                <%= t('articles.hide_highlight') %>
+              </button>
+              
+              <%# Toggle references visibility (hides all reference markup) %>
+              <button type="button"
+                    class="btn-toggle-active"
+                    data-action="click->article-preferences#toggleReferences"
+                    data-references-toggle
+                    title="<%= t('articles.hide_references_tooltip') %>">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                </svg>
+                <%= t('articles.hide_references') %>
+              </button>
+            <% end %>
+            
+            <%# Warning box and toggle button for disabled exdecs (only when they're not loaded AND exdecs exist) %>
+            <% if defined?(@article_exdecs_disabled) && @article_exdecs_disabled && defined?(@exdecs) && @exdecs.present? %>
+              <%# Hidden toggle button for AJAX-loaded exdecs (will be shown by JS after load) %>
+              <button type="button"
+                    class="hidden btn-toggle-active btn-toggle-exdecs"
+                    data-action="click->article-exdecs-loader#toggleExdecs"
+                    data-exdec-toggle
+                    data-article-exdecs-loader-target="toggleButton"
+                    title="<%= t('articles.hide_exdecs_tooltip') %>">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                </svg>
+                <span data-article-exdecs-loader-target="toggleButtonText"><%= t('articles.hide_exdecs') %></span>
+              </button>
+              
+              <% 
+                exdec_count = defined?(@exdecs) ? @exdecs.size : 0
+                estimated_seconds = LawOptimization.estimate_load_time(exdec_count)
+                estimated_time = LawOptimization.format_load_time(estimated_seconds)
+                load_time_text = "~#{estimated_time}"
+              %>
+              <div class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-yellow-700 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700" 
+                   data-exdec-warning>
+                <svg class="w-4 h-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                </svg>
+                <span><%= t('articles.exdecs_disabled') %></span>
+                <span class="mx-2 text-yellow-400 dark:text-yellow-600">|</span>
+                <button type="button"
+                        class="underline hover:no-underline cursor-pointer"
+                        data-action="click->article-exdecs-loader#load"
+                        data-article-exdecs-loader-target="button">
+                  <%= t('articles.load_anyway') %> (<%= load_time_text %>)
+                </button>
+              </div>
+              
+              <%# Loading indicator %>
+              <div class="hidden inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-blue-700 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-300 dark:border-blue-700" 
+                   data-article-exdecs-loader-target="loadingIndicator">
+                <svg class="animate-spin h-4 w-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <%= t('articles.loading_exdecs', default: 'Artikelverwijzingen laden...') %>
+              </div>
+              
+              <%# Error message (hidden by default, shown by JS on error) %>
+              <div class="hidden inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-300 border border-red-300 dark:border-red-700"
+                   data-article-exdecs-loader-target="errorMessage">
+              </div>
+            <% end %>
+          </div>
+          
+          <%# Right side: export buttons %>
+          <div class="flex flex-wrap items-center gap-2">
+            <%# Copy all articles to clipboard %>
+            <button type="button"
+                  class="btn-toggle-inactive"
+                  data-controller="clipboard"
+                  data-action="click->clipboard#copyAllArticles"
+                  data-clipboard-copied-label-value="<%= t('articles.all_copied') %>"
+                  title="<%= t('articles.copy_all_tooltip') %>">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"/>
+                <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2a1 1 0 110 2h-2v-2z"/>
+              </svg>
+              <%= t('articles.copy_all') %>
+            </button>
+            
+            <%# Copy all articles (citation) %>
+            <button type="button"
+                  class="btn-toggle-inactive"
+                  data-controller="clipboard"
+                  data-action="click->clipboard#copyAllArticlesCitation"
+                  data-clipboard-copied-label-value="<%= t('articles.all_citation_copied') %>"
+                  title="<%= t('articles.copy_all_citation_tooltip') %>">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+              </svg>
+              <%= t('articles.copy_all_citation') %>
+            </button>
+            
+            <%# Export to Word %>
+            <button type="button"
+                  class="btn-toggle-inactive"
+                  data-controller="export-feedback"
+                  data-action="click->export-feedback#download"
+                  data-export-feedback-url-value="<%= export_word_law_path(params[:numac], language_id: @language_id) %>"
+                  data-export-feedback-filename-value="<%= @legislation&.short_title&.parameterize || params[:numac] %>.doc"
+                  title="<%= t('articles.export_word_tooltip') %>">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" data-export-feedback-target="icon">
+                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+              </svg>
+              <svg class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-export-feedback-target="spinner">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span data-export-feedback-target="label"><%= t('articles.export_word') %></span>
+            </button>
+            
+            <%# Export to Word (citation) %>
+            <button type="button"
+                  class="btn-toggle-inactive"
+                  data-controller="export-feedback"
+                  data-action="click->export-feedback#download"
+                  data-export-feedback-url-value="<%= export_word_law_path(params[:numac], language_id: @language_id, citation: true) %>"
+                  data-export-feedback-filename-value="<%= @legislation&.short_title&.parameterize || params[:numac] %>-citaat.doc"
+                  title="<%= t('articles.export_word_citation_tooltip') %>">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" data-export-feedback-target="icon">
+                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+              </svg>
+              <svg class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-export-feedback-target="spinner">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span data-export-feedback-target="label"><%= t('articles.export_word_citation') %></span>
+            </button>
+          </div>
+        </div>
+        
+        <%# Success message - Only shown by JavaScript after successful AJAX load %>
+        <div class="hidden mt-4 p-3 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-400 dark:border-green-500 rounded-r"
+             data-exdec-success
+             data-article-exdecs-loader-target="successMessage">
+          <div class="flex items-start">
+            <svg class="h-5 w-5 text-green-400 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+            </svg>
+            <div class="ml-3 flex-1">
+              <p class="text-sm text-green-700 dark:text-green-300">
+                <%= t('articles.exdecs_loaded') %>
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="article-content pt-3">
+      <%# Use short canonical article ids (e.g., "art-1") for anchors %>
+
+      <%# Prefetch DocumentNumberLookup cache for the entire page to minimize queries %>
+      <%
+        all_text = articles.map { |a| a.article_text.to_s }.join(' ')
+        # Include alphanumeric suffixes (e.g., 2014-04-25/M4)
+        doc_numbers = all_text.scan(/\d{4}-\d{2}-\d{2}\/[A-Za-z0-9]+/).uniq
+        prefetch_document_lookups(doc_numbers) if doc_numbers.any?
+      %>
+
+            <%# Reset unique section heading counters so numbering matches TOC %>
+      <% @_section_heading_counts = Hash.new(0) %>
+      <% prev_was_heading = false %>
+      <% section_stack = [] %> <%# Track open sections with their hierarchy levels %>
+
+      <% articles.each_with_index do |article, index| %>
+        <% # Use the centralized helper to determine article type (pass DB type too) %>
+        <% determined_type = determine_article_type(article.article_title, article.article_text, article.article_type) %>
+        <% is_heading = [:section_heading, :abolished_section].include?(determined_type) %>
+        
+        <% # Determine permalink: prefer canonical id from title (e.g., "art-6"), then from text, then short slug %>
+        <% # article_id_from_toc_line now handles variant extraction automatically from title/text %>
+        <% # For LNK articles, don't extract article IDs from text (they may contain article content as section headers) %>
+        <% article_text = article.article_text.chomp.strip %>
+        <% article_title = article.article_title.to_s.chomp.strip %>
+        <% is_lnk = article.article_type == 'LNK' %>
+        <% permalink = article_id_from_toc_line(article_title) || (!is_lnk && article_id_from_toc_line(article_text)) || generate_short_permalink(is_lnk ? article_title : article_text, prefer_article_id: !is_lnk) %>
+        
+
+        
+        <% # Peek ahead to reduce bottom padding on an article when the next item is a heading %>
+        <% next_is_heading = false %>
+        <% if (index + 1) < articles.length %>
+          <% next_art = articles[index + 1] %>
+          <% next_type = determine_article_type(next_art.article_title, next_art.article_text, next_art.article_type) %>
+          <% next_is_heading = [:section_heading, :abolished_section].include?(next_type) %>
+        <% end %>
+
+        <% if is_heading %>
+          <%# Determine hierarchy level of this heading %>
+          <% current_level = section_heading_level(article.article_text) %>
+          
+          <%# Close sections at same level or deeper (lower in hierarchy) %>
+          <% while section_stack.any? && section_stack.last >= current_level %>
+            <% section_stack.pop %>
+              </div> <%# Close content %>
+            </div> <%# Close collapse controller %>
+          <% end %>
+          
+          <%# Open new collapse wrapper %>
+          <div data-controller="collapse" data-collapse-expanded-value="true" class="collapsible-section">
+            <!-- Section Heading is fully rendered (including copy-link) by the helper -->
+            <%= print_article(article.article_text, article.article_title, article.article_type) %>
+            
+            <%# Open collapsible content container for articles under this section %>
+            <div data-collapse-target="content" class="section-content">
+            <% section_stack.push(current_level) %>
+        <% else %>
+          <!-- Regular Article -->
+          <%# Invisible anchors placed before the article to ensure correct scroll offset for fixed headers %>
+          <article id="<%= permalink %>"
+                   data-article-scope
+                   class="group relative scroll-mt-24 <%= (index.zero? || prev_was_heading) ? '' : 'border-t border-gray-200 dark:border-[var(--accent-500)]/40' %>">
+            <%# Hidden alias anchor moved inside the article to avoid creating extra space between siblings %>
+            <span id="section-<%= permalink %>" class="block h-0 overflow-hidden scroll-mt-24 !mt-0" aria-hidden="true"></span>
+            <% top_pad = prev_was_heading ? 'pt-2' : 'pt-4' %>
+            <% bottom_pad = next_is_heading ? 'pb-2' : 'pb-4' %>
+            <div class="<%= [top_pad, bottom_pad].join(' ') %> flex items-start">
+              <div class="flex-1 min-w-0" id="article-text-<%= permalink %>">
+                <%= print_article(article.article_text, article.article_title, article.article_type) %>
+              </div>
+              
+              <!-- Copy dropdown (single button with menu) -->
+              <div class="relative shrink-0 ml-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity" data-controller="dropdown">
+                <button type="button"
+                        data-dropdown-target="button"
+                        data-action="click->dropdown#toggle"
+                        class="p-1 text-gray-400 hover:text-[var(--accent-600)] transition-colors duration-200 focus:outline-none rounded"
+                        title="<%= t(:copy_options, default: 'Kopieeropties') %>"
+                        aria-label="<%= t(:copy_options, default: 'Kopieeropties') %>"
+                        aria-expanded="false"
+                        aria-haspopup="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                </button>
+                
+                <!-- Dropdown menu -->
+                <div data-dropdown-target="menu"
+                     class="hidden absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                  <!-- Copy Link -->
+                  <button type="button"
+                          data-controller="clipboard"
+                          data-action="click->clipboard#copy click->dropdown#close"
+                          data-clipboard-fragment-value="<%= permalink %>"
+                          data-clipboard-copied-label-value="<%= t(:link_copied) %>"
+                          class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                    </svg>
+                    <%= t(:copy_article_link) %>
+                  </button>
+                  
+                  <!-- Copy Text -->
+                  <button type="button"
+                          data-controller="clipboard"
+                          data-action="click->clipboard#copyText click->dropdown#close"
+                          data-clipboard-source-selector-value="#article-text-<%= permalink %>"
+                          data-clipboard-copied-label-value="<%= t(:text_copied) %>"
+                          class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M9.5 4.5A1.5 1.5 0 0111 3h2a1.5 1.5 0 011.5 1.5V6H17a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V8a2 2 0 012-2h2.5V4.5z" />
+                    </svg>
+                    <%= t(:copy_article_text) %>
+                  </button>
+                  
+                  <!-- Copy Clean Text -->
+                  <button type="button"
+                          data-controller="clipboard"
+                          data-action="click->clipboard#copyCleanText click->dropdown#close"
+                          data-clipboard-source-selector-value="#article-text-<%= permalink %>"
+                          data-clipboard-copied-label-value="<%= t(:clean_text_copied) %>"
+                          class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                    </svg>
+                    <%= t(:copy_clean_text) %>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <%# Show related executive decisions that reference this article %>
+            <% article_id = extract_article_id_from_article(article) %>
+            
+            <% if defined?(@show_exdecs) && @show_exdecs && defined?(@article_exdec_mapping) && @article_exdec_mapping.present? %>
+              <% related_exdecs = @article_exdec_mapping[article_id] if article_id %>
+              
+              <% if related_exdecs.present? %>
+                <div class="mt-2 mb-1 ml-4 border-l-2 border-gray-400 dark:border-gray-600 bg-gray-50/50 dark:bg-gray-800/10 rounded-r-lg" data-controller="collapse" data-collapse-expanded-value="true">
+                  <div class="py-1.5 pr-3 pl-4">
+                    <%# Collapsible header %>
+                    <button type="button" 
+                            class="w-full flex items-center justify-between text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-500)] rounded"
+                            data-action="click->collapse#toggle"
+                            data-collapse-target="button"
+                            aria-label="<%= t('exdecs.toggle_section', default: 'Toggle executive decisions') %>"
+                            aria-expanded="true">
+                      <h3 class="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                        </svg>
+                        <%= t('exdecs.implementing_this_article', default: 'Uitvoeringsbesluiten die dit artikel uitvoeren') %>
+                        <span class="badge-exdec-count">
+                          <%= related_exdecs.size %>
+                        </span>
+                      </h3>
+                      <svg xmlns="http://www.w3.org/2000/svg" 
+                           class="w-4 h-4 transition-transform text-gray-500 dark:text-gray-400" 
+                           viewBox="0 0 20 20" 
+                           fill="currentColor"
+                           data-collapse-target="icon">
+                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                    
+                    <%# Collapsible content %>
+                    <div class="mt-2 space-y-2" data-collapse-target="content">
+                      <% related_exdecs.each do |exdec_info| %>
+                        <% exdec = exdec_info[:exdec] %>
+                        <% exdec_article = exdec_info[:article] %>
+                        <% exdec_law = exdec.executive_legislation_in_language(@executive_legislations_cache) %>
+                        
+                        <%= render 'laws/exdec_card', exdec: exdec, exdec_article: exdec_article, exdec_law: exdec_law, language_id: @language_id %>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            <% end %>
+          </article>
+        <% end %>
+        <% prev_was_heading = is_heading %>
+      <% end %>
+      
+      <%# Close all remaining open sections %>
+      <% while section_stack.any? %>
+        <% section_stack.pop %>
+          </div> <%# Close content %>
+        </div> <%# Close collapse controller %>
+      <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

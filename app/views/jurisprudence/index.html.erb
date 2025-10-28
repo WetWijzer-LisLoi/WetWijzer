@@ -1,0 +1,231 @@
+<% @title = I18n.locale == :fr ? 'Jurisprudence Belge' : 'Belgische Rechtspraak' %>
+
+<div class="max-w-6xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      <% if I18n.locale == :fr %>
+        🏛️ Jurisprudence Belge
+      <% else %>
+        🏛️ Belgische Rechtspraak
+      <% end %>
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      <% if I18n.locale == :fr %>
+        <%= @total_count %> arrêts disponibles
+      <% else %>
+        <%= @total_count %> arresten beschikbaar
+      <% end %>
+    </p>
+  </div>
+
+  <!-- Search Form -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6" data-controller="collapsible-filters">
+    <%= form_with url: jurisprudence_index_path, method: :get, local: true do %>
+      <!-- Search bar + toggle -->
+      <div class="flex flex-col sm:flex-row gap-3 mb-3">
+        <div class="flex-1">
+          <input type="text" name="q" value="<%= @query %>" 
+                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                 placeholder="<%= I18n.locale == :fr ? 'ECLI, mots-clés...' : 'ECLI, trefwoorden...' %>">
+        </div>
+        <div class="flex gap-2">
+          <button type="submit" class="flex-1 sm:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md text-sm">
+            <% if I18n.locale == :fr %>Rechercher<% else %>Zoeken<% end %>
+          </button>
+          <button type="button" 
+                  class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md text-sm sm:hidden"
+                  data-action="click->collapsible-filters#toggle"
+                  data-collapsible-filters-target="toggleBtn">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Collapsible filters (always visible on desktop) -->
+      <div class="hidden sm:block" data-collapsible-filters-target="content">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              <% if I18n.locale == :fr %>Cour<% else %>Hof<% end %>
+            </label>
+            <select name="court" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm">
+              <option value=""><%= I18n.locale == :fr ? 'Toutes' : 'Alle' %></option>
+              <% @grouped_courts.each do |level_label, courts| %>
+                <optgroup label="<%= level_label %>">
+                  <% courts.each do |display_name, value| %>
+                    <option value="<%= value %>" <%= 'selected' if @court == value %>><%= display_name.truncate(25) %></option>
+                  <% end %>
+                </optgroup>
+              <% end %>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              <% if I18n.locale == :fr %>Année<% else %>Jaar<% end %>
+            </label>
+            <select name="year" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm">
+              <option value=""><%= I18n.locale == :fr ? 'Toutes' : 'Alle' %></option>
+              <% (Date.current.year).downto(1985).each do |y| %>
+                <option value="<%= y %>" <%= 'selected' if @year.to_i == y %>><%= y %></option>
+              <% end %>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              <% if I18n.locale == :fr %>Langue<% else %>Taal<% end %>
+            </label>
+            <select name="lang" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm">
+              <option value=""><%= I18n.locale == :fr ? 'Toutes' : 'Alle' %></option>
+              <option value="NL" <%= 'selected' if @lang == 'NL' %>>NL</option>
+              <option value="FR" <%= 'selected' if @lang == 'FR' %>>FR</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              <% if I18n.locale == :fr %>Date de<% else %>Datum van<% end %>
+            </label>
+            <input type="date" name="date_from" value="<%= @date_from %>"
+                   class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm">
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              <% if I18n.locale == :fr %>Date à<% else %>Datum tot<% end %>
+            </label>
+            <input type="date" name="date_to" value="<%= @date_to %>"
+                   class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm">
+          </div>
+        </div>
+
+        <!-- Sort + Clear row -->
+        <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-gray-500 dark:text-gray-400"><% if I18n.locale == :fr %>Trier:<% else %>Sorteren:<% end %></label>
+            <select name="sort" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-xs py-1">
+              <option value="date_desc" <%= 'selected' if @sort == 'date_desc' || @sort.blank? %>><%= I18n.locale == :fr ? 'Date (récent)' : 'Datum (recent)' %></option>
+              <option value="date_asc" <%= 'selected' if @sort == 'date_asc' %>><%= I18n.locale == :fr ? 'Date (ancien)' : 'Datum (oud)' %></option>
+            </select>
+          </div>
+          <% if @query.present? || @court.present? || @year.present? || @date_from.present? || @date_to.present? || @lang.present? %>
+            <a href="<%= jurisprudence_index_path %>" class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+              <% if I18n.locale == :fr %>Effacer filtres<% else %>Filters wissen<% end %>
+            </a>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Results -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+    <% if @cases.empty? %>
+      <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+        <% if I18n.locale == :fr %>
+          Aucun arrêt trouvé
+        <% else %>
+          Geen arresten gevonden
+        <% end %>
+      </div>
+    <% else %>
+      <div class="divide-y divide-gray-200 dark:divide-gray-700">
+        <% @cases.each do |c| %>
+          <a href="<%= jurisprudence_path(c[:id]) %>" 
+             class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1 min-w-0">
+                <h3 class="font-medium text-gray-900 dark:text-white truncate">
+                  <%= c[:case_number] %>
+                </h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 flex flex-wrap items-center gap-1">
+                  <%= court_level_indicator(c[:court]) %>
+                  <%= court_badge_with_tooltip(c[:court]) %>
+                  <%= appeal_route_badge(c[:court]) %>
+                  <span class="ml-1"><%= c[:decision_date] %></span>
+                  <span class="text-xs"><%= c[:language_id].to_s.upcase.start_with?('N') ? 'NL' : 'FR' %></span>
+                </p>
+                <% if c[:summary].present? %>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">
+                    <%= c[:summary].to_s.truncate(200) %>
+                  </p>
+                <% end %>
+              </div>
+              <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </a>
+        <% end %>
+      </div>
+    <% end %>
+
+    <!-- Pagination -->
+    <% if @total_pages > 1 %>
+      <% filter_params = { q: @query, court: @court, year: @year, date_from: @date_from, date_to: @date_to, lang: @lang, sort: @sort }.compact %>
+      <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="text-sm text-gray-700 dark:text-gray-300">
+            <% if I18n.locale == :fr %>
+              Page <%= @page %> sur <%= @total_pages %>
+            <% else %>
+              Pagina <%= @page %> van <%= @total_pages %>
+            <% end %>
+          </div>
+          <div class="flex items-center gap-1">
+            <% if @page > 1 %>
+              <a href="<%= jurisprudence_index_path(filter_params.merge(page: 1)) %>"
+                 class="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">«</a>
+              <a href="<%= jurisprudence_index_path(filter_params.merge(page: @page - 1)) %>"
+                 class="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">‹</a>
+            <% end %>
+            <% 
+              # Show page numbers: first, around current, last
+              pages_to_show = [1]
+              ([@page - 2, 2].max..[@page + 2, @total_pages - 1].min).each { |p| pages_to_show << p }
+              pages_to_show << @total_pages if @total_pages > 1
+              pages_to_show = pages_to_show.uniq.sort
+              prev_page = 0
+            %>
+            <% pages_to_show.each do |p| %>
+              <% if p > prev_page + 1 %>
+                <span class="px-1 text-gray-400">…</span>
+              <% end %>
+              <% if p == @page %>
+                <span class="px-3 py-1 bg-blue-600 text-white text-sm rounded"><%= p %></span>
+              <% else %>
+                <a href="<%= jurisprudence_index_path(filter_params.merge(page: p)) %>"
+                   class="px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"><%= p %></a>
+              <% end %>
+              <% prev_page = p %>
+            <% end %>
+            <% if @page < @total_pages %>
+              <a href="<%= jurisprudence_index_path(filter_params.merge(page: @page + 1)) %>"
+                 class="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">›</a>
+              <a href="<%= jurisprudence_index_path(filter_params.merge(page: @total_pages)) %>"
+                 class="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">»</a>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Link to chatbot -->
+  <div class="mt-6 text-center">
+    <a href="<%= chatbot_path(source: 'jurisprudence') %>" 
+       class="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+      </svg>
+      <% if I18n.locale == :fr %>
+        Poser une question à l'assistant IA
+      <% else %>
+        Stel een vraag aan de AI-assistent
+      <% end %>
+    </a>
+  </div>
+</div>

@@ -1,0 +1,174 @@
+<% fr = I18n.locale == :fr %>
+
+<div class="max-w-4xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      💰 <%= fr ? 'Calculateur d\'intérêts légaux' : 'Wettelijke rentecalculator' %>
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      <%= fr ? 'Calculez les intérêts légaux belges sur une somme due' : 'Bereken Belgische wettelijke rente op een verschuldigd bedrag' %>
+    </p>
+  </div>
+
+  <!-- Calculator Form -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+    <%= form_with url: tools_interest_calculator_path, method: :get, local: true, class: 'space-y-4' do %>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= fr ? 'Montant principal (€)' : 'Hoofdsom (€)' %>
+          </label>
+          <input type="number" name="principal" value="<%= params[:principal] || 1000 %>" min="0" step="0.01"
+                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= fr ? 'Type de taux' : 'Type tarief' %>
+          </label>
+          <select name="rate_type" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+            <option value="civil" <%= 'selected' if params[:rate_type] == 'civil' || params[:rate_type].blank? %>>
+              <%= fr ? 'Civil/Commercial (Art. 1153 CC)' : 'Burgerlijk/Commercieel (Art. 1153 BW)' %>
+            </option>
+            <option value="tax" <%= 'selected' if params[:rate_type] == 'tax' %>>
+              <%= fr ? 'Fiscal' : 'Fiscaal' %>
+            </option>
+            <option value="social" <%= 'selected' if params[:rate_type] == 'social' %>>
+              <%= fr ? 'Sécurité sociale' : 'Sociale zekerheid' %>
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= fr ? 'Date de début' : 'Startdatum' %>
+          </label>
+          <input type="date" name="start_date" value="<%= params[:start_date] || (Date.current - 1.year).to_s %>"
+                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= fr ? 'Date de fin' : 'Einddatum' %>
+          </label>
+          <input type="date" name="end_date" value="<%= params[:end_date] || Date.current.to_s %>"
+                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+          <p class="text-xs text-gray-500 mt-1"><%= fr ? "Vide = aujourd'hui" : 'Leeg = vandaag' %></p>
+        </div>
+      </div>
+      <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md">
+        <%= fr ? 'Calculer' : 'Berekenen' %>
+      </button>
+    <% end %>
+  </div>
+
+  <% if @error %>
+    <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+      <p class="text-red-800 dark:text-red-200"><%= @error %></p>
+    </div>
+  <% end %>
+
+  <% if @result %>
+    <!-- Result -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4"><%= fr ? 'Résultat' : 'Resultaat' %></h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center">
+          <p class="text-sm text-gray-500 dark:text-gray-400"><%= fr ? 'Principal' : 'Hoofdsom' %></p>
+          <p class="text-2xl font-bold text-gray-900 dark:text-white">€ <%= number_with_delimiter(@result[:principal], delimiter: ' ') %></p>
+        </div>
+        <div class="bg-amber-50 dark:bg-amber-900/30 rounded-lg p-4 text-center">
+          <p class="text-sm text-amber-600 dark:text-amber-400"><%= fr ? 'Intérêts' : 'Rente' %></p>
+          <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">+ € <%= number_with_delimiter(@result[:total_interest], delimiter: ' ') %></p>
+        </div>
+        <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-4 text-center">
+          <p class="text-sm text-green-600 dark:text-green-400"><%= fr ? 'Total dû' : 'Totaal verschuldigd' %></p>
+          <p class="text-2xl font-bold text-green-600 dark:text-green-400">€ <%= number_with_delimiter(@result[:total_amount], delimiter: ' ') %></p>
+        </div>
+      </div>
+
+      <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p><%= fr ? 'Période:' : 'Periode:' %> <%= I18n.l(@result[:start_date], format: :short) %> → <%= I18n.l(@result[:end_date], format: :short) %> (<%= @result[:total_days] %> <%= fr ? 'jours' : 'dagen' %>)</p>
+      </div>
+
+      <% if @result[:breakdown].any? %>
+        <h3 class="font-medium text-gray-900 dark:text-white mb-2"><%= fr ? 'Détail par année' : 'Detail per jaar' %></h3>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th class="px-3 py-2 text-left text-gray-700 dark:text-gray-300"><%= fr ? 'Année' : 'Jaar' %></th>
+                <th class="px-3 py-2 text-left text-gray-700 dark:text-gray-300"><%= fr ? 'Période' : 'Periode' %></th>
+                <th class="px-3 py-2 text-right text-gray-700 dark:text-gray-300"><%= fr ? 'Jours' : 'Dagen' %></th>
+                <th class="px-3 py-2 text-right text-gray-700 dark:text-gray-300"><%= fr ? 'Taux' : 'Tarief' %></th>
+                <th class="px-3 py-2 text-right text-gray-700 dark:text-gray-300"><%= fr ? 'Intérêts' : 'Rente' %></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+              <% @result[:breakdown].each do |row| %>
+                <tr>
+                  <td class="px-3 py-2 text-gray-900 dark:text-white font-medium"><%= row[:year] %></td>
+                  <td class="px-3 py-2 text-gray-600 dark:text-gray-400"><%= row[:start_date].strftime('%d/%m') %> - <%= row[:end_date].strftime('%d/%m') %></td>
+                  <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400"><%= row[:days] %></td>
+                  <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400"><%= row[:rate] %>%</td>
+                  <td class="px-3 py-2 text-right text-amber-600 dark:text-amber-400 font-medium">€ <%= row[:interest] %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+
+      <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          ⚠️ <%= fr ? 'Ce calcul est fourni à titre indicatif. Les taux peuvent varier.' : 'Deze berekening is indicatief. Tarieven kunnen variëren.' %>
+        </p>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Current rates -->
+  <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6">
+    <h3 class="font-semibold text-gray-900 dark:text-white mb-4"><%= fr ? 'Taux d\'intérêt légaux' : 'Wettelijke rentevoeten' %></h3>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="bg-white dark:bg-gray-800">
+          <tr>
+            <th class="px-3 py-2 text-left text-gray-700 dark:text-gray-300"><%= fr ? 'Année' : 'Jaar' %></th>
+            <th class="px-3 py-2 text-right text-gray-700 dark:text-gray-300"><%= fr ? 'Civil' : 'Burgerlijk' %></th>
+            <th class="px-3 py-2 text-right text-gray-700 dark:text-gray-300"><%= fr ? 'Fiscal' : 'Fiscaal' %></th>
+            <th class="px-3 py-2 text-right text-gray-700 dark:text-gray-300"><%= fr ? 'Social' : 'Sociaal' %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+          <% @rates.each do |row| %>
+            <tr class="<%= row[:year] == Date.current.year ? 'bg-blue-50 dark:bg-blue-900/20' : '' %>">
+              <td class="px-3 py-2 text-gray-900 dark:text-white font-medium">
+                <%= row[:year] %>
+                <% if row[:year] == Date.current.year %>
+                  <span class="ml-1 text-xs text-blue-600 dark:text-blue-400">(<%= fr ? 'actuel' : 'huidig' %>)</span>
+                <% end %>
+              </td>
+              <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400"><%= row[:civil] ? "#{row[:civil]}%" : '-' %></td>
+              <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400"><%= row[:tax] ? "#{row[:tax]}%" : '-' %></td>
+              <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400"><%= row[:social] ? "#{row[:social]}%" : '-' %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+      <%= fr ? 'Source: SPF Finances - Art. 1153 Code civil, Loi du 2 août 2002' : 'Bron: FOD Financiën - Art. 1153 BW, Wet van 2 augustus 2002' %>
+    </p>
+  </div>
+
+  <!-- Links -->
+  <div class="mt-6 flex flex-wrap justify-center gap-4 text-sm">
+    <a href="<%= tools_deadline_calculator_path %>" class="text-blue-600 dark:text-blue-400 hover:underline">
+      📅 <%= fr ? 'Calculateur de dates' : 'Datumcalculator' %>
+    </a>
+    <a href="<%= tools_holidays_path(Date.current.year) %>" class="text-blue-600 dark:text-blue-400 hover:underline">
+      📆 <%= fr ? 'Jours fériés' : 'Feestdagen' %>
+    </a>
+  </div>
+</div>

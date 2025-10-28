@@ -1,0 +1,214 @@
+<%= content_for :title, t('account.title') %>
+
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto flex gap-8">
+    <%= render 'layouts/account_sidebar' %>
+    
+    <main class="flex-1 min-w-0">
+
+    <!-- Account Info -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+          <%= t('account.info') %>
+        </h2>
+        <%= link_to edit_account_path, class: "text-blue-600 hover:text-blue-700 text-sm" do %>
+          <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          <%= t('account.edit_profile') %>
+        <% end %>
+      </div>
+      <dl class="grid grid-cols-2 gap-4">
+        <div>
+          <dt class="text-sm text-gray-500 dark:text-gray-400"><%= t('auth.email') %></dt>
+          <dd class="text-gray-900 dark:text-white"><%= @user.email %></dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500 dark:text-gray-400"><%= t('auth.name') %></dt>
+          <dd class="text-gray-900 dark:text-white"><%= @user.name || '-' %></dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500 dark:text-gray-400"><%= t('account.member_since') %></dt>
+          <dd class="text-gray-900 dark:text-white"><%= @user.created_at.strftime('%d %B %Y') %></dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500 dark:text-gray-400"><%= t('account.total_queries') %></dt>
+          <dd class="text-gray-900 dark:text-white"><%= @usage_stats[:total_queries] %></dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- Usage Dashboard -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        📊 <%= t('account.usage_dashboard') %>
+      </h2>
+      
+      <% tier = @subscription&.tier || 'trial' %>
+      <% weekly_used = @user.weekly_usage_count %>
+      <% weekly_limit = tier == 'trial' ? 5 : 1000 %>
+      <% weekly_percent = [(weekly_used.to_f / weekly_limit * 100), 100].min %>
+      
+      <div class="space-y-4">
+        <!-- Weekly Usage -->
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-600 dark:text-gray-400"><%= t('account.weekly_usage') %></span>
+            <span class="font-medium text-gray-900 dark:text-white">
+              <%= weekly_used %> / <%= weekly_limit == 1000 ? '∞' : weekly_limit %>
+            </span>
+          </div>
+          <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+            <div class="h-3 rounded-full transition-all duration-300 <%= weekly_percent > 80 ? 'bg-red-500' : weekly_percent > 50 ? 'bg-amber-500' : 'bg-green-500' %>" 
+                 style="width: <%= tier == 'trial' ? weekly_percent : 5 %>%"></div>
+          </div>
+          <% if tier == 'trial' && weekly_used >= weekly_limit %>
+            <p class="text-xs text-red-600 dark:text-red-400 mt-1">
+              ⚠️ <%= t('account.limit_reached') %>
+              <%= link_to t('subscriptions.upgrade'), pricing_path, class: "underline" %>
+            </p>
+          <% elsif tier == 'trial' %>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <%= t('account.queries_remaining', count: @user.remaining_free_queries) %>
+            </p>
+          <% end %>
+        </div>
+        
+        <!-- Monthly Stats -->
+        <div class="pt-4 border-t border-gray-200 dark:border-gray-700 grid grid-cols-2 gap-4">
+          <div class="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div class="text-2xl font-bold text-blue-600"><%= @usage_stats[:this_month] %></div>
+            <div class="text-xs text-gray-500 dark:text-gray-400"><%= t('account.this_month') %></div>
+          </div>
+          <div class="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div class="text-2xl font-bold text-gray-700 dark:text-gray-300"><%= @usage_stats[:total_queries] %></div>
+            <div class="text-xs text-gray-500 dark:text-gray-400"><%= t('account.total_queries') %></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subscription -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+          <%= t('subscriptions.your_subscription') %>
+        </h2>
+        <% if @user.trial_active? %>
+          <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+            🎁 <%= t('account.trial_active', days: @user.trial_days_remaining) %>
+          </span>
+        <% else %>
+          <span class="px-2 py-1 text-xs font-medium rounded-full <%= @subscription&.active? ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' %>">
+            <%= @subscription&.tier&.capitalize || 'Trial' %>
+          </span>
+        <% end %>
+      </div>
+      
+      <div class="space-y-3">
+        <!-- PEPPOL Billing Info -->
+        <%= link_to billing_info_path, class: "flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition" do %>
+          <div class="flex items-center">
+            <svg class="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <div>
+              <span class="text-gray-700 dark:text-gray-300"><%= t('account.billing_info') %></span>
+              <% if @subscription&.vat_number.present? %>
+                <span class="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-800 rounded-full">PEPPOL ✓</span>
+              <% end %>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <% end %>
+
+        <% if @subscription&.stripe_customer_id.present? %>
+          <%= link_to billing_portal_path, class: "flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition" do %>
+            <div class="flex items-center">
+              <svg class="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+              <span class="text-gray-700 dark:text-gray-300"><%= t('subscriptions.manage_billing') %></span>
+            </div>
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          <% end %>
+        <% end %>
+        
+        <%= link_to subscription_path, class: "flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition" do %>
+          <div class="flex items-center">
+            <svg class="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span class="text-gray-700 dark:text-gray-300"><%= t('account.manage_subscription') %></span>
+          </div>
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Security Settings -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        🔒 <%= t('account.security') %>
+      </h2>
+      
+      <div class="space-y-3">
+        <!-- 2FA -->
+        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div class="flex items-center">
+            <svg class="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            <div>
+              <span class="text-gray-700 dark:text-gray-300"><%= t('account.two_factor') %></span>
+              <% if @user.otp_enabled? %>
+                <span class="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-800 rounded-full"><%= t('account.enabled') %></span>
+              <% end %>
+            </div>
+          </div>
+          <% if @user.otp_enabled? %>
+            <%= link_to t('account.disable'), disable_2fa_path, method: :delete, data: { confirm: t('account.disable_2fa_confirm') }, class: "text-red-600 hover:text-red-700 text-sm" %>
+          <% else %>
+            <%= link_to t('account.enable'), setup_2fa_path, class: "text-blue-600 hover:text-blue-700 text-sm" %>
+          <% end %>
+        </div>
+
+        <!-- Activity Log -->
+        <%= link_to activity_log_path, class: "flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition" do %>
+          <div class="flex items-center">
+            <svg class="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span class="text-gray-700 dark:text-gray-300"><%= t('account.activity_log') %></span>
+          </div>
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- GDPR Actions -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        <%= t('account.your_data') %>
+      </h2>
+      
+      <div class="space-y-4">
+        <!-- Export Data -->
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="font-medium text-gray-900 dark:text-white"><%= t('account.export_data') %></p>
+            <p class="text-sm text-gray-500 dark:text-gray-400"><%= t('account.export_data_desc') %></p>
+          </div>
+          <%= link_to export_data_path, class: "px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition" do %>
+            <%= t('account.download') %>
+          <% end %>
+        </div>
+
+        <!-- Delete Account -->
+        <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div>
+            <p class="font-medium text-red-600"><%= t('account.delete_account') %></p>
+            <p class="text-sm text-gray-500 dark:text-gray-400"><%= t('account.delete_account_desc') %></p>
+          </div>
+          <%= button_to delete_account_path, 
+              method: :delete,
+              data: { confirm: t('account.delete_confirm') },
+              class: "px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition" do %>
+            <%= t('account.delete') %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    </main>
+  </div>
+</div>

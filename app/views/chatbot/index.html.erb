@@ -1,0 +1,489 @@
+<% @title = "#{t('chatbot.title', default: 'Legal Chatbot')} - WetWijzer" %>
+
+<div class="max-w-4xl mx-auto">
+  <div class="mb-8">
+    <div class="flex items-center justify-between flex-wrap gap-4">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2" data-translate="title">
+          <%= I18n.locale == :fr ? 'LisLoi Assistant Juridique' : 'WetWijzer Juridische Assistent' %>
+        </h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-gray-500 dark:text-gray-400">🌐</span>
+        <div class="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
+          <% if I18n.locale == :fr %>
+            <button type="button" id="lang-primary" class="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white" onclick="switchPageLanguage('fr')">FR</button>
+            <a href="https://wetwijzer.be/chatbot" class="px-3 py-1.5 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">NL</a>
+          <% else %>
+            <button type="button" id="lang-primary" class="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white" onclick="switchPageLanguage('nl')">NL</button>
+            <a href="https://lisloi.be/chatbot" class="px-3 py-1.5 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">FR</a>
+          <% end %>
+          <button type="button" id="lang-en" class="px-3 py-1.5 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300" onclick="switchPageLanguage('en')">EN</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden"
+       data-controller="chatbot"
+       data-chatbot-language-value="<%= @language || I18n.locale %>"
+       data-chatbot-source-value="legislation,jurisprudence,parliamentary"
+       data-chatbot-use-local-value="<%= @use_local ? 'true' : 'false' %>"
+       data-chatbot-pass-value="<%= params[:pass] %>"
+       data-chatbot-open-value="true">
+    
+    <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 border-b border-gray-200 dark:border-gray-600">
+      <div class="flex flex-wrap items-center gap-4">
+        <!-- Hidden language select for JS compatibility -->
+        <select id="chatbot-language" class="hidden" data-chatbot-target="languageSelect">
+          <option value="nl" selected>Nederlands</option>
+        </select>
+
+        <div class="flex items-center gap-4 flex-wrap">
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300" data-translate="sources">
+            <%= I18n.locale == :fr ? 'Sources' : 'Bronnen' %>:
+          </span>
+          
+          <label class="inline-flex items-center gap-1.5 cursor-pointer">
+            <input type="checkbox" 
+                   id="source-legislation"
+                   data-chatbot-target="sourceLegislation"
+                   data-action="change->chatbot#updateSources"
+                   checked
+                   class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+            <span class="text-sm text-gray-700 dark:text-gray-300" data-translate="legislation">
+              <%= I18n.locale == :fr ? '📜 Législation' : '📜 Wetgeving' %>
+            </span>
+          </label>
+          
+          <label class="inline-flex items-center gap-1.5 cursor-pointer">
+            <input type="checkbox"
+                   id="source-jurisprudence" 
+                   data-chatbot-target="sourceJurisprudence"
+                   data-action="change->chatbot#updateSources"
+                   checked
+                   class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+            <span class="text-sm text-gray-700 dark:text-gray-300" data-translate="jurisprudence">
+              <%= I18n.locale == :fr ? '⚖️ Jurisprudence' : '⚖️ Rechtspraak' %>
+            </span>
+          </label>
+          
+          <label class="inline-flex items-center gap-1.5 cursor-pointer">
+            <input type="checkbox"
+                   id="source-parliamentary"
+                   data-chatbot-target="sourceParliamentary"
+                   data-action="change->chatbot#updateSources"
+                   checked
+                   class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+            <span class="text-sm text-gray-700 dark:text-gray-300" data-translate="parliamentary">
+              <%= I18n.locale == :fr ? '🏛️ Travaux prép.' : '🏛️ Parl. voorber.' %>
+            </span>
+          </label>
+          
+        </div>
+
+        <button type="button"
+                class="ml-auto text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                data-action="click->chatbot#clear"
+                data-translate="clear">
+          <%= I18n.locale == :fr ? 'Effacer' : 'Wissen' %>
+        </button>
+      </div>
+    </div>
+
+    <div class="h-96 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900"
+         data-chatbot-target="messages">
+      
+      <div class="message p-3 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 max-w-[85%]">
+        <div class="message-content" data-translate="welcome">
+          <%= I18n.locale == :fr ? 
+              "Bonjour! Je suis l'assistant juridique LisLoi. Je réponds dans votre langue de saisie." :
+              "Hallo! Ik ben de WetWijzer juridische assistent. Ik antwoord in jouw invoertaal." %>
+        </div>
+      </div>
+
+      <% if @result %>
+        <div class="message p-3 rounded-lg ml-auto bg-blue-500 text-white max-w-[85%]">
+          <div class="message-content"><%= params[:question] %></div>
+        </div>
+        
+        <div class="message p-3 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 max-w-[85%]">
+          <div class="message-content whitespace-pre-wrap"><%= @result[:answer] %></div>
+          
+          <% if @result[:sources]&.any? %>
+            <div class="message-sources mt-2 pt-2 border-t border-gray-200 dark:border-gray-600 text-xs">
+              <div class="font-medium text-gray-500 dark:text-gray-400 mb-1">
+                <%= t('chatbot.sources', default: 'Bronnen') %>:
+              </div>
+              <% @result[:sources].each_with_index do |source, index| %>
+                <div class="<%= source[:url] ? 'text-blue-600 dark:text-blue-400 hover:underline' : 'text-gray-600 dark:text-gray-300' %>">
+                  <% if source[:url] %>
+                    <a href="<%= source[:url] %>" target="_blank">
+                      <%= index + 1 %>. <%= source[:law_title] || source[:title] %>
+                      <% if source[:article_title] %> - <%= source[:article_title] %><% end %>
+                      <% if source[:relevance] %> (<%= (source[:relevance] * 100).round(0) %>%)<% end %>
+                    </a>
+                  <% else %>
+                    <%= index + 1 %>. <%= source[:law_title] || source[:title] %>
+                    <% if source[:article_title] %> - <%= source[:article_title] %><% end %>
+                    <% if source[:relevance] %> (<%= (source[:relevance] * 100).round(0) %>%)<% end %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+          
+          <div class="message-meta mt-2 text-xs text-gray-400">
+            <%= @result[:response_time] %>s
+            <% if @result[:model] %> · <%= @result[:model] %><% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <% if @error %>
+        <div class="message p-3 rounded-lg bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 max-w-[85%]">
+          <div class="message-content"><%= @error %></div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="p-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+      <div class="flex gap-3">
+        <textarea 
+          data-chatbot-target="input"
+          data-action="keydown->chatbot#handleKeydown"
+          class="flex-1 resize-none rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          rows="2"
+          placeholder="<%= I18n.locale == :fr ? 'Posez une question...' : 'Stel een vraag...' %>" data-translate-placeholder="inputPlaceholder"><%= params[:question] %></textarea>
+        
+        <button type="button"
+                data-chatbot-target="sendButton"
+                data-action="click->chatbot#send"
+                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+          </svg>
+          <span class="hidden sm:inline" data-translate="send"><%= I18n.locale == :fr ? 'Envoyer' : 'Verstuur' %></span>
+        </button>
+      </div>
+      
+      <!-- Single loading indicator with animated progress bar -->
+      <div data-chatbot-target="loading" class="hidden mt-4">
+        <div class="w-full max-w-lg mx-auto">
+          <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden relative">
+            <div data-chatbot-target="progressBar" 
+                 class="progress-shimmer h-2.5 rounded-full"></div>
+          </div>
+          <div data-chatbot-target="progressText" 
+               class="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+            Bezig met verwerken...
+          </div>
+        </div>
+      </div>
+      <style>
+        .progress-shimmer {
+          width: 0%;
+          transition: width 0.3s ease-out;
+          background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 25%, #93c5fd 50%, #60a5fa 75%, #3b82f6 100%);
+          background-size: 200% 100%;
+          animation: progress-move 1.5s linear infinite;
+        }
+        @keyframes progress-move {
+          0% { background-position: 100% 0; }
+          100% { background-position: -100% 0; }
+        }
+      </style>
+      
+      <!-- Typing indicator (shown in messages area) -->
+      <div class="hidden" data-chatbot-target="typingIndicator"></div>
+      
+      <p class="mt-3 text-xs text-gray-500 dark:text-gray-400" data-translate="disclaimer">
+        <%= I18n.locale == :fr ? '⚠️ Ceci n\'est pas un avis juridique officiel. Les modèles IA peuvent faire des erreurs et peuvent halluciner*. Vérifiez toujours auprès des sources officielles.' : '⚠️ Dit is geen officieel juridisch advies. AI-modellen kunnen fouten maken en kunnen mogelijks hallucineren*. Verifieer informatie altijd bij officiële bronnen.' %>
+      </p>
+      <p class="text-[9px] text-gray-400 dark:text-gray-500 italic mt-0.5" style="font-size: 9px;" data-translate="footnote">
+        <%= I18n.locale == :fr ? '*Halluciner: inventer des informations qui semblent correctes mais qui sont fausses ou inexistantes.' : '*Hallucineren: het verzinnen van informatie die correct lijkt maar feitelijk onjuist of onbestaand is.' %>
+        (<a href="https://www.ibm.com/think/topics/ai-hallucinations" target="_blank" class="underline hover:text-gray-600">IBM</a>)
+      </p>
+    </div>
+  </div>
+
+  <!-- Sample Questions with NL/EN Tabs - 1000 Questions -->
+  <div class="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white" data-translate="sampleQuestions">
+        📚 <%= I18n.locale == :fr ? 'Exemples de questions' : 'Voorbeeldvragen' %> (<span id="question-count">2545</span>)
+      </h2>
+      <div class="flex items-center gap-3">
+        <select id="category-filter" class="text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" onchange="filterQuestions()">
+          <option value="all" data-translate="allCategories"><%= I18n.locale == :fr ? 'Toutes catégories' : 'Alle categorieën' %></option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="mb-3">
+      <input type="text" id="question-search" placeholder="<%= I18n.locale == :fr ? 'Rechercher...' : 'Zoeken...' %>" data-translate-placeholder="search" 
+             class="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2"
+             oninput="filterQuestions()">
+    </div>
+    
+    <div id="questions-list" class="h-64 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+      <div class="p-4 text-center text-gray-500">Loading questions...</div>
+    </div>
+  </div>
+  
+  <script>
+    var allQuestions = [];
+    var currentLang = '<%= I18n.locale == :fr ? 'fr' : 'nl' %>';
+    var pageLang = currentLang;
+    
+    // UI translations
+    var translations = {
+      nl: {
+        title: 'WetWijzer Juridische Assistent',
+        sources: 'Bronnen:',
+        legislation: '📜 Wetgeving',
+        jurisprudence: '⚖️ Rechtspraak',
+        parliamentary: '🏛️ Parl. voorber.',
+        fisconet: '💰 Fiscaliteit',
+        both: 'Beide',
+        clear: 'Wissen',
+        send: 'Verstuur',
+        disclaimer: '⚠️ Dit is geen officieel juridisch advies. AI-modellen kunnen fouten maken en kunnen mogelijks hallucineren*. Verifieer informatie altijd bij officiële bronnen.',
+        footnote: '*Hallucineren: het verzinnen van informatie die correct lijkt maar feitelijk onjuist of onbestaand is. (<a href=\"https://www.ibm.com/think/topics/ai-hallucinations\" target=\"_blank\" class=\"underline hover:text-gray-600\">IBM</a>)',
+        sampleQuestions: '📚 Voorbeeldvragen',
+        allCategories: 'Alle categorieën',
+        search: 'Zoeken...',
+        inputPlaceholder: 'Stel een vraag...',
+        welcome: 'Hallo! Ik ben de WetWijzer juridische assistent. Ik antwoord in jouw invoertaal.'
+      },
+      fr: {
+        title: 'LisLoi Assistant Juridique',
+        sources: 'Sources:',
+        legislation: '📜 Législation',
+        jurisprudence: '⚖️ Jurisprudence',
+        parliamentary: '🏛️ Travaux prép.',
+        fisconet: '💰 Fiscalité',
+        both: 'Les deux',
+        clear: 'Effacer',
+        send: 'Envoyer',
+        disclaimer: '⚠️ Ceci n\'est pas un avis juridique officiel. Les modèles IA peuvent faire des erreurs et peuvent halluciner*. Vérifiez toujours auprès des sources officielles.',
+        footnote: '*Halluciner: inventer des informations qui semblent correctes mais qui sont fausses ou inexistantes. (<a href=\"https://www.ibm.com/think/topics/ai-hallucinations\" target=\"_blank\" class=\"underline hover:text-gray-600\">IBM</a>)',
+        sampleQuestions: '📚 Exemples de questions',
+        allCategories: 'Toutes catégories',
+        search: 'Rechercher...',
+        inputPlaceholder: 'Posez une question...',
+        welcome: 'Bonjour! Je suis l\'assistant juridique LisLoi. Je réponds dans votre langue de saisie.'
+      },
+      en: {
+        title: '<%= I18n.locale == :fr ? 'LisLoi' : 'WetWijzer' %> Legal Assistant',
+        sources: 'Sources:',
+        legislation: '📜 Legislation',
+        jurisprudence: '⚖️ Case Law',
+        parliamentary: '🏛️ Prep. Works',
+        fisconet: '💰 Tax Law',
+        both: 'Both',
+        clear: 'Clear',
+        send: 'Send',
+        disclaimer: '⚠️ This is not official legal advice. AI models can make mistakes and may hallucinate*. Always verify with official sources.',
+        footnote: '*Hallucinate: inventing information that appears correct but is factually wrong or non-existent. (<a href=\"https://www.ibm.com/think/topics/ai-hallucinations\" target=\"_blank\" class=\"underline hover:text-gray-600\">IBM</a>)',
+        sampleQuestions: '📚 Sample Questions',
+        allCategories: 'All categories',
+        search: 'Search...',
+        inputPlaceholder: 'Ask a question...',
+        welcome: 'Hi! I\'m the <%= I18n.locale == :fr ? 'LisLoi' : 'WetWijzer' %> legal assistant. I respond in your input language.'
+      }
+    };
+    
+    function switchPageLanguage(lang) {
+      pageLang = lang;
+      currentLang = lang;
+      
+      // Update toggle buttons
+      var primaryBtn = document.getElementById('lang-primary');
+      var enBtn = document.getElementById('lang-en');
+      var activeClass = 'px-3 py-1.5 text-sm font-medium bg-blue-600 text-white';
+      var inactiveClass = 'px-3 py-1.5 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
+      
+      if (lang === 'en') {
+        enBtn.className = activeClass;
+        primaryBtn.className = inactiveClass;
+      } else {
+        primaryBtn.className = activeClass;
+        enBtn.className = inactiveClass;
+      }
+      
+      // Use original site language for non-EN, otherwise EN
+      var t = lang === 'en' ? translations.en : translations['<%= I18n.locale == :fr ? 'fr' : 'nl' %>'];
+      
+      // Update all translatable elements
+      document.querySelectorAll('[data-translate]').forEach(function(el) {
+        var key = el.getAttribute('data-translate');
+        if (t[key]) {
+          if (key === 'sampleQuestions') {
+            el.innerHTML = t[key] + ' (<span id="question-count">' + (document.getElementById('question-count')?.textContent || '1000') + '</span>)';
+          } else if (key === 'footnote') {
+            el.innerHTML = t[key];
+          } else {
+            el.textContent = t[key];
+          }
+        }
+      });
+      
+      // Update all placeholders
+      document.querySelectorAll('[data-translate-placeholder]').forEach(function(el) {
+        var key = el.getAttribute('data-translate-placeholder');
+        if (t[key]) el.placeholder = t[key];
+      });
+      
+      // Update questions display
+      filterQuestions();
+    }
+    
+    // Category translations and icons
+    var categoryInfo = {
+      'ARBEIDSRECHT': { en: 'Employment Law', icon: '👷' },
+      'SOCIALE ZEKERHEID': { en: 'Social Security', icon: '🏥' },
+      'FAMILIERECHT': { en: 'Family Law', icon: '👨‍👩‍👧' },
+      'FISCAAL': { en: 'Tax Law', icon: '💰' },
+      'HUURRECHT': { en: 'Rental Law', icon: '🏠' },
+      'CONSUMENTENRECHT': { en: 'Consumer Law', icon: '🛡️' },
+      'STRAFRECHT': { en: 'Criminal Law', icon: '⚖️' },
+      'VENNOOTSCHAPSRECHT': { en: 'Company Law', icon: '🏢' },
+      'VASTGOEDRECHT': { en: 'Real Estate Law', icon: '🏗️' },
+      'PROCEDURERECHT': { en: 'Procedural Law', icon: '📋' },
+      'VREEMDELINGENRECHT': { en: 'Immigration Law', icon: '🌍' },
+      'DRUGS': { en: 'Drugs & Alcohol', icon: '🚫' },
+      'PRIVACY': { en: 'Privacy & Data', icon: '🔒' },
+      'GRONDWET': { en: 'Constitution', icon: '📜' },
+      'SOCIAAL STRAFRECHT': { en: 'Social Criminal Law', icon: '⚠️' },
+      'AANVULLENDE': { en: 'Additional', icon: '➕' },
+      'FINALE': { en: 'Final', icon: '🎯' },
+      'FINAL': { en: 'Final', icon: '🎯' }
+    };
+    
+    function getCategoryDisplay(cat, lang) {
+      for (var key in categoryInfo) {
+        if (cat.toUpperCase().includes(key)) {
+          var info = categoryInfo[key];
+          return info.icon + ' ' + (lang === 'en' ? info.en : key.charAt(0) + key.slice(1).toLowerCase());
+        }
+      }
+      return '📚 ' + cat;
+    }
+    
+    function getShortCategory(cat) {
+      return cat.replace(/\s*\(\d+\)\s*$/, '').replace(/^AANVULLENDE\s+/, '').replace(/\s+VRAGEN.*$/, '');
+    }
+    
+    function switchQuestionTab(lang) {
+      currentLang = lang;
+      var nlTab = document.getElementById('tab-nl');
+      var enTab = document.getElementById('tab-en');
+      
+      if (lang === 'nl') {
+        nlTab.className = 'px-3 py-1 text-sm font-medium bg-blue-600 text-white';
+        enTab.className = 'px-3 py-1 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
+      } else {
+        enTab.className = 'px-3 py-1 text-sm font-medium bg-blue-600 text-white';
+        nlTab.className = 'px-3 py-1 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
+      }
+      filterQuestions();
+    }
+    
+    function filterQuestions() {
+      var search = document.getElementById('question-search').value.toLowerCase();
+      var category = document.getElementById('category-filter').value;
+      
+      var filtered = allQuestions.filter(function(q) {
+        var matchSearch = !search || q.nl.toLowerCase().includes(search) || (q.en && q.en.toLowerCase().includes(search));
+        var matchCategory = category === 'all' || q.category === category;
+        return matchSearch && matchCategory;
+      });
+      
+      document.getElementById('question-count').textContent = filtered.length;
+      renderQuestions(filtered);
+    }
+    
+    function renderQuestions(questions) {
+      var container = document.getElementById('questions-list');
+      if (questions.length === 0) {
+        container.innerHTML = '<div class="p-4 text-center text-gray-500">No questions found</div>';
+        return;
+      }
+      
+      var grouped = {};
+      questions.forEach(function(q) {
+        var shortCat = getShortCategory(q.category);
+        if (!grouped[shortCat]) grouped[shortCat] = [];
+        grouped[shortCat].push(q);
+      });
+      
+      var html = '';
+      for (var cat in grouped) {
+        html += '<div class="border-b border-gray-200 dark:border-gray-700 last:border-0">';
+        html += '<div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 text-xs font-semibold text-gray-600 dark:text-gray-400">' + getCategoryDisplay(cat, currentLang) + ' (' + grouped[cat].length + ')</div>';
+        html += '<ul class="divide-y divide-gray-100 dark:divide-gray-800">';
+        grouped[cat].forEach(function(q) {
+          var displayText = currentLang === 'en' && q.en ? q.en : q.nl;
+          html += '<li><button type="button" class="w-full text-left px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 sample-question" data-question="' + displayText.replace(/"/g, '&quot;') + '">' + displayText + '</button></li>';
+        });
+        html += '</ul></div>';
+      }
+      container.innerHTML = html;
+      
+      // Re-attach click handlers
+      container.querySelectorAll('.sample-question').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var question = this.getAttribute('data-question');
+          var input = document.querySelector('[data-chatbot-target="input"]');
+          if (input) {
+            input.value = question;
+            input.focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        });
+      });
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      // Load questions from JSON
+      fetch('/chatbot_questions.json')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          allQuestions = data;
+          
+          // Populate category filter
+          var cats = [...new Set(data.map(function(q) { return q.category; }))];
+          var select = document.getElementById('category-filter');
+          cats.forEach(function(cat) {
+            var opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = getShortCategory(cat);
+            select.appendChild(opt);
+          });
+          
+          filterQuestions();
+        })
+        .catch(function(err) {
+          document.getElementById('questions-list').innerHTML = '<div class="p-4 text-center text-red-500">Error loading questions</div>';
+        });
+    });
+  </script>
+
+  <noscript>
+    <div class="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900 rounded-lg">
+      <p class="text-yellow-800 dark:text-yellow-200 mb-4">
+        JavaScript is uitgeschakeld. Gebruik het onderstaande formulier:
+      </p>
+      <%= form_with url: chatbot_ask_path, method: :post, data: { turbo: false }, class: "space-y-4" do %>
+        <div class="flex gap-4">
+          <%= select_tag :language, options_for_select([['Nederlands', 'nl'], ['Français', 'fr']], @language || 'nl'), class: "rounded-md border-gray-300" %>
+          <%= select_tag :source, options_for_select([['Wetgeving', 'legislation'], ['Rechtspraak', 'jurisprudence'], ['Beide', 'all']], @source || 'legislation'), class: "rounded-md border-gray-300" %>
+        </div>
+        <%= text_area_tag :question, params[:question], rows: 3, class: "w-full rounded-md border-gray-300", placeholder: "Stel een vraag..." %>
+        <%= submit_tag "Verstuur", class: "px-4 py-2 bg-blue-600 text-white rounded-md" %>
+      <% end %>
+    </div>
+  </noscript>
+</div>

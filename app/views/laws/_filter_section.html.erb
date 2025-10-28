@@ -1,0 +1,340 @@
+<div id="filters-panel" data-filters-toggle-target="panel" data-search-validation-target="panel" class="<%= [(@validation_failed ? nil : 'hidden'), 'p-4 mt-2 bg-white dark:bg-midnight border border-gray-200 dark:border-[var(--border-header)] rounded-md'].compact.join(' ') %>">
+  <%= form.hidden_field :types_present, value: '1' %>
+  <%= form.hidden_field :languages_present, value: '1' %>
+  <%= form.hidden_field :scope_present, value: '1' %>
+
+  <% explicit_lang = params[:languages_present].present? || params.key?(:lang_nl) || params.key?(:lang_fr) %>
+  <% nl_checked = explicit_lang ? (params[:lang_nl] == '1') : (I18n.locale != :fr) %>
+  <% fr_checked = explicit_lang ? (params[:lang_fr] == '1') : (I18n.locale == :fr) %>
+  
+  <%# Hidden fields for default language selections %>
+  <%= form.hidden_field :lang_nl, value: (nl_checked ? '1' : '0') unless explicit_lang %>
+  <%= form.hidden_field :lang_fr, value: (fr_checked ? '1' : '0') unless explicit_lang %>
+
+    <div class="w-full flex justify-center filters-outer">
+      <div class="grid filters-grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left items-stretch w-full max-w-7xl auto-cols-fr">
+      <!-- Column 1: Legislation Types + Content Status -->
+      <div class="min-w-0 w-full overflow-hidden flex flex-col">
+        <!-- Legislation Types -->
+        <div id="filter-types" data-search-validation-target="types">
+          <h4 class="<%= filters_heading_classes %>"><%= t(:legislation_types_title) %></h4>
+          <div class="filters-group">
+            <% any_type = params[:types_present].present? || params.key?(:constitution) || params.key?(:law) || params.key?(:decree) || params.key?(:ordinance) || params.key?(:decision) || params.key?(:misc) %>
+            <% constitution_checked = any_type ? (params[:constitution] == "1") : true %>
+            <% law_checked = any_type ? (params[:law] == "1") : true %>
+            <% decree_checked = any_type ? (params[:decree] == "1") : true %>
+            <% ordinance_checked = any_type ? (params[:ordinance] == "1") : true %>
+            <% decision_checked = any_type ? (params[:decision] == "1") : true %>
+            <% misc_checked = any_type ? (params[:misc] == "1") : true %>
+            
+            <%# Hidden fields to send values for checked defaults %>
+            <%= form.hidden_field :constitution, value: (constitution_checked ? '1' : '0') unless any_type %>
+            <%= form.hidden_field :law, value: (law_checked ? '1' : '0') unless any_type %>
+            <%= form.hidden_field :decree, value: (decree_checked ? '1' : '0') unless any_type %>
+            <%= form.hidden_field :ordinance, value: (ordinance_checked ? '1' : '0') unless any_type %>
+            <%= form.hidden_field :decision, value: (decision_checked ? '1' : '0') unless any_type %>
+            <%= form.hidden_field :misc, value: (misc_checked ? '1' : '0') unless any_type %>
+            
+            <div class="flex items-center gap-2">
+              <%= form.check_box :constitution, { include_hidden: false, checked: constitution_checked, class: form_checkbox_classes } %>
+              <%= form.label :constitution, t(:constitution), class: form_inline_label_classes %>
+            </div>
+            <div class="flex items-center gap-2">
+              <%= form.check_box :law, { include_hidden: false, checked: law_checked, class: form_checkbox_classes } %>
+              <%= form.label :law, t(:law), class: form_inline_label_classes %>
+            </div>
+            <div class="flex items-center gap-2">
+              <%= form.check_box :decree, { include_hidden: false, checked: decree_checked, class: form_checkbox_classes } %>
+              <%= form.label :decree, t(:decree), class: form_inline_label_classes %>
+            </div>
+            <div class="flex items-center gap-2">
+              <%= form.check_box :ordinance, { include_hidden: false, checked: ordinance_checked, class: form_checkbox_classes } %>
+              <%= form.label :ordinance, t(:ordinance), class: form_inline_label_classes %>
+            </div>
+            <div class="flex items-center gap-2">
+              <%= form.check_box :decision, { include_hidden: false, checked: decision_checked, class: form_checkbox_classes } %>
+              <%= form.label :decision, t(:decision), class: form_inline_label_classes %>
+            </div>
+            <div class="flex items-center gap-2">
+              <%= form.check_box :misc, { include_hidden: false, checked: misc_checked, class: form_checkbox_classes } %>
+              <%= form.label :misc, t(:misc), class: form_inline_label_classes %>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Content Status (Verberg) -->
+        <div class="mt-4">
+          <h4 class="<%= filters_heading_classes %>"><%= t(:content_status) %></h4>
+          <div class="filters-group">
+            <% hide_abolished_checked = params[:hide_abolished] == "1" %>
+            <% hide_empty_checked = params[:hide_empty] == "1" %>
+            <% hide_missing_trans_checked = params[:hide_missing_translation] == "1" %>
+            <% hide_german_checked = params[:hide_german_translation] == "1" %>
+            
+            <div class="flex items-center gap-2">
+              <%= form.check_box :hide_abolished, { include_hidden: false, checked: hide_abolished_checked, class: form_checkbox_classes } %>
+              <%= form.label :hide_abolished, t(:hide_abolished), class: form_inline_label_classes %>
+            </div>
+            <div class="flex items-center gap-2">
+              <%= form.check_box :hide_empty, { include_hidden: false, checked: hide_empty_checked, class: form_checkbox_classes } %>
+              <%= form.label :hide_empty, t(:hide_empty_content), class: form_inline_label_classes %>
+            </div>
+            <div class="flex items-center gap-2">
+              <%= form.check_box :hide_missing_translation, { include_hidden: false, checked: hide_missing_trans_checked, class: form_checkbox_classes } %>
+              <%= form.label :hide_missing_translation, t(:hide_missing_translation), class: form_inline_label_classes %>
+            </div>
+            <div class="flex items-center gap-2">
+              <%= form.check_box :hide_german_translation, { include_hidden: false, checked: hide_german_checked, class: form_checkbox_classes } %>
+              <%= form.label :hide_german_translation, t(:hide_german_translation), class: form_inline_label_classes %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Languages + Search scope (Column 2) -->
+      <div class="min-w-0 w-full overflow-hidden flex flex-col">
+        <!-- Languages -->
+        <div id="filter-languages" data-search-validation-target="languages">
+          <h4 class="<%= filters_heading_classes %>"><%= t(:languages_title) %></h4>
+          <div class="filters-group">
+            <div class="flex items-center gap-2">
+              <%= form.check_box :lang_nl, { include_hidden: false, checked: nl_checked, class: form_checkbox_classes } %>
+              <%= form.label :lang_nl, t(:language_dutch), class: form_inline_label_classes %>
+            </div>
+            <div class="flex items-center gap-2">
+              <%= form.check_box :lang_fr, { include_hidden: false, checked: fr_checked, class: form_checkbox_classes } %>
+              <%= form.label :lang_fr, t(:language_french), class: form_inline_label_classes %>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Search scope -->
+        <div id="filter-scope" data-search-validation-target="scope" class="mt-4">
+          <h4 class="<%= filters_heading_classes %>"><%= t(:search_scope_title) %></h4>
+          <div class="filters-group">
+            <% any_scope = params[:scope_present].present? || params.key?(:search_in_title) || params.key?(:search_in_text) || params.key?(:search_in_tags) %>
+            <% title_checked = any_scope ? (params[:search_in_title] == "1") : true %>
+            <% text_checked  = any_scope ? (params[:search_in_text] == "1")  : false %>
+            <% tags_checked  = any_scope ? (params[:search_in_tags] == "1")  : true %>
+            
+            <%# Hidden fields for default scope selections %>
+            <%= form.hidden_field :search_in_title, value: (title_checked ? '1' : '0') unless any_scope %>
+            <%= form.hidden_field :search_in_tags, value: (tags_checked ? '1' : '0') unless any_scope %>
+            <%= form.hidden_field :search_in_text, value: (text_checked ? '1' : '0') unless any_scope %>
+            
+            <div class="flex items-center gap-2">
+              <%= form.check_box :search_in_title, { include_hidden: false, checked: title_checked, class: form_checkbox_classes } %>
+              <%= form.label :search_in_title, t(:search_in_title), class: form_inline_label_classes %>
+            </div>
+            <div class="flex items-center gap-2">
+              <%= form.check_box :search_in_tags, { include_hidden: false, checked: tags_checked, class: form_checkbox_classes } %>
+              <%= form.label :search_in_tags, t(:search_in_tags), class: form_inline_label_classes %>
+            </div>
+            <div class="flex items-center gap-2">
+              <%= form.check_box :search_in_text, { include_hidden: false, checked: text_checked, class: form_checkbox_classes } %>
+              <%= form.label :search_in_text, t(:search_in_text), class: form_inline_label_classes %>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Search Mode -->
+        <div class="mt-4">
+          <h4 class="<%= filters_heading_classes %>"><%= t(:search_mode_title) %></h4>
+          <div class="filters-group">
+            <% exact_mode_checked = params[:search_mode] == 'exact' %>
+            <div class="flex items-center gap-2">
+              <%= form.check_box :search_mode, { include_hidden: false, checked: exact_mode_checked, class: form_checkbox_classes }, 'exact', 'flexible' %>
+              <%= form.label :search_mode, t(:search_mode_exact_match), class: form_inline_label_classes %>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-xs">
+              <%= t(:search_mode_hint) %>
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Column 3: Advanced Filters -->
+      <div class="min-w-0 w-full overflow-hidden flex flex-col">
+        <h4 class="<%= filters_heading_classes %>"><%= t(:advanced_filters_title) %></h4>
+        
+        <!-- Date Range -->
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t(:date_range) %>
+          </label>
+          <div class="flex items-center gap-2">
+            <%= form.text_field :date_from,
+              value: params[:date_from],
+              data: { controller: "flatpickr", flatpickr_locale_value: I18n.locale },
+              class: "flex-1 min-w-0 text-xs rounded-md border-gray-300 dark:border-gray-600 dark:bg-navy dark:text-mist focus:border-[var(--accent-500)] focus:ring-[var(--accent-500)]",
+              placeholder: I18n.locale == :fr ? 'jj/mm/aaaa' : 'dd/mm/jjjj'
+            %>
+            <span class="text-gray-500 dark:text-gray-400 flex-shrink-0">-</span>
+            <%= form.text_field :date_to,
+              value: params[:date_to],
+              data: { controller: "flatpickr", flatpickr_locale_value: I18n.locale },
+              class: "flex-1 min-w-0 text-xs rounded-md border-gray-300 dark:border-gray-600 dark:bg-navy dark:text-mist focus:border-[var(--accent-500)] focus:ring-[var(--accent-500)]",
+              placeholder: I18n.locale == :fr ? 'jj/mm/aaaa' : 'dd/mm/jjjj'
+            %>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Column 4: Display Options -->
+      <div class="min-w-0 w-full overflow-hidden flex flex-col">
+        <!-- Section: Results per page -->
+        <h4 class="<%= filters_heading_classes %>"><%= t(:display_options_title) %></h4>
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t(:results_per_page) %>
+          </label>
+          <%= form.select :per_page,
+            options_for_select([
+              [10, 10],
+              [25, 25],
+              [50, 50],
+              [100, 100],
+              [250, 250]
+            ], params[:per_page] || 50),
+            {},
+            { id: 'per_page', class: [
+              "w-full rounded-md",
+              "border-gray-300 dark:border-gray-600",
+              "dark:bg-navy dark:text-mist",
+              "text-sm",
+              "focus:border-[var(--accent-500)] focus:ring-[var(--accent-500)]"
+            ].join(" ") }
+          %>
+        </div>
+        
+        <!-- Section: Prioritize abbreviations first -->
+        <% any_prior_toggle = params.key?(:prioritize_tags) %>
+        <% prioritize_checked = any_prior_toggle ? (params[:prioritize_tags] != "0") : true %>
+        <div class="flex items-center gap-2 mb-4">
+          <%= form.check_box :prioritize_tags, { checked: prioritize_checked, class: form_checkbox_classes } %>
+          <%= form.label :prioritize_tags, t(:prioritize_tags), class: form_inline_label_classes %>
+        </div>
+        
+        <!-- Sort Order -->
+        <div>
+          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t(:sort_order) %>
+          </label>
+          <%= form.select :sort,
+            options_for_select([
+              [t(:sort_date_desc), 'date_desc'],
+              [t(:sort_date_asc), 'date_asc'],
+              [t(:sort_title_asc), 'title_asc'],
+              [t(:sort_title_desc), 'title_desc'],
+              [t(:sort_year_desc), 'year_desc'],
+              [t(:sort_year_asc), 'year_asc']
+            ], params[:sort] || 'date_desc'),
+            {},
+            { class: [
+              "w-full rounded-md",
+              "border-gray-300 dark:border-gray-600",
+              "dark:bg-navy dark:text-mist",
+              "text-sm",
+              "focus:border-[var(--accent-500)] focus:ring-[var(--accent-500)]"
+            ].join(" ") }
+          %>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Jurisprudence Filters (shown when jurisprudence source is selected) -->
+  <div id="jurisprudence-filters" class="<%= params[:source_jurisprudence] == '1' ? '' : 'hidden' %> mt-6 pt-4 border-t border-gray-200 dark:border-gray-700" data-source-filters-target="jurisprudenceFilters">
+    <h4 class="<%= filters_heading_classes %> mb-4 flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+      </svg>
+      <%= I18n.locale == :fr ? 'Filtres jurisprudence' : 'Rechtspraak filters' %>
+    </h4>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <%= I18n.locale == :fr ? 'Cour' : 'Hof' %>
+        </label>
+        <%= form.select :juris_court,
+          options_for_select([
+            [I18n.locale == :fr ? 'Toutes les cours' : 'Alle hoven', ''],
+            ['Grondwettelijk Hof', 'Grondwettelijk Hof'],
+            ['Hof van Cassatie', 'Hof van Cassatie'],
+            ['Raad van State', 'Raad van State'],
+            ['Hof van Beroep', 'Hof van Beroep'],
+            ['Arbeidshof', 'Arbeidshof'],
+            ['Arbeidsrechtbank', 'Arbeidsrechtbank'],
+            ['Ondernemingsrechtbank', 'Ondernemingsrechtbank'],
+            ['Rechtbank eerste aanleg', 'Rechtbank eerste aanleg']
+          ], params[:juris_court]),
+          {},
+          { class: "w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-navy dark:text-mist" }
+        %>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <%= I18n.locale == :fr ? 'Année' : 'Jaar' %>
+        </label>
+        <%= form.select :juris_year,
+          options_for_select([[I18n.locale == :fr ? 'Toutes' : 'Alle', '']] + (Date.current.year).downto(1990).map { |y| [y, y] }, params[:juris_year]),
+          {},
+          { class: "w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-navy dark:text-mist" }
+        %>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <%= I18n.locale == :fr ? 'Langue' : 'Taal' %>
+        </label>
+        <%= form.select :juris_lang,
+          options_for_select([
+            [I18n.locale == :fr ? 'Toutes' : 'Alle', ''],
+            ['Nederlands', 'NL'],
+            ['Français', 'FR']
+          ], params[:juris_lang]),
+          {},
+          { class: "w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-navy dark:text-mist" }
+        %>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Parliamentary Filters (shown when parliamentary source is selected) -->
+  <div id="parliamentary-filters" class="<%= params[:source_parliamentary] == '1' ? '' : 'hidden' %> mt-6 pt-4 border-t border-gray-200 dark:border-gray-700" data-source-filters-target="parliamentaryFilters">
+    <h4 class="<%= filters_heading_classes %> mb-4 flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+      </svg>
+      <%= I18n.locale == :fr ? 'Filtres travaux parlementaires' : 'Parlementaire filters' %>
+    </h4>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <%= I18n.locale == :fr ? 'Parlement' : 'Parlement' %>
+        </label>
+        <%= form.select :parl_parliament,
+          options_for_select([
+            [I18n.locale == :fr ? 'Tous' : 'Alle', ''],
+            ['Kamer', 'kamer'],
+            ['Senaat', 'senaat'],
+            ['Vlaams Parlement', 'vlaams'],
+            ['Brussels Parlement', 'brussels'],
+            ['Waals Parlement', 'waals']
+          ], params[:parl_parliament]),
+          {},
+          { class: "w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-navy dark:text-mist" }
+        %>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <%= I18n.locale == :fr ? 'Année' : 'Jaar' %>
+        </label>
+        <%= form.select :parl_year,
+          options_for_select([[I18n.locale == :fr ? 'Toutes' : 'Alle', '']] + (Date.current.year).downto(1990).map { |y| [y, y] }, params[:parl_year]),
+          {},
+          { class: "w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-navy dark:text-mist" }
+        %>
+      </div>
+    </div>
+  </div>
+</div>

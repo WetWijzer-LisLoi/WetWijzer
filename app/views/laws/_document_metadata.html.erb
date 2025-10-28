@@ -1,0 +1,128 @@
+<div class="p-6" data-controller="collapse" data-collapse-expanded-value="true">
+  <button type="button" class="w-full flex items-center justify-between text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--accent-500)]" data-action="click->collapse#toggle" data-collapse-target="button" aria-label="<%= t('aria.toggle_document_info') %>" aria-expanded="true">
+    <h2 class="text-xl font-bold text-gray-800 dark:text-[var(--accent-500)]">
+      <%= t(:document_info) %>
+    </h2>
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor" data-collapse-target="icon">
+      <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
+    </svg>
+  </button>
+  
+  <div class="space-y-3 text-xs mt-4" data-collapse-target="content">
+    <!-- Numac Number -->
+    <div class="flex flex-col">
+      <dt class="font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <%= t(:numac) %>
+      </dt>
+      <dd class="mt-1 text-gray-900 dark:text-mist font-mono bg-gray-50 dark:bg-midnight px-2 py-1 rounded text-xs">
+        <%= law.numac %>
+      </dd>
+    </div>
+    
+    <!-- Language -->
+    <div class="flex flex-col">
+      <dt class="font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <%= t(:language) %>
+      </dt>
+      <dd class="mt-1 text-gray-900 dark:text-mist">
+        <span class="badge-language">
+          <% language = Language.find_by(id: law.language_id) %>
+          <%= language ? language.language : t(:unknown_language, default: 'Unknown') %>
+        </span>
+      </dd>
+    </div>
+    
+    <!-- Document Type -->
+    <% if law.law_type_id.present? %>
+      <div class="flex flex-col">
+        <dt class="font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          <%= t(:type) %>
+        </dt>
+        <dd class="mt-1 text-gray-900 dark:text-mist">
+          <span class="badge-type">
+            <% law_type = Type.find_by(id: law.law_type_id) %>
+            <% raw_name = law_type&.law_type.to_s.strip %>
+            <% label = if law.law_type_id.to_s == '11' || raw_name.match?(/\A(?:misc|divers)\z/i)
+                 t(:misc)
+               else
+                 (raw_name.present? ? raw_name.capitalize : t(:unknown_type, default: 'Unknown'))
+               end %>
+            <%= label %>
+          </span>
+        </dd>
+      </div>
+    <% end %>
+    
+    <!-- Debug: Raw introd content -->
+    <% if false && content&.introd.present? %>
+      <div class="mt-4 p-4 bg-yellow-50 dark:bg-amber-900/20 rounded-lg border border-yellow-200 dark:border-amber-800/50">
+        <h4 class="text-sm font-medium text-yellow-800 dark:text-amber-200 mb-2">Debug: Raw introd content</h4>
+        <pre class="text-xs text-yellow-700 dark:text-amber-300 whitespace-pre-wrap break-words"><%= content.introd.inspect %></pre>
+        
+        <h4 class="text-sm font-medium text-yellow-800 dark:text-amber-200 mt-4 mb-2">Debug: Extracted Dates</h4>
+        <p class="text-xs text-yellow-700 dark:text-amber-300">
+          <strong>Publication Date:</strong> <%= extract_publication_date(content.introd).inspect %><br>
+          <strong>Effective Date:</strong> <%= extract_effective_date(content.introd).inspect %>
+        </p>
+      </div>
+    <% end %>
+    
+    <!-- Publication and Effective Dates (v0.86: use pre-extracted columns) -->
+    <% if content&.publication_date.present? || content&.effective_date.present? %>
+      <div class="space-y-3">
+        <!-- Publication Date -->
+        <% if content.publication_date.present? %>
+          <div class="flex flex-col">
+            <dt class="font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <%= t(:publication_date, default: 'Publicatiedatum') %>
+            </dt>
+            <dd class="mt-1 text-gray-900 dark:text-mist text-xs">
+              <%= content.publication_date %>
+            </dd>
+          </div>
+        <% end %>
+        
+        <!-- Effective Date -->
+        <% if content.effective_date.present? %>
+          <div class="flex flex-col">
+            <dt class="font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <%= t(:date_in_effect) %>
+            </dt>
+            <dd class="mt-1 text-gray-900 dark:text-mist text-xs">
+              <%= content.effective_date %>
+            </dd>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <!-- Parliamentary preparations (Senate / Chamber) -->
+    <%# Only show if we have actual links to display (label + valid URL) %>
+    <% 
+      senate_url = content&.senate_dossier_label.present? ? content.senate_dossier_url(I18n.locale) : nil
+      chamber_url = content&.chamber_dossier_label.present? ? content.chamber_dossier_url(I18n.locale) : nil
+      has_parliamentary_links = senate_url.present? || chamber_url.present?
+    %>
+    <% if has_parliamentary_links %>
+      <div class="flex flex-col">
+        <dt class="font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          <%= t(:parliamentary_preparations, default: 'Parlementaire werkzaamheden') %>
+        </dt>
+        <dd class="mt-1 text-gray-900 dark:text-mist space-y-1">
+          <% if senate_url.present? %>
+            <div>
+              <span><%= t(:senate_label, default: 'Senaat') %>:</span>
+              <%= link_to(content.senate_dossier_label, senate_url, target: "_blank", rel: "noopener noreferrer", class: "text-[var(--link-color)] hover:text-[var(--link-hover-color)] hover:underline") %>
+            </div>
+          <% end %>
+          <% if chamber_url.present? %>
+            <div>
+              <span><%= t(:chamber_label, default: 'Kamer') %>:</span>
+              <%= link_to(content.chamber_dossier_label, chamber_url, target: "_blank", rel: "noopener noreferrer", class: "text-[var(--link-color)] hover:text-[var(--link-hover-color)] hover:underline") %>
+            </div>
+          <% end %>
+        </dd>
+      </div>
+    <% end %>
+  </div>
+</div>

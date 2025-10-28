@@ -1,0 +1,305 @@
+<% if @is_fisconet %>
+  <%= render 'laws/fisconet_show' %>
+<% else %>
+<!-- Page Header -->
+<div class="mb-6" data-controller="articles-loading" data-articles-loading-frame-value="law_articles">
+  <div class="bg-gradient-to-r from-[var(--accent-500)]/5 to-[var(--accent-500)]/10 dark:from-[var(--accent-500)]/10 dark:to-[var(--accent-500)]/20 rounded-xl p-4 md:p-6 border border-[var(--accent-500)]/20 dark:border-[var(--accent-500)]/30">
+    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+      <div class="flex items-center gap-3">
+        <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-[var(--accent-500)]">
+          <%= t(:details).capitalize() %>
+        </h1>
+        <%# Loading indicator - shown while articles turbo frame is loading %>
+        <div data-articles-loading-target="indicator" class="inline-flex items-center gap-2 px-2 py-1 md:px-3 md:py-1.5 text-xs md:text-sm font-medium rounded-lg bg-[var(--accent-500)]/10 text-[var(--accent-700)] dark:text-[var(--accent-300)] border border-[var(--accent-500)]/20">
+          <svg class="animate-spin h-3 w-3 md:h-4 md:w-4 no-print" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span class="hidden sm:inline no-print"><%= t('articles.loading_articles', default: 'Artikelen laden...') %></span>
+          <%# Print warning - only visible in print when articles still loading %>
+          <span class="print-loading-warning"><%= I18n.locale == :fr ? "ATTENTION: Les articles sont encore en cours de chargement. Veuillez attendre que tous les articles soient chargés avant d'imprimer." : "LET OP: Artikelen worden nog geladen. Wacht tot alle artikelen geladen zijn voordat u afdrukt." %></span>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 no-print">
+        <%# Language switch link %>
+        <% other_language_id = @language_id == 1 ? 2 : 1 %>
+        <%= link_to law_path(@law, language_id: other_language_id),
+                    class: "inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-[var(--accent-700)] dark:text-[var(--accent-300)] hover:bg-[var(--accent-500)]/10 border border-[var(--accent-500)]/20 transition-colors duration-150",
+                    title: I18n.locale == :fr ? (@language_id == 1 ? "Voir la version française" : "Voir la version néerlandaise") : (@language_id == 1 ? "Bekijk de Franstalige versie" : "Bekijk de Nederlandstalige versie") do %>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+          </svg>
+          <span class="hidden sm:inline"><%= I18n.locale == :fr ? (@language_id == 1 ? "FR" : "NL") : (@language_id == 1 ? "FR" : "NL") %></span>
+        <% end %>
+        <%# Side by side comparison link %>
+        <%= link_to compare_law_path(@law),
+                    class: "inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-[var(--accent-700)] dark:text-[var(--accent-300)] hover:bg-[var(--accent-500)]/10 border border-[var(--accent-500)]/20 transition-colors duration-150",
+                    title: I18n.locale == :fr ? "Comparer NL et FR côte à côte" : "NL en FR naast elkaar vergelijken" do %>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+          </svg>
+          <span class="hidden sm:inline"><%= I18n.locale == :fr ? "Comparer" : "Vergelijk" %></span>
+        <% end %>
+        <%# Print button %>
+        <button type="button"
+                onclick="window.print()"
+                class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-[var(--accent-700)] dark:text-[var(--accent-300)] hover:bg-[var(--accent-500)]/10 border border-[var(--accent-500)]/20 transition-colors duration-150"
+                title="<%= I18n.locale == :fr ? 'Imprimer' : 'Afdrukken' %>">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <%# Bookmark button %>
+        <button type="button"
+                class="bookmark-btn inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-[var(--accent-700)] dark:text-[var(--accent-300)] hover:bg-[var(--accent-500)]/10 border border-[var(--accent-500)]/20 transition-colors duration-150"
+                data-controller="bookmark"
+                data-bookmark-numac-value="<%= @law.numac %>"
+                data-bookmark-title-value="<%= escape_once(@law.title.to_s.truncate(200)) %>"
+                data-action="click->bookmark#toggle"
+                title="<%= t('bookmarks.add') %>">
+          <svg data-bookmark-target="icon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+          </svg>
+        </button>
+        <%# Copy reference dropdown %>
+        <div class="relative" 
+             data-controller="copy-reference"
+             data-copy-reference-numac-value="<%= @law.numac %>"
+             data-copy-reference-title-value="<%= escape_once(@law.title.to_s) %>"
+             data-copy-reference-date-value="<%= @law.content&.publication_date %>">
+          <button type="button"
+                  class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-[var(--accent-700)] dark:text-[var(--accent-300)] hover:bg-[var(--accent-500)]/10 border border-[var(--accent-500)]/20 transition-colors duration-150"
+                  data-copy-reference-target="button"
+                  data-action="click->copy-reference#toggle"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  title="<%= t('copy_reference.title') %>">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+          </button>
+          <div data-copy-reference-target="menu"
+               class="hidden absolute right-0 mt-1 w-48 rounded-md shadow-lg bg-white dark:bg-navy border border-gray-200 dark:border-gray-700 z-50">
+            <div class="py-1">
+              <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist hover:bg-[var(--accent-active-bg)]" data-action="click->copy-reference#copyFull"><%= t('copy_reference.full') %></button>
+              <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist hover:bg-[var(--accent-active-bg)]" data-action="click->copy-reference#copyNumac"><%= t('copy_reference.numac') %></button>
+              <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist hover:bg-[var(--accent-active-bg)]" data-action="click->copy-reference#copyUrl"><%= t('copy_reference.url') %></button>
+            </div>
+          </div>
+        </div>
+        <%# Praxis integration - deep link to contract creator %>
+        <div class="relative"
+             data-controller="praxis-link"
+             data-praxis-link-numac-value="<%= @law.numac %>"
+             data-praxis-link-title-value="<%= escape_once(@law.title.to_s.truncate(200)) %>">
+          <a href="praxis://contract?ref=<%= @law.numac %>"
+             class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-purple-700 dark:text-purple-300 hover:bg-purple-500/10 border border-purple-500/20 transition-colors duration-150"
+             data-action="click->praxis-link#openOrCopy"
+             title="<%= t('praxis.open_in_praxis') %>">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span class="hidden sm:inline">Praxis</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content Layout -->
+<div data-controller="sidebar-toggle toc-anchor" class="w-full pb-24 md:pb-0">
+  <!-- Shelf handle is used for all sizes; mobile floating buttons are available -->
+  <!-- Mobile backdrop for sidebar -->
+  <div data-sidebar-toggle-target="backdrop" class="hidden fixed inset-0 bg-black/30 z-30 md:hidden"></div>
+  
+  <!-- Mobile-only floating controls: bottom-right row [Go to, Inhoud] -->
+  <div class="md:hidden fixed bottom-5 right-4 z-50 inline-flex flex-row items-center gap-2 overflow-visible">
+    <!-- Go to… jump menu (opens upward) -->
+    <div id="mobile-jump" data-controller="jump-select" data-jump-select-fallback-value="true" class="relative z-20 inline-block overflow-visible">
+      <button type="button"
+              class="inline-flex items-center gap-2 px-3 py-2 rounded-full border bg-white/90 text-gray-900 shadow-lg backdrop-blur hover:bg-white border-gray-200 dark:bg-navy/80 dark:text-white dark:border-gray-700 dark:hover:bg-navy transition-all duration-150 ease-out motion-reduce:transition-none active:scale-95"
+              data-action="jump-select#toggle"
+              data-jump-select-target="button"
+              aria-haspopup="true" aria-expanded="false"
+              aria-label="<%= t(:go_to, default: 'Ga naar…') %>">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+          <path fill-rule="evenodd" d="M10 3a1 1 0 01.894.553l2 4A1 1 0 0112 9H8a1 1 0 01-.894-1.447l2-4A1 1 0 0110 3zm-3 8a1 1 0 000 2h6a1 1 0 100-2H7zm-2 4a1 1 0 000 2h10a1 1 0 100-2H5z" clip-rule="evenodd" />
+        </svg>
+      </button>
+      <div data-jump-select-target="menu"
+           class="hidden absolute bottom-full right-0 mb-10 z-[999] w-56 rounded-md shadow-lg ring-1 ring-black/10 bg-white dark:bg-navy border border-gray-200 dark:border-gray-700 focus:outline-none"
+           role="menu" aria-orientation="vertical">
+        <div class="py-1">
+          <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#external-links-card"><%= t(:external_links).capitalize %></button>
+          <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#document-info-card"><%= t(:document_info) %></button>
+          <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#title-card"><%= t(:title_details).capitalize %></button>
+          <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#main-toc-card"><%= t(:toc).capitalize %></button>
+          <% if @updated_laws.present? %>
+            <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#updated-laws-card"><%= t(:updates) %></button>
+          <% end %>
+          <% if @exdecs.present? %>
+            <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#exdecs-card"><%= t(:exdecs_title) %></button>
+          <% end %>
+          <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#tekst"><%= t(:articles_text).capitalize %></button>
+        </div>
+      <style>
+        /* Mobile Go to (jump-select) open state + icon feedback */
+        #mobile-jump [data-jump-select-target="button"][aria-expanded="true"] {
+          background-color: rgba(255, 255, 255, 0.95);
+          border-color: rgb(229 231 235); /* gray-200 */
+        }
+        .dark #mobile-jump [data-jump-select-target="button"][aria-expanded="true"] {
+          background-color: rgba(6, 12, 20, 0.8); /* dark:navy/80 approximation */
+          border-color: rgb(55, 65, 81); /* gray-700 */
+        }
+        #mobile-jump [data-jump-select-target="button"] svg {
+          transition: transform 200ms ease-in-out;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          #mobile-jump [data-jump-select-target="button"] svg {
+            transition: none;
+          }
+        }
+        #mobile-jump [data-jump-select-target="button"][aria-expanded="true"] svg {
+          transform: rotate(90deg);
+        }
+        /* Mobile Inhoud (sidebar toggle) open state matches Go to */
+        [data-sidebar-toggle-floating][aria-expanded="true"] {
+          background-color: rgba(255, 255, 255, 0.95);
+          border-color: rgb(229 231 235); /* gray-200 */
+        }
+        .dark [data-sidebar-toggle-floating][aria-expanded="true"] {
+          background-color: rgba(6, 12, 20, 0.8); /* dark:navy/80 approximation */
+          border-color: rgb(55, 65, 81); /* gray-700 */
+        }
+      </style>
+      </div>
+    </div>
+
+    <!-- Inhoud floating toggle button -->
+    <% if @content.present? && @content.toc.present? %>
+      <button type="button"
+              class="relative z-10 inline-flex items-center gap-2 px-3 py-2 rounded-full border bg-white/90 text-gray-900 shadow-lg backdrop-blur hover:bg-white border-gray-200 dark:bg-navy/80 dark:text-white dark:border-gray-700 dark:hover:bg-navy transition-all duration-150 ease-out motion-reduce:transition-none active:scale-95"
+              data-sidebar-toggle-target="button"
+              data-sidebar-toggle-floating
+              data-action="sidebar-toggle#toggle"
+              aria-controls="toc-sidebar-panel"
+              aria-label="<%= t('aria.open_sidebar') %>">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+          <path fill-rule="evenodd" d="M3.75 6.75a.75.75 0 01.75-.75h15a.75.75 0 010 1.5H4.5a.75.75 0 01-.75-.75zm0 5.25a.75.75 0 01.75-.75h15a.75.75 0 010 1.5H4.5a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    <% end %>
+  </div>
+  
+  <div class="flex flex-col md:flex-row gap-8 w-full">
+  <!-- Sidebar with TOC (left) -->
+  <% if @content.present? && @content.toc.present? %>
+    <div id="toc-sidebar-panel" data-sidebar-toggle-target="panel" class="hidden fixed inset-y-0 left-0 z-40 w-80 max-w-[85vw] transform -translate-x-full transition-transform duration-300 ease-in-out motion-reduce:transition-none p-2 md:p-0 order-2 md:order-1 md:static md:inset-auto md:z-auto md:w-80 md:min-w-80 md:max-w-80 md:flex-shrink-0 md:sticky md:top-0 md:self-start pr-2 md:pr-0 space-y-6">
+
+      <!-- Table of Contents -->
+      <div id="toc-card-sidebar" class="relative bg-white dark:bg-navy rounded-xl shadow-lg border border-gray-200 dark:border-gray-700" data-controller="sidebar-auto-open">
+        <!-- Sidebar handle: full-height clickable area on the right edge -->
+        <button type="button"
+                class="hidden md:flex items-center justify-center absolute top-0 right-0 z-[1002] w-8 h-full rounded-none rounded-r-xl border-0 shadow-none bg-transparent text-gray-500 hover:text-gray-700 dark:text-[var(--accent-500)]/60 dark:hover:text-[var(--accent-500)] transition-colors duration-200 ease-out motion-reduce:transition-none hover:bg-transparent active:bg-transparent cursor-pointer"
+                data-sidebar-toggle-target="button"
+                data-action="sidebar-toggle#toggle"
+                aria-controls="toc-sidebar-panel"
+                aria-label="<%= t('aria.toggle_sidebar') %>">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 transition-transform duration-300 ease-in-out motion-reduce:transition-none" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" data-sidebar-toggle-arrow>
+            <rect x="9" y="6" width="2" height="12" rx="1"></rect>
+            <rect x="13" y="6" width="2" height="12" rx="1"></rect>
+          </svg>
+        </button>
+        <%= render 'toc', content: @content, articles: @articles, hide_header: false, scrollable: true, track: true %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 min-w-0 space-y-6 order-1 md:order-2">
+    <!-- Print-only consultation date header -->
+    <div class="print-only-header hidden print:block text-sm text-gray-600 mb-4">
+      <%= I18n.locale == :fr ? "Consulté le" : "Geraadpleegd op" %>: <%= Date.today.strftime('%d-%m-%Y') %>
+    </div>
+
+    <!-- External Links -->
+    <div id="external-links-card" class="no-print bg-white dark:bg-navy rounded-xl shadow-lg border border-gray-200 dark:border-[var(--accent-500)]/30 scroll-mt-24">
+      <%= render 'external_links', law: @law %>
+    </div>
+
+    <!-- Related Sources (Parliamentary Work, Jurisprudence) -->
+    <% if @related_parliamentary.present? || @related_jurisprudence.present? %>
+      <div id="related-sources-card" class="no-print bg-white dark:bg-navy rounded-xl shadow-lg border border-gray-200 dark:border-[var(--accent-500)]/30 scroll-mt-24">
+        <%= render 'related_sources', law: @law, related_parliamentary: @related_parliamentary, related_jurisprudence: @related_jurisprudence %>
+      </div>
+    <% end %>
+
+    <!-- Document Metadata -->
+    <div id="document-info-card" class="bg-white dark:bg-navy rounded-xl shadow-lg border border-gray-200 dark:border-[var(--accent-500)]/30 scroll-mt-24">
+      <%= render 'document_metadata', law: @law, content: @content %>
+      <%# Jurisdiction badges based on law title %>
+      <%= jurisdiction_info(@law.title) %>
+    </div>
+
+    <!-- Document Title -->
+    <div id="title-card" class="bg-white dark:bg-navy rounded-xl shadow-lg border border-gray-200 dark:border-[var(--accent-500)]/30 scroll-mt-24">
+      <%= render 'title', law: @law %>
+    </div>
+ 
+    <!-- Static TOC section under Title (always visible, collapsible) -->
+    <div id="main-toc-card" class="bg-white dark:bg-navy rounded-xl shadow-lg border border-b-0 border-gray-200 dark:border-[var(--accent-500)]/30 scroll-mt-24">
+      <%= render 'toc', content: @content, articles: @articles, hide_header: false, scrollable: false, track: false, variant: :main %>
+    </div>
+    
+    <!-- Updated Laws -->
+    <% if @updated_laws.present? %>
+      <div id="updated-laws-card" class="bg-white dark:bg-navy rounded-xl shadow-lg border border-t-0 border-gray-200 dark:border-[var(--accent-500)]/30 scroll-mt-24">
+        <%= render 'updated_laws', updated_laws: @updated_laws %>
+      </div>
+    <% end %>
+    
+    <!-- Executive Decisions -->
+    <% if @exdecs.present? %>
+      <div id="exdecs-card" class="bg-white dark:bg-navy rounded-xl shadow-lg border border-gray-200 dark:border-[var(--accent-500)]/30 scroll-mt-24">
+        <%= render 'exdecs', exdecs: @exdecs %>
+      </div>
+    <% end %>
+    
+    <!-- Articles (Eager-loaded) -->
+    <div id="tekst" class="scroll-mt-24" data-sidebar-toggle-target="trigger" 
+         data-controller="article-preferences"
+         data-article-preferences-show-colors-value="true"
+         data-article-preferences-show-exdecs-value="true">
+      <%= turbo_frame_tag "law_articles",
+            src: articles_law_path(@law, language_id: @language_id, show_article_exdecs: params[:show_article_exdecs]),
+            loading: :eager,
+            data: { toc_anchor_target: "frame" } do %>
+        <div class="bg-white dark:bg-navy rounded-xl shadow-lg border border-gray-200 dark:border-[var(--accent-500)]/30">
+          <div class="p-6">
+            <div class="flex flex-col items-start gap-4 p-4 rounded-lg border bg-[var(--accent-500)]/10 border-[var(--accent-500)]/20 text-[var(--accent-800)] dark:bg-[var(--accent-500)]/10 dark:border-[var(--accent-500)]/40 dark:text-mist" role="status" aria-live="polite">
+              <div class="flex items-center gap-4">
+                <svg aria-hidden="true" class="w-5 h-5 shrink-0 text-[var(--accent-600)]" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 100-2 1 1 0 000 2zm1 2a1 1 0 10-2 0v6a1 1 0 102 0V9z" clip-rule="evenodd"/>
+                </svg>
+                <div class="text-sm leading-5 font-medium">
+                  <%= t('articles.loading_message', default: 'Please wait, loading articles...') %>
+                </div>
+              </div>
+              <noscript>
+                <div class="text-sm">
+                  <%= link_to t('articles.view_articles', default: 'Click here to view articles'), 
+                              articles_law_path(@law, language_id: @language_id, show_article_exdecs: params[:show_article_exdecs]),
+                              class: "inline-flex items-center gap-2 px-4 py-2 bg-[var(--accent-600)] text-white rounded-lg hover:bg-[var(--accent-700)] transition-colors dark:bg-[var(--accent-600)] dark:hover:bg-[var(--accent-700)]" %>
+                </div>
+              </noscript>
+            </div>
+          </div>
+          <%= loading_skeleton_tag(kind: :article) %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+<% end %>

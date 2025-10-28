@@ -1,0 +1,83 @@
+// Print Utilities
+// ===================================
+
+// Base print styles
+@media print {
+  // Reset
+  * {
+    background: transparent !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  // Page setup
+  @page {
+    margin: 2cm;
+  }
+
+  // Typography
+  body {
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+
+  // Links
+  a {
+    text-decoration: underline !important;
+    
+    &[href^="http"]:after {
+      content: " (" attr(href) ")";
+      font-size: 80%;
+    }
+  }
+
+  // Page breaks
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+
+  // Hide non-essential elements
+  .no-print,
+  .navbar,
+  .footer,
+  .btn,
+  .actions,
+  .pagination,
+  .breadcrumb,
+  .modal,
+  .tooltip {
+    display: none !important;
+  }
+
+  // Show print-only elements
+  .print-only {
+    display: block !important;
+  }
+
+  // Page breaks
+  .page-break {
+    page-break-before: always;
+  }
+
+  // Tables
+  table {
+    border-collapse: collapse !important;
+    
+    th, td {
+      border: 1px solid #000 !important;
+    }
+  }
+
+  // Images
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  // Code blocks
+  pre, code {
+    white-space: pre-wrap !important;
+    border: 1px solid #000 !important;
+  }
+}

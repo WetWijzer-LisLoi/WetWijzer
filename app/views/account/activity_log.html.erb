@@ -1,0 +1,65 @@
+<%= content_for :title, t('account.activity_log') %>
+
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-2xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+        📋 <%= t('account.activity_log') %>
+      </h1>
+      <%= link_to account_path, class: "text-blue-600 hover:text-blue-700" do %>
+        ← <%= t('account.back_to_account') %>
+      <% end %>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+      <% if @activities.any? %>
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+          <% @activities.each do |activity| %>
+            <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <div class="flex items-start justify-between">
+                <div class="flex items-start">
+                  <div class="mr-3 mt-0.5">
+                    <% case activity.action %>
+                    <% when 'login' %>
+                      <span class="text-green-500">✓</span>
+                    <% when 'failed_login' %>
+                      <span class="text-red-500">✗</span>
+                    <% when 'logout' %>
+                      <span class="text-gray-400">↩</span>
+                    <% when 'password_changed', 'password_reset_completed' %>
+                      <span class="text-blue-500">🔑</span>
+                    <% when 'account_locked' %>
+                      <span class="text-red-500">🔒</span>
+                    <% when 'otp_enabled', 'otp_disabled' %>
+                      <span class="text-purple-500">🛡️</span>
+                    <% else %>
+                      <span class="text-gray-400">•</span>
+                    <% end %>
+                  </div>
+                  <div>
+                    <p class="font-medium text-gray-900 dark:text-white">
+                      <%= t("account.activity.#{activity.action}", default: activity.action.humanize) %>
+                    </p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                      <%= activity.ip_address %>
+                      <% if activity.user_agent.present? %>
+                        · <%= activity.user_agent.truncate(40) %>
+                      <% end %>
+                    </p>
+                  </div>
+                </div>
+                <span class="text-xs text-gray-400 whitespace-nowrap">
+                  <%= time_ago_in_words(activity.created_at) %> <%= t('account.ago') %>
+                </span>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+          <%= t('account.no_activity') %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

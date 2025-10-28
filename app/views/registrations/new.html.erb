@@ -1,0 +1,105 @@
+<%= content_for :title, t('auth.signup') %>
+
+<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <div>
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+        <%= t('auth.signup') %>
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+        <%= t('auth.have_account') %>
+        <%= link_to t('auth.login'), login_path, class: "font-medium text-blue-600 hover:text-blue-500" %>
+      </p>
+    </div>
+
+    <% if @user.errors.any? %>
+      <div class="bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
+        <ul class="list-disc list-inside">
+          <% @user.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form_with model: @user, url: signup_path, method: :post, class: "mt-8 space-y-6" do |f| %>
+      <div class="space-y-4">
+        <div>
+          <label for="user_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('auth.name') %> <span class="text-gray-400">(optioneel)</span>
+          </label>
+          <%= f.text_field :name, 
+              class: "appearance-none relative block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+              placeholder: t('auth.name') %>
+        </div>
+        
+        <div>
+          <label for="user_email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('auth.email') %> <span class="text-red-500">*</span>
+          </label>
+          <%= f.email_field :email, 
+              required: true,
+              autocomplete: "email",
+              class: "appearance-none relative block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+              placeholder: t('auth.email') %>
+        </div>
+
+        <div data-controller="password-strength">
+          <label for="user_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('auth.password') %> <span class="text-red-500">*</span>
+          </label>
+          <%= f.password_field :password, 
+              required: true,
+              autocomplete: "new-password",
+              data: { password_strength_target: "input", action: "input->password-strength#check" },
+              class: "appearance-none relative block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+              placeholder: t('auth.password') %>
+          <div class="mt-2">
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div data-password-strength-target="meter" class="h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <div data-password-strength-target="text" class="text-xs mt-1"></div>
+            <div data-password-strength-target="requirements" class="mt-2 flex flex-wrap"></div>
+          </div>
+        </div>
+
+        <div>
+          <label for="user_password_confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('auth.password_confirmation') %> <span class="text-red-500">*</span>
+          </label>
+          <%= f.password_field :password_confirmation, 
+              required: true,
+              autocomplete: "new-password",
+              class: "appearance-none relative block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+              placeholder: t('auth.password_confirmation') %>
+        </div>
+
+        <div class="flex items-start">
+          <%= f.check_box :terms_accepted, 
+              required: true,
+              class: "h-4 w-4 mt-1 text-blue-600 border-gray-300 rounded focus:ring-blue-500" %>
+          <label for="user_terms_accepted" class="ml-2 text-sm text-gray-600 dark:text-gray-400">
+            <%= t('auth.terms_html', 
+                privacy_link: link_to(t('auth.privacy_policy'), '/privacy', class: 'text-blue-600 hover:underline'),
+                terms_link: link_to(t('auth.terms_of_service'), '/terms', class: 'text-blue-600 hover:underline')
+            ).html_safe %>
+            <span class="text-red-500">*</span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <button type="submit"
+                class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+          <%= t('auth.signup') %>
+        </button>
+      </div>
+    <% end %>
+
+    <div class="text-center">
+      <%= link_to root_path, class: "text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" do %>
+        ← Terug naar <%= t('app_title') %>
+      <% end %>
+    </div>
+  </div>
+</div>

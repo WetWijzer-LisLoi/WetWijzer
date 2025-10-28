@@ -1,0 +1,14 @@
+<h2><%= t('mailer.confirmation.greeting', name: @user.name || @user.email) %></h2>
+
+<p><%= t('mailer.confirmation.body') %></p>
+
+<p style="text-align: center;">
+  <a href="<%= @confirmation_url %>" class="button"><%= t('mailer.confirmation.button') %></a>
+</p>
+
+<p><%= t('mailer.confirmation.link_text') %></p>
+<p><%= @confirmation_url %></p>
+
+<p><%= t('mailer.confirmation.expires') %></p>
+
+<p><%= t('mailer.confirmation.ignore') %></p>

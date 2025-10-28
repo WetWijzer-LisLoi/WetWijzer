@@ -1,0 +1,89 @@
+<% fr = I18n.locale == :fr %>
+
+<div class="max-w-3xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      📆 <%= fr ? "Jours fériés belges #{@year}" : "Belgische feestdagen #{@year}" %>
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      <%= fr ? 'Jours fériés officiels selon la législation belge' : 'Officiële feestdagen volgens Belgische wetgeving' %>
+    </p>
+  </div>
+
+  <!-- Year navigation -->
+  <div class="flex items-center justify-center gap-4 mb-6">
+    <a href="<%= tools_holidays_path(@year - 1) %>" 
+       class="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md text-gray-700 dark:text-gray-300">
+      ← <%= @year - 1 %>
+    </a>
+    <span class="text-2xl font-bold text-gray-900 dark:text-white"><%= @year %></span>
+    <a href="<%= tools_holidays_path(@year + 1) %>" 
+       class="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md text-gray-700 dark:text-gray-300">
+      <%= @year + 1 %> →
+    </a>
+  </div>
+
+  <!-- Holidays list -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+    <div class="divide-y divide-gray-200 dark:divide-gray-700">
+      <% @holidays.each do |date, names| %>
+        <% 
+          is_past = date < Date.current
+          is_today = date == Date.current
+          day_name = I18n.l(date, format: '%A')
+        %>
+        <div class="p-4 flex items-center justify-between <%= is_past ? 'opacity-50' : '' %> <%= is_today ? 'bg-blue-50 dark:bg-blue-900/20' : '' %>">
+          <div class="flex items-center gap-4">
+            <div class="text-center w-16">
+              <p class="text-2xl font-bold <%= is_today ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white' %>">
+                <%= date.day %>
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">
+                <%= I18n.l(date, format: '%b') %>
+              </p>
+            </div>
+            <div>
+              <p class="font-medium text-gray-900 dark:text-white">
+                <%= fr ? names[:fr] : names[:nl] %>
+              </p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                <%= day_name %>
+                <% if is_today %>
+                  <span class="ml-2 px-2 py-0.5 bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs rounded-full">
+                    <%= fr ? "Aujourd'hui" : 'Vandaag' %>
+                  </span>
+                <% end %>
+              </p>
+            </div>
+          </div>
+          <div class="text-right text-sm text-gray-500 dark:text-gray-400">
+            <%= fr ? "Semaine #{date.cweek}" : "Week #{date.cweek}" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Info -->
+  <div class="mt-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6">
+    <h3 class="font-semibold text-gray-900 dark:text-white mb-3">
+      <%= fr ? 'Information' : 'Informatie' %>
+    </h3>
+    <div class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+      <p>
+        <%= fr ? 'Les jours fériés belges sont définis par la loi du 4 janvier 1974.' : 'Belgische feestdagen zijn vastgelegd in de wet van 4 januari 1974.' %>
+      </p>
+      <p>
+        <%= fr ? "Pâques #{@year}: " : "Pasen #{@year}: " %>
+        <strong><%= I18n.l(BelgianCourtService.easter_sunday(@year), format: :long) %></strong>
+      </p>
+    </div>
+  </div>
+
+  <!-- Back link -->
+  <div class="mt-6 text-center">
+    <a href="<%= tools_deadline_calculator_path %>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+      ← <%= fr ? 'Retour au calculateur' : 'Terug naar calculator' %>
+    </a>
+  </div>
+</div>

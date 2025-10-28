@@ -1,0 +1,197 @@
+// Accent Theme Variables
+// Defines 5 selectable accent themes. Applied by adding `theme-<name>` to <html>.
+// Defaults to blue if no theme set.
+
+:root {
+  /* default (blue) */
+  --accent-400: #60a5fa; /* blue-400 */
+  --accent-500: #3b82f6; /* blue-500 */
+  --accent-600: #2563eb; /* blue-600 */
+  --accent-700: #1d4ed8; /* blue-700 */
+  /* default page bg, used when no explicit theme is set */
+  --page-bg: #ffffff;
+  /* default active/hover background for accent highlights */
+  --accent-active-bg: #eff6ff; /* blue-50 */
+  /* themeable surfaces */
+  --surface-header-bg: #ffffff;
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  /* header swatch color */
+  --swatch-color: var(--accent-500);
+}
+
+/* When <html> has .dark, adjust default blue tints */
+:root.dark {
+  /* brighter tints for dark backgrounds */
+  --accent-400: #60a5fa; /* blue-400 */
+  --accent-500: #38bdf8; /* sky-400 as mid */
+  --accent-600: #7dd3fc; /* sky-300 */
+  --accent-700: #bae6fd; /* sky-200 */
+  /* default dark page bg */
+  --page-bg: #111827; /* gray-900 */
+  /* default active/hover background for dark mode */
+  --accent-active-bg: rgba(56, 189, 248, 0.20); /* sky-400 @ 20% */
+  --surface-header-bg: #0f172a; /* midnight */
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  --swatch-color: var(--accent-500);
+}
+
+/* Theme: original (matches production .theme-blank - fun default look) */
+.theme-original {
+  /* keep blue accents for legible interactive states */
+  --accent-400: #60a5fa; /* blue-400 */
+  --accent-500: #3b82f6; /* blue-500 */
+  --accent-600: #2563eb; /* blue-600 */
+  --accent-700: #1d4ed8; /* blue-700 */
+  --page-bg: #ffffff; /* pure white */
+  /* use a neutral active background instead of blue tint */
+  --accent-active-bg: #f1f5f9; /* slate-100 */
+  --surface-header-bg: #ffffff; /* header remains white */
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  --swatch-color: #ffffff;
+}
+
+.theme-original.dark, .dark.theme-original {
+  --page-bg: #0f172a; /* midnight */
+  /* subtle hover layer in dark */
+  --accent-active-bg: rgba(203, 213, 225, 0.16); /* mist @ 16% */
+  --surface-header-bg: #0f172a; /* midnight */
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  --swatch-color: #0f172a; /* midnight */
+}
+
+/* Theme: blank (alias for original) */
+.theme-blank {
+  --accent-400: #60a5fa; /* blue-400 */
+  --accent-500: #3b82f6; /* blue-500 */
+  --accent-600: #2563eb; /* blue-600 */
+  --accent-700: #1d4ed8; /* blue-700 */
+  --page-bg: #ffffff; /* pure white */
+  --accent-active-bg: #f1f5f9; /* slate-100 */
+  --surface-header-bg: #ffffff;
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  --swatch-color: #ffffff;
+}
+
+.theme-blank.dark, .dark.theme-blank {
+  --page-bg: #0f172a; /* midnight */
+  --accent-active-bg: rgba(203, 213, 225, 0.16); /* mist @ 16% */
+  --surface-header-bg: #0f172a; /* midnight */
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  --swatch-color: #0f172a; /* midnight */
+}
+
+/* Theme: blue (default) */
+.theme-blue {
+  --accent-400: #60a5fa; /* blue-400 */
+  --accent-500: #3b82f6; /* blue-500 */
+  --accent-600: #2563eb; /* blue-600 */
+  --accent-700: #1d4ed8; /* blue-700 */
+  --page-bg: #eff6ff; /* blue-50 */
+  --accent-active-bg: #eff6ff; /* blue-50 */
+  --surface-header-bg: var(--page-bg);
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  --swatch-color: var(--accent-500);
+}
+
+.theme-blue.dark, .dark.theme-blue {
+  --page-bg: #1e3a8a; /* blue-900 */
+  --accent-active-bg: rgba(56, 189, 248, 0.20); /* sky-400 @ 20% */
+}
+
+/* Theme: rose */
+.theme-rose {
+  --accent-400: #fb7185; /* rose-400 */
+  --accent-500: #f43f5e; /* rose-500 */
+  --accent-600: #e11d48; /* rose-600 */
+  --accent-700: #be123c; /* rose-700 */
+  --page-bg: #fff1f2; /* rose-50 */
+  --accent-active-bg: #fff1f2; /* rose-50 */
+  --surface-header-bg: var(--page-bg);
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  --swatch-color: var(--accent-500);
+}
+.theme-rose.dark, .dark.theme-rose {
+  --accent-400: #fb7185; /* rose-400 */
+  --accent-500: #fda4af; /* rose-300 */
+  --accent-600: #fecdd3; /* rose-200 */
+  --accent-700: #ffe4e6; /* rose-100 */
+  --page-bg: #881337; /* rose-900 */
+  --accent-active-bg: rgba(251, 113, 133, 0.20); /* rose-400 @ 20% */
+}
+
+/* Theme: amber */
+.theme-amber {
+  --accent-400: #f59e0b; /* amber-500 */
+  --accent-500: #d97706; /* amber-600 */
+  --accent-600: #b45309; /* amber-700 */
+  --accent-700: #92400e; /* amber-800 */
+  --page-bg: #fffbeb; /* amber-50 */
+  --accent-active-bg: #fffbeb; /* amber-50 */
+  --surface-header-bg: var(--page-bg);
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  --swatch-color: var(--accent-500);
+}
+.theme-amber.dark, .dark.theme-amber {
+  --accent-400: #f59e0b; /* amber-500 */
+  --accent-500: #fbbf24; /* amber-400 */
+  --accent-600: #fcd34d; /* amber-300 */
+  --accent-700: #fde68a; /* amber-200 */
+  --page-bg: #78350f; /* amber-900 */
+  --accent-active-bg: rgba(251, 191, 36, 0.20); /* amber-400 @ 20% */
+}
+
+/* Theme: emerald */
+.theme-emerald {
+  --accent-400: #34d399; /* emerald-400 */
+  --accent-500: #10b981; /* emerald-500 */
+  --accent-600: #059669; /* emerald-600 */
+  --accent-700: #047857; /* emerald-700 */
+  --page-bg: #ecfdf5; /* emerald-50 */
+  --accent-active-bg: #ecfdf5; /* emerald-50 */
+  --surface-header-bg: var(--page-bg);
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  --swatch-color: var(--accent-500);
+}
+.theme-emerald.dark, .dark.theme-emerald {
+  --accent-400: #34d399; /* emerald-400 */
+  --accent-500: #6ee7b7; /* emerald-300 */
+  --accent-600: #a7f3d0; /* emerald-200 */
+  --accent-700: #d1fae5; /* emerald-100 */
+  --page-bg: #064e3b; /* emerald-900 */
+  --accent-active-bg: rgba(110, 231, 183, 0.20); /* emerald-300 @ 20% */
+}
+
+/* Theme: violet */
+.theme-violet {
+  --accent-400: #a78bfa; /* violet-400 */
+  --accent-500: #8b5cf6; /* violet-500 */
+  --accent-600: #7c3aed; /* violet-600 */
+  --accent-700: #6d28d9; /* violet-700 */
+  --page-bg: #f5f3ff; /* violet-50 */
+  --accent-active-bg: #f5f3ff; /* violet-50 */
+  --surface-header-bg: var(--page-bg);
+  --table-th-bg: var(--accent-active-bg);
+  --table-row-hover-bg: var(--accent-active-bg);
+  --swatch-color: var(--accent-500);
+}
+.theme-violet.dark, .dark.theme-violet {
+  --accent-400: #a78bfa; /* violet-400 */
+  --accent-500: #c4b5fd; /* violet-300 */
+  --accent-600: #ddd6fe; /* violet-200 */
+  --accent-700: #ede9fe; /* violet-100 */
+  --page-bg: #4c1d95; /* violet-900 */
+  --accent-active-bg: rgba(196, 181, 253, 0.20); /* violet-300 @ 20% */
+}
+
+/* Helper utility (optional): use with Tailwind arbitrary values, e.g.
+   class="text-[var(--accent-600)] hover:text-[var(--accent-700)]" */

@@ -1,0 +1,533 @@
+// Navigation Components
+// ===================================
+
+// Main navigation
+.nav {
+  @apply flex flex-wrap items-center;
+  
+  // Navigation items
+  &-item {
+    @apply relative;
+    
+    // Active state
+    &.active {
+      @apply font-medium;
+      
+      .nav-link {
+        @apply text-blue-600 dark:text-blue-400;
+      }
+    }
+    
+    // Disabled state
+    &.disabled {
+      @apply opacity-50 cursor-not-allowed;
+      
+      .nav-link {
+        @apply pointer-events-none;
+      }
+    }
+  }
+  
+  // Navigation links
+  &-link {
+    @apply block px-3 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors duration-200;
+    
+    // Active state
+    &.active {
+      @apply text-blue-600 dark:text-blue-400 font-medium;
+    }
+    
+    // Disabled state
+    &[disabled],
+    &.disabled {
+      @apply opacity-50 cursor-not-allowed pointer-events-none;
+    }
+  }
+  
+  // Vertical navigation
+  &-vertical {
+    @apply flex-col items-stretch;
+    
+    .nav-link {
+      @apply px-4 py-2;
+    }
+    
+    .nav-item + .nav-item {
+      @apply mt-1;
+    }
+  }
+  
+  // Horizontal navigation
+  &-horizontal {
+    @apply flex-row;
+    
+    .nav-link {
+      @apply px-3 py-2;
+    }
+    
+    .nav-item + .nav-item {
+      @apply ml-1;
+    }
+  }
+  
+  // Pills variant
+  &-pills {
+    .nav-link {
+      @apply rounded-md;
+      
+      &:hover:not(.active) {
+        @apply bg-gray-100 dark:bg-gray-700;
+      }
+      
+      &.active {
+        @apply bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300;
+      }
+    }
+  }
+  
+  // Tabs variant
+  &-tabs {
+    @apply border-b border-gray-200 dark:border-gray-700;
+    
+    .nav-item {
+      @apply -mb-px;
+    }
+    
+    .nav-link {
+      @apply border border-transparent rounded-t-md hover:border-gray-300 dark:hover:border-gray-600;
+      
+      &.active {
+        @apply bg-white border-gray-200 text-blue-600 dark:bg-gray-800 dark:border-gray-700 dark:text-blue-400;
+        border-bottom-color: transparent !important;
+      }
+    }
+  }
+}
+
+// Breadcrumb navigation
+.breadcrumb {
+  @apply flex flex-wrap items-center text-sm text-gray-600 dark:text-gray-400;
+  
+  &-item {
+    @apply flex items-center;
+    
+    & + &::before {
+      @apply mx-2 text-gray-400 dark:text-gray-600;
+      content: "/";
+    }
+    
+    a {
+      @apply text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors duration-200;
+    }
+    
+    &.active {
+      @apply text-gray-500 dark:text-gray-300;
+    }
+  }
+}
+
+// Pagination
+.pagination {
+  @apply flex items-center space-x-1;
+  
+  &-item {
+    @apply inline-flex items-center justify-center w-8 h-8 rounded-md text-sm font-medium transition-colors duration-200;
+    
+    // Page numbers
+    &-page {
+      @apply text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700;
+      
+      &.active {
+        @apply bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600;
+      }
+    }
+    
+    // Navigation arrows
+    &-prev,
+    &-next {
+      @apply text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700;
+      
+      &[disabled] {
+        @apply opacity-50 cursor-not-allowed hover:bg-transparent;
+      }
+    }
+    
+    // Ellipsis
+    &-ellipsis {
+      @apply text-gray-500 dark:text-gray-400;
+    }
+  }
+  
+  // Sizes
+  &-sm {
+    .pagination-item {
+      @apply w-6 h-6 text-xs;
+    }
+  }
+  
+  &-lg {
+    .pagination-item {
+      @apply w-10 h-10 text-base;
+    }
+  }
+}
+
+// Sidebar navigation
+.sidebar {
+  @apply flex flex-col h-full bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700;
+  
+  // Header
+  &-header {
+    @apply flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700;
+  }
+  
+  // Brand/logo
+  &-brand {
+    @apply text-lg font-semibold text-gray-900 dark:text-white;
+  }
+  
+  // Navigation
+  &-nav {
+    @apply flex-1 overflow-y-auto;
+  }
+  
+  // Navigation sections
+  &-section {
+    @apply px-3 py-2;
+    
+    &-title {
+      @apply px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400;
+    }
+  }
+  
+  // Navigation links
+  &-link {
+    @apply flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200;
+    @apply text-gray-700 hover:bg-gray-100 hover:text-gray-900;
+    @apply dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white;
+    
+    // Active state
+    &.active {
+      @apply bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300;
+    }
+    
+    // Icons
+    .icon {
+      @apply mr-3 flex-shrink-0 h-5 w-5 text-gray-400 dark:text-gray-500;
+      
+      .active & {
+        @apply text-blue-500 dark:text-blue-400;
+      }
+    }
+    
+    // Badges
+    .badge {
+      @apply ml-auto;
+    }
+  }
+  
+  // Nested navigation
+  &-subnav {
+    @apply pl-4 mt-1 space-y-1;
+    
+    .sidebar-link {
+      @apply py-1.5 text-sm;
+    }
+  }
+  
+  // Footer
+  &-footer {
+    @apply p-3 border-t border-gray-200 dark:border-gray-700;
+  }
+  
+  // Collapsed state
+  &.collapsed {
+    .sidebar-brand,
+    .sidebar-section-title,
+    .sidebar-link-text {
+      @apply sr-only;
+    }
+    
+    .sidebar-link {
+      @apply justify-center px-3;
+      
+      .icon {
+        @apply mr-0;
+      }
+      
+      .badge {
+        @apply absolute top-1 right-1;
+      }
+    }
+    
+    .sidebar-subnav {
+      @apply pl-0;
+    }
+  }
+}
+
+// Mobile menu
+.mobile-menu {
+  @apply fixed inset-0 z-50 flex lg:hidden;
+  
+  // Overlay
+  &-overlay {
+    @apply fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity;
+  }
+  
+  // Panel
+  &-panel {
+    @apply relative flex flex-col w-full max-w-xs bg-white dark:bg-gray-800 shadow-xl transform transition-all ease-in-out duration-300;
+    
+    // Slide in from left
+    &-enter,
+    &-exit-active {
+      @apply -translate-x-full;
+    }
+    
+    // Slide in from right
+    &.right {
+      @apply ml-auto;
+      
+      &-enter,
+      &-exit-active {
+        @apply translate-x-full;
+      }
+    }
+  }
+  
+  // Header
+  &-header {
+    @apply flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700;
+  }
+  
+  // Close button
+  &-close {
+    @apply p-2 -mr-2 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400;
+  }
+  
+  // Navigation
+  &-nav {
+    @apply flex-1 px-2 py-4 overflow-y-auto;
+  }
+  
+  // Navigation sections
+  &-section {
+    @apply px-3 py-2;
+    
+    &-title {
+      @apply px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400;
+    }
+  }
+  
+  // Navigation links
+  &-link {
+    @apply flex items-center px-3 py-2 text-base font-medium rounded-md transition-colors duration-200;
+    @apply text-gray-700 hover:bg-gray-100 hover:text-gray-900;
+    @apply dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white;
+    
+    // Active state
+    &.active {
+      @apply bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300;
+    }
+    
+    // Icons
+    .icon {
+      @apply mr-3 flex-shrink-0 h-6 w-6 text-gray-400 dark:text-gray-500;
+      
+      .active & {
+        @apply text-blue-500 dark:text-blue-400;
+      }
+    }
+  }
+  
+  // Nested navigation
+  &-subnav {
+    @apply pl-4 mt-1 space-y-1;
+  }
+  
+  // Footer
+  &-footer {
+    @apply p-3 border-t border-gray-200 dark:border-gray-700;
+  }
+}
+
+// Tabs
+.tabs {
+  @apply border-b border-gray-200 dark:border-gray-700;
+  
+  // Navigation
+  &-nav {
+    @apply flex -mb-px space-x-8;
+  }
+  
+  // Tab item
+  &-item {
+    @apply py-4 px-1 border-b-2 font-medium text-sm;
+    @apply border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300;
+    @apply dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600;
+    
+    // Active state
+    &.active {
+      @apply border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400;
+    }
+    
+    // Disabled state
+    &[disabled],
+    &.disabled {
+      @apply opacity-50 cursor-not-allowed pointer-events-none;
+    }
+  }
+  
+  // Tab content
+  &-content {
+    @apply py-4;
+  }
+  
+  // Pills variant
+  &-pills {
+    @apply border-none;
+    
+    .tabs-nav {
+      @apply space-x-2;
+    }
+    
+    .tabs-item {
+      @apply px-3 py-2 rounded-md text-sm font-medium border-none;
+      @apply text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700;
+      
+      &.active {
+        @apply bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300;
+      }
+    }
+  }
+}
+
+// Vertical tabs
+.tabs-vertical {
+  @apply flex;
+  
+  .tabs-nav {
+    @apply flex-col space-y-1 border-r border-gray-200 dark:border-gray-700 mr-8 -my-4;
+  }
+  
+  .tabs-item {
+    @apply border-r-2 border-transparent -mr-px;
+    
+    &.active {
+      @apply border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400;
+    }
+  }
+  
+  .tabs-content {
+    @apply flex-1;
+  }
+}
+
+// Scrollable tabs
+.tabs-scrollable {
+  @apply relative;
+  
+  .tabs-nav {
+    @apply overflow-x-auto pb-1 -mb-1 -mx-4 px-4;
+    scrollbar-width: none; // Hide scrollbar in Firefox
+    
+    &::-webkit-scrollbar {
+      @apply hidden; // Hide scrollbar in WebKit browsers
+    }
+  }
+  
+  .tabs-item {
+    @apply whitespace-nowrap;
+  }
+  
+  // Scroll indicators
+  &-indicator {
+    @apply absolute bottom-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700 pointer-events-none;
+    
+    &-thumb {
+      @apply absolute top-0 bottom-0 bg-blue-500 dark:bg-blue-400 rounded-full transition-all duration-200;
+    }
+  }
+}
+
+// Breadcrumb with icons
+.breadcrumb-icon {
+  @apply flex items-center text-sm text-gray-600 dark:text-gray-400;
+  
+  &-item {
+    @apply flex items-center;
+    
+    & + &::before {
+      @apply mx-2 text-gray-400 dark:text-gray-600;
+      content: ">";
+    }
+    
+    a {
+      @apply flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors duration-200;
+    }
+    
+    .icon {
+      @apply flex-shrink-0 h-4 w-4 mr-2;
+    }
+    
+    &.active {
+      @apply text-gray-500 dark:text-gray-300;
+    }
+  }
+}
+
+// Pagination with icons
+.pagination-arrows {
+  @apply inline-flex rounded-md shadow-sm;
+  
+  .pagination-item {
+    @apply px-2.5;
+    
+    &:first-child {
+      @apply rounded-l-md;
+    }
+    
+    &:last-child {
+      @apply rounded-r-md;
+    }
+    
+    &-prev,
+    &-next {
+      @apply px-3;
+    }
+    
+    .icon {
+      @apply h-5 w-5;
+    }
+  }
+}
+
+// Responsive navigation
+@screen sm {
+  .nav-horizontal-sm {
+    @apply flex-row;
+    
+    .nav-link {
+      @apply px-3 py-2;
+    }
+    
+    .nav-item + .nav-item {
+      @apply ml-1 mt-0;
+    }
+  }
+}
+
+@screen md {
+  .nav-horizontal-md {
+    @apply flex-row;
+    
+    .nav-link {
+      @apply px-3 py-2;
+    }
+    
+    .nav-item + .nav-item {
+      @apply ml-1 mt-0;
+    }
+  }
+}

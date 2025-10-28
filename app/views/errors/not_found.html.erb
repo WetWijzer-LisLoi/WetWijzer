@@ -1,0 +1,18 @@
+<div class="min-h-[60vh] flex flex-col items-center justify-center text-center">
+  <div class="bg-white dark:bg-midnight p-12 rounded-xl shadow-lg">
+    <h1 class="text-6xl font-bold text-[var(--accent-600)]">404</h1>
+    <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-4"><%= t(:page_not_found).capitalize() %></h2>
+    <p class="text-gray-600 dark:text-gray-300 mt-2"><%= t(:page_not_found_message) %></p>
+    <div class="mt-8">
+      <%= link_to t(:go_home).capitalize(), root_path, class: [
+        "inline-flex items-center justify-center",
+        "px-6 py-3",
+        "border border-transparent",
+        "text-base font-medium rounded-md",
+        "text-white bg-[var(--accent-600)] hover:bg-[var(--accent-700)]",
+        "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-500)]",
+        "transition-colors duration-200"
+      ].join(" ") %>
+    </div>
+  </div>
+</div>

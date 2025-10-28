@@ -1,0 +1,102 @@
+<% fr = I18n.locale == :fr %>
+
+<div class="max-w-4xl mx-auto">
+  <div class="mb-6">
+    <a href="<%= tools_path %>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">← <%= fr ? 'Tous les outils' : 'Alle tools' %></a>
+  </div>
+
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      💰 <%= fr ? 'Droits de rôle' : 'Rolrechten' %>
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      <%= fr ? 'Aperçu des droits de rôle par juridiction (2024-2025)' : 'Overzicht van rolrechten per rechtscollege (2024-2025)' %>
+    </p>
+  </div>
+
+  <!-- Fees Table -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50 dark:bg-gray-700">
+          <tr>
+            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white"><%= fr ? 'Juridiction' : 'Rechtscollege' %></th>
+            <th class="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white"><%= fr ? 'Droit de rôle' : 'Rolrecht' %></th>
+            <th class="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white"><%= fr ? 'Expédition/page' : 'Expeditie/blz' %></th>
+            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white"><%= fr ? 'Notes' : 'Opmerkingen' %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+          <% @fees.each do |key, fee| %>
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <td class="px-4 py-3">
+                <p class="font-medium text-gray-900 dark:text-white"><%= fr ? fee[:name_fr] : fee[:name_nl] %></p>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <% if fee[:rolrecht] == 0 %>
+                  <span class="text-green-600 dark:text-green-400 font-medium"><%= fr ? 'Gratuit' : 'Gratis' %></span>
+                <% else %>
+                  <span class="font-bold text-gray-900 dark:text-white">€ <%= number_with_precision(fee[:rolrecht], precision: 0) %></span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400">
+                <% if fee[:expeditie] > 0 %>
+                  € <%= number_with_precision(fee[:expeditie], precision: 2) %>
+                <% else %>
+                  -
+                <% end %>
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                <%= fr ? fee[:notes_fr] : fee[:notes_nl] %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Additional Info -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <h3 class="font-semibold text-gray-900 dark:text-white mb-3"><%= fr ? 'Autres frais' : 'Andere kosten' %></h3>
+      <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+        <li><strong><%= fr ? 'Signification par huissier:' : 'Betekening door deurwaarder:' %></strong> ± €150-300</li>
+        <li><strong><%= fr ? 'Citation:' : 'Dagvaarding:' %></strong> ± €250-400</li>
+        <li><strong><%= fr ? 'Copie certifiée:' : 'Eensluidend verklaard afschrift:' %></strong> € 1,50/page</li>
+        <li><strong><%= fr ? 'Dépôt électronique (DPA):' : 'Elektronische neerlegging (DPA):' %></strong> <%= fr ? 'Gratuit' : 'Gratis' %></li>
+      </ul>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <h3 class="font-semibold text-gray-900 dark:text-white mb-3"><%= fr ? 'Exonérations' : 'Vrijstellingen' %></h3>
+      <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+        <li>✓ <%= fr ? 'Aide juridique de 2e ligne' : 'Juridische tweedelijnsbijstand' %></li>
+        <li>✓ <%= fr ? 'Affaires de sécurité sociale' : 'Sociale zekerheidszaken' %></li>
+        <li>✓ <%= fr ? 'Certaines affaires familiales' : 'Bepaalde familiezaken' %></li>
+        <li>✓ <%= fr ? 'Procédures de règlement collectif' : 'Collectieve schuldenregeling' %></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Legal Basis -->
+  <div class="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+    <p class="text-sm text-blue-800 dark:text-blue-200">
+      <strong><%= fr ? 'Base légale:' : 'Wettelijke basis:' %></strong> 
+      <%= fr ? 'Loi du 19 mars 2017 instituant un fonds budgétaire relatif à l\'aide juridique de deuxième ligne' : 'Wet van 19 maart 2017 tot oprichting van een begrotingsfonds voor de juridische tweedelijnsbijstand' %>
+      (BS/MB 31/03/2017)
+    </p>
+  </div>
+
+  <!-- Quick links -->
+  <div class="mt-6 flex flex-wrap justify-center gap-4 text-sm">
+    <a href="<%= tools_conclusion_calendar_path %>" class="text-blue-600 dark:text-blue-400 hover:underline">
+      📋 <%= fr ? 'Calendrier conclusions' : 'Conclusiekalender' %>
+    </a>
+    <a href="<%= tools_court_finder_path %>" class="text-blue-600 dark:text-blue-400 hover:underline">
+      🏛️ <%= fr ? 'Tribunal compétent' : 'Bevoegde rechtbank' %>
+    </a>
+    <a href="<%= tools_interest_calculator_path %>" class="text-blue-600 dark:text-blue-400 hover:underline">
+      📈 <%= fr ? 'Intérêts légaux' : 'Wettelijke rente' %>
+    </a>
+  </div>
+</div>

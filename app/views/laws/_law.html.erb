@@ -1,0 +1,89 @@
+<tr class="<%= local_assigns[:law_counter]&.odd? ? 'bg-white dark:bg-navy' : 'bg-gray-50 dark:bg-midnight' %> hover:bg-[var(--accent-active-bg)] transition-colors duration-200">
+            <td class="w-28 px-2 py-3 align-top text-sm leading-5 font-medium text-gray-700 dark:text-mist text-center whitespace-nowrap">
+    <%# Fun themes (original, blue, rose, etc.) get colored badges %>
+    <%# Professional themes (slate, indigo, etc.) get plain text %>
+    <span class="badge-date">
+      <%= localized_date(law.date) %>
+    </span>
+  </td>
+            <td class="w-full px-4 py-3 whitespace-normal text-sm leading-5 text-gray-900 dark:text-mist text-justify">
+     <%= if params[:title].present? && !params[:title].strip.empty? 
+           keyword_replacer(law_title: print_multiline(escape_angle_brackets(law.title)))
+         else 
+           print_multiline(escape_angle_brackets(law.title)) 
+         end %>
+     <% begin %>
+      <% tags_arr = ActiveSupport::JSON.decode(law.tags.to_s) rescue [] %>
+      <% tags_arr = [] unless tags_arr.is_a?(Array) %>
+      <% if tags_arr.present? %>
+        <% query = params[:title].to_s.downcase.strip %>
+        <% pri_on = (!params.key?(:prioritize_tags) || params[:prioritize_tags] == "1") %>
+        <% tokens = query.scan(/[a-z0-9][a-z0-9\.\-]{1,15}/i).map(&:downcase).uniq %>
+        <% has_tag_match = pri_on && tokens.any? && tags_arr.any? { |tg| t = tg.to_s.downcase; tokens.any? { |tok| t.include?(tok) } } %>
+        <div class="mt-1 flex flex-wrap gap-1">
+          <% if has_tag_match %>
+            <span class="badge-tag"><%= t(:tags_match_badge) %></span>
+          <% end %>
+          <% tags_arr.each do |tg| %>
+            <span class="badge-tag"><%= tg %></span>
+          <% end %>
+        </div>
+      <% end %>
+    <% rescue JSON::ParserError %>
+    <% end %>
+    </td>
+        <td class="w-14 px-1 py-3 align-top text-sm leading-5 font-medium text-center">
+      <% if law.respond_to?(:fisconet?) && law.fisconet? %>
+        <%# Fisconet: link to FisconetPlus directly %>
+        <%= link_to law.fisconet_url, class: %w[inline-flex items-center justify-center w-6 h-6 mx-auto border border-transparent text-xs font-medium rounded-md text-white bg-[var(--accent-600)] hover:bg-[var(--accent-700)] dark:text-midnight focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-[var(--accent-500)] transition-colors duration-200].join(" "), title: t(:details).capitalize(), target: "_blank" do %>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          </svg>
+        <% end %>
+      <% else %>
+        <%= link_to show_law_path(law, { language_id: law.language_id }), class: %w[inline-flex items-center justify-center w-6 h-6 mx-auto border border-transparent text-xs font-medium rounded-md text-white bg-[var(--accent-600)] hover:bg-[var(--accent-700)] dark:text-midnight focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-[var(--accent-500)] transition-colors duration-200].join(" "), title: t(:details).capitalize(), data: { turbo_frame: '_top' } do %>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+        <% end %>
+      <% end %>
+    </td>
+    <td class="w-14 px-1 py-3 align-top whitespace-nowrap text-sm leading-5 font-medium text-center">
+      <% if law.respond_to?(:fisconet?) && law.fisconet? %>
+        <%# FisconetPlus source - show F badge with link %>
+        <%= link_to law.fisconet_url, class: %w[inline-flex items-center justify-center w-6 h-6 mx-auto border border-amber-400 dark:border-amber-600 text-xs font-medium rounded-md text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-800/40 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-amber-500 transition-colors duration-200].join(" "), target: "_blank", rel: "nofollow", title: 'FisconetPlus' do %>
+          <span class="sr-only">FisconetPlus</span>
+          <span class="font-medium">F</span>
+        <% end %>
+      <% elsif law.justel != "N/A" %>
+        <%= link_to law.justel, class: %w[inline-flex items-center justify-center w-6 h-6 mx-auto border border-gray-300 dark:border-navy text-xs font-medium rounded-md text-gray-700 dark:text-mist bg-white dark:bg-midnight hover:bg-gray-50 dark:hover:bg-[var(--accent-500)]/10 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-[var(--accent-500)] transition-colors duration-200].join(" "), target: "_blank", rel: "nofollow", title: 'Justel' do %>
+          <span class="sr-only">Justel</span>
+          <span class="font-medium">J</span>
+        <% end %>
+      <% end %>
+    </td>
+    <td class="w-14 px-1 py-3 align-top whitespace-nowrap text-sm leading-5 font-medium text-center">
+      <% if law.reflex != "N/A" %>
+        <%= link_to law.reflex, class: %w[inline-flex items-center justify-center w-6 h-6 mx-auto border border-gray-300 dark:border-navy text-xs font-medium rounded-md text-gray-700 dark:text-mist bg-white dark:bg-midnight hover:bg-gray-50 dark:hover:bg-[var(--accent-500)]/10 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-[var(--accent-500)] transition-colors duration-200].join(" "), target: "_blank", rel: "nofollow", title: 'Reflex' do %>
+          <span class="sr-only">Reflex</span>
+          <span class="font-medium">R</span>
+        <% end %>
+      <% end %>
+    </td>
+    <td class="w-10 px-1 py-3 align-top whitespace-nowrap text-sm leading-5 font-medium text-center no-print">
+      <% unless law.respond_to?(:fisconet?) && law.fisconet? %>
+        <button type="button"
+                class="bookmark-btn inline-flex items-center justify-center w-6 h-6 mx-auto text-gray-400 hover:text-[var(--accent-500)] dark:text-gray-500 dark:hover:text-[var(--accent-400)] transition-colors duration-200"
+                data-controller="bookmark"
+                data-bookmark-numac-value="<%= law.numac %>"
+                data-bookmark-title-value="<%= escape_once(law.title.to_s.truncate(200)) %>"
+                data-action="click->bookmark#toggle"
+                title="<%= t('bookmarks.add') %>">
+          <svg data-bookmark-target="icon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+          </svg>
+        </button>
+      <% end %>
+    </td>
+  </tr>

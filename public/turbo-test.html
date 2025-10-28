@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Turbo Test</title>
+</head>
+<body>
+  <h1>Turbo Frame Test</h1>
+  <p>If you see "LOADED!" below within 2 seconds, Turbo is working.</p>
+  
+  <turbo-frame id="test-frame" src="/turbo-test-content.html">
+    <p>Loading...</p>
+  </turbo-frame>
+
+  <script type="module">
+    import * as Turbo from 'https://cdn.skypack.dev/@hotwired/turbo';
+    console.log('Turbo loaded:', Turbo);
+    
+    window.addEventListener('turbo:frame-load', (event) => {
+      console.log('Frame loaded:', event.target.id);
+    });
+    
+    window.addEventListener('turbo:frame-missing', (event) => {
+      console.log('Frame missing:', event.detail);
+    });
+  </script>
+</body>
+</html>

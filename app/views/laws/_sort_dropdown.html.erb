@@ -1,0 +1,75 @@
+<%# Sort dropdown - displays current sort option with dropdown menu %>
+<% 
+  has_search = params[:title].present?
+  
+  # Default to relevance when searching, date_desc otherwise
+  default_sort = has_search ? 'relevance' : 'date_desc'
+  current_sort = params[:sort].presence || default_sort
+  
+  sort_options = [
+    ['relevance', t(:sort_relevance)],
+    ['date_desc', t(:sort_date_desc)],
+    ['date_asc', t(:sort_date_asc)],
+    ['title_asc', t(:sort_title_asc)],
+    ['title_desc', t(:sort_title_desc)]
+  ]
+  
+  # Only show relevance when there's a search query
+  sort_options = sort_options.reject { |k, _| k == 'relevance' } unless has_search
+  
+  # Find current label, handling both dropdown and table header sorts
+  current_label = sort_options.find { |k, _| k == current_sort }&.last || t(:sort_date_desc)
+  
+  # Determine sort direction for arrow icon
+  is_descending = current_sort.end_with?('_desc') || current_sort == 'relevance'
+%>
+
+<div class="relative inline-block text-left" data-controller="dropdown">
+  <button type="button" 
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-mist bg-white dark:bg-navy border border-gray-300 dark:border-sky/30 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-sky/10 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-500)]"
+          data-action="click->dropdown#toggle"
+          data-dropdown-target="button"
+          aria-haspopup="true">
+    <% if is_descending %>
+      <%# Arrow pointing down for descending %>
+      <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/>
+      </svg>
+    <% else %>
+      <%# Arrow pointing up for ascending %>
+      <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/>
+      </svg>
+    <% end %>
+    <span><%= t(:sort_order) %>: <span class="font-semibold"><%= current_label %></span></span>
+    <svg class="w-4 h-4 text-gray-400 transition-transform" data-dropdown-target="arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+    </svg>
+  </button>
+  
+  <div class="hidden absolute right-0 z-20 mt-1 w-48 origin-top-right rounded-md bg-white dark:bg-navy shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-sky/30 focus:outline-none"
+       data-dropdown-target="menu"
+       role="menu">
+    <div class="py-1" role="none">
+      <% sort_options.each do |sort_key, sort_label| %>
+        <% 
+          is_current = current_sort == sort_key
+          new_params = request.query_parameters.merge(sort: sort_key).except('frame')
+        %>
+        <%= link_to laws_path(new_params),
+              class: "flex items-center px-4 py-2 text-sm #{is_current ? 'bg-[var(--accent-50)] dark:bg-[var(--accent-500)]/20 text-[var(--accent-700)] dark:text-[var(--accent-300)] font-medium' : 'text-gray-700 dark:text-mist hover:bg-gray-100 dark:hover:bg-sky/10'}",
+              role: "menuitem",
+              data: { turbo_frame: '_top' } do %>
+          <% if is_current %>
+            <svg class="w-4 h-4 mr-2 text-[var(--accent-600)]" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+          <% else %>
+            <span class="w-4 mr-2"></span>
+          <% end %>
+          <%= sort_label %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>

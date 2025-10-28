@@ -1,0 +1,105 @@
+<% fr = I18n.locale == :fr %>
+
+<div class="max-w-4xl mx-auto">
+  <div class="mb-6">
+    <a href="<%= tools_path %>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">← <%= fr ? 'Tous les outils' : 'Alle tools' %></a>
+  </div>
+
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      📚 <%= fr ? 'Glossaire juridique NL↔FR' : 'Juridisch woordenboek NL↔FR' %>
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      <%= fr ? 'Terminologie juridique belge bilingue' : 'Tweetalige Belgische juridische terminologie' %>
+    </p>
+  </div>
+
+  <!-- Search Form -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+    <%= form_with url: tools_glossary_path, method: :get, local: true do %>
+      <div class="flex gap-2">
+        <input type="text" name="q" value="<%= @query %>" 
+               placeholder="<%= fr ? 'Rechercher un terme juridique...' : 'Zoek een juridische term...' %>"
+               class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+               autofocus>
+        <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md">
+          <%= fr ? 'Rechercher' : 'Zoeken' %>
+        </button>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @query.present? %>
+    <!-- Results -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
+      <% if @terms.any? %>
+        <div class="p-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            <%= @terms.size %> <%= fr ? 'résultat(s) pour' : 'resultaat/resultaten voor' %> "<%= @query %>"
+          </p>
+        </div>
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+          <% @terms.each do |term| %>
+            <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p class="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">Nederlands</p>
+                  <p class="text-lg font-semibold text-gray-900 dark:text-white"><%= term[:nl] %></p>
+                </div>
+                <div>
+                  <p class="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">Français</p>
+                  <p class="text-lg font-semibold text-gray-900 dark:text-white"><%= term[:fr] %></p>
+                </div>
+              </div>
+              <% if term[:category] %>
+                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-600 rounded"><%= term[:category] %></span>
+                </p>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="p-6 text-center">
+          <p class="text-gray-500 dark:text-gray-400">
+            <%= fr ? 'Aucun résultat trouvé pour' : 'Geen resultaten gevonden voor' %> "<%= @query %>"
+          </p>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <!-- Browse by category -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4"><%= fr ? 'Parcourir par catégorie' : 'Bladeren per categorie' %></h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <% ['Rechtbanken', 'Procedures', 'Contracten', 'Strafrecht', 'Familierecht', 'Arbeidsrecht', 'Handelsrecht', 'Grondwet'].each do |cat| %>
+          <a href="<%= tools_glossary_path(q: cat) %>" 
+             class="px-4 py-2 text-center text-sm bg-gray-100 dark:bg-gray-700 hover:bg-green-100 dark:hover:bg-green-900/30 text-gray-700 dark:text-gray-300 rounded-lg transition-colors">
+            <%= cat %>
+          </a>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Sample terms -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+      <div class="p-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+        <h2 class="font-semibold text-gray-900 dark:text-white"><%= fr ? 'Termes fréquents' : 'Veelvoorkomende termen' %></h2>
+      </div>
+      <div class="divide-y divide-gray-200 dark:divide-gray-700">
+        <% BelgianCourtService.search_glossary('').first(10).each do |term| %>
+          <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <p class="font-medium text-gray-900 dark:text-white"><%= term[:nl] %></p>
+              </div>
+              <div>
+                <p class="font-medium text-gray-900 dark:text-white"><%= term[:fr] %></p>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

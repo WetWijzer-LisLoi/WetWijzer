@@ -1,0 +1,150 @@
+<% fr = I18n.locale == :fr %>
+
+<div class="max-w-4xl mx-auto">
+  <div class="mb-6">
+    <a href="<%= tools_path %>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">← <%= fr ? 'Tous les outils' : 'Alle tools' %></a>
+  </div>
+
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      🏛️ <%= fr ? 'Trouver le tribunal compétent' : 'Bevoegde rechtbank vinden' %>
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      <%= fr ? 'Déterminez quel tribunal est compétent pour votre affaire' : 'Bepaal welke rechtbank bevoegd is voor uw zaak' %>
+    </p>
+  </div>
+
+  <!-- Finder Form -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+    <%= form_with url: tools_court_finder_path, method: :get, local: true, class: 'space-y-4' do %>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= fr ? 'Type d\'affaire' : 'Type zaak' %> *
+          </label>
+          <select name="case_type" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" required>
+            <option value=""><%= fr ? '-- Choisir --' : '-- Kies --' %></option>
+            <optgroup label="<%= fr ? 'Civil' : 'Burgerlijk' %>">
+              <option value="civil_general" <%= 'selected' if params[:case_type] == 'civil_general' %>><%= fr ? 'Civil général' : 'Algemeen burgerlijk' %></option>
+              <option value="family" <%= 'selected' if params[:case_type] == 'family' %>><%= fr ? 'Famille (divorce, garde)' : 'Familie (echtscheiding, voogdij)' %></option>
+              <option value="rental" <%= 'selected' if params[:case_type] == 'rental' %>><%= fr ? 'Location / Bail' : 'Huur / Pacht' %></option>
+              <option value="small_claims" <%= 'selected' if params[:case_type] == 'small_claims' %>><%= fr ? 'Petits litiges' : 'Kleine geschillen' %></option>
+            </optgroup>
+            <optgroup label="<%= fr ? 'Commercial' : 'Commercieel' %>">
+              <option value="commercial" <%= 'selected' if params[:case_type] == 'commercial' %>><%= fr ? 'Commercial / Entreprise' : 'Handels / Onderneming' %></option>
+              <option value="bankruptcy" <%= 'selected' if params[:case_type] == 'bankruptcy' %>><%= fr ? 'Faillite / Insolvabilité' : 'Faillissement / Insolventie' %></option>
+              <option value="intellectual_property" <%= 'selected' if params[:case_type] == 'intellectual_property' %>><%= fr ? 'Propriété intellectuelle' : 'Intellectuele eigendom' %></option>
+            </optgroup>
+            <optgroup label="<%= fr ? 'Travail' : 'Arbeid' %>">
+              <option value="labor" <%= 'selected' if params[:case_type] == 'labor' %>><%= fr ? 'Contrat de travail' : 'Arbeidsovereenkomst' %></option>
+              <option value="social_security" <%= 'selected' if params[:case_type] == 'social_security' %>><%= fr ? 'Sécurité sociale' : 'Sociale zekerheid' %></option>
+            </optgroup>
+            <optgroup label="<%= fr ? 'Pénal' : 'Strafrecht' %>">
+              <option value="criminal_minor" <%= 'selected' if params[:case_type] == 'criminal_minor' %>><%= fr ? 'Contravention' : 'Overtreding' %></option>
+              <option value="criminal_major" <%= 'selected' if params[:case_type] == 'criminal_major' %>><%= fr ? 'Délit / Crime' : 'Misdrijf' %></option>
+              <option value="traffic" <%= 'selected' if params[:case_type] == 'traffic' %>><%= fr ? 'Circulation routière' : 'Verkeersrecht' %></option>
+            </optgroup>
+            <optgroup label="<%= fr ? 'Administratif' : 'Administratief' %>">
+              <option value="administrative" <%= 'selected' if params[:case_type] == 'administrative' %>><%= fr ? 'Recours administratif' : 'Administratief beroep' %></option>
+              <option value="tax" <%= 'selected' if params[:case_type] == 'tax' %>><%= fr ? 'Fiscal' : 'Fiscaal' %></option>
+            </optgroup>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= fr ? 'Montant en jeu (€)' : 'Bedrag in geschil (€)' %>
+          </label>
+          <input type="number" name="amount" value="<%= params[:amount] %>" min="0" step="0.01"
+                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                 placeholder="<%= fr ? 'Optionnel' : 'Optioneel' %>">
+          <p class="text-xs text-gray-500 mt-1"><%= fr ? 'Influence la compétence pour certains litiges' : 'Beïnvloedt bevoegdheid voor bepaalde geschillen' %></p>
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <%= fr ? 'Arrondissement judiciaire' : 'Gerechtelijk arrondissement' %>
+        </label>
+        <select name="district" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+          <option value=""><%= fr ? '-- Tous / Non spécifié --' : '-- Alle / Niet gespecificeerd --' %></option>
+          <% @districts.each do |key, info| %>
+            <option value="<%= key %>" <%= 'selected' if params[:district] == key.to_s %>>
+              <%= fr ? info[:name_fr] : info[:name_nl] %>
+            </option>
+          <% end %>
+        </select>
+      </div>
+      <button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-md">
+        <%= fr ? 'Trouver le tribunal' : 'Vind rechtbank' %>
+      </button>
+    <% end %>
+  </div>
+
+  <% if @result %>
+    <!-- Result -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4"><%= fr ? 'Résultat' : 'Resultaat' %></h2>
+      
+      <div class="space-y-4">
+        <% @result[:courts].each do |court| %>
+          <div class="p-4 rounded-lg <%= court[:primary] ? 'bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-500' : 'bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600' %>">
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <%= fr ? court[:name_fr] : court[:name_nl] %>
+                  <% if court[:primary] %>
+                    <span class="px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-200 rounded">
+                      <%= fr ? 'Recommandé' : 'Aanbevolen' %>
+                    </span>
+                  <% end %>
+                </h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1"><%= fr ? court[:description_fr] : court[:description_nl] %></p>
+                <% if court[:reason] %>
+                  <p class="text-sm text-purple-600 dark:text-purple-400 mt-2">💡 <%= court[:reason] %></p>
+                <% end %>
+              </div>
+              <span class="px-2 py-1 text-xs font-medium rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
+                L<%= court[:level] %>
+              </span>
+            </div>
+            <% if court[:appeal_to] %>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                <%= fr ? 'Appel →' : 'Beroep →' %> <%= fr ? court[:appeal_to][:name_fr] : court[:appeal_to][:name_nl] %>
+                (<%= court[:appeal_deadline] %> <%= fr ? 'jours' : 'dagen' %>)
+              </p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+
+      <% if @result[:notes].present? %>
+        <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+          <p class="text-sm text-amber-800 dark:text-amber-200">
+            ⚠️ <%= @result[:notes] %>
+          </p>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <!-- Reference Info -->
+  <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6">
+    <h3 class="font-semibold text-gray-900 dark:text-white mb-3"><%= fr ? 'Seuils de compétence' : 'Bevoegdheidsgrenzen' %></h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+      <div>
+        <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2"><%= fr ? 'Justice de paix' : 'Vredegerecht' %></h4>
+        <ul class="text-gray-600 dark:text-gray-400 space-y-1">
+          <li>• <%= fr ? 'Litiges jusqu\'à €5.000' : 'Geschillen tot €5.000' %></li>
+          <li>• <%= fr ? 'Baux / locations' : 'Huur / pacht' %></li>
+          <li>• <%= fr ? 'Troubles de voisinage' : 'Burenhinder' %></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2"><%= fr ? 'Tribunal de première instance' : 'Rechtbank eerste aanleg' %></h4>
+        <ul class="text-gray-600 dark:text-gray-400 space-y-1">
+          <li>• <%= fr ? 'Litiges > €5.000' : 'Geschillen > €5.000' %></li>
+          <li>• <%= fr ? 'Compétence générale' : 'Algemene bevoegdheid' %></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

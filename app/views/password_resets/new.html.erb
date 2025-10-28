@@ -1,0 +1,52 @@
+<%= content_for :title, t('auth.forgot_password') %>
+
+<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full">
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+        <%= t('auth.forgot_password') %>
+      </h1>
+      <p class="mt-2 text-gray-600 dark:text-gray-400">
+        <%= t('auth.forgot_password_desc') %>
+      </p>
+    </div>
+
+    <% if flash[:notice] %>
+      <div class="mb-4 p-4 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 rounded-lg">
+        <%= flash[:notice] %>
+      </div>
+    <% end %>
+
+    <% if flash[:alert] %>
+      <div class="mb-4 p-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-lg">
+        <%= flash[:alert] %>
+      </div>
+    <% end %>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
+      <%= form_with url: password_reset_path, method: :post, class: "space-y-6" do %>
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('auth.email') %>
+          </label>
+          <input type="email" 
+                 name="email" 
+                 id="email" 
+                 required
+                 autofocus
+                 class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                 placeholder="email@example.com">
+        </div>
+
+        <button type="submit" 
+                class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+          <%= t('auth.send_reset_link') %>
+        </button>
+      <% end %>
+
+      <div class="mt-6 text-center">
+        <%= link_to t('auth.back_to_login'), login_path, class: "text-blue-600 hover:underline" %>
+      </div>
+    </div>
+  </div>
+</div>

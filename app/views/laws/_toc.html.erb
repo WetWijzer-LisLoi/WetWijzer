@@ -1,0 +1,257 @@
+<% if content.present? && content.toc.present? %>
+  <% hide_header = local_assigns.fetch(:hide_header, false) %>
+  <% scrollable = local_assigns.fetch(:scrollable, true) %>
+  <% track = local_assigns.fetch(:track, true) %>
+  <% variant = local_assigns.fetch(:variant, :default) %>
+  <div class="p-6 pr-3 md:pr-12" <%= raw 'data-controller="collapse" data-collapse-expanded-value="true"' if (variant == :main && !hide_header) %>>
+    <% unless hide_header %>
+      <% if variant == :main %>
+        <button type="button" class="w-full flex items-center justify-between gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--accent-500)]" data-action="click->collapse#toggle" data-collapse-target="button" aria-label="<%= t('aria.toggle_toc') %>" aria-expanded="true">
+          <h2 class="text-xl font-bold text-gray-800 dark:text-[var(--accent-500)]"><%= t(:toc).capitalize() %></h2>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform duration-200 ease-in-out motion-reduce:transition-none text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor" data-collapse-target="icon">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      <% else %>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-gray-800 dark:text-[var(--accent-500)] flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 17.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+            </svg>
+            <%= t(:toc).capitalize() %>
+          </h3>
+          <div class="hidden md:flex items-center gap-2">
+            <%# TOC Options dropdown %>
+            <% if track %>
+              <div class="relative" data-controller="toc-options">
+                <button type="button"
+                        class="inline-flex items-center justify-center w-6 h-6 rounded-full border bg-white/90 text-gray-700 shadow-sm hover:bg-white hover:border-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--accent-500)] focus-visible:ring-offset-white border-gray-200 dark:bg-navy/80 dark:text-mist dark:border-gray-700 dark:hover:bg-navy dark:hover:border-gray-600 dark:focus-visible:ring-[var(--accent-500)] dark:focus-visible:ring-offset-navy transition-all duration-150 active:scale-95"
+                        data-action="click->toc-options#toggle"
+                        data-toc-options-target="button"
+                        aria-haspopup="true" aria-expanded="false"
+                        aria-label="<%= t(:toc_options, default: 'Opties') %>"
+                        title="<%= t(:toc_options, default: 'Opties') %>">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
+                    <path fill-rule="evenodd" d="M7.84 1.804A1 1 0 018.82 1h2.36a1 1 0 01.98.804l.331 1.652a6.993 6.993 0 011.929 1.115l1.598-.54a1 1 0 011.186.447l1.18 2.044a1 1 0 01-.205 1.251l-1.267 1.113a7.047 7.047 0 010 2.228l1.267 1.113a1 1 0 01.206 1.25l-1.18 2.045a1 1 0 01-1.187.447l-1.598-.54a6.993 6.993 0 01-1.929 1.115l-.33 1.652a1 1 0 01-.98.804H8.82a1 1 0 01-.98-.804l-.331-1.652a6.993 6.993 0 01-1.929-1.115l-1.598.54a1 1 0 01-1.186-.447l-1.18-2.044a1 1 0 01.205-1.251l1.267-1.114a7.05 7.05 0 010-2.227L1.821 7.773a1 1 0 01-.206-1.25l1.18-2.045a1 1 0 011.187-.447l1.598.54A6.993 6.993 0 017.51 3.456l.33-1.652zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+                <div data-toc-options-target="menu"
+                     class="hidden fixed mt-1 z-[9999] w-56 rounded-md shadow-lg ring-1 ring-black/10 bg-white dark:bg-navy border border-gray-200 dark:border-gray-700 focus:outline-none"
+                     style="position: fixed;">
+                  <div class="p-2 space-y-1">
+                    <label class="flex items-center gap-2 select-none cursor-pointer px-2 py-1.5 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <input type="checkbox" class="<%= form_checkbox_classes %>" data-sidebar-auto-open-target="checkbox" data-action="change->sidebar-auto-open#toggle">
+                      <span class="text-xs text-gray-700 dark:text-gray-300"><%= t(:auto_open_sidebar) %></span>
+                    </label>
+                    <label class="flex items-center gap-2 select-none cursor-pointer px-2 py-1.5 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <input type="checkbox" class="<%= form_checkbox_classes %>" data-toc-tracker-target="follow" data-action="change->toc-tracker#toggleFollow" checked>
+                      <span class="text-xs text-gray-700 dark:text-gray-300"><%= t(:follow_scrolling) %></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+            <!-- Go to jump menu -->
+            <div class="relative" data-controller="jump-select">
+            <button type="button"
+                    class="inline-flex items-center justify-center w-6 h-6 rounded-full border bg-white/90 text-gray-700 shadow-sm hover:bg-white hover:border-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--accent-500)] focus-visible:ring-offset-white border-gray-200 dark:bg-navy/80 dark:text-mist dark:border-gray-700 dark:hover:bg-navy dark:hover:border-gray-600 dark:focus-visible:ring-[var(--accent-500)] dark:focus-visible:ring-offset-navy transition-all duration-150 active:scale-95"
+                    data-action="jump-select#toggle"
+                    data-jump-select-target="button"
+                    aria-haspopup="true" aria-expanded="false"
+                    aria-label="<%= t(:go_to, default: 'Ga naar…') %>"
+                    title="<%= t(:go_to, default: 'Ga naar…') %>">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
+                <path fill-rule="evenodd" d="M10 3a1 1 0 01.894.553l2 4A1 1 0 0112 9H8a1 1 0 01-.894-1.447l2-4A1 1 0 0110 3zm-3 8a1 1 0 000 2h6a1 1 0 100-2H7zm-2 4a1 1 0 000 2h10a1 1 0 100-2H5z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            <div data-jump-select-target="menu"
+                     class="hidden absolute right-0 mt-2 z-[999] w-56 rounded-md shadow-lg ring-1 ring-black/10 bg-white dark:bg-navy border border-gray-200 dark:border-gray-700 focus:outline-none"
+                     role="menu" aria-orientation="vertical">
+              <div class="py-1">
+                <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)] focus:outline-none focus-visible:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#external-links-card"><%= t(:external_links).capitalize %></button>
+                <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)] focus:outline-none focus-visible:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#document-info-card"><%= t(:document_info) %></button>
+                <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)] focus:outline-none focus-visible:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#title-card"><%= t(:title_details).capitalize %></button>
+                <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)] focus:outline-none focus-visible:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#main-toc-card"><%= t(:toc).capitalize %></button>
+                <% if @updated_laws.present? %>
+                  <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)] focus:outline-none focus-visible:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#updated-laws-card"><%= t(:updates) %></button>
+                <% end %>
+                <% if @exdecs.present? %>
+                  <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)] focus:outline-none focus-visible:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#exdecs-card"><%= t(:exdecs_title).capitalize %></button>
+                <% end %>
+                <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)] focus:outline-none focus-visible:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#tekst"><%= t(:articles_text).capitalize %></button>
+              </div>
+            </div>
+            </div>
+            <!-- To Top button -->
+            <button type="button"
+                    class="inline-flex items-center justify-center w-6 h-6 rounded-full border bg-white/90 text-gray-700 shadow-sm hover:bg-white hover:border-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--accent-500)] focus-visible:ring-offset-white border-gray-200 dark:bg-navy/80 dark:text-mist dark:border-gray-700 dark:hover:bg-navy dark:hover:border-gray-600 dark:focus-visible:ring-[var(--accent-500)] dark:focus-visible:ring-offset-navy transition-all duration-150 active:scale-95"
+                    onclick="window.scrollTo({ top: 0, behavior: 'auto' })"
+                    aria-label="<%= t('aria.scroll_to_top', default: 'Scroll naar boven') %>"
+                    title="<%= t(:to_top, default: 'Naar boven') %>">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
+                <path fill-rule="evenodd" d="M10 17a.75.75 0 0 1-.75-.75V5.612L5.29 9.77a.75.75 0 0 1-1.08-1.04l5.25-5.5a.75.75 0 0 1 1.08 0l5.25 5.5a.75.75 0 1 1-1.08 1.04l-3.96-4.158V16.25A.75.75 0 0 1 10 17Z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      <% end %>
+      <% end %>
+    
+    <nav class="toc-navigation <%= 'max-h-[calc(100vh-200px)] overflow-y-auto overflow-x-hidden' if scrollable %> pr-2 <%= 'mt-4' if variant == :main && !hide_header %>" style="scrollbar-width: thin; scrollbar-color: rgb(156 163 175) transparent; scrollbar-gutter: stable both-edges; margin-right: -2px; border-radius: 0.75rem;" <%= raw 'data-controller="toc-tracker"' if track %> <%= raw 'data-collapse-target="content"' if (variant == :main && !hide_header) %>>
+      <style>
+        .toc-navigation {
+          /* Reserve space for scrollbar so it doesn't overlap text on overlay-scrollbar platforms */
+          scrollbar-gutter: stable both-edges;
+        }
+        .toc-navigation::-webkit-scrollbar {
+          width: 6px;
+        }
+        .toc-navigation::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .toc-navigation::-webkit-scrollbar-thumb {
+          background-color: rgb(156 163 175);
+          border-radius: 3px;
+        }
+        .dark .toc-navigation::-webkit-scrollbar-thumb {
+          background-color: rgb(75 85 99);
+        }
+        .toc-navigation::-webkit-scrollbar-thumb:hover {
+          background-color: rgb(107 114 128);
+        }
+        .dark .toc-navigation::-webkit-scrollbar-thumb:hover {
+          background-color: rgb(55 65 81);
+        }
+        /* Go to (jump-select) open state + icon feedback */
+        #toc-card-sidebar [data-controller="jump-select"] [data-jump-select-target="button"][aria-expanded="true"] {
+          background-color: rgba(255, 255, 255, 0.95);
+          border-color: rgb(229 231 235); /* gray-200 */
+        }
+        .dark #toc-card-sidebar [data-controller="jump-select"] [data-jump-select-target="button"][aria-expanded="true"] {
+          background-color: rgba(6, 12, 20, 0.8); /* dark:navy/80 approximation */
+          border-color: rgb(55, 65, 81); /* gray-700 */
+        }
+        #toc-card-sidebar [data-controller="jump-select"] [data-jump-select-target="button"] svg {
+          transition: transform 200ms ease-in-out;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          #toc-card-sidebar [data-controller="jump-select"] [data-jump-select-target="button"] svg {
+            transition: none;
+          }
+        }
+        #toc-card-sidebar [data-controller="jump-select"] [data-jump-select-target="button"][aria-expanded="true"] svg {
+          transform: rotate(90deg);
+        }
+        /* Keyboard focus on jump menu items */
+        #toc-card-sidebar [data-controller="jump-select"] [data-jump-select-target="menu"] button:focus-visible {
+          outline: 2px solid var(--accent-500);
+          outline-offset: -2px;
+        }
+        .dark #toc-card-sidebar [data-controller="jump-select"] [data-jump-select-target="menu"] button:focus-visible {
+          outline-color: var(--accent-400);
+        }
+        
+        <% if track %>
+        /* Active TOC link styles - minimalistic */
+        .toc-link.active {
+          color: rgb(17 24 39) !important;
+          background-color: rgb(243 244 246) !important;
+          font-weight: 500 !important;
+        }
+        .dark .toc-link.active {
+          color: rgb(243 244 246) !important;
+          background-color: rgb(31 41 55) !important;
+        }
+        <% end %>
+      </style>
+      <%# Tracking controls moved to options dropdown in header %>
+
+      <%# Reset unique section heading counters for deterministic TOC ids %>
+      <% @_section_heading_counts = Hash.new(0) %>
+      <%# Generate hierarchical permalinks (currently not used for article anchors) %>
+      <% hierarchical_permalinks = generate_hierarchical_permalinks(content.toc, articles) %>
+
+      
+      <% size_class = (variant == :main ? 'text-sm' : 'text-xs') %>
+      <ul class="space-y-0.5 <%= size_class %> pr-3">
+        <% content.toc.each_line do |line| %>
+          <% cleaned_line = line.chomp.strip %>
+          <% next if cleaned_line.blank? %>
+          
+          <% # Determine link target: use canonical article id like "art-1" for articles; slug for others %>
+          <% article_id = article_id_from_toc_line(cleaned_line) %>
+          <% permalink = article_id || generate_short_permalink(cleaned_line) %>
+          
+          <% # Determine if this is a chapter, section, or article %>
+          <% # Include DEEL/BOEK/PART/LIVRE as top-level structural elements %>
+          <% is_chapter = cleaned_line.match?(/^(DEEL|BOEK|PART|PARTIE|LIVRE|HOOFDSTUK|CHAPITRE|TITEL|TITRE)/i) %>
+          <% is_section = cleaned_line.match?(/^(AFDELING|SECTION|ONDERAFDELING|SOUS-SECTION)/i) %>
+          <% is_bijlagen = cleaned_line.match?(/^(BIJLAGE|BIJLAGEN|ANNEXE|ANNEXES|ANNEX)/i) %>
+          <% # Only treat lines that actually start with an article label/number as articles %>
+          <% is_article = article_id_from_toc_line(cleaned_line).present? %>
+          
+          <% # Compute a unified link_target used for href and data-target %>
+          <% # Articles use canonical article id; headings use unique_section_heading_id %>
+          <% link_target = is_article ? permalink : unique_section_heading_id(cleaned_line) %>
+
+          <% # Determine hierarchy level for indentation (skip for BIJLAGEN) %>
+          <% unless is_bijlagen %>
+            <% level = section_heading_level(cleaned_line) %>
+            <% # Map level to indentation - no borders, clean hierarchy %>
+            <% indent_class, font_weight = case level
+                                           when 1, 2, 3 then ['pl-0', 'font-semibold']
+                                           when 4, 5 then ['pl-3', 'font-medium']
+                                           when 6 then ['pl-6', 'font-normal']
+                                           when 7 then ['pl-9', 'font-normal']
+                                           else ['pl-3', 'font-normal']
+                                           end %>
+          <% end %>
+          
+          <% if is_bijlagen %>
+            <li class="pl-2 pt-1 first:pt-0">
+              <a href="#<%= link_target %>" 
+                 class="toc-link block font-medium text-gray-700 dark:text-gray-300 <%= size_class %> py-1 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 ease-out motion-reduce:transition-none"
+                 <%= raw 'data-toc-tracker-target="link"' if track %>
+                 <%= raw "data-target=\"#{link_target}\"" if track %>
+                 data-action="click->toc-anchor#handleClick">
+                <%= highlight_abolished_markers(h(cleaned_line)) %>
+              </a>
+            </li>
+          <% elsif is_chapter || is_section %>
+            <li class="<%= indent_class %> pt-1 first:pt-0">
+              <a href="#<%= link_target %>" 
+                 class="toc-link block <%= font_weight %> text-gray-800 dark:text-gray-200 <%= size_class %> py-1.5 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 ease-out motion-reduce:transition-none"
+                 <%= raw 'data-toc-tracker-target="link"' if track %>
+                 <%= raw "data-target=\"#{link_target}\"" if track %>
+                 data-action="click->toc-anchor#handleClick">
+                <%= highlight_abolished_markers(h(cleaned_line)) %>
+              </a>
+            </li>
+          <% elsif is_article %>
+            <li class="pl-6">
+              <a href="#<%= link_target %>" 
+                 class="toc-link block py-1 px-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 ease-out motion-reduce:transition-none"
+                 <%= raw 'data-toc-tracker-target="link"' if track %>
+                 <%= raw "data-target=\"#{link_target}\"" if track %>
+                 data-action="click->toc-anchor#handleClick">
+                <span class="<%= size_class %> break-words" title="<%= cleaned_line %>">
+                  <%= highlight_abolished_markers(h(cleaned_line)) %>
+                </span>
+              </a>
+            </li>
+          <% else %>
+            <li class="pl-6">
+              <a href="#<%= link_target %>" 
+                 class="toc-link block text-gray-600 dark:text-gray-400 <%= size_class %> py-0.5 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 ease-out motion-reduce:transition-none"
+                 <%= raw 'data-toc-tracker-target="link"' if track %>
+                 <%= raw "data-target=\"#{link_target}\"" if track %>
+                 data-action="click->toc-anchor#handleClick">
+                <%= highlight_abolished_markers(h(cleaned_line)) %>
+              </a>
+            </li>
+          <% end %>
+        <% end %>
+      </ul>
+    </nav>
+  </div>
+<% end %>

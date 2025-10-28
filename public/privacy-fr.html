@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Politique de Confidentialité - WetWijzer/LisLoi</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        h1 { color: #333; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        h2 { color: #555; margin-top: 30px; }
+        .last-updated { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>Politique de Confidentialité</h1>
+    <p class="last-updated">Dernière mise à jour : 4 janvier 2026</p>
+
+    <h2>1. Introduction</h2>
+    <p>WetWijzer/LisLoi ("nous", "notre", "le Service") respecte votre vie privée. Cette politique de confidentialité explique quelles données nous collectons, comment nous les utilisons et quels droits vous avez en vertu du Règlement Général sur la Protection des Données (RGPD).</p>
+
+    <h2>2. Description du Service</h2>
+    <p>WetWijzer/LisLoi est une plateforme de recherche non officielle pour la législation belge. Le Service fournit un accès aux lois, décrets, ordonnances et jurisprudence, ainsi qu'un chatbot IA capable de répondre aux questions sur la législation belge.</p>
+
+    <h2>2. Données Collectées</h2>
+    
+    <h3>2.1 Informations Collectées Automatiquement</h3>
+    <p>Lorsque vous utilisez le Service, nous collectons automatiquement :</p>
+    <ul>
+        <li><strong>Adresse IP :</strong> À des fins de sécurité et pour prévenir les abus</li>
+        <li><strong>Informations du navigateur :</strong> Type de navigateur, préférence de langue</li>
+        <li><strong>Heures d'accès :</strong> Date et heure des visites</li>
+        <li><strong>Pages visitées :</strong> Quelles lois et pages vous avez consultées</li>
+    </ul>
+
+    <h3>2.2 Interactions avec le Chatbot</h3>
+    <p>Lorsque vous utilisez le chatbot IA :</p>
+    <ul>
+        <li><strong>Vos questions</strong> sont envoyées directement au fournisseur d'IA (voir section 4) et <strong>non stockées</strong> dans notre base de données</li>
+        <li><strong>Le contexte de conversation</strong> reste uniquement local dans votre navigateur pendant la session (via JavaScript, non permanent)</li>
+        <li><strong>Les fichiers journaux du serveur</strong> peuvent contenir votre adresse IP et l'heure d'accès (voir section 5 pour la conservation)</li>
+    </ul>
+    <p><strong>IMPORTANT :</strong> Ne partagez pas d'informations personnelles identifiables, de données confidentielles ou d'informations sensibles dans les conversations avec le chatbot. Les conversations sont traitées par des fournisseurs d'IA externes.</p>
+
+    <h3>2.3 Données de Compte (Utilisateurs du Chatbot)</h3>
+    <p>Lorsque vous créez un compte pour le chatbot IA, nous collectons :</p>
+    <ul>
+        <li><strong>Adresse e-mail :</strong> Pour la vérification du compte et la communication</li>
+        <li><strong>Nom :</strong> Optionnel, pour la personnalisation</li>
+        <li><strong>Mot de passe :</strong> Stocké de manière chiffrée (bcrypt), jamais en clair</li>
+        <li><strong>Statistiques d'utilisation :</strong> Nombre de questions chatbot par jour</li>
+        <li><strong>Préférence linguistique :</strong> Néerlandais ou français</li>
+        <li><strong>Authentification à deux facteurs (2FA) :</strong> Si activée, une clé secrète chiffrée pour les codes TOTP</li>
+        <li><strong>Journal d'activité :</strong> Tentatives de connexion, modifications de mot de passe et événements de sécurité (adresse IP et horodatage)</li>
+    </ul>
+
+    <h3>2.4 Données de Paiement (Abonnements Payants)</h3>
+    <p>Pour les abonnements payants, nous traitons les paiements via Stripe. Nous ne stockons <strong>aucune</strong> donnée de carte bancaire. Stripe collecte :</p>
+    <ul>
+        <li>Données de carte de paiement (traitées par Stripe, pas par nous)</li>
+        <li>Adresse de facturation</li>
+        <li>Numéro de TVA (pour les clients professionnels et la facturation électronique PEPPOL)</li>
+        <li>Nom de l'entreprise et numéro d'entreprise (optionnel)</li>
+    </ul>
+    <p>Consultez la <a href="https://stripe.com/privacy">politique de confidentialité de Stripe</a> pour plus d'informations.</p>
+
+    <h3>2.5 Facturation Électronique PEPPOL</h3>
+    <p>Depuis le 1er janvier 2026, la facturation électronique via PEPPOL est obligatoire pour les transactions B2B en Belgique. Si vous fournissez un numéro de TVA, nous envoyons les factures via le réseau PEPPOL. Pour cela, nous partageons vos données de facturation avec notre fournisseur d'Access Point PEPPOL (Storecove). Consultez la <a href="https://www.storecove.com/privacy">politique de confidentialité de Storecove</a> pour plus d'informations.</p>
+
+    <h3>2.6 Cookies de Session</h3>
+    <p><strong>IMPORTANT : Pas connecté ? Nous ne stockons AUCUN cookie.</strong></p>
+    <p>Uniquement lorsque vous vous connectez à un compte chatbot, nous utilisons un cookie de session pour maintenir votre connexion. Ce cookie :</p>
+    <ul>
+        <li>Contient uniquement un jeton de session aléatoire (aucune donnée personnelle)</li>
+        <li>Expire après 30 jours ou lors de la déconnexion</li>
+        <li>N'est pas utilisé pour le suivi ou la publicité</li>
+    </ul>
+    <p><strong>Les visiteurs anonymes ne reçoivent AUCUN cookie.</strong> Vous pouvez utiliser l'intégralité du site sans que nous stockions quoi que ce soit sur votre appareil.</p>
+
+    <h2>3. Comment Nous Utilisons Vos Données</h2>
+    <p>Nous utilisons les données collectées pour :</p>
+    <ul>
+        <li>Fournir et maintenir le Service</li>
+        <li>Améliorer la fonctionnalité du chatbot</li>
+        <li>Détecter et prévenir les abus et les problèmes de sécurité</li>
+        <li>Résoudre les problèmes techniques</li>
+        <li>Analyser les statistiques d'utilisation (de manière anonymisée)</li>
+    </ul>
+    <p>Nous n'utilisons PAS vos données pour le marketing, la publicité ou la vente à des tiers.</p>
+
+    <h2>4. Partage des Données</h2>
+    <p>Nous ne partageons vos données que dans les cas suivants :</p>
+    <ul>
+        <li><strong>Fournisseurs d'API IA :</strong> Les questions du chatbot sont envoyées à Azure OpenAI (Suède, UE) pour générer des réponses. Azure est conforme au RGPD et respecte les exigences d'EU Data Boundary.</li>
+        <li><strong>Processeur de paiement :</strong> Stripe (Irlande, UE) traite les paiements pour les abonnements. Stripe est conforme au RGPD.</li>
+        <li><strong>Fournisseur d'e-mail :</strong> Migadu (Suisse) envoie les e-mails de confirmation et transactionnels. Conforme au RGPD.</li>
+        <li><strong>Obligations légales :</strong> Si requis par la loi ou pour protéger nos droits</li>
+        <li><strong>Fournisseurs d'hébergement :</strong> Nos serveurs sont hébergés par des tiers (Hetzner, Allemagne) qui ont accès aux fichiers journaux du serveur</li>
+    </ul>
+    <p>Nous ne vendons, ne louons ni n'échangeons JAMAIS vos données.</p>
+
+    <h2>5. Conservation des Données</h2>
+    <ul>
+        <li><strong>Fichiers journaux du serveur :</strong> Conservés pendant un maximum de 90 jours, puis supprimés automatiquement</li>
+        <li><strong>Conversations du chatbot :</strong> <strong>Non stockées</strong> dans notre base de données - uniquement traitées par des fournisseurs d'IA externes</li>
+        <li><strong>Données de compte :</strong> Conservées tant que votre compte est actif. Vous pouvez supprimer votre compte à tout moment via votre page de compte.</li>
+        <li><strong>Statistiques d'utilisation :</strong> Les statistiques anonymisées sont conservées pour analyse. Les données d'utilisation personnelles sont supprimées lors de la suppression du compte.</li>
+        <li><strong>Données de paiement :</strong> Stripe conserve les données selon sa politique. Nous ne conservons que le statut d'abonnement et les références de facture.</li>
+    </ul>
+
+    <h2>6. Sécurité des Données</h2>
+    <p>Nous prenons des mesures raisonnables pour protéger vos données, notamment :</p>
+    <ul>
+        <li>Chiffrement HTTPS pour toutes les communications</li>
+        <li>Environnement serveur sécurisé avec pare-feu</li>
+        <li>Mises à jour de sécurité régulières</li>
+        <li>Accès limité aux données personnelles</li>
+        <li>Verrouillage de compte après 5 tentatives de connexion échouées</li>
+        <li>Authentification à deux facteurs (2FA) optionnelle</li>
+        <li>Expiration automatique de session en cas d'inactivité</li>
+        <li>En-têtes de sécurité (CSP, HSTS, X-Frame-Options)</li>
+    </ul>
+    <p>Cependant, aucune méthode n'est sûre à 100%. Utilisez le Service à vos propres risques.</p>
+
+    <h2>7. Vos Droits en Vertu du RGPD</h2>
+    <p>En tant que résident de l'UE, vous avez le droit de :</p>
+    <ul>
+        <li><strong>Accès :</strong> Demander une copie des données que nous détenons sur vous</li>
+        <li><strong>Rectification :</strong> Demander la correction de données inexactes</li>
+        <li><strong>Suppression :</strong> Demander la suppression de vos données ("droit à l'oubli")</li>
+        <li><strong>Limitation :</strong> Limiter le traitement de vos données</li>
+        <li><strong>Portabilité :</strong> Recevoir vos données dans un format structuré</li>
+        <li><strong>Opposition :</strong> Vous opposer au traitement de vos données</li>
+    </ul>
+    <p>Pour exercer ces droits, contactez-nous à <a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a>.</p>
+
+    <h2>8. Données des Enfants</h2>
+    <p>Le Service n'est pas destiné aux personnes de moins de 16 ans. Nous ne collectons pas sciemment de données auprès d'enfants. Si vous êtes un parent ou un tuteur et découvrez que votre enfant nous a fourni des données, veuillez nous contacter.</p>
+
+    <h2>9. Transfert International de Données</h2>
+    <p>Vos données restent au sein de l'Union européenne :</p>
+    <ul>
+        <li><strong>Serveurs d'application :</strong> Allemagne (Hetzner)</li>
+        <li><strong>Traitement IA (chatbot) :</strong> Suède (Azure OpenAI Europe West)</li>
+    </ul>
+    <p>Tout traitement de données a lieu au sein de l'UE sous protection RGPD. Il n'y a aucun transfert vers des pays hors UE.</p>
+
+    <h2>10. Modifications de Cette Politique</h2>
+    <p>Nous pouvons mettre à jour cette politique de confidentialité de temps à autre. Les modifications seront publiées sur cette page avec une date mise à jour. En cas de modifications importantes, nous afficherons un avis visible sur le site web.</p>
+
+    <h2>11. Contact</h2>
+    <p>Pour toute question concernant cette politique de confidentialité ou pour exercer vos droits RGPD :</p>
+    <ul>
+        <li><strong>E-mail :</strong> <a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a></li>
+        <li><strong>Site web :</strong> <a href="https://wetwijzer.be">https://wetwijzer.be</a> / <a href="https://lisloi.be">https://lisloi.be</a></li>
+    </ul>
+
+    <h2>12. Autorité de Contrôle</h2>
+    <p>Si vous n'êtes pas satisfait de notre traitement de vos données, vous avez le droit de déposer une plainte auprès de l'Autorité belge de Protection des Données :</p>
+    <p>
+        <strong>Autorité de Protection des Données (APD)</strong><br>
+        Rue de la Presse 35, 1000 Bruxelles<br>
+        Tél : +32 (0)2 274 48 00<br>
+        E-mail : contact@apd-gba.be<br>
+        Site web : <a href="https://www.autoriteprotectiondonnees.be">www.autoriteprotectiondonnees.be</a>
+    </p>
+
+    <hr style="margin-top: 40px;">
+    <p style="text-align: center; color: #666;">
+        <a href="/privacy-nl.html">Nederlandse versie</a> | 
+        <a href="/terms-fr.html">Conditions d'utilisation</a> | 
+        <a href="/">Retour à LisLoi</a>
+    </p>
+</body>
+</html>

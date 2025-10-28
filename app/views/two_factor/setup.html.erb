@@ -1,0 +1,46 @@
+<%= content_for :title, t('account.setup_2fa') %>
+
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md mx-auto">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+      🔐 <%= t('account.setup_2fa') %>
+    </h1>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+      <div class="text-center mb-6">
+        <p class="text-gray-600 dark:text-gray-400 mb-4">
+          <%= t('account.2fa_instructions') %>
+        </p>
+        
+        <div class="inline-block p-4 bg-white rounded-lg shadow">
+          <%= @qr_code.html_safe %>
+        </div>
+        
+        <p class="text-xs text-gray-500 mt-3">
+          <%= t('account.manual_entry') %>: <code class="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded"><%= @otp_secret %></code>
+        </p>
+      </div>
+
+      <%= form_with url: enable_2fa_path, method: :post, class: "space-y-4" do |f| %>
+        <div>
+          <label for="otp_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('account.enter_code') %>
+          </label>
+          <input type="text" name="otp_code" id="otp_code" 
+                 class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-center text-2xl tracking-widest bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                 placeholder="000000" maxlength="6" autocomplete="one-time-code" inputmode="numeric" required>
+        </div>
+
+        <button type="submit" class="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+          <%= t('account.enable_2fa') %>
+        </button>
+      <% end %>
+
+      <div class="mt-4 text-center">
+        <%= link_to account_path, class: "text-gray-500 hover:text-gray-700 text-sm" do %>
+          ← <%= t('account.cancel') %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

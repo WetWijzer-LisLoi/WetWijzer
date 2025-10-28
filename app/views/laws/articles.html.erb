@@ -1,0 +1,4 @@
+<%= turbo_frame_tag "law_articles",
+      data: { controller: 'frame-status', frame_status_completed_value: t('loading_status.completed') } do %>
+  <%= render partial: "laws/articles", locals: { articles: @articles, content: @content } %>
+<% end %>

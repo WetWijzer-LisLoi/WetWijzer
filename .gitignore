@@ -1,0 +1,122 @@
+rerun.txt
+*.swp
+*.swo
+*.DS_Store
+.bundle
+db/*.sqlite3*
+log/*.log
+log/*.log.*
+
+# Database files anywhere in the repository
+*.db
+*.db.gz
+*.db-shm
+*.db-wal
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+
+# Embedding generation artifacts (large files)
+embedding_output.log
+article_embeddings.db*
+
+# Specifically ignore any database files in lib/wetwijzer_updater
+lib/wetwijzer_updater/*.db
+lib/wetwijzer_updater/*.sqlite3
+
+# Large test/temp files
+*.zip
+test-export.zip
+justel_search_*.html
+.sass-cache/
+tmp/*
+public/tmp/*
+public/uploads
+public/packs/
+dump.rdb
+.byebug_history
+routes.txt
+.idea
+/public/packs
+/public/packs-test
+/public/assets
+/node_modules
+/coverage
+storage/**/*
+!storage/.keep
+yarn-error.log
+
+/public/packs
+/public/packs-test
+/node_modules
+/yarn-error.log
+yarn-debug.log*
+.yarn-integrity
+yarn.lock
+
+.env
+
+/app/assets/builds/*
+!/app/assets/builds/.keep
+
+# Vite Ruby
+# Commit production build outputs so server doesn't need Node.
+# Keep development/test outputs ignored.
+/public/vite-dev/
+/public/vite-test/
+
+/config/master.key
+
+node_modules
+# Python virtual environment
+.venv/
+venv/
+# Vite uses dotenv and suggests to ignore local-only env files. See
+# https://vitejs.dev/guide/env-and-mode.html#env-files
+*.local
+
+# Docs: ignore everything except WetWijzer Python download scripts
+docs/**
+!docs/wetwijzer-python/
+docs/wetwijzer-python/**
+!docs/wetwijzer-python/*.py
+!docs/wetwijzer-python/requirements.txt
+!docs/wetwijzer-python/*.sh
+
+# Allow tracking the n-gram backfill runbook
+!docs/wetwijzer-python/WetWijzer N-gram Backfill Runbook.md
+
+# Allow test files but not test results
+!docs/wetwijzer-python/tests/
+!docs/wetwijzer-python/tests/**/*.py
+docs/wetwijzer-python/tests/**/__pycache__/
+docs/wetwijzer-python/tests/**/.pytest_cache/
+docs/wetwijzer-python/tests/**/*.pyc
+# Allow ops docs subtree (schedules, installers, runbooks)
+!docs/ops/
+!docs/ops/**
+
+# Allow security documentation
+!docs/SERVER_SECURITY.md
+!docs/FAIL2BAN_SETUP.md
+!docs/SSH_PORT_CHANGE.md
+/vendor/
+.vscode/
+
+# Exclude development/comparison scripts from root (contain server IPs, test data)
+*.sh
+*.ps1
+!deploy.ps1
+*.py
+*.bat
+!bin/**
+!lib/**
+!test/**
+!.github/**
+*.md
+!README.md
+!CONTRIBUTING.md
+!LICENSE.md
+!DEPLOYMENT.md
+!.github/**/*.md
+*.logdocs/CHATBOT_ACCESS.md

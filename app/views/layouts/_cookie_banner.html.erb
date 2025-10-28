@@ -1,0 +1,32 @@
+<% # Cookie consent banner - only shown once until accepted %>
+<div id="cookie-banner" 
+     class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-50 transform translate-y-full transition-transform duration-300"
+     data-controller="cookie-consent"
+     data-cookie-consent-accepted-value="<%= cookies[:cookie_consent] == 'accepted' %>">
+  <div class="container mx-auto px-4 py-4">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="flex-1">
+        <p class="text-sm text-gray-700 dark:text-gray-300">
+          <strong><%= t('cookies.title') %></strong>
+          <%= t('cookies.message') %>
+          <%= link_to t('cookies.learn_more'), '/privacy-policy', class: "text-blue-600 hover:underline", target: "_blank" %>
+        </p>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <%= t('cookies.details') %>
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button type="button"
+                data-action="click->cookie-consent#accept"
+                class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
+          <%= t('cookies.accept') %>
+        </button>
+        <button type="button"
+                data-action="click->cookie-consent#decline"
+                class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+          <%= t('cookies.decline') %>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

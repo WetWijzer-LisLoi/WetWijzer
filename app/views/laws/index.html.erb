@@ -1,0 +1,231 @@
+<div class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-sky/10 dark:to-sky/20 border-b border-blue-200 dark:border-sky/30 rounded-xl py-8 sm:py-12 md:py-16">
+  <div class="text-center px-4">
+    <div class="text-center mb-4">
+      <h1 class="text-3xl leading-tight font-extrabold text-gray-900 dark:text-sky sm:text-4xl sm:leading-10 md:text-5xl md:leading-none md:tracking-tight lg:text-6xl break-words">
+        <%= t(:app_title) %>
+      </h1>
+    </div>
+    <p class="text-xs sm:text-sm text-blue-600 dark:text-sky font-medium bg-blue-100 dark:bg-sky/20 px-3 py-1 rounded-full inline-block alpha-version-badge">
+      <%= t(:alpha_version) %>
+    </p>
+  </div>
+</div>
+
+<div class="bg-white dark:bg-midnight mt-8 mb-8">
+  <div class="text-center px-4">
+    <p class="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-mist max-w-4xl mx-auto">
+      <%== t(:introduction, ejustice: link_to(t(:legal_database), "https://www.ejustice.just.fgov.be", class: %w[font-medium text-blue-600 hover:text-blue-800 dark:text-sky dark:hover:opacity-80 underline].join(" "), target: "_blank", rel: "nofollow")) %>
+    </p>
+  </div>
+</div>
+
+<!-- Popular Laws Section -->
+<% non_filter_keys = %w[per_page sort commit languages_present types_present scope_present]
+   has_search_query = request.query_parameters.except(*non_filter_keys).values.any?(&:present?) %>
+<%= render 'laws/popular_laws', collapsed: has_search_query %>
+
+<div>
+  <%= form_with url: laws_path, method: :get, class: "space-y-6", data: { turbo_frame: "_top", controller: 'search-validation' }, html: { 'data-action': 'submit->search-validation#validate', autocomplete: 'off' } do |form| %>
+    <div class="space-y-4" data-controller="filters-toggle source-toggle">
+      <!-- Source Selector (above search bar) -->
+      <div class="flex items-center justify-center gap-1 sm:gap-2 mb-2">
+        <span class="text-xs text-gray-500 dark:text-gray-400 mr-2 hidden sm:inline"><%= I18n.locale == :fr ? 'Rechercher dans:' : 'Zoeken in:' %></span>
+        <div class="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-navy p-1">
+          <button type="button" 
+                  class="source-btn px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors"
+                  data-source="legislation"
+                  data-action="click->source-toggle#select"
+                  data-source-toggle-target="btn">
+            <span class="flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+              </svg>
+              <span class="hidden sm:inline"><%= I18n.locale == :fr ? 'Législation' : 'Wetgeving' %></span>
+            </span>
+          </button>
+          <button type="button" 
+                  class="source-btn px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors"
+                  data-source="jurisprudence"
+                  data-action="click->source-toggle#select"
+                  data-source-toggle-target="btn">
+            <span class="flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+              </svg>
+              <span class="hidden sm:inline"><%= I18n.locale == :fr ? 'Jurisprudence' : 'Rechtspraak' %></span>
+            </span>
+          </button>
+          <button type="button" 
+                  class="source-btn px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors"
+                  data-source="parliamentary"
+                  data-action="click->source-toggle#select"
+                  data-source-toggle-target="btn">
+            <span class="flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+              </svg>
+              <span class="hidden sm:inline"><%= I18n.locale == :fr ? 'Parl.' : 'Parl.' %></span>
+            </span>
+          </button>
+        </div>
+        <%= form.hidden_field :source, value: params[:source] || 'legislation', data: { source_toggle_target: 'input' } %>
+      </div>
+      
+      <div class="flex flex-col sm:flex-row gap-2">
+        <div class="relative flex-grow">
+          <%= form.text_field :title,
+            placeholder: t(:search_placeholder),
+            value: params[:title],
+            class: %w[w-full rounded-md border-gray-300 dark:border-sky/50 dark:bg-navy dark:text-mist dark:placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:focus:border-sky dark:focus:ring-sky text-base].join(" ")
+          %>
+        </div>
+        <div class="flex gap-2 sm:contents">
+          <button type="button"
+                  class="flex-1 sm:flex-none px-4 py-2 border border-gray-300 dark:border-sky/50 bg-white dark:bg-navy text-gray-700 dark:text-mist rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-sky/10"
+                  data-action="click->filters-toggle#toggle"
+                  data-filters-toggle-target="button"
+                  aria-controls="filters-panel"
+                  aria-expanded="false">
+            <%= t(:filters_title) %>
+          </button>
+          <%= form.submit t(:search), class: %w[flex-1 sm:flex-none px-6 py-2 bg-[var(--accent-600)] hover:bg-[var(--accent-700)] dark:bg-[var(--accent-600)] dark:hover:bg-[var(--accent-700)] text-white dark:text-midnight font-semibold rounded-md shadow-sm cursor-pointer transition-colors duration-200].join(" ") %>
+        </div>
+      </div>
+      
+      <!-- Search Hints -->
+      <%= render 'laws/search_hints' %>
+      
+      <%= form.hidden_field :dark_mode, value: params[:dark_mode] if params[:dark_mode].present? %>
+      <%= render 'laws/filter_section', form: form %>
+    </div>
+   <% end %>
+  <!-- Mount target for the completed pill below the search bar -->
+  <div id="search-status-mount" class="w-full"></div>
+</div>
+
+  <!-- Results Section -->
+  <div>
+    <% if @validation_failed %>
+      <div class="mb-4 rounded-md border border-red-300 bg-red-50 p-4 text-red-800 dark:border-red-600/40 dark:bg-red-900/30 dark:text-red-200">
+        <p class="font-semibold"><%= t('filters.validation.incomplete') %></p>
+        <p class="mt-1"><%= t('filters.validation.fix') %></p>
+        <% if defined?(@missing_labels) && @missing_labels.present? %>
+          <% anchor_map = { types: '#filter-types', languages: '#filter-languages', scope: '#filter-scope' } %>
+          <ul class="mt-2 list-disc pl-6">
+            <% @missing_keys.each_with_index do |key, idx| %>
+              <% label = @missing_labels[idx] %>
+              <li>
+                <a href="<%= anchor_map[key] %>" class="underline decoration-red-400 hover:text-red-600 dark:hover:text-red-300"><%= label %></a>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% non_filter_keys = %w[per_page sort commit languages_present types_present scope_present]
+       has_query = request.query_parameters.except(*non_filter_keys).values.any?(&:present?)
+       from_submit = params[:commit].present?
+       frame_src = if @validation_failed || !(has_query || from_submit)
+         nil
+       else
+         laws_path(request.query_parameters.merge(frame: 1))
+       end %>
+    <% if frame_src.present? %>
+      <%= turbo_frame_tag 'laws_list', src: frame_src,
+            data: { controller: 'frame-status', frame_status_loading_value: t('loading_status.loading'), frame_status_completed_value: t('loading_status.completed'), frame_status_duration_value: 0, frame_status_mount_selector_value: '#search-status-mount' } do %>
+        <div class="bg-white dark:bg-midnight rounded-xl shadow-lg">
+          <div class="progress-top text-blue-600 dark:text-sky"></div>
+          <%= loading_skeleton_tag(kind: :list) %>
+        </div>
+      <% end %>
+    <% else %>
+      <%= turbo_frame_tag 'laws_list' %>
+    <% end %>
+    <noscript>
+      <div class="bg-white dark:bg-midnight rounded-xl shadow-lg overflow-hidden">
+        <%= render partial: 'laws/list', locals: { laws: @laws, pagy: @pagy } %>
+      </div>
+    </noscript>
+  </div>
+
+  <!-- Jurisprudence Results (when source is selected) -->
+  <% if @jurisprudence_results.present? %>
+    <div class="mt-8">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+          </svg>
+          <%= I18n.locale == :fr ? 'Jurisprudence' : 'Rechtspraak' %>
+          <span class="text-sm font-normal text-gray-500">(<%= @jurisprudence_results.size %> <%= I18n.locale == :fr ? 'résultats' : 'resultaten' %>)</span>
+        </h2>
+        <a href="<%= rechtspraak_path(q: params[:title]) %>" class="text-sm text-blue-600 hover:underline">
+          <%= I18n.locale == :fr ? 'Voir tout →' : 'Bekijk alle →' %>
+        </a>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+          <% @jurisprudence_results.each do |result| %>
+            <a href="<%= jurisprudence_path(id: result[:id]) %>" class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-medium text-gray-900 dark:text-white truncate">
+                    <%= result[:case_number] %>
+                  </h3>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    <%= result[:court] %> - <%= result[:decision_date] %>
+                  </p>
+                  <% if result[:summary].present? %>
+                    <p class="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">
+                      <%= truncate(result[:summary], length: 150) %>
+                    </p>
+                  <% end %>
+                </div>
+                <span class="flex-shrink-0 px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 rounded">
+                  <%= I18n.locale == :fr ? 'Jurisprudence' : 'Rechtspraak' %>
+                </span>
+              </div>
+            </a>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Parliamentary Results (when source is selected) -->
+  <% if @parliamentary_results.present? %>
+    <div class="mt-8">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+          </svg>
+          <%= I18n.locale == :fr ? 'Travaux parlementaires' : 'Parlementaire stukken' %>
+          <span class="text-sm font-normal text-gray-500">(<%= @parliamentary_results.size %> <%= I18n.locale == :fr ? 'résultats' : 'resultaten' %>)</span>
+        </h2>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+          <% @parliamentary_results.each do |result| %>
+            <div class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-medium text-gray-900 dark:text-white">
+                    <%= result[:title] %>
+                  </h3>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    <% parliament_labels = { 'kamer' => 'Kamer', 'senaat' => 'Senaat', 'vlaams' => 'Vlaams Parlement', 'brussels' => 'Brussels Parlement', 'waals' => 'Waals Parlement' } %>
+                    <%= parliament_labels[result[:parliament]] || result[:parliament] %> - <%= result[:dossier_number] %> - <%= result[:date] %>
+                  </p>
+                </div>
+                <span class="flex-shrink-0 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded">
+                  <%= I18n.locale == :fr ? 'Parlementaire' : 'Parlementair' %>
+                </span>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>

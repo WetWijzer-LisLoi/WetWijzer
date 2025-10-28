@@ -1,0 +1,565 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+// Note: Using @import instead of @use because @tailwind directives must come first.
+// The @import deprecation warning can be safely ignored when used with Tailwind CSS.
+// See: https://tailwindcss.com/docs/using-with-preprocessors#sass
+@import 'flatpickr/dist/flatpickr.min.css';
+@import 'themes/accent'; // theme CSS variables (Vite bundle)
+@import 'components/theme-components';
+@import 'components/global-border-fixes'; // fixes for broken Tailwind opacity syntax
+// Ensures var(--accent-*) and --page-bg are available in the app stylesheet
+
+// Abolished Article Styling
+// ===========================================
+// Styles for articles that have been abolished or revoked.
+// These styles ensure clear visual distinction of abolished content.
+
+.abolished-article {
+  // Only apply text color, no background or border
+  @apply text-red-600 dark:text-red-400;
+  
+  // Keep article number black/white and bold
+  strong {
+    @apply text-gray-900 dark:text-white font-bold;
+  }
+  
+  // Style links within abolished articles
+  a {
+    @apply text-red-600 hover:underline dark:text-red-400;
+  }
+}
+
+@layer base {
+  body {
+    /* Use themed page background variable */
+    background-color: var(--page-bg);
+    @apply text-gray-800 transition-colors duration-300;
+  }
+  .dark body {
+    /* Keep text color only; background comes from var(--page-bg) */
+    @apply text-mist;
+  }
+  .dark a:not(.reference a):not(.reference *) {
+    @apply text-sky hover:opacity-80;
+  }
+  /* Links inside references should inherit color */
+  .dark .reference a {
+    color: inherit !important;
+    text-decoration: none;
+  }
+  .dark .reference a:hover {
+    text-decoration: underline;
+  }
+  .dark .prose {
+    @apply text-mist;
+  }
+  
+  /* Theme-aware link colors */
+  .theme-link {
+    color: var(--link-color);
+  }
+  .theme-link:hover {
+    color: var(--link-hover-color);
+  }
+  
+  /* Theme-aware badge colors (for search results and other inline badges) */
+  .theme-badge {
+    background-color: var(--badge-bg);
+    color: var(--badge-text);
+    border-color: var(--badge-border);
+  }
+  
+  /* Date badges in search results - normalized font weight */
+  td span.inline-flex.items-center.justify-center {
+    font-weight: 400;
+  }
+  
+  /* Tag badges in search results - normalized font weight */
+  td span.inline-flex.items-center.px-2 {
+    font-weight: 400;
+  }
+  
+  /* Theme-aware hover backgrounds */
+  .theme-hover {
+    background-color: var(--accent-active-bg);
+  }
+
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    @apply text-white;
+  }
+  
+  /* References styling */
+  .reference-link {
+    @apply text-blue-600 dark:text-sky no-underline font-normal hover:underline;
+    font-size: 0.8em;
+    line-height: 0;
+    position: relative;
+    top: -0.4em;
+    margin: 0 1px;
+  }
+  
+  .references {
+    @apply mt-6 pt-0;
+    
+    .references-container {
+      @apply space-y-2;
+      
+      h4 {
+        @apply font-medium text-gray-700 dark:text-gray-300 mb-2 text-sm uppercase tracking-wider;
+      }
+      
+      .reference-item {
+        @apply text-sm text-gray-600 dark:text-gray-400 flex items-start;
+        
+        sup {
+          @apply mr-1 text-xs text-gray-500 dark:text-gray-500;
+          line-height: 1;
+          position: relative;
+          top: -0.1em;
+        }
+      }
+    }
+  }
+  
+  /* Article content styling */
+  .article-content {
+    @apply leading-relaxed text-justify;
+    
+    p {
+      @apply mb-4;
+    }
+    
+    b, strong {
+      @apply font-semibold;
+    }
+    
+    /* Style for article numbers and references */
+    b {
+      @apply text-gray-900 dark:text-white;
+    }
+    
+    /* Add extra space before new sections */
+    p + p {
+      @apply mt-6;
+    }
+  }
+  
+  /* Misclassified articles are now handled in the controller */
+}
+
+.page {
+  @apply relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white transition ease-in-out duration-150 dark:bg-navy dark:border-navy dark:text-mist;
+
+  &:hover {
+    @apply text-gray-500 dark:bg-sky/20;
+  }
+
+  &:focus {
+    @apply outline-none ring-2 ring-blue-300 ring-offset-2;
+  }
+
+  &:active {
+    @apply bg-gray-100 text-gray-700;
+  }
+}
+
+.page--link {
+  @apply -ml-px relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm leading-5 font-medium text-gray-700 transition ease-in-out duration-150 dark:bg-navy dark:border-navy dark:text-mist;
+
+  &:focus {
+    @apply z-10 outline-none ring-2 ring-blue-300 ring-offset-2;
+  }
+
+  &:active {
+    @apply bg-gray-100 text-gray-700;
+  }
+
+        &:hover,
+  &.active {
+    @apply bg-blue-100 text-blue-800 dark:bg-sky dark:text-midnight;
+  }
+}
+
+/* Custom style for pagination arrows in dark mode */
+.dark .page a svg {
+  stroke: #bdc3c7; /* mist */
+}
+
+/* Table styles */
+table {
+  @apply w-full border-collapse;
+  
+  th, td {
+    @apply p-3 text-left text-sm;
+  }
+  
+  th {
+    background-color: var(--table-th-bg);
+    @apply text-gray-700 font-semibold;
+  }
+  
+  /* Default row colors - will be overridden by inline styles */
+  tbody tr {
+    @apply bg-white dark:bg-transparent;
+  }
+  
+  /* Hover state */
+  tbody tr:hover {
+    background-color: var(--table-row-hover-bg);
+  }
+}
+
+/* Article content tables */
+.article-content {
+  table {
+    @apply my-8;
+    
+    th, td {
+      @apply border border-gray-300 dark:border-gray-600;
+    }
+    
+    /* Add space between table and surrounding content */
+    & + * {
+      @apply mt-8;
+    }
+    
+    /* Nested tables */
+    table {
+      @apply border-0 m-0;
+      
+      th, td {
+        @apply border border-gray-200 dark:border-gray-500;
+      }
+      
+      tr:nth-child(even) {
+        @apply bg-white dark:bg-midnight/80;
+      }
+    }
+  }
+}
+
+/* Dark mode specific table styles */
+.dark table {
+  th {
+    /* use themed variable for background; keep text color override */
+    @apply text-mist;
+  }
+  
+  td {
+    @apply text-mist;
+  }
+  
+  tr:hover {
+    background-color: var(--table-row-hover-bg);
+  }
+}
+
+  /* =============================================
+   * Themed Page Background
+   * Make the entire page background follow the selected accent theme.
+   * ============================================= */
+  html, body {
+    background-color: var(--page-bg);
+  }
+
+/* =============================================
+ * Loading UX: Skeleton Shimmer and Top Progress Bar
+ * ============================================= */
+
+/* Skeleton shimmer effect */
+@keyframes ww-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Toast notification animations */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+
+.animate-fade-out {
+  animation: fade-out 0.3s ease-out forwards;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: rgba(203, 213, 225, 0.5); /* slate-300-ish */
+}
+
+.dark .skeleton {
+  background-color: rgba(30, 41, 59, 0.55); /* slate-800-ish */
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 60%;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  animation: ww-shimmer 1.2s infinite;
+}
+
+/* Thin indeterminate top progress bar
+ * Usage: place <div class="progress-top text-blue-600 dark:text-sky"></div> as the first child
+ * of a container. Color taken from currentColor.
+ */
+@keyframes ww-progress {
+  0%   { left: -30%; width: 30%; }
+  50%  { left: 35%;  width: 30%; }
+  100% { left: 100%; width: 40%; }
+}
+
+.progress-top {
+  position: relative;
+  height: 2px; /* ~2px */
+  overflow: hidden;
+}
+
+.progress-top::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40%;
+  background: currentColor; /* inherits from text-... utility */
+  opacity: 0.9;
+  border-radius: 9999px; /* full */
+  animation: ww-progress 1.1s ease-in-out infinite;
+}
+
+/* =============================================
+ * Section Headings: permanent hover-like styling
+ * Make section headings stand out by applying the hover background by default
+ * Works for both normal and abolished section headings since both use .section-heading
+ * ============================================= */
+@layer components {
+  /* Apply background and border to the container to also wrap the Wijzigingen block.
+   * Use a small negative left margin + equal left padding to keep inner breathing room
+   * while aligning the heading text start with article text start.
+   */
+  .section-heading {
+    @apply bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md -ml-2 px-2 pt-1 pb-2;
+  }
+
+  /* Heading itself should not add extra padding/background on top of the container */
+  .section-heading > h2 {
+    @apply bg-transparent border-0;
+    padding: 0 !important;
+  }
+
+  /* References inside a section heading: reduce top spacing and avoid extra horizontal padding */
+  .section-heading .references {
+    @apply mt-2 p-0;
+  }
+}
+
+/* =============================================
+ * Filters layout profiles (mobile vs desktop)
+ * Ensures: centered container across breakpoints, left-aligned content,
+ *          1 column on mobile, 3 columns on desktop, with comfortable spacing.
+ * ============================================= */
+@layer components {
+  .filters-outer {
+    @apply w-full flex justify-center;
+  }
+
+  .filters-grid {
+    /* keep inline-grid to satisfy system test selector */
+    @apply inline-grid grid-cols-1 md:grid-cols-3 justify-items-start text-left;
+    /* spacing */
+    @apply gap-y-8 gap-x-10 md:gap-y-12 md:gap-x-20;
+    /* width and centering */
+    @apply mx-auto md:w-full md:max-w-5xl;
+  }
+
+  .filters-group {
+    /* looser on mobile, slightly tighter on desktop */
+    @apply space-y-4 md:space-y-3;
+  }
+}
+
+/* =============================================
+ * Flatpickr Dark Mode Styling
+ * ============================================= */
+.dark .flatpickr-calendar {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+.dark .flatpickr-months {
+  background: #1e293b;
+}
+
+.dark .flatpickr-current-month .flatpickr-monthDropdown-months,
+.dark .flatpickr-current-month .numInputWrapper input {
+  background: #334155;
+  color: #bdc3c7;
+}
+
+.dark .flatpickr-current-month .flatpickr-monthDropdown-months:hover,
+.dark .flatpickr-current-month .numInputWrapper input:hover {
+  background: #475569;
+}
+
+.dark .flatpickr-weekdays {
+  background: #1e293b;
+}
+
+.dark span.flatpickr-weekday {
+  color: #94a3b8;
+}
+
+.dark .flatpickr-day {
+  color: #bdc3c7;
+}
+
+.dark .flatpickr-day:hover,
+.dark .flatpickr-day:focus {
+  background: #334155;
+  border-color: #334155;
+}
+
+.dark .flatpickr-day.today {
+  border-color: var(--accent-500);
+}
+
+.dark .flatpickr-day.selected,
+.dark .flatpickr-day.startRange,
+.dark .flatpickr-day.endRange {
+  background: var(--accent-600);
+  border-color: var(--accent-600);
+  color: #fff;
+}
+
+.dark .flatpickr-day.selected:hover,
+.dark .flatpickr-day.startRange:hover,
+.dark .flatpickr-day.endRange:hover {
+  background: var(--accent-700);
+  border-color: var(--accent-700);
+}
+
+.dark .flatpickr-months .flatpickr-prev-month:hover svg,
+.dark .flatpickr-months .flatpickr-next-month:hover svg {
+  fill: var(--accent-500);
+}
+
+.dark .flatpickr-months .flatpickr-prev-month svg,
+.dark .flatpickr-months .flatpickr-next-month svg {
+  fill: #94a3b8;
+}
+
+// ===========================================
+// Print Styles
+// ===========================================
+@media print {
+  // Hide loading spinners FIRST (highest priority)
+  .animate-spin,
+  .animate-spin *,
+  [data-articles-loading-target],
+  [data-articles-loading-target] * {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  // Hide ALL SVG icons completely
+  svg {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  
+  // Hide all interactive elements and header
+  header,
+  footer,
+  button,
+  .btn,
+  .btn-toggle-active,
+  .btn-toggle-inactive,
+  nav,
+  .sticky,
+  .fixed,
+  [data-action],
+  [onclick],
+  [data-controller="theme-selector"],
+  [data-controller="dark-mode"],
+  #scroll-to-top,
+  #global-scroll-to-top,
+  .no-print {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  // Reset backgrounds and colors
+  * {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+  
+  // Keep the two-column layout for compare view
+  .flex.gap-2 {
+    display: flex !important;
+    gap: 8px !important;
+  }
+  
+  .flex-1 {
+    flex: 1 !important;
+    border: 1px solid #ccc !important;
+    padding: 6px !important;
+    font-size: 9pt !important;
+  }
+  
+  // Hide header buttons but keep title
+  .bg-gradient-to-r {
+    background: none !important;
+    padding: 0 !important;
+    border: none !important;
+    margin-bottom: 10px !important;
+  }
+  
+  // Page setup
+  @page {
+    margin: 1cm;
+    size: landscape;
+  }
+  
+  body {
+    font-size: 10pt !important;
+    line-height: 1.4 !important;
+  }
+}

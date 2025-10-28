@@ -1,0 +1,137 @@
+<% @title = "#{@document[:parliament]} - #{@document[:document_number]}" %>
+
+<div class="max-w-4xl mx-auto">
+  <!-- Back link -->
+  <div class="mb-4">
+    <a href="<%= parliamentary_work_path %>" 
+       class="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline">
+      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      <% if I18n.locale == :fr %>Retour à la liste<% else %>Terug naar overzicht<% end %>
+    </a>
+  </div>
+
+  <!-- Document header -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
+    <div class="p-6">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div class="flex-1 min-w-0">
+          <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            <%= @document[:title] || @document[:document_number] %>
+          </h1>
+          <div class="flex flex-wrap gap-2 mb-3">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
+              🏛️ <%= @document[:parliament]&.upcase %>
+            </span>
+            <% if @document[:legislature].present? %>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                <% if I18n.locale == :fr %>Législature<% else %>Legislatuur<% end %> <%= @document[:legislature] %>
+              </span>
+            <% end %>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+              📁 <%= @document[:dossier_number] %>
+            </span>
+            <% if @document[:document_type].present? %>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                <%= @document[:document_type].gsub('_', ' ').capitalize %>
+              </span>
+            <% end %>
+            <% if @document[:document_date].present? %>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                📅 <%= @document[:document_date] %>
+              </span>
+            <% end %>
+            <% if @document[:language].present? %>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                🌐 <%= @document[:language]&.upcase %>
+              </span>
+            <% end %>
+          </div>
+
+          <!-- Link to related legislation -->
+          <% if @document[:legislation_numac].present? %>
+            <div class="mb-2">
+              <a href="<%= show_law_path(@document[:legislation_numac]) %>" 
+                 class="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                </svg>
+                <% if I18n.locale == :fr %>Voir la législation associée<% else %>Bekijk gerelateerde wetgeving<% end %>
+              </a>
+            </div>
+          <% end %>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="flex flex-col gap-2">
+          <% if @document[:url].present? %>
+            <a href="<%= @document[:url] %>" target="_blank" rel="noopener"
+               class="flex-shrink-0 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg inline-flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+              </svg>
+              <span class="hidden sm:inline"><% if I18n.locale == :fr %>Source<% else %>Bron<% end %></span>
+            </a>
+          <% end %>
+          <% if @document[:pdf_url].present? %>
+            <a href="<%= @document[:pdf_url] %>" target="_blank" rel="noopener"
+               class="flex-shrink-0 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg inline-flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              <span class="hidden sm:inline">PDF</span>
+            </a>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <% if @document[:content].present? %>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+      <div class="p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <% if I18n.locale == :fr %>Contenu<% else %>Inhoud<% end %>
+        </h2>
+        <div class="prose dark:prose-invert max-w-none">
+          <div class="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+<%= @document[:content] %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Ask chatbot -->
+  <div class="mt-6 p-4 bg-purple-50 dark:bg-purple-900/30 rounded-xl">
+    <div class="flex items-center gap-4">
+      <div class="flex-shrink-0">
+        <svg class="w-8 h-8 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h3 class="font-medium text-gray-900 dark:text-white">
+          <% if I18n.locale == :fr %>
+            Questions sur ce document?
+          <% else %>
+            Vragen over dit document?
+          <% end %>
+        </h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          <% if I18n.locale == :fr %>
+            Posez vos questions à notre assistant IA juridique
+          <% else %>
+            Stel uw vragen aan onze juridische AI-assistent
+          <% end %>
+        </p>
+      </div>
+      <a href="<%= chatbot_path(source: 'parliamentary') %>"
+         class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg">
+        <% if I18n.locale == :fr %>Ouvrir le chatbot<% else %>Open chatbot<% end %>
+      </a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,53 @@
+<div class="p-6" data-controller="collapse" data-collapse-expanded-value="true">
+  <button type="button" class="w-full flex items-center justify-between text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--accent-500)]" data-action="click->collapse#toggle" data-collapse-target="button" aria-label="<%= t('aria.toggle_external_links') %>" aria-expanded="true">
+    <h2 class="text-xl font-bold text-gray-800 dark:text-[var(--accent-500)]">
+      <%= t(:external_links).capitalize() %>
+    </h2>
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor" data-collapse-target="icon">
+      <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
+    </svg>
+  </button>
+  
+  <ul class="space-y-2 mt-4" data-collapse-target="content">
+    <% if law.justel != "N/A" %>
+      <li>
+        <%= link_to law.justel, class: "text-[var(--link-color)] hover:text-[var(--link-hover-color)] hover:underline", target: "_blank", rel: "nofollow" do %>
+          <%= t(:justel).capitalize() %>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline-block ml-1">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-4.5 0V6.75A.75.75 0 0114.25 6h1.5a.75.75 0 01.75.75v1.5m-4.5 0h4.5m-4.5 0l6-6" />
+          </svg>
+        <% end %>
+      </li>
+    <% end %>
+    <% if law.reflex != "N/A" %>
+      <li>
+        <%= link_to law.reflex, class: "text-[var(--link-color)] hover:text-[var(--link-hover-color)] hover:underline", target: "_blank", rel: "nofollow" do %>
+          <%= t(:reflex).capitalize() %>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline-block ml-1">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-4.5 0V6.75A.75.75 0 0114.25 6h1.5a.75.75 0 01.75.75v1.5m-4.5 0h4.5m-4.5 0l6-6" />
+          </svg>
+        <% end %>
+      </li>
+    <% end %>
+    <% if law.mon_pdf != "N/A" %>
+      <li>
+        <%= link_to law.mon_pdf, class: "text-[var(--link-color)] hover:text-[var(--link-hover-color)] hover:underline", target: "_blank", rel: "nofollow" do %>
+          <%= t(:mon_pdf).capitalize() %>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline-block ml-1">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+        <% end %>
+      </li>
+    <% end %>
+    <% if law.ov_pdf != "N/A" %>
+      <li>
+        <%= link_to law.ov_pdf, class: "text-[var(--link-color)] hover:text-[var(--link-hover-color)] hover:underline", target: "_blank", rel: "nofollow" do %>
+          <%= t(:ov_pdf).capitalize() %>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline-block ml-1">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</div>

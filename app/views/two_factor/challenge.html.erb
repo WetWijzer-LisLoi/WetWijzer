@@ -1,0 +1,47 @@
+<%= content_for :title, t('account.2fa_verification') %>
+
+<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <div>
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+        <%= t('account.2fa_verification') %>
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+        <%= t('account.enter_2fa_code') %>
+      </p>
+    </div>
+
+    <%= form_with url: verify_2fa_path, method: :post, class: "mt-8 space-y-6" do |f| %>
+      <div>
+        <label for="otp_code" class="sr-only"><%= t('account.2fa_code') %></label>
+        <input type="text" 
+               name="otp_code" 
+               id="otp_code" 
+               required
+               autofocus
+               autocomplete="one-time-code"
+               inputmode="numeric"
+               pattern="[0-9]*"
+               maxlength="6"
+               class="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white dark:bg-gray-800 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-center text-2xl tracking-widest"
+               placeholder="000000">
+      </div>
+
+      <div>
+        <button type="submit" 
+                class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          <%= t('account.verify') %>
+        </button>
+      </div>
+    <% end %>
+
+    <div class="text-center">
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        <%= t('account.use_backup_code') %>
+      </p>
+      <%= link_to login_path, class: "text-sm text-blue-600 hover:text-blue-500" do %>
+        <%= t('auth.back_to_login') %>
+      <% end %>
+    </div>
+  </div>
+</div>

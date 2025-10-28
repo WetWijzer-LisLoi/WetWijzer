@@ -1,0 +1,71 @@
+<div class="fixed bottom-6 right-6 z-50"
+     data-controller="chatbot"
+     data-chatbot-language-value="<%= I18n.locale %>"
+     data-chatbot-source-value="legislation"
+     data-chatbot-use-local-value="false"
+     data-chatbot-open-value="false">
+  
+  <button type="button"
+          data-chatbot-target="toggleButton"
+          data-action="click->chatbot#toggle"
+          class="w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+    </svg>
+    <span class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center"
+          data-chatbot-target="badge">1</span>
+  </button>
+
+  <div class="hidden absolute bottom-16 right-0 w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden"
+       data-chatbot-target="widget">
+    
+    <div class="bg-blue-600 text-white px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+        </svg>
+        <span class="font-medium"><%= t('chatbot.widget_title', default: 'Juridische Assistent') %></span>
+      </div>
+      <button type="button" data-action="click->chatbot#close" class="p-1 hover:bg-blue-500 rounded transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="h-80 overflow-y-auto p-3 space-y-3 bg-gray-50 dark:bg-gray-900" data-chatbot-target="messages"></div>
+
+    <div class="hidden px-3 py-2 bg-gray-50 dark:bg-gray-900" data-chatbot-target="typingIndicator">
+      <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
+        <div class="flex gap-1">
+          <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+          <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+          <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+        </div>
+        <span><%= t('chatbot.thinking', default: 'Aan het nadenken...') %></span>
+      </div>
+    </div>
+
+    <div class="p-3 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+      <div class="flex gap-2">
+        <textarea 
+          data-chatbot-target="input"
+          data-action="keydown->chatbot#handleKeydown"
+          class="flex-1 resize-none rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          rows="1"
+          placeholder="<%= t('chatbot.placeholder', default: 'Stel een vraag...') %>"></textarea>
+        
+        <button type="button"
+                data-chatbot-target="sendButton"
+                data-action="click->chatbot#send"
+                class="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

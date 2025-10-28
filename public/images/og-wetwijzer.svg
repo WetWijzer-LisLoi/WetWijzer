@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="accent-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#60a5fa"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg-gradient)"/>
+  
+  <!-- Subtle grid pattern -->
+  <g opacity="0.03">
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="1"/>
+    </pattern>
+    <rect width="1200" height="630" fill="url(#grid)"/>
+  </g>
+  
+  <!-- Decorative accent line -->
+  <rect x="0" y="0" width="8" height="630" fill="url(#accent-gradient)"/>
+  
+  <!-- Scale of justice icon (simplified) -->
+  <g transform="translate(100, 200)" fill="none" stroke="#3b82f6" stroke-width="3" opacity="0.15">
+    <circle cx="100" cy="50" r="20"/>
+    <line x1="100" y1="70" x2="100" y2="180"/>
+    <line x1="40" y1="100" x2="160" y2="100"/>
+    <path d="M 40 100 L 20 160 L 60 160 Z"/>
+    <path d="M 160 100 L 140 160 L 180 160 Z"/>
+    <line x1="60" y1="180" x2="140" y2="180"/>
+  </g>
+  
+  <!-- Main content -->
+  <g transform="translate(100, 180)">
+    <!-- App name -->
+    <text x="0" y="100" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="96" font-weight="700" fill="white">
+      WetWijzer
+    </text>
+    
+    <!-- Tagline -->
+    <text x="0" y="170" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="36" font-weight="400" fill="#94a3b8">
+      Juridisch informatieportaal voor het Belgisch recht
+    </text>
+    
+    <!-- Subtitle -->
+    <text x="0" y="230" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="24" font-weight="400" fill="#64748b">
+      Wetten · Decreten · Besluiten · Rechtspraak
+    </text>
+  </g>
+  
+  <!-- Domain -->
+  <g transform="translate(100, 530)">
+    <rect x="0" y="0" width="200" height="40" rx="6" fill="#3b82f6" opacity="0.2"/>
+    <text x="100" y="27" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="20" font-weight="500" fill="#60a5fa" text-anchor="middle">
+      wetwijzer.be
+    </text>
+  </g>
+  
+  <!-- Belgian flag accent (subtle) -->
+  <g transform="translate(1100, 530)">
+    <rect x="0" y="0" width="20" height="40" fill="#2d2d2d"/>
+    <rect x="20" y="0" width="20" height="40" fill="#fcd116"/>
+    <rect x="40" y="0" width="20" height="40" fill="#ef3340"/>
+  </g>
+</svg>

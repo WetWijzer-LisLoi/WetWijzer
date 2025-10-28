@@ -1,0 +1,429 @@
+<% @title = I18n.locale == :fr ? 'Calculateur de dates' : 'Datumcalculator' %>
+<% fr = I18n.locale == :fr %>
+
+<div class="max-w-4xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      📅 <%= fr ? 'Calculateur de dates juridiques' : 'Juridische datumcalculator' %>
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      <%= fr ? 'Calculez les délais, durées et dates avec les jours fériés belges' : 'Bereken termijnen, duur en data met Belgische feestdagen' %>
+    </p>
+  </div>
+
+  <!-- Back to tools -->
+  <div class="mb-4">
+    <a href="<%= tools_path %>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">← <%= fr ? 'Tous les outils' : 'Alle tools' %></a>
+  </div>
+
+  <!-- Mode Tabs -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
+    <div class="flex overflow-x-auto scrollbar-thin border-b border-gray-200 dark:border-gray-700 -mb-px">
+      <a href="<%= tools_deadline_calculator_path(mode: 'deadline') %>" 
+         class="flex-shrink-0 flex-1 min-w-[120px] px-4 py-3 text-center text-sm font-medium whitespace-nowrap <%= @mode == 'deadline' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-b-2 border-blue-500' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700' %>">
+        ⚖️ <%= fr ? 'Délais légaux' : 'Wettelijke termijnen' %>
+      </a>
+      <a href="<%= tools_deadline_calculator_path(mode: 'between') %>" 
+         class="flex-shrink-0 flex-1 min-w-[120px] px-4 py-3 text-center text-sm font-medium whitespace-nowrap <%= @mode == 'between' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-b-2 border-blue-500' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700' %>">
+        📊 <%= fr ? 'Entre dates' : 'Tussen data' %>
+      </a>
+      <a href="<%= tools_deadline_calculator_path(mode: 'add') %>" 
+         class="flex-shrink-0 flex-1 min-w-[120px] px-4 py-3 text-center text-sm font-medium whitespace-nowrap <%= @mode == 'add' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-b-2 border-blue-500' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700' %>">
+        ➕ <%= fr ? 'Ajouter jours' : 'Dagen optellen' %>
+      </a>
+    </div>
+
+    <div class="p-6">
+      <% if @mode == 'deadline' %>
+        <!-- DEADLINE MODE: Legal deadline calculator -->
+        <%= form_with url: tools_deadline_calculator_path, method: :get, local: true, class: 'space-y-4' do %>
+          <input type="hidden" name="mode" value="deadline">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <%= fr ? 'Date de signification' : 'Datum van betekening' %>
+              </label>
+              <input type="date" name="service_date" value="<%= params[:service_date] || Date.current.to_s %>"
+                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <%= fr ? 'Type de délai' : 'Type termijn' %>
+              </label>
+              <select name="deadline_days" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                <optgroup label="<%= fr ? 'Délais standards' : 'Standaard termijnen' %>">
+                  <option value="30" <%= 'selected' if params[:deadline_days] == '30' %>>30d - <%= fr ? 'Appel / Opposition' : 'Hoger beroep / Verzet' %></option>
+                  <option value="90" <%= 'selected' if params[:deadline_days] == '90' %>>90d - <%= fr ? 'Cassation' : 'Cassatie' %></option>
+                </optgroup>
+                <optgroup label="<%= fr ? 'Délais spéciaux' : 'Bijzondere termijnen' %>">
+                  <option value="15" <%= 'selected' if params[:deadline_days] == '15' %>>15d - <%= fr ? 'Faillite / Assises / Jeunesse' : 'Faillissement / Assisen / Jeugd' %></option>
+                  <option value="8" <%= 'selected' if params[:deadline_days] == '8' %>>8d - <%= fr ? 'PRJ (WCO)' : 'WCO (gerechtelijke reorganisatie)' %></option>
+                </optgroup>
+                <optgroup label="<%= fr ? "Conseil d'État" : 'Raad van State' %>">
+                  <option value="60" <%= 'selected' if params[:deadline_days] == '60' %>>60d - <%= fr ? 'Annulation' : 'Nietigverklaring' %></option>
+                  <option value="30" <%= 'selected' if params[:deadline_days] == '30' && params[:court] == 'rvs' %>>30d - <%= fr ? 'Suspension' : 'Schorsing' %></option>
+                  <option value="15" <%= 'selected' if params[:deadline_days] == '15' && params[:court] == 'rvs_udn' %>>15d - <%= fr ? 'Extrême urgence (UDN)' : 'Uiterst dringend (UDN)' %></option>
+                </optgroup>
+                <optgroup label="<%= fr ? 'Cour Constitutionnelle' : 'Grondwettelijk Hof' %>">
+                  <option value="180" <%= 'selected' if params[:deadline_days] == '180' %>>180d - <%= fr ? 'Annulation' : 'Vernietiging' %></option>
+                  <option value="45" <%= 'selected' if params[:deadline_days] == '45' %>>45d - <%= fr ? 'Mémoire' : 'Memorie' %></option>
+                </optgroup>
+                <optgroup label="<%= fr ? 'Autres' : 'Overige' %>">
+                  <% [7, 14, 21, 120].each do |d| %>
+                    <option value="<%= d %>" <%= 'selected' if params[:deadline_days] == d.to_s %>><%= d %> <%= fr ? 'jours' : 'dagen' %></option>
+                  <% end %>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input type="checkbox" name="apply_vacation" value="1" <%= params[:apply_vacation] != '0' ? 'checked' : '' %>
+                   class="rounded border-gray-300 dark:border-gray-600 text-blue-600">
+            <%= fr ? 'Appliquer la règle des vacances judiciaires (Art. 50 C. jud.)' : 'Gerechtelijke vakantieregel toepassen (Art. 50 Ger.W.)' %>
+          </label>
+          <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md">
+            <%= fr ? 'Calculer' : 'Berekenen' %>
+          </button>
+        <% end %>
+
+      <% elsif @mode == 'between' %>
+        <!-- BETWEEN MODE: Days between two dates -->
+        <%= form_with url: tools_deadline_calculator_path, method: :get, local: true, class: 'space-y-4' do %>
+          <input type="hidden" name="mode" value="between">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <%= fr ? 'Date de début' : 'Startdatum' %>
+              </label>
+              <input type="date" name="start_date" value="<%= params[:start_date] || Date.current.to_s %>"
+                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <%= fr ? 'Date de fin' : 'Einddatum' %>
+              </label>
+              <input type="date" name="end_date" value="<%= params[:end_date] || (Date.current + 30).to_s %>"
+                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" required>
+            </div>
+          </div>
+          <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md">
+            <%= fr ? 'Calculer la durée' : 'Duur berekenen' %>
+          </button>
+        <% end %>
+
+      <% elsif @mode == 'add' %>
+        <!-- ADD MODE: Add days to a date -->
+        <%= form_with url: tools_deadline_calculator_path, method: :get, local: true, class: 'space-y-4' do %>
+          <input type="hidden" name="mode" value="add">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <%= fr ? 'Date de début' : 'Startdatum' %>
+              </label>
+              <input type="date" name="start_date" value="<%= params[:start_date] || Date.current.to_s %>"
+                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <%= fr ? 'Jours à ajouter' : 'Dagen toe te voegen' %>
+              </label>
+              <input type="number" name="days_to_add" value="<%= params[:days_to_add] || 30 %>" min="1" max="3650"
+                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" required>
+            </div>
+          </div>
+          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input type="checkbox" name="workdays_only" value="1" <%= params[:workdays_only] == '1' ? 'checked' : '' %>
+                   class="rounded border-gray-300 dark:border-gray-600 text-blue-600">
+            <%= fr ? 'Compter uniquement les jours ouvrables (exclure week-ends et jours fériés)' : 'Alleen werkdagen tellen (weekends en feestdagen overslaan)' %>
+          </label>
+          <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md">
+            <%= fr ? 'Calculer' : 'Berekenen' %>
+          </button>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @error %>
+    <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+      <p class="text-red-800 dark:text-red-200"><%= @error %></p>
+    </div>
+  <% end %>
+
+  <% if @result %>
+    <!-- Result -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        <%= fr ? 'Résultat' : 'Resultaat' %>
+      </h2>
+
+      <% if @result[:mode] == 'deadline' %>
+        <!-- DEADLINE RESULT -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400"><%= fr ? 'Signification' : 'Betekening' %></p>
+                <p class="font-medium text-gray-900 dark:text-white"><%= I18n.l(@result[:service_date], format: :long) %></p>
+              </div>
+            </div>
+            <div class="ml-1.5 border-l-2 border-gray-200 dark:border-gray-600 h-4"></div>
+            <% if @result[:extended] && @result[:raw_deadline] != @result[:final_deadline] %>
+              <div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-gray-400"><%= fr ? "Délai brut (#{@result[:deadline_days]} jours)" : "Ruwe termijn (#{@result[:deadline_days]} dagen)" %></p>
+                  <p class="font-medium text-gray-500 dark:text-gray-400 line-through"><%= I18n.l(@result[:raw_deadline], format: :long) %></p>
+                </div>
+              </div>
+              <div class="ml-1.5 border-l-2 border-gray-200 dark:border-gray-600 h-4"></div>
+            <% end %>
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full <%= @result[:extended] ? 'bg-amber-500' : 'bg-green-500' %>"></div>
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400"><%= fr ? "Délai final#{@result[:extended] ? ' (prolongé)' : ''}" : "Eindtermijn#{@result[:extended] ? ' (verlengd)' : ''}" %></p>
+                <p class="text-xl font-bold <%= @result[:extended] ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400' %>">
+                  <%= I18n.l(@result[:final_deadline], format: :long) %>
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-3">
+            <% if @result[:extended] %>
+              <div class="flex items-start gap-2">
+                <span class="text-amber-500">⚠️</span>
+                <div>
+                  <p class="font-medium text-amber-800 dark:text-amber-200"><%= fr ? 'Délai prolongé' : 'Termijn verlengd' %></p>
+                  <p class="text-sm text-gray-600 dark:text-gray-300">
+                    <% case @result[:extension_reason] %>
+                    <% when /judicial_vacation/ %><%= fr ? 'Règle des vacances judiciaires (Art. 50 C. jud.)' : 'Gerechtelijke vakantieregel (Art. 50 Ger.W.)' %>
+                    <% when /weekend/ %><%= fr ? 'Le délai tombe un week-end' : 'Termijn valt op weekend' %>
+                    <% when /holiday/ %><%= fr ? 'Le délai tombe un jour férié' : 'Termijn valt op feestdag' %>
+                    <% end %>
+                  </p>
+                </div>
+              </div>
+            <% end %>
+            <% if @result[:vacation_warning] %>
+              <div class="flex items-start gap-2 bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg">
+                <span class="text-blue-500">⚖️</span>
+                <div>
+                  <p class="font-medium text-blue-800 dark:text-blue-200"><%= fr ? 'Vacances judiciaires' : 'Gerechtelijke vakantie' %></p>
+                  <p class="text-sm text-blue-700 dark:text-blue-300">
+                    <%= fr ? 'Ce délai tombe pendant les vacances judiciaires (1 juillet - 31 août). Vérifiez si Art. 50 C. jud. s\'applique.' : 'Deze termijn valt in de gerechtelijke vakantie (1 juli - 31 augustus). Controleer of Art. 50 Ger.W. van toepassing is.' %>
+                  </p>
+                </div>
+              </div>
+            <% end %>
+            <% if @result[:holidays_in_period]&.any? %>
+              <div>
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><%= fr ? 'Jours fériés:' : 'Feestdagen:' %></p>
+                <ul class="text-sm text-gray-600 dark:text-gray-400">
+                  <% @result[:holidays_in_period].each do |h| %>
+                    <li>• <%= I18n.l(h[:date], format: :short) %> - <%= h[:name] %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+      <% elsif @result[:mode] == 'between' %>
+        <!-- BETWEEN RESULT -->
+        <div class="text-center mb-6">
+          <p class="text-5xl font-bold text-blue-600 dark:text-blue-400"><%= @result[:total_days] %></p>
+          <p class="text-xl text-gray-600 dark:text-gray-400"><%= fr ? 'jours' : 'dagen' %></p>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center">
+            <p class="text-2xl font-bold text-green-600 dark:text-green-400"><%= @result[:workdays] %></p>
+            <p class="text-sm text-gray-600 dark:text-gray-400"><%= fr ? 'Jours ouvrables' : 'Werkdagen' %></p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center">
+            <p class="text-2xl font-bold text-gray-500"><%= @result[:weekends] %></p>
+            <p class="text-sm text-gray-600 dark:text-gray-400"><%= fr ? 'Week-ends' : 'Weekenddagen' %></p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center">
+            <p class="text-2xl font-bold text-amber-600 dark:text-amber-400"><%= @result[:holiday_count] %></p>
+            <p class="text-sm text-gray-600 dark:text-gray-400"><%= fr ? 'Jours fériés' : 'Feestdagen' %></p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center">
+            <p class="text-2xl font-bold text-purple-600 dark:text-purple-400"><%= @result[:weeks] %></p>
+            <p class="text-sm text-gray-600 dark:text-gray-400"><%= fr ? 'Semaines' : 'Weken' %></p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+            <p class="font-medium text-blue-800 dark:text-blue-200"><%= I18n.l(@result[:start_date], format: :long) %></p>
+            <p class="text-blue-600 dark:text-blue-400"><%= fr ? "Semaine #{@result[:start_week]}, jour #{@result[:start_day_of_year]} de l'année" : "Week #{@result[:start_week]}, dag #{@result[:start_day_of_year]} van het jaar" %></p>
+          </div>
+          <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+            <p class="font-medium text-green-800 dark:text-green-200"><%= I18n.l(@result[:end_date], format: :long) %></p>
+            <p class="text-green-600 dark:text-green-400"><%= fr ? "Semaine #{@result[:end_week]}, jour #{@result[:end_day_of_year]} de l'année" : "Week #{@result[:end_week]}, dag #{@result[:end_day_of_year]} van het jaar" %></p>
+          </div>
+        </div>
+        <% if @result[:holidays]&.any? %>
+          <div class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+            <p class="font-medium text-amber-800 dark:text-amber-200 mb-2"><%= fr ? 'Jours fériés dans la période:' : 'Feestdagen in deze periode:' %></p>
+            <ul class="text-sm text-amber-700 dark:text-amber-300 grid grid-cols-1 md:grid-cols-2 gap-1">
+              <% @result[:holidays].each do |h| %>
+                <li>• <%= I18n.l(h[:date], format: :short) %> - <%= h[:name] %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+      <% elsif @result[:mode] == 'add' %>
+        <!-- ADD RESULT -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400"><%= fr ? 'Date de début' : 'Startdatum' %></p>
+                <p class="font-medium text-gray-900 dark:text-white"><%= I18n.l(@result[:start_date], format: :long) %></p>
+              </div>
+            </div>
+            <div class="ml-1.5 border-l-2 border-dashed border-gray-300 dark:border-gray-600 h-8 flex items-center">
+              <span class="ml-4 text-sm text-gray-500 dark:text-gray-400">
+                + <%= @result[:days_requested] %> <%= @result[:workdays_only] ? (fr ? 'jours ouvrables' : 'werkdagen') : (fr ? 'jours' : 'dagen') %>
+              </span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full bg-green-500"></div>
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400"><%= fr ? 'Date de fin' : 'Einddatum' %></p>
+                <p class="text-xl font-bold text-green-600 dark:text-green-400"><%= I18n.l(@result[:end_date], format: :long) %></p>
+                <p class="text-sm text-gray-500 dark:text-gray-400"><%= fr ? "Semaine #{@result[:end_week]}" : "Week #{@result[:end_week]}" %></p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-3">
+            <% if @result[:workdays_only] %>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="text-center p-3 bg-white dark:bg-gray-800 rounded">
+                  <p class="text-2xl font-bold text-blue-600 dark:text-blue-400"><%= @result[:actual_calendar_days] %></p>
+                  <p class="text-xs text-gray-500"><%= fr ? 'Jours calendrier' : 'Kalenderdagen' %></p>
+                </div>
+                <div class="text-center p-3 bg-white dark:bg-gray-800 rounded">
+                  <p class="text-2xl font-bold text-gray-500"><%= @result[:weekends_skipped] %></p>
+                  <p class="text-xs text-gray-500"><%= fr ? 'Week-ends ignorés' : 'Weekends overgeslagen' %></p>
+                </div>
+              </div>
+              <% if @result[:holidays_skipped]&.any? %>
+                <div>
+                  <p class="text-sm font-medium text-amber-700 dark:text-amber-300"><%= fr ? 'Jours fériés ignorés:' : 'Overgeslagen feestdagen:' %></p>
+                  <ul class="text-sm text-gray-600 dark:text-gray-400">
+                    <% @result[:holidays_skipped].each do |h| %>
+                      <li>• <%= I18n.l(h[:date], format: :short) %> - <%= h[:name] %></li>
+                    <% end %>
+                  </ul>
+                </div>
+              <% end %>
+            <% else %>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="text-center p-3 bg-white dark:bg-gray-800 rounded">
+                  <p class="text-2xl font-bold text-green-600 dark:text-green-400"><%= @result[:workdays] %></p>
+                  <p class="text-xs text-gray-500"><%= fr ? 'Jours ouvrables' : 'Werkdagen' %></p>
+                </div>
+                <div class="text-center p-3 bg-white dark:bg-gray-800 rounded">
+                  <p class="text-2xl font-bold text-gray-500"><%= @result[:weekends] %></p>
+                  <p class="text-xs text-gray-500"><%= fr ? 'Week-ends' : 'Weekenddagen' %></p>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Action buttons -->
+      <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3">
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          ⚠️ <%= fr ? 'Cet outil est fourni à titre indicatif uniquement.' : 'Deze tool is enkel informatief.' %>
+        </p>
+        <div class="flex flex-wrap items-center gap-2">
+          <% if @result[:mode] == 'deadline' %>
+            <%# Calendar buttons dropdown %>
+            <div class="relative" data-controller="dropdown">
+              <button type="button" data-action="click->dropdown#toggle" data-dropdown-target="button"
+                      class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md hover:bg-green-200 dark:hover:bg-green-900/50">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span><%= fr ? 'Agenda' : 'Agenda' %></span>
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+              </button>
+              <div data-dropdown-target="menu" class="hidden absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                <div class="py-1">
+                  <%# Google Calendar %>
+                  <% gcal_url = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=#{ERB::Util.url_encode((fr ? 'Délai légal' : 'Wettelijke termijn') + " (#{params[:deadline_days]}#{fr ? 'j' : 'd'})")}&dates=#{@result[:final_deadline].strftime('%Y%m%d')}/#{(@result[:final_deadline] + 1).strftime('%Y%m%d')}&details=#{ERB::Util.url_encode((fr ? 'Délai calculé depuis' : 'Termijn berekend vanaf') + " #{params[:service_date]}")}" %>
+                  <a href="<%= gcal_url %>" target="_blank" rel="noopener"
+                     class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    📅 Google Calendar
+                  </a>
+                  <%# Outlook Web %>
+                  <% outlook_url = "https://outlook.live.com/calendar/0/action/compose?subject=#{ERB::Util.url_encode((fr ? 'Délai légal' : 'Wettelijke termijn'))}&startdt=#{@result[:final_deadline].iso8601}&enddt=#{(@result[:final_deadline] + 1).iso8601}&allday=true" %>
+                  <a href="<%= outlook_url %>" target="_blank" rel="noopener"
+                     class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    📧 Outlook
+                  </a>
+                  <%# iCal download %>
+                  <a href="<%= tools_deadline_calculator_path(format: :ics, mode: 'deadline', service_date: params[:service_date], deadline_days: params[:deadline_days], apply_vacation: params[:apply_vacation]) %>"
+                     class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    ⬇️ <%= fr ? 'Télécharger .ics' : 'Download .ics' %>
+                  </a>
+                </div>
+              </div>
+            </div>
+          <% end %>
+          <%# Print button %>
+          <button type="button" onclick="window.print()"
+                  class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                  title="<%= fr ? 'Imprimer' : 'Afdrukken' %>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            <span class="hidden sm:inline"><%= fr ? 'Imprimer' : 'Print' %></span>
+          </button>
+          <%# Copy link button %>
+          <button type="button" onclick="navigator.clipboard.writeText(window.location.href); this.querySelector('span').textContent = '✓ <%= fr ? 'Copié' : 'Gekopieerd' %>'"
+                  class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                  title="<%= fr ? 'Copier le lien' : 'Link kopiëren' %>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+            <span><%= fr ? 'Copier lien' : 'Kopieer link' %></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Reference Info (only for deadline mode) -->
+  <% if @mode == 'deadline' %>
+    <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6">
+      <h3 class="font-semibold text-gray-900 dark:text-white mb-3"><%= fr ? 'Délais courants' : 'Veel voorkomende termijnen' %></h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div>
+          <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2"><%= fr ? 'Standard (30 jours)' : 'Standaard (30 dagen)' %></h4>
+          <ul class="text-gray-600 dark:text-gray-400 space-y-1">
+            <li>• <%= fr ? 'Tribunal → Cour d\'appel' : 'Rechtbank → Hof van Beroep' %></li>
+            <li>• <%= fr ? 'Justice de paix → Tribunal' : 'Vredegerecht → Rechtbank' %></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2"><%= fr ? 'Spéciaux' : 'Speciaal' %></h4>
+          <ul class="text-gray-600 dark:text-gray-400 space-y-1">
+            <li>• 90 <%= fr ? 'jours - Cassation' : 'dagen - Cassatie' %></li>
+            <li>• 60 <%= fr ? "jours - Conseil d'État" : 'dagen - Raad van State' %></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Quick links -->
+  <div class="mt-6 flex flex-wrap justify-center gap-4 text-sm">
+    <a href="<%= tools_holidays_path(Date.current.year) %>" class="text-blue-600 dark:text-blue-400 hover:underline">
+      📆 <%= fr ? 'Jours fériés' : 'Feestdagen' %> <%= Date.current.year %>
+    </a>
+    <a href="<%= tools_interest_calculator_path %>" class="text-blue-600 dark:text-blue-400 hover:underline">
+      💰 <%= fr ? 'Calculateur d\'intérêts' : 'Rentecalculator' %>
+    </a>
+  </div>
+</div>

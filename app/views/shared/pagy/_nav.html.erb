@@ -1,0 +1,139 @@
+<%# IMPORTANT: use '<%== ... ' instead of '<%= ... ' if you run this in rails %>
+
+<%# Pagy v43 custom navigation with original styling %>
+<%# In Pagy 43, series is protected - use send(:series) to access it %>
+
+<% content_for :prev do %>
+    <div class="min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-midnight text-sm font-medium text-gray-700 dark:text-mist hover:bg-gray-50 dark:hover:bg-[var(--accent-500)]/10 focus:z-10 focus:outline-none focus:ring-1 focus:ring-[var(--accent-500)] transition-colors duration-150">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+      </svg>
+    </div>
+<% end %>
+
+<% content_for :next do %>
+    <div class="min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-midnight text-sm font-medium text-gray-700 dark:text-mist hover:bg-gray-50 dark:hover:bg-[var(--accent-500)]/10 focus:z-10 focus:outline-none focus:ring-1 focus:ring-[var(--accent-500)] transition-colors duration-150">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+      </svg>
+    </div>
+<% end %>
+
+<nav class="w-full" role="navigation">
+  <div class="flex-1 flex justify-between sm:hidden">
+    <% if pagy.previous %>
+      <a href="<%= pagy.page_url(pagy.previous) %>" data-turbo-action="advance" aria-label="previous" class="min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-midnight text-sm font-medium text-gray-700 dark:text-mist hover:bg-gray-50 dark:hover:bg-[var(--accent-500)]/10 focus:z-10 focus:outline-none focus:ring-1 focus:ring-[var(--accent-500)] transition-colors duration-150">
+        Previous
+      </a>
+    <% else %>
+      <div></div>
+    <% end %>
+
+    <% if pagy.next %>
+      <a href="<%= pagy.page_url(pagy.next) %>" data-turbo-action="advance" aria-label="next" class="min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-midnight text-sm font-medium text-gray-700 dark:text-mist hover:bg-gray-50 dark:hover:bg-[var(--accent-500)]/10 focus:z-10 focus:outline-none focus:ring-1 focus:ring-[var(--accent-500)] transition-colors duration-150">
+        Next
+      </a>
+    <% else %>
+      <div></div>
+    <% end %>
+  </div>
+
+  <div class="flex items-center justify-between w-full">
+    <div>
+            <p class="text-sm text-gray-700 dark:text-mist">
+        <%= t('pagination.display') %>
+
+        <span class="font-medium">
+          <%= pagy.from %>
+        </span>
+
+        <%= t('pagination.to') %>
+
+        <span class="font-medium">
+          <%= pagy.to %>
+        </span>
+
+        <%= t('pagination.of') %>
+
+        <span class="font-medium">
+          <%= pagy.count %>
+        </span>
+
+        <%= t('pagination.results') %>
+      </p>
+    </div>
+
+    <div>
+      <nav class="flex items-center space-x-1" aria-label="<%= t('aria.pagination') %>">
+        <% if pagy.previous %>
+          <%= link_to pagy.page_url(pagy.previous), 'data-turbo-action': 'advance', 'aria-label': 'previous', class: 'min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-midnight text-sm font-medium text-gray-700 dark:text-mist hover:bg-gray-50 dark:hover:bg-[var(--accent-500)]/10 focus:z-10 focus:outline-none focus:ring-1 focus:ring-[var(--accent-500)] transition-colors duration-150' do %>
+            <%= content_for(:prev) %>
+          <% end %>
+        <% else %>
+          <span class="min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-navy text-sm font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed">
+            <%= content_for(:prev) %>
+          </span>
+        <% end %>
+
+        <%
+          # Pagy v43: Pagy::Offset doesn't have series, so we build it manually
+          # Generate a simple series: [1, 2, 3, current, last] with gaps
+          series = []
+          current = pagy.page
+          last = pagy.last
+          
+          if last <= 7
+            # Show all pages if 7 or fewer
+            series = (1..last).to_a
+          else
+            # Always show first page
+            series << 1
+            
+            # Add gap if needed
+            series << :gap if current > 4
+            
+            # Show pages around current
+            range_start = [2, current - 1].max
+            range_end = [current + 1, last - 1].min
+            series += (range_start..range_end).to_a
+            
+            # Add gap if needed  
+            series << :gap if current < last - 3
+            
+            # Always show last page
+            series << last unless series.include?(last)
+          end
+          
+          # Convert current page to string
+          series = series.map { |p| p == current ? current.to_s : p }
+        %>
+        <% series.each do |item| # series example: [1, :gap, 7, 8, "9", 10, 11, :gap, 36] %>
+          <% case item %>
+          <% when Integer # page link %>
+            <a href="<%= pagy.page_url(item) %>" data-turbo-action="advance" class="min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-midnight text-sm font-medium text-gray-700 dark:text-mist hover:bg-gray-50 dark:hover:bg-[var(--accent-500)]/10 focus:z-10 focus:outline-none focus:ring-1 focus:ring-[var(--accent-500)] transition-colors duration-150">
+              <%= item %>
+            </a>
+          <% when String # current page %>
+            <span class="min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 border border-[var(--accent-600)] bg-[var(--accent-active-bg)] text-sm font-medium text-[var(--accent-600)] dark:text-mist">
+              <%= item %>
+            </span>
+          <% when :gap # page gap %>
+            <span class="min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 text-gray-500">
+              &hellip;
+            </span>
+          <% end %>
+        <% end %>
+
+        <% if pagy.next %>
+          <%= link_to pagy.page_url(pagy.next), 'data-turbo-action': 'advance', 'aria-label': 'next', class: 'min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-midnight text-sm font-medium text-gray-700 dark:text-mist hover:bg-gray-50 dark:hover:bg-[var(--accent-500)]/10 focus:z-10 focus:outline-none focus:ring-1 focus:ring-[var(--accent-500)] transition-colors duration-150' do %>
+            <%= content_for(:next) %>
+          <% end %>
+        <% else %>
+          <span class="min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-navy text-sm font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed">
+            <%= content_for(:next) %>
+          </span>
+        <% end %>
+      </nav>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,186 @@
+<% @title = I18n.locale == :fr ? 'Travaux Préparatoires Belges' : 'Belgische Parlementaire Voorbereidingen' %>
+
+<div class="max-w-6xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      <% if I18n.locale == :fr %>
+        🏛️ Travaux Préparatoires
+      <% else %>
+        🏛️ Parlementaire Voorbereidingen
+      <% end %>
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      <% if I18n.locale == :fr %>
+        <%= number_with_delimiter(@total_count) %> documents disponibles
+      <% else %>
+        <%= number_with_delimiter(@total_count) %> documenten beschikbaar
+      <% end %>
+    </p>
+  </div>
+
+  <!-- Search Form -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6" data-controller="collapsible-filters">
+    <%= form_with url: parliamentary_work_path, method: :get, local: true do %>
+      <!-- Search bar + toggle -->
+      <div class="flex flex-col sm:flex-row gap-3 mb-3">
+        <div class="flex-1">
+          <input type="text" name="q" value="<%= @query %>" 
+                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                 placeholder="<%= I18n.locale == :fr ? 'Titre, numéro de dossier...' : 'Titel, dossiernummer...' %>">
+        </div>
+        <div class="flex gap-2">
+          <button type="submit" class="flex-1 sm:flex-none px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-md text-sm">
+            <% if I18n.locale == :fr %>Rechercher<% else %>Zoeken<% end %>
+          </button>
+          <button type="button" 
+                  class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md text-sm sm:hidden"
+                  data-action="click->collapsible-filters#toggle"
+                  data-collapsible-filters-target="toggleBtn">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Collapsible filters -->
+      <div class="hidden sm:block" data-collapsible-filters-target="content">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              <% if I18n.locale == :fr %>Parlement<% else %>Parlement<% end %>
+            </label>
+            <select name="parliament" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm">
+              <option value=""><%= I18n.locale == :fr ? 'Tous' : 'Alle' %></option>
+              <% @parliaments.each do |parl| %>
+                <option value="<%= parl %>" <%= 'selected' if @parliament == parl %>><%= parl %></option>
+              <% end %>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              <% if I18n.locale == :fr %>Année<% else %>Jaar<% end %>
+            </label>
+            <select name="year" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm">
+              <option value=""><%= I18n.locale == :fr ? 'Toutes' : 'Alle' %></option>
+              <% @years.each do |y| %>
+                <option value="<%= y %>" <%= 'selected' if @year.to_i == y %>><%= y %></option>
+              <% end %>
+            </select>
+          </div>
+
+          <div class="flex items-end">
+            <% if @query.present? || @parliament.present? || @year.present? %>
+              <a href="<%= parliamentary_work_path %>" class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                <% if I18n.locale == :fr %>Effacer filtres<% else %>Filters wissen<% end %>
+              </a>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Results -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+    <% if @documents.empty? %>
+      <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+        <% if I18n.locale == :fr %>
+          Aucun document trouvé
+        <% else %>
+          Geen documenten gevonden
+        <% end %>
+      </div>
+    <% else %>
+      <div class="divide-y divide-gray-200 dark:divide-gray-700">
+        <% @documents.each do |doc| %>
+          <a href="<%= parliamentary_path(doc[:id]) %>" 
+             class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1 min-w-0">
+                <h3 class="font-medium text-gray-900 dark:text-white">
+                  <%= doc[:title]&.truncate(100) || doc[:document_number] %>
+                </h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
+                    <%= doc[:parliament] %>
+                  </span>
+                  <span class="ml-2 text-xs"><%= doc[:dossier_number] %></span>
+                  <span class="ml-2 text-xs text-gray-400"><%= doc[:document_number] %></span>
+                </p>
+              </div>
+              <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </a>
+        <% end %>
+      </div>
+    <% end %>
+
+    <!-- Pagination -->
+    <% if @total_pages > 1 %>
+      <% filter_params = { q: @query, parliament: @parliament, year: @year }.compact %>
+      <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="text-sm text-gray-700 dark:text-gray-300">
+            <% if I18n.locale == :fr %>
+              Page <%= @page %> sur <%= @total_pages %>
+            <% else %>
+              Pagina <%= @page %> van <%= @total_pages %>
+            <% end %>
+          </div>
+          <div class="flex items-center gap-1">
+            <% if @page > 1 %>
+              <a href="<%= parliamentary_work_path(filter_params.merge(page: 1)) %>"
+                 class="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">«</a>
+              <a href="<%= parliamentary_work_path(filter_params.merge(page: @page - 1)) %>"
+                 class="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">‹</a>
+            <% end %>
+            <% 
+              pages_to_show = [1]
+              ([@page - 2, 2].max..[@page + 2, @total_pages - 1].min).each { |p| pages_to_show << p }
+              pages_to_show << @total_pages if @total_pages > 1
+              pages_to_show = pages_to_show.uniq.sort
+              prev_page = 0
+            %>
+            <% pages_to_show.each do |p| %>
+              <% if p > prev_page + 1 %>
+                <span class="px-1 text-gray-400">…</span>
+              <% end %>
+              <% if p == @page %>
+                <span class="px-3 py-1 bg-purple-600 text-white text-sm rounded"><%= p %></span>
+              <% else %>
+                <a href="<%= parliamentary_work_path(filter_params.merge(page: p)) %>"
+                   class="px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"><%= p %></a>
+              <% end %>
+              <% prev_page = p %>
+            <% end %>
+            <% if @page < @total_pages %>
+              <a href="<%= parliamentary_work_path(filter_params.merge(page: @page + 1)) %>"
+                 class="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">›</a>
+              <a href="<%= parliamentary_work_path(filter_params.merge(page: @total_pages)) %>"
+                 class="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">»</a>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Link to chatbot -->
+  <div class="mt-6 text-center">
+    <a href="<%= chatbot_path(source: 'parliamentary') %>" 
+       class="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+      </svg>
+      <% if I18n.locale == :fr %>
+        Poser une question à l'assistant IA
+      <% else %>
+        Stel een vraag aan de AI-assistent
+      <% end %>
+    </a>
+  </div>
+</div>

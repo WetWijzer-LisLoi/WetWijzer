@@ -1,0 +1,327 @@
+/**
+ * Main Stylesheet Manifest
+ * 
+ * This is the main entry point for all styles in the WetWijzer application.
+ * It imports all the necessary CSS and SCSS files in a specific order to ensure
+ * proper cascading and theming.
+ *
+ * Organization:
+ * 1. Vendor imports (Tailwind, etc.)
+ * 2. Base styles (typography, animations)
+ * 3. Component styles (buttons, cards, forms, etc.)
+ * 4. Utility styles (accessibility, print)
+ * 5. Page-specific styles
+ * 6. Theme overrides (dark mode, etc.)
+ * 7. Print styles (must be last)
+ *
+ * Note: We're not using `require_tree .` to maintain explicit control over
+ * the loading order and dependencies between stylesheets.
+ *
+ * @see https://sass-lang.com/documentation/at-rules/import
+ */
+
+// =============================================
+// 1. Vendor Imports
+// =============================================
+
+/**
+ * Tailwind CSS Framework
+ * 
+ * Imports the base, components, and utilities layers of Tailwind CSS.
+ * The order of these imports is important for proper cascading.
+ * 
+ * @see https://tailwindcss.com/docs/using-with-preprocessors
+ */
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+// =============================================
+// 2. Base Styles
+// =============================================
+
+// Base styles are now handled by Tailwind CSS
+
+
+// =============================================
+// 3. Component Styles
+// =============================================
+
+
+// Component styles are now handled by Tailwind CSS
+// Navigation component is kept as it requires specific styling
+@import "components/navigation";
+
+/**
+ * References
+ * 
+ * Styles for legal references and reference color toggling
+ */
+@import "components/references";
+
+/**
+ * Domain-specific tag styles
+ * Styles for spans generated from custom tags (e.g., <opgeheven>, <ingevoegd>)
+ */
+@import "components/domain_tags";
+
+
+// =============================================
+// 4. Utility Styles
+// =============================================
+
+/**
+ * Accessibility
+ * 
+ * Accessibility-related utilities including screen reader only classes
+ * and focus management.
+ */
+@import "utilities/accessibility";
+
+/**
+ * Print Styles
+ * 
+ * Print-specific styles for better document printing.
+ */
+@import "utilities/print";
+
+
+// =============================================
+// 5. Page-Specific Styles
+// =============================================
+
+/**
+ * Home Page
+ * 
+ * Styles specific to the home page.
+ */
+@import "pages/home";
+
+/**
+ * Laws Pages
+ * 
+ * Styles for law listing and detail pages.
+ */
+@import "pages/laws";
+
+
+// =============================================
+// 6. Vendor Overrides
+// =============================================
+
+/**
+ * Select2
+ * 
+ * Custom styles for Select2 dropdown components.
+ */
+@import "vendor/select2";
+
+/**
+ * Datepicker
+ * 
+ * Custom styles for date picker components.
+ */
+@import "vendor/datepicker";
+
+
+// =============================================
+// 7. Theme Overrides
+// =============================================
+
+/**
+ * Accent Theme
+ * 
+ * Accent theme variables.
+ */
+@import "themes/accent";
+
+/**
+ * Dark Mode
+ * 
+ * Dark theme overrides. Must be imported after all other styles
+ * to properly override them.
+ */
+@import "themes/dark";
+
+
+// =============================================
+// 8. Print Styles (must be last)
+// =============================================
+
+/**
+ * Print Stylesheet
+ * 
+ * Print-specific styles that override other styles when printing.
+ * Must be imported last to take precedence.
+ */
+@import "print";
+
+// Custom utilities (for anything that doesn't fit elsewhere)
+// These should be used sparingly - prefer Tailwind's utility classes when possible
+
+/* =============================================
+ * Themed Page Background
+ * Make the entire page background follow the selected accent theme.
+ * ============================================= */
+html, body {
+  background-color: var(--page-bg);
+}
+
+/*
+ * Subtle custom scrollbar for sidebar TOC
+ * - Thinner track and thumb
+ * - Reserve gutter to avoid overlapping content
+ */
+.custom-scrollbar {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.4) transparent; /* thumb, track */
+  /* Reserve space for scrollbar to prevent overlap where supported */
+  scrollbar-gutter: stable both-edges;
+}
+
+/* WebKit browsers */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.35); /* slate-500 ~ */
+  border-radius: 8px;
+  border: 2px solid transparent; /* creates some spacing from content */
+  background-clip: padding-box;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.5);
+}
+
+/* =============================================
+ * Section Headings: permanent hover-like styling
+ * Make section headings stand out by applying the hover background by default
+ * Works for both normal and abolished section headings since both use .section-heading
+ * ============================================= */
+.section-heading > h2 {
+  @apply bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700;
+}
+
+/* =============================================
+ * Article Number Styling Enforcement
+ * Ensure leading article numbers are visibly bold across contexts
+ * ============================================= */
+.article-number {
+  font-weight: 700; /* same as Tailwind's font-bold */
+}
+
+/* =============================================
+ * Target Highlight for URL Fragment Navigation
+ * Pop effect when navigating to a specific article via #art-XX
+ * ============================================= */
+article:target {
+  animation: target-pop 2s ease-out forwards;
+  border-left: 3px solid var(--accent-500);
+  padding-left: 0.75rem;
+  margin-left: -0.75rem;
+}
+
+@keyframes target-pop {
+  0% {
+    background-color: var(--accent-200);
+    box-shadow: 0 0 0 4px var(--accent-300);
+  }
+  50% {
+    background-color: var(--accent-100);
+    box-shadow: 0 0 0 2px var(--accent-200);
+  }
+  100% {
+    background-color: var(--accent-50);
+    box-shadow: none;
+  }
+}
+
+.dark article:target {
+  animation: target-pop-dark 2s ease-out forwards;
+}
+
+@keyframes target-pop-dark {
+  0% {
+    background-color: rgba(var(--accent-500-rgb), 0.3);
+    box-shadow: 0 0 0 4px rgba(var(--accent-500-rgb), 0.2);
+  }
+  50% {
+    background-color: rgba(var(--accent-500-rgb), 0.2);
+    box-shadow: 0 0 0 2px rgba(var(--accent-500-rgb), 0.15);
+  }
+  100% {
+    background-color: rgba(var(--accent-500-rgb), 0.1);
+    box-shadow: none;
+  }
+}
+
+/* =============================================
+ * Filters Grid Layout
+ * Ensure predictable computed styles for grid-template-columns so
+ * system tests can reliably count columns. Also enforce left text alignment.
+ * - Mobile (<768px): 1 column => grid-template-columns: auto
+ * - Desktop (>=768px): 4 columns => grid-template-columns: auto auto auto auto
+ * The grid is kept inline-level to allow centering inside a flex container.
+ * ============================================= */
+.filters-grid {
+  display: inline-grid; /* override potential .grid utility */
+  grid-template-columns: auto; /* mobile: 1 column */
+  text-align: left; /* ensure left-justified text */
+}
+
+@media (min-width: 768px) {
+  .filters-grid {
+    grid-template-columns: auto auto auto auto; /* desktop: 4 columns */
+  }
+}
+
+/* =============================================
+ * Bookmark Icon States
+ * Visual feedback for bookmarked items
+ * ============================================= */
+.bookmark-btn svg[data-bookmark-target="icon"].bookmarked {
+  fill: var(--accent-500);
+  stroke: var(--accent-500);
+}
+
+.bookmark-btn:hover svg[data-bookmark-target="icon"] {
+  stroke: var(--accent-500);
+}
+
+/* Keyboard selection highlight for j/k navigation */
+.keyboard-selected {
+  @apply ring-2 ring-offset-2 ring-[var(--accent-500)] bg-[var(--accent-active-bg)];
+}
+
+/* Toast animations */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+
+.animate-fade-out {
+  animation: fade-out 0.3s ease-out forwards;
+}

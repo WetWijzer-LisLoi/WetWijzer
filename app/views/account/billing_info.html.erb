@@ -1,0 +1,129 @@
+<%= content_for :title, t('account.billing_info') %>
+
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-lg mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+        🧾 <%= t('account.billing_info') %>
+      </h1>
+      <%= link_to account_path, class: "text-blue-600 hover:text-blue-700" do %>
+        ← <%= t('account.back_to_account') %>
+      <% end %>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+      <div class="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+        <h2 class="font-bold text-blue-800 dark:text-blue-200 mb-2">
+          🇪🇺 <%= t('account.peppol_info_title') %>
+        </h2>
+        <p class="text-sm text-blue-700 dark:text-blue-300">
+          <%= t('account.peppol_info_desc') %>
+        </p>
+      </div>
+
+      <%= form_with url: update_billing_info_path, method: :patch, class: "space-y-4" do |f| %>
+        <div>
+          <label for="company_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('account.company_name') %>
+          </label>
+          <input type="text" name="company_name" id="company_name" 
+                 value="<%= @subscription&.company_name %>"
+                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                 placeholder="Acme NV">
+        </div>
+
+        <div>
+          <label for="vat_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('account.vat_number') %> <span class="text-gray-400">(BE0123456789)</span>
+          </label>
+          <input type="text" name="vat_number" id="vat_number" 
+                 value="<%= @subscription&.vat_number %>"
+                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                 placeholder="BE0123456789"
+                 pattern="BE[0-9]{10}">
+          <p class="text-xs text-gray-500 mt-1"><%= t('account.vat_number_hint') %></p>
+        </div>
+
+        <div>
+          <label for="enterprise_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('account.enterprise_number') %> <span class="text-gray-400">(<%= t('common.optional') %>)</span>
+          </label>
+          <input type="text" name="enterprise_number" id="enterprise_number" 
+                 value="<%= @subscription&.enterprise_number %>"
+                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                 placeholder="0123.456.789">
+        </div>
+
+        <hr class="border-gray-200 dark:border-gray-700 my-4">
+
+        <h3 class="font-medium text-gray-900 dark:text-white mb-3"><%= t('account.billing_address') %></h3>
+
+        <div>
+          <label for="billing_address_line1" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('account.address_line1') %>
+          </label>
+          <input type="text" name="billing_address_line1" id="billing_address_line1" 
+                 value="<%= @subscription&.billing_address_line1 %>"
+                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                 placeholder="Wetstraat 1">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="billing_postal_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <%= t('account.postal_code') %>
+            </label>
+            <input type="text" name="billing_postal_code" id="billing_postal_code" 
+                   value="<%= @subscription&.billing_postal_code %>"
+                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="1000">
+          </div>
+          <div>
+            <label for="billing_city" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <%= t('account.city') %>
+            </label>
+            <input type="text" name="billing_city" id="billing_city" 
+                   value="<%= @subscription&.billing_city %>"
+                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="Brussel">
+          </div>
+        </div>
+
+        <div>
+          <label for="billing_country" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('account.country') %>
+          </label>
+          <select name="billing_country" id="billing_country" 
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500">
+            <option value="BE" <%= 'selected' if @subscription&.billing_country == 'BE' || @subscription&.billing_country.nil? %>>🇧🇪 België / Belgique</option>
+            <option value="NL" <%= 'selected' if @subscription&.billing_country == 'NL' %>>🇳🇱 Nederland</option>
+            <option value="LU" <%= 'selected' if @subscription&.billing_country == 'LU' %>>🇱🇺 Luxembourg</option>
+            <option value="FR" <%= 'selected' if @subscription&.billing_country == 'FR' %>>🇫🇷 France</option>
+            <option value="DE" <%= 'selected' if @subscription&.billing_country == 'DE' %>>🇩🇪 Deutschland</option>
+          </select>
+        </div>
+
+        <div class="pt-4">
+          <button type="submit" class="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+            <%= t('common.save') %>
+          </button>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="mt-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+      <h3 class="font-medium text-gray-900 dark:text-white mb-2"><%= t('account.peppol_status') %></h3>
+      <% if @subscription&.vat_number.present? %>
+        <div class="flex items-center text-green-600">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <%= t('account.peppol_ready') %>
+        </div>
+      <% else %>
+        <div class="flex items-center text-amber-600">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <%= t('account.peppol_not_ready') %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

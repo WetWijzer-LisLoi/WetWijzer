@@ -1,0 +1,118 @@
+<% fr = I18n.locale == :fr %>
+
+<div class="max-w-4xl mx-auto">
+  <div class="mb-6">
+    <a href="<%= tools_path %>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">← <%= fr ? 'Tous les outils' : 'Alle tools' %></a>
+  </div>
+
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      ✅ <%= fr ? 'Checklists documents' : 'Documentchecklists' %>
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      <%= fr ? 'Documents requis par type de procédure' : 'Vereiste documenten per type procedure' %>
+    </p>
+  </div>
+
+  <!-- Type Selector -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <%= fr ? 'Sélectionnez le type de procédure:' : 'Selecteer het type procedure:' %>
+    </label>
+    <div class="flex flex-wrap gap-2">
+      <% @checklists.each do |key, cl| %>
+        <a href="<%= tools_checklist_path(type: key) %>" 
+           class="px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                  <%= @selected == key ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600' %>">
+          <%= fr ? cl[:name_fr] : cl[:name_nl] %>
+        </a>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @checklist %>
+    <!-- Selected Checklist -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6 print:shadow-none">
+      <div class="flex justify-between items-start mb-4">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+          <%= fr ? @checklist[:name_fr] : @checklist[:name_nl] %>
+        </h2>
+        <button onclick="window.print()" class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 print:hidden">
+          🖨️ <%= fr ? 'Imprimer' : 'Afdrukken' %>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <% @checklist[:documents].each_with_index do |doc, idx| %>
+          <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer group">
+            <input type="checkbox" class="mt-1 rounded border-gray-300 dark:border-gray-600 text-blue-600 print:hidden">
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <span class="font-medium text-gray-900 dark:text-white"><%= fr ? doc[:fr] : doc[:nl] %></span>
+                <% if doc[:required] %>
+                  <span class="px-1.5 py-0.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded">
+                    <%= fr ? 'Obligatoire' : 'Verplicht' %>
+                  </span>
+                <% else %>
+                  <span class="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+                    <%= fr ? 'Facultatif' : 'Optioneel' %>
+                  </span>
+                <% end %>
+              </div>
+              <% if fr && doc[:nl] != doc[:fr] %>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">NL: <%= doc[:nl] %></p>
+              <% elsif !fr && doc[:nl] != doc[:fr] %>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">FR: <%= doc[:fr] %></p>
+              <% end %>
+            </div>
+            <span class="text-gray-400 dark:text-gray-600 group-hover:text-gray-600 dark:group-hover:text-gray-400 print:hidden">
+              ☐
+            </span>
+          </label>
+        <% end %>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 print:hidden">
+        <div class="flex flex-wrap gap-2 text-sm">
+          <span class="text-gray-500 dark:text-gray-400"><%= fr ? 'Total:' : 'Totaal:' %></span>
+          <span class="font-medium text-gray-900 dark:text-white"><%= @checklist[:documents].size %> <%= fr ? 'documents' : 'documenten' %></span>
+          <span class="text-gray-400">|</span>
+          <span class="text-red-600 dark:text-red-400"><%= @checklist[:documents].count { |d| d[:required] } %> <%= fr ? 'obligatoires' : 'verplicht' %></span>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <!-- No selection -->
+    <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-8 text-center">
+      <p class="text-gray-500 dark:text-gray-400">
+        👆 <%= fr ? 'Sélectionnez un type de procédure ci-dessus' : 'Selecteer hierboven een type procedure' %>
+      </p>
+    </div>
+  <% end %>
+
+  <!-- All Checklists Overview (when none selected) -->
+  <% unless @checklist %>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+      <% @checklists.each do |key, cl| %>
+        <a href="<%= tools_checklist_path(type: key) %>" 
+           class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 hover:shadow-xl transition-shadow">
+          <h3 class="font-semibold text-gray-900 dark:text-white mb-2"><%= fr ? cl[:name_fr] : cl[:name_nl] %></h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            <%= cl[:documents].size %> <%= fr ? 'documents' : 'documenten' %> 
+            (<%= cl[:documents].count { |d| d[:required] } %> <%= fr ? 'obligatoires' : 'verplicht' %>)
+          </p>
+        </a>
+      <% end %>
+    </div>
+  <% end %>
+
+  <!-- Quick links -->
+  <div class="mt-6 flex flex-wrap justify-center gap-4 text-sm print:hidden">
+    <a href="<%= tools_conclusion_calendar_path %>" class="text-blue-600 dark:text-blue-400 hover:underline">
+      📋 <%= fr ? 'Calendrier conclusions' : 'Conclusiekalender' %>
+    </a>
+    <a href="<%= tools_court_finder_path %>" class="text-blue-600 dark:text-blue-400 hover:underline">
+      🏛️ <%= fr ? 'Tribunal compétent' : 'Bevoegde rechtbank' %>
+    </a>
+  </div>
+</div>
