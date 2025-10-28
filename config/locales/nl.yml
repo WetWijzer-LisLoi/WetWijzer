@@ -1,0 +1,247 @@
+# Files in the config/locales directory are used for internationalization and
+# are automatically loaded by Rails. If you want to use locales other than
+# English, add the necessary files in this directory.
+#
+# To use the locales, use `I18n.t`:
+#
+#     I18n.t "hello"
+#
+# In views, this is aliased to just `t`:
+#
+#     <%= t("hello") %>
+#
+# To use a different locale, set it with `I18n.locale`:
+#
+#     I18n.locale = :es
+#
+# This would use the information in config/locales/es.yml.
+#
+# To learn more about the API, please read the Rails Internationalization guide
+# at https://guides.rubyonrails.org/i18n.html.
+#
+# Be aware that YAML interprets the following case-insensitive strings as
+# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
+# must be quoted to be interpreted as strings. For example:
+#
+#     en:
+#       "yes": yup
+#       enabled: "ON"
+
+nl:
+  activerecord:
+    errors:
+      messages:
+        record_invalid: "Validatie mislukt: %{errors}"
+  language_id: "1"
+  lang_nl: "1"
+  lang_fr: "0"
+  favicon: "favicon_nl.svg"
+  app_title: "WetWijzer"
+  alpha_version: "Alfaversie"
+  legal_database: "wetgevingsdatabank van België"
+  introduction: "Deze applicatie doorzoekt de volledige %{ejustice}. Geef een zoekwoord op in de zoekbox, pas de filters aan naar keuze en druk op Zoeken. Laat het zoekvak leeg om alle wetten te tonen; het laden kan enkele seconden duren."
+  search: "Zoeken"
+  loading: "Laden"
+  loading_status:
+    loading: "Laden…"
+    completed: "Voltooid."
+  constitution: "Grondwet"
+  law: "Wet"
+  decree: "Decreet"
+  ordinance: "Ordonnantie"
+  decision: "Besluit"
+  misc: "Varia"
+  date: "datum"
+  title: "Titel"
+  details: "details"
+  external_links: "externe links"
+  try_again: "Geen zoekresultaat. Probeer opnieuw."
+  justel: "justel"
+
+  # Articles section
+  articles:
+    changes: "Wijzigingen"
+    view_legislation: "Bekijk wetgeving"
+    hide_colors: "Verberg kleuren"
+    show_colors: "Toon kleuren"
+    hide_highlight: "Verberg markering"
+    show_highlight: "Toon markering"
+    hide_exdecs: "Verberg uitvoeringsbesluiten"
+    show_exdecs: "Toon uitvoeringsbesluiten"
+    loading_message: "Even geduld, artikelen worden geladen…"
+    loading_articles: "Artikelen laden..."
+    view_articles: "Klik hier om artikelen te bekijken"
+    exdecs_disabled: "Uitvoeringsbesluiten niet geladen"
+    load_anyway: "Laden"
+    loading_references: "Uitvoeringsbesluiten laden..."
+    please_wait: "Even geduld a.u.b., dit kan even duren"
+    exdecs_loaded: "Artikelverwijzingen succesvol geladen. Deze pagina kan langer duren om weer te geven."
+    exdecs_load_failed: "Fout bij laden van artikelverwijzingen. Probeer het later opnieuw."
+    copy_all: "Kopieer alle artikelen"
+    all_copied: "Alle tekst gekopieerd!"
+    export_word: "Exporteer naar Word"
+
+  reflex: "reflex"
+  mon_pdf: "staatsblad PDF"
+  ov_pdf: "overzicht PDF"
+  title_details: "titel"
+  toc: "inhoudstafel"
+  updates: "Deze tekst heeft de volgende tekst(en) gewijzigd"
+  exdecs_title: "Uitvoeringsbesluit(en)"
+  exdecs:
+    implementing_this_article: "Uitvoeringsbesluiten die dit artikel uitvoeren"
+    show_article: "Toon artikel"
+    toggle_section: "Toon/verberg uitvoeringsbesluiten"
+    article: "Artikel"
+  articles_text: "tekst"
+  go_to: "Ga naar…"
+  search_legislation: "Wetgeving Zoeken"
+  search_placeholder: "Zoek wetgeving (bv. 'arbeidsrecht', 'BW boek 3', 'privacy', of NUMAC: '1980121550'). Tip: Zoek ook op afkortingen zoals BW, Sw., GW, WIB, enz."
+  search_tags_note: "Tip: Zoeken op 'Titel' matcht ook op tags/afkortingen (bv. BW, WVV, C. civ.)."
+  search_mode_title: "Zoekmodus"
+  search_mode_exact_match: "Exacte match"
+  search_mode_hint: "Standaard: flexibel (alle woorden). Aanvinken: exacte woordvolgorde."
+  search_hints_no_results_with_exact: "Geen resultaten gevonden. Probeer minder specifieke zoektermen te gebruiken of schakel de optie 'exacte match' uit."
+  search_hints_no_results_without_exact: " Probeer met de filter 'Exacte overeenkomst' voor precieze resultaten."
+  popular_laws:
+    title: "Veelgebruikte wetgeving"
+    hint: ""
+    show: "toon"
+    hide: "verberg"
+    categories:
+      civil: "Burgerlijk recht"
+      criminal: "Strafrecht"
+      constitutional: "Staatsrecht"
+      corporate: "Ondernemingsrecht"
+      social: "Sociaal recht"
+      tax: "Fiscaal recht"
+  search_hints_tips: "Tips: Gebruik afkortingen (BW, WVV), zoek op trefwoorden, of vink exacte match aan voor precieze zoekacties."
+  show_results_label: "Toon:"
+  results: "resultaten"
+  results_found:
+    one: "%{count} resultaat gevonden."
+    other: "%{count} resultaten gevonden."
+  filters_title: "Filters"
+  legislation_types_title: "Soorten Wetgeving"
+  languages_title: "Talen"
+  search_scope_title: "Zoeken in"
+  search_in_title: "Titel"
+  search_in_tags: "Afkortingen"
+  search_in_text: "Tekst"
+  prioritize_tags: "Toon afkortingen eerst"
+  tags_match_badge: "Tag-match"
+  content_status: "Verberg"
+  hide_abolished: "Verberg opgeheven wetgeving"
+  hide_empty_content: "Verberg wetgeving met lege inhoud"
+  hide_missing_translation: "Verberg ontbrekende vertalingen"
+  hide_german_translation: "Verberg Duitse vertalingen"
+  results_per_page: "Aantal resultaten per pagina"
+  advanced_filters_title: "Geavanceerde filters"
+  display_options_title: "Weergave-opties"
+  date_range: "Datumbereik"
+  date_from: "Van"
+  date_to: "Tot"
+  year_range: "Jaarbereik"
+  year_from: "Van"
+  year_to: "Tot"
+  numac_search: "NUMAC zoeken"
+  numac_placeholder: "2024001234"
+  numac_hint: "Zoek op NUMAC-nummer"
+  sort_order: "Sorteervolgorde"
+  sort_date_desc: "Datum (nieuwste eerst)"
+  sort_date_asc: "Datum (oudste eerst)"
+  sort_title_asc: "Titel (A-Z)"
+  sort_title_desc: "Titel (Z-A)"
+  sort_year_desc: "Jaar (nieuwste eerst)"
+  sort_year_asc: "Jaar (oudste eerst)"
+  language_dutch: "Nederlands"
+  language_french: "Frans"
+  pagination:
+    display: "Resultaten"
+    to: "tot"
+    of: "van"
+    results: "resultaten"
+
+  # 404 error translations
+  page_not_found: "pagina niet gevonden"
+  page_not_found_message: "De pagina die u zoekt bestaat niet of is verplaatst."
+  go_home: "naar startpagina"
+  errors:
+    not_found:
+      title: "Pagina niet gevonden"
+
+  # New UI elements translations
+  document_info: "Documentinformatie"
+  numac: "Numac"
+  publication_date: "Publicatiedatum"
+  date_in_effect: "Datum inwerkingtreding"
+  language: "Taal"
+  document_type: "Type"
+  type: "Type"
+  follow_scrolling: "Volg scrollen"
+  auto_open_sidebar: "Auto-open bij laden artikelen"
+  toc_options: "Opties"
+  copy_section_link: "Kopieer link naar deze sectie"
+  copy_article_link: "Kopieer link naar dit artikel"
+  link_copied: "Link gekopieerd!"
+  copy_section_text: "Kopieer de tekst van deze sectie"
+  copy_article_text: "Kopieer de tekst van dit artikel"
+  text_copied: "Tekst gekopieerd!"
+
+  # Parliamentary preparations
+  parliamentary_preparations: "Parlementaire werkzaamheden"
+  senate_label: "Senaat"
+  chamber_label: "Kamer"
+
+  # Filters validation
+  filters:
+    validation:
+      incomplete: "Filter onvolledig — kies minstens één type, één taal en één zoekoptie."
+      fix: "Vul de ontbrekende selectie(s) aan:"
+      missing:
+        types: "Kies minstens één soort wetgeving."
+        languages: "Kies minstens één taal."
+        scope: "Kies minstens één zoekoptie: Titel of Tekst."
+
+  # Theme selector
+  theme:
+    choose_accent: "Kies accentkleur"
+    original: "Origineel"
+    blue: "Blauw"
+    rose: "Roze"
+    amber: "Amber"
+    emerald: "Smaragd"
+    violet: "Violet"
+    fuchsia: "Fuchsia"
+    pink: "Roze"
+    slate: "Lei"
+    indigo: "Indigo"
+    sky: "Hemelsblauw"
+    teal: "Blauwgroen"
+    cyan: "Cyaan"
+    green: "Groen"
+    purple: "Paars"
+    red: "Rood"
+
+  # Footer
+  footer:
+    tagline: "Open-source zoekmachine voor Belgische wetgeving"
+    contact_us: "Contacteer ons:"
+    github_tooltip: "Bekijk broncode op GitHub"
+  support_us: "Steun Ons"
+  
+  # Accessibility labels
+  aria:
+    pagination: "Paginering"
+    toggle_updates: "Toon/verberg updates"
+    toggle_toc: "Toon/verberg inhoudstafel"
+    toggle_title: "Toon/verberg titel"
+    toggle_external_links: "Toon/verberg externe links"
+    toggle_executive_decisions: "Toon/verberg uitvoeringsbesluiten"
+    toggle_document_info: "Toon/verberg documentinfo"
+    toggle_articles: "Toon/verberg artikelen"
+    open_sidebar: "Open zijbalk"
+    toggle_sidebar: "Toon/verberg zijbalk"
+  
+  switch_to_french: "FR"
+  switch_to_dutch: "NL"

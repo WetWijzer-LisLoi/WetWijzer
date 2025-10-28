@@ -1,0 +1,513 @@
+<% collapsed = local_assigns.fetch(:collapsed, false) %>
+<div class="bg-white dark:bg-midnight rounded-xl shadow-sm border border-gray-200 dark:border-sky/30 px-6 py-5 mb-6" data-controller="collapse" data-collapse-expanded-value="<%= !collapsed %>">
+  <button type="button" class="w-full flex items-center justify-between mb-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--accent-500)]" data-action="click->collapse#toggle" data-collapse-target="button" aria-label="Toggle popular laws" aria-expanded="<%= !collapsed %>">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-sky flex items-center gap-2">
+      <span class="text-xl popular-laws-icon">📚</span>
+      <%= t('popular_laws.title') %>
+    </h2>
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform duration-200 ease-in-out motion-reduce:transition-none text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor" data-collapse-target="icon">
+      <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
+    </svg>
+  </button>
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6" data-collapse-target="content">
+    <!-- Civil Law / Droit civil -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-mist mb-2 uppercase tracking-wide">
+        <%= t('popular_laws.categories.civil') %>
+      </h3>
+      
+      <!-- Old BW (1804) -->
+      <div class="grid grid-cols-1 gap-y-1 mb-3">
+        <%= link_to law_path('1804032150', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? '(oud) Burgerlijk Wetboek - Boek I: Personen' : '(ancien) Code civil - Livre I: Personnes' %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= I18n.locale == :nl ? '(art. 1-515)' : '(art. 1-515)' %></span>
+          <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? '(oud) BW' : '(anc.) C.Civ.' %></span>
+        <% end %>
+        
+        <%= link_to law_path('1804032151', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? '(oud) Burgerlijk Wetboek - Boek II: Goederen en beperkingen van eigendom' : '(ancien) Code civil - Livre II: Biens et restrictions à la propriété' %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= I18n.locale == :nl ? '(art. 516-710bis)' : '(art. 516-710bis)' %></span>
+        <% end %>
+        
+        <%= link_to law_path('1804032152', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? '(oud) Burgerlijk Wetboek - Boek III: Wijze van eigendomsverkrijging - Titel I-II' : '(ancien) Code civil - Livre III: Mode d\'acquisition de la propriété - Titre I-II' %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= I18n.locale == :nl ? '(art. 711-1100)' : '(art. 711-1100)' %></span>
+        <% end %>
+        
+        <%= link_to law_path('1804032153', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? '(oud) Burgerlijk Wetboek - Boek III: Wijze van eigendomsverkrijging - Titel III-V' : '(ancien) Code civil - Livre III: Mode d\'acquisition de la propriété - Titre III-V' %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= I18n.locale == :nl ? '(art. 1101-1581)' : '(art. 1101-1581)' %></span>
+        <% end %>
+        
+        <%= link_to law_path('1804032154', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? '(oud) Burgerlijk Wetboek - Boek III: Wijze van eigendomsverkrijging - Titel VI-XIII' : '(ancien) Code civil - Livre III: Mode d\'acquisition de la propriété - Titre VI-XIII' %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= I18n.locale == :nl ? '(art. 1582-2010)' : '(art. 1582-2010)' %></span>
+        <% end %>
+        
+        <%= link_to law_path('1804032155', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? '(oud) Burgerlijk Wetboek - Boek III: Wijze van eigendomsverkrijging - Titel XIV-XX' : '(ancien) Code civil - Livre III: Mode d\'acquisition de la propriété - Titre XIV-XX' %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= I18n.locale == :nl ? '(art. 2011-2281)' : '(art. 2011-2281)' %></span>
+        <% end %>
+        
+        <%= link_to law_path('1804032156', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? '(oud) Burgerlijk Wetboek - Boek III, Titel V: Stelsel van gemeenschap van goederen' : '(ancien) Code civil - Livre III, Titre V: Régime de communauté de biens' %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= I18n.locale == :nl ? '(art. 1399-1581)' : '(art. 1399-1581)' %></span>
+        <% end %>
+      </div>
+      
+      <!-- BW Books (new) -->
+      <div class="grid grid-cols-1 gap-y-1 mb-3">
+        <%= link_to law_path('2022A32057', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Burgerlijk Wetboek - Boek 1' : 'Code civil - Livre 1' %></span>
+          <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold">(BW)</span>
+        <% end %>
+        
+        <%= link_to law_path('2022A30600', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Burgerlijk Wetboek - Boek 2' : 'Code civil - Livre 2' %></span>
+        <% end %>
+        
+        <%= link_to law_path('2020A20347', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Burgerlijk Wetboek - Boek 3' : 'Code civil - Livre 3' %></span>
+        <% end %>
+        
+        <%= link_to law_path('2022B30600', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Burgerlijk Wetboek - Boek 4' : 'Code civil - Livre 4' %></span>
+        <% end %>
+        
+        <%= link_to law_path('2022A32058', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Burgerlijk Wetboek - Boek 5' : 'Code civil - Livre 5' %></span>
+        <% end %>
+        
+        <%= link_to law_path('2019A12168', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Burgerlijk Wetboek - Boek 8' : 'Code civil - Livre 8' %></span>
+        <% end %>
+      </div>
+      
+      <!-- Ger.W. Parts -->
+      <div class="grid grid-cols-1 gap-y-1">
+        <%= link_to law_path('1967101052', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Eerste deel' : 'Code judiciaire - Partie I' %></span>
+          <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold">(Ger.W.)</span>
+        <% end %>
+        
+        <%= link_to law_path('1967101053', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Deel II' : 'Code judiciaire - Partie II' %></span>
+        <% end %>
+        
+        <%= link_to law_path('1967101054', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Deel III' : 'Code judiciaire - Partie III' %></span>
+        <% end %>
+        
+        <%= link_to law_path('1967101055', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Deel IV' : 'Code judiciaire - Partie IV' %></span>
+        <% end %>
+        
+        <%= link_to law_path('1967101056', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Deel V' : 'Code judiciaire - Partie V' %></span>
+        <% end %>
+        
+        <%= link_to law_path('1967101057', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Deel VI' : 'Code judiciaire - Partie VI' %></span>
+        <% end %>
+        
+        <%= link_to law_path('1967101063', language_id: I18n.locale == :nl ? 1 : 2), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors group" do %>
+          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Zevende deel' : 'Code judiciaire - Partie VII' %></span>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Criminal Law / Droit pénal -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-mist mb-2 uppercase tracking-wide">
+        <%= t('popular_laws.categories.criminal') %>
+      </h3>
+      <ul class="space-y-1">
+        <li>
+          <%= link_to law_path('1867060850', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Strafwetboek' : 'Code pénal' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Sw.' : 'C.P.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('1808111701', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek van Strafvordering' : 'Code d\'instruction criminelle' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Sv.' : 'C.I.C.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('2010A09589', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Sociaal Strafwetboek' : 'Code pénal social' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Soc.Sw.' : 'C.P.S.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('1992000606', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wet op het politieambt (5 augustus 1992)' : 'Loi sur la fonction de police (5 août 1992)' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'WPA' : 'LFP' %></span>
+          <% end %>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Constitutional Law / Droit constitutionnel -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-mist mb-2 uppercase tracking-wide">
+        <%= t('popular_laws.categories.constitutional') %>
+      </h3>
+      <ul class="space-y-1">
+        <li>
+          <%= link_to law_path('1994021048', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Grondwet' : 'Constitution' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'GW' : 'Const.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('1929042651', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Kieswetboek' : 'Code électoral' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Kiesw.' : 'C.Élect.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('1984900065', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Nationaliteitswetboek' : 'Code nationalité' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'WBN' : 'C.Nat.' %></span>
+          <% end %>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Corporate & Economic Law / Droit des sociétés et économique -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-mist mb-2 uppercase tracking-wide">
+        <%= t('popular_laws.categories.corporate') %>
+      </h3>
+      <ul class="space-y-1">
+        <li>
+          <%= link_to law_path('2019A40586', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek vennootschappen & verenigingen' : 'Code sociétés & associations' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'WVV' : 'CSA' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('2013A11134', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek van economisch recht' : 'Code de droit économique' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'WER' : 'CDE' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('1997009766', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Faillissementswet' : 'Loi faillites' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Faill.W.' : 'L.Faill.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('1807091050', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek van Koophandel' : 'Code de Commerce' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'W.Kh.' : 'C.Com.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('1991011289', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Mededingingswet' : 'Loi protection concurrence' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Med.W.' : 'L.Conc.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('2010000693', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Marktpraktijkenwet' : 'Loi pratiques marché' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'MPW' : 'LPM' %></span>
+          <% end %>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Social & Labor Law / Droit social et du travail -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-mist mb-2 uppercase tracking-wide">
+        <%= t('popular_laws.categories.social') %>
+      </h3>
+      <ul class="space-y-1">
+        <li>
+          <%= link_to law_path('1978070303', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Arbeidsovereenkomstenwet' : 'Loi contrats de travail' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'AOW' : 'L.C.T.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('1996012650', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Welzijnswet' : 'Loi bien-être' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Welz.W.' : 'L.B.E.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('2006021341', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wet Overheidsopdrachten' : 'Loi Marchés publics' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Overh.W.' : 'L.M.P.' %></span>
+          <% end %>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Tax Law / Droit fiscal -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-mist mb-2 uppercase tracking-wide">
+        <%= t('popular_laws.categories.tax') %>
+      </h3>
+      <ul class="space-y-1">
+        <li>
+          <%= link_to law_path('1964022650', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek Inkomstenbelastingen' : 'Code impôts sur revenus' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'WIB' : 'CIR' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('1969070305', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'BTW-Wetboek' : 'Code TVA' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Btw.W.' : 'C.T.V.A.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('1939113002', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Registratiewetboek' : 'Code enregistrement' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'W.Reg.' : 'C.Enr.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('1936033102', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Successiewetboek' : 'Code droits succession' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'W.Succ.' : 'C.D.S.' %></span>
+          <% end %>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Housing & Traffic / Logement et circulation -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-mist mb-2 uppercase tracking-wide">
+        <%= I18n.locale == :nl ? 'WONEN & VERKEER' : 'LOGEMENT & CIRCULATION' %>
+      </h3>
+      <ul class="space-y-1">
+        <li>
+          <%= link_to law_path('1951043000', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Handelshuurwet' : 'Loi baux commerciaux' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Huurw.' : 'L.B.C.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('2018015087', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Vlaams Woninghuurdecreet' : 'Décret flamand bail d\'habitation' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Vl.WHD' : 'Fl.D.B.H.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('2017040697', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Brussels Woninghuurordonnantie' : 'Ordonnance bruxelloise bail d\'habitation' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Br.WHO' : 'Br.O.B.H.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('2018201408', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Waals Woninghuurdecreet' : 'Décret wallon bail d\'habitation' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Wa.WHD' : 'Wa.D.B.H.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('1968031601', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wegverkeerswet' : 'Loi circulation routière' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Wegv.W.' : 'L.C.R.' %></span>
+          <% end %>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Immigration / Étrangers -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-mist mb-2 uppercase tracking-wide">
+        <%= I18n.locale == :nl ? 'VREEMDELINGEN' : 'ÉTRANGERS' %>
+      </h3>
+      <ul class="space-y-1">
+        <li>
+          <%= link_to law_path('1980121550', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Vreemdelingenwet' : 'Loi étrangers' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Vreemd.W.' : 'L.Étr.' %></span>
+          <% end %>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Health & Transport / Santé et transport -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-mist mb-2 uppercase tracking-wide">
+        <%= I18n.locale == :nl ? 'GEZONDHEID & TRANSPORT' : 'SANTÉ & TRANSPORT' %>
+      </h3>
+      <ul class="space-y-1">
+        <li>
+          <%= link_to law_path('2002022737', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wet Patiëntenrechten' : 'Loi droits patient' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Pat.R.W.' : 'L.D.P.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('2019A12565', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Scheepvaartwetboek' : 'Code navigation maritime' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Scheepv.W.' : 'C.N.M.' %></span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('2014A15009', language_id: I18n.locale == :nl ? 1 : 2), 
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Consulair Wetboek' : 'Code consulaire' %></span>
+            <span class="font-mono text-xs text-[var(--accent-600)] dark:text-[var(--accent-400)] font-semibold"><%= I18n.locale == :nl ? 'Cons.W.' : 'C.Cons.' %></span>
+          <% end %>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
