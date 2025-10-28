@@ -1,0 +1,281 @@
+<% @title = "#{t('chatbot.title', default: 'Legal Chatbot')} - WetWijzer" %>
+
+<div class="max-w-4xl mx-auto">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      <%= t('chatbot.title', default: 'WetWijzer Legal Chatbot') %>
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      <%= t('chatbot.subtitle', default: 'POC - AI-powered Belgian Legislation Q&A') %>
+    </p>
+  </div>
+
+
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden"
+       data-controller="chatbot"
+       data-chatbot-language-value="<%= @language || I18n.locale %>"
+       data-chatbot-source-value="legislation"
+       data-chatbot-use-local-value="<%= @use_local ? 'true' : 'false' %>"
+       data-chatbot-pass-value="<%= params[:pass] %>"
+       data-chatbot-open-value="true">
+    
+    <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 border-b border-gray-200 dark:border-gray-600">
+      <div class="flex flex-wrap items-center gap-4">
+        <div class="flex items-center gap-2">
+          <label for="chatbot-language" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <%= t('chatbot.language', default: 'Taal') %>:
+          </label>
+          <select id="chatbot-language" 
+                  class="text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                  data-chatbot-target="languageSelect"
+                  data-action="change->chatbot#updateLanguage">
+            <option value="nl" <%= 'selected' if (@language || 'nl') == 'nl' %>>Nederlands</option>
+            <option value="fr" <%= 'selected' if @language == 'fr' %>>Français</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label for="chatbot-source" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <%= t('chatbot.source', default: 'Bron') %>:
+          </label>
+          <select id="chatbot-source"
+                  class="text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                  data-chatbot-target="sourceSelect"
+                  data-action="change->chatbot#updateSource">
+            <option value="legislation" <%= 'selected' if (@source || 'legislation') == 'legislation' %>>
+              <%= t('chatbot.legislation', default: 'Wetgeving') %>
+            </option>
+            <option value="jurisprudence" <%= 'selected' if @source == 'jurisprudence' %>>
+              <%= t('chatbot.jurisprudence', default: 'Rechtspraak') %>
+            </option>
+            <option value="all" <%= 'selected' if @source == 'all' %>>
+              <%= t('chatbot.both', default: 'Beide') %>
+            </option>
+          </select>
+        </div>
+
+        <button type="button"
+                class="ml-auto text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                data-action="click->chatbot#clear">
+          <%= t('chatbot.clear', default: 'Wissen') %>
+        </button>
+      </div>
+    </div>
+
+    <div class="h-96 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900"
+         data-chatbot-target="messages">
+      
+      <div class="message p-3 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 max-w-[85%]">
+        <div class="message-content">
+          <%= t('chatbot.welcome', default: 'Hallo! Ik ben de WetWijzer juridische assistent. Stel me een vraag over Belgische wetgeving.') %>
+        </div>
+      </div>
+
+      <% if @result %>
+        <div class="message p-3 rounded-lg ml-auto bg-blue-500 text-white max-w-[85%]">
+          <div class="message-content"><%= params[:question] %></div>
+        </div>
+        
+        <div class="message p-3 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 max-w-[85%]">
+          <div class="message-content whitespace-pre-wrap"><%= @result[:answer] %></div>
+          
+          <% if @result[:sources]&.any? %>
+            <div class="message-sources mt-2 pt-2 border-t border-gray-200 dark:border-gray-600 text-xs">
+              <div class="font-medium text-gray-500 dark:text-gray-400 mb-1">
+                <%= t('chatbot.sources', default: 'Bronnen') %>:
+              </div>
+              <% @result[:sources].each_with_index do |source, index| %>
+                <div class="<%= source[:url] ? 'text-blue-600 dark:text-blue-400 hover:underline' : 'text-gray-600 dark:text-gray-300' %>">
+                  <% if source[:url] %>
+                    <a href="<%= source[:url] %>" target="_blank">
+                      <%= index + 1 %>. <%= source[:law_title] || source[:title] %>
+                      <% if source[:article_title] %> - <%= source[:article_title] %><% end %>
+                      <% if source[:relevance] %> (<%= (source[:relevance] * 100).round(0) %>%)<% end %>
+                    </a>
+                  <% else %>
+                    <%= index + 1 %>. <%= source[:law_title] || source[:title] %>
+                    <% if source[:article_title] %> - <%= source[:article_title] %><% end %>
+                    <% if source[:relevance] %> (<%= (source[:relevance] * 100).round(0) %>%)<% end %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+          
+          <div class="message-meta mt-2 text-xs text-gray-400">
+            <%= @result[:response_time] %>s
+            <% if @result[:model] %> · <%= @result[:model] %><% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <% if @error %>
+        <div class="message p-3 rounded-lg bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 max-w-[85%]">
+          <div class="message-content"><%= @error %></div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="hidden px-4 py-2 bg-gray-50 dark:bg-gray-900" data-chatbot-target="typingIndicator">
+      <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
+        <div class="flex gap-1">
+          <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+          <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+          <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+        </div>
+        <span><%= t('chatbot.thinking', default: 'Aan het nadenken...') %></span>
+      </div>
+    </div>
+
+    <div class="p-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+      <div class="flex gap-3">
+        <textarea 
+          data-chatbot-target="input"
+          data-action="keydown->chatbot#handleKeydown"
+          class="flex-1 resize-none rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          rows="2"
+          placeholder="<%= t('chatbot.placeholder', default: 'Stel een vraag over Belgische wetgeving...') %>"><%= params[:question] %></textarea>
+        
+        <button type="button"
+                data-chatbot-target="sendButton"
+                data-action="click->chatbot#send"
+                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+          </svg>
+          <span class="hidden sm:inline"><%= t('chatbot.send', default: 'Verstuur') %></span>
+        </button>
+      </div>
+      
+      <!-- Loading indicator with progress bar -->
+      <div data-chatbot-target="loading" class="hidden">
+        <div class="flex items-center justify-center space-x-2 text-blue-600 mb-4">
+          <svg class="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span class="font-medium"><%= t('chatbot.thinking') %></span>
+        </div>
+        
+        <!-- Progress bar -->
+        <div class="w-full max-w-lg mx-auto px-4">
+          <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden shadow-inner">
+            <div data-chatbot-target="progressBar" 
+                 class="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500 ease-out shadow-sm"
+                 style="width: 0%"></div>
+          </div>
+          <div data-chatbot-target="progressText" 
+               class="text-sm font-medium text-gray-700 dark:text-gray-300 text-center mt-3 min-h-[20px]">
+            Aan het opstarten...
+          </div>
+        </div>
+      </div>
+      
+      <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+        <%= t('chatbot.disclaimer', default: '⚠️ Dit is geen officieel juridisch advies. AI-modellen kunnen fouten maken. Verifieer informatie altijd bij officiële bronnen.') %>
+      </p>
+    </div>
+  </div>
+
+  <!-- Sample Questions -->
+  <div class="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <% if I18n.locale == :fr %>
+        📚 Exemples de questions
+      <% else %>
+        📚 Voorbeeldvragen
+      <% end %>
+    </h2>
+    
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <% if I18n.locale == :fr %>
+        <!-- French legislation questions -->
+        <div>
+          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">📜 Législation</h3>
+          <ul class="space-y-1 text-sm">
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Combien de jours de congé annuel ai-je droit?">Jours de congé?</button></li>
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Quel est le délai de préavis pour un licenciement?">Délai de préavis?</button></li>
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Quelles sont les règles pour le travail de nuit?">Travail de nuit?</button></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">🏛️ Jurisprudence</h3>
+          <ul class="space-y-1 text-sm">
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Que dit la Cour constitutionnelle sur la discrimination?">Discrimination?</button></li>
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Jurisprudence sur le licenciement abusif?">Licenciement abusif?</button></li>
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Arrêts sur la faute médicale?">Faute médicale?</button></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">⚖️ Droit des sociétés</h3>
+          <ul class="space-y-1 text-sm">
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Capital minimum pour créer une SRL?">Capital SRL?</button></li>
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Responsabilité des administrateurs?">Responsabilité administrateurs?</button></li>
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Règles pour l'assemblée générale?">Assemblée générale?</button></li>
+          </ul>
+        </div>
+      <% else %>
+        <!-- Dutch legislation questions -->
+        <div>
+          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">📜 Wetgeving</h3>
+          <ul class="space-y-1 text-sm">
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Hoeveel vakantiedagen heb ik recht op?">Vakantiedagen?</button></li>
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Wat is de opzegtermijn bij ontslag?">Opzegtermijn?</button></li>
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Wat zijn de regels voor nachtarbeid?">Nachtarbeid?</button></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">🏛️ Rechtspraak</h3>
+          <ul class="space-y-1 text-sm">
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Wat zegt het Grondwettelijk Hof over discriminatie?">Discriminatie?</button></li>
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Rechtspraak over kennelijk onredelijk ontslag?">Onredelijk ontslag?</button></li>
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Arresten over medische fouten?">Medische fouten?</button></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">⚖️ Vennootschapsrecht</h3>
+          <ul class="space-y-1 text-sm">
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Minimumkapitaal voor oprichting BV?">Kapitaal BV?</button></li>
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Bestuurdersaansprakelijkheid regels?">Bestuurdersaansprakelijkheid?</button></li>
+            <li><button type="button" class="text-left text-blue-600 dark:text-blue-400 hover:underline sample-question" data-question="Regels voor algemene vergadering?">Algemene vergadering?</button></li>
+          </ul>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.sample-question').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var question = this.getAttribute('data-question');
+          var input = document.querySelector('[data-chatbot-target="input"]');
+          if (input) {
+            input.value = question;
+            input.focus();
+          }
+        });
+      });
+    });
+  </script>
+
+  <noscript>
+    <div class="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900 rounded-lg">
+      <p class="text-yellow-800 dark:text-yellow-200 mb-4">
+        JavaScript is uitgeschakeld. Gebruik het onderstaande formulier:
+      </p>
+      <%= form_with url: chatbot_ask_path, method: :post, data: { turbo: false }, class: "space-y-4" do %>
+        <div class="flex gap-4">
+          <%= select_tag :language, options_for_select([['Nederlands', 'nl'], ['Français', 'fr']], @language || 'nl'), class: "rounded-md border-gray-300" %>
+          <%= select_tag :source, options_for_select([['Wetgeving', 'legislation'], ['Rechtspraak', 'jurisprudence'], ['Beide', 'all']], @source || 'legislation'), class: "rounded-md border-gray-300" %>
+        </div>
+        <%= text_area_tag :question, params[:question], rows: 3, class: "w-full rounded-md border-gray-300", placeholder: "Stel een vraag..." %>
+        <%= submit_tag "Verstuur", class: "px-4 py-2 bg-blue-600 text-white rounded-md" %>
+      <% end %>
+    </div>
+  </noscript>
+</div>

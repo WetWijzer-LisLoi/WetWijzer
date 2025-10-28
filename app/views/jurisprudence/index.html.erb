@@ -1,0 +1,141 @@
+<% @title = I18n.locale == :fr ? 'Jurisprudence Belge' : 'Belgische Rechtspraak' %>
+
+<div class="max-w-6xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      <% if I18n.locale == :fr %>
+        🏛️ Jurisprudence Belge
+      <% else %>
+        🏛️ Belgische Rechtspraak
+      <% end %>
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      <% if I18n.locale == :fr %>
+        <%= @total_count %> arrêts disponibles
+      <% else %>
+        <%= @total_count %> arresten beschikbaar
+      <% end %>
+    </p>
+  </div>
+
+  <!-- Search Form -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6">
+    <%= form_with url: jurisprudence_index_path, method: :get, local: true, class: "flex flex-wrap gap-4" do %>
+      <input type="hidden" name="pass" value="<%= params[:pass] %>">
+      
+      <div class="flex-1 min-w-[200px]">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <% if I18n.locale == :fr %>Rechercher<% else %>Zoeken<% end %>
+        </label>
+        <input type="text" name="q" value="<%= @query %>" 
+               class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+               placeholder="<%= I18n.locale == :fr ? 'ECLI, mots-clés...' : 'ECLI, trefwoorden...' %>">
+      </div>
+      
+      <div class="w-48">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <% if I18n.locale == :fr %>Cour<% else %>Hof<% end %>
+        </label>
+        <select name="court" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+          <option value=""><%= I18n.locale == :fr ? 'Toutes les cours' : 'Alle hoven' %></option>
+          <% @courts.each do |court| %>
+            <option value="<%= court %>" <%= 'selected' if @court == court %>><%= court&.truncate(40) %></option>
+          <% end %>
+        </select>
+      </div>
+      
+      <div class="flex items-end">
+        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md">
+          <% if I18n.locale == :fr %>Rechercher<% else %>Zoeken<% end %>
+        </button>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Results -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+    <% if @cases.empty? %>
+      <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+        <% if I18n.locale == :fr %>
+          Aucun arrêt trouvé
+        <% else %>
+          Geen arresten gevonden
+        <% end %>
+      </div>
+    <% else %>
+      <div class="divide-y divide-gray-200 dark:divide-gray-700">
+        <% @cases.each do |c| %>
+          <a href="<%= jurisprudence_path(c[:id], pass: params[:pass]) %>" 
+             class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1 min-w-0">
+                <h3 class="font-medium text-gray-900 dark:text-white truncate">
+                  <%= c[:case_number] %>
+                </h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                    <%= c[:court]&.truncate(30) %>
+                  </span>
+                  <span class="ml-2"><%= c[:decision_date] %></span>
+                  <span class="ml-2 text-xs"><%= c[:language_id] == 1 ? 'NL' : 'FR' %></span>
+                </p>
+                <% if c[:summary].present? %>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">
+                    <%= c[:summary].to_s.truncate(200) %>
+                  </p>
+                <% end %>
+              </div>
+              <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </a>
+        <% end %>
+      </div>
+    <% end %>
+
+    <!-- Pagination -->
+    <% if @total_pages > 1 %>
+      <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+        <div class="flex items-center justify-between">
+          <div class="text-sm text-gray-700 dark:text-gray-300">
+            <% if I18n.locale == :fr %>
+              Page <%= @page %> sur <%= @total_pages %>
+            <% else %>
+              Pagina <%= @page %> van <%= @total_pages %>
+            <% end %>
+          </div>
+          <div class="flex gap-2">
+            <% if @page > 1 %>
+              <a href="<%= jurisprudence_index_path(q: @query, court: @court, page: @page - 1, pass: params[:pass]) %>"
+                 class="px-3 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-600">
+                ← <% if I18n.locale == :fr %>Précédent<% else %>Vorige<% end %>
+              </a>
+            <% end %>
+            <% if @page < @total_pages %>
+              <a href="<%= jurisprudence_index_path(q: @query, court: @court, page: @page + 1, pass: params[:pass]) %>"
+                 class="px-3 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-600">
+                <% if I18n.locale == :fr %>Suivant<% else %>Volgende<% end %> →
+              </a>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Link to chatbot -->
+  <div class="mt-6 text-center">
+    <a href="<%= chatbot_path(pass: params[:pass], source: 'jurisprudence') %>" 
+       class="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+      </svg>
+      <% if I18n.locale == :fr %>
+        Poser une question à l'assistant IA
+      <% else %>
+        Stel een vraag aan de AI-assistent
+      <% end %>
+    </a>
+  </div>
+</div>

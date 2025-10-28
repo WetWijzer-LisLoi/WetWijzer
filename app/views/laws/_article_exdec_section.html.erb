@@ -1,0 +1,40 @@
+<div class="mt-2 mb-1 ml-4 border-l-2 border-gray-400 dark:border-gray-600 bg-gray-50/50 dark:bg-gray-800/10 rounded-r-lg" data-controller="collapse" data-collapse-expanded-value="true">
+  <div class="py-1.5 pr-3 pl-4">
+    <%# Collapsible header %>
+    <button type="button" 
+            class="w-full flex items-center justify-between text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-500)] rounded"
+            data-action="click->collapse#toggle"
+            data-collapse-target="button"
+            aria-label="<%= t('exdecs.toggle_section', default: 'Toggle executive decisions') %>"
+            aria-expanded="true">
+      <h3 class="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+        </svg>
+        <%= t('exdecs.implementing_this_article', default: 'Uitvoeringsbesluiten die dit artikel uitvoeren') %>
+        <span class="badge-exdec-count">
+          <%= related_exdecs.size %>
+        </span>
+      </h3>
+      <svg xmlns="http://www.w3.org/2000/svg" 
+           class="w-4 h-4 transition-transform text-gray-500 dark:text-gray-400" 
+           viewBox="0 0 20 20" 
+           fill="currentColor"
+           data-collapse-target="icon">
+        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
+      </svg>
+    </button>
+    
+    <%# Collapsible content - scrollable if many exdecs %>
+    <% exdec_count = related_exdecs.size %>
+    <div class="mt-2 space-y-2 <%= 'max-h-64 overflow-y-auto pr-1' if exdec_count > 3 %>" data-collapse-target="content">
+      <% related_exdecs.each do |exdec_info| %>
+        <% exdec = exdec_info[:exdec] %>
+        <% exdec_article = exdec_info[:article] %>
+        <% exdec_law = exdec.executive_legislation_in_language(executive_legislations_cache) %>
+        
+        <%= render 'laws/exdec_card', exdec: exdec, exdec_article: exdec_article, exdec_law: exdec_law, language_id: language_id %>
+      <% end %>
+    </div>
+  </div>
+</div>

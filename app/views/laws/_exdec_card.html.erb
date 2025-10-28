@@ -1,0 +1,32 @@
+<%# Shared exdec card component - DO NOT DUPLICATE THIS CODE %>
+<%# Used by: _articles.html.erb and _article_exdec_section.html.erb %>
+<div class="exdec-card text-xs bg-white dark:bg-navy rounded border border-gray-300 dark:border-gray-700 overflow-hidden">
+  <%# Header with NUMAC and title on one line %>
+  <div class="exdec-header px-3 py-1.5 bg-gray-50 dark:bg-gray-800/20 border-b-2 border-gray-300 dark:border-gray-700">
+    <div class="flex items-baseline gap-2 flex-wrap">
+      <% 
+        # Generate permalink for the article to jump to it directly
+        # article_id_from_toc_line now handles variant extraction automatically
+        article_permalink = article_id_from_toc_line(exdec_article.article_title.to_s.chomp.strip) || 
+                           article_id_from_toc_line(exdec_article.article_text.to_s.chomp.strip) || 
+                           generate_short_permalink(exdec_article.article_text.to_s.chomp.strip, prefer_article_id: true)
+        link_url = law_path(exdec.exdec_numac, language_id: language_id, anchor: article_permalink)
+      %>
+      <%= link_to link_url, 
+            class: "link-exdec-numac flex-shrink-0",
+            target: "_blank" do %>
+        <%= exdec.exdec_numac %>
+      <% end %>
+      <% if exdec_law&.title.present? %>
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300 flex-1 min-w-0">
+          <%= print_multiline(exdec_law.title, skip_paragraphs: true) %>
+        </span>
+      <% end %>
+    </div>
+  </div>
+  
+  <%# Article content - tight spacing %>
+  <div class="exdec-content px-3 py-1 bg-gray-50/50 dark:bg-midnight/50">
+    <div class="text-xs text-gray-600 dark:text-gray-400 leading-normal whitespace-pre-line [&>p]:m-0 [&>*:first-child]:mt-0"><%= safe_db_content(exdec_article.article_text.to_s.gsub(/\n{3,}/, "\n\n"), :regular_article).strip.html_safe %></div>
+  </div>
+</div>

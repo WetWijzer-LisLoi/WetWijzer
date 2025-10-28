@@ -1,0 +1,47 @@
+<% if @laws.present? %>
+  <div class="bg-white dark:bg-midnight rounded-xl shadow-lg overflow-hidden w-full">
+    <%# Sort controls bar %>
+    <div class="flex items-center justify-end px-4 py-2 bg-gray-50 dark:bg-navy/50 border-b border-gray-200 dark:border-sky/20">
+      <%= render 'laws/sort_dropdown' %>
+    </div>
+    
+    <div class="overflow-x-auto w-full">
+      <table class="w-full">
+        <thead class="bg-gradient-to-r from-[var(--accent-500)]/5 to-[var(--accent-500)]/10 dark:from-[var(--accent-500)]/20 dark:to-[var(--accent-500)]/30">
+          <tr class="border-b-2 border-[var(--accent-500)]/20 dark:border-[var(--accent-500)]/50">
+            <th class="w-28 px-2 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-mist uppercase tracking-wider whitespace-nowrap">
+              <div class="grid w-full place-items-center">
+                <%= sort_link_to t(:date), 'date' %>
+              </div>
+            </th>
+            <th class="w-full px-4 py-3 text-left text-xs leading-4 font-medium text-gray-700 dark:text-mist uppercase tracking-wider">
+              <%= sort_link_to t(:title), 'title' %>
+            </th>
+            <th class="w-14 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-mist uppercase tracking-wider whitespace-nowrap">
+              <span class="sr-only"><%= t(:details).capitalize() %></span>
+              <span title="<%= t(:details).capitalize() %>">D</span>
+            </th>
+            <th class="w-14 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-mist uppercase tracking-wider whitespace-nowrap">
+              <span class="sr-only">Justel</span>
+              <span title="Justel">J</span>
+            </th>
+            <th class="w-14 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-mist uppercase tracking-wider whitespace-nowrap">
+              <span class="sr-only">Reflex</span>
+              <span title="Reflex">R</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-[var(--border-divider)] dark:bg-navy">
+          <%= render partial: 'laws/law', collection: @laws %>
+        </tbody>
+      </table>
+    </div>
+    <div class="px-6 py-3 border-t border-gray-200 dark:border-[var(--border-header)] bg-white dark:bg-midnight">
+      <%= render 'shared/pagy/nav', pagy: @pagy %>
+    </div>
+  </div>
+<% else %>
+  <div class="bg-white dark:bg-midnight rounded-xl shadow-lg p-8">
+    <%= render 'shared/no_content' %>
+  </div>
+<% end %>

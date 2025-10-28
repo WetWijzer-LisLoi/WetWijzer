@@ -1,0 +1,53 @@
+<% if updated_laws.present? %>
+  <div class="p-6" data-controller="collapse" data-collapse-expanded-value="true">
+    <button type="button" class="w-full flex items-center justify-between text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--accent-500)]" data-action="click->collapse#toggle" data-collapse-target="button" aria-label="<%= t('aria.toggle_updates') %>" aria-expanded="true">
+      <h2 class="text-xl font-bold text-gray-800 dark:text-[var(--accent-500)]"><%= t(:updates) %></h2>
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor" data-collapse-target="icon">
+        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
+      </svg>
+    </button>
+    <div class="mt-4 overflow-x-auto md:overflow-visible" data-collapse-target="content">
+      <style>
+        /* Ensure tables blend with card in dark mode (no white rows/areas) */
+        .dark #updated-laws-card table,
+        .dark #updated-laws-card thead,
+        .dark #updated-laws-card tbody { background-color: transparent !important; }
+
+        /* Subtle zebra striping - theme-aware */
+        #updated-laws-card tbody tr:nth-child(even) { background-color: #f9fafb; } /* gray-50 */
+        .dark #updated-laws-card tbody tr:nth-child(even) { 
+          background-color: color-mix(in srgb, var(--accent-500) 10%, transparent); 
+        }
+
+        /* Ensure hover always shows above zebra */
+        #updated-laws-card tbody tr:hover { background-color: var(--table-row-hover-bg) !important; }
+      </style>
+      <table class="min-w-full bg-transparent dark:bg-transparent divide-y divide-gray-200 dark:divide-[var(--border-separator)]">
+        <thead class="bg-gray-50 dark:bg-transparent">
+          <tr>
+            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-mist tracking-wider w-36"><%= t(:numac) %></th>
+            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-mist tracking-wider"><%= t(:title) %></th>
+          </tr>
+        </thead>
+        <tbody class="bg-transparent dark:bg-transparent divide-y divide-gray-200 dark:divide-[var(--border-separator)]">
+          <% updated_laws.each do |f| %>
+            <% next unless f.update_numac.present? %>
+            <% law = f.updating_legislation_in_language %>
+            <tr>
+              <td class="px-3 py-2 whitespace-nowrap align-top w-36 text-sm">
+                <%= link_to f.update_numac, law_path(f.update_numac, language_id: @language_id), class: %w[flex items-center justify-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-500)] transition-colors duration-200 dark:bg-midnight dark:text-mist dark:border-gray-600 dark:hover:bg-navy].join(" "), target: "_blank" %>
+              </td>
+              <td class="px-3 py-2 align-top w-full min-w-0 whitespace-normal break-words text-sm leading-relaxed text-gray-900 dark:text-mist" style="text-align: justify; text-justify: inter-word;">
+                <% if law&.title.present? %>
+                  <%= print_multiline(law.title, skip_paragraphs: true) %>
+                <% else %>
+                  <span class="text-gray-400 dark:text-gray-500">&mdash;</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>

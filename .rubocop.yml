@@ -1,0 +1,150 @@
+AllCops:
+  TargetRubyVersion: 3.3
+  NewCops: enable
+  Exclude:
+    - 'db/schema.rb'
+    - 'db/schema-*.rb'
+    - 'db/schema - Copy.rb'
+    - 'db/migrate/**/*'
+    - 'db/migrate - Copy/**/*'
+    - 'db/migrate_pending/**/*'
+    - 'bin/**/*'
+    - 'node_modules/**/*'
+    - 'vendor/**/*'
+    - 'public/**/*'
+    - 'tmp/**/*'
+    - 'log/**/*'
+    - 'inspect_*.rb'
+    - 'analysis_scripts/**/*'
+    - 'script/**/*'
+  SuggestExtensions: false
+
+# Keep docs optional for app code
+Style/Documentation:
+  Enabled: false
+
+# Disable line ending checks (Windows vs Unix differences are handled by Git)
+Layout/EndOfLine:
+  Enabled: false
+
+# Increased from default 120 to match modern monitors and IDEs
+# Allow longer lines for SQL queries and complex strings
+Layout/LineLength:
+  Max: 140
+  Exclude:
+    - 'lib/tasks/**/*' # Rake tasks often have long SQL queries
+    - 'app/controllers/laws_controller.rb' # Log messages
+    - 'app/helpers/article_references_helper.rb' # Method chaining
+    - 'app/helpers/references_helper.rb' # Complex HTML generation with data attributes
+  AllowedPatterns:
+    - '^\s*.*(SELECT|FROM|WHERE|JOIN|ORDER BY|GROUP BY).*$' # SQL queries
+    - '^\s*Rails\.logger\.(info|debug|warn|error)' # Log messages
+
+# METRICS SETTINGS
+# Adjusted to be realistic for production Rails apps while maintaining quality
+
+# Method length: 30 lines for helpers with complex HTML/parsing logic
+Metrics/MethodLength:
+  Max: 20
+  CountComments: false
+  Exclude:
+    - 'test/**/*'
+    - 'lib/tasks/**/*'
+    - 'lib/**/*' # Allow longer methods in lib utilities
+    - 'app/controllers/laws_controller.rb' # Complex endpoint logic
+    - 'app/helpers/**/*' # Helpers with large lookup tables and HTML generation
+    - 'fix_na_dates_from_titles.rb' # Complex algorithm
+
+# ABC Size: 25 (up from default 17)
+# Allows for complex business logic without being excessive
+Metrics/AbcSize:
+  Max: 25
+  Exclude:
+    - 'test/**/*'
+    - 'lib/tasks/**/*'
+    - 'lib/**/*' # Allow complexity in utility libraries
+    - 'app/controllers/laws_controller.rb' # Complex data loading
+    - 'app/helpers/**/*' # Complex HTML generation and parsing
+    - 'fix_na_dates_from_titles.rb' # Complex date extraction algorithms
+
+# Block length: Allow longer blocks in DSL contexts
+Metrics/BlockLength:
+  Max: 25
+  CountComments: false
+  Exclude:
+    - 'test/**/*'
+    - 'config/**/*'
+    - 'lib/tasks/**/*'
+
+# Class length: 150 lines (up from default 100)
+# Reasonable for complex models and service objects
+Metrics/ClassLength:
+  Max: 150
+  CountComments: false
+  Exclude:
+    - 'test/**/*'
+    - 'app/controllers/laws_controller.rb' # Main controller with multiple endpoints
+
+# Module length: 150 lines (up from default 100)
+Metrics/ModuleLength:
+  Max: 150
+  CountComments: false
+  Exclude:
+    - 'test/**/*'
+    - 'app/helpers/article_references_helper.rb' # Complex reference extraction logic
+
+# Cyclomatic complexity: Keep at 10 (up from default 7)
+Metrics/CyclomaticComplexity:
+  Max: 10
+  Exclude:
+    - 'test/**/*'
+    - 'lib/tasks/**/*'
+    - 'lib/**/*'
+    - 'app/helpers/application_helper.rb' # Complex parsing logic
+    - 'app/helpers/article_references_helper.rb' # Complex pattern matching
+    - 'fix_na_dates_from_titles.rb' # Complex date parsing logic
+
+# Perceived complexity: Keep at 10
+Metrics/PerceivedComplexity:
+  Max: 10
+  Exclude:
+    - 'test/**/*'
+    - 'lib/tasks/**/*'
+    - 'lib/**/*'
+    - 'app/helpers/application_helper.rb' # Complex parsing logic
+    - 'app/services/law_search_service.rb' # Complex search logic
+    - 'fix_na_dates_from_titles.rb' # Complex date parsing logic
+
+# Parameter lists: Keep at default 5
+Metrics/ParameterLists:
+  Max: 5
+  CountKeywordArgs: true
+
+# Allow variable names with numbers (common in this codebase)
+Naming/VariableNumber:
+  Enabled: false
+
+# Allow format strings in rake tasks and scripts
+Style/FormatStringToken:
+  Exclude:
+    - 'lib/tasks/**/*'
+    - '*.rb' # Exclude standalone scripts
+
+# Allow optional boolean parameters (sometimes needed for API compatibility)
+Style/OptionalBooleanParameter:
+  Enabled: false
+
+# Allow empty test classes (placeholder for future tests)
+Lint/EmptyClass:
+  Exclude:
+    - 'test/**/*'
+
+# Filename conventions
+Naming/FileName:
+  Exclude:
+    - 'lib/tasks/TEMPLATE_*' # Allow UPPERCASE in template filenames
+
+# Allow short parameter names in utility scripts
+Naming/MethodParameterName:
+  Exclude:
+    - '*.rb' # Standalone scripts often use short names

@@ -1,0 +1,364 @@
+// Print Styles
+// ===================================
+// Minimal print styles focusing on essential overrides and optimizations
+
+@media print {
+  // Basic reset - keep it minimal
+  * {
+    background: transparent !important;
+    color: #000 !important; // Black prints faster
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  // Page setup
+  @page {
+    margin: 1.5cm;
+  }
+
+  // Base typography - let browser handle most defaults
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+
+  // Headings - just ensure they don't break across pages
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  // Links - show URLs for external links
+  a[href^="http"]:after {
+    content: " (" attr(href) ")";
+    font-size: 90%;
+    color: #666;
+    word-break: break-all;
+  }
+
+  // Page breaks - prevent breaking inside important elements
+  p, h2, h3, h4, h5, h6, ul, ol, dl, table, pre, blockquote, figure, img {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  // Tables - ensure they're readable
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    
+    th, td {
+      border: 1px solid #000 !important;
+      padding: 0.3em 0.5em !important;
+    }
+    
+    thead {
+      display: table-header-group;
+      
+      th {
+        background-color: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  }
+
+  // Images - ensure they fit and don't break
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  // Code blocks - basic styling
+  pre, code {
+    font-family: "Courier New", monospace;
+    background: #f8f8f8 !important;
+    border: 1px solid #ddd !important;
+    padding: 0.5em !important;
+  }
+
+  // Hide non-essential UI elements
+  .no-print,
+  .navbar,
+  .header,
+  .footer,
+  .sidebar,
+  .actions,
+  .btn,
+  .button,
+  .pagination,
+  .breadcrumb,
+  .alert,
+  .notification,
+  .modal,
+  .tooltip,
+  .popover,
+  .tabs,
+  .tab-content > .tab-pane:not(.active),
+  .d-print-none,
+  .btn-toggle-active,
+  .btn-toggle-inactive,
+  [data-action],
+  button[onclick],
+  nav,
+  .sticky {
+    display: none !important;
+  }
+  
+  // Hide ALL SVG icons (they print huge)
+  svg {
+    display: none !important;
+  }
+  
+  // Hide loading spinners
+  .animate-spin,
+  [data-articles-loading-target] {
+    display: none !important;
+  }
+  
+  // Compare view print styles
+  .flex.gap-2 {
+    display: flex !important;
+    gap: 10px !important;
+  }
+  
+  .flex-1 {
+    flex: 1 !important;
+    border: 1px solid #ccc !important;
+    padding: 8px !important;
+    font-size: 10pt !important;
+  }
+  
+  // Hide the header buttons area but keep the title
+  .bg-gradient-to-r {
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    
+    // Hide all buttons and links in header
+    .flex.items-center.gap-3,
+    .flex.flex-wrap.items-center.gap-2 {
+      display: none !important;
+    }
+    
+    // Keep the h1 title visible
+    h1 {
+      display: block !important;
+      font-size: 14pt !important;
+      margin-bottom: 10px !important;
+    }
+  }
+
+  // Show print-only elements
+  .print-only,
+  .d-print-block {
+    display: block !important;
+  }
+  
+  .d-print-inline {
+    display: inline !important;
+  }
+  
+  .d-print-inline-block {
+    display: inline-block !important;
+  }
+
+  // Utility classes for page breaks
+  .page-break {
+    page-break-before: always;
+  }
+  
+  .page-break-after {
+    page-break-after: always;
+  }
+  
+  .avoid-break {
+    page-break-inside: avoid;
+  }
+
+  // Legal document specific - keep only essential overrides
+  .legal-document {
+    h1 {
+      text-align: center;
+      margin: 1.5em 0;
+    }
+    
+    .document-meta {
+      text-align: center;
+      margin-bottom: 2em;
+    }
+    
+    .article-number {
+      font-weight: bold;
+      margin-right: 0.5em;
+    }
+  }
+
+  // Ensure main content is visible
+  [role="main"],
+  .main-content,
+  .content {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  // Basic grid for print - keep it simple
+  .row {
+    display: block;
+    width: 100%;
+  }
+  
+  [class*="col-"] {
+    float: none;
+    width: 100%;
+    margin-bottom: 1em;
+  }
+  
+  // Simple print grid
+  .print-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -15px;
+  }
+  
+  .print-col {
+    padding: 0 15px;
+    flex: 1;
+  }
+
+  // Print URL after external links
+  a[href^="http"]:not([href*="example.com"]):after {
+    content: " (" attr(href) ")";
+    font-size: 90%;
+    color: #666;
+    word-break: break-all;
+  }
+  
+  // Hide print URL for anchor links and JavaScript links
+  a[href^="#"]:after,
+  a[href^="javascript:"]:after {
+    content: "";
+  }
+  
+  // Ensure tables don't break across pages
+  table {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  // Ensure images and figures don't break across pages
+  img, figure {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  // Ensure headings stay with their content
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  
+  // Prevent widows and orphans
+  p, li, h1, h2, h3, h4, h5, h6 {
+    orphans: 3;
+    widows: 3;
+  }
+  
+  // Ensure proper spacing for paragraphs
+  p {
+    margin: 0.8em 0;
+    text-align: justify;
+    
+    &:first-child {
+      margin-top: 0;
+    }
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  
+  // Style for legal references
+  .legal-reference {
+    font-style: italic;
+    
+    &::before {
+      content: "[";
+    }
+    
+    &::after {
+      content: "]";
+    }
+  }
+  
+  // Style for amendments and changes
+  .amendment {
+    border-left: 3px solid #000;
+    padding-left: 1em;
+    margin: 1em 0;
+    
+    &-header {
+      font-weight: bold;
+      margin-bottom: 0.5em;
+    }
+  }
+  
+  // Style for footnotes
+  .footnotes {
+    font-size: 0.9em;
+    margin-top: 2em;
+    padding-top: 1em;
+    border-top: 1px solid #000;
+    
+    &-title {
+      font-weight: bold;
+      margin-bottom: 0.5em;
+    }
+    
+    ol {
+      list-style-type: decimal;
+      padding-left: 2em;
+    }
+    
+    li {
+      margin: 0.3em 0;
+    }
+  }
+  
+  // Style for signature blocks
+  .signature-block {
+    margin: 2em 0;
+    
+    &-line {
+      border-top: 1px solid #000;
+      width: 50%;
+      margin: 2em 0 0.5em;
+    }
+    
+    &-label {
+      font-style: italic;
+    }
+  }
+  
+  // Print-specific utility classes
+  .print-text-left { text-align: left !important; }
+  .print-text-center { text-align: center !important; }
+  .print-text-right { text-align: right !important; }
+  .print-text-justify { text-align: justify !important; }
+  
+  .print-mt-0 { margin-top: 0 !important; }
+  .print-mt-1 { margin-top: 0.25em !important; }
+  .print-mt-2 { margin-top: 0.5em !important; }
+  .print-mt-3 { margin-top: 1em !important; }
+  .print-mt-4 { margin-top: 1.5em !important; }
+  .print-mt-5 { margin-top: 3em !important; }
+  .print-mb-0 { margin-bottom: 0 !important; }
+  .print-mb-1 { margin-bottom: 0.25em !important; }
+  .print-mb-2 { margin-bottom: 0.5em !important; }
+  .print-mb-3 { margin-bottom: 1em !important; }
+  .print-mb-4 { margin-bottom: 1.5em !important; }
+  
+  // Close the media query
+}
