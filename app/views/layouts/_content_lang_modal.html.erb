@@ -1,0 +1,54 @@
+<%# Content language chooser modal — LexLibera only
+     Shown after cookie consent is accepted, or when clicking the header toggle
+     without having chosen a content language yet. %>
+<div id="content-lang-modal"
+     data-controller="content-lang"
+     data-content-lang-target="modal"
+     class="hidden fixed inset-0 z-[60] flex items-center justify-center"
+     aria-hidden="true"
+     role="dialog"
+     aria-label="<%= t('content_lang.modal_title', default: 'Choose Legislation Language') %>">
+  <%# Backdrop %>
+  <div class="absolute inset-0 bg-black/50"
+       data-action="click->content-lang#hideModal"></div>
+
+  <%# Modal card %>
+  <div class="relative w-full max-w-md mx-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl overflow-hidden">
+    <%# Accent top bar %>
+    <div class="h-1 bg-gradient-to-r from-(--accent-500) to-(--accent-600)"></div>
+
+    <div class="p-6 text-center">
+      <div class="text-3xl mb-3" aria-hidden="true">⚖️</div>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white">
+        <%= t('content_lang.modal_title', default: 'Choose Legislation Language') %>
+      </h2>
+      <p class="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">
+        <%= t('content_lang.modal_message', default: 'Belgian legislation is officially published in Dutch and French. Choose your preferred language for legal texts:') %>
+      </p>
+
+      <div class="flex gap-3 mt-6 justify-center">
+        <button type="button"
+                data-action="click->content-lang#select"
+                data-lang="nl"
+                class="flex-1 max-w-[180px] px-5 py-3 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-(--accent-500) dark:hover:border-(--accent-400) bg-gray-50 dark:bg-gray-700 hover:bg-(--accent-50) dark:hover:bg-(--accent-900)/20 transition-colors duration-100 group">
+          <span class="block text-2xl mb-1">🇳🇱</span>
+          <span class="block font-semibold text-gray-900 dark:text-white group-hover:text-(--accent-600) dark:group-hover:text-(--accent-400)">Nederlands</span>
+          <span class="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">Dutch</span>
+        </button>
+
+        <button type="button"
+                data-action="click->content-lang#select"
+                data-lang="fr"
+                class="flex-1 max-w-[180px] px-5 py-3 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-(--accent-500) dark:hover:border-(--accent-400) bg-gray-50 dark:bg-gray-700 hover:bg-(--accent-50) dark:hover:bg-(--accent-900)/20 transition-colors duration-100 group">
+          <span class="block text-2xl mb-1">🇫🇷</span>
+          <span class="block font-semibold text-gray-900 dark:text-white group-hover:text-(--accent-600) dark:group-hover:text-(--accent-400)">Français</span>
+          <span class="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">French</span>
+        </button>
+      </div>
+
+      <p class="text-xs text-gray-400 dark:text-gray-500 mt-4">
+        <%= t('content_lang.modal_hint', default: 'You can change this anytime from the header.') %>
+      </p>
+    </div>
+  </div>
+</div>

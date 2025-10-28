@@ -1,0 +1,8 @@
+<%= t('mailer.usage_warning.title', default: 'Credit Usage Warning') %>
+
+<%= t('mailer.usage_warning.greeting', name: @user.name || @user.email, default: "Hello #{@user.name || @user.email}") %>
+
+<%= t('mailer.usage_warning.body', percent: @usage_percent, default: "You have used #{@usage_percent}% of your credits.") %>
+
+<%= t('mailer.usage_warning.upgrade', default: 'Upgrade to Pro or buy more credits:') %>
+<%= @upgrade_url %>

@@ -1,0 +1,183 @@
+<%# Classic index — plain HTML, no JavaScript, no Tailwind
+     Inspired by the original WetWijzer alpha design %>
+
+<div class="classic-hero">
+  <p>
+    <%= case I18n.locale
+        when :fr then "Cette application explore la base de données législative complète de Belgique par titre. Entrez un mot-clé dans la barre de recherche, cochez les types souhaités et validez. Une recherche vide retourne toute la législation récente."
+        when :de then "Diese Anwendung durchsucht die vollständige belgische Gesetzgebungsdatenbank nach Titel. Geben Sie ein Stichwort ein, wählen Sie die gewünschten Typen und bestätigen Sie. Eine leere Suche zeigt die neueste Gesetzgebung."
+        when :en then "This application searches the complete Belgian legislation database by title. Enter a keyword in the search box, select the desired types and confirm. A blank search returns all recent legislation."
+        else "Deze applicatie doorzoekt de volledige wetgevingsdatabank van België op titel van een wet. Geef een zoekwoord op in de zoekbox, vink de gewenste types wet aan en bevestig met enter. Een blanco zoekbox geeft alle wetten terug."
+        end %>
+  </p>
+</div>
+
+<form action="<%= laws_path %>" method="get">
+  <div class="classic-search">
+    <input type="search" name="title" value="<%= params[:title] %>"
+           placeholder="<%= t(:search_placeholder_classic) %>" />
+    <input type="hidden" name="source_legislation" value="1" />
+    <button type="submit"><%= t(:search) %></button>
+  </div>
+
+  <%# Type filter checkboxes — using canonical param names matching LawSearchService %>
+  <div class="classic-filters">
+    <% type_labels = case I18n.locale
+         when :fr then { constitution: 'Constitution', law: 'Loi', decree: 'Décret', ordinance: 'Ordonnance', decision: 'Arrêté', misc: 'Divers' }
+         when :de then { constitution: 'Verfassung', law: 'Gesetz', decree: 'Dekret', ordinance: 'Verordnung', decision: 'Erlass', misc: 'Sonstiges' }
+         when :en then { constitution: 'Constitution', law: 'Act', decree: 'Decree', ordinance: 'Ordinance', decision: 'Decision', misc: 'Miscellaneous' }
+         else { constitution: 'Grondwet', law: 'Wet', decree: 'Decreet', ordinance: 'Ordonnantie', decision: 'Besluit', misc: 'Varia' }
+       end %>
+    <% type_keys = %i[constitution law decree ordinance decision misc] %>
+    <% type_keys.each do |key| %>
+      <label>
+        <input type="checkbox" name="<%= key %>" value="1"
+               <%= params[key] != '0' ? 'checked' : '' %> />
+        <%= type_labels[key] %>
+      </label>
+    <% end %>
+
+    <span style="display:inline-block;width:1px;height:16px;background:#6b7280;margin:0 12px;vertical-align:middle;opacity:0.5"></span>
+
+    <%# Language filter checkboxes — defaults per brand %>
+    <% lang_defaults = case I18n.locale
+         when :nl then { lang_nl: true, lang_fr: false, lang_de: false }
+         when :fr then { lang_nl: false, lang_fr: true, lang_de: false }
+         when :de then { lang_nl: false, lang_fr: true, lang_de: true }
+         else          { lang_nl: false, lang_fr: true, lang_de: false }
+       end %>
+    <% has_search = params[:commit].present? %>
+    <% { lang_nl: 'NL', lang_fr: 'FR', lang_de: 'DE' }.each do |param_name, label| %>
+      <label>
+        <input type="checkbox" name="<%= param_name %>" value="1"
+               <%= if has_search
+                     params[param_name] == '1' ? 'checked' : ''
+                   else
+                     lang_defaults[param_name] ? 'checked' : ''
+                   end %> />
+        <%= label %>
+      </label>
+    <% end %>
+
+    <input type="hidden" name="commit" value="1" />
+  </div>
+</form>
+
+<% if @laws.present? %>
+  <div style="margin-top:24px">
+    <p class="classic-meta">
+      <span><%= t(:results_found, count: (@pagy&.count || @laws.size)) %></span>
+      <% if params[:title].present? %>
+        &nbsp;&middot;&nbsp;
+        <a href="<%= laws_path %>"><%= t(:clear_search, default: 'Toon alles') %></a>
+      <% end %>
+    </p>
+
+    <%# Sortable column headers — pass sort param via links %>
+    <% current_sort = params[:sort].presence || 'date_desc' %>
+    <% sort_base = request.query_parameters.except('page') %>
+    <table class="classic-table">
+      <thead>
+        <tr>
+          <th>
+            <% if current_sort == 'date_desc' %>
+              <a href="<%= laws_path(sort_base.merge(sort: 'date_asc')) %>"><%= t(:date_label) %> &darr;</a>
+            <% elsif current_sort == 'date_asc' %>
+              <a href="<%= laws_path(sort_base.merge(sort: 'date_desc')) %>"><%= t(:date_label) %> &uarr;</a>
+            <% else %>
+              <a href="<%= laws_path(sort_base.merge(sort: 'date_desc')) %>"><%= t(:date_label) %></a>
+            <% end %>
+          </th>
+          <th>
+            <% if current_sort == 'title_asc' %>
+              <a href="<%= laws_path(sort_base.merge(sort: 'title_desc')) %>"><%= t(:title_header) %> &uarr;</a>
+            <% elsif current_sort == 'title_desc' %>
+              <a href="<%= laws_path(sort_base.merge(sort: 'title_asc')) %>"><%= t(:title_header) %> &darr;</a>
+            <% else %>
+              <a href="<%= laws_path(sort_base.merge(sort: 'title_asc')) %>"><%= t(:title_header) %></a>
+            <% end %>
+          </th>
+          <th class="link-col"><%= t(:details).capitalize %></th>
+          <th class="link-col"><%= t(:justel).capitalize %></th>
+          <th class="link-col"><%= t(:reflex).capitalize %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @laws.each do |law| %>
+          <tr>
+            <td class="date-col"><%= law.respond_to?(:datum) ? (law.datum.presence || law.date) : (law.respond_to?(:date) ? law.date : '') %></td>
+            <td>
+              <% law_title = if law.respond_to?(:titel)
+                                strip_tags(law.titel.presence || law.title.to_s)
+                              elsif law.respond_to?(:title)
+                                strip_tags(law.title.to_s)
+                              else
+                                law.to_s
+                              end %>
+              <% law_link = law.respond_to?(:numac) ? law_path(law.numac) : '#' %>
+              <a href="<%= law_link %>"><%= law_title %></a>
+            </td>
+            <td class="link-col">
+              <a href="<%= law.respond_to?(:numac) ? law_path(law.numac) : '#' %>"><%= t(:details).capitalize %></a>
+            </td>
+            <td class="link-col">
+              <% if law.respond_to?(:justel) && law.justel.present? %>
+                <a href="<%= law.justel %>" target="_blank" rel="nofollow"><%= t(:justel).capitalize %></a>
+              <% end %>
+            </td>
+            <td class="link-col">
+              <% if law.respond_to?(:numac) %>
+                <a href="https://www.ejustice.just.fgov.be/cgi_loi/loi_a1.pl?DETAIL=<%= law.respond_to?(:datum) ? law.datum.to_s.gsub('-','') : '' %>%2F<%= law.numac %>&caller=list&row_id=1&numero=1&ression=1&cn=<%= law.respond_to?(:datum) ? law.datum.to_s.gsub('-','') : '' %>&table_name=wet&nm=<%= law.numac %>&la=N&cheression=t&language=nl&choession=N&fromtab=wet&nl=n&sql=numac+%3D+'<%= law.numac %>'&tri=dd+AS+RANK+&tession=N&ression=n&imagession=on" target="_blank" rel="nofollow"><%= t(:reflex).capitalize %></a>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%# Classic pagination — plain prev/page/next, no JS %>
+  <% total_pages = @pagy&.pages || 0 %>
+  <% if @pagy && total_pages > 1 %>
+    <nav class="classic-pagination" aria-label="Pagination">
+      <% if @pagy.previous %>
+        <a href="<%= laws_path(request.query_parameters.merge(page: 1)) %>">&laquo;&laquo;</a>
+        <a href="<%= laws_path(request.query_parameters.merge(page: @pagy.previous)) %>">&laquo;</a>
+      <% else %>
+        <span class="disabled">&laquo;&laquo;</span>
+        <span class="disabled">&laquo;</span>
+      <% end %>
+
+      <% window = 3 %>
+      <% page_start = [1, @pagy.page - window].max %>
+      <% page_end = [total_pages, @pagy.page + window].min %>
+      <% if page_start > 1 %>
+        <a href="<%= laws_path(request.query_parameters.merge(page: 1)) %>">1</a>
+        <% if page_start > 2 %><span class="disabled">&hellip;</span><% end %>
+      <% end %>
+      <% (page_start..page_end).each do |p| %>
+        <% if p == @pagy.page %>
+          <span class="current"><%= p %></span>
+        <% else %>
+          <a href="<%= laws_path(request.query_parameters.merge(page: p)) %>"><%= p %></a>
+        <% end %>
+      <% end %>
+      <% if page_end < total_pages %>
+        <% if page_end < total_pages - 1 %><span class="disabled">&hellip;</span><% end %>
+        <a href="<%= laws_path(request.query_parameters.merge(page: total_pages)) %>"><%= total_pages %></a>
+      <% end %>
+
+      <% if @pagy.page < total_pages %>
+        <a href="<%= laws_path(request.query_parameters.merge(page: @pagy.page + 1)) %>">&raquo;</a>
+        <a href="<%= laws_path(request.query_parameters.merge(page: total_pages)) %>">&raquo;&raquo;</a>
+      <% else %>
+        <span class="disabled">&raquo;</span>
+        <span class="disabled">&raquo;&raquo;</span>
+      <% end %>
+    </nav>
+  <% end %>
+<% elsif params[:title].present? %>
+  <div class="classic-card" style="margin-top:24px;text-align:center">
+    <p><%= t('global_search.no_results') %></p>
+  </div>
+<% end %>

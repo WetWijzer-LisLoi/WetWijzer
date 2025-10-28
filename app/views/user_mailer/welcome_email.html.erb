@@ -1,0 +1,48 @@
+<h2><%= t('mailer.welcome.greeting', name: @user.name || @user.email, default: "#{@user.name || @user.email}") %> 🎉</h2>
+
+<p><%= t('mailer.welcome.body', default: 'Your account has been created. You can now use the chatbot with your free weekly credits.') %></p>
+
+<div class="info-box" style="background-color: #f0fdf4; border-left-color: #22c55e;">
+  <strong style="color: #16a34a;"><%= case I18n.locale
+    when :fr then 'Votre compte comprend :'
+    when :de then 'Ihr Konto umfasst:'
+    when :en then 'Your account includes:'
+    else 'Uw account bevat:'
+    end %></strong>
+  <ul style="margin: 8px 0 0; padding-left: 20px;">
+    <li><%= case I18n.locale
+      when :fr then '3 crédits gratuits par semaine'
+      when :de then '3 kostenlose Credits pro Woche'
+      when :en then '3 free credits per week'
+      else '3 gratis credits per week'
+      end %></li>
+    <li><%= case I18n.locale
+      when :fr then '10 crédits bonus de démarrage'
+      when :de then '10 Bonus-Startguthaben'
+      when :en then '10 bonus starter credits'
+      else '10 bonus startcredits'
+      end %></li>
+    <li><%= case I18n.locale
+      when :fr then 'Accès à Intelligent IA'
+      when :de then 'Zugang zu Klug KI'
+      when :en then 'Access to Smart AI'
+      else 'Toegang tot Slim AI'
+      end %></li>
+  </ul>
+</div>
+
+<p style="text-align: center; margin: 30px 0;">
+  <a href="<%= @chatbot_url || root_url %>" class="button" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); background-color: #2563eb; color: #ffffff !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);"><%= case I18n.locale
+    when :fr then 'Commencer'
+    when :de then 'Loslegen'
+    when :en then 'Get started'
+    else 'Aan de slag'
+    end %></a>
+</p>
+
+<p style="font-size: 13px; color: #6b7280;"><%= case I18n.locale
+  when :fr then 'Merci de rejoindre notre communauté !'
+  when :de then 'Danke, dass Sie unserer Community beitreten!'
+  when :en then 'Thank you for joining our community!'
+  else 'Bedankt om deel uit te maken van onze community!'
+  end %></p>

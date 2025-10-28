@@ -1,0 +1,306 @@
+<% @title = case I18n.locale when :fr then 'Recherche unifiée' when :de then 'Einheitliche Suche' when :en then 'Unified search' else 'Unified zoeken' end %>
+
+<div class="max-w-6xl mx-auto" data-controller="unified-search">
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      🔍 <%= @title %>
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      <%= case I18n.locale
+        when :fr then 'Recherchez dans la législation et les travaux parlementaires'
+        when :de then 'Suchen Sie in Gesetzgebung und parlamentarischen Dokumenten'
+        when :en then 'Search in legislation and parliamentary documents'
+        else 'Zoek in wetgeving en parlementaire stukken'
+      end %>
+    </p>
+  </div>
+
+  <!-- Search Form -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+    <%= form_with url: unified_search_path, method: :get, local: true do %>
+      <!-- Search Input -->
+      <div class="mb-4">
+        <div class="flex gap-3">
+          <div class="flex-1 relative">
+            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input type="text" name="q" value="<%= @query %>"
+                   data-unified-search-target="searchInput"
+                   class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-lg pl-12 pr-4 py-3.5 focus:ring-2 focus:ring-(--accent-500) focus:border-transparent transition-all"
+                   placeholder="<%= case I18n.locale when :fr then 'Entrez votre recherche...' when :de then 'Suchbegriff eingeben...' when :en then 'Enter your search...' else 'Voer uw zoekopdracht in...' end %>"
+                   autofocus>
+          </div>
+          <button type="submit" class="px-8 py-3.5 bg-(--accent-600-solid) hover:bg-(--accent-700-solid) text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0">
+            <%= case I18n.locale when :fr then 'Rechercher' when :de then 'Suchen' when :en then 'Search' else 'Zoeken' end %>
+          </button>
+        </div>
+        <% if @query.blank? %>
+          <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+            <%= case I18n.locale
+              when :fr then "Astuce : Appuyez sur"
+              when :de then "Tipp: Drücken Sie"
+              when :en then "Tip: Press"
+              else "Tip: Druk op"
+            end %> <kbd class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">/</kbd> <%= case I18n.locale when :fr then 'pour rechercher,' when :de then 'zum Suchen,' when :en then 'to search,' else 'om te zoeken,' end %> <kbd class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">j</kbd>/<kbd class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">k</kbd> <%= case I18n.locale when :fr then 'pour naviguer' when :de then 'zur Navigation' when :en then 'to navigate' else 'voor navigatie' end %>
+          </p>
+        <% end %>
+      </div>
+
+      <!-- Hidden source inputs for all sources -->
+      <% @available_sources.each do |source| %>
+        <input type="hidden" name="sources[]" value="<%= source[:key] %>">
+      <% end %>
+    <% end %>
+  </div>
+
+  <% if @query.present? %>
+    <!-- Results Summary -->
+    <div class="mb-4 flex items-center justify-between">
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        <span class="font-semibold text-gray-900 dark:text-white"><%= @total_count %></span> <%= case I18n.locale when :fr then 'résultats pour' when :de then 'Ergebnisse für' when :en then 'results for' else 'resultaten voor' end %> "<span class="font-medium"><%= @query %></span>"
+      </p>
+    </div>
+
+    <!-- Tab Navigation (Pill Tabs) -->
+    <div class="flex flex-wrap gap-2 mb-6" role="tablist">
+      <button type="button"
+              data-unified-search-target="tabButton"
+              data-tab="all"
+              data-action="click->unified-search#switchTab"
+              class="unified-search__tab unified-search__tab--active"
+              role="tab"
+              aria-selected="true">
+        <%= case I18n.locale when :fr then 'Tous' when :de then 'Alle' when :en then 'All' else 'Alle' end %>
+        <span class="unified-search__tab-badge" data-count-for="all"><%= @total_count %></span>
+      </button>
+      <% @available_sources.each do |source| %>
+        <% count = @results.dig(source[:key], :total) || 0 %>
+        <button type="button"
+                data-unified-search-target="tabButton"
+                data-tab="<%= source[:key] %>"
+                data-action="click->unified-search#switchTab"
+                class="unified-search__tab"
+                role="tab"
+                aria-selected="false">
+          <% case source[:icon] %>
+          <% when 'document' %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          <% when 'scale' %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+            </svg>
+          <% when 'building' %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+          <% end %>
+          <%= source[:label] %>
+          <span class="unified-search__tab-badge" data-count-for="<%= source[:key] %>"><%= count %></span>
+        </button>
+      <% end %>
+    </div>
+
+    <!-- Results by Source -->
+    <% if @results.any? %>
+      <div class="space-y-6">
+        <% @results.each do |source, data| %>
+          <% next if data[:items].empty? %>
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden"
+               data-unified-search-target="tabPanel"
+               data-source="<%= source %>"
+               role="tabpanel">
+            <div class="px-5 py-3.5 bg-linear-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-600">
+              <div class="flex items-center justify-between">
+                <h2 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <% case source %>
+                  <% when :legislation %>
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <%= case I18n.locale when :fr then 'Législation' when :de then 'Gesetzgebung' when :en then 'Legislation' else 'Wetgeving' end %>
+                  <% when :jurisprudence %>
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <%= case I18n.locale when :fr then 'Jurisprudence' when :de then 'Rechtsprechung' when :en then 'Case law' else 'Rechtspraak' end %>
+                  <% when :parliamentary %>
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <%= case I18n.locale when :fr then 'Travaux parlementaires' when :de then 'Parlamentarische Dokumente' when :en then 'Parliamentary documents' else 'Parlementaire stukken' end %>
+                  <% end %>
+                </h2>
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 px-2.5 py-1 rounded-full">
+                  <%= data[:total] %> <%= case I18n.locale when :fr then 'résultats' when :de then 'Ergebnisse' when :en then 'results' else 'resultaten' end %>
+                </span>
+              </div>
+            </div>
+
+            <div class="divide-y divide-gray-100 dark:divide-gray-700">
+              <% data[:items].each do |item| %>
+                <div class="unified-search__result-card" data-unified-search-target="resultItem">
+                  <a href="<%= item[:url] %>" class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
+                    <div class="flex items-start justify-between gap-4">
+                      <div class="flex-1 min-w-0">
+                        <h3 class="font-medium text-gray-900 dark:text-white group-hover:text-(--accent-600) dark:group-hover:text-(--accent-400) transition-colors">
+                          <%= highlight_search_term(item[:title], @query) %>
+                        </h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
+                          <% if item[:subtitle].present? %>
+                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span><%= item[:subtitle] %></span>
+                          <% end %>
+                        </p>
+                      </div>
+                      <svg class="w-5 h-5 text-gray-400 group-hover:text-(--accent-500) transition-colors shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                      </svg>
+                    </div>
+                  </a>
+                  <% if Rails.application.config.respond_to?(:chatbot_enabled) && Rails.application.config.chatbot_enabled %>
+                    <div class="px-4 pb-3 flex gap-2">
+                      <a href="<%= chatbot_path(q: "#{case I18n.locale when :fr then 'Expliquez:' when :de then 'Erklären Sie:' when :en then 'Explain:' else 'Leg uit:' end} #{item[:title]}") %>"
+                         class="text-xs px-3 py-1.5 rounded-lg bg-(--accent-50,#eff6ff) dark:bg-(--accent-900,#1e3a5f)/30 text-(--accent-700) dark:text-(--accent-300) hover:bg-(--accent-100) dark:hover:bg-(--accent-800)/40 transition-colors flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                        </svg>
+                        <%= case I18n.locale when :fr then "Demander à l'IA" when :de then 'KI fragen' when :en then 'Ask AI' else 'Vraag AI' end %>
+                      </a>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% elsif @query.present? %>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-12 text-center">
+        <svg class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <p class="text-gray-500 dark:text-gray-400 text-lg">
+          <%= case I18n.locale
+            when :fr then "Aucun résultat trouvé pour \"#{@query}\""
+            when :de then "Keine Ergebnisse gefunden für \"#{@query}\""
+            when :en then "No results found for \"#{@query}\""
+            else "Geen resultaten gevonden voor \"#{@query}\""
+          end %>
+        </p>
+        <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">
+          <%= case I18n.locale
+            when :fr then "Essayez d'autres termes ou des mots-clés plus courts"
+            when :de then 'Versuchen Sie andere Begriffe oder kürzere Suchworte'
+            when :en then 'Try different terms or shorter keywords'
+            else 'Probeer andere zoektermen of kortere trefwoorden'
+          end %>
+        </p>
+      </div>
+    <% end %>
+  <% end %>
+
+  <!-- Link to chatbot -->
+  <% if Rails.application.config.respond_to?(:chatbot_enabled) && Rails.application.config.chatbot_enabled %>
+  <div class="mt-8 p-5 bg-linear-to-r from-(--accent-50,#eff6ff) to-(--accent-100,#dbeafe) dark:from-(--accent-900,#1e3a5f)/30 dark:to-(--accent-800,#1e40af)/20 rounded-xl border border-(--accent-200,#bfdbfe) dark:border-(--accent-800,#1e40af)/30">
+    <div class="flex items-center gap-4">
+      <div class="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, var(--accent-600-solid, #2563eb), var(--accent-700-solid, #4f46e5));">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h3 class="font-semibold text-gray-900 dark:text-white">
+          <%= case I18n.locale
+            when :fr then 'Besoin d\'aide pour comprendre?'
+            when :de then 'Hilfe beim Verstehen benötigt?'
+            when :en then 'Need help understanding?'
+            else 'Hulp nodig bij het begrijpen?'
+          end %>
+        </h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          <%= case I18n.locale
+            when :fr then 'Posez vos questions à notre assistant IA juridique'
+            when :de then 'Stellen Sie Ihre Fragen an unseren juristischen KI-Assistenten'
+            when :en then 'Ask our legal AI assistant your questions'
+            else 'Stel uw vragen aan onze juridische AI-assistent'
+          end %>
+        </p>
+      </div>
+      <a href="<%= chatbot_path %>" class="px-5 py-2.5 text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5" style="background: linear-gradient(135deg, var(--accent-600-solid, #2563eb), var(--accent-700-solid, #4f46e5));">
+        <%= case I18n.locale when :fr then 'Ouvrir le chatbot' when :de then 'Chatbot öffnen' when :en then 'Open chatbot' else 'Open chatbot' end %>
+      </a>
+    </div>
+  </div>
+  <% end %>
+</div>
+
+<style>
+  /* Unified Search Tab Pills */
+  .unified-search__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--tw-text-opacity, 1);
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    cursor: pointer;
+    background: transparent;
+    color: rgb(107 114 128);
+  }
+  .dark .unified-search__tab {
+    color: rgb(156 163 175);
+  }
+  .unified-search__tab:hover {
+    background: rgb(243 244 246);
+    color: rgb(55 65 81);
+  }
+  .dark .unified-search__tab:hover {
+    background: rgb(55 65 81);
+    color: rgb(209 213 219);
+  }
+  .unified-search__tab--active {
+    background: var(--accent-600-solid, #2563eb) !important;
+    color: white !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .unified-search__tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.25rem;
+    padding: 0 0.375rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(0,0,0,0.1);
+  }
+  .unified-search__tab--active .unified-search__tab-badge {
+    background: rgba(255,255,255,0.25);
+    color: white;
+  }
+  /* Result focus highlight for keyboard navigation */
+  .unified-search__result--focused {
+    outline: 2px solid var(--accent-500, #3b82f6);
+    outline-offset: -2px;
+    border-radius: 0.25rem;
+  }
+  .unified-search__result-card {
+    transition: background-color 0.15s ease;
+  }
+  /* Search term highlight */
+  .search-highlight {
+    background: rgba(var(--accent-rgb, 59 130 246), 0.15);
+    color: var(--accent-700, #1d4ed8);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+  }
+  .dark .search-highlight {
+    background: rgba(var(--accent-rgb, 59 130 246), 0.25);
+    color: var(--accent-300, #93c5fd);
+  }
+</style>

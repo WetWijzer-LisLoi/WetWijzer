@@ -1,0 +1,312 @@
+<% @title = "#{@case[:court]} - #{@case[:case_number]}" %>
+<% juportal_url = "https://juportal.be/content/#{@case[:case_number]}" if @case[:case_number].to_s.start_with?('ECLI:') %>
+<% appeal_info = court_appeal_info(@case[:court]) %>
+
+<style nonce="<%= content_security_policy_nonce %>">
+  /* Tighten short intro lines (party names, addresses) — full paragraphs keep normal spacing */
+  #full-text-content p.mb-3 { margin-bottom: 0.5rem; }
+  #full-text-content h3, #full-text-content h4 { margin-top: 1.75rem; }
+  /* Restore normal paragraph spacing after first heading appears */
+  #full-text-content h3 ~ p.mb-3,
+  #full-text-content h4 ~ p.mb-3 { margin-bottom: 0.75rem; }
+</style>
+
+<!-- Page Header -->
+<div class="mb-6">
+  <div class="bg-linear-to-r from-(--accent-500)/5 to-(--accent-500)/10 dark:from-(--accent-500)/10 dark:to-(--accent-500)/20 rounded-xl p-4 md:p-6 border border-(--accent-500)/20 dark:border-(--accent-500)/30">
+    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+      <div class="flex items-center gap-3">
+        <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-(--accent-500)">
+          <%= @case[:case_number] %>
+        </h1>
+        <%# Copy ECLI button %>
+        <button type="button"
+                data-copy-text="<%= @case[:case_number] %>"
+                class="inline-flex items-center gap-1.5 px-2 py-1.5 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-300) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
+                title="<%= case I18n.locale when :fr then 'Copier ECLI' when :de then 'ECLI kopieren' when :en then 'Copy ECLI' else 'Kopieer ECLI' end %>">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 no-print">
+        <%# Language toggle — switch to FR/NL version %>
+        <% if @alt_case %>
+          <a href="<%= jurisprudence_path(@alt_case) %>"
+             class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-300) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
+             title="<%= case I18n.locale when :fr then "Voir la version #{@alt_lang_label}" when :de then "#{@alt_lang_label}-Version anzeigen" when :en then "View #{@alt_lang_label} version" else "Bekijk #{@alt_lang_label} versie" end %>">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/>
+            </svg>
+            <span class="hidden sm:inline"><%= @alt_lang_label %></span>
+          </a>
+        <% else %>
+          <button type="button"
+                  data-toast-message="<%= case I18n.locale when :fr then 'Version non disponible' when :de then 'Version nicht verfügbar' when :en then 'Version not available' else 'Versie niet beschikbaar' end %>"
+                  class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 cursor-default opacity-60"
+                  title="<%= case I18n.locale when :fr then "Pas de version #{@alt_lang_label} disponible" when :de then "Keine #{@alt_lang_label}-Version verfügbar" when :en then "No #{@alt_lang_label} version available" else "Geen #{@alt_lang_label} versie beschikbaar" end %>">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/>
+            </svg>
+            <span class="hidden sm:inline"><%= @alt_lang_label %></span>
+          </button>
+        <% end %>
+        <%# JuPortal source link %>
+        <% if juportal_url %>
+          <a href="<%= juportal_url %>" target="_blank" rel="noopener"
+             class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-300) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
+             title="<%= case I18n.locale when :fr then 'Voir sur JuPortal (source officielle)' when :de then 'Auf JuPortal anzeigen (offizielle Quelle)' when :en then 'View on JuPortal (official source)' else 'Bekijk op JuPortal (officiële bron)' end %>">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+            <span class="hidden sm:inline">JuPortal</span>
+          </a>
+          <%# Direct link to original PDF on JuPortal %>
+          <% pdf_lang = @case[:language_id].to_s == '2' ? 'FR' : 'NL' %>
+          <a href="https://juportal.be/JUPORTAwork/<%= @case[:case_number] %>_<%= pdf_lang %>.pdf" target="_blank" rel="noopener"
+             class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-300) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
+             title="<%= case I18n.locale when :fr then 'Télécharger le PDF original (avec images)' when :de then 'Original-PDF herunterladen (mit Bildern)' when :en then 'Download original PDF (with images)' else 'Download origineel PDF (met afbeeldingen)' end %>">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+            <span class="hidden sm:inline">PDF</span>
+          </a>
+        <% end %>
+        <%# Export Word button %>
+        <a href="<%= export_word_jurisprudence_path(@case[:case_number]) %>"
+           class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-300) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
+           title="<%= case I18n.locale when :fr then 'Télécharger en Word' when :de then 'Als Word-Dokument herunterladen' when :en then 'Download as Word document' else 'Download als Word-document' end %>">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          <span class="hidden sm:inline">Word</span>
+        </a>
+        <%# Print button %>
+        <button type="button"
+                data-controller="print" data-action="click->print#fire"
+                class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-300) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
+                title="<%= case I18n.locale when :fr then 'Imprimer' when :de then 'Drucken' when :en then 'Print' else 'Afdrukken' end %>">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content Area -->
+<div class="w-full space-y-6">
+  <!-- Case Metadata -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
+    <div class="p-4 md:p-6">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-3">
+        <% case I18n.locale when :fr %>Détails de la décision<% when :de %>Entscheidungsdetails<% when :en %>Decision details<% else %>Beslissingsdetails<% end %>
+      </h2>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-(--accent-100) dark:bg-(--accent-900)/30 text-(--accent-800) dark:text-(--accent-200)">
+          🏛️ <%= @case[:court] %>
+        </span>
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300">
+          📅 <%= @case[:decision_date] %>
+        </span>
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300">
+          🌐 <%= @case[:language_id].to_s == '1' ? 'NL' : 'FR' %>
+        </span>
+        <% if @case[:decision_type].present? %>
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300">
+            <%= @case[:decision_type].capitalize %>
+          </span>
+        <% end %>
+        <% if @case[:outcome].present? %>
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300">
+            <%= @case[:outcome] %>
+          </span>
+        <% end %>
+      </div>
+
+      <% if @case[:subject_matter].present? %>
+        <div class="mb-3">
+          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-300/70 mb-1">
+            <% case I18n.locale when :fr %>Matière<% when :de %>Rechtsgebiet<% when :en %>Subject matter<% else %>Rechtsgebied<% end %>
+          </h3>
+          <div class="flex flex-wrap gap-1">
+            <% @case[:subject_matter].split(',').map(&:strip).each do |subject| %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-(--accent-100) dark:bg-(--accent-900)/30 text-(--accent-700) dark:text-(--accent-300)">
+                <%= subject %>
+              </span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <% if @referenced_laws.present? %>
+        <div>
+          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-300/70 mb-1">
+            <% case I18n.locale when :fr %>Législation citée<% when :de %>Zitierte Gesetzgebung<% when :en %>Cited legislation<% else %>Geciteerde wetgeving<% end %>
+          </h3>
+          <div class="flex flex-wrap gap-1.5">
+            <% @referenced_laws.each do |ref| %>
+              <a href="<%= law_path(ref[:numac]) %>"
+                 class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium
+                        bg-(--accent-100) dark:bg-(--accent-900)/30
+                        text-(--accent-800) dark:text-(--accent-200)
+                        hover:bg-(--accent-200) dark:hover:bg-(--accent-800)/40
+                        transition-colors duration-150"
+                 title="<%= ref[:numac] %>">
+                <svg class="w-3 h-3 mr-1 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <%= ref[:title] || ref[:numac] %>
+              </a>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <% if @case[:summary].present? %>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
+      <div class="p-4 md:p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-3">
+          <% case I18n.locale when :fr %>Résumé<% when :de %>Zusammenfassung<% when :en %>Summary<% else %>Samenvatting<% end %>
+        </h2>
+        <div class="p-4 bg-(--accent-500)/5 dark:bg-gray-900 rounded-lg text-gray-700 dark:text-gray-300 border-l-4 border-(--accent-400) text-justify">
+          <%= clean_jurisprudence_summary(@case[:summary]) %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Full Text -->
+  <% display_text = @case[:rich_text].present? ? @case[:rich_text] : @case[:full_text] %>
+  <% if display_text.present? %>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
+      <div class="p-4 md:p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-4">
+          <% case I18n.locale when :fr %>Texte intégral<% when :de %>Volltext<% when :en %>Full text<% else %>Volledige tekst<% end %>
+        </h2>
+        <div id="full-text-content" class="max-w-none">
+          <div class="text-base text-gray-700 dark:text-gray-300 leading-relaxed" style="text-align: justify;">
+<%= clean_jurisprudence_full_text(display_text, case_number: @case[:case_number]) %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+
+
+  <!-- Ask chatbot -->
+  <% if Rails.application.config.chatbot_enabled %>
+  <div class="p-4 bg-linear-to-r from-(--accent-50) to-(--accent-100)/30 dark:from-(--accent-900)/20 dark:to-midnight rounded-xl border border-(--accent-200) dark:border-(--accent-800)/30">
+    <div class="flex items-center gap-4">
+      <div class="shrink-0">
+        <svg class="w-8 h-8 text-(--accent-600) dark:text-(--accent-400)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h3 class="font-medium text-gray-900 dark:text-(--accent-500)">
+          <% case I18n.locale when :fr %>Questions sur cet arrêt?<% when :de %>Fragen zu diesem Urteil?<% when :en %>Questions about this ruling?<% else %>Vragen over dit arrest?<% end %>
+        </h3>
+        <p class="text-sm text-gray-600 dark:text-gray-300/80">
+          <% case I18n.locale when :fr %>Posez vos questions à notre assistant IA juridique<% when :de %>Stellen Sie Ihre Fragen an unseren juristischen KI-Assistenten<% when :en %>Ask our legal AI assistant<% else %>Stel uw vragen aan onze juridische AI-assistent<% end %>
+        </p>
+      </div>
+      <a href="<%= chatbot_path(source: 'jurisprudence') %>"
+         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-300) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150">
+        <%= case I18n.locale when :fr then 'Ouvrir le chatbot' when :de then 'Chatbot öffnen' when :en then 'Open chatbot' else 'Open chatbot' end %>
+      </a>
+    </div>
+  </div>
+  <% end %>
+
+  <!-- GDPR: Pseudonymization notice + takedown link -->
+  <div class="p-4 bg-amber-50/50 dark:bg-amber-900/10 rounded-xl border border-amber-200/50 dark:border-amber-800/30">
+    <div class="flex items-start gap-3">
+      <div class="shrink-0 mt-0.5">
+        <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <p class="text-sm text-amber-800 dark:text-amber-200">
+          <% case I18n.locale
+             when :fr %>
+            Ce texte est <strong>automatiquement pseudonymisé</strong>. Malgré un traitement minutieux, certaines données personnelles peuvent ne pas être entièrement masquées.
+          <% when :de %>
+            Dieser Text wurde <strong>automatisch pseudonymisiert</strong>. Trotz sorgfältiger Verarbeitung kann es vorkommen, dass personenbezogene Daten nicht vollständig maskiert sind.
+          <% when :en %>
+            This text has been <strong>automatically pseudonymised</strong>. Despite careful processing, some personal data may not be fully masked.
+          <% else %>
+            Deze tekst is <strong>automatisch gepseudonimiseerd</strong>. Ondanks zorgvuldige verwerking kan het voorkomen dat persoonsgegevens niet volledig zijn gemaskeerd.
+          <% end %>
+        </p>
+        <a href="<%= gdpr_takedown_path(ecli: @case[:case_number]) %>"
+           class="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 text-xs font-medium rounded-lg text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 border border-amber-300/50 dark:border-amber-700/50 transition-colors duration-150">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          <%= case I18n.locale when :fr then 'Signaler des données personnelles' when :de then 'Personenbezogene Daten melden' when :en then 'Report personal data' else 'Persoonsgegevens melden' end %>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Schema.org Structured Data (JSON-LD) %>
+<% content_for :head do %>
+<script type="application/ld+json">
+<%= raw({
+  "@context": "https://schema.org",
+  "@type": "CreativeWork",
+  "additionalType": "https://schema.org/Legislation",
+  "name": @case[:case_number],
+  "description": "#{@case[:court]} — #{@case[:decision_type].try(:capitalize)} #{@case[:decision_date]}",
+  "datePublished": @case[:decision_date].to_s,
+  "inLanguage": @case[:language_id].to_s == '1' ? 'nl' : 'fr',
+  "author": {
+    "@type": "Organization",
+    "name": @case[:court]
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WetWijzer",
+    "url": "https://wetwijzer.be"
+  },
+  "url": request.original_url,
+  "identifier": @case[:case_number],
+  "about": @case[:subject_matter].present? ? @case[:subject_matter].split(',').map(&:strip) : nil,
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "WetWijzer",
+    "url": "https://wetwijzer.be"
+  }
+}.compact.to_json) %>
+</script>
+<% end %>
+
+<script nonce="<%= content_security_policy_nonce %>">
+  document.querySelectorAll('[data-copy-text]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      navigator.clipboard.writeText(this.dataset.copyText);
+      var svg = this.querySelector('svg');
+      if (svg) { svg.classList.add('text-green-500'); setTimeout(function() { svg.classList.remove('text-green-500'); }, 1500); }
+    });
+  });
+  document.querySelectorAll('[data-toast-message]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var t = document.createElement('div');
+      t.textContent = this.dataset.toastMessage;
+      t.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 text-sm rounded-lg shadow-xl z-50 transition-opacity';
+      document.body.appendChild(t);
+      setTimeout(function() { t.style.opacity = '0'; setTimeout(function() { t.remove(); }, 300); }, 2500);
+    });
+  });
+</script>
+

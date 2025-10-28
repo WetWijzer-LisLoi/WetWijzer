@@ -1,0 +1,133 @@
+<%# ── About Byline — compact founder credit with expandable bio ──
+     Used on homepage (hero) and chatbot page.
+     Params:
+       variant: :hero (centered, under title) | :sidebar (left-aligned, chatbot page)
+%>
+<% variant = local_assigns.fetch(:variant, :hero) %>
+<% is_hero = variant == :hero %>
+
+<%# ── Byline row: photo + name + title + expand toggle ── %>
+<div class="<%= is_hero ? 'max-w-3xl mx-auto' : '' %>">
+  <details class="about-byline group" id="about-byline-details">
+    <summary class="flex items-center gap-3 cursor-pointer select-none list-none
+                    <%= is_hero ? 'justify-center py-2' : 'py-1.5' %>
+                    hover:opacity-90 transition-opacity"
+             style="list-style: none;">
+      <%# Remove default marker %>
+      <style nonce="<%= content_security_policy_nonce %>">
+        .about-byline summary::-webkit-details-marker { display: none; }
+        .about-byline summary::marker { display: none; content: ''; }
+      </style>
+
+      <%# Gold-ring photo — small inline %>
+      <div class="flex-shrink-0">
+        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full p-[1.5px] transition-transform duration-300 group-hover:scale-110"
+             style="background: linear-gradient(135deg, #c9a962, #e8d5a3, #c9a962);">
+          <img src="/images/gauthier-berth.jpg"
+               alt="Gauthier Berth"
+               class="w-full h-full rounded-full object-cover border-[1.5px] border-white dark:border-gray-800"
+               loading="lazy">
+        </div>
+      </div>
+
+      <%# Name + title — single line %>
+      <div class="flex items-center gap-1.5 flex-wrap min-w-0">
+        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">Mr. Gauthier Berth</span>
+        <span class="text-[11px] text-gray-400 dark:text-gray-500 hidden sm:inline">·</span>
+        <span class="text-[11px] font-medium whitespace-nowrap hidden sm:inline" style="color: var(--accent-600);">
+          <%= case I18n.locale
+              when :fr then 'Avocat · Fondateur'
+              when :de then 'Rechtsanwalt · Gründer'
+              when :en then 'Attorney · Founder'
+              else 'Advocaat · Oprichter'
+              end %>
+        </span>
+      </div>
+
+      <%# Expand chevron %>
+      <svg class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 transition-transform duration-200 group-open:rotate-180 flex-shrink-0"
+           fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </summary>
+
+    <%# ── Expanded bio panel — slides open ── %>
+    <div class="overflow-hidden">
+      <div class="<%= is_hero ? 'max-w-2xl mx-auto' : '' %> mt-3 rounded-xl bg-white dark:bg-[#0f172a] border border-gray-200/80 dark:border-[#1e293b] shadow-sm
+                  animate-[slideDown_0.2s_ease-out]">
+        <div class="px-4 sm:px-5 py-3.5">
+          <div class="flex gap-4 items-start">
+            <%# Larger photo in expanded view %>
+            <div class="flex-shrink-0">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px]"
+                   style="background: linear-gradient(135deg, #c9a962, #e8d5a3, #c9a962);">
+                <img src="/images/gauthier-berth.jpg"
+                     alt="Gauthier Berth"
+                     class="w-full h-full rounded-full object-cover border-2 border-white dark:border-gray-800"
+                     loading="lazy">
+              </div>
+            </div>
+
+            <%# Full bio text %>
+            <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1.5 min-w-0">
+              <p class="font-semibold text-gray-800 dark:text-gray-200 text-base leading-tight">
+                Mr. Gauthier Berth
+                <span class="block text-xs font-normal mt-0.5" style="color: var(--accent-600);">
+                  <%= case I18n.locale
+                      when :fr then 'Avocat au barreau de Bruxelles · Fondateur'
+                      when :de then 'Rechtsanwalt an der Brüsseler Anwaltskammer · Gründer'
+                      when :en then 'Attorney at the Brussels Bar · Founder'
+                      else 'Advocaat bij de Nederlandstalige Balie te Brussel · Oprichter'
+                      end %>
+                </span>
+                <span class="flex items-center gap-3 mt-1.5">
+                  <a href="https://www.advocaat.be/nl/zoek-een-advocaat/advocaat/63fee2a5-637a-4839-a5a6-c833482f1e3a"
+                     target="_blank" rel="noopener noreferrer"
+                     class="inline-flex items-center gap-1 text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                     title="advocaat.be">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2L3 7v11h14V7l-7-5zM5 16V8l5-3.5L15 8v8H5z" clip-rule="evenodd"/></svg>
+                    advocaat.be
+                  </a>
+                  <a href="https://www.linkedin.com/in/gauthier-b-017447138/"
+                     target="_blank" rel="noopener noreferrer"
+                     class="inline-flex items-center gap-1 text-[10px] text-gray-400 hover:text-[#0A66C2] dark:hover:text-[#0A66C2] transition-colors"
+                     title="LinkedIn">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                    LinkedIn
+                  </a>
+                </span>
+              </p>
+
+              <% case I18n.locale %>
+              <% when :fr %>
+                <p>J'ai créé <%= site_name %> pour rendre le droit belge accessible à tous. Le site contient <strong>+350.000 articles de loi</strong>, <strong>+200.000 arrêts</strong> et <strong>+100.000 documents parlementaires</strong> — consultables gratuitement et complétés par un chatbot IA qui répond dans <strong>toutes les langues</strong>.</p>
+                <p><strong>Pour qui?</strong> Citoyens, étudiants en droit, journalistes, entrepreneurs et professionnels juridiques.</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500"><a href="<%= about_path %>" class="underline hover:text-gray-600 dark:hover:text-gray-300 transition-colors">En savoir plus →</a></p>
+              <% when :de %>
+                <p>Ich habe <%= site_name %> entwickelt, um belgisches Recht für alle zugänglich zu machen. Die Website enthält <strong>+350.000 Gesetzesartikel</strong>, <strong>+200.000 Urteile</strong> und <strong>+100.000 parlamentarische Dokumente</strong> — kostenlos durchsuchbar und ergänzt durch einen KI-Chatbot, der in <strong>allen Sprachen</strong> antwortet.</p>
+                <p><strong>Für wen?</strong> Bürger, Jurastudenten, Journalisten, Unternehmer und juristische Fachkräfte.</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500"><a href="<%= about_path %>" class="underline hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Mehr erfahren →</a></p>
+              <% when :en %>
+                <p>I created <%= site_name %> to make Belgian law accessible to everyone. The site contains <strong>+350,000 legal articles</strong>, <strong>+200,000 court decisions</strong> and <strong>+100,000 parliamentary documents</strong> — searchable for free and complemented by an AI chatbot that responds in <strong>any language</strong>.</p>
+                <p><strong>Who is it for?</strong> Citizens, law students, journalists, entrepreneurs and legal professionals.</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500"><a href="<%= about_path %>" class="underline hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Learn more →</a></p>
+              <% else %>
+                <p>Ik heb <%= site_name %> gebouwd om het Belgisch recht toegankelijk te maken voor iedereen. De website bevat <strong>+350.000 wetsartikelen</strong>, <strong>+200.000 rechterlijke uitspraken</strong> en <strong>+100.000 parlementaire documenten</strong> — gratis doorzoekbaar en aangevuld met een AI-chatbot die in <strong>elke taal</strong> antwoordt.</p>
+                <p><strong>Voor wie?</strong> Burgers, rechtenstudenten, journalisten, ondernemers en juridische professionals.</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500"><a href="<%= about_path %>" class="underline hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Meer info →</a></p>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </details>
+</div>
+
+<%# Slide-down animation %>
+<style nonce="<%= content_security_policy_nonce %>">
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>

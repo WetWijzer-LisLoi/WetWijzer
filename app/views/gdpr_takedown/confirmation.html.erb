@@ -1,0 +1,66 @@
+<% @title = case I18n.locale when :fr then 'Demande reçue' when :de then 'Antrag eingegangen' when :en then 'Request received' else 'Verzoek ontvangen' end %>
+
+<div class="max-w-2xl mx-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 text-center">
+    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+      <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+      </svg>
+    </div>
+
+    <h1 class="text-xl font-bold text-gray-900 dark:text-(--accent-500) mb-3">
+      <% case I18n.locale
+         when :fr %>
+        Demande de suppression reçue
+      <% when :de %>
+        Löschantrag eingegangen
+      <% when :en %>
+        Removal request received
+      <% else %>
+        Verwijderingsverzoek ontvangen
+      <% end %>
+    </h1>
+
+    <p class="text-gray-600 dark:text-gray-300/80 mb-6">
+      <% case I18n.locale
+         when :fr %>
+        Nous avons reçu votre demande et la traiterons dans les <strong>30 jours</strong>.
+        Vous recevrez une confirmation par e-mail à l'adresse indiquée.
+      <% when :de %>
+        Wir haben Ihren Antrag erhalten und werden ihn innerhalb von <strong>30 Tagen</strong> bearbeiten.
+        Sie erhalten eine Bestätigung per E-Mail an die angegebene Adresse.
+      <% when :en %>
+        We have received your request and will process it within <strong>30 days</strong>.
+        You will receive a confirmation email at the address provided.
+      <% else %>
+        Wij hebben uw verzoek ontvangen en zullen dit binnen <strong>30 dagen</strong> behandelen.
+        U ontvangt een bevestiging per e-mail op het opgegeven adres.
+      <% end %>
+    </p>
+
+    <div class="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg text-sm text-gray-500 dark:text-gray-300/60 mb-6">
+      <% case I18n.locale
+         when :fr %>
+        <strong>Référence:</strong> Art. 17 RGPD (Droit à l'effacement)<br>
+        <strong>Contact:</strong> <a href="mailto:privacy@wetwijzer.be" class="text-(--accent-600) dark:text-(--accent-400) hover:underline">privacy@wetwijzer.be</a>
+      <% when :de %>
+        <strong>Referenz:</strong> Art. 17 DSGVO (Recht auf Löschung)<br>
+        <strong>Kontakt:</strong> <a href="mailto:privacy@wetwijzer.be" class="text-(--accent-600) dark:text-(--accent-400) hover:underline">privacy@wetwijzer.be</a>
+      <% when :en %>
+        <strong>Reference:</strong> Art. 17 GDPR (Right to erasure)<br>
+        <strong>Contact:</strong> <a href="mailto:privacy@wetwijzer.be" class="text-(--accent-600) dark:text-(--accent-400) hover:underline">privacy@wetwijzer.be</a>
+      <% else %>
+        <strong>Referentie:</strong> Art. 17 AVG (Recht op gegevenswissing)<br>
+        <strong>Contact:</strong> <a href="mailto:privacy@wetwijzer.be" class="text-(--accent-600) dark:text-(--accent-400) hover:underline">privacy@wetwijzer.be</a>
+      <% end %>
+    </div>
+
+    <a href="<%= jurisprudence_index_path %>"
+       class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-300) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      <%= case I18n.locale when :fr then 'Retour à la Jurisprudence' when :de then 'Zurück zur Rechtsprechung' when :en then 'Back to Case law' else 'Terug naar Rechtspraak' end %>
+    </a>
+  </div>
+</div>

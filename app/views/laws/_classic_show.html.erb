@@ -1,0 +1,144 @@
+<%# Classic show — pure HTML, zero JavaScript, zero Tailwind %>
+<% if @law.present? %>
+
+<%# ── Breadcrumb ── %>
+<nav style="font-size:13px;margin-bottom:16px">
+  <a href="<%= laws_path %>"><%= t(:app_title) %></a> ›
+  <span><%= t(:details).capitalize %></span>
+</nav>
+
+<%# ── Law title ── %>
+<h1 style="font-size:22px;font-weight:700;line-height:1.4;margin-bottom:12px;color:#111">
+  <%= strip_tags(@law.title.to_s) %>
+</h1>
+
+<%# ── Metadata table — compact key/value pairs ── %>
+<table class="classic-table" style="margin-bottom:20px;max-width:560px">
+  <tbody>
+    <tr><td style="width:140px"><strong><%= t(:date_label) %></strong></td><td><%= @law.date %></td></tr>
+    <tr><td><strong>NUMAC</strong></td><td><%= @law.numac %></td></tr>
+    <% if @content&.respond_to?(:publication_date) && @content.publication_date.present? %>
+      <tr><td><strong><%= t(:publication) %></strong></td><td><%= @content.publication_date %></td></tr>
+    <% end %>
+    <% if @law.respond_to?(:justel) && @law.justel.present? %>
+      <tr><td><strong>Justel</strong></td><td><a href="<%= @law.justel %>" target="_blank" rel="nofollow"><%= @law.justel %></a></td></tr>
+    <% end %>
+  </tbody>
+</table>
+
+<%# ── Quick links — language switch, back, external ── %>
+<% other_language_id = @language_id == 1 ? 2 : 1 %>
+<p style="font-size:13px;margin-bottom:24px">
+  <a href="<%= law_path(@law.numac, language_id: other_language_id) %>"><%= @language_id == 1 ? 'FR' : 'NL' %></a>
+  · <a href="<%= laws_path %>"><%= t(:back_to_list) %></a>
+  <% if @law.respond_to?(:numac) %>
+    · <a href="https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=nl&la=N&cn=<%= @law.date.to_s.gsub('-','') %>&table_name=wet" target="_blank" rel="nofollow">Justel</a>
+    · <a href="https://www.ejustice.just.fgov.be/cgi_loi/loi_a1.pl?DETAIL=<%= @law.date.to_s.gsub('-','') %>%2F<%= @law.numac %>&caller=list&row_id=1&numero=1&ression=1&cn=<%= @law.date.to_s.gsub('-','') %>&table_name=wet&nm=<%= @law.numac %>&la=N&language=nl&fromtab=wet&nl=n&sql=numac+%3D+'<%= @law.numac %>'&tri=dd+AS+RANK+&tession=N&ression=n&imagession=on" target="_blank" rel="nofollow">Reflex</a>
+  <% end %>
+</p>
+
+<hr style="border:0;border-top:1px solid #e5e7eb;margin-bottom:24px">
+
+<%# ── Table of Contents ── %>
+<% if @content.present? && @content.toc.present? %>
+  <details open>
+    <summary style="cursor:pointer;font-size:16px;font-weight:600;margin-bottom:8px"><%= t(:toc) %></summary>
+    <div style="font-size:14px;line-height:1.8;padding-left:8px;margin-bottom:24px">
+      <%= sanitize @content.toc, tags: %w[a b strong em i u br p div span ul ol li h3 h4 h5 h6 table tr td th], attributes: %w[href class id style] %>
+    </div>
+  </details>
+  <hr style="border:0;border-top:1px solid #e5e7eb;margin-bottom:24px">
+<% end %>
+
+<%# ── Updated Laws ── %>
+<% if defined?(@updated_laws) && @updated_laws.present? %>
+  <details>
+    <summary style="cursor:pointer;font-size:16px;font-weight:600;margin-bottom:8px"><%= t(:updates) %> (<%= @updated_laws.size %>)</summary>
+    <table class="classic-table" style="margin-bottom:24px">
+      <thead>
+        <tr>
+          <th><%= t(:date_label) %></th>
+          <th><%= t(:title_header) %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @updated_laws.each do |ul| %>
+          <% updating = ul.updating_legislation_in_language || ul.updating_legislation %>
+          <% next unless updating %>
+          <tr>
+            <td class="date-col"><%= updating.respond_to?(:datum) ? (updating.datum.presence || updating.date) : updating.date %></td>
+            <td><a href="<%= law_path(ul.update_numac, language_id: @language_id) %>"><%= strip_tags(updating.respond_to?(:titel) ? updating.titel.to_s : updating.title.to_s) %></a></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </details>
+  <hr style="border:0;border-top:1px solid #e5e7eb;margin-bottom:24px">
+<% end %>
+
+<%# ── Executive Decisions (Uitvoeringsbesluiten) ── %>
+<% if defined?(@exdecs) && @exdecs.present? %>
+  <details>
+    <summary style="cursor:pointer;font-size:16px;font-weight:600;margin-bottom:8px"><%= t(:exdecs_title) %> (<%= @exdecs.size %>)</summary>
+    <table class="classic-table" style="margin-bottom:24px">
+      <thead>
+        <tr>
+          <th><%= t(:date_label) %></th>
+          <th><%= t(:title_header) %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @exdecs.each do |exdec| %>
+          <% exec_law = @executive_legislations_cache[exdec.exdec_numac] if defined?(@executive_legislations_cache) %>
+          <tr>
+            <td class="date-col"><%= exec_law&.date %></td>
+            <td>
+              <% if exec_law %>
+                <a href="<%= law_path(exdec.exdec_numac, language_id: @language_id) %>"><%= strip_tags(exec_law.title.to_s).truncate(200) %></a>
+              <% else %>
+                <%= exdec.exdec_numac %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </details>
+  <hr style="border:0;border-top:1px solid #e5e7eb;margin-bottom:24px">
+<% end %>
+
+<%# ── Articles — the law text ── %>
+<h2 style="font-size:18px;font-weight:600;margin-bottom:16px"><%= t(:articles_text).capitalize %></h2>
+
+<% if @articles.present? %>
+  <% @articles.each do |article| %>
+    <div class="classic-article" id="art-<%= article.id %>">
+      <% art_type = determine_article_type(article.article_title, article.article_text, article.article_type) %>
+      <% if art_type == :section_heading || art_type == :abolished_section %>
+        <div class="classic-section-heading">
+          <%= strip_tags(article.article_text.to_s).strip %>
+        </div>
+      <% else %>
+        <% if article.article_title.present? && article.article_title.strip != '#' %>
+          <div class="classic-article-number">
+            <%= article.article_title.strip %>
+          </div>
+        <% end %>
+        <div class="classic-article-content">
+          <%= safe_db_content(article.article_text.to_s, art_type).html_safe %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+<% elsif @content.present? && @content.respond_to?(:introd) && @content.introd.present? %>
+  <div class="classic-article-content">
+    <%= sanitize @content.introd, tags: %w[a b strong em i u br p div span ul ol li h3 h4 h5 h6 table tr td th], attributes: %w[href class id style] %>
+  </div>
+<% else %>
+  <p><em><%= t(:no_articles_available, default: 'Geen artikelen beschikbaar.') %></em></p>
+<% end %>
+
+<% else %>
+  <p><%= t(:law_not_found) %></p>
+  <p><a href="<%= laws_path %>">&larr; <%= t(:back_to_list) %></a></p>
+<% end %>

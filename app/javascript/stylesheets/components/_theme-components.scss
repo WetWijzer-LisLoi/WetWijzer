@@ -1,0 +1,31 @@
+/* ============================================================================
+ * THEME COMPONENTS — Import Barrel
+ *
+ * This file imports all theme component partials. The original monolithic file
+ * (5,323 lines / 190KB) has been split into logical sections for maintainability.
+ *
+ * Import order matters:
+ *   1. Base (semantic components, badges, toggles, references, hide modes)
+ *   2. Theme overrides (original → fun → professional)
+ *   3. Section-specific (sidebar, articles, other sections, exdecs)
+ *   4. Interactive (buttons, collapsible)
+ * ============================================================================ */
+
+/* --- 1. Base semantic components (badges, toggles, references, hide modes) --- */
+@import 'theme/base';
+
+/* --- 2. Theme-specific overrides --- */
+@import 'theme/original-theme';
+@import 'theme/fun-themes';
+@import 'theme/professional-themes';
+
+/* --- 3. Section-specific styling --- */
+@import 'theme/sidebar-toc';
+@import 'theme/articles-section';
+@import 'theme/other-sections';
+@import 'theme/hide-colors';
+
+/* --- 4. Interactive components --- */
+@import 'theme/button-improvements';
+@import 'theme/exdec-sections';
+@import 'theme/collapsible';

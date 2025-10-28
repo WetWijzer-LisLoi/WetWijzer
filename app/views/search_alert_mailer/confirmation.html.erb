@@ -1,0 +1,23 @@
+<h2><%= I18n.t('search_alerts.mailer.confirmation.title') %></h2>
+
+<p><%= I18n.t('search_alerts.mailer.confirmation.body') %></p>
+
+<div class="info-box">
+  <strong><%= I18n.t('search_alerts.mailer.confirmation.query_label') %>:</strong>
+  "<%= @alert.query %>"
+</div>
+
+<p style="text-align: center; margin: 24px 0;">
+  <a href="<%= @confirm_url %>" class="button">
+    <%= I18n.t('search_alerts.mailer.confirmation.button') %>
+  </a>
+</p>
+
+<p style="font-size: 14px; color: #6b7280;">
+  <%= I18n.t('search_alerts.mailer.confirmation.link_fallback') %><br>
+  <a href="<%= @confirm_url %>" style="word-break: break-all;"><%= @confirm_url %></a>
+</p>
+
+<p style="font-size: 13px; color: #9ca3af; margin-top: 24px;">
+  <%= I18n.t('search_alerts.mailer.confirmation.ignore') %>
+</p>

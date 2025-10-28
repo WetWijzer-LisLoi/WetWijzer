@@ -1,0 +1,16 @@
+<h2><%= t('mailer.reactivation.greeting', name: @user.name || @user.email) %></h2>
+
+<p><%= t('mailer.reactivation.body') %></p>
+
+<p style="text-align: center; margin: 30px 0;">
+  <a href="<%= @reactivation_url %>" class="button" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); background-color: #2563eb; color: #ffffff !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);"><%= t('mailer.reactivation.button') %></a>
+</p>
+
+<p><%= t('mailer.reactivation.ignore') %></p>
+
+<div class="info-box">
+  <p style="margin: 0; font-size: 13px;">
+    <%= t('mailer.reactivation.link_text') %>
+  </p>
+  <p style="margin: 4px 0 0; font-size: 12px; word-break: break-all;"><%= @reactivation_url %></p>
+</div>

@@ -1,0 +1,471 @@
+/* ============================================================================
+ * SEMANTIC THEME COMPONENTS
+ * Clean, maintainable theme-aware component classes
+ * ============================================================================ */
+
+/* Collapsible sections - hide default marker triangle */
+details > summary { list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+
+/* ============================================================================
+ * CARD RADIUS -- Professional themes use rectangular (sharp) cards
+ * --card-radius: 1rem (vibrant/fun) | 0 (professional)
+ * ============================================================================ */
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) {
+  /* Override Tailwind rounded-xl (0.75rem) and rounded-2xl (1rem) on card containers */
+  .rounded-xl,
+  .rounded-2xl {
+    border-radius: var(--card-radius) !important;
+  }
+
+  /* Slightly round inputs/selects for usability (2px) even on professional themes */
+  input.rounded-xl,
+  select.rounded-lg,
+  input.rounded-lg {
+    border-radius: 2px !important;
+  }
+
+  /* Keep buttons with minimal rounding for click affordance */
+  button.rounded-xl,
+  a.rounded-xl[class*="px-"] {
+    border-radius: 2px !important;
+  }
+}
+
+
+/* Language Badge Component - Default (theme-aware) */
+.badge-language {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: var(--badge-bg);
+  color: var(--badge-text);
+}
+
+/* Document Type Badge Component - Default (theme-aware) */
+.badge-type {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: var(--badge-bg);
+  color: var(--badge-text);
+}
+
+/* Date Badge Component - Default (theme-aware) */
+.badge-date {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  background-color: var(--badge-bg);
+  color: var(--badge-text);
+}
+
+/* Tag Badge Component - Default (theme-aware) */
+.badge-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 500;
+  border: 1px solid var(--badge-border);
+  background-color: var(--badge-bg);
+  color: var(--badge-text);
+}
+
+/* Toggle Button Component - Active State (theme-aware) */
+.btn-toggle-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  background-color: var(--badge-bg);
+  color: var(--badge-text);
+}
+
+/* Ensure hidden class works on toggle buttons (higher specificity) */
+.btn-toggle-active.hidden,
+.btn-toggle-inactive.hidden {
+  display: none !important;
+}
+
+/* Domain tags (KB, AR, W, L, etc.) - Legal modification references */
+/* No padding so background stays within brackets */
+.domain-tag {
+  background-color: #fef3c7; /* bg-amber-100 */
+  color: #92400e; /* text-amber-800 */
+  border-radius: 0.125rem; /* Subtle rounding */
+}
+
+.dark .domain-tag {
+  background-color: rgba(161, 98, 7, 0.4); /* dark:bg-yellow-900/40 */
+  color: #fde047; /* dark:text-yellow-300 */
+}
+
+/* Reference highlighting - bidirectional hover effect */
+span.reference[data-controller="reference-highlight"] {
+  transition: all 0.15s ease-in-out;
+}
+
+/* Minimalistic identical highlighting for both inline and bottom references */
+.reference-highlighted,
+.reference-inline-highlighted {
+  background-color: rgba(59, 130, 246, 0.12) !important; /* blue @ 12% */
+  border-radius: 0.25rem !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.dark .reference-highlighted,
+.dark .reference-inline-highlighted {
+  background-color: rgba(96, 165, 250, 0.15) !important; /* blue-400 @ 15% */
+}
+
+/* Prevent nested references from inheriting highlight background */
+.reference-highlighted .reference,
+.reference-inline-highlighted .reference {
+  background-color: white !important;
+  border-radius: 0.25rem;
+}
+
+.dark .reference-highlighted .reference,
+.dark .reference-inline-highlighted .reference {
+  background-color: rgb(15, 23, 42) !important;
+}
+
+/* Allow nested references to have their own highlight */
+.reference-highlighted .reference.reference-inline-highlighted,
+.reference-inline-highlighted .reference.reference-inline-highlighted {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+}
+
+.dark .reference-highlighted .reference.reference-inline-highlighted,
+.dark .reference-inline-highlighted .reference.reference-inline-highlighted {
+  background-color: rgba(96, 165, 250, 0.15) !important;
+}
+
+/* Reference row highlighted */
+.reference-row-highlighted {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+  border-radius: 0.375rem !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.dark .reference-row-highlighted {
+  background-color: rgba(96, 165, 250, 0.10) !important;
+}
+
+/* --- FUN THEMES: more prominent highlighting for colored text --- */
+:is(.theme-original, .theme-blue, .theme-rose, .theme-amber, .theme-emerald, .theme-violet, .theme-fuchsia, .theme-pink) :is(.reference-highlighted, .reference-inline-highlighted) {
+  background-color: rgba(59, 130, 246, 0.25) !important;
+}
+
+:is(.theme-original, .theme-blue, .theme-rose, .theme-amber, .theme-emerald, .theme-violet, .theme-fuchsia, .theme-pink) :is(.reference-highlighted, .reference-inline-highlighted) .reference {
+  background-color: white !important;
+}
+
+:is(.theme-original, .theme-blue, .theme-rose, .theme-amber, .theme-emerald, .theme-violet, .theme-fuchsia, .theme-pink) :is(.reference-highlighted, .reference-inline-highlighted) .reference.reference-inline-highlighted {
+  background-color: rgba(59, 130, 246, 0.25) !important;
+}
+
+:is(.theme-original.dark, .dark .theme-original, .theme-blue.dark, .dark .theme-blue, .theme-rose.dark, .dark .theme-rose, .theme-amber.dark, .dark .theme-amber, .theme-emerald.dark, .dark .theme-emerald, .theme-violet.dark, .dark .theme-violet, .theme-fuchsia.dark, .dark .theme-fuchsia, .theme-pink.dark, .dark .theme-pink) :is(.reference-highlighted, .reference-inline-highlighted) {
+  background-color: rgba(96, 165, 250, 0.28) !important;
+}
+
+:is(.theme-original.dark, .dark .theme-original, .theme-blue.dark, .dark .theme-blue, .theme-rose.dark, .dark .theme-rose, .theme-amber.dark, .dark .theme-amber, .theme-emerald.dark, .dark .theme-emerald, .theme-violet.dark, .dark .theme-violet, .theme-fuchsia.dark, .dark .theme-fuchsia, .theme-pink.dark, .dark .theme-pink) :is(.reference-highlighted, .reference-inline-highlighted) .reference {
+  background-color: rgb(15, 23, 42) !important;
+}
+
+:is(.theme-original.dark, .dark .theme-original, .theme-blue.dark, .dark .theme-blue, .theme-rose.dark, .dark .theme-rose, .theme-amber.dark, .dark .theme-amber, .theme-emerald.dark, .dark .theme-emerald, .theme-violet.dark, .dark .theme-violet, .theme-fuchsia.dark, .dark .theme-fuchsia, .theme-pink.dark, .dark .theme-pink) :is(.reference-highlighted, .reference-inline-highlighted) .reference.reference-inline-highlighted {
+  background-color: rgba(96, 165, 250, 0.28) !important;
+}
+
+:is(.theme-original, .theme-blue, .theme-rose, .theme-amber, .theme-emerald, .theme-violet, .theme-fuchsia, .theme-pink) .reference-row-highlighted {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+:is(.theme-original.dark, .dark .theme-original, .theme-blue.dark, .dark .theme-blue, .theme-rose.dark, .dark .theme-rose, .theme-amber.dark, .dark .theme-amber, .theme-emerald.dark, .dark .theme-emerald, .theme-violet.dark, .dark .theme-violet, .theme-fuchsia.dark, .dark .theme-fuchsia, .theme-pink.dark, .dark .theme-pink) .reference-row-highlighted {
+  background-color: rgba(96, 165, 250, 0.18) !important;
+}
+
+/* --- PROFESSIONAL THEMES: extra subtle highlighting --- */
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) :is(.reference-highlighted, .reference-inline-highlighted) {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+}
+
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) :is(.reference-highlighted, .reference-inline-highlighted) .reference {
+  background-color: white !important;
+}
+
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) :is(.reference-highlighted, .reference-inline-highlighted) .reference.reference-inline-highlighted {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+}
+
+:is(.theme-slate.dark, .dark .theme-slate, .theme-indigo.dark, .dark .theme-indigo, .theme-sky.dark, .dark .theme-sky, .theme-teal.dark, .dark .theme-teal, .theme-cyan.dark, .dark .theme-cyan, .theme-green.dark, .dark .theme-green, .theme-purple.dark, .dark .theme-purple, .theme-red.dark, .dark .theme-red) :is(.reference-highlighted, .reference-inline-highlighted) {
+  background-color: rgba(96, 165, 250, 0.10) !important;
+}
+
+:is(.theme-slate.dark, .dark .theme-slate, .theme-indigo.dark, .dark .theme-indigo, .theme-sky.dark, .dark .theme-sky, .theme-teal.dark, .dark .theme-teal, .theme-cyan.dark, .dark .theme-cyan, .theme-green.dark, .dark .theme-green, .theme-purple.dark, .dark .theme-purple, .theme-red.dark, .dark .theme-red) :is(.reference-highlighted, .reference-inline-highlighted) .reference {
+  background-color: rgb(15, 23, 42) !important;
+}
+
+:is(.theme-slate.dark, .dark .theme-slate, .theme-indigo.dark, .dark .theme-indigo, .theme-sky.dark, .dark .theme-sky, .theme-teal.dark, .dark .theme-teal, .theme-cyan.dark, .dark .theme-cyan, .theme-green.dark, .dark .theme-green, .theme-purple.dark, .dark .theme-purple, .theme-red.dark, .dark .theme-red) :is(.reference-highlighted, .reference-inline-highlighted) .reference.reference-inline-highlighted {
+  background-color: rgba(96, 165, 250, 0.10) !important;
+}
+
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) .reference-row-highlighted {
+  background-color: rgba(59, 130, 246, 0.05) !important;
+}
+
+:is(.theme-slate.dark, .dark .theme-slate, .theme-indigo.dark, .dark .theme-indigo, .theme-sky.dark, .dark .theme-sky, .theme-teal.dark, .dark .theme-teal, .theme-cyan.dark, .dark .theme-cyan, .theme-green.dark, .dark .theme-green, .theme-purple.dark, .dark .theme-purple, .theme-red.dark, .dark .theme-red) .reference-row-highlighted {
+  background-color: rgba(96, 165, 250, 0.07) !important;
+}
+
+
+
+/* Hide reference colors when no-colors mode is active */
+/* PERFORMANCE: Use body class to avoid touching thousands of individual elements */
+/* Must override Tailwind's arbitrary value syntax text-[var(--ref-X)] */
+/* Using multiple high-specificity selectors to ensure override */
+body.ww-hide-ref-colors .reference,
+body.ww-hide-ref-colors span.reference,
+body.ww-hide-ref-colors .reference[class*="text-"],
+body.ww-hide-ref-colors span.reference[class*="text-"] {
+  color: currentColor !important;
+}
+
+/* Dark mode variant */
+body.ww-hide-ref-colors.dark .reference,
+body.ww-hide-ref-colors.dark span.reference,
+body.dark.ww-hide-ref-colors .reference,
+body.dark.ww-hide-ref-colors span.reference {
+  color: currentColor !important;
+}
+
+/* Also handle nested spans within references */
+body.ww-hide-ref-colors .reference span,
+body.ww-hide-ref-colors span.reference span {
+  color: currentColor !important;
+}
+
+/* Extra specificity for Tailwind arbitrary values like text-[var(--ref-1)] */
+body.ww-hide-ref-colors *[class*="text-[var(--ref-"] {
+  color: currentColor !important;
+}
+
+/* Reference highlighting is now controlled separately via JavaScript localStorage */
+/* Colors and highlighting are independent toggles */
+
+/* Hide references/wijzigingen - hide the references section and inline markers when hidden */
+body.ww-hide-references .references-section {
+  display: none !important;
+}
+
+/* Hide inline reference markers like [1], [1 ...]1 when hidden */
+/* Only hides the marker numbers, not the text content inside */
+body.ww-hide-references .ref-marker {
+  display: none !important;
+}
+
+/* Hide modification markers like <Wijziging ...> when hidden */
+body.ww-hide-references .modification-marker {
+  display: none !important;
+}
+
+/* Hide domain tags like <W ...>, <KB ...>, <L ...> when hidden */
+body.ww-hide-references .domain-tag {
+  display: none !important;
+}
+
+/* Hide hyperlinks in article content when hidden - show text only */
+body.ww-hide-references .article-content a,
+body.ww-hide-references article a {
+  color: inherit !important;
+  text-decoration: none !important;
+  pointer-events: none !important;
+}
+
+/* Hide reference colors when references are hidden */
+body.ww-hide-references .reference,
+body.ww-hide-references span.reference,
+body.ww-hide-references [class*="text-[var(--ref-"] {
+  color: currentColor !important;
+}
+
+/* Also remove reference highlighting hover effects when hidden */
+body.ww-hide-references [data-controller="reference-highlight"] {
+  color: currentColor !important;
+}
+
+/* Hide domain tag styling when colors are hidden */
+body.ww-hide-ref-colors .domain-tag {
+  background-color: transparent !important;
+  color: currentColor !important;
+}
+
+/* Hide highlighting/markers when toggle is off */
+/* This hides the background highlighting on references */
+body.ww-hide-highlight .reference {
+  background-color: transparent !important;
+}
+
+body.ww-hide-highlight .ref-marker {
+  background-color: transparent !important;
+}
+
+body.ww-hide-highlight .modification-marker {
+  background-color: transparent !important;
+}
+
+body.ww-hide-highlight .domain-tag {
+  background-color: transparent !important;
+}
+
+/* Sidebar toggle button feedback - Fun themes (more prominent) */
+#toc-card-sidebar > button[data-sidebar-toggle-target="button"]:hover {
+  background-color: rgba(229, 231, 235, 0.5) !important; /* gray-200/50 */
+}
+
+#toc-card-sidebar > button[data-sidebar-toggle-target="button"]:active {
+  background-color: rgba(229, 231, 235, 0.8) !important; /* gray-200/80 */
+}
+
+.dark #toc-card-sidebar > button[data-sidebar-toggle-target="button"]:hover {
+  background-color: rgba(var(--accent-500-rgb), 0.12) !important;
+}
+
+.dark #toc-card-sidebar > button[data-sidebar-toggle-target="button"]:active {
+  background-color: rgba(var(--accent-500-rgb), 0.20) !important;
+}
+
+/* Professional themes - Extra subtle sidebar toggle feedback */
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) #toc-card-sidebar > button[data-sidebar-toggle-target="button"]:hover {
+  background-color: rgba(243, 244, 246, 0.3) !important;
+}
+
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) #toc-card-sidebar > button[data-sidebar-toggle-target="button"]:active {
+  background-color: rgba(229, 231, 235, 0.5) !important;
+}
+
+:is(.theme-slate.dark, .dark.theme-slate, .theme-indigo.dark, .dark.theme-indigo, .theme-sky.dark, .dark.theme-sky, .theme-teal.dark, .dark.theme-teal, .theme-cyan.dark, .dark.theme-cyan, .theme-green.dark, .dark.theme-green, .theme-purple.dark, .dark.theme-purple, .theme-red.dark, .dark.theme-red) #toc-card-sidebar > button[data-sidebar-toggle-target="button"]:hover {
+  background-color: rgba(var(--accent-500-rgb), 0.06) !important;
+}
+
+:is(.theme-slate.dark, .dark.theme-slate, .theme-indigo.dark, .dark.theme-indigo, .theme-sky.dark, .dark.theme-sky, .theme-teal.dark, .dark.theme-teal, .theme-cyan.dark, .dark.theme-cyan, .theme-green.dark, .dark.theme-green, .theme-purple.dark, .dark.theme-purple, .theme-red.dark, .dark.theme-red) #toc-card-sidebar > button[data-sidebar-toggle-target="button"]:active {
+  background-color: rgba(var(--accent-500-rgb), 0.12) !important;
+}
+
+.btn-toggle-active:hover {
+  filter: brightness(0.95);
+}
+
+/* Toggle Button Component - Inactive State (neutral) */
+.btn-toggle-inactive {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.btn-toggle-inactive:hover {
+  background-color: #e5e7eb;
+}
+
+.dark .btn-toggle-inactive {
+  background-color: #1f2937;
+  color: #9ca3af;
+}
+
+.dark .btn-toggle-inactive:hover {
+  background-color: #374151;
+}
+
+/* Toggle Button Component - Executive Decisions (theme-aware amber/accent) */
+.btn-toggle-exdecs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  background-color: rgba(251, 191, 36, 0.10);
+  color: #d97706;
+}
+
+.btn-toggle-exdecs:hover {
+  background-color: rgba(251, 191, 36, 0.20);
+  filter: none;
+}
+
+.dark .btn-toggle-exdecs {
+  background-color: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+}
+
+.dark .btn-toggle-exdecs:hover {
+  background-color: rgba(251, 191, 36, 0.25);
+  filter: none;
+}
+
+/* Executive Decision Section Component - Header badge */
+.badge-exdec-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 10px;
+  font-weight: 500;
+  background-color: rgba(251, 191, 36, 0.20);
+  color: #92400e;
+}
+
+.dark .badge-exdec-count {
+  background-color: rgba(251, 191, 36, 0.20);
+  color: #fbbf24;
+}
+
+/* Executive Decision Link Component - NUMAC links (theme-aware) */
+.link-exdec-numac {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: underline;
+  color: var(--accent-700);
+}
+
+.link-exdec-numac:hover {
+  color: var(--accent-800);
+}
+
+.dark .link-exdec-numac {
+  color: var(--accent-400);
+}
+
+.dark .link-exdec-numac:hover {
+  color: var(--accent-300);
+}

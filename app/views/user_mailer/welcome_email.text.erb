@@ -1,0 +1,5 @@
+<%= t('mailer.welcome.title', default: 'Welcome!') %>
+
+<%= t('mailer.welcome.greeting', name: @user.name || @user.email, default: "Hello #{@user.name || @user.email}") %>
+
+<%= t('mailer.welcome.body', default: 'Your account has been created. You can now use the chatbot with your free weekly credits.') %>

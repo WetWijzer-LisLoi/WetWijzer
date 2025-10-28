@@ -1,0 +1,26 @@
+<h2><%= t('mailer.unverified_warning.greeting', name: @user.name || @user.email) %></h2>
+
+<p><%= t('mailer.unverified_warning.body') %></p>
+
+<p style="text-align: center; margin: 30px 0;">
+  <a href="<%= @confirmation_url %>" class="button" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); background-color: #2563eb; color: #ffffff !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);"><%= t('mailer.unverified_warning.button') %></a>
+</p>
+
+<% if @warning_type == :final %>
+  <div class="warning-box" style="border-left-color: #dc2626; background-color: #fef2f2;">
+    <strong style="color: #dc2626;">⚠ <%= t('mailer.unverified_warning.deadline_final') %></strong>
+  </div>
+<% else %>
+  <div class="warning-box">
+    <strong><%= t('mailer.unverified_warning.deadline') %></strong>
+  </div>
+<% end %>
+
+<p><%= t('mailer.unverified_warning.consequence') %></p>
+
+<div class="info-box">
+  <p style="margin: 0; font-size: 13px;">
+    <%= t('mailer.unverified_warning.link_text') %>
+  </p>
+  <p style="margin: 4px 0 0; font-size: 12px; word-break: break-all;"><%= @confirmation_url %></p>
+</div>

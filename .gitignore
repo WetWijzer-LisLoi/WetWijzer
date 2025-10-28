@@ -1,0 +1,177 @@
+# BMad agent framework (local tooling, not shipped)
+.agent/
+_bmad/
+
+# Windows NUL device artifact
+NUL
+
+# Python bytecode
+__pycache__/
+**/__pycache__/
+*.pyc
+
+rerun.txt
+*.swp
+*.swo
+*.DS_Store
+.bundle
+db/*.sqlite3*
+/log/
+log/*.log
+log/*.log.*
+
+# Database files anywhere in the repository
+*.db
+*.db.gz
+*.db-shm
+*.db-wal
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+
+# Embedding generation artifacts (large files)
+embedding_output.log
+article_embeddings.db*
+
+# FAISS indexes and metadata (large binary files - deployed on server only)
+*.faiss
+*.npy
+*.xz
+
+# Specifically ignore any database files in lib/wetwijzer_updater
+lib/wetwijzer_updater/*.db
+lib/wetwijzer_updater/*.sqlite3
+lib/wetwijzer_updater/**/*.db
+
+# Large test/temp files
+*.zip
+test-export.zip
+justel_search_*.html
+.sass-cache/
+tmp/*
+public/tmp/*
+public/uploads
+public/packs/
+dump.rdb
+.byebug_history
+routes.txt
+.idea
+/public/packs
+/public/packs-test
+/public/assets
+/node_modules
+/coverage
+storage/**/*
+!storage/.keep
+yarn-error.log
+
+/public/packs
+/public/packs-test
+/node_modules
+/yarn-error.log
+yarn-debug.log*
+.yarn-integrity
+yarn.lock
+
+.env
+.env.*
+!.env.example
+faiss.env
+*.env.local
+
+# Credential and secret files
+docs/STAGING_TEST_CREDENTIALS.md
+docs/CHATBOT_ACCESS.md
+
+/app/assets/builds/*
+!/app/assets/builds/.keep
+
+# Vite Ruby
+# Commit production build outputs so server doesn't need Node.
+# Keep development/test outputs ignored.
+/public/vite-dev/
+/public/vite-test/
+# Source maps are large and unnecessary in the repo
+public/vite/**/*.map
+
+/config/master.key
+
+node_modules
+# Python virtual environment
+.venv/
+venv/
+# Vite uses dotenv and suggests to ignore local-only env files. See
+# https://vitejs.dev/guide/env-and-mode.html#env-files
+*.local
+
+# Docs: ignore everything except WetWijzer Python download scripts
+docs/**
+!docs/wetwijzer-python/
+docs/wetwijzer-python/**
+!docs/wetwijzer-python/*.py
+!docs/wetwijzer-python/requirements.txt
+!docs/wetwijzer-python/*.sh
+
+# Allow tracking the n-gram backfill runbook
+!docs/wetwijzer-python/WetWijzer N-gram Backfill Runbook.md
+
+# Allow test files but not test results
+!docs/wetwijzer-python/tests/
+!docs/wetwijzer-python/tests/**/*.py
+docs/wetwijzer-python/tests/**/__pycache__/
+docs/wetwijzer-python/tests/**/.pytest_cache/
+docs/wetwijzer-python/tests/**/*.pyc
+# Allow ops docs subtree (schedules, installers, runbooks)
+!docs/ops/
+!docs/ops/**
+
+# Allow security documentation
+!docs/SERVER_SECURITY.md
+!docs/FAIL2BAN_SETUP.md
+!docs/SSH_PORT_CHANGE.md
+!docs/SECURITY_AUDIT*.md
+
+# Allow scraper documentation
+!docs/scraper_version_history.md
+!docs/v087_*.md
+!docs/v0871_*.md
+
+# Allow payment & billing docs
+!docs/CRYPTO_PAYMENTS.md
+!docs/walkthrough.md
+!docs/index.md
+!docs/archive/
+!docs/archive/CRYPTO_PAYMENTS_BTCPAY_PLAN.md
+/vendor/
+.vscode/
+
+# Exclude development/comparison scripts from root (contain server IPs, test data)
+*.sh
+*.ps1
+!deploy.ps1
+*.py
+*.bat
+!bin/**
+!lib/**
+!test/**
+!.github/**
+# Re-ignore pycache inside allowed dirs
+lib/**/__pycache__/
+lib/**/*.pyc
+*.md
+!README.md
+!CONTRIBUTING.md
+!LICENSE.md
+!DEPLOYMENT.md
+!.github/**/*.md
+*.logdocs/CHATBOT_ACCESS.md
+lib/wetwijzer_updater/text_embedding_3_large.db
+config/credentials.yml.enc
+config/master.key
+lib/wetwijzer_updater/gdrive_token.json
+lib/wetwijzer_updater/gdrive_credentials.json
+
+# Legal pages containing personal company data (KBO address, VAT, etc.)
+app/views/legal_pages/privacy_*.html.erb
+app/views/legal_pages/terms_*.html.erb
+app/views/legal_pages/imprint_*.html.erb

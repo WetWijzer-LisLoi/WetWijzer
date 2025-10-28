@@ -1,0 +1,257 @@
+<%= content_for :title, t('credits.title') %>
+
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
+    <%= render 'layouts/account_sidebar' %>
+    
+    <main class="flex-1 min-w-0">
+      <div class="max-w-4xl mx-auto px-4 py-8">
+        <% if flash[:error] %>
+          <div class="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 flex items-center gap-3">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+            <span class="text-sm font-medium"><%= flash[:error] %></span>
+          </div>
+        <% end %>
+        <% if flash[:notice] || flash[:success] %>
+          <div class="mb-6 p-4 rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 flex items-center gap-3">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span class="text-sm font-medium"><%= flash[:notice] || flash[:success] %></span>
+          </div>
+        <% end %>
+
+        <%# ==================== CREDIT BALANCE BREAKDOWN ==================== %>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                <%= t('credits.your_balance') %>
+              </h1>
+              <p class="text-gray-600 dark:text-gray-400 mt-1">
+                <%= t('credits.balance_description') %>
+              </p>
+            </div>
+            <div class="text-right">
+              <div class="text-4xl font-bold text-(--accent-600) dark:text-(--accent-400)">
+                <%= @total_credits %>
+              </div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">
+                <%= t('credits.credits_label') %>
+              </div>
+            </div>
+          </div>
+
+          <%# Credit pool breakdown %>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <%# Weekly free credits %>
+            <div class="rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50">
+              <div class="flex items-center gap-2 mb-1">
+                <svg class="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 capitalize tracking-wide">
+                  <%= case I18n.locale when :fr then 'Gratuits hebdo' when :de then 'Gratis wöchentlich' when :en then 'Free weekly' else 'Gratis per week' end %>
+                </span>
+              </div>
+              <div class="text-2xl font-bold text-gray-900 dark:text-white"><%= @weekly_credits %><span class="text-sm font-normal text-gray-500">/<%= User::WEEKLY_FREE_CREDITS %></span></div>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <%= case I18n.locale when :fr then 'Rechargés chaque semaine' when :de then 'Wöchentlich aufgeladen' when :en then 'Replenished weekly' else 'Wekelijks aangevuld' end %>
+              </p>
+              <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                * <%= case I18n.locale when :fr then 'Uniquement ⚡ Intelligent' when :de then 'Nur mit ⚡ Klug' when :en then 'Only usable with ⚡ Smart' else 'Alleen ⚡ Slim' end %>
+              </p>
+            </div>
+
+            <%# Pro monthly credits %>
+            <div class="rounded-lg p-4 <%= @is_pro ? 'bg-amber-50 dark:bg-amber-900/20 ring-1 ring-amber-200 dark:ring-amber-800' : 'bg-gray-50 dark:bg-gray-700/50 opacity-60' %>">
+              <div class="flex items-center gap-2 mb-1">
+                <svg class="w-4 h-4 <%= @is_pro ? 'text-amber-500' : 'text-gray-400' %> shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1z"/></svg>
+                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 capitalize tracking-wide">
+                  Pro <%= case I18n.locale when :fr then 'mensuel' when :de then 'monatlich' when :en then 'monthly' else 'maandelijks' end %>
+                </span>
+              </div>
+              <% if @is_pro %>
+                <div class="text-2xl font-bold text-gray-900 dark:text-white"><%= @pro_credits %><span class="text-sm font-normal text-gray-500">/<%= User::PRO_MONTHLY_CREDITS %></span></div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <%= case I18n.locale when :fr then "Rechargés chaque mois à la date de facturation · ne s'accumulent pas" when :de then 'Monatlich am Abrechnungsdatum aufgeladen · nicht kumulierbar' when :en then 'Replenished monthly on your billing date · do not accumulate' else 'Elke maand aangevuld op uw facturatiedatum · niet cumuleerbaar' end %>
+                </p>
+              <% else %>
+                <div class="text-2xl font-bold text-gray-400 dark:text-gray-500">—</div>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  <%= link_to (case I18n.locale when :fr then 'Passez à Pro' when :de then 'Upgrade auf Pro' when :en then 'Upgrade to Pro' else 'Upgrade naar Pro' end), subscription_path, class: 'text-(--accent-600) dark:text-(--accent-400) underline hover:no-underline font-medium' %>
+                </p>
+              <% end %>
+            </div>
+
+            <%# Purchased credits (permanent) %>
+            <div class="rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-200 dark:ring-blue-800">
+              <div class="flex items-center gap-2 mb-1">
+                <svg class="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 capitalize tracking-wide">
+                  <%= case I18n.locale when :fr then 'Achetés' when :de then 'Gekauft' when :en then 'Purchased' else 'Gekocht' end %>
+                </span>
+              </div>
+              <div class="text-2xl font-bold text-gray-900 dark:text-white"><%= @current_credits %></div>
+              <p class="text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium">
+                ✓ <%= case I18n.locale when :fr then "Permanents · n'expirent jamais" when :de then 'Permanent · verfallen nie' when :en then 'Permanent · never expire' else 'Permanent · vervallen nooit' end %>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <%# ==================== CREDIT PACKAGES ==================== %>
+        <div class="mb-8">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+              <%= t('credits.buy_credits') %>
+            </div>
+          <p class="text-gray-600 dark:text-gray-400 mb-1">
+            <%= t('credits.buy_description', default: 'Kies een creditpakket om uw saldo op te waarderen.') %>
+          </p>
+          <p class="text-xs text-blue-600 dark:text-blue-400 mb-4 font-medium">
+            ✓ <%= case I18n.locale when :fr then "Les crédits achetés sont permanents et n'expirent jamais." when :de then 'Gekaufte Credits sind permanent und verfallen nie.' when :en then 'Purchased credits are permanent and never expire.' else 'Gekochte credits zijn permanent en vervallen nooit.' end %>
+          </p>
+
+          <div class="space-y-4" data-controller="purchase-consent">
+            <% @packages.each do |package| %>
+              <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                <div class="p-6 flex items-center justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3">
+                      <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+                        <%= package[:name] %>
+                      </h3>
+                      <% if package[:id] == 'medium' %>
+                        <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-(--accent-100,#dbeafe) text-(--accent-700) dark:bg-(--accent-900,#1e3a5f) dark:text-(--accent-400)">
+                          <%= t('credits.popular', default: 'Populair') %>
+                        </span>
+                      <% end %>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">
+                      <%= package[:description] %>
+                    </p>
+                    
+                    <ul class="mt-3 flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                      <li class="flex items-center gap-1">
+                        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <%= t('credits.package_credits', count: package[:credits]) %>
+                      </li>
+                      <li class="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                        <%= case I18n.locale when :fr then 'Permanents' when :de then 'Permanent' when :en then 'Permanent' else 'Permanent' end %>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div class="flex items-center gap-6 ml-6">
+                    <div class="text-right">
+                      <% if package[:has_pro_discount] %>
+                        <span class="text-sm text-gray-400 line-through mr-1"><%= package[:price_display] %></span>
+                        <span class="text-3xl font-bold text-green-600 dark:text-green-400">
+                          <%= package[:effective_price_display] %>
+                        </span>
+                        <div class="mt-0.5">
+                          <span class="px-1.5 py-0.5 text-xs font-semibold rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                            Pro
+                          </span>
+                        </div>
+                      <% else %>
+                        <span class="text-3xl font-bold text-gray-900 dark:text-white">
+                          <%= package[:price_display] %>
+                        </span>
+                      <% end %>
+                    </div>
+                    
+                    <div class="relative purchase-btn-wrap group">
+                      <%= button_to credits_purchase_path(package: package[:id]), 
+                          method: :post,
+                          data: { purchase_consent_target: 'button', turbo: false },
+                          class: "px-6 py-3 rounded-lg font-medium transition-colors bg-gray-300 text-gray-500 dark:bg-gray-600 dark:text-gray-400 cursor-not-allowed whitespace-nowrap purchase-btn" do %>
+                        <%= t('credits.buy_now') %>
+                      <% end %>
+                      <div class="consent-tooltip hidden absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg whitespace-nowrap z-10">
+                        <%= t('credits.agree_first', default: 'Vink eerst het vakje hieronder aan') %>
+                        <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+
+            <!-- Consent Checkbox -->
+            <div class="mt-4 px-4">
+              <label class="flex items-start gap-3 cursor-pointer select-none">
+                <input type="checkbox" 
+                       id="withdrawal_consent"
+                       data-purchase-consent-target="checkbox"
+                       data-action="change->purchase-consent#toggle"
+                       class="mt-0.5 h-4 w-4 shrink-0">
+                <span class="text-sm text-gray-700 dark:text-gray-300">
+                  <%= case I18n.locale
+                    when :fr then "J'accepte que le contenu numérique (crédits) soit livré immédiatement après le paiement et je renonce expressément à mon droit de rétractation de 14 jours."
+                    when :de then 'Ich stimme zu, dass der digitale Inhalt (Credits) sofort nach der Zahlung geliefert wird, und verzichte ausdrücklich auf mein 14-tägiges Widerrufsrecht.'
+                    when :en then 'I agree that the digital content (credits) will be delivered immediately after payment and I expressly waive my 14-day right of withdrawal.'
+                    else 'Ik ga akkoord dat de digitale inhoud (credits) onmiddellijk na betaling wordt geleverd en ik doe uitdrukkelijk afstand van mijn herroepingsrecht van 14 dagen.'
+                  end %>
+                  <%= link_to (case I18n.locale when :fr then 'Conditions Générales' when :de then 'Allgemeine Geschäftsbedingungen' when :en then 'Terms & Conditions' else 'Algemene Voorwaarden' end), terms_of_service_path, class: 'text-(--accent-600) dark:text-(--accent-400) underline hover:no-underline font-medium' %>.
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <%# ==================== PURCHASE HISTORY ==================== %>
+        <% if @credit_purchases.any? %>
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
+              <%= t('credits.purchase_history') %>
+            </h2>
+            
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
+                    <th class="pb-3"><%= t('credits.table_date') %></th>
+                    <th class="pb-3"><%= t('credits.table_package') %></th>
+                    <th class="pb-3"><%= t('credits.table_credits') %></th>
+                    <th class="pb-3"><%= t('credits.table_amount') %></th>
+                    <th class="pb-3"><%= t('credits.table_status') %></th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y dark:divide-gray-700">
+                  <% @credit_purchases.each do |purchase| %>
+                    <tr>
+                      <td class="py-3 text-gray-900 dark:text-white">
+                        <%= l(purchase.created_at, format: :short) %>
+                      </td>
+                      <td class="py-3 text-gray-900 dark:text-white">
+                        <%= t("credits.packages.#{purchase.package}.name") %>
+                      </td>
+                      <td class="py-3 text-gray-900 dark:text-white">
+                        <%= purchase.credits_granted %>
+                      </td>
+                      <td class="py-3 text-gray-900 dark:text-white">
+                        €<%= purchase.price_euros %>
+                      </td>
+                      <td class="py-3">
+                        <% status_class = case purchase.status
+                             when 'completed' then 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                             when 'pending' then 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                             when 'failed' then 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                             else 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                           end %>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium <%= status_class %>">
+                          <%= t("credits.status.#{purchase.status}") %>
+                        </span>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </main>
+  </div>
+</div>

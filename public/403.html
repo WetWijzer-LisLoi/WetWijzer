@@ -1,0 +1,183 @@
+﻿<!doctype html>
+<html lang="nl">
+  <head>
+    <title>Toegang geweigerd — WetWijzer</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, width=device-width">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="/favicon.ico">
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      * { margin: 0; }
+
+      body {
+        background: #0b1120;
+        color: #c8d6e5;
+        display: grid;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        min-height: 100vh;
+        place-items: center;
+        padding: 2rem;
+      }
+
+      .container {
+        max-width: 540px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .logo {
+        margin-bottom: 2rem;
+      }
+      .logo a {
+        color: #38bdf8;
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        text-decoration: none;
+      }
+      .logo a:hover { color: #7dd3fc; }
+      .logo span { color: #64748b; font-weight: 400; }
+
+      .card {
+        background: rgba(30, 41, 59, 0.6);
+        border: none;
+        border-radius: 1rem;
+        padding: 2.5rem 2rem;
+        backdrop-filter: blur(8px);
+      }
+
+      .status-wrap {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 1.5rem;
+      }
+      .status {
+        font-size: 3.5rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        color: #ef4444;
+        line-height: 1;
+      }
+
+      .lang-block {
+        padding: 1rem 0;
+        border-bottom: none;
+      }
+      .lang-block:last-of-type { border-bottom: none; }
+
+      .lang-label {
+        display: inline-block;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #38bdf8;
+        background: rgba(56, 189, 248, 0.1);
+        padding: 0.15em 0.6em;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+      }
+
+      .lang-block h2 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #f1f5f9;
+        margin-bottom: 0.35rem;
+      }
+
+      .lang-block p {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        line-height: 1.5;
+      }
+
+      .actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 2rem;
+      }
+
+      .actions a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35em;
+        font-size: 0.85rem;
+        padding: 0.6em 1.4em;
+        border-radius: 0.5em;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.15s ease;
+      }
+
+      .btn-primary {
+        background: #38bdf8;
+        color: #0b1120;
+      }
+      .btn-primary:hover { background: #7dd3fc; }
+
+      .btn-secondary {
+        background: rgba(148, 163, 184, 0.12);
+        color: #94a3b8;
+        border: none;
+      }
+      .btn-secondary:hover {
+        background: rgba(148, 163, 184, 0.22);
+        color: #e2e8f0;
+      }
+
+      .footer {
+        margin-top: 1.5rem;
+        font-size: 0.7rem;
+        color: #475569;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="logo">
+        <a href="/">WetWijzer</a>
+      </div>
+
+      <div class="card">
+        <div class="status-wrap">
+          <div class="status">403</div>
+        </div>
+
+        <div class="lang-block">
+          <span class="lang-label">NL</span>
+          <h2>Toegang geweigerd</h2>
+          <p>Je hebt geen toestemming om deze pagina te bekijken. Als je denkt dat dit een fout is, neem dan contact met ons op.</p>
+        </div>
+
+        <div class="lang-block">
+          <span class="lang-label">FR</span>
+          <h2>Accès refusé</h2>
+          <p>Vous n'avez pas la permission d'accéder à cette page. Si vous pensez qu'il s'agit d'une erreur, veuillez nous contacter.</p>
+        </div>
+
+        <div class="lang-block">
+          <span class="lang-label">DE</span>
+          <h2>Zugriff verweigert</h2>
+          <p>Sie haben keine Berechtigung, diese Seite anzuzeigen. Wenn Sie glauben, dass dies ein Fehler ist, kontaktieren Sie uns bitte.</p>
+        </div>
+
+        <div class="lang-block">
+          <span class="lang-label">EN</span>
+          <h2>Access denied</h2>
+          <p>You do not have permission to view this page. If you believe this is an error, please contact us.</p>
+        </div>
+
+        <div class="actions">
+          <a href="/" class="btn-primary">&larr; Home</a>
+          <a href="mailto:info@wetwijzer.be" class="btn-secondary">Contact</a>
+        </div>
+      </div>
+
+      <div class="footer">WetWijzer &mdash; Open-source zoekmachine voor Belgische wetgeving en rechtspraak</div>
+    </div>
+  </body>
+</html>

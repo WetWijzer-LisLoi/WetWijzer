@@ -1,0 +1,662 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<% content_for :head do %>
+<style>
+  .ai-security-hero {
+    background: linear-gradient(135deg, #0d1b2a 0%, #1b2838 50%, #0a1628 100%);
+    border-radius: 12px;
+    padding: 40px 30px;
+    margin: 0 0 35px 0;
+    text-align: center;
+    color: #e0e7ef;
+    position: relative;
+    overflow: hidden;
+  }
+  .ai-security-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 30% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 50%, rgba(16, 185, 129, 0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .ai-security-hero .shield-icon {
+    font-size: 3.5rem;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .ai-security-hero h2 {
+    color: #f0f4f8 !important;
+    border: none !important;
+    margin: 0 0 10px 0 !important;
+    font-size: 1.6rem !important;
+    font-weight: 700;
+    padding: 0 !important;
+  }
+  .ai-security-hero p {
+    color: #94a3b8;
+    font-size: 1rem;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  .security-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 20px 0 30px 0;
+  }
+  .security-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    background: #fafbfc;
+    transition: box-shadow 0.2s;
+  }
+  .security-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .security-card .card-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .security-card h4 {
+    margin: 0 0 6px 0 !important;
+    font-size: 0.95rem !important;
+    color: var(--tw-prose-headings, #1e293b) !important;
+  }
+  .security-card p {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.4;
+  }
+  .pledge-box {
+    background: #ecfdf5;
+    border: 2px solid #10b981;
+    border-radius: 10px;
+    padding: 24px;
+    margin: 25px 0;
+  }
+  .pledge-box h3 {
+    color: #065f46 !important;
+    margin-top: 0 !important;
+    font-size: 1.15rem !important;
+  }
+  .pledge-box ul { margin-bottom: 0; }
+  .pledge-box li { margin: 6px 0; }
+  .cert-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 15px 0;
+  }
+  .cert-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #334155;
+  }
+  .flow-diagram {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 24px;
+    margin: 20px 0;
+    text-align: center;
+  }
+  .flow-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: #334155;
+  }
+  .flow-step {
+    background: #e0f2fe;
+    border: 1px solid #7dd3fc;
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-align: center;
+    min-width: 90px;
+  }
+  .flow-step .step-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+  .flow-arrow { color: #94a3b8; font-size: 1.2rem; }
+  .dark .ai-security-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  }
+  .dark .security-card {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  .dark .security-card h4 { color: #e2e8f0 !important; }
+  .dark .security-card p { color: #94a3b8; }
+  .dark .pledge-box {
+    background: #064e3b;
+    border-color: #10b981;
+    color: #d1fae5;
+  }
+  .dark .pledge-box h3 { color: #6ee7b7 !important; }
+  .dark .cert-badge {
+    background: #1e293b;
+    border-color: #475569;
+    color: #cbd5e1;
+  }
+  .dark .flow-diagram { background: #1e293b; border-color: #334155; }
+  .dark .flow-step { background: #1e3a5f; border-color: #3b82f6; color: #e2e8f0; }
+  .dark .flow-steps { color: #e2e8f0; }
+  .dark .flow-arrow { color: #64748b; }
+</style>
+<% end %>
+
+<div class="legal-page">
+<h1>AI-beveiliging &amp; privacy</h1>
+    <p class="last-updated">Laatst bijgewerkt: 9 juni 2026</p>
+
+    <!-- HERO -->
+    <div class="ai-security-hero">
+        <span class="shield-icon">🛡️</span>
+        <h2>Uw juridische vragen blijven privé</h2>
+        <p>Wanneer u WetWijzer een juridische vraag stelt, wordt uw gesprek beschermd door zero-knowledge encryptie, EU-dataresidentie en een strikt no-training-beleid. Uw opgeslagen gesprekken worden versleuteld in uw browser vóórdat ze onze server bereiken — wij bewaren enkel onleesbare cijfertekst.</p>
+    </div>
+
+    <!-- IN ÉÉN OOGOPSLAG -->
+    <h2>In één oogopslag</h2>
+    <div class="security-grid">
+        <div class="security-card">
+            <span class="card-icon">🔒</span>
+            <h4>Zero-knowledge encryptie</h4>
+            <p>Opgeslagen gesprekken worden versleuteld in uw browser (AES-256-GCM) vóór verzending — onze server ontvangt enkel onleesbare cijfertekst</p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">🔐</span>
+            <h4>TLS 1.2+ tijdens transport</h4>
+            <p>Elk bericht reist via versleutelde kanalen — niemand kan uw vragen onderscheppen</p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">🇪🇺</span>
+            <h4>Uitsluitend EU-verwerking</h4>
+            <p>Alle AI-verwerking vindt uitsluitend plaats binnen de EU — Frankrijk, Zweden en Duitsland</p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">🚫</span>
+            <h4>Nul training</h4>
+            <p>Geen van onze AI-providers gebruikt uw prompts of antwoorden om AI-modellen te trainen, hertrainen of verbeteren</p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">🗂️</span>
+            <h4>Opslaan is optioneel</h4>
+            <p>Anonieme sessies worden niet bewaard. Ingelogde gebruikers kunnen gesprekken opslaan — altijd zero-knowledge versleuteld met uw eigen sleutel</p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">👤</span>
+            <h4>Wiskundig onleesbaar</h4>
+            <p>Onze server bezit uw encryptiesleutel niet — zelfs bij een datalek of gerechtelijk bevel zijn uw gesprekken wiskundig onleesbaar</p>
+        </div>
+    </div>
+
+    <!-- BELOFTE -->
+    <div class="pledge-box">
+        <h3>🤝 Onze privacybelofte</h3>
+        <ul>
+            <li><strong>Wij kunnen uw opgeslagen gesprekken niet lezen</strong> — ze worden versleuteld in uw browser met een sleutel die wij niet bezitten (zero-knowledge AES-256-GCM)</li>
+            <li><strong>Wij loggen uw vraagtekst niet</strong> — enkel anonieme metadata (taal, responstijd, creditkosten) wordt opgeslagen; een afgekapte SHA-256-hash* dient uitsluitend voor foutopsporing</li>
+            <li><strong>Wij verkopen uw gegevens nooit</strong> — niet aan adverteerders, niet aan datahandelaren, aan niemand</li>
+            <li><strong>Wij delen uw gegevens nooit</strong> — uw vragen worden uitsluitend naar uw geselecteerde AI-provider gestuurd voor verwerking, verder niets</li>
+            <li><strong>Wij profileren u nooit</strong> — wij bouwen geen gedragsprofielen, interessegrafieken of marketingsegmenten</li>
+            <li><strong>Elke toegang wordt gelogd</strong> — een append-only audit trail registreert elke poging om gespreksgegevens te benaderen buiten normale werking</li>
+        </ul>
+        <p style="font-size: 0.82rem; color: #065f46; margin: 12px 0 0 0;">* <strong>Wat is een hash?</strong> Een hash is een wiskundige eenrichtingsvingerafdruk. Vergelijk het met het bakken van een taart: u kunt bloem, eieren en suiker omzetten in een taart, maar u kunt een taart niet terugveranderen in bloem, eieren en suiker. Op dezelfde manier zet een hashfunctie uw vraag om in een vaste tekenreeks (bv. <code>a3f8c1e9b2d4</code>), maar het is <strong>wiskundig onmogelijk</strong> om uw oorspronkelijke vraag uit die tekenreeks te reconstrueren — zelfs niet met onbeperkte rekenkracht. Wij slaan enkel deze onomkeerbare vingerafdruk op.</p>
+    </div>
+
+    <!-- HOE UW VRAAG REIST -->
+    <h2>1. Hoe uw vraag reist</h2>
+    <p>Wanneer u een juridische vraag typt en op "Verzenden" drukt, maakt uw bericht de volgende exacte reis:</p>
+
+    <div class="flow-diagram">
+        <div class="flow-steps">
+            <div class="flow-step"><span class="step-icon">💻</span>Uw browser</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step"><span class="step-icon">🔐</span>TLS 1.3</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step"><span class="step-icon">🇩🇪</span>Onze server<br><small>(Hetzner, Duitsland)</small></div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step"><span class="step-icon">🔐</span>TLS 1.2+</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step"><span class="step-icon">🇪🇺</span>AI-Provider<br><small>(Frankrijk / Zweden / Duitsland)</small></div>
+        </div>
+        <p style="margin-top: 15px; font-size: 0.85rem; color: #64748b;">Uw vraag is bij elke stap versleuteld. Het antwoord keert terug via hetzelfde versleutelde kanaal.</p>
+    </div>
+
+    <h3>Stap voor stap:</h3>
+    <ol>
+        <li><strong>Uw browser → Onze server:</strong> Uw vraag wordt versleuteld met <strong>TLS 1.3</strong> (de nieuwste standaard). Dit betekent dat zelfs uw internetprovider niet kan zien wat u hebt getypt.</li>
+        <li><strong>Onze server:</strong> Wij matchen uw vraag met onze lokale wetgevingsdatabase om relevante artikelen te vinden. Wij loggen <em>alleen metadata</em> (taal, creditkosten, reactietijd) — <strong>nooit de vraagtekst</strong>.</li>
+        <li><strong>Onze server → AI-Provider:</strong> Uw vraag plus de relevante wetsartikelen worden naar de geselecteerde AI-provider gestuurd (Mistral AI in Frankrijk, Azure OpenAI in Zweden, of AWS Bedrock in Duitsland) via een <strong>TLS 1.2+</strong> versleutelde verbinding. Elke verbinding gebruikt API-sleutelauthenticatie — geïsoleerd van andere klanten.</li>
+        <li><strong>De AI-provider verwerkt uw vraag:</strong> Het AI-model genereert een antwoord. Uw gegevens worden in rust versleuteld met <strong>AES-256</strong>. Na verwerking bewaren geen van onze providers uw prompts of antwoorden voor trainingsdoeleinden.</li>
+        <li><strong>Het antwoord keert terug:</strong> Het AI-antwoord reist via hetzelfde versleutelde pad terug naar uw browser.</li>
+    </ol>
+
+    <!-- WAT ONZE AI-PROVIDERS GARANDEREN -->
+    <h2>2. Wat onze AI-providers garanderen</h2>
+    <p>Wij gebruiken <strong>drie enterprise-grade AI-providers</strong>, die alle gegevens uitsluitend binnen de EU verwerken. Geen van hen gebruikt consumenten-API's — dit maakt een enorm verschil voor uw privacy:</p>
+
+    <h3>2.1 Uw gegevens worden nooit gebruikt voor training</h3>
+    <p>Alle drie de providers garanderen contractueel dat uw gegevens nooit worden gebruikt voor modeltraining:</p>
+    <div class="highlight">
+        <p><strong>Microsoft Azure OpenAI (Zweden):</strong> "Your prompts (inputs), completions (outputs), embeddings, and training data are NOT available to other customers, NOT available to OpenAI, NOT used to improve OpenAI models, NOT used to train, retrain, or improve any Microsoft or third-party foundation models."</p>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 0;">— <a href="https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy" target="_blank" rel="noopener">Microsoft Azure OpenAI Data, Privacy, and Security Documentation</a></p>
+    </div>
+    <div class="highlight" style="margin-top: 15px;">
+        <p><strong>Mistral AI (Frankrijk):</strong> Mistral AI is een Frans bedrijf dat onderworpen is aan EU-wetgeving. Onder hun API-servicevoorwaarden worden gegevens die via hun API worden ingediend niet gebruikt voor training of verbetering van hun modellen.</p>
+    </div>
+    <div class="highlight" style="margin-top: 15px;">
+        <p><strong>Amazon Web Services Bedrock (Duitsland):</strong> AWS Bedrock garandeert dat klantgegevens niet worden gebruikt om foundation-modellen te trainen of te verbeteren. Uw gegevens blijven binnen de eu-central-1 (Frankfurt) regio.</p>
+    </div>
+    <p>Deze garanties worden ondersteund door juridisch bindende <strong>Gegevensverwerkingsovereenkomsten (DPA's)</strong> met elke provider, afdwingbaar onder EU-wetgeving.</p>
+
+    <h3>2.2 Encryptiestandaarden</h3>
+    <table>
+        <tr>
+            <th>Beschermingslaag</th>
+            <th>Standaard</th>
+            <th>Wat het betekent</th>
+        </tr>
+        <tr>
+            <td><strong>Zero-knowledge encryptie</strong></td>
+            <td>AES-256-GCM (Web Crypto API)</td>
+            <td>Opgeslagen gesprekken worden in uw browser versleuteld v&oacute;&oacute;r verzending. Onze server ontvangt en bewaart uitsluitend onleesbare cijfertekst &mdash; zonder de sleutel om deze te ontcijferen</td>
+        </tr>
+        <tr>
+            <td><strong>Encryptie tijdens transport</strong></td>
+            <td>TLS 1.2 of hoger</td>
+            <td>Alle gegevens tussen onze server en elke AI-provider zijn versleuteld in het communicatiekanaal &mdash; onmogelijk te onderscheppen</td>
+        </tr>
+        <tr>
+            <td><strong>Encryptie in rust (AI-provider)</strong></td>
+            <td>AES-256 (FIPS 140-2)</td>
+            <td>Alle tijdelijke gegevens bij AI-provider-infrastructuur worden versleuteld met 256-bit AES &mdash; dezelfde standaard die wereldwijd door overheden en banken wordt gebruikt</td>
+        </tr>
+        <tr>
+            <td><strong>Sleutelbeheer</strong></td>
+            <td>Client-side PBKDF2 + AES-GCM</td>
+            <td>Uw encryptiesleutel wordt afgeleid van uw wachtwoord via 600.000 PBKDF2-iteraties. De sleutel verlaat nooit uw browser &mdash; wij bewaren enkel een met uw wachtwoord versleutelde versie van de hoofdsleutel</td>
+        </tr>
+        <tr>
+            <td><strong>Netwerkisolatie</strong></td>
+            <td>Regionale uitrollen</td>
+            <td>Alle AI-instanties zijn uitgerold in EU-regio's &mdash; Mistral AI in Frankrijk, Azure OpenAI in Sweden Central en AWS Bedrock in Frankfurt, Duitsland</td>
+        </tr>
+    </table>
+
+    <h3>2.3 Misbruikmonitoring</h3>
+    <p>Azure OpenAI voert standaard geautomatiseerde inhoudsveiligheidsmonitoring uit. Dit betekent:</p>
+    <ul>
+        <li>Prompts en antwoorden <em>kunnen</em> tijdelijk worden opgeslagen (tot 30 dagen) voor geautomatiseerde misbruikdetectie</li>
+        <li>Deze opslag is <strong>versleuteld</strong> en <strong>logisch geïsoleerd</strong> van andere klanten</li>
+        <li>Menselijke beoordeling vindt alleen plaats wanneer geautomatiseerde systemen potentiële beleidsschendingen signaleren</li>
+        <li>Deze gegevens worden <strong>nooit gebruikt voor modeltraining</strong></li>
+    </ul>
+    <p>Mistral AI en AWS Bedrock hebben vergelijkbare inhoudsveiligheidsmechanismen, alle werkend onder EU-gegevensbeschermingswetgeving.</p>
+    <div class="legal-notice">
+        <p><strong>Transparantienota:</strong> Wij zijn transparant over dit providergedrag. Voor de meeste juridische vragen is dit volkomen irrelevant — inhoudsveiligheidsfilters zijn ontworpen om schadelijke inhoud te detecteren (geweld, illegale activiteiten), niet juridische onderzoeksvragen. Uw vraag over arbeidsrecht of huurrecht zal nooit worden gesignaleerd.</p>
+    </div>
+
+    <h3>2.4 EU-Dataresidentie</h3>
+    <p>Alle drie de AI-providers verwerken gegevens uitsluitend binnen de Europese Unie:</p>
+    <ul>
+        <li><strong>Mistral AI:</strong> Opereert vanuit Frankrijk — een Europees bedrijf onderworpen aan Frans en EU-recht</li>
+        <li><strong>Azure OpenAI:</strong> Regionale uitrol in Sweden Central — de strengste dataresidentie-optie die Azure biedt. Wij gebruiken <strong>geen</strong> "Global Standard" of "Global Provisioned" uitrollen</li>
+        <li><strong>AWS Bedrock:</strong> Uitgerold in eu-central-1 (Frankfurt, Duitsland) — gegevens verlaten de EU-regio nooit</li>
+        <li>Alle drie de landen (Frankrijk, Zweden, Duitsland) zijn EU-lidstaten en onderworpen aan de AVG</li>
+    </ul>
+
+    <!-- COMPLIANCE -->
+    <h2>3. Certificeringen &amp; compliance</h2>
+    <p>Onze AI-providers erven uitgebreide complianceportfolio's van hun respectieve platforms:</p>
+
+    <div class="cert-badges">
+        <span class="cert-badge">✅ ISO 27001</span>
+        <span class="cert-badge">✅ ISO 27017</span>
+        <span class="cert-badge">✅ ISO 27018</span>
+        <span class="cert-badge">✅ SOC 2 Type II</span>
+        <span class="cert-badge">✅ AVG</span>
+        <span class="cert-badge">✅ HIPAA</span>
+        <span class="cert-badge">✅ CSA STAR</span>
+    </div>
+
+    <table>
+        <tr>
+            <th>Certificering</th>
+            <th>Wat het dekt</th>
+        </tr>
+        <tr>
+            <td><strong>ISO/IEC 27001</strong></td>
+            <td>Internationale standaard voor informatiebeveiligingsbeheersystemen (ISMS) — omvat beleid, procedures en controles</td>
+        </tr>
+        <tr>
+            <td><strong>ISO/IEC 27017</strong></td>
+            <td>Cloudspecifieke beveiligingscontroles — extra waarborgen specifiek ontworpen voor cloudomgevingen</td>
+        </tr>
+        <tr>
+            <td><strong>ISO/IEC 27018</strong></td>
+            <td>Bescherming van persoonsgegevens in de cloud — de internationale gedragscode voor cloudprivacy</td>
+        </tr>
+        <tr>
+            <td><strong>SOC 2 Type II</strong></td>
+            <td>Onafhankelijke audit door derden die verifieert dat beveiliging, beschikbaarheid, vertrouwelijkheid en privacycontroles effectief zijn over tijd</td>
+        </tr>
+        <tr>
+            <td><strong>AVG</strong></td>
+            <td>Volledige naleving van de Algemene Verordening Gegevensbescherming van de EU, ondersteund door Microsofts Data Protection Addendum</td>
+        </tr>
+    </table>
+    <p class="small">Microsoft-certificeringen worden onafhankelijk geauditeerd en zijn publiek verifieerbaar via het <a href="https://servicetrust.microsoft.com/" target="_blank" rel="noopener">Microsoft Service Trust Portal</a>. AWS-certificeringen zijn beschikbaar via het <a href="https://aws.amazon.com/compliance/" target="_blank" rel="noopener">AWS Compliance Center</a>.</p>
+
+    <!-- WAT WIJ OPSLAAN -->
+    <h2>4. Wat wij opslaan (en wat niet)</h2>
+
+    <h3>4.1 Wat wij opslaan</h3>
+    <table>
+        <tr>
+            <th>Gegeven</th>
+            <th>Voorbeeld</th>
+            <th>Duur</th>
+            <th>Doel</th>
+        </tr>
+        <tr>
+            <td>Gekozen taal</td>
+            <td>NL / FR / EN / DE</td>
+            <td>Onbeperkt (geanonimiseerd)</td>
+            <td>Dienststatistieken</td>
+        </tr>
+        <tr>
+            <td>Gekozen juridisch domein</td>
+            <td>"Wetgeving" / "Rechtspraak"</td>
+            <td>Onbeperkt (geanonimiseerd)</td>
+            <td>Dienstoptimalisatie</td>
+        </tr>
+        <tr>
+            <td>Gekozen intelligentieniveau</td>
+            <td>⚡ Smart / 🏆 Mastermind</td>
+            <td>Onbeperkt (geanonimiseerd)</td>
+            <td>Capaciteitsplanning</td>
+        </tr>
+        <tr>
+            <td>Afgeschreven credits</td>
+            <td>1, 4, 6–8 of 10</td>
+            <td>Levensduur account</td>
+            <td>Facturatie</td>
+        </tr>
+        <tr>
+            <td>Reactietijd</td>
+            <td>2,3 seconden</td>
+            <td>Onbeperkt (geanonimiseerd)</td>
+            <td>Prestatiemonitoring</td>
+        </tr>
+        <tr>
+            <td>Gesprekscontext</td>
+            <td>Venster voor vervolgvragen</td>
+            <td><strong>Sessieduur</strong></td>
+            <td>Vervolgvragen mogelijk maken</td>
+        </tr>
+    </table>
+
+    <h3>4.2 Wat wij NIET opslaan</h3>
+    <div class="highlight--success">
+        <p><strong>Hoe het in de praktijk werkt:</strong> Wanneer u een vraag stelt, genereert onze server een <strong>eenrichtings-SHA-256-hash</strong> (afgekapt tot 12 tekens) van uw vraagtekst — uitsluitend voor logcorrelatie en foutopsporing. Deze hash is <strong>wiskundig onomkeerbaar</strong>: het is onmogelijk om uw oorspronkelijke vraag hieruit te reconstrueren, zelfs niet met onbeperkte rekenkracht of tijd. De ruwe vraagtekst wordt slechts in het servergeheugen bewaard totdat deze naar de AI-provider is verzonden en wordt daarna onmiddellijk gewist. Uw IP-adres wordt eveneens gehasht met SHA-256 plus een server-side geheim zout (salt), waardoor het even onomkeerbaar is.</p>
+        <p style="font-size: 0.85rem; margin-top: 8px;"><strong>Analogie:</strong> Hashen is als het bakken van een taart — u kunt ingrediënten omzetten in een taart, maar u kunt een taart niet terugveranderen in de afzonderlijke ingrediënten. Zelfs als twee personen exact dezelfde vraag stellen, voegen wij unieke elementen (zout) toe zodat de resulterende hashes verschillend zijn, waardoor patroonanalyse onmogelijk is.</p>
+    </div>
+    <table>
+        <tr>
+            <th>Gegeven</th>
+            <th>Opgeslagen?</th>
+            <th>Hoe</th>
+        </tr>
+        <tr>
+            <td><strong>Uw vraagtekst</strong></td>
+            <td>❌ Nooit</td>
+            <td>Enkel een afgekapte SHA-256-hash (12 tekens) wordt gelogd — de oorspronkelijke tekst kan niet worden hersteld</td>
+        </tr>
+        <tr>
+            <td><strong>Het AI-antwoord</strong></td>
+            <td>❌ Nooit</td>
+            <td>Enkel tokenaantallen (invoer/uitvoer) worden geregistreerd voor facturatie — geen antwoordinhoud</td>
+        </tr>
+        <tr>
+            <td><strong>Geraadpleegde bronartikelen</strong></td>
+            <td>❌ Nooit</td>
+            <td>Enkel het aantal bronnen wordt gelogd (bv. "3 bronnen"), niet welke artikelen</td>
+        </tr>
+        <tr>
+            <td><strong>Uw IP-adres</strong></td>
+            <td>❌ Nooit in leesbare tekst</td>
+            <td>Opgeslagen als een gezouten SHA-256-hash — onomkeerbaar, kan niet naar u worden herleid</td>
+        </tr>
+        <tr>
+            <td><strong>Gespreksgeschiedenis</strong></td>
+            <td>🔒 Zero-knowledge versleuteld</td>
+            <td>Voor niet-ingelogde bezoekers: leeft alleen in het werkgeheugen van uw browser &mdash; verdwijnt zodra u de pagina verlaat. Er wordt <strong>geen localStorage of sessionStorage</strong> gebruikt. Voor ingelogde gebruikers: zero-knowledge versleuteld opgeslagen (AES-256-GCM) &mdash; wij kunnen de inhoud niet ontcijferen</td>
+        </tr>
+    </table>
+    <p class="small">* Uitzondering: wanneer u op "Melden" (🚩) klikt bij een chatbot-antwoord, worden uw vraag en het antwoord doorgestuurd naar de beheerder voor kwaliteitscontrole. Dit wordt duidelijk aangegeven in de interface vóórdat u bevestigt.</p>
+
+    <!-- ONZE EIGEN INFRASTRUCTUUR -->
+    <h2>5. Onze eigen serverbeveiliging</h2>
+    <p>Uw gegevens zijn niet alleen veilig bij onze AI-providers — onze eigen infrastructuur is ook versterkt:</p>
+    <table>
+        <tr>
+            <th>Maatregel</th>
+            <th>Implementatie</th>
+        </tr>
+        <tr>
+            <td><strong>Serverlocatie</strong></td>
+            <td>Hetzner, Duitsland (EU) — ISO 27001-gecertificeerd datacenter</td>
+        </tr>
+        <tr>
+            <td><strong>Overal HTTPS</strong></td>
+            <td>TLS 1.3 met HSTS (HTTP Strict Transport Security) — browsers weigeren onversleutelde verbindingen</td>
+        </tr>
+        <tr>
+            <td><strong>Wachtwoordopslag</strong></td>
+            <td>bcrypt met zout — zelfs bij een datalek kunnen wachtwoorden niet worden omgekeerd</td>
+        </tr>
+        <tr>
+            <td><strong>2FA-geheimen</strong></td>
+            <td>AES-256-versleuteld in de database</td>
+        </tr>
+        <tr>
+            <td><strong>Beveiligingsheaders</strong></td>
+            <td>CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy</td>
+        </tr>
+        <tr>
+            <td><strong>Snelheidsbeperking</strong></td>
+            <td>Brute-force-bescherming — account wordt vergrendeld na 5 mislukte inlogpogingen</td>
+        </tr>
+        <tr>
+            <td><strong>IP-anonimisering</strong></td>
+            <td>IP-adressen opgeslagen als SHA-256-hashes (niet omkeerbaar)</td>
+        </tr>
+        <tr>
+            <td><strong>Analyse</strong></td>
+            <td>Zelf gehoste Umami — geen Google Analytics, geen cookies, geen tracking</td>
+        </tr>
+    </table>
+
+    <!-- DATASTROOM-OVERZICHT -->
+    <h2>6. Volledig datastroom-overzicht</h2>
+    <table>
+        <tr>
+            <th>Van</th>
+            <th>Naar</th>
+            <th>Verzonden gegevens</th>
+            <th>Encryptie</th>
+            <th>Bewaartermijn</th>
+        </tr>
+        <tr>
+            <td>Uw browser</td>
+            <td>Onze server (Duitsland)</td>
+            <td>Uw vraag</td>
+            <td>TLS 1.3</td>
+            <td>Max. 24u (alleen context)</td>
+        </tr>
+        <tr>
+            <td>Onze server</td>
+            <td>AI-Provider (Frankrijk / Zweden / Duitsland)</td>
+            <td>Vraag + relevante artikelen</td>
+            <td>TLS 1.2+</td>
+            <td>Niet bewaard voor training</td>
+        </tr>
+        <tr>
+            <td>AI-Provider</td>
+            <td>Onze server</td>
+            <td>AI-antwoord</td>
+            <td>TLS 1.2+</td>
+            <td>Niet bewaard</td>
+        </tr>
+        <tr>
+            <td>Onze server</td>
+            <td>Uw browser</td>
+            <td>AI-antwoord + bronverwijzingen</td>
+            <td>TLS 1.3</td>
+            <td>Alleen in het werkgeheugen van de browser (verdwijnt bij het verlaten van de pagina). Geen localStorage.</td>
+        </tr>
+    </table>
+
+    <!-- VERGELIJKING -->
+    <h2>7. Hoe wij ons onderscheiden</h2>
+    <p>In tegenstelling tot consumenten-AI-chatbots gebruikt WetWijzer enterprise-grade AI-providers met strikte EU-dataresidentie:</p>
+    <table>
+        <tr>
+            <th>Functie</th>
+            <th>Consumenten ChatGPT</th>
+            <th>WetWijzer (Multi-Provider)</th>
+        </tr>
+        <tr>
+            <td>Gebruikt uw gegevens voor training</td>
+            <td>Ja (tenzij afgemeld)</td>
+            <td><strong>Nooit</strong></td>
+        </tr>
+        <tr>
+            <td>Gegevens gedeeld met OpenAI</td>
+            <td>Ja</td>
+            <td><strong>Nee — volledig geïsoleerd per provider</strong></td>
+        </tr>
+        <tr>
+            <td>Gegevens verlaten de EU</td>
+            <td>Ja (VS-servers)</td>
+            <td><strong>Nee — alleen EU (Frankrijk, Zweden, Duitsland)</strong></td>
+        </tr>
+        <tr>
+            <td>Enterprise DPA (juridisch bindend)</td>
+            <td>Niet voor gratis tier</td>
+            <td><strong>Ja — DPA met elke provider</strong></td>
+        </tr>
+        <tr>
+            <td>ISO 27001 / SOC 2-gecertificeerd</td>
+            <td>Varieert</td>
+            <td><strong>Ja — onafhankelijk geauditeerd</strong></td>
+        </tr>
+        <tr>
+            <td>Beheerder kan uw vragen lezen</td>
+            <td>Hangt af van aanbieder</td>
+            <td><strong>Nee &mdash; opgeslagen gesprekken zijn zero-knowledge versleuteld; vraagtekst wordt nooit in platte tekst opgeslagen</strong></td>
+        </tr>
+    </table>
+
+    <!-- WAARSCHUWING -->
+    <h2>8. Een noot van gezond verstand</h2>
+    <div class="warning">
+        <p><strong>⚠️ Ondanks al deze beschermingen raden wij aan:</strong></p>
+        <ul>
+            <li>Deel geen persoonlijke identificatiedocumenten (ID-nummers, rijksregisternummers) in chatbotgesprekken</li>
+            <li>Deel geen vertrouwelijke bedrijfsgegevens of handelsgeheimen</li>
+            <li>De chatbot biedt <strong>informatieve begeleiding</strong>, geen juridisch advies — raadpleeg altijd een gekwalificeerd advocaat voor belangrijke juridische beslissingen</li>
+        </ul>
+    </div>
+
+    <h3>8.1 Tor-, VPN- &amp; proxygebruikers</h3>
+    <div class="warning">
+        <p><strong>🧅 Belangrijke mededeling voor Tor Browser-, VPN- en proxygebruikers:</strong></p>
+        <p>WetWijzer is ontworpen voor <strong>gebruikers binnen de EU</strong>. Als uw verbinding afkomstig lijkt van <strong>buiten de EU</strong>, wordt u gevraagd een eenmalige beveiligingscontrole (<a href="/privacy-policy#section-10-3">ALTCHA proof-of-work</a>) te voltooien alvorens het platform te betreden.</p>
+    </div>
+    <p>Dit is van toepassing als u het volgende gebruikt:</p>
+    <ul>
+        <li><strong>Tor Browser:</strong> Tor-exitnodes bevinden zich bijna altijd buiten de EU (meestal in de VS, Canada of Azië). Onze server ziet het IP-adres van de exitnode, niet het uwe — waardoor het eruitziet als een bezoek van buiten de EU.</li>
+        <li><strong>VPN-diensten:</strong> Als uw VPN-exitserver zich buiten de EU/EER/Zwitserland/VK bevindt, triggert u dezelfde geobeveiligingscontrole.</li>
+        <li><strong>Bedrijfsproxies:</strong> Sommige bedrijfsproxyketens routeren verkeer via niet-EU-gateways.</li>
+    </ul>
+    <h4>Wat dit in de praktijk betekent:</h4>
+    <table>
+        <tr>
+            <th>Scenario</th>
+            <th>Geocontrole?</th>
+            <th>Kunt u de chatbot gebruiken?</th>
+        </tr>
+        <tr>
+            <td>Gewone browser, EU IP-adres</td>
+            <td>❌ Geen controle nodig</td>
+            <td>✅ Ja, onmiddellijk</td>
+        </tr>
+        <tr>
+            <td>VPN met EU-exit (bv. Nederland, Duitsland)</td>
+            <td>❌ Geen controle nodig</td>
+            <td>✅ Ja</td>
+        </tr>
+        <tr>
+            <td>VPN met niet-EU-exit (bv. VS, Singapore)</td>
+            <td>✅ Eenmalige ALTCHA-uitdaging</td>
+            <td>✅ Ja, na verificatie</td>
+        </tr>
+        <tr>
+            <td>Tor Browser (willekeurige exitnode)</td>
+            <td>✅ ALTCHA-uitdaging (waarschijnlijk)</td>
+            <td>✅ Ja, na verificatie</td>
+        </tr>
+    </table>
+    <div class="legal-notice">
+        <p><strong>Privacynota voor Tor-gebruikers:</strong> Wij respecteren uw recht om anoniem te browsen. De geobeveiligingscontrole de-anonimiseert u niet — het verifieert alleen dat u een mens bent via een proof-of-work-uitdaging die volledig op onze eigen server draait. Er worden geen gegevens naar derden gestuurd. Wees u er echter van bewust dat bij gebruik van Tor uw verkeer verloopt via een <strong>relay-node van derden</strong> die u niet controleert. Hoewel TLS-encryptie de inhoud van uw chatbotvragen beschermt tegen de exitnode-operator, kan de exitnode zien welke website u bezoekt (wetwijzer.be). Dit is een eigenschap van Tor zelf, niet van ons platform.</p>
+    </div>
+    <p><strong>Aanbeveling:</strong> Als u een VPN gebruikt voor privacy en de geocontrole volledig wilt vermijden, selecteer dan een <strong>EU-gebaseerde exitserver</strong> (bv. Nederland, Duitsland, Frankrijk, Zweden). Dit zorgt er ook voor dat uw verbinding met onze server binnen de EU-netwerkbackbone blijft.</p>
+
+    <h3>8.2 Klassieke versie (zonder JavaScript)</h3>
+    <p>Voor gebruikers die maximale privacy verkiezen of JavaScript volledig uitschakelen (gebruikelijk bij het "Veiligste" beveiligingsniveau van Tor), biedt WetWijzer een <strong>Klassieke versie</strong> die werkt met <strong>nul JavaScript en minimale CSS</strong>:</p>
+    <ul>
+        <li><strong>Geen JavaScript vereist</strong> — de volledige wetgevingszoek-, blader- en leeservaring werkt met pure HTML en server-side rendering</li>
+        <li><strong>Geen cookies</strong> — de klassieke versie plaatst geen enkele cookie</li>
+        <li><strong>Geen tracking</strong> — geen analysescripts, geen externe bronnen, geen verbindingen met derden</li>
+        <li><strong>Bereikbaar via footerlink</strong> — elke pagina op WetWijzer bevat een "Classic (zonder JavaScript)"-link in de footer, of u kunt rechtstreeks navigeren naar <code>classic.wetwijzer.be</code></li>
+    </ul>
+    <div class="legal-notice">
+        <p><strong>Opmerking:</strong> De AI-chatbotfunctie vereist wel JavaScript, aangezien deze afhankelijk is van real-time streamingantwoorden. De klassieke versie biedt volledige toegang tot alle wetgeving, parlementaire documenten en rechtspraak — alleen de chatbot is niet beschikbaar zonder JavaScript.</p>
+    </div>
+
+    <!-- VERDER LEZEN -->
+    <h2>9. Verder lezen</h2>
+    <ul>
+        <li><a href="/privacy-policy">WetWijzer Privacybeleid</a> — ons uitgebreid AVG-conform privacybeleid</li>
+        <li><a href="https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy" target="_blank" rel="noopener">Azure OpenAI Data, Privacy, and Security</a> — officiële documentatie van Microsoft</li>
+        <li><a href="https://mistral.ai/terms/#terms-of-service" target="_blank" rel="noopener">Mistral AI Servicevoorwaarden</a> — gegevensverwerkingsafspraken van Mistral</li>
+        <li><a href="https://aws.amazon.com/bedrock/security-compliance/" target="_blank" rel="noopener">AWS Bedrock Security & Compliance</a> — beveiligingsdocumentatie van Amazon</li>
+        <li><a href="https://servicetrust.microsoft.com/" target="_blank" rel="noopener">Microsoft Service Trust Portal</a> — compliancecertificeringen verifiëren</li>
+        <li><a href="https://www.microsoft.com/licensing/docs/view/Microsoft-Products-and-Services-Data-Protection-Addendum-DPA" target="_blank" rel="noopener">Microsoft Data Protection Addendum (DPA)</a> — het juridisch bindend gegevensbeschermingscontract</li>
+    </ul>
+
+    <div class="legal-notice">
+        <p><strong>Vragen over onze AI-beveiliging?</strong></p>
+        <p>Neem contact met ons op via <a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a> — wij lichten graag elk aspect van onze beveiligingsarchitectuur toe.</p>
+    </div>
+</div>

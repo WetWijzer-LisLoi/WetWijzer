@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="<%= I18n.locale %>">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= @title %></title>
+    <meta name="description" content="<%= @meta_description || t(:meta_description) %>" />
+    <meta name="robots" content="noindex, nofollow" />
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <style>
+      /* ═══════════════════════════════════════════════════════
+         Classic WetWijzer — minimal CSS, CSP-compliant JS
+         Inspired by the original 2025 alpha design
+         ═══════════════════════════════════════════════════════ */
+
+      /* ── Reset ── */
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      /* ── Typography & base ── */
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.6;
+        color: #1a1a1a;
+        background: #fff;
+        font-size: 15px;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: #1a56db; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+
+      /* ── Layout ── */
+      .classic-container { max-width: 1060px; margin: 0 auto; padding: 0 20px; }
+
+      /* ── Header ── */
+      .classic-header {
+        border-bottom: 1px solid #e5e7eb;
+        padding: 14px 0;
+      }
+      .classic-header-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .classic-logo {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a1a1a;
+        text-decoration: none;
+        letter-spacing: -0.3px;
+      }
+      .classic-logo:hover { text-decoration: none; color: #1a56db; }
+      .classic-logo-icon { width: 24px; height: 24px; flex-shrink: 0; }
+      .classic-nav { display: flex; gap: 20px; font-size: 14px; align-items: center; }
+      .classic-nav a { color: #6b7280; }
+      .classic-nav a:hover { color: #1a56db; }
+      .classic-lang-sep { color: #d1d5db; }
+
+      /* ── Language toggle pills ── */
+      .classic-lang-toggle {
+        display: inline-flex;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        overflow: hidden;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .classic-lang-toggle a {
+        display: inline-block;
+        padding: 4px 10px;
+        color: #6b7280;
+        text-decoration: none;
+        transition: background .15s, color .15s;
+        border-right: 1px solid #d1d5db;
+      }
+      .classic-lang-toggle a:last-child { border-right: none; }
+      .classic-lang-toggle a:hover { background: #f0f4ff; color: #1a56db; text-decoration: none; }
+      .classic-lang-toggle a.active {
+        background: #1a56db;
+        color: #fff;
+      }
+
+      /* ── Theme toggle ── */
+      .classic-theme-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: #f9fafb;
+        cursor: pointer;
+        color: #6b7280;
+        transition: background .15s, color .15s, border-color .15s;
+      }
+      .classic-theme-btn:hover { background: #e5e7eb; color: #1a56db; border-color: #1a56db; }
+      .classic-theme-btn svg { width: 16px; height: 16px; }
+      .classic-theme-btn .icon-sun { display: none; }
+      .classic-theme-btn .icon-moon { display: block; }
+      .classic-badge {
+        display: inline-block;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: capitalize;
+        letter-spacing: 1px;
+        padding: 1px 5px;
+        border-radius: 3px;
+        background: #f3f4f6;
+        color: #9ca3af;
+        vertical-align: middle;
+        margin-left: 4px;
+      }
+
+      /* ── Hero / Title ── */
+      .classic-hero {
+        text-align: center;
+        padding: 28px 0 8px;
+      }
+      .classic-hero p {
+        font-size: 15px;
+        color: #4b5563;
+        max-width: 680px;
+        margin: 0 auto;
+        line-height: 1.7;
+      }
+      .classic-hero p a { color: #1a56db; }
+
+      /* ── Search ── */
+      .classic-search {
+        max-width: 680px;
+        margin: 24px auto 0;
+        display: flex;
+        gap: 8px;
+      }
+      .classic-search input[type="search"],
+      .classic-search input[type="text"] {
+        flex: 1;
+        padding: 10px 14px;
+        font-size: 15px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: #fff;
+        outline: none;
+        color: #1a1a1a;
+      }
+      .classic-search input::placeholder { color: #9ca3af; }
+      .classic-search input:focus { border-color: #1a56db; box-shadow: 0 0 0 2px rgba(26,86,219,.12); }
+      .classic-search button {
+        padding: 10px 24px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #fff;
+        background: #1a56db;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .classic-search button:hover { background: #1648b8; }
+
+      /* ── Type filter checkboxes ── */
+      .classic-filters {
+        max-width: 680px;
+        margin: 12px auto 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+      }
+      .classic-filters label {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 14px;
+        color: #374151;
+        cursor: pointer;
+        user-select: none;
+      }
+      .classic-filters input[type="checkbox"] {
+        accent-color: #1a56db;
+        width: 15px;
+        height: 15px;
+      }
+
+      /* ── Results meta ── */
+      .classic-meta { font-size: 13px; color: #6b7280; margin-bottom: 8px; }
+      .classic-meta span { margin-right: 16px; }
+
+      /* ── Tables ── */
+      .classic-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+      .classic-table th {
+        text-align: left;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: capitalize;
+        letter-spacing: 0.5px;
+        color: #6b7280;
+        padding: 8px 12px;
+        border-bottom: 2px solid #e5e7eb;
+      }
+      .classic-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 14px;
+        vertical-align: top;
+      }
+      .classic-table tr:hover td { background: #f8fafc; }
+      .classic-table .date-col { white-space: nowrap; width: 100px; color: #6b7280; font-size: 13px; }
+      .classic-table .link-col { white-space: nowrap; width: 60px; text-align: center; }
+      .classic-table .link-col a { font-size: 13px; color: #1a56db; }
+      .classic-table th a { color: inherit; text-decoration: none; }
+      .classic-table th a:hover { color: #1a56db; text-decoration: none; }
+
+      /* ── Cards / content ── */
+      .classic-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 16px;
+      }
+      .classic-card h2 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: #111;
+      }
+
+      /* ── Articles ── */
+      .classic-article {
+        padding: 12px 0;
+        border-top: 1px solid #f3f4f6;
+      }
+      .classic-article:first-child { border-top: none; }
+      .classic-article-number {
+        font-weight: 700;
+        color: #374151;
+        margin-bottom: 4px;
+      }
+      .classic-article-content { color: #1a1a1a; line-height: 1.7; text-align: justify; }
+      .classic-article-content p { margin-bottom: 12px; }
+      .classic-article-content br + br { display: block; content: ""; margin-top: 12px; }
+
+      /* ── Section headings in law text ── */
+      .classic-section-heading {
+        font-size: 15px;
+        font-weight: 700;
+        text-transform: capitalize;
+        color: #374151;
+        padding: 16px 0 8px;
+        margin-top: 8px;
+        border-top: 2px solid #e5e7eb;
+      }
+      .classic-section-heading:first-child { border-top: none; margin-top: 0; }
+
+      /* ── Pagination ── */
+      .classic-pagination {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+        margin: 24px 0;
+        flex-wrap: wrap;
+      }
+      .classic-pagination a, .classic-pagination span {
+        display: inline-block;
+        padding: 6px 12px;
+        font-size: 14px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        color: #374151;
+        background: #fff;
+      }
+      .classic-pagination a:hover { background: #f0f4ff; border-color: #1a56db; text-decoration: none; }
+      .classic-pagination .current {
+        background: #1a56db;
+        color: #fff;
+        border-color: #1a56db;
+        font-weight: 600;
+      }
+      .classic-pagination .disabled { color: #d1d5db; cursor: default; background: #f3f4f6; border-color: #e5e7eb; opacity: 0.6; }
+
+      /* ── Footer ── */
+      .classic-footer {
+        margin-top: 48px;
+        padding: 16px 0;
+        border-top: 1px solid #e5e7eb;
+        font-size: 13px;
+        color: #9ca3af;
+        text-align: center;
+      }
+      .classic-footer a { color: #9ca3af; }
+      .classic-footer a:hover { color: #1a56db; }
+      .classic-footer-links { margin-top: 6px; }
+
+      /* ── Responsive ── */
+      @media (max-width: 640px) {
+        .classic-header-inner { flex-direction: column; align-items: flex-start; }
+        .classic-search { flex-direction: column; }
+        .classic-hero h1 { font-size: 26px; }
+        .classic-hero { padding: 32px 0 16px; }
+        .classic-table th:nth-child(n+3), .classic-table td:nth-child(n+3) { display: none; }
+      }
+
+      /* ═══════════════════════════════════════════════════════
+         Dark mode — class-based (toggled by JS, with OS fallback)
+         ═══════════════════════════════════════════════════════ */
+      html.dark body { background: #111827; color: #e5e7eb; }
+      html.dark a { color: #60a5fa; }
+      html.dark .classic-header { background: #1f2937; border-color: #374151; }
+      html.dark .classic-logo { color: #f9fafb; }
+      html.dark .classic-nav a { color: #9ca3af; }
+      html.dark .classic-lang-sep { color: #4b5563; }
+      html.dark .classic-badge { background: #374151; color: #9ca3af; }
+      html.dark .classic-lang-toggle { border-color: #4b5563; }
+      html.dark .classic-lang-toggle a { color: #9ca3af; border-color: #4b5563; }
+      html.dark .classic-lang-toggle a:hover { background: #1e3a5f; color: #60a5fa; }
+      html.dark .classic-lang-toggle a.active { background: #2563eb; color: #fff; }
+      html.dark .classic-hero h1 { color: #f9fafb; }
+      html.dark .classic-hero p { color: #9ca3af; }
+      html.dark .classic-search input { background: #1f2937; border-color: #4b5563; color: #e5e7eb; }
+      html.dark .classic-search input::placeholder { color: #6b7280; }
+      html.dark .classic-search input:focus { border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96,165,250,.15); }
+      html.dark .classic-search button { background: #2563eb; }
+      html.dark .classic-search button:hover { background: #3b82f6; }
+      html.dark .classic-filters label { color: #d1d5db; }
+      html.dark .classic-filters input[type="checkbox"] { accent-color: #60a5fa; }
+      html.dark .classic-meta { color: #9ca3af; }
+      html.dark .classic-table th { background: #1f2937; border-color: #374151; color: #9ca3af; }
+      html.dark .classic-table td { border-color: #1f2937; color: #d1d5db; }
+      html.dark .classic-table tr:hover td { background: #1e3a5f; }
+      html.dark .classic-table .link-col a { color: #60a5fa; }
+      html.dark .classic-table th a { color: #9ca3af; }
+      html.dark .classic-table th a:hover { color: #60a5fa; }
+      html.dark .classic-card { background: #1f2937; border-color: #374151; }
+      html.dark .classic-card h2 { color: #f9fafb; }
+      html.dark .classic-article { border-color: #374151; }
+      html.dark .classic-article-number { color: #d1d5db; }
+      html.dark .classic-article-content { color: #e5e7eb; }
+      html.dark .classic-section-heading { border-color: #374151; color: #d1d5db; }
+      html.dark .classic-pagination a, html.dark .classic-pagination span { background: #1f2937; border-color: #4b5563; color: #d1d5db; }
+      html.dark .classic-pagination a:hover { background: #1e3a5f; }
+      html.dark .classic-pagination .current { background: #2563eb; border-color: #2563eb; }
+      html.dark .classic-pagination .disabled { background: #111827; border-color: #374151; color: #4b5563; opacity: 0.5; }
+      html.dark .classic-footer { border-color: #374151; }
+      html.dark .classic-theme-btn { background: #374151; border-color: #4b5563; color: #d1d5db; }
+      html.dark .classic-theme-btn:hover { background: #4b5563; color: #60a5fa; border-color: #60a5fa; }
+      html.dark .classic-theme-btn .icon-sun { display: block; }
+      html.dark .classic-theme-btn .icon-moon { display: none; }
+      html.dark .classic-logo-icon .shield-bg { fill: url(#shieldGradientDark); }
+    </style>
+    <script nonce="<%= content_security_policy_nonce %>">
+      // Apply dark mode from saved preference or OS preference
+      (function(){
+        var saved = null;
+        try { saved = localStorage.getItem('classic-dark-mode'); } catch(e) {}
+        if (saved === 'true' || (saved === null && window.matchMedia('(prefers-color-scheme:dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <%# Classic header — logo + language pills + nav + theme toggle %>
+    <header class="classic-header">
+      <div class="classic-container classic-header-inner">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <a href="<%= root_path %>" class="classic-logo">
+            <svg class="classic-logo-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" style="stop-color:#1E3A8A" />
+                  <stop offset="100%" style="stop-color:#0F172A" />
+                </linearGradient>
+                <linearGradient id="shieldGradientDark" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" style="stop-color:#3B82F6" />
+                  <stop offset="100%" style="stop-color:#1E3A8A" />
+                </linearGradient>
+                <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:#3B82F6" />
+                  <stop offset="100%" style="stop-color:#60A5FA" />
+                </linearGradient>
+              </defs>
+              <path class="shield-bg" d="M16 2 L28 7 L28 14 C28 22 22 28 16 30 C10 28 4 22 4 14 L4 7 Z" fill="url(#shieldGradient)" stroke="#1E3A8A" stroke-width="0.5"/>
+              <rect x="6" y="6.5" width="20" height="1.5" rx="0.75" fill="url(#accentGrad)" opacity="0.8"/>
+              <text x="16" y="21" font-family="Georgia,serif" font-size="13" font-weight="700" text-anchor="middle" fill="#fff" letter-spacing="0.5" opacity="0.95">WW</text>
+            </svg>
+            <%= t(:app_title) %><span class="classic-badge">classic</span>
+          </a>
+
+          <%# Language toggle pills — use classic.* subdomains matching main site %>
+          <div class="classic-lang-toggle">
+            <a href="https://classic.wetwijzer.be<%= request.path %>" class="<%= 'active' if I18n.locale == :nl %>">NL</a>
+            <a href="https://classic.lisloi.be<%= request.path %>" class="<%= 'active' if I18n.locale == :fr %>">FR</a>
+            <a href="https://classic.gesetzguide.be<%= request.path %>" class="<%= 'active' if I18n.locale == :de %>">DE</a>
+            <a href="https://classic.lexlibera.be<%= request.path %>" class="<%= 'active' if I18n.locale == :en %>">EN</a>
+          </div>
+        </div>
+        <nav class="classic-nav">
+          <a href="<%= laws_path %>"><%= t('nav.legislation') %></a>
+          <% if defined?(parliamentary_work_path) %>
+            <a href="<%= parliamentary_work_path %>"><%= t('nav.parliamentary') %></a>
+          <% end %>
+          <a href="<%= "https://#{request.host.sub('classic.', '')}" %>" title="<%= t('classic.switch_modern') %>">⚡ Modern</a>
+          <button type="button" class="classic-theme-btn" id="classic-theme-toggle" aria-label="<%= t('theme.toggle_dark_mode', default: 'Toggle dark mode') %>">
+            <svg class="icon-moon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            <svg class="icon-sun" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M12 6a6 6 0 100 12 6 6 0 000-12z"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="classic-container">
+      <%= yield %>
+    </main>
+
+    <footer class="classic-footer">
+      <div class="classic-container">
+        <%= t('footer.tagline') %> ·
+        <a href="mailto:<%= contact_email %>"><%= contact_email %></a>
+        <div class="classic-footer-links">
+          <a href="<%= terms_of_service_path %>"><%= t('footer.terms') %></a> ·
+          <a href="<%= privacy_policy_path %>"><%= t('footer.privacy') %></a> ·
+          <a href="<%= about_path %>"><%= t('footer.about') %></a> ·
+          <a href="<%= accessibility_statement_path %>"><%= t('footer.accessibility') %></a> ·
+          <a href="<%= "https://#{request.host.sub('classic.', '')}" %>">⚡ <%= t('classic.switch_modern') %></a>
+        </div>
+      </div>
+    </footer>
+    <script nonce="<%= content_security_policy_nonce %>">
+      // Toggle dark mode — persists to localStorage
+      (function(){
+        var btn = document.getElementById('classic-theme-toggle');
+        if (!btn) return;
+        btn.addEventListener('click', function(){
+          var isDark = document.documentElement.classList.toggle('dark');
+          try { localStorage.setItem('classic-dark-mode', isDark ? 'true' : 'false'); } catch(e) {}
+        });
+      })();
+    </script>
+  </body>
+</html>

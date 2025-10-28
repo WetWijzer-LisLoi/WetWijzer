@@ -1,0 +1,105 @@
+<% name = @user.name.presence || @user.email %>
+<% case @locale
+   when :fr then %>
+Cher/Chère <%= name %>,
+
+Veuillez trouver ci-joint votre facture de <%= @site_name %>.
+<% when :de then %>
+Sehr geehrte/r <%= name %>,
+
+Anbei erhalten Sie Ihre Rechnung von <%= @site_name %>.
+<% when :en then %>
+Dear <%= name %>,
+
+Please find attached your invoice from <%= @site_name %>.
+<% else %>
+Beste <%= name %>,
+
+Hierbij ontvangt u uw factuur van <%= @site_name %>.
+<% end %>
+
+<% case @locale
+   when :fr then %>
+  Numéro de facture: <%= @invoice_number %>
+  Montant: € <%= sprintf('%.2f', @total).gsub('.', ',') %>
+  Communication structurée: <%= @invoice.ogm %>
+  Date: <%= @invoice.created_at.strftime('%d/%m/%Y') %>
+<% when :de then %>
+  Rechnungsnummer: <%= @invoice_number %>
+  Betrag: € <%= sprintf('%.2f', @total).gsub('.', ',') %>
+  Strukturierte Mitteilung: <%= @invoice.ogm %>
+  Datum: <%= @invoice.created_at.strftime('%d/%m/%Y') %>
+<% when :en then %>
+  Invoice number: <%= @invoice_number %>
+  Amount: € <%= sprintf('%.2f', @total).gsub('.', ',') %>
+  Structured communication: <%= @invoice.ogm %>
+  Date: <%= @invoice.created_at.strftime('%d/%m/%Y') %>
+<% else %>
+  Factuurnummer: <%= @invoice_number %>
+  Bedrag: € <%= sprintf('%.2f', @total).gsub('.', ',') %>
+  OGM: <%= @invoice.ogm %>
+  Datum: <%= @invoice.created_at.strftime('%d/%m/%Y') %>
+<% end %>
+
+<% case @locale
+   when :fr then %>
+La facture est jointe en PDF.
+<% when :de then %>
+Die Rechnung ist als PDF beigefügt.
+<% when :en then %>
+The invoice is attached as a PDF.
+<% else %>
+De factuur is bijgevoegd als PDF.
+<% end %>
+<% if @is_b2b && @invoice.xml_exists? %>
+<% case @locale
+   when :fr then %>
+La facture électronique (UBL/XML) pour PEPPOL est également jointe.
+<% when :de then %>
+Die elektronische Rechnung (UBL/XML) für PEPPOL ist ebenfalls beigefügt.
+<% when :en then %>
+The electronic invoice (UBL/XML) for PEPPOL is also attached.
+<% else %>
+De elektronische factuur (UBL/XML) voor PEPPOL is eveneens bijgevoegd.
+<% end %>
+<% end %>
+<% if @peppol_sent %>
+<% case @locale
+   when :fr then %>
+✅ Cette facture a également été envoyée via PEPPOL.
+<% when :de then %>
+✅ Diese Rechnung wurde auch über PEPPOL gesendet.
+<% when :en then %>
+✅ This invoice was also sent via PEPPOL.
+<% else %>
+✅ Deze factuur is ook verzonden via PEPPOL.
+<% end %>
+<% end %>
+
+<% case @locale
+   when :fr then %>
+Cordialement,
+L'équipe <%= @site_name %>
+<% when :de then %>
+Mit freundlichen Grüßen,
+Team <%= @site_name %>
+<% when :en then %>
+Kind regards,
+The <%= @site_name %> Team
+<% else %>
+Met vriendelijke groeten,
+Team <%= @site_name %>
+<% end %>
+
+---
+<%= @site_name %> · <%= @tagline %>
+<% case @locale
+   when :fr then %>
+Questions sur votre facture? <%= @billing_email %>
+<% when :de then %>
+Fragen zu Ihrer Rechnung? <%= @billing_email %>
+<% when :en then %>
+Questions about your invoice? <%= @billing_email %>
+<% else %>
+Vragen over uw factuur? <%= @billing_email %>
+<% end %>

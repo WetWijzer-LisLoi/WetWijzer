@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <style>
+      /* Reset and base styles */
+      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+      
+      /* Base body styling */
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.6;
+        color: #1f2937;
+        background-color: #f3f4f6;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+      }
+      
+      /* Container */
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      
+      /* Header with gradient */
+      .header {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+        text-align: center;
+        padding: 30px 20px;
+      }
+      .header h1 {
+        color: #ffffff;
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+      .header .tagline {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 14px;
+        margin-top: 8px;
+      }
+      
+      /* Content area */
+      .content {
+        padding: 40px 30px;
+      }
+      
+      /* Primary button */
+      .button {
+        display: inline-block;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: #ffffff !important;
+        text-decoration: none;
+        padding: 14px 32px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 16px;
+        margin: 20px 0;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+      }
+      .button:hover {
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      }
+      
+      /* Secondary button */
+      .button-secondary {
+        display: inline-block;
+        background-color: #f3f4f6;
+        color: #374151 !important;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 14px;
+        border: 1px solid #d1d5db;
+      }
+      
+      /* Info box */
+      .info-box {
+        background-color: #eff6ff;
+        border-left: 4px solid #2563eb;
+        padding: 16px;
+        margin: 20px 0;
+        border-radius: 0 6px 6px 0;
+      }
+      
+      /* Warning box */
+      .warning-box {
+        background-color: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        padding: 16px;
+        margin: 20px 0;
+        border-radius: 0 6px 6px 0;
+      }
+      
+      /* Footer */
+      .footer {
+        background-color: #f9fafb;
+        padding: 24px 30px;
+        border-top: 1px solid #e5e7eb;
+        text-align: center;
+      }
+      .footer p {
+        font-size: 13px;
+        color: #6b7280;
+        margin: 4px 0;
+      }
+      .footer a {
+        color: #2563eb;
+        text-decoration: none;
+      }
+      .footer .social-links {
+        margin-top: 16px;
+      }
+      .footer .social-links a {
+        display: inline-block;
+        margin: 0 8px;
+        color: #9ca3af;
+      }
+      
+      /* Dark mode support — matches WetWijzer website theme */
+      @media (prefers-color-scheme: dark) {
+        body {
+          background-color: #080d19 !important;
+        }
+        .email-container {
+          background-color: #0f172a !important;
+        }
+        .content {
+          color: #f3f4f6 !important;
+        }
+        .content a {
+          color: #60a5fa !important;
+        }
+        .footer {
+          background-color: #080d19 !important;
+          border-top-color: rgba(56, 189, 248, 0.20) !important;
+        }
+        .footer p {
+          color: #9ca3af !important;
+        }
+        .footer a {
+          color: #60a5fa !important;
+        }
+        .info-box {
+          background-color: rgba(37, 99, 235, 0.15) !important;
+          border-left-color: #60a5fa !important;
+        }
+        .warning-box {
+          background-color: rgba(245, 158, 11, 0.15) !important;
+          border-left-color: #fbbf24 !important;
+        }
+        .button {
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+        }
+        .button-secondary {
+          background-color: #1e293b !important;
+          color: #e2e8f0 !important;
+          border-color: #334155 !important;
+        }
+      }
+      
+      /* Responsive */
+      @media screen and (max-width: 600px) {
+        .email-container {
+          border-radius: 0;
+        }
+        .content {
+          padding: 30px 20px;
+        }
+        .header {
+          padding: 24px 16px;
+        }
+        .header h1 {
+          font-size: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 20px;">
+    <div class="email-container">
+      <div class="header">
+        <h1><%= site_name %></h1>
+        <% tagline = case I18n.locale
+           when :fr then 'Outil de recherche législative belge'
+           when :de then 'Belgisches Rechtsrecherche-Tool'
+           when :en then 'Belgian legal research tool'
+           else 'Belgische wetgevingszoekmachine'
+         end %>
+        <p class="tagline"><%= tagline %></p>
+      </div>
+      <div class="content">
+        <%= yield %>
+      </div>
+      <div class="footer">
+        <p>&copy; <%= Date.current.year %> <%= site_name %></p>
+        <p>
+          <a href="<%= root_url %>"><%= site_name %></a> · 
+          <a href="<%= root_url %>privacy-policy"><%= case I18n.locale when :fr then 'Confidentialité' when :de then 'Datenschutz' when :en then 'Privacy' else 'Privacy' end %></a> · 
+          <a href="<%= root_url %>terms-of-service"><%= case I18n.locale when :fr then 'Conditions' when :de then 'Nutzungsbedingungen' when :en then 'Terms' else 'Voorwaarden' end %></a>
+        </p>
+        <p style="margin-top: 12px; font-size: 11px; color: #9ca3af;">
+          <% unsubscribe_note = case I18n.locale
+             when :fr then "Cet email a été envoyé car vous avez un compte chez #{site_name}."
+             when :de then "Diese E-Mail wurde gesendet, weil Sie ein Konto bei #{site_name} haben."
+             when :en then "This email was sent because you have an account with #{site_name}."
+             else "Deze e-mail is verzonden omdat u een account heeft bij #{site_name}."
+           end %>
+          <%= unsubscribe_note %>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

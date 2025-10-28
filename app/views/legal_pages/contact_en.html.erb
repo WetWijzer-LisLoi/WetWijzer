@@ -1,0 +1,24 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<div class="legal-page">
+<h1>Contact</h1>
+
+    <h2>Email</h2>
+    <p>For questions, remarks or reports, you can reach us at:</p>
+    <p>
+      <a href="mailto:<%= contact_email %>"><%= contact_email %></a>
+    </p>
+
+    <h2>Responsible publisher</h2>
+    <p>Mr. Gauthier Berth</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400">Attorney at the Dutch-speaking Bar Association of Brussels</p>
+
+    <h2>Response time</h2>
+    <p>We aim to respond to all messages within <strong>2 business days</strong>.</p>
+
+    <h2>Privacy-related requests</h2>
+    <p>For requests under the GDPR, you can use our <a href="<%= gdpr_takedown_path %>">GDPR form</a> or send an email to <a href="mailto:<%= contact_email %>"><%= contact_email %></a>.</p>
+
+    <h2>Report a bug or contribute</h2>
+    <p>LexLibera is open source software. You can report bugs and suggestions via <a href="https://github.com/WetWijzer-LisLoi/WetWijzer/issues" target="_blank" rel="noopener">GitHub Issues</a>.</p>
+
+</div>

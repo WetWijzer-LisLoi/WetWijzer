@@ -1,0 +1,241 @@
+﻿/* ============================================================================
+ * ARTICLES/TEKST SECTION IMPROVEMENTS - Enhanced visual hierarchy
+ * ============================================================================ */
+
+/* Articles container - subtle shadow and refined border (FUN themes) */
+#tekst > div {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+#tekst > div:hover {
+  box-shadow: 0 6px 10px -1px rgba(0, 0, 0, 0.08), 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.dark #tekst > div {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+.dark #tekst > div:hover {
+  box-shadow: 0 6px 10px -1px rgba(0, 0, 0, 0.4), 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Professional themes - Minimal crisp shadows for formal document aesthetic */
+.theme-slate #tekst > div,
+.theme-indigo #tekst > div,
+.theme-sky #tekst > div,
+.theme-teal #tekst > div,
+.theme-cyan #tekst > div,
+.theme-green #tekst > div,
+.theme-purple #tekst > div,
+.theme-red #tekst > div {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+.theme-slate #tekst > div:hover,
+.theme-indigo #tekst > div:hover,
+.theme-sky #tekst > div:hover,
+.theme-teal #tekst > div:hover,
+.theme-cyan #tekst > div:hover,
+.theme-green #tekst > div:hover,
+.theme-purple #tekst > div:hover,
+.theme-red #tekst > div:hover {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08) !important;
+}
+
+.theme-slate.dark #tekst > div,
+.theme-indigo.dark #tekst > div,
+.theme-sky.dark #tekst > div,
+.theme-teal.dark #tekst > div,
+.theme-cyan.dark #tekst > div,
+.theme-green.dark #tekst > div,
+.theme-purple.dark #tekst > div,
+.theme-red.dark #tekst > div,
+.dark .theme-slate #tekst > div,
+.dark .theme-indigo #tekst > div,
+.dark .theme-sky #tekst > div,
+.dark .theme-teal #tekst > div,
+.dark .theme-cyan #tekst > div,
+.dark .theme-green #tekst > div,
+.dark .theme-purple #tekst > div,
+.dark .theme-red #tekst > div {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+.theme-slate.dark #tekst > div:hover,
+.theme-indigo.dark #tekst > div:hover,
+.theme-sky.dark #tekst > div:hover,
+.theme-teal.dark #tekst > div:hover,
+.theme-cyan.dark #tekst > div:hover,
+.theme-green.dark #tekst > div:hover,
+.theme-purple.dark #tekst > div:hover,
+.theme-red.dark #tekst > div:hover,
+.dark .theme-slate #tekst > div:hover,
+.dark .theme-indigo #tekst > div:hover,
+.dark .theme-sky #tekst > div:hover,
+.dark .theme-teal #tekst > div:hover,
+.dark .theme-cyan #tekst > div:hover,
+.dark .theme-green #tekst > div:hover,
+.dark .theme-purple #tekst > div:hover,
+.dark .theme-red #tekst > div:hover {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Article borders - refined spacing and colors */
+article.border-t {
+  border-color: rgb(229, 231, 235) !important; /* gray-200 */
+  transition: border-color 0.2s ease;
+}
+
+.dark article.border-t {
+  border-color: rgb(75, 85, 99) !important; /* gray-600 */
+}
+
+/* Professional themes - Consistent article borders */
+.theme-slate article.border-t,
+.theme-indigo article.border-t,
+.theme-sky article.border-t,
+.theme-teal article.border-t,
+.theme-cyan article.border-t,
+.theme-green article.border-t,
+.theme-purple article.border-t,
+.theme-red article.border-t {
+  border-color: rgb(229, 231, 235) !important;
+}
+
+.theme-slate.dark article.border-t,
+.theme-indigo.dark article.border-t,
+.theme-sky.dark article.border-t,
+.theme-teal.dark article.border-t,
+.theme-cyan.dark article.border-t,
+.theme-green.dark article.border-t,
+.theme-purple.dark article.border-t,
+.theme-red.dark article.border-t,
+.dark .theme-slate article.border-t,
+.dark .theme-indigo article.border-t,
+.dark .theme-sky article.border-t,
+.dark .theme-teal article.border-t,
+.dark .theme-cyan article.border-t,
+.dark .theme-green article.border-t,
+.dark .theme-purple article.border-t,
+.dark .theme-red article.border-t {
+  border-color: rgb(75, 85, 99) !important;
+}
+
+/* Article hover effects - subtle visual feedback */
+article.group:hover {
+  background-color: rgba(249, 250, 251, 0.5);
+  transition: background-color 0.2s ease;
+}
+
+.dark article.group:hover {
+  background-color: rgba(17, 24, 39, 0.3);
+}
+
+/* Professional themes - No hover background for minimal aesthetic */
+.theme-slate article.group:hover,
+.theme-indigo article.group:hover,
+.theme-sky article.group:hover,
+.theme-teal article.group:hover,
+.theme-cyan article.group:hover,
+.theme-green article.group:hover,
+.theme-purple article.group:hover,
+.theme-red article.group:hover {
+  background-color: transparent !important;
+}
+
+/* Article preference toggles - refined styling */
+.btn-toggle-active,
+.btn-toggle-inactive {
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.btn-toggle-active:hover,
+.btn-toggle-inactive:hover {
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.btn-toggle-active:active,
+.btn-toggle-inactive:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Professional themes - Minimal shadows on toggle buttons */
+.theme-slate .btn-toggle-active,
+.theme-slate .btn-toggle-inactive,
+.theme-indigo .btn-toggle-active,
+.theme-indigo .btn-toggle-inactive,
+.theme-sky .btn-toggle-active,
+.theme-sky .btn-toggle-inactive,
+.theme-teal .btn-toggle-active,
+.theme-teal .btn-toggle-inactive,
+.theme-cyan .btn-toggle-active,
+.theme-cyan .btn-toggle-inactive,
+.theme-green .btn-toggle-active,
+.theme-green .btn-toggle-inactive,
+.theme-purple .btn-toggle-active,
+.theme-purple .btn-toggle-inactive,
+.theme-red .btn-toggle-active,
+.theme-red .btn-toggle-inactive {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+.theme-slate .btn-toggle-active:hover,
+.theme-slate .btn-toggle-inactive:hover,
+.theme-indigo .btn-toggle-active:hover,
+.theme-indigo .btn-toggle-inactive:hover,
+.theme-sky .btn-toggle-active:hover,
+.theme-sky .btn-toggle-inactive:hover,
+.theme-teal .btn-toggle-active:hover,
+.theme-teal .btn-toggle-inactive:hover,
+.theme-cyan .btn-toggle-active:hover,
+.theme-cyan .btn-toggle-inactive:hover,
+.theme-green .btn-toggle-active:hover,
+.theme-green .btn-toggle-inactive:hover,
+.theme-purple .btn-toggle-active:hover,
+.theme-purple .btn-toggle-inactive:hover,
+.theme-red .btn-toggle-active:hover,
+.theme-red .btn-toggle-inactive:hover {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  transform: none !important;
+}
+
+/* Executive decisions (exdecs) card styling */
+div[data-controller="collapse"]:has(.badge-exdec-count) {
+  transition: background-color 0.2s ease;
+}
+
+div[data-controller="collapse"]:has(.badge-exdec-count):hover {
+  background-color: rgba(249, 250, 251, 0.5);
+}
+
+.dark div[data-controller="collapse"]:has(.badge-exdec-count):hover {
+  background-color: rgba(17, 24, 39, 0.2);
+}
+
+/* Badge styling - consistent with theme */
+.badge-exdec-count {
+  transition: all 0.15s ease;
+}
+
+/* Article content - improved readability */
+.article-content {
+  line-height: 1.75;
+  color: rgb(31, 41, 55); /* gray-800 */
+}
+
+.dark .article-content {
+  color: rgb(229, 231, 235); /* gray-200 */
+  line-height: 1.8; /* Slightly more spacing in dark mode for readability */
+}
+
+/* Paragraph indent for new paragraphs (BOG style) */
+/* Uses a small indent instead of double spacing to indicate paragraph breaks */
+/* The indent is visual only and won't be copied when selecting text */
+.paragraph-indent {
+  display: inline-block;
+  width: 1.5em;
+}

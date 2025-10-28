@@ -1,0 +1,259 @@
+AllCops:
+  TargetRubyVersion: 3.4
+  NewCops: enable
+  Exclude:
+    - 'db/schema.rb'
+    - 'db/schema-*.rb'
+    - 'db/schema - Copy.rb'
+    - 'db/migrate/**/*'
+    - 'db/migrate - Copy/**/*'
+    - 'db/migrate_pending/**/*'
+    - 'bin/**/*'
+    - 'node_modules/**/*'
+    - 'vendor/**/*'
+    - 'public/**/*'
+    - 'tmp/**/*'
+    - 'log/**/*'
+    - 'storage/**/*'
+    - 'scripts/**/*'
+    - 'inspect_*.rb'
+    - 'analysis_scripts/**/*'
+    - 'script/**/*'
+    - 'docs/**/*'
+    - 'lib/wetwijzer_updater/**/*'
+    - 'tmp_erb*.rb'
+    - 'check_introd*.rb'
+    - 'laws_filtering_prod.rb'
+    - 'test_regex.rb'
+    - 'test_embedding_quality.rb'
+    - 'lib/tasks/generate_embeddings_fast.rb'
+  SuggestExtensions: false
+
+# Keep docs optional for app code
+Style/Documentation:
+  Enabled: false
+
+# Disable line ending checks (Windows vs Unix differences are handled by Git)
+Layout/EndOfLine:
+  Enabled: false
+
+# Increased from default 120 to match modern monitors and IDEs
+# Allow longer lines for SQL queries and complex strings
+Layout/LineLength:
+  Max: 160
+  Exclude:
+    - 'lib/tasks/**/*'
+    - 'app/services/**/*'
+    - 'app/controllers/**/*'
+    - 'app/helpers/**/*'
+    - 'app/views/**/*'
+    - 'config/**/*'
+  AllowedPatterns:
+    - '^\s*.*(SELECT|FROM|WHERE|JOIN|ORDER BY|GROUP BY).*$'
+    - '^\s*Rails\.logger\.(info|debug|warn|error)'
+
+# METRICS SETTINGS
+# Adjusted to be realistic for production Rails apps while maintaining quality
+
+# Method length: 30 lines for helpers with complex HTML/parsing logic
+Metrics/MethodLength:
+  Max: 20
+  CountComments: false
+  Exclude:
+    - 'test/**/*'
+    - 'lib/tasks/**/*'
+    - 'lib/**/*'
+    - 'app/controllers/**/*'
+    - 'app/helpers/**/*'
+    - 'app/services/**/*'
+    - 'app/models/**/*'
+    - 'app/jobs/**/*'
+    - 'config/**/*'
+
+Metrics/AbcSize:
+  Max: 25
+  Exclude:
+    - 'test/**/*'
+    - 'lib/tasks/**/*'
+    - 'lib/**/*'
+    - 'app/controllers/**/*'
+    - 'app/helpers/**/*'
+    - 'app/services/**/*'
+    - 'app/models/**/*'
+    - 'app/jobs/**/*'
+    - 'config/**/*'
+
+# ABC Size: 25 (up from default 17)
+# Allows for complex business logic without being excessive
+
+
+# Block length: Allow longer blocks in DSL contexts
+Metrics/BlockLength:
+  Max: 25
+  CountComments: false
+  Exclude:
+    - 'test/**/*'
+    - 'config/**/*'
+    - 'lib/tasks/**/*'
+    - 'app/services/**/*'
+    - 'app/controllers/**/*'
+    - 'app/helpers/**/*'
+    - 'app/views/**/*'
+
+# Class length: 150 lines (up from default 100)
+# Reasonable for complex models and service objects
+Metrics/ClassLength:
+  Max: 150
+  CountComments: false
+  Exclude:
+    - 'test/**/*'
+    - 'app/controllers/**/*'
+    - 'app/services/**/*'
+    - 'app/models/**/*'
+
+Metrics/ModuleLength:
+  Max: 150
+  CountComments: false
+  Exclude:
+    - 'test/**/*'
+    - 'app/helpers/**/*'
+    - 'app/controllers/**/*'
+    - 'app/services/**/*'
+
+# Cyclomatic complexity: Keep at 10 (up from default 7)
+Metrics/CyclomaticComplexity:
+  Max: 10
+  Exclude:
+    - 'test/**/*'
+    - 'lib/tasks/**/*'
+    - 'lib/**/*'
+    - 'app/helpers/**/*'
+    - 'app/services/**/*'
+    - 'app/controllers/**/*'
+    - 'app/models/**/*'
+
+Metrics/PerceivedComplexity:
+  Max: 10
+  Exclude:
+    - 'test/**/*'
+    - 'lib/tasks/**/*'
+    - 'lib/**/*'
+    - 'app/helpers/**/*'
+    - 'app/services/**/*'
+    - 'app/controllers/**/*'
+    - 'app/models/**/*'
+
+Metrics/ParameterLists:
+  Max: 5
+  CountKeywordArgs: true
+  Exclude:
+    - 'app/services/**/*'
+    - 'app/models/**/*'
+    - 'app/controllers/**/*'
+
+Metrics/BlockNesting:
+  Exclude:
+    - 'app/services/**/*'
+    - 'app/controllers/**/*'
+    - 'app/helpers/**/*'
+
+Metrics/CollectionLiteralLength:
+  Enabled: false
+
+Naming/VariableNumber:
+  Enabled: false
+
+Style/FormatStringToken:
+  Enabled: false
+
+Style/OptionalBooleanParameter:
+  Enabled: false
+
+Style/MultilineBlockChain:
+  Enabled: false
+
+Lint/EmptyClass:
+  Exclude:
+    - 'test/**/*'
+
+Lint/EmptyFile:
+  Exclude:
+    - 'test/**/*'
+
+Lint/DuplicateHashKey:
+  Exclude:
+    - 'app/services/legal_chatbot_service.rb'
+
+Lint/DuplicateBranch:
+  Exclude:
+    - 'app/services/legal_chatbot_service.rb'
+    - 'app/services/legal_chatbot/**/*'
+    - 'app/controllers/api/chatbot_controller.rb'
+    - 'app/controllers/two_factor_controller.rb'
+    - 'app/controllers/concerns/**/*'
+    - 'app/models/**/*'
+    - 'test/**/*'
+
+Lint/UselessConstantScoping:
+  Enabled: false
+
+Naming/PredicateMethod:
+  Enabled: false
+
+Naming/PredicatePrefix:
+  Enabled: false
+
+Naming/MethodParameterName:
+  AllowedNames:
+    - q
+    - db
+    - id
+    - ip
+    - to
+    - by
+    - e
+
+Naming/FileName:
+  Exclude:
+    - 'lib/tasks/TEMPLATE_*'
+
+Naming/AccessorMethodName:
+  Enabled: false
+
+Style/OpenStructUse:
+  Enabled: false
+
+Style/EmptyElse:
+  Enabled: false
+
+Style/IdenticalConditionalBranches:
+  Enabled: false
+
+Style/HashLikeCase:
+  Enabled: false
+
+Style/SafeNavigationChainLength:
+  Enabled: false
+
+Lint/IneffectiveAccessModifier:
+  Enabled: false
+
+Lint/DuplicateMethods:
+  Exclude:
+    - 'app/services/**/*'
+
+Lint/UnusedMethodArgument:
+  Exclude:
+    - 'app/services/**/*'
+    - 'app/controllers/**/*'
+
+Layout/BlockAlignment:
+  Exclude:
+    - 'app/views/**/*'
+
+# Constants defined inside `included do ... end` blocks are standard Rails pattern
+# Constants in rake task blocks are also standard
+Lint/ConstantDefinitionInBlock:
+  Exclude:
+    - 'app/services/**/*'
+    - 'lib/tasks/**/*'

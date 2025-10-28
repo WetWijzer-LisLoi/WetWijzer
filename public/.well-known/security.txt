@@ -1,0 +1,11 @@
+# security.txt -- https://securitytxt.org / RFC 9116
+# Applies to: wetwijzer.be, lisloi.be, gesetzguide.be
+
+Contact: mailto:security@wetwijzer.be
+Expires: 2027-05-27T00:00:00.000Z
+Preferred-Languages: nl, fr, en, de
+Canonical: https://wetwijzer.be/.well-known/security.txt
+Canonical: https://lisloi.be/.well-known/security.txt
+Canonical: https://gesetzguide.be/.well-known/security.txt
+Policy: https://wetwijzer.be/privacy-en.html
+Acknowledgments: https://github.com/WetWijzer-LisLoi/WetWijzer

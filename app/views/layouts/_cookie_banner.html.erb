@@ -1,0 +1,38 @@
+<%# Cookie consent banner — LexLibera only
+     Appears at the bottom of the screen for first-time visitors.
+     Uses the cookie_consent Stimulus controller for accept/decline logic. %>
+<div data-controller="cookie-consent"
+     class="fixed bottom-0 inset-x-0 z-50 transform translate-y-full transition-transform duration-300 ease-out"
+     role="dialog"
+     aria-label="<%= t('cookies.banner_title', default: 'Cookie Preference') %>">
+  <div class="max-w-2xl mx-auto px-4 pb-4">
+    <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl p-5">
+      <div class="flex items-start gap-3">
+        <span class="text-2xl flex-shrink-0 mt-0.5" aria-hidden="true">🍪</span>
+        <div class="flex-1 min-w-0">
+          <h3 class="font-semibold text-gray-900 dark:text-white text-sm">
+            <%= t('cookies.banner_title', default: 'Cookie Preference') %>
+          </h3>
+          <p class="text-sm text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
+            <%= t('cookies.banner_message', default: 'LexLibera uses a single functional cookie to remember your preferred language for legal texts (Dutch or French). No tracking, no advertising.') %>
+          </p>
+          <div class="flex flex-wrap items-center gap-2 mt-3">
+            <button type="button"
+                    data-action="click->cookie-consent#accept"
+                    class="px-4 py-1.5 text-sm font-medium rounded-md bg-(--accent-600-solid) text-white hover:bg-(--accent-700-solid) transition-colors">
+              <%= t('cookies.accept', default: 'Accept') %>
+            </button>
+            <button type="button"
+                    data-action="click->cookie-consent#decline"
+                    class="px-4 py-1.5 text-sm font-medium rounded-md text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <%= t('cookies.decline', default: 'No thanks') %>
+            </button>
+            <%= link_to privacy_policy_path, class: "text-sm text-(--accent-600) dark:text-(--accent-400) hover:underline ml-1" do %>
+              <%= t('cookies.learn_more', default: 'Learn more') %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

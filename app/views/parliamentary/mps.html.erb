@@ -1,0 +1,310 @@
+<% @title = case I18n.locale when :fr then 'Députés' when :de then 'Abgeordnete' when :en then 'Members of Parliament' else 'Kamerleden' end %>
+<% party_colors = ParliamentaryHelper::PARTY_COLORS %>
+
+<div class="max-w-6xl mx-auto px-4">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-blue-400 mb-2 flex items-center gap-3">
+      <span class="text-4xl">👥</span>
+      <% case I18n.locale when :fr %>Députés<% when :de %>Abgeordnete<% when :en %>Members of Parliament<% else %>Kamerleden<% end %>
+    </h1>
+    <p class="text-lg text-gray-600 dark:text-gray-300">
+      <span class="font-semibold text-(--accent-600) dark:text-(--accent-400)"><%= @members.size %></span>
+      <% case I18n.locale when :fr %>membres — Législature<% when :de %>Mitglieder — Legislaturperiode<% when :en %>members — Legislature<% else %>leden — Legislatuur<% end %>
+      <span class="font-semibold"><%= @legislature %></span>
+    </p>
+    <div class="mt-2 flex flex-wrap gap-4">
+      <a href="<%= parliamentary_work_path %>" class="text-sm text-(--accent-600) dark:text-(--accent-400) hover:underline">
+        ← <% case I18n.locale when :fr %>Retour aux travaux préparatoires<% when :de %>Zurück zu den Gesetzgebungsvorarbeiten<% when :en %>Back to parliamentary works<% else %>Terug naar parlementaire voorbereidingen<% end %>
+      </a>
+      <a href="<%= hemicycle_history_path %>" class="text-sm text-(--accent-600) dark:text-(--accent-400) hover:underline">
+        🏛️ <% case I18n.locale when :fr %>Hémicycle historique (1894–2024)<% when :de %>Historischer Halbkreis (1894–2024)<% when :en %>Historical hemicycle (1894–2024)<% else %>Historisch hemicyclus (1894–2024)<% end %>
+      </a>
+      <a href="<%= vlpar_index_path %>" class="text-sm text-(--accent-600) dark:text-(--accent-400) hover:underline">
+        🦁 <% if I18n.locale == :fr %>Parlement flamand<% elsif I18n.locale == :de %>Flämisches Parlament<% else %>Vlaams Parlement<% end %>
+      </a>
+    </div>
+  </div>
+
+  <!-- Hemicycle Visualization -->
+  <% if @hemicycle_data.present? %>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-8">
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+        <span class="text-xl">🏛️</span>
+        <% case I18n.locale when :fr %>Hémicycle<% when :de %>Halbkreis<% when :en %>Hemicycle<% else %>Hemicyclus<% end %>
+        — <span class="text-(--accent-600) dark:text-(--accent-400)"><% case I18n.locale when :fr %>Législature<% when :de %>Legislaturperiode<% when :en %>Legislature<% else %>Legislature<% end %> <%= @legislature %></span>
+      </h2>
+
+      <div class="flex flex-col lg:flex-row items-center gap-6">
+        <!-- SVG Hemicycle -->
+        <div class="w-full lg:w-2/3 flex justify-center">
+          <svg id="mpHemicycleSvg" viewBox="0 0 500 280" class="w-full max-w-lg" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background arc -->
+            <path d="M 30 260 A 220 220 0 0 1 470 260" fill="none" stroke="currentColor" stroke-opacity="0.1" stroke-width="40" class="text-gray-400 dark:text-gray-600"/>
+
+            <% 
+              # Generate hemicycle seats as dots arranged in concentric arcs
+              total_seats = @hemicycle_data.sum { |p| p[:seats] }
+              rows = 7
+              seat_radius = 5.5
+              cx, cy = 250, 265
+              
+              # Build seat array with party assignment
+              seats = []
+              @hemicycle_data.sort_by { |p| 
+                # Political spectrum: left to right
+                order = { 'PVDA-PTB' => 0, 'PVDA' => 0, 'PTB' => 0,
+                          'Ecolo' => 1, 'Groen' => 2, 'Ecolo-Groen' => 1.5,
+                          'PS' => 3, 'Vooruit' => 4, 'sp.a' => 4,
+                          'cdH' => 5, 'Les Engagés' => 5, 'LE' => 5,
+                          'CD&V' => 6, 'cd&v' => 6,
+                          'Open Vld' => 7, 'MR' => 8, 'DéFI' => 9,
+                          'N-VA' => 10, 'VB' => 11, 'Anders' => 12, 'Anders.' => 12 }
+                order[p[:party]] || 99
+              }.each do |party_data|
+                party_data[:seats].times { seats << party_data }
+              end
+              
+              seat_idx = 0
+            %>
+            <% (0...rows).each do |row| %>
+              <%
+                r = 100 + row * 23
+                # Seats per row scales with arc length
+                n = (total_seats.to_f * (Math::PI * r) / (0...rows).sum { |rr| Math::PI * (100 + rr * 23) }).round
+                n = [n, total_seats - seat_idx].min
+                next if n <= 0
+              %>
+              <% (0...n).each do |i| %>
+                <%
+                  break if seat_idx >= seats.size
+                  angle = Math::PI - (Math::PI * (i + 0.5) / n)
+                  sx = cx + r * Math.cos(angle)
+                  sy = cy - r * Math.sin(angle)
+                  party_data = seats[seat_idx]
+                  seat_idx += 1
+                %>
+                <circle cx="<%= sx.round(1) %>" cy="<%= sy.round(1) %>" r="<%= seat_radius %>"
+                        fill="<%= party_data[:color] %>"
+                        opacity="<%= party_data[:involved] ? 1.0 : 0.85 %>"
+                        class="seat-dot"
+                        data-party="<%= party_data[:party] %>"
+                        style="cursor:pointer;transition:all .15s">
+                  <title><%= party_data[:party] %></title>
+                </circle>
+              <% end %>
+            <% end %>
+
+            <!-- Center label -->
+            <text x="250" y="255" text-anchor="middle" fill="currentColor" class="text-gray-600 dark:text-gray-400 text-xs font-semibold" font-size="12">
+              <%= total_seats %> <% case I18n.locale when :fr %>sièges<% when :de %>Sitze<% when :en %>seats<% else %>seats<% end %>
+            </text>
+          </svg>
+        </div>
+
+        <!-- Legend -->
+        <div class="w-full lg:w-1/3">
+          <div class="grid grid-cols-2 gap-2">
+            <% @hemicycle_data.sort_by { |p| -p[:seats] }.each do |party| %>
+              <a href="<%= mp_directory_path(legislature: @legislature, party: party[:party]) %>"
+                 class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-sky/10 transition-all group <%= @party_filter == party[:party] ? 'bg-gray-100 dark:bg-sky/20 ring-1 ring-(--accent-400)' : '' %>"
+                 data-legend-party="<%= party[:party] %>">
+                <span class="w-3 h-3 rounded-full shrink-0" style="background-color: <%= party[:color] %>"></span>
+                <span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white"><%= party[:party] %></span>
+                <span class="text-xs text-gray-400 ml-auto"><%= party[:seats] %></span>
+              </a>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script nonce="<%= content_security_policy_nonce %>">
+    document.addEventListener("DOMContentLoaded", function() {
+      const svg = document.getElementById("mpHemicycleSvg");
+      if (!svg) return;
+      const dots = svg.querySelectorAll(".seat-dot");
+      const legendItems = document.querySelectorAll("#mpHemicycleSvg ~ div [data-legend-party], .hemicycle-legend [data-legend-party]");
+      const allLegendItems = document.querySelectorAll("[data-legend-party]");
+      const dr = dots[0] ? dots[0].getAttribute("r") : "5.5";
+      let hovered = null;
+
+      function hl(party) {
+        hovered = party;
+        dots.forEach(d => {
+          if (d.getAttribute("data-party") === party) {
+            d.setAttribute("r", parseFloat(dr) * 1.3);
+            d.setAttribute("opacity", "1");
+            d.setAttribute("stroke", "#fff"); d.setAttribute("stroke-width", "1.5");
+          } else {
+            d.setAttribute("r", dr); d.setAttribute("opacity", "0.15");
+            d.removeAttribute("stroke"); d.removeAttribute("stroke-width");
+          }
+        });
+        allLegendItems.forEach(el => {
+          el.style.opacity = el.getAttribute("data-legend-party") === party ? "1" : "0.3";
+        });
+      }
+
+      function clr() {
+        hovered = null;
+        dots.forEach(d => {
+          d.setAttribute("r", dr); d.setAttribute("opacity", "0.9");
+          d.removeAttribute("stroke"); d.removeAttribute("stroke-width");
+        });
+        allLegendItems.forEach(el => { el.style.opacity = "1"; });
+      }
+
+      svg.addEventListener("mouseover", e => {
+        const p = e.target.getAttribute("data-party");
+        if (p) hl(p);
+      });
+      svg.addEventListener("mouseout", e => {
+        if (e.target.classList.contains("seat-dot")) clr();
+      });
+
+      allLegendItems.forEach(el => {
+        el.addEventListener("mouseenter", () => hl(el.getAttribute("data-legend-party")));
+        el.addEventListener("mouseleave", () => clr());
+      });
+    });
+    </script>
+  <% end %>
+
+  <!-- Filters -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-8">
+    <form method="get" action="<%= mp_directory_path %>" class="flex flex-wrap gap-4 items-end">
+      <!-- Legislature -->
+      <div class="flex-1 min-w-[140px]">
+        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+          <% case I18n.locale when :fr %>Législature<% when :de %>Legislaturperiode<% when :en %>Legislature<% else %>Legislatuur<% end %>
+        </label>
+        <select name="legislature" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-(--accent-500) focus:border-(--accent-500)" data-autosubmit="true">
+          <% @legislatures.each do |leg| %>
+            <option value="<%= leg %>" <%= 'selected' if leg == @legislature %>><%= leg %></option>
+          <% end %>
+        </select>
+      </div>
+
+      <!-- Party -->
+      <div class="flex-1 min-w-[160px]">
+        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+          <% case I18n.locale when :fr %>Parti<% when :de %>Partei<% when :en %>Party<% else %>Partij<% end %>
+        </label>
+        <select name="party" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-(--accent-500) focus:border-(--accent-500)" data-autosubmit="true">
+          <option value=""><% case I18n.locale when :fr %>Tous les partis<% when :de %>Alle Parteien<% when :en %>All parties<% else %>Alle partijen<% end %></option>
+          <% @parties.each do |p| %>
+            <option value="<%= p %>" <%= 'selected' if p == @party_filter %>><%= p %></option>
+          <% end %>
+        </select>
+      </div>
+
+      <!-- Name search -->
+      <div class="flex-2 min-w-[200px]">
+        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+          <% case I18n.locale when :fr %>Rechercher<% when :de %>Suchen<% when :en %>Search<% else %>Zoeken<% end %>
+        </label>
+        <div class="relative">
+          <input type="text" name="q" value="<%= @name_filter %>"
+                 placeholder="<% case I18n.locale when :fr %>Nom du député...<% when :de %>Name des Abgeordneten...<% when :en %>MP name...<% else %>Naam kamerlid...<% end %>"
+                 class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm pl-9 focus:ring-(--accent-500) focus:border-(--accent-500)"/>
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+      </div>
+
+      <button type="submit" class="px-4 py-2 bg-(--accent-600-solid) hover:bg-(--accent-700-solid) text-white rounded-lg text-sm font-medium transition-colors">
+        <% case I18n.locale when :fr %>Filtrer<% when :de %>Filtern<% when :en %>Filter<% else %>Filteren<% end %>
+      </button>
+
+      <% if @party_filter.present? || @name_filter.present? %>
+        <a href="<%= mp_directory_path(legislature: @legislature) %>" class="px-4 py-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm">
+          ✕ Reset
+        </a>
+      <% end %>
+    </form>
+    <script nonce="<%= content_security_policy_nonce %>">
+      document.querySelectorAll('[data-autosubmit]').forEach(function(el) {
+        el.addEventListener('change', function() { this.form.submit(); });
+      });
+    </script>
+  </div>
+
+  <!-- MP Grid -->
+  <% if @members.any? %>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+      <% @members.each_with_index do |mp, idx| %>
+        <a href="<%= mp_profile_path(key: mp[:dekamer_key], legislature: @legislature) %>"
+           class="block bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl hover:border-(--accent-400) dark:hover:border-(--accent-400) transition-all duration-200 p-4 group"
+           <% if mp[:vote_count] && mp[:vote_count] > 0 %>
+           title="<%= number_with_delimiter(mp[:vote_count]) %> <%= case I18n.locale when :fr then 'votes de préférence' when :de then 'Vorzugsstimmen' when :en then 'preference votes' else 'voorkeurstemmen' end %>"
+           <% end %>>
+          <div class="flex items-start gap-3">
+            <!-- MP Photo -->
+            <div class="relative shrink-0">
+              <div class="w-11 h-11 rounded-full overflow-hidden border-2 shadow-sm" style="border-color: <%= party_colors[mp[:party]] || '#888' %>">
+                <img src="https://www.dekamer.be/site/wwwroot/images/cv/ksegna_<%= @legislature %>/<%=  mp[:dekamer_key] %>.jpg"
+                     alt="<%= mp[:name] %>" class="w-full h-full object-cover mp-photo-fallback" loading="lazy"
+                     data-key="<%= mp[:dekamer_key] %>"
+                     data-leg="<%= @legislature %>">
+                <div class="w-full h-full items-center justify-center text-white font-bold text-sm" style="display:none;background-color:<%= party_colors[mp[:party]] || '#888' %>">
+                  <%= mp[:name]&.chars&.first&.upcase %>
+                </div>
+              </div>
+              <% if mp[:list_position] %>
+                <span class="absolute -bottom-0.5 -right-0.5 w-4.5 h-4.5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm" style="background-color:<%= party_colors[mp[:party]] || '#888' %>"><%= mp[:list_position] %></span>
+              <% end %>
+            </div>
+            <div class="min-w-0">
+              <h3 class="font-semibold text-gray-900 dark:text-white text-sm group-hover:text-(--accent-600) dark:group-hover:text-(--accent-400) transition-colors truncate">
+                <%= mp[:name] %>
+              </h3>
+              <% if mp[:party].present? %>
+                <span class="inline-flex items-center gap-1 mt-1">
+                  <span class="w-2 h-2 rounded-full" style="background-color: <%= party_colors[mp[:party]] || '#888' %>"></span>
+                  <span class="text-xs text-gray-500 dark:text-gray-400"><%= mp[:party] %></span>
+                </span>
+              <% end %>
+              <% if mp[:kieskring].present? %>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5"><%= mp[:kieskring] %></p>
+              <% end %>
+              <% if mp[:vote_count] && mp[:vote_count] > 0 %>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  🗳 <%= number_with_delimiter(mp[:vote_count]) %>
+                </p>
+              <% end %>
+            </div>
+          </div>
+        </a>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+      <span class="text-4xl">🔍</span>
+      <p class="mt-2">
+        <% case I18n.locale when :fr %>Aucun député trouvé<% when :de %>Kein Abgeordneter gefunden<% when :en %>No members of parliament found<% else %>Geen kamerleden gevonden<% end %>
+      </p>
+    </div>
+  <% end %>
+</div>
+
+<script nonce="<%= content_security_policy_nonce %>">
+  document.querySelectorAll('.mp-photo-fallback').forEach(function(img) {
+    var attempt = 0;
+    var key = img.dataset.key;
+    var leg = img.dataset.leg;
+    img.addEventListener('error', function handler() {
+      attempt++;
+      if (attempt === 1) {
+        this.src = 'https://www.dekamer.be/site/wwwroot/images/cv/ksegna_' + leg + '/' + key + '.gif';
+      } else if (attempt === 2) {
+        this.src = 'https://www.dekamer.be/site/wwwroot/images/cv/PERSON_ID_' + leg + '/' + key + '.jpg';
+      } else {
+        this.removeEventListener('error', handler);
+        this.style.display = 'none';
+        if (this.nextElementSibling) this.nextElementSibling.style.display = 'flex';
+      }
+    });
+  });
+</script>

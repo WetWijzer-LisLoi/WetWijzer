@@ -1,0 +1,25 @@
+<h2><%= t('mailer.subscription_cancelled.greeting', name: @user.name || @user.email) %></h2>
+
+<p><%= t('mailer.subscription_cancelled.body') %></p>
+
+<div class="info-box">
+  <p style="margin: 0;"><%= t('mailer.subscription_cancelled.access_until') %></p>
+  <% if @period_end %>
+    <p style="margin: 4px 0 0; font-weight: 600;"><%= I18n.l(@period_end, format: :long) rescue @period_end&.strftime('%d/%m/%Y') %></p>
+  <% end %>
+</div>
+
+<p><%= t('mailer.subscription_cancelled.keep_free') %></p>
+
+<% if @cancellation_reason.present? %>
+  <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px 16px; margin: 16px 0;">
+    <p style="margin: 0; font-size: 12px; color: #9ca3af;"><%= t('mailer.subscription_cancelled.your_feedback') %></p>
+    <p style="margin: 4px 0 0; font-style: italic; color: #6b7280;">"<%= @cancellation_reason %>"</p>
+  </div>
+<% end %>
+
+<p style="text-align: center;">
+  <a href="<%= @resubscribe_url %>" class="button-secondary"><%= t('mailer.subscription_cancelled.resubscribe_button') %></a>
+</p>
+
+<p style="font-size: 13px; color: #6b7280;"><%= t('mailer.subscription_cancelled.farewell') %></p>

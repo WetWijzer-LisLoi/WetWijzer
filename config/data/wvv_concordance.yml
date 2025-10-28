@@ -1,0 +1,174 @@
+# Concordantietabel Wetboek van Vennootschappen (W.Venn.) → Wetboek van Vennootschappen en Verenigingen (WVV)
+# Wet 23/03/2019, gewijzigd bij Wet 06/06/2019 — Inwerkingtreding 01/05/2019
+# Bron: Belgisch Staatsblad, officiële concordantietabel (bijlage Wet 06/06/2019)
+# Format: [oud_art, nieuw_art]
+old_numac: "1999A09646"
+new_numac: "2019A40586"
+
+label_nl: "W.Venn. → WVV"
+label_fr: "C.Soc. → CSA"
+source_nl: "Wet 23/03/2019 · In werking 01/05/2019 · Overgang statuten uiterlijk 01/01/2024"
+source_fr: "Loi 23/03/2019 · En vigueur 01/05/2019 · Transition statuts au plus tard 01/01/2024"
+transition_nl: "Vennootschappen die hun statuten niet vóór 01/01/2024 aanpasten, werden automatisch omgezet (BVBA→BV, CVBA→CV, Comm.VA→NV). Het oude W.Venn. blijft relevant voor interpretatie van pre-WVV contracten en statuten."
+transition_fr: "Les sociétés n'ayant pas adapté leurs statuts avant le 01/01/2024 ont été automatiquement converties (SPRL→SRL, SCRL→SC, SCA→SA). L'ancien C.Soc. reste pertinent pour l'interprétation de contrats et statuts antérieurs."
+
+sections:
+  - heading_nl: "Boek 1 — Inleidende bepalingen en definities"
+    heading_fr: "Livre 1 — Dispositions introductives et définitions"
+    entries:
+      - ["Art. 1", "Art. 1:1"]
+      - ["Art. 2, §1", "Art. 1:5, §1"]
+      - ["Art. 2, §2", "Art. 1:5, §2"]
+      - ["Art. 2, §3", "Art. 1:5, §3"]
+      - ["Art. 3", "Art. 1:6"]
+      - ["Art. 4", "Art. 1:8"]
+      - ["Art. 5", "Art. 1:9"]
+      - ["Art. 6", "Art. 1:10"]
+      - ["Art. 7", "Art. 1:11"]
+      - ["Art. 8", "Art. 1:12"]
+      - ["Art. 9", "Art. 1:13"]
+      - ["Art. 10", "Art. 1:14"]
+      - ["Art. 11", "Art. 1:15"]
+      - ["Art. 12", "Art. 1:16"]
+      - ["Art. 13", "Art. 1:17"]
+      - ["Art. 14", "Art. 1:18"]
+      - ["Art. 15", "Art. 1:19"]
+      - ["Art. 16", "Art. 1:20"]
+      - ["Art. 17", "Art. 1:21"]
+
+  - heading_nl: "Boek 2 — Bestuur en aansprakelijkheid"
+    heading_fr: "Livre 2 — Administration et responsabilité"
+    entries:
+      - ["Art. 18", "Art. 2:56"]
+      - ["Art. 61, §1", "Art. 2:57"]
+      - ["Art. 62", "Art. 2:56, §1"]
+      - ["Art. 63", "Art. 2:56, §2"]
+      - ["—", "Art. 2:57, §2 (nieuw: proportionaliteit)"]
+      - ["—", "Art. 2:58 (nieuw: aansprakelijkheidscap)"]
+      - ["Art. 64", "Art. 2:59"]
+      - ["Art. 65", "Art. 2:60"]
+      - ["Art. 66", "Art. 2:61"]
+      - ["Art. 67", "Art. 2:62"]
+      - ["Art. 68-77", "Art. 2:63-2:70"]
+      - ["Art. 770-779", "Art. 2:71-2:108"]
+      - ["Art. 780-787", "Art. 2:109-2:115"]
+
+  - heading_nl: "Boek 3 — Jaarrekening en audit"
+    heading_fr: "Livre 3 — Comptes annuels et contrôle"
+    entries:
+      - ["Art. 92", "Art. 3:1"]
+      - ["Art. 93", "Art. 3:2"]
+      - ["Art. 94-96", "Art. 3:3-3:5"]
+      - ["Art. 97-100", "Art. 3:6-3:9"]
+      - ["Art. 101-107", "Art. 3:10-3:16"]
+      - ["Art. 108-115", "Art. 3:17-3:24"]
+      - ["Art. 116-120", "Art. 3:25-3:29"]
+      - ["Art. 121-128", "Art. 3:30-3:37"]
+      - ["Art. 129-135", "Art. 3:38-3:44"]
+      - ["Art. 130-141", "Art. 3:45-3:56"]
+      - ["Art. 142-148", "Art. 3:57-3:63"]
+      - ["Art. 164-166", "Art. 3:64-3:66"]
+      - ["Art. 167-171", "Art. 3:67-3:71"]
+      - ["Art. 172-178", "Art. 3:72-3:78"]
+      - ["Art. 179-181", "Art. 3:79-3:81"]
+
+  - heading_nl: "Boek 4 — Maatschap, VOF en CommV"
+    heading_fr: "Livre 4 — Société simple, SNC et SComm"
+    entries:
+      - ["Art. 19-45 (burgerlijke venn.)", "Art. 4:1-4:28 (maatschap)"]
+      - ["Art. 200", "Art. 4:22"]
+      - ["Art. 201", "Art. 4:23"]
+      - ["Art. 202", "Art. 4:24"]
+      - ["Art. 203", "Art. 4:25"]
+      - ["Art. 204", "Art. 4:26"]
+      - ["Art. 205", "Art. 4:27"]
+      - ["Art. 206", "Art. 4:28"]
+      - ["Art. 207", "Art. 4:29"]
+      - ["Art. 208", "Art. 4:30"]
+      - ["Art. 209", "Art. 4:31"]
+
+  - heading_nl: "Boek 5 — BV (voorheen BVBA)"
+    heading_fr: "Livre 5 — SRL (anciennement SPRL)"
+    entries:
+      - ["Art. 210, §1", "Art. 5:1"]
+      - ["Art. 211", "Art. 5:2"]
+      - ["Art. 212", "Art. 5:3"]
+      - ["Art. 213", "Art. 5:4"]
+      - ["Art. 214", "Art. 5:5"]
+      - ["Art. 215-220", "Art. 5:6-5:11"]
+      - ["Art. 221-223", "Art. 5:12-5:14"]
+      - ["Art. 229-232", "Art. 5:15-5:18"]
+      - ["Art. 233-239", "Art. 5:19-5:25"]
+      - ["Art. 240-248", "Art. 5:62-5:72"]
+      - ["Art. 249", "Art. 5:73"]
+      - ["Art. 250-260", "Art. 5:74-5:84"]
+      - ["Art. 261-270", "Art. 5:85-5:94"]
+      - ["Art. 281-290", "Art. 5:95-5:104"]
+      - ["Art. 298-310", "Art. 5:105-5:117"]
+      - ["Art. 311-319", "Art. 5:118-5:126"]
+      - ["Art. 320-321", "Art. 5:127-5:132"]
+      - ["Art. 322", "Art. 5:133"]
+      - ["Art. 323-330", "Art. 5:134-5:140"]
+      - ["—", "Art. 5:141-5:142 (alarmbelprocedure)"]
+      - ["Art. 332", "Art. 5:143"]
+      - ["Art. 333-340", "Art. 5:144-5:151"]
+      - ["Art. 341-349", "Art. 5:152-5:160"]
+
+  - heading_nl: "Boek 6 — CV (voorheen CVBA)"
+    heading_fr: "Livre 6 — SC (anciennement SCRL)"
+    entries:
+      - ["Art. 350", "Art. 6:1"]
+      - ["Art. 351", "Art. 6:2"]
+      - ["Art. 352-360", "Art. 6:3-6:11"]
+      - ["Art. 361-370", "Art. 6:12-6:21"]
+      - ["Art. 371-380", "Art. 6:22-6:31"]
+      - ["Art. 381-390", "Art. 6:32-6:41"]
+      - ["Art. 391-400", "Art. 6:42-6:51"]
+      - ["Art. 401-407", "Art. 6:52-6:58"]
+      - ["Art. 408-412", "Art. 6:59-6:63"]
+
+  - heading_nl: "Boek 7 — NV (naamloze vennootschap)"
+    heading_fr: "Livre 7 — SA (société anonyme)"
+    entries:
+      - ["Art. 437", "Art. 7:1"]
+      - ["Art. 438", "Art. 7:2"]
+      - ["Art. 439", "Art. 7:5"]
+      - ["Art. 440-445", "Art. 7:6-7:11"]
+      - ["Art. 446-450", "Art. 7:12-7:16"]
+      - ["Art. 451-455", "Art. 7:80-7:84"]
+      - ["Art. 456", "Art. 7:85"]
+      - ["Art. 457-470", "Art. 7:86-7:96"]
+      - ["Art. 471-480", "Art. 7:17-7:26"]
+      - ["Art. 481-490", "Art. 7:27-7:36"]
+      - ["Art. 491-500", "Art. 7:37-7:46"]
+      - ["Art. 501-510", "Art. 7:47-7:56"]
+      - ["Art. 511-520", "Art. 7:57-7:66"]
+      - ["Art. 521-523", "Art. 7:67-7:69"]
+      - ["Art. 524", "Art. 7:97"]
+      - ["Art. 525-530", "Art. 7:98-7:103"]
+      - ["Art. 531-540", "Art. 7:104-7:113"]
+      - ["Art. 541-560", "Art. 7:114-7:135"]
+      - ["Art. 561-580", "Art. 7:136-7:155"]
+      - ["Art. 581-600", "Art. 7:156-7:175"]
+      - ["Art. 601-620", "Art. 7:176-7:195"]
+      - ["Art. 621-632", "Art. 7:196-7:227"]
+      - ["Art. 633", "Art. 7:228"]
+      - ["Art. 634-640", "Art. 7:229-7:235"]
+
+  - heading_nl: "Boek 8-9 — Europese rechtsvormen"
+    heading_fr: "Livre 8-9 — Formes juridiques européennes"
+    entries:
+      - ["Art. 651-662", "Art. 8:1-8:12 (Europese vennootschap SE)"]
+      - ["Art. 663-674", "Art. 8:13-8:24 (SE — bijzonder)"]
+      - ["Art. 675-686", "Art. 9:1-9:12 (Europese coöp. SCE)"]
+
+  - heading_nl: "Opgeheven vennootschapsvormen"
+    heading_fr: "Formes de sociétés supprimées"
+    entries:
+      - ["CVOA (art. 425-436)", "Opgeheven — omzetting naar BV of CV"]
+      - ["LV / Landbouwvenn.", "Opgeheven — omzetting naar CV"]
+      - ["ESV (art. 839-873)", "Opgeheven — omzetting naar VOF/BV"]
+      - ["Comm.VA (art. 654-656)", "Opgeheven — automatisch NV geworden"]
+      - ["EBVBA", "Opgeheven — opgegaan in BV (zonder kapitaal)"]
+      - ["S-BVBA (starter-BVBA)", "Opgeheven — opgegaan in BV"]
+

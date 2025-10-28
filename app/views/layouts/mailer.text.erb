@@ -1,0 +1,5 @@
+<%= yield %>
+
+--
+<%= case I18n.locale when :fr then 'LisLoi' when :de then 'GesetzGuide' when :en then 'LexLibera' else 'WetWijzer' end %>
+<%= case I18n.locale when :fr then 'Outil de recherche législative belge' when :de then 'Belgisches Rechtsrecherche-Tool' when :en then 'Belgian legal research tool' else 'Onofficiële Belgische wetgevingszoekmachine' end %>

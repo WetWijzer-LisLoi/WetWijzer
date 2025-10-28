@@ -1,0 +1,55 @@
+<% if related_parliamentary.present? %>
+<div class="px-4 md:px-6 pb-4 md:pb-6">
+  <% if local_assigns[:parliamentary_total].to_i > related_parliamentary.size %>
+    <p class="text-xs text-gray-400 dark:text-gray-500 mb-2"><%= related_parliamentary.size %> van <%= parliamentary_total %> resultaten</p>
+  <% end %>
+  <div class="space-y-1">
+    <% related_parliamentary.each do |doc| %>
+      <% link_url = if doc[:source] == :vlaamse_codex && doc[:pdf_url].present?
+                        doc[:pdf_url]
+                      elsif doc[:source] == :dossier_summary && doc[:dossier_url].present?
+                        doc[:dossier_url]
+                      else
+                        parliamentary_path(doc[:id])
+                      end %>
+      <% link_target = (doc[:source] == :vlaamse_codex || doc[:source] == :dossier_summary) ? '_blank' : nil %>
+      <a href="<%= link_url %>" 
+         <% if link_target %>target="<%= link_target %>" rel="noopener"<% end %>
+         class="block p-2 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex-1 min-w-0">
+            <span class="text-sm text-gray-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300">
+              <%= doc[:title]&.truncate(80) || doc[:document_number] %>
+            </span>
+            <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <span class="capitalize"><%= doc[:parliament] %></span>
+              <span><%= doc[:dossier_number] %></span>
+              <% if doc[:document_type].present? %>
+                <span class="px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded">
+                  <%= doc[:document_type].to_s.gsub('_', ' ') %>
+                </span>
+              <% end %>
+            </div>
+          </div>
+          <svg class="w-4 h-4 text-gray-400 group-hover:text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </div>
+      </a>
+    <% end %>
+  </div>
+  <a href="<%= parliamentary_work_path(numac: @law&.numac) %>" 
+     class="inline-flex items-center gap-1 mt-2 text-xs text-purple-600 dark:text-purple-400 hover:underline">
+    <% case I18n.locale when :fr %>Voir tous les travaux préparatoires<% when :de %>Alle parlamentarischen Dokumente anzeigen<% when :en %>View all parliamentary documents<% else %>Alle parlementaire documenten bekijken<% end %>
+    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+    </svg>
+  </a>
+</div>
+<% else %>
+<div class="px-4 md:px-6 pb-4 md:pb-6">
+  <p class="text-sm text-gray-500 dark:text-gray-400 italic">
+    <%= case I18n.locale when :fr then 'Aucun travail préparatoire trouvé.' when :de then 'Keine Gesetzgebungsvorarbeiten gefunden.' when :en then 'No parliamentary preparatory works found.' else 'Geen parlementaire voorbereidingen gevonden.' end %>
+  </p>
+</div>
+<% end %>

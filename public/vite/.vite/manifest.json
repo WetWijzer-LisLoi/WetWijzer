@@ -1,0 +1,31 @@
+{
+  "../../node_modules/@rails/actioncable/src/index.js": {
+    "file": "assets/src-CAVUzBaU.js",
+    "name": "src",
+    "src": "../../node_modules/@rails/actioncable/src/index.js",
+    "isDynamicEntry": true
+  },
+  "_application-C6M80jvT.css": {
+    "file": "assets/application-C6M80jvT.css",
+    "src": "_application-C6M80jvT.css"
+  },
+  "_application-DZILG214.js": {
+    "file": "assets/application-DZILG214.js",
+    "name": "application",
+    "dynamicImports": [
+      "../../node_modules/@rails/actioncable/src/index.js"
+    ],
+    "css": [
+      "assets/application-C6M80jvT.css"
+    ]
+  },
+  "entrypoints/application.js": {
+    "file": "assets/application-CoaWmbr8.js",
+    "name": "entrypoints\\application.js",
+    "src": "entrypoints/application.js",
+    "isEntry": true,
+    "imports": [
+      "_application-DZILG214.js"
+    ]
+  }
+}

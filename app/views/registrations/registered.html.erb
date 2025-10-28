@@ -1,0 +1,139 @@
+<%= content_for :title, case I18n.locale when :fr then 'Inscription réussie' when :de then 'Registrierung erfolgreich' when :en then 'Registration successful' else 'Registratie gelukt' end %>
+
+<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center space-y-6">
+      <%# Success checkmark with animation %>
+      <div class="flex justify-center">
+        <div class="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center animate-bounce-once">
+          <svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+      </div>
+
+      <%# Title %>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+        <%= case I18n.locale
+            when :fr then 'Inscription réussie !'
+            when :de then 'Registrierung erfolgreich!'
+            when :en then 'Registration successful!'
+            else 'Registratie gelukt!'
+            end %>
+      </h1>
+
+      <%# Email icon + instruction %>
+      <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl p-5">
+        <div class="flex justify-center mb-3">
+          <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <p class="text-sm text-blue-800 dark:text-blue-200 font-medium">
+          <%= case I18n.locale
+              when :fr then "Un e-mail de vérification a été envoyé à :"
+              when :de then 'Eine Bestätigungs-E-Mail wurde gesendet an:'
+              when :en then 'A verification email has been sent to:'
+              else 'Een verificatiemail is verzonden naar:'
+              end %>
+        </p>
+        <p class="mt-1 text-sm font-bold text-blue-900 dark:text-blue-100">
+          <%= @registered_email %>
+        </p>
+      </div>
+
+      <%# Steps %>
+      <div class="text-left space-y-3">
+        <div class="flex items-start gap-3">
+          <span class="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300">1</span>
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            <%= case I18n.locale
+                when :fr then "Ouvrez votre boîte de réception et cherchez l'e-mail de WetWijzer."
+                when :de then 'Öffnen Sie Ihren Posteingang und suchen Sie die E-Mail von WetWijzer.'
+                when :en then 'Open your inbox and look for the email from WetWijzer.'
+                else 'Open uw inbox en zoek de e-mail van WetWijzer.'
+                end %>
+          </p>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300">2</span>
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            <%= case I18n.locale
+                when :fr then "Cliquez sur le lien de vérification dans l'e-mail."
+                when :de then 'Klicken Sie auf den Bestätigungslink in der E-Mail.'
+                when :en then 'Click the verification link in the email.'
+                else 'Klik op de verificatielink in de e-mail.'
+                end %>
+          </p>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300">3</span>
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            <%= case I18n.locale
+                when :fr then 'Connectez-vous et commencez avec 3 crédits gratuits !'
+                when :de then 'Melden Sie sich an und starten Sie mit 3 kostenlosen Credits!'
+                when :en then 'Log in and start with 3 free credits!'
+                else 'Log in en begin met 3 gratis credits!'
+                end %>
+          </p>
+        </div>
+        <% if cookies.signed[:pending_pro].present? %>
+          <div class="flex items-start gap-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 -mx-1">
+            <span class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background: var(--accent-600-solid, #2563eb);">4</span>
+            <p class="text-sm font-medium" style="color: var(--accent-700, #1d4ed8);">
+              <%= case I18n.locale
+                  when :fr then 'Après connexion, vous serez automatiquement redirigé vers le paiement WetWijzer Pro.'
+                  when :de then 'Nach der Anmeldung werden Sie automatisch zur WetWijzer Pro-Zahlung weitergeleitet.'
+                  when :en then 'After login, you\'ll be automatically redirected to WetWijzer Pro payment.'
+                  else 'Na het inloggen wordt u automatisch doorgestuurd naar de WetWijzer Pro-betaling.'
+                  end %>
+            </p>
+          </div>
+        <% end %>
+      </div>
+
+      <%# Spam warning %>
+      <p class="text-xs text-gray-400 dark:text-gray-500">
+        💡 <%= case I18n.locale
+              when :fr then "Vérifiez aussi votre dossier spam ou courrier indésirable."
+              when :de then 'Überprüfen Sie auch Ihren Spam- oder Junk-Ordner.'
+              when :en then 'Also check your spam or junk folder.'
+              else 'Controleer ook uw spam- of ongewenste e-mailmap.'
+              end %>
+      </p>
+
+      <%# Actions %>
+      <div class="space-y-3 pt-2">
+        <%= link_to login_path, class: "block w-full py-3 px-4 bg-(--accent-600-solid) hover:bg-(--accent-700-solid) text-white font-medium rounded-lg text-center transition-colors shadow-lg shadow-(--accent-600)/25" do %>
+          <%= case I18n.locale
+              when :fr then 'Aller à la page de connexion'
+              when :de then 'Zur Anmeldeseite'
+              when :en then 'Go to login page'
+              else 'Ga naar de inlogpagina'
+              end %>
+        <% end %>
+
+        <%= link_to resend_confirmation_path(email: @registered_email), method: :post, class: "block text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors" do %>
+          <%= case I18n.locale
+              when :fr then "Renvoyer l'e-mail de vérification"
+              when :de then 'Bestätigungs-E-Mail erneut senden'
+              when :en then 'Resend verification email'
+              else 'Verificatiemail opnieuw verzenden'
+              end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes bounce-once {
+    0%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-12px); }
+    50% { transform: translateY(-4px); }
+    70% { transform: translateY(-8px); }
+  }
+  .animate-bounce-once {
+    animation: bounce-once 0.8s ease-out;
+  }
+</style>

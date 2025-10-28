@@ -1,0 +1,134 @@
+﻿/* ============================================================================
+ * BUTTON IMPROVEMENTS - Better theme integration
+ * ============================================================================ */
+
+/* Toggle buttons - refined styling for all themes */
+.btn-toggle-active,
+.btn-toggle-inactive,
+.btn-toggle-exdecs {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+/* Fun themes - Active state uses theme accent */
+.btn-toggle-active {
+  background-color: var(--accent-50);
+  color: var(--accent-700);
+  border-color: var(--accent-200);
+}
+
+.dark .btn-toggle-active {
+  background-color: color-mix(in srgb, var(--accent-500) 15%, transparent);
+  color: var(--accent-300);
+  border-color: color-mix(in srgb, var(--accent-500) 30%, transparent);
+}
+
+.btn-toggle-active:hover {
+  background-color: var(--accent-100);
+  border-color: var(--accent-300);
+}
+
+.dark .btn-toggle-active:hover {
+  background-color: color-mix(in srgb, var(--accent-500) 20%, transparent);
+  border-color: color-mix(in srgb, var(--accent-500) 40%, transparent);
+}
+
+/* Inactive state - grayscale */
+.btn-toggle-inactive {
+  background-color: rgb(249, 250, 251);
+  color: rgb(107, 114, 128);
+  border-color: rgb(229, 231, 235);
+}
+
+.dark .btn-toggle-inactive {
+  background-color: rgba(55, 65, 81, 0.3);
+  color: rgb(156, 163, 175);
+  border-color: rgb(75, 85, 99);
+}
+
+.btn-toggle-inactive:hover {
+  background-color: rgb(243, 244, 246);
+  border-color: rgb(209, 213, 219);
+}
+
+.dark .btn-toggle-inactive:hover {
+  background-color: rgba(55, 65, 81, 0.4);
+  border-color: rgb(107, 114, 128);
+}
+
+/* Professional themes - Minimal button styling */
+.theme-slate .btn-toggle-active,
+.theme-indigo .btn-toggle-active,
+.theme-sky .btn-toggle-active,
+.theme-teal .btn-toggle-active,
+.theme-cyan .btn-toggle-active,
+.theme-green .btn-toggle-active,
+.theme-purple .btn-toggle-active,
+.theme-red .btn-toggle-active {
+  background-color: transparent !important;
+  color: var(--accent-600) !important;
+  border-color: var(--accent-300) !important;
+  font-weight: 500 !important;
+}
+
+.theme-slate.dark .btn-toggle-active,
+.theme-indigo.dark .btn-toggle-active,
+.theme-sky.dark .btn-toggle-active,
+.theme-teal.dark .btn-toggle-active,
+.theme-cyan.dark .btn-toggle-active,
+.theme-green.dark .btn-toggle-active,
+.theme-purple.dark .btn-toggle-active,
+.theme-red.dark .btn-toggle-active,
+.dark .theme-slate .btn-toggle-active,
+.dark .theme-indigo .btn-toggle-active,
+.dark .theme-sky .btn-toggle-active,
+.dark .theme-teal .btn-toggle-active,
+.dark .theme-cyan .btn-toggle-active,
+.dark .theme-green .btn-toggle-active,
+.dark .theme-purple .btn-toggle-active,
+.dark .theme-red .btn-toggle-active {
+  background-color: transparent !important;
+  color: var(--accent-400) !important;
+  border-color: var(--accent-500) !important;
+}
+
+.theme-slate .btn-toggle-inactive,
+.theme-indigo .btn-toggle-inactive,
+.theme-sky .btn-toggle-inactive,
+.theme-teal .btn-toggle-inactive,
+.theme-cyan .btn-toggle-inactive,
+.theme-green .btn-toggle-inactive,
+.theme-purple .btn-toggle-inactive,
+.theme-red .btn-toggle-inactive {
+  background-color: transparent !important;
+  color: rgb(107, 114, 128) !important;
+  border-color: rgb(209, 213, 219) !important;
+}
+
+.theme-slate.dark .btn-toggle-inactive,
+.theme-indigo.dark .btn-toggle-inactive,
+.theme-sky.dark .btn-toggle-inactive,
+.theme-teal.dark .btn-toggle-inactive,
+.theme-cyan.dark .btn-toggle-inactive,
+.theme-green.dark .btn-toggle-inactive,
+.theme-purple.dark .btn-toggle-inactive,
+.theme-red.dark .btn-toggle-inactive,
+.dark .theme-slate .btn-toggle-inactive,
+.dark .theme-indigo .btn-toggle-inactive,
+.dark .theme-sky .btn-toggle-inactive,
+.dark .theme-teal .btn-toggle-inactive,
+.dark .theme-cyan .btn-toggle-inactive,
+.dark .theme-green .btn-toggle-inactive,
+.dark .theme-purple .btn-toggle-inactive,
+.dark .theme-red .btn-toggle-inactive {
+  background-color: transparent !important;
+  color: rgb(156, 163, 175) !important;
+  border-color: rgb(75, 85, 99) !important;
+}

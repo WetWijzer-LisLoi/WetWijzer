@@ -1,0 +1,11 @@
+<%= t('mailer.deletion_final_warning.title', default: 'Final Warning: Account Deletion') %>
+
+<%= t('mailer.deletion_final_warning.greeting', name: @user.name || @user.email, default: "Hello #{@user.name || @user.email}") %>
+
+<%= t('mailer.deletion_final_warning.body', date: @deletion_date&.strftime('%d/%m/%Y'), default: "Your account will be permanently deleted on #{@deletion_date&.strftime('%d/%m/%Y')}.") %>
+
+<%= t('mailer.deletion_final_warning.cancel_prompt', default: 'To cancel, click the link below:') %>
+<%= @cancel_url %>
+
+<%= t('mailer.deletion_final_warning.reactivation_link', default: 'Or reactivate without logging in:') %>
+<%= @reactivation_url %>

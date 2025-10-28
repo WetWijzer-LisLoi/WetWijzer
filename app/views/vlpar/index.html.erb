@@ -1,0 +1,229 @@
+<% content_for :title do %>
+  <% case I18n.locale when :fr %>Parlement flamand<% when :de %>Flämisches Parlament<% when :en %>Flemish Parliament<% else %>Vlaams Parlement<% end %>
+<% end %>
+
+<div class="max-w-7xl mx-auto px-4 py-8">
+  <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white flex items-center gap-3 mb-2">
+    <span class="text-3xl">🏛️</span>
+    <% case I18n.locale when :fr %>Parlement flamand<% when :de %>Flämisches Parlament<% when :en %>Flemish Parliament<% else %>Vlaams Parlement<% end %>
+  </h1>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+    <%= @members.size %> <%= case I18n.locale when :fr then 'députés' when :de then 'Abgeordnete' when :en then 'members' else 'volksvertegenwoordigers' end %>
+    <% if @legislature.present? %>— <span class="font-semibold"><%= @legislature %></span><% end %>
+    <% if @party_filter.present? %>
+      — <span class="font-semibold"><%= @party_filter %></span>
+    <% end %>
+  </p>
+  <div class="flex flex-wrap gap-4 items-center text-sm mb-6">
+    <a href="<%= mp_directory_path %>" class="text-(--accent-600) dark:text-(--accent-400) hover:underline">
+      ← <% case I18n.locale when :fr %>Chambre fédérale<% when :de %>Bundeskammer<% when :en %>Federal Chamber<% else %>Federale Kamer<% end %>
+    </a>
+    <a href="<%= hemicycle_history_path %>" class="text-(--accent-600) dark:text-(--accent-400) hover:underline">
+      🏛️ <% case I18n.locale when :fr %>Hémicycle historique<% when :de %>Historischer Halbkreis<% when :en %>Historical Hemicycle<% else %>Historisch hemicyclus<% end %> (1894–2024)
+    </a>
+    <% if @legislatures && @legislatures.size > 1 %>
+      <form method="get" action="<%= vlpar_index_path %>" class="flex items-center gap-2">
+        <select name="legislature" data-autosubmit="true" class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200">
+          <% @legislatures.each do |leg| %>
+            <option value="<%= leg %>" <%= leg == @legislature ? 'selected' : '' %>><%= leg %></option>
+          <% end %>
+        </select>
+        <script nonce="<%= content_security_policy_nonce %>">
+          document.querySelectorAll('[data-autosubmit]').forEach(function(el) {
+            el.addEventListener('change', function() { this.form.submit(); });
+          });
+        </script>
+      </form>
+    <% end %>
+  </div>
+
+  <% if @db_unavailable %>
+    <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-6 text-center">
+      <p class="text-amber-700 dark:text-amber-300 font-semibold mb-2">⚠️ Database niet beschikbaar</p>
+      <p class="text-sm text-amber-600 dark:text-amber-400">
+        <% if I18n.locale == :fr %>Les données du Parlement flamand n'ont pas encore été importées.
+        <% else %>Gegevens Vlaams Parlement zijn nog niet geïmporteerd. Voer <code>rake vlpar:scrape</code> uit op de server.
+        <% end %>
+      </p>
+    </div>
+  <% end %>
+
+  <!-- Hemicycle Visualization -->
+  <% if @factions.present? %>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-8">
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+        <span class="text-xl">🏛️</span>
+        <% case I18n.locale when :fr %>Hémicycle<% when :de %>Halbkreis<% when :en %>Hemicycle<% else %>Hemicyclus<% end %>
+        — <span class="text-(--accent-600) dark:text-(--accent-400)"><%= @total_seats %> <% case I18n.locale when :fr %>sièges<% when :de %>Sitze<% when :en %>seats<% else %>zetels<% end %></span>
+      </h2>
+
+      <div class="flex flex-col lg:flex-row items-center gap-6">
+        <!-- SVG Hemicycle -->
+        <div class="w-full lg:w-2/3 flex justify-center">
+          <svg id="vlparHemicycleSvg" viewBox="0 0 500 280" class="w-full max-w-lg" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 30 260 A 220 220 0 0 1 470 260" fill="none" stroke="currentColor" stroke-opacity="0.1" stroke-width="40" class="text-gray-400 dark:text-gray-600"/>
+
+            <%
+              total_seats = @total_seats
+              rows = 7
+              seat_radius = 5.0
+              cx, cy = 250, 265
+
+              # Build seat array: sort by faction volgnr (spectrum)
+              seats = []
+              @factions.each do |faction|
+                faction[:seats].times { seats << faction }
+              end
+
+              seat_idx = 0
+            %>
+            <% (0...rows).each do |row| %>
+              <%
+                r = 100 + row * 23
+                n = (total_seats.to_f * (Math::PI * r) / (0...rows).sum { |rr| Math::PI * (100 + rr * 23) }).round
+                n = [n, total_seats - seat_idx].min
+                next if n <= 0
+              %>
+              <% (0...n).each do |i| %>
+                <%
+                  break if seat_idx >= seats.size
+                  angle = Math::PI - (Math::PI * (i + 0.5) / n)
+                  sx = cx + r * Math.cos(angle)
+                  sy = cy - r * Math.sin(angle)
+                  faction = seats[seat_idx]
+                  seat_idx += 1
+                %>
+                <circle cx="<%= sx.round(1) %>" cy="<%= sy.round(1) %>" r="<%= seat_radius %>"
+                        fill="<%= faction[:color] %>"
+                        opacity="0.9"
+                        class="seat-dot"
+                        data-party="<%= faction[:name] %>"
+                        style="cursor:pointer;transition:all .15s">
+                  <title><%= faction[:name] %> (<%= faction[:seats] %>)</title>
+                </circle>
+              <% end %>
+            <% end %>
+
+            <text x="250" y="255" text-anchor="middle" fill="currentColor" class="text-gray-600 dark:text-gray-400 text-xs font-semibold" font-size="12">
+              <%= total_seats %> <% case I18n.locale when :fr %>sièges<% when :de %>Sitze<% when :en %>seats<% else %>zetels<% end %>
+            </text>
+          </svg>
+        </div>
+
+        <!-- Legend -->
+        <div class="w-full lg:w-1/3">
+          <div class="grid grid-cols-2 gap-2">
+            <% @factions.sort_by { |f| -f[:seats] }.each do |faction| %>
+              <a href="<%= vlpar_index_path(party: faction[:name], legislature: @legislature) %>"
+                 class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-sky/10 transition-all group <%= @party_filter == faction[:name] ? 'bg-gray-100 dark:bg-sky/20 ring-1 ring-(--accent-400)' : '' %>"
+                 data-legend-party="<%= faction[:name] %>">
+                <span class="w-3 h-3 rounded-full shrink-0" style="background-color: <%= faction[:color] %>"></span>
+                <span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white truncate"><%= faction[:name] %></span>
+                <span class="text-xs text-gray-400 ml-auto"><%= faction[:seats] %></span>
+              </a>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hover interactivity JS (same pattern as federal hemicycle) -->
+    <script nonce="<%= content_security_policy_nonce %>">
+    document.addEventListener("DOMContentLoaded", function() {
+      const svg = document.getElementById("vlparHemicycleSvg");
+      if (!svg) return;
+      const dots = svg.querySelectorAll(".seat-dot");
+      const allLegendItems = document.querySelectorAll("[data-legend-party]");
+      const dr = dots[0] ? dots[0].getAttribute("r") : "5";
+
+      function hl(party) {
+        dots.forEach(d => {
+          if (d.getAttribute("data-party") === party) {
+            d.setAttribute("r", parseFloat(dr) * 1.3);
+            d.setAttribute("opacity", "1");
+            d.setAttribute("stroke", "#fff"); d.setAttribute("stroke-width", "1.5");
+          } else {
+            d.setAttribute("r", dr); d.setAttribute("opacity", "0.15");
+            d.removeAttribute("stroke"); d.removeAttribute("stroke-width");
+          }
+        });
+        allLegendItems.forEach(el => {
+          el.style.opacity = el.getAttribute("data-legend-party") === party ? "1" : "0.3";
+        });
+      }
+
+      function clr() {
+        dots.forEach(d => {
+          d.setAttribute("r", dr); d.setAttribute("opacity", "0.9");
+          d.removeAttribute("stroke"); d.removeAttribute("stroke-width");
+        });
+        allLegendItems.forEach(el => { el.style.opacity = "1"; });
+      }
+
+      svg.addEventListener("mouseover", e => {
+        const p = e.target.getAttribute("data-party");
+        if (p) hl(p);
+      });
+      svg.addEventListener("mouseout", e => {
+        if (e.target.classList.contains("seat-dot")) clr();
+      });
+
+      allLegendItems.forEach(el => {
+        el.addEventListener("mouseenter", () => hl(el.getAttribute("data-legend-party")));
+        el.addEventListener("mouseleave", () => clr());
+      });
+    });
+    </script>
+  <% end %>
+
+  <!-- MP Cards Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <% @members.each do |mp| %>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow flex gap-3 items-start">
+        <% if mp[:photo_url].present? %>
+          <img src="<%= mp[:photo_url] %>" alt="<%= mp[:name] %>"
+               loading="lazy"
+               class="w-14 h-14 rounded-full object-cover border-2 shrink-0 img-fallback-hide"
+               style="border-color: <%= mp[:color] %>">
+        <% else %>
+          <div class="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold shrink-0"
+               style="background-color: <%= mp[:color] %>">
+            <%= mp[:surname]&.first&.upcase %>
+          </div>
+        <% end %>
+        <div class="min-w-0">
+          <h3 class="font-bold text-gray-900 dark:text-white text-sm truncate"><%= mp[:surname] %> <%= mp[:first_name] %></h3>
+          <div class="flex items-center gap-1 mt-0.5">
+            <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: <%= mp[:color] %>"></span>
+            <span class="text-xs text-gray-500 dark:text-gray-400 truncate"><%= mp[:party] %></span>
+          </div>
+          <% if mp[:kieskring].present? %>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">📍 <%= mp[:kieskring].sub('Kieskring ', '') %></p>
+          <% end %>
+          <% if mp[:deelstaatsenator] %>
+            <span class="inline-block text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded mt-1">
+              <% case I18n.locale when :fr %>Sénateur<% when :de %>Senator<% when :en %>Senator<% else %>Deelstaatsenator<% end %>
+            </span>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @members.empty? %>
+    <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+      <% case I18n.locale
+        when :fr %>Aucun député trouvé<%
+        when :de %>Keine Abgeordneten gefunden<%
+        when :en %>No members found<%
+        else %>Geen volksvertegenwoordigers gevonden<%
+      end %>
+    </div>
+  <% end %>
+</div>
+
+<script nonce="<%= content_security_policy_nonce %>">
+  document.querySelectorAll('.img-fallback-hide').forEach(function(img) {
+    img.addEventListener('error', function() { this.style.display = 'none'; });
+  });
+</script>

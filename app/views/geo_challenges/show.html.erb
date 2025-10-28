@@ -1,0 +1,111 @@
+<% content_for(:title) { case I18n.locale when :fr then 'Vérification de sécurité' when :de then 'Sicherheitsprüfung' when :en then 'Security Verification' else 'Beveiligingscontrole' end } %>
+
+<div class="min-h-screen flex items-center justify-center px-4 py-16" style="background: linear-gradient(135deg, var(--accent-900, #0f172a) 0%, var(--accent-800, #1e293b) 50%, var(--accent-900, #0f172a) 100%);">
+  <div class="w-full max-w-md">
+    <%# Brand logo %>
+    <div class="text-center mb-8">
+      <h1 class="text-3xl sm:text-4xl font-black text-white tracking-tight" style="font-family: 'Georgia', serif; font-style: italic;">
+        <%= site_name %>
+      </h1>
+    </div>
+
+    <%# Challenge card %>
+    <div class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl">
+      <%# Shield icon %>
+      <div class="flex justify-center mb-5">
+        <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, var(--accent-500, #3b82f6), var(--accent-700, #1d4ed8));">
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+        </div>
+      </div>
+
+      <h2 class="text-xl font-bold text-white text-center mb-2">
+        <%= case I18n.locale
+            when :fr then 'Vérification de sécurité'
+            when :de then 'Sicherheitsprüfung'
+            when :en then 'Security Verification'
+            else 'Beveiligingscontrole'
+            end %>
+      </h2>
+
+      <p class="text-sm text-gray-300 text-center mb-6 leading-relaxed">
+        <%= case I18n.locale
+            when :fr then "Cette vérification est requise pour les visiteurs en dehors de l'Union Européenne. Elle sera effectuée automatiquement."
+            when :de then 'Diese Überprüfung ist für Besucher außerhalb der Europäischen Union erforderlich. Sie wird automatisch durchgeführt.'
+            when :en then 'This verification is required for visitors outside the European Union. It will be completed automatically.'
+            else 'Deze verificatie is vereist voor bezoekers buiten de Europese Unie. Het wordt automatisch uitgevoerd.'
+            end %>
+      </p>
+
+      <% if @error %>
+        <div class="mb-4 p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-200 text-sm text-center">
+          <%= case I18n.locale
+              when :fr then 'La vérification a échoué. Veuillez réessayer.'
+              when :de then 'Die Überprüfung ist fehlgeschlagen. Bitte versuchen Sie es erneut.'
+              when :en then 'Verification failed. Please try again.'
+              else 'Verificatie mislukt. Probeer het opnieuw.'
+              end %>
+        </div>
+      <% end %>
+
+      <%= form_with url: geo_challenge_path, method: :post, local: true, id: "geo-challenge-form", class: "space-y-4" do |f| %>
+        <div class="flex justify-center">
+          <altcha-widget
+            challengeurl="/altcha-challenge.json"
+            auto="onload"
+            hidefooter
+            hidelogo
+            style="--altcha-max-width: 100%; --altcha-color-text: #e2e8f0; --altcha-color-border: rgba(255,255,255,0.15); --altcha-color-border-focus: var(--accent-500, #3b82f6); --altcha-color-bg: transparent;">
+          </altcha-widget>
+        </div>
+        <noscript>
+          <div class="p-3 rounded-lg bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 text-sm text-center">
+            <%= case I18n.locale
+                when :fr then 'JavaScript est requis pour cette vérification.'
+                when :de then 'JavaScript ist für diese Überprüfung erforderlich.'
+                when :en then 'JavaScript is required for this verification.'
+                else 'JavaScript is vereist voor deze verificatie.'
+                end %>
+          </div>
+        </noscript>
+
+
+      <% end %>
+
+      <%# Auto-submit when solved %>
+      <script nonce="<%= content_security_policy_nonce %>">
+        document.addEventListener('DOMContentLoaded', function() {
+          const form = document.getElementById('geo-challenge-form');
+          if (form) {
+            form.addEventListener('statechange', function(e) {
+              if (e.detail && e.detail.state === 'verified') {
+                form.submit();
+              }
+            });
+            // Also listen on the widget directly
+            const widget = form.querySelector('altcha-widget');
+            if (widget) {
+              widget.addEventListener('statechange', function(e) {
+                if (e.detail && e.detail.state === 'verified') {
+                  form.submit();
+                }
+              });
+            }
+          }
+        });
+      </script>
+
+      <p class="text-xs text-gray-500 text-center mt-4">
+        <%= case I18n.locale
+            when :fr then "Propulsé par ALTCHA — vérification open-source respectueuse de la vie privée"
+            when :de then 'Betrieben von ALTCHA — datenschutzfreundliche Open-Source-Verifizierung'
+            when :en then 'Powered by ALTCHA — privacy-friendly open-source verification'
+            else 'Mogelijk gemaakt door ALTCHA — privacyvriendelijke open-source verificatie'
+            end %>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script src="/altcha.min.js" type="module" defer nonce="<%= content_security_policy_nonce %>"></script>

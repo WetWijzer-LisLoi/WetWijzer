@@ -1,0 +1,10 @@
+<%= t('mailer.subscription_cancelled.title', default: 'Subscription Cancelled') %>
+
+<%= t('mailer.subscription_cancelled.greeting', name: @user.name || @user.email, default: "Hello #{@user.name || @user.email}") %>
+
+<%= t('mailer.subscription_cancelled.body', default: 'Your Pro subscription has been cancelled.') %>
+
+<% if @period_end %><%= t('mailer.subscription_cancelled.access_until', date: @period_end.strftime('%d/%m/%Y'), default: "You retain Pro access until #{@period_end.strftime('%d/%m/%Y')}.") %><% end %>
+
+<%= t('mailer.subscription_cancelled.resubscribe', default: 'You can resubscribe anytime:') %>
+<%= @resubscribe_url %>

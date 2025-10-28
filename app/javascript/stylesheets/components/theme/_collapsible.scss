@@ -1,0 +1,62 @@
+﻿/* ============================================================================
+ * COLLAPSIBLE SECTIONS (GENERIC COLLAPSE CONTROLLER)
+ * ============================================================================ */
+
+/* Collapse button cursor */
+button[data-collapse-target="button"] {
+  cursor: pointer;
+}
+
+/* Chevron icon rotation for any collapse controller */
+button[data-collapse-target="button"][aria-expanded="false"] svg[data-collapse-target="icon"] {
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+}
+
+button[data-collapse-target="button"][aria-expanded="true"] svg[data-collapse-target="icon"] {
+  transform: rotate(0deg);
+  transition: transform 0.2s ease;
+}
+
+/* Generic collapse content - applies to ALL collapse controllers */
+[data-controller~="collapse"] [data-collapse-target="content"] {
+  transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+  max-height: none;
+  opacity: 1;
+}
+
+/* Collapsed state - generic for any collapse controller */
+[data-controller~="collapse"].is-collapsed [data-collapse-target="content"] {
+  max-height: 0 !important;
+  opacity: 0;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Hide emoji icons in professional themes */
+.theme-slate .popular-laws-icon,
+.theme-indigo .popular-laws-icon,
+.theme-sky .popular-laws-icon,
+.theme-teal .popular-laws-icon,
+.theme-cyan .popular-laws-icon,
+.theme-green .popular-laws-icon,
+.theme-purple .popular-laws-icon,
+.theme-red .popular-laws-icon {
+  display: none;
+}
+
+/* Simplify Alpha Version badge in professional themes */
+.theme-slate .alpha-version-badge,
+.theme-indigo .alpha-version-badge,
+.theme-sky .alpha-version-badge,
+.theme-teal .alpha-version-badge,
+.theme-cyan .alpha-version-badge,
+.theme-green .alpha-version-badge,
+.theme-purple .alpha-version-badge,
+.theme-red .alpha-version-badge {
+  background-color: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}

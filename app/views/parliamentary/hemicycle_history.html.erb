@@ -1,0 +1,285 @@
+<% @title = { fr: 'Hémicycle historique', de: 'Historischer Halbkreis', nl: 'Historisch Hemicyclus' }[I18n.locale] || 'Historisch Hemicyclus' %>
+
+<div class="max-w-6xl mx-auto px-4">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-blue-400 mb-2 flex items-center gap-3">
+      <span class="text-4xl">🏛️</span>
+      <% if I18n.locale == :fr %>Hémicycle historique<% elsif I18n.locale == :de %>Historischer Halbkreis<% else %>Historisch Hemicyclus<% end %>
+    </h1>
+    <p class="text-lg text-gray-600 dark:text-gray-300">
+      <% if I18n.locale == :fr %>
+        Composition de la Chambre des représentants depuis 1894
+      <% elsif I18n.locale == :de %>
+        Zusammensetzung der Abgeordnetenkammer seit 1894
+      <% else %>
+        Samenstelling van de Kamer van volksvertegenwoordigers sinds 1894
+      <% end %>
+    </p>
+    <div class="mt-2 flex gap-4">
+      <a href="<%= mp_directory_path %>" class="text-sm text-(--accent-600) dark:text-(--accent-400) hover:underline">
+        ← <% if I18n.locale == :fr %>Retour aux députés<% elsif I18n.locale == :de %>Zurück zu den Abgeordneten<% elsif I18n.locale == :en %>Back to members<% else %>Terug naar kamerleden<% end %>
+      </a>
+    </div>
+  </div>
+
+  <% if @hemicycle.present? %>
+    <!-- Year Selector -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-8">
+      <div class="flex flex-wrap items-center gap-4 mb-4">
+        <label class="text-sm font-bold text-gray-700 dark:text-gray-300">
+          <% if I18n.locale == :fr %>Élections<% elsif I18n.locale == :de %>Wahlen<% else %>Verkiezingen<% end %>
+        </label>
+        <div class="flex flex-wrap gap-1.5">
+          <% @years.reverse.each do |year| %>
+            <a href="<%= hemicycle_history_path(year: year) %>"
+               class="px-2.5 py-1 rounded-md text-xs font-medium transition-all
+                      <%= year == @selected_year ?
+                        'bg-(--accent-600-solid) text-white shadow-md' :
+                        'bg-gray-100 dark:bg-sky/10 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-sky/20' %>">
+              <%= year %>
+            </a>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Current year title -->
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+          <% if I18n.locale == :fr %>Chambre des représentants<% elsif I18n.locale == :de %>Abgeordnetenkammer<% else %>Kamer van volksvertegenwoordigers<% end %>
+          — <span class="text-(--accent-600) dark:text-(--accent-400)"><%= @selected_year %></span>
+        </h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <span class="font-semibold"><%= @hemicycle[:total_seats] %></span>
+          <% if I18n.locale == :fr %>sièges<% elsif I18n.locale == :de %>Sitze<% else %>zetels<% end %>
+          —
+          <span class="font-semibold"><%= @hemicycle[:parties].size %></span>
+          <% if I18n.locale == :fr %>partis<% elsif I18n.locale == :de %>Parteien<% else %>partijen<% end %>
+        </p>
+      </div>
+
+      <div class="flex flex-col lg:flex-row items-center gap-6">
+        <!-- SVG Hemicycle -->
+        <div class="w-full lg:w-2/3 flex justify-center">
+          <svg id="hemicycleSvg" viewBox="0 0 500 280" class="w-full max-w-lg" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background arc -->
+            <path d="M 30 260 A 220 220 0 0 1 470 260" fill="none" stroke="currentColor" stroke-opacity="0.1" stroke-width="40" class="text-gray-400 dark:text-gray-600"/>
+
+            <%
+              total_seats = @hemicycle[:total_seats]
+              cx, cy = 250, 265
+              r_min = 95
+              r_max = 255
+              row_gap = 20
+
+              # Compute row count and radii
+              num_rows = [(((r_max - r_min) / row_gap).floor), 3].max
+              num_rows = [num_rows, 10].min
+
+              radii = (0...num_rows).map { |i| r_min + i * ((r_max - r_min).to_f / (num_rows - 1)) }
+
+              # Distribute seats proportionally across rows by arc length
+              arc_lengths = radii.map { |r| Math::PI * r }
+              total_arc = arc_lengths.sum
+
+              row_counts = radii.each_with_index.map { |r, i|
+                (total_seats.to_f * arc_lengths[i] / total_arc).round
+              }
+
+              # Fix rounding: adjust to exact total
+              diff = total_seats - row_counts.sum
+              if diff > 0
+                diff.times { |d| row_counts[d % num_rows] += 1 }
+              elsif diff < 0
+                (-diff).times { |d| row_counts[(num_rows - 1 - d) % num_rows] -= 1 if row_counts[(num_rows - 1 - d) % num_rows] > 0 }
+              end
+
+              seat_radius = case total_seats
+                            when 0..80 then 7.0
+                            when 81..120 then 6.0
+                            when 121..160 then 5.0
+                            when 161..200 then 4.2
+                            else 3.8
+                            end
+
+              # Build seat array (spectrum-ordered, left→right)
+              all_seats = []
+              @hemicycle[:parties].each do |pd|
+                pd[:seats].times { all_seats << pd }
+              end
+
+              seat_idx = 0
+            %>
+            <% radii.each_with_index do |r, row_i| %>
+              <%
+                n = row_counts[row_i]
+                next if n <= 0
+              %>
+              <% (0...n).each do |i| %>
+                <%
+                  break if seat_idx >= all_seats.size
+                  angle = Math::PI * (1.0 - (i + 0.5) / n)
+                  sx = cx + r * Math.cos(angle)
+                  sy = cy - r * Math.sin(angle)
+                  pd = all_seats[seat_idx]
+                  seat_idx += 1
+                %>
+                <circle cx="<%= sx.round(1) %>" cy="<%= sy.round(1) %>" r="<%= seat_radius %>"
+                        fill="<%= pd[:color] %>"
+                        opacity="0.9"
+                        class="seat-dot"
+                        data-party="<%= pd[:party] %>"
+                        style="cursor:pointer;transition:all .15s">
+                  <title><%= pd[:party] %> (<%= pd[:family] %>)</title>
+                </circle>
+              <% end %>
+            <% end %>
+
+            <!-- Center label -->
+            <text x="250" y="255" text-anchor="middle" fill="currentColor" class="text-gray-600 dark:text-gray-400 text-xs font-semibold" font-size="12">
+              <%= total_seats %> <% if I18n.locale == :fr %>sièges<% elsif I18n.locale == :de %>Sitze<% else %>zetels<% end %>
+            </text>
+            <text x="250" y="240" text-anchor="middle" fill="currentColor" class="text-gray-800 dark:text-gray-200 font-bold" font-size="16">
+              <%= @selected_year %>
+            </text>
+          </svg>
+        </div>
+
+        <!-- Legend -->
+        <div class="w-full lg:w-1/3">
+          <div class="space-y-1.5">
+            <% @hemicycle[:parties].sort_by { |p| -p[:seats] }.each do |party| %>
+              <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-sky/5 hover:bg-gray-100 dark:hover:bg-sky/10 transition-all"
+                   data-legend-party="<%= party[:party] %>">
+                <span class="w-3 h-3 rounded-full shrink-0" style="background-color: <%= party[:color] %>"></span>
+                <span class="text-sm text-gray-700 dark:text-gray-300 flex-1 truncate" title="<%= party[:family] %>">
+                  <%= party[:party] %>
+                </span>
+                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 tabular-nums"><%= party[:seats] %></span>
+                <span class="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums w-8 text-right">
+                  <%= (party[:seats].to_f / @hemicycle[:total_seats] * 100).round(0) %>%
+                </span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Political spectrum legend -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-8">
+      <h3 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+        <% if I18n.locale == :fr %>Spectre politique<% elsif I18n.locale == :de %>Politisches Spektrum<% else %>Politiek spectrum<% end %>
+      </h3>
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
+          <% if I18n.locale == :fr %>Gauche<% elsif I18n.locale == :de %>Links<% else %>Links<% end %>
+        </span>
+        <div class="flex-1 h-3 rounded-full overflow-hidden flex">
+          <% @hemicycle[:parties].each do |party| %>
+            <div style="width: <%= (party[:seats].to_f / @hemicycle[:total_seats] * 100).round(1) %>%; background-color: <%= party[:color] %>;"
+                 title="<%= party[:party] %>: <%= party[:seats] %>"
+                 class="h-full transition-all hover:opacity-80"></div>
+          <% end %>
+        </div>
+        <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
+          <% if I18n.locale == :fr %>Droite<% elsif I18n.locale == :de %>Rechts<% else %>Rechts<% end %>
+        </span>
+      </div>
+    </div>
+
+    <!-- Timeline overview -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-8">
+      <h3 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">
+        <% if I18n.locale == :fr %>Évolution de la composition<% elsif I18n.locale == :de %>Entwicklung der Zusammensetzung<% else %>Evolutie van de samenstelling<% end %>
+      </h3>
+      <div class="space-y-1">
+        <% @timeline.each do |tdata| %>
+          <a href="<%= hemicycle_history_path(year: tdata[:year]) %>"
+             class="flex items-center gap-3 px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-sky/10 transition-colors <%= tdata[:year] == @selected_year ? 'bg-gray-100 dark:bg-sky/20 ring-1 ring-(--accent-400)' : '' %>">
+            <span class="text-xs font-mono font-bold w-10 text-gray-600 dark:text-gray-400"><%= tdata[:year] %></span>
+            <div class="flex-1 h-4 rounded-sm overflow-hidden flex">
+              <% tdata[:parties].each do |p| %>
+                <div style="width: <%= (p[:seats].to_f / tdata[:total] * 100).round(1) %>%; background-color: <%= p[:color] %>;"
+                     title="<%= p[:name] %>: <%= p[:seats] %>"
+                     class="h-full"></div>
+              <% end %>
+            </div>
+            <span class="text-[10px] text-gray-400 w-8 text-right"><%= tdata[:total] %></span>
+          </a>
+        <% end %>
+      </div>
+    </div>
+
+  <% else %>
+    <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+      <span class="text-4xl">🏛️</span>
+      <p class="mt-2">
+        <% if I18n.locale == :fr %>Données indisponibles<% elsif I18n.locale == :de %>Daten nicht verfügbar<% else %>Gegevens niet beschikbaar<% end %>
+      </p>
+    </div>
+  <% end %>
+</div>
+
+<% if @hemicycle.present? %>
+<script nonce="<%= content_security_policy_nonce %>">
+document.addEventListener("DOMContentLoaded", function() {
+  const svg = document.getElementById("hemicycleSvg");
+  if (!svg) return;
+
+  let selected = null;
+  const dots = svg.querySelectorAll(".seat-dot");
+  const legendItems = document.querySelectorAll("[data-legend-party]");
+  const defaultRadius = dots[0] ? dots[0].getAttribute("r") : "5";
+
+  function highlight(party) {
+    selected = party;
+    dots.forEach(d => {
+      if (d.getAttribute("data-party") === party) {
+        d.setAttribute("r", parseFloat(defaultRadius) * 1.3);
+        d.setAttribute("opacity", "1");
+        d.setAttribute("stroke", "#fff");
+        d.setAttribute("stroke-width", "1.5");
+      } else {
+        d.setAttribute("r", defaultRadius);
+        d.setAttribute("opacity", "0.12");
+        d.removeAttribute("stroke");
+        d.removeAttribute("stroke-width");
+      }
+    });
+    legendItems.forEach(el => {
+      el.style.opacity = el.getAttribute("data-legend-party") === party ? "1" : "0.3";
+    });
+  }
+
+  function clear() {
+    selected = null;
+    dots.forEach(d => {
+      d.setAttribute("r", defaultRadius);
+      d.setAttribute("opacity", "0.9");
+      d.removeAttribute("stroke");
+      d.removeAttribute("stroke-width");
+    });
+    legendItems.forEach(el => { el.style.opacity = "1"; });
+  }
+
+  svg.addEventListener("click", function(e) {
+    const party = e.target.getAttribute("data-party");
+    if (party) {
+      party === selected ? clear() : highlight(party);
+    } else if (e.target.tagName !== "title") {
+      clear();
+    }
+  });
+
+  legendItems.forEach(el => {
+    el.style.cursor = "pointer";
+    el.addEventListener("click", function(e) {
+      e.preventDefault();
+      const party = this.getAttribute("data-legend-party");
+      party === selected ? clear() : highlight(party);
+    });
+  });
+});
+</script>
+<% end %>

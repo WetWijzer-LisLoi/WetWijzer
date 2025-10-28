@@ -1,0 +1,271 @@
+<header class="bg-(--surface-header-bg) no-print" data-controller="dark-mode mobile-menu">
+  <div class="container mx-auto px-4 py-2">
+    <div class="flex justify-between items-center gap-y-1">
+      <%# Left: always-visible items %>
+      <div class="flex items-center gap-1 sm:gap-2 text-sm">
+        <%# Dark mode toggle — always visible %>
+        <button type="button"
+                data-action="click->dark-mode#toggle"
+                class="text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors duration-150 ease-out motion-reduce:transition-none focus:outline-hidden"
+                aria-label="<%= t('theme.toggle_dark_mode', default: 'Toggle dark mode') %>">
+          <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M12 6a6 6 0 100 12 6 6 0 000-12z"></path></svg>
+          <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+        </button>
+
+
+        <%# Theme selector — hidden on mobile, visible on sm+ %>
+        <div class="relative hidden sm:block" data-controller="theme-selector">
+          <button type="button"
+                  class="flex items-center justify-center w-6 h-6 rounded-full text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors duration-150 ease-out motion-reduce:transition-none"
+                  aria-label="<%= t('theme.choose_accent') %>"
+                  title="<%= t('theme.choose_accent') %>"
+                  data-action="click->theme-selector#toggle">
+            <span aria-hidden="true" class="block w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600" style="background-color: var(--swatch-color);"></span>
+          </button>
+          <div class="fixed inset-0 hidden" data-theme-selector-target="backdrop" data-action="click->theme-selector#close"></div>
+          <div class="absolute left-0 mt-2 z-30 w-64 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-4 hidden" data-theme-selector-target="panel" role="menu" aria-label="<%= t('theme.choose_accent') %>">
+            <div class="grid grid-cols-8 gap-4 mb-4 justify-items-center">
+              <% themes_for_row(1).each do |theme_key, theme_data| %>
+                <button type="button"
+                        class="<%= theme_button_classes(theme_key) %>"
+                        <% if (style = theme_button_style(theme_key)) %>style="<%= style %>"<% end %>
+                        aria-label="<%= t("theme.#{theme_key}") %>"
+                        title="<%= t("theme.#{theme_key}") %>"
+                        data-action="click->theme-selector#select"
+                        data-theme-selector-target="button"
+                        data-theme-selector-theme-param="<%= theme_key %>"></button>
+              <% end %>
+            </div>
+            <div class="grid grid-cols-8 gap-4 justify-items-center">
+              <% themes_for_row(2).each do |theme_key, theme_data| %>
+                <button type="button"
+                        class="<%= theme_button_classes(theme_key) %>"
+                        <% if (style = theme_button_style(theme_key)) %>style="<%= style %>"<% end %>
+                        aria-label="<%= t("theme.#{theme_key}") %>"
+                        title="<%= t("theme.#{theme_key}") %>"
+                        data-action="click->theme-selector#select"
+                        data-theme-selector-target="button"
+                        data-theme-selector-theme-param="<%= theme_key %>"></button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <%# Desktop nav items — hidden on mobile %>
+        <div class="hidden sm:flex sm:items-center sm:gap-1 sm:gap-2">
+          <%= link_to bookmarks_path, class: %w[text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors duration-150 ease-out motion-reduce:transition-none].join(" "), title: t('bookmarks.title') do %>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+          <% end %>
+
+          <%# RSS feed dropdown %>
+          <div class="relative" data-controller="dropdown">
+            <button type="button"
+                    class="text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 transition-colors duration-150 ease-out motion-reduce:transition-none"
+                    data-action="click->dropdown#toggle"
+                    data-dropdown-target="button"
+                    title="<%= t('rss.subscribe') %>">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M5 3a1 1 0 000 2c5.523 0 10 4.477 10 10a1 1 0 102 0C17 8.373 11.627 3 5 3z"/>
+                <path d="M4 9a1 1 0 011-1 7 7 0 017 7 1 1 0 11-2 0 5 5 0 00-5-5 1 1 0 01-1-1z"/>
+                <circle cx="5" cy="15" r="2"/>
+              </svg>
+            </button>
+            <div class="hidden absolute left-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-black/5 z-50"
+                 data-dropdown-target="menu">
+              <div class="py-1">
+                <p class="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400">RSS</p>
+                <%= link_to laws_path(format: :rss), class: "block px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10 font-medium", target: "_blank" do %>
+                  📰 <%= case I18n.locale when :fr then 'Flux combiné' when :de then 'Kombinierter Feed' when :en then 'Combined feed' else 'Gecombineerde feed' end %>
+                <% end %>
+                <hr class="my-1 border-gray-200 dark:border-gray-600/20">
+                <%= link_to laws_path(format: :rss, source: 'legislation'), class: "block px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10", target: "_blank" do %>
+                  📜 <%= case I18n.locale when :fr then 'Législation' when :de then 'Gesetzgebung' when :en then 'Legislation' else 'Wetgeving' end %>
+                <% end %>
+                <%= link_to laws_path(format: :rss, source: 'jurisprudence'), class: "block px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10", target: "_blank" do %>
+                  ⚖️ <%= case I18n.locale when :fr then 'Jurisprudence' when :de then 'Rechtsprechung' when :en then 'Case law' else 'Rechtspraak' end %>
+                <% end %>
+                <%= link_to laws_path(format: :rss, source: 'parliamentary'), class: "block px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10", target: "_blank" do %>
+                  🏛️ <%= case I18n.locale when :fr then 'Travaux parlementaires' when :de then 'Parlamentarische Arbeit' when :en then 'Parliamentary work' else 'Parlementair werk' end %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
+          <% if Rails.application.config.chatbot_enabled %>
+          <%= link_to chatbot_path, class: %w[text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors duration-150 ease-out motion-reduce:transition-none relative inline-flex items-center].join(" "), title: (case I18n.locale when :fr then "Chatbot juridique" when :de then "Juristischer Chatbot" when :en then "Legal chatbot" else "Juridische chatbot" end) do %>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+            <span class="text-[7px] font-bold leading-none text-amber-600 dark:text-amber-400 -ml-0.5 -mt-2 self-start">α</span>
+          <% end %>
+          <% end %>
+
+          <span class="text-gray-300 dark:text-navy">|</span>
+          <%= link_to "https://wetwijzer.be", class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>NL<span class="hidden sm:inline"> (wetwijzer.be)</span><% end %>
+          <span class="text-gray-300 dark:text-navy">|</span>
+          <%= link_to "https://lisloi.be", class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>FR<span class="hidden sm:inline"> (lisloi.be)</span><% end %>
+          <span class="text-gray-300 dark:text-navy">|</span>
+          <%= link_to "https://gesetzguide.be", class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>DE<span class="hidden sm:inline"> (gesetzguide.be)</span><% end %>
+          <span class="text-gray-300 dark:text-navy">|</span>
+          <%= link_to "https://lexlibera.be", class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>EN/INT<span class="hidden sm:inline"> (lexlibera.be)</span><% end %>
+        </div>
+      </div>
+
+      <%# Right: profile + hamburger %>
+      <div class="flex items-center gap-2">
+        <%# Hamburger button — mobile only %>
+        <button type="button"
+                class="sm:hidden p-1.5 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                data-action="click->mobile-menu#toggle"
+                aria-label="Menu"
+                aria-expanded="false">
+          <%# Hamburger icon %>
+          <svg data-mobile-menu-target="openIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          <%# Close icon %>
+          <svg data-mobile-menu-target="closeIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+
+        <%# Profile / Login — always visible %>
+        <% if logged_in? %>
+          <div class="relative" data-controller="dropdown">
+            <button type="button" 
+                    class="relative flex items-center justify-center w-8 h-8 rounded-full bg-(--accent-600-solid) text-white font-semibold text-sm hover:bg-(--accent-700-solid) transition-colors"
+                    data-dropdown-target="button"
+                    data-action="click->dropdown#toggle"
+                    title="<%= current_user.name || current_user.email %>">
+              <%= (current_user.name&.first || current_user.email.first).upcase %>
+              <% if current_user.pro? %>
+                <span class="absolute -top-1 -right-1 flex items-center justify-center w-[18px] h-[18px] rounded-full shadow-[0_1px_4px_rgba(217,119,6,0.6)] ring-[1.5px] ring-white dark:ring-gray-900" style="background: linear-gradient(135deg, #fcd34d, #f59e0b, #d97706);" title="WetWijzer Pro">
+                  <svg class="w-[11px] h-[11px]" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1z"/>
+                  </svg>
+                </span>
+              <% end %>
+            </button>
+            <div class="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black/5 hidden z-50" data-dropdown-target="menu">
+              <div class="py-1">
+                <div class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 truncate" title="<%= current_user.email %>">
+                  <%= current_user.email %>
+                </div>
+                <%= link_to account_path, class: "block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" do %>
+                  <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                  <%= t('account.title', default: 'Account') %>
+                <% end %>
+                <% if Rails.application.config.chatbot_enabled %>
+                <%= link_to credits_path, class: "block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" do %>
+                  <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <%= t('credits.title', default: 'Credits') %> (<%= current_user.credits %>)
+                <% end %>
+                <%= link_to subscription_path, class: "block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" do %>
+                  <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                  <%= t('subscriptions.title', default: 'Subscription') %>
+                <% end %>
+                <% end %>
+                <%= button_to logout_path, method: :delete, class: "w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700" do %>
+                  <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                  <%= t('auth.logout', default: 'Logout') %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% else %>
+          <div class="hidden sm:flex sm:items-center">
+            <%= link_to login_path, class: "px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors" do %>
+              <%= t('auth.login', default: 'Login') %>
+            <% end %>
+            <%= link_to signup_path, class: "ml-2 px-3 py-1.5 text-sm font-medium bg-(--accent-600-solid) text-white rounded-md hover:bg-(--accent-700-solid) dark:bg-transparent dark:text-(--accent-400) dark:border dark:border-(--accent-400) dark:hover:bg-(--accent-400)/10 transition-colors" do %>
+              <%= t('auth.signup', default: 'Sign up') %>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Mobile menu panel — slides down below the header bar %>
+    <div class="hidden opacity-0 -translate-y-2 transition-all duration-150 ease-out sm:hidden border-t border-gray-200 dark:border-gray-700 mt-2 pt-3 pb-2"
+         data-mobile-menu-target="panel">
+      <div class="flex flex-col gap-3">
+        <%# Theme selector (mobile) %>
+        <div class="relative" data-controller="theme-selector">
+          <button type="button"
+                  class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors"
+                  data-action="click->theme-selector#toggle">
+            <span aria-hidden="true" class="block w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600" style="background-color: var(--swatch-color);"></span>
+            <%= t('theme.choose_accent') %>
+          </button>
+          <div class="fixed inset-0 hidden" data-theme-selector-target="backdrop" data-action="click->theme-selector#close"></div>
+          <div class="mt-2 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-4 hidden" data-theme-selector-target="panel" role="menu">
+            <div class="grid grid-cols-8 gap-4 mb-4 justify-items-center">
+              <% themes_for_row(1).each do |theme_key, theme_data| %>
+                <button type="button"
+                        class="<%= theme_button_classes(theme_key) %>"
+                        <% if (style = theme_button_style(theme_key)) %>style="<%= style %>"<% end %>
+                        aria-label="<%= t("theme.#{theme_key}") %>"
+                        title="<%= t("theme.#{theme_key}") %>"
+                        data-action="click->theme-selector#select"
+                        data-theme-selector-target="button"
+                        data-theme-selector-theme-param="<%= theme_key %>"></button>
+              <% end %>
+            </div>
+            <div class="grid grid-cols-8 gap-4 justify-items-center">
+              <% themes_for_row(2).each do |theme_key, theme_data| %>
+                <button type="button"
+                        class="<%= theme_button_classes(theme_key) %>"
+                        <% if (style = theme_button_style(theme_key)) %>style="<%= style %>"<% end %>
+                        aria-label="<%= t("theme.#{theme_key}") %>"
+                        title="<%= t("theme.#{theme_key}") %>"
+                        data-action="click->theme-selector#select"
+                        data-theme-selector-target="button"
+                        data-theme-selector-theme-param="<%= theme_key %>"></button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <%# Navigation links %>
+        <div class="flex flex-col gap-2">
+          <%= link_to bookmarks_path, class: "flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors" do %>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+            <%= t('bookmarks.title') %>
+          <% end %>
+
+          <% if Rails.application.config.chatbot_enabled %>
+          <%= link_to chatbot_path, class: "flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+            <%= case I18n.locale when :fr then 'Chatbot juridique' when :de then 'Juristischer Chatbot' when :en then 'Legal chatbot' else 'Juridische chatbot' end %>
+          <% end %>
+          <% end %>
+        </div>
+
+        <%# Domain links %>
+        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+          <%= link_to "https://wetwijzer.be", class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>NL<% end %>
+          <span class="text-gray-300 dark:text-navy">|</span>
+          <%= link_to "https://lisloi.be", class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>FR<% end %>
+          <span class="text-gray-300 dark:text-navy">|</span>
+          <%= link_to "https://gesetzguide.be", class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>DE<% end %>
+          <span class="text-gray-300 dark:text-navy">|</span>
+          <%= link_to "https://lexlibera.be", class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>EN/INT<% end %>
+        </div>
+
+        <%# Login/Signup (mobile) %>
+        <% unless logged_in? %>
+        <div class="flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+          <%= link_to login_path, class: "px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors" do %>
+            <%= t('auth.login', default: 'Login') %>
+          <% end %>
+          <%= link_to signup_path, class: "px-3 py-1.5 text-sm font-medium bg-(--accent-600-solid) text-white rounded-md hover:bg-(--accent-700-solid) transition-colors" do %>
+            <%= t('auth.signup', default: 'Sign up') %>
+          <% end %>
+        </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</header>
