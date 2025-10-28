@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="<%= I18n.locale %>" class="<%= 'dark' if params[:dark_mode] == 'dark' %> no-js">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= @title %></title>
+
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    
+    <%# Remove no-js class as early as possible to enable JS-enhanced features %>
+    <script>document.documentElement.classList.remove('no-js');</script>
+
+    <%= turbo_refreshes_with method: :morph, scroll: :preserve  %>
+    <%= favicon_link_tag "#{t(:favicon)}?v=20251112" %>
+    <%= vite_client_tag %>
+    <script>
+      // Early Turbo progress setup + minimal fallback so feedback shows on first interaction
+      (function () {
+        // If Turbo becomes available, set its progress bar delay to 0 immediately
+        var _Turbo = null;
+        Object.defineProperty(window, 'Turbo', {
+          configurable: true,
+          get: function () { return _Turbo; },
+          set: function (val) {
+            _Turbo = val;
+            try {
+              if (_Turbo && _Turbo.config && _Turbo.config.drive) {
+                _Turbo.config.drive.progressBarDelay = 0;
+              } else if (typeof _Turbo.setProgressBarDelay === 'function') {
+                // Fallback for older Turbo versions
+                _Turbo.setProgressBarDelay(0);
+              }
+            } catch (_) {}
+          }
+        });
+
+        // Minimal fallback top bar before Turbo/app bundle is ready
+        var started = false;
+        function showFallback() {
+          if (started) return; started = true;
+          var bar = document.createElement('div');
+          bar.id = 'fallback-progress-bar';
+          bar.setAttribute('aria-hidden', 'true');
+          bar.style.position = 'fixed';
+          bar.style.top = '0';
+          bar.style.left = '0';
+          bar.style.height = '3px';
+          bar.style.width = '20%';
+          bar.style.background = '#2563eb';
+          bar.style.boxShadow = '0 0 10px rgba(37,99,235,.7)';
+          bar.style.transition = 'width .3s ease';
+          bar.style.zIndex = '99999';
+          (document.body || document.documentElement).appendChild(bar);
+          setTimeout(function(){ bar.style.width = '80%'; }, 50);
+        }
+        function hideFallback() {
+          var bar = document.getElementById('fallback-progress-bar');
+          if (!bar) return;
+          bar.style.width = '100%';
+          setTimeout(function(){ if (bar && bar.parentNode) bar.parentNode.removeChild(bar); }, 150);
+        }
+
+        // Start fallback on first internal navigation intent
+        document.addEventListener('submit', function (e) {
+          var form = e.target;
+          if (!form || form.hasAttribute('data-turbo') && form.getAttribute('data-turbo') === 'false') return;
+          // Only show for top-frame or full-page submissions
+          var tf = form.getAttribute('data-turbo-frame');
+          if (!tf || tf === '_top') showFallback();
+        }, { capture: true });
+
+        document.addEventListener('click', function (e) {
+          var a = e.target && e.target.closest && e.target.closest('a[href]');
+          if (!a) return;
+          try {
+            var url = new URL(a.getAttribute('href'), window.location.href);
+            if (a.target === '_blank' || url.origin !== window.location.origin) return;
+            showFallback();
+          } catch (_) { /* ignore */ }
+        }, { capture: true });
+
+        // When Turbo takes over and renders, clear the fallback
+        document.addEventListener('turbo:load', hideFallback);
+        document.addEventListener('turbo:render', hideFallback);
+      })();
+    </script>
+    <%= vite_javascript_tag 'application', 'data-turbo-track': 'reload' %>
+    <script>
+      // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+      // Only apply localStorage theme if JS is enabled (otherwise use URL param from server)
+      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    </script>
+    
+    <style>
+      /* Hide JS-only UI elements when JavaScript is disabled */
+      .no-js .progress-top,
+      .no-js [data-controller="theme-selector"],
+      .no-js [data-controller="filters-toggle"] button[data-action*="filters-toggle"],
+      .no-js [data-controller="jump-select"],
+      .no-js [data-sidebar-toggle-floating],
+      .no-js turbo-frame:not([src]) {
+        display: none !important;
+      }
+      
+      /* Show noscript content */
+      .no-js noscript {
+        display: block !important;
+      }
+      
+      /* Make filter panel visible by default when JS is disabled */
+      .no-js #filters-panel {
+        display: block !important;
+      }
+      
+      /* Make sidebar visible by default on larger screens when JS is disabled */
+      @media (min-width: 768px) {
+        .no-js [data-sidebar-toggle-target="sidebar"] {
+          display: block !important;
+        }
+      }
+      
+      /* Hide all loading indicators when JS is disabled */
+      .no-js .loading-skeleton,
+      .no-js [role="status"][aria-live],
+      .no-js [data-controller="frame-status"],
+      .no-js [data-frame-status-results],
+      .no-js #search-status-mount,
+      .no-js turbo-frame[src] > div:first-child:has(.progress-top),
+      .no-js turbo-frame[src] > div:first-child:has([aria-live="polite"]) {
+        display: none !important;
+      }
+      
+      /* Hide empty turbo frames that would show loading content */
+      .no-js turbo-frame[src]:empty::before {
+        content: none !important;
+      }
+    </style>
+
+  </head>
+  <body>
+    <div class="min-h-screen flex flex-col" data-controller="turbo-cache">
+      <%= render "layouts/header" %>
+      <main class="container mx-auto p-4 flex-1">
+        <%= yield %>
+      </main>
+      <%= render "layouts/footer" %>
+    </div>
+  </body>
+</html>

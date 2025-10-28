@@ -1,0 +1,190 @@
+<!-- Page Header -->
+<div class="mb-6">
+  <div class="bg-gradient-to-r from-[var(--accent-500)]/5 to-[var(--accent-500)]/10 dark:from-[var(--accent-500)]/10 dark:to-[var(--accent-500)]/20 rounded-xl p-6 border border-[var(--accent-500)]/20 dark:border-[var(--accent-500)]/30">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-[var(--accent-500)]">
+      <%= t(:details).capitalize() %>
+    </h1>
+  </div>
+</div>
+
+<!-- Main Content Layout -->
+<div data-controller="sidebar-toggle toc-anchor" class="w-full pb-24 md:pb-0">
+  <!-- Shelf handle is used for all sizes; mobile floating buttons are available -->
+  <!-- Mobile backdrop for sidebar -->
+  <div data-sidebar-toggle-target="backdrop" class="hidden fixed inset-0 bg-black/30 z-30 md:hidden"></div>
+  
+  <!-- Mobile-only floating controls: bottom-right row [Go to, Inhoud] -->
+  <div class="md:hidden fixed bottom-5 right-4 z-50 inline-flex flex-row items-center gap-2 overflow-visible">
+    <!-- Go to… jump menu (opens upward) -->
+    <div id="mobile-jump" data-controller="jump-select" data-jump-select-fallback-value="true" class="relative z-20 inline-block overflow-visible">
+      <button type="button"
+              class="inline-flex items-center gap-2 px-3 py-2 rounded-full border bg-white/90 text-gray-900 shadow-lg backdrop-blur hover:bg-white border-gray-200 dark:bg-navy/80 dark:text-white dark:border-gray-700 dark:hover:bg-navy transition-all duration-150 ease-out motion-reduce:transition-none active:scale-95"
+              data-action="jump-select#toggle"
+              data-jump-select-target="button"
+              aria-haspopup="true" aria-expanded="false"
+              aria-label="<%= t(:go_to, default: 'Ga naar…') %>">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+          <path fill-rule="evenodd" d="M10 3a1 1 0 01.894.553l2 4A1 1 0 0112 9H8a1 1 0 01-.894-1.447l2-4A1 1 0 0110 3zm-3 8a1 1 0 000 2h6a1 1 0 100-2H7zm-2 4a1 1 0 000 2h10a1 1 0 100-2H5z" clip-rule="evenodd" />
+        </svg>
+      </button>
+      <div data-jump-select-target="menu"
+           class="hidden absolute bottom-full right-0 mb-10 z-[999] w-56 rounded-md shadow-lg ring-1 ring-black/10 bg-white dark:bg-navy border border-gray-200 dark:border-gray-700 focus:outline-none"
+           role="menu" aria-orientation="vertical">
+        <div class="py-1">
+          <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#external-links-card"><%= t(:external_links).capitalize %></button>
+          <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#document-info-card"><%= t(:document_info) %></button>
+          <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#title-card"><%= t(:title_details).capitalize %></button>
+          <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#main-toc-card"><%= t(:toc).capitalize %></button>
+          <% if @updated_laws.present? %>
+            <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#updated-laws-card"><%= t(:updates) %></button>
+          <% end %>
+          <% if @exdecs.present? %>
+            <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#exdecs-card"><%= t(:exdecs_title) %></button>
+          <% end %>
+          <button type="button" role="menuitem" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-mist transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[var(--accent-active-bg)]" data-action="jump-select#go" data-target="#tekst"><%= t(:articles_text).capitalize %></button>
+        </div>
+      <style>
+        /* Mobile Go to (jump-select) open state + icon feedback */
+        #mobile-jump [data-jump-select-target="button"][aria-expanded="true"] {
+          background-color: rgba(255, 255, 255, 0.95);
+          border-color: rgb(229 231 235); /* gray-200 */
+        }
+        .dark #mobile-jump [data-jump-select-target="button"][aria-expanded="true"] {
+          background-color: rgba(6, 12, 20, 0.8); /* dark:navy/80 approximation */
+          border-color: rgb(55, 65, 81); /* gray-700 */
+        }
+        #mobile-jump [data-jump-select-target="button"] svg {
+          transition: transform 200ms ease-in-out;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          #mobile-jump [data-jump-select-target="button"] svg {
+            transition: none;
+          }
+        }
+        #mobile-jump [data-jump-select-target="button"][aria-expanded="true"] svg {
+          transform: rotate(90deg);
+        }
+        /* Mobile Inhoud (sidebar toggle) open state matches Go to */
+        [data-sidebar-toggle-floating][aria-expanded="true"] {
+          background-color: rgba(255, 255, 255, 0.95);
+          border-color: rgb(229 231 235); /* gray-200 */
+        }
+        .dark [data-sidebar-toggle-floating][aria-expanded="true"] {
+          background-color: rgba(6, 12, 20, 0.8); /* dark:navy/80 approximation */
+          border-color: rgb(55, 65, 81); /* gray-700 */
+        }
+      </style>
+      </div>
+    </div>
+
+    <!-- Inhoud floating toggle button -->
+    <% if @content.present? && @content.toc.present? %>
+      <button type="button"
+              class="relative z-10 inline-flex items-center gap-2 px-3 py-2 rounded-full border bg-white/90 text-gray-900 shadow-lg backdrop-blur hover:bg-white border-gray-200 dark:bg-navy/80 dark:text-white dark:border-gray-700 dark:hover:bg-navy transition-all duration-150 ease-out motion-reduce:transition-none active:scale-95"
+              data-sidebar-toggle-target="button"
+              data-sidebar-toggle-floating
+              data-action="sidebar-toggle#toggle"
+              aria-controls="toc-sidebar-panel"
+              aria-label="<%= t('aria.open_sidebar') %>">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+          <path fill-rule="evenodd" d="M3.75 6.75a.75.75 0 01.75-.75h15a.75.75 0 010 1.5H4.5a.75.75 0 01-.75-.75zm0 5.25a.75.75 0 01.75-.75h15a.75.75 0 010 1.5H4.5a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    <% end %>
+  </div>
+  
+  <div class="flex flex-col md:flex-row gap-8 w-full">
+  <!-- Sidebar with TOC (left) -->
+  <% if @content.present? && @content.toc.present? %>
+    <div id="toc-sidebar-panel" data-sidebar-toggle-target="panel" class="hidden fixed inset-y-0 left-0 z-40 w-80 max-w-[85vw] transform -translate-x-full transition-transform duration-300 ease-in-out motion-reduce:transition-none p-2 md:p-0 order-2 md:order-1 md:static md:inset-auto md:z-auto md:w-80 md:min-w-80 md:max-w-80 md:flex-shrink-0 md:sticky md:top-0 md:self-start pr-2 md:pr-0 space-y-6">
+
+      <!-- Table of Contents -->
+      <div id="toc-card-sidebar" class="relative bg-white dark:bg-navy rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+        <!-- Sidebar handle: full-height clickable area on the right edge -->
+        <button type="button"
+                class="hidden md:flex items-center justify-center absolute top-0 right-0 z-[1002] w-8 h-full rounded-none rounded-r-xl border-0 shadow-none bg-transparent text-gray-500 hover:text-gray-700 dark:text-[var(--accent-500)]/60 dark:hover:text-[var(--accent-500)] transition-colors duration-200 ease-out motion-reduce:transition-none hover:bg-transparent active:bg-transparent cursor-pointer"
+                data-sidebar-toggle-target="button"
+                data-action="sidebar-toggle#toggle"
+                aria-controls="toc-sidebar-panel"
+                aria-label="<%= t('aria.toggle_sidebar') %>">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 transition-transform duration-300 ease-in-out motion-reduce:transition-none" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" data-sidebar-toggle-arrow>
+            <rect x="9" y="6" width="2" height="12" rx="1"></rect>
+            <rect x="13" y="6" width="2" height="12" rx="1"></rect>
+          </svg>
+        </button>
+        <%= render 'toc', content: @content, articles: @articles, hide_header: false, scrollable: true, track: true %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 min-w-0 space-y-6 order-1 md:order-2">
+    <!-- External Links -->
+    <div id="external-links-card" class="bg-white dark:bg-navy rounded-xl shadow-lg border border-gray-200 dark:border-[var(--accent-500)]/30 scroll-mt-24">
+      <%= render 'external_links', law: @law %>
+    </div>
+
+    <!-- Document Metadata -->
+    <div id="document-info-card" class="bg-white dark:bg-navy rounded-xl shadow-lg border border-gray-200 dark:border-[var(--accent-500)]/30 scroll-mt-24">
+      <%= render 'document_metadata', law: @law, content: @content %>
+    </div>
+
+    <!-- Document Title -->
+    <div id="title-card" class="bg-white dark:bg-navy rounded-xl shadow-lg border border-gray-200 dark:border-[var(--accent-500)]/30 scroll-mt-24">
+      <%= render 'title', law: @law %>
+    </div>
+ 
+    <!-- Static TOC section under Title (always visible, collapsible) -->
+    <div id="main-toc-card" class="bg-white dark:bg-navy rounded-xl shadow-lg border border-b-0 border-gray-200 dark:border-[var(--accent-500)]/30 scroll-mt-24">
+      <%= render 'toc', content: @content, articles: @articles, hide_header: false, scrollable: false, track: false, variant: :main %>
+    </div>
+    
+    <!-- Updated Laws -->
+    <% if @updated_laws.present? %>
+      <div id="updated-laws-card" class="bg-white dark:bg-navy rounded-xl shadow-lg border border-t-0 border-gray-200 dark:border-[var(--accent-500)]/30 scroll-mt-24">
+        <%= render 'updated_laws', updated_laws: @updated_laws %>
+      </div>
+    <% end %>
+    
+    <!-- Executive Decisions -->
+    <% if @exdecs.present? %>
+      <div id="exdecs-card" class="bg-white dark:bg-navy rounded-xl shadow-lg border border-gray-200 dark:border-[var(--accent-500)]/30 scroll-mt-24">
+        <%= render 'exdecs', exdecs: @exdecs %>
+      </div>
+    <% end %>
+    
+    <!-- Articles (Eager-loaded) -->
+    <div id="tekst" class="scroll-mt-24" data-sidebar-toggle-target="trigger" 
+         data-controller="article-preferences"
+         data-article-preferences-show-colors-value="true"
+         data-article-preferences-show-exdecs-value="true">
+      <%= turbo_frame_tag "law_articles",
+            src: articles_law_path(@law, language_id: @language_id, show_article_exdecs: params[:show_article_exdecs]),
+            loading: :eager,
+            data: { toc_anchor_target: "frame", action: "turbo:frame-load->sidebar-toggle#autoOpenIfToc" } do %>
+        <div class="bg-white dark:bg-navy rounded-xl shadow-lg border border-gray-200 dark:border-[var(--accent-500)]/30">
+          <div class="p-6">
+            <div class="flex flex-col items-start gap-4 p-4 rounded-lg border bg-[var(--accent-500)]/10 border-[var(--accent-500)]/20 text-[var(--accent-800)] dark:bg-[var(--accent-500)]/10 dark:border-[var(--accent-500)]/40 dark:text-mist" role="status" aria-live="polite">
+              <div class="flex items-center gap-4">
+                <svg aria-hidden="true" class="w-5 h-5 shrink-0 text-[var(--accent-600)]" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 100-2 1 1 0 000 2zm1 2a1 1 0 10-2 0v6a1 1 0 102 0V9z" clip-rule="evenodd"/>
+                </svg>
+                <div class="text-sm leading-5 font-medium">
+                  <%= t('articles.loading_message', default: 'Please wait, loading articles...') %>
+                </div>
+              </div>
+              <noscript>
+                <div class="text-sm">
+                  <%= link_to t('articles.view_articles', default: 'Click here to view articles'), 
+                              articles_law_path(@law, language_id: @language_id, show_article_exdecs: params[:show_article_exdecs]),
+                              class: "inline-flex items-center gap-2 px-4 py-2 bg-[var(--accent-600)] text-white rounded-lg hover:bg-[var(--accent-700)] transition-colors dark:bg-[var(--accent-600)] dark:hover:bg-[var(--accent-700)]" %>
+                </div>
+              </noscript>
+            </div>
+          </div>
+          <%= loading_skeleton_tag(kind: :article) %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

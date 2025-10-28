@@ -1,0 +1,31 @@
+{
+  "../../node_modules/@rails/actioncable/src/index.js": {
+    "file": "assets/index-lVzqX2jn.js",
+    "name": "index",
+    "src": "../../node_modules/@rails/actioncable/src/index.js",
+    "isDynamicEntry": true
+  },
+  "_application-D3PmWVjI.js": {
+    "file": "assets/application-D3PmWVjI.js",
+    "name": "application",
+    "dynamicImports": [
+      "../../node_modules/@rails/actioncable/src/index.js"
+    ],
+    "css": [
+      "assets/application-abRk4MiO.css"
+    ]
+  },
+  "_application-abRk4MiO.css": {
+    "file": "assets/application-abRk4MiO.css",
+    "src": "_application-abRk4MiO.css"
+  },
+  "entrypoints/application.js": {
+    "file": "assets/application-BLFOkWvj.js",
+    "name": "entrypoints\\application.js",
+    "src": "entrypoints/application.js",
+    "isEntry": true,
+    "imports": [
+      "_application-D3PmWVjI.js"
+    ]
+  }
+}
