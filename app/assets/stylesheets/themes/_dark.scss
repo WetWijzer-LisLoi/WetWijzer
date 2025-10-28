@@ -1,0 +1,407 @@
+// Dark Theme
+// ===================================
+// This file contains dark mode overrides for the application
+
+// Enable dark mode by adding the 'dark' class to the html or body element
+// or by using the dark variant in your HTML: <div class="dark">
+
+// Dark mode variables
+:root {
+  // Base colors
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  
+  // Brand colors
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  
+  // State colors
+  --color-success-500: #10b981;
+  --color-warning-500: #f59e0b;
+  --color-danger-500: #ef4444;
+  --color-info-500: #3b82f6;
+  
+  // Background and text
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f9fafb;
+  --color-text: #111827;
+  --color-text-secondary: #4b5563;
+  --color-border: #e5e7eb;
+  
+  // Dark mode overrides
+  .dark & {
+    --color-bg: #111827;
+    --color-bg-secondary: #1f2937;
+    --color-text: #f9fafb;
+    --color-text-secondary: #9ca3af;
+    --color-border: #374151;
+  }
+}
+
+// Dark mode base styles
+.dark {
+  // Background colors
+  @apply bg-gray-900 text-gray-100;
+  
+  // Links
+  a:not([class*="text-"]) {
+    @apply text-blue-400 hover:text-blue-300;
+  }
+  
+  // Headings
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-white;
+  }
+  
+  // Forms
+  input,
+  select,
+  textarea {
+    @apply bg-gray-800 border-gray-700 text-white placeholder-gray-400;
+    
+    &:focus {
+      @apply border-blue-500 ring-blue-500;
+    }
+    
+    &[disabled] {
+      @apply bg-gray-800 text-gray-500;
+    }
+  }
+  
+  // Buttons
+  .btn {
+    &-primary {
+      @apply bg-blue-600 hover:bg-blue-700 text-white;
+    }
+    
+    &-secondary {
+      @apply bg-gray-700 hover:bg-gray-600 text-white border-gray-600;
+    }
+    
+    &-outline {
+      @apply border-gray-600 text-gray-300 hover:bg-gray-800 hover:border-gray-500;
+    }
+  }
+  
+  // Cards
+  .card {
+    @apply bg-gray-800 border-gray-700;
+    
+    &-header {
+      @apply bg-gray-800 border-gray-700;
+    }
+    
+    &-footer {
+      @apply bg-gray-800 border-gray-700;
+    }
+  }
+  
+  // Tables
+  table {
+    @apply border-gray-700;
+    
+    th, td {
+      @apply border-gray-700;
+    }
+    
+    thead {
+      @apply bg-gray-800;
+    }
+    
+    tbody tr {
+      @apply border-gray-700 hover:bg-gray-800;
+    }
+  }
+  
+  // Navigation
+  .nav {
+    &-link {
+      @apply text-gray-300 hover:bg-gray-800 hover:text-white;
+      
+      &.active {
+        @apply bg-blue-900 text-white;
+      }
+    }
+  }
+  
+  // Dropdowns
+  .dropdown {
+    &-menu {
+      @apply bg-gray-800 border-gray-700 shadow-lg;
+    }
+    
+    &-item {
+      @apply text-gray-300 hover:bg-gray-700 hover:text-white;
+      
+      &.active {
+        @apply bg-blue-900 text-white;
+      }
+    }
+  }
+  
+  // Alerts
+  .alert {
+    &-info {
+      @apply bg-blue-900/30 text-blue-100 border-blue-800;
+    }
+    
+    &-success {
+      @apply bg-green-900/30 text-green-100 border-green-800;
+    }
+    
+    &-warning {
+      @apply bg-yellow-900/30 text-yellow-100 border-yellow-800;
+    }
+    
+    &-danger {
+      @apply bg-red-900/30 text-red-100 border-red-800;
+    }
+  }
+  
+  // Code blocks
+  pre, code {
+    @apply bg-gray-800 border-gray-700;
+  }
+  
+  // Blockquotes
+  blockquote {
+    @apply border-blue-800 bg-gray-800/50 text-gray-300;
+  }
+  
+  // Horizontal rules
+  hr {
+    @apply border-gray-700;
+  }
+  
+  // Custom scrollbar
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-800;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-600 rounded-full hover:bg-gray-500;
+  }
+  
+  // Custom form elements
+  .form-check-input {
+    @apply bg-gray-700 border-gray-600;
+    
+    &:checked {
+      @apply bg-blue-600 border-blue-600;
+    }
+  }
+  
+  .form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  }
+  
+  // Tooltips
+  .tooltip {
+    @apply bg-gray-700 text-white;
+    
+    &-arrow::before {
+      @apply border-t-gray-700;
+    }
+  }
+  
+  // Popovers
+  .popover {
+    @apply bg-gray-800 border-gray-700 text-gray-100;
+    
+    &-header {
+      @apply bg-gray-700 border-gray-600 text-white;
+    }
+    
+    &-arrow::before {
+      @apply border-t-gray-800;
+    }
+    
+    &-arrow::after {
+      @apply border-t-gray-800;
+    }
+  }
+  
+  // Modal
+  .modal {
+    &-content {
+      @apply bg-gray-800 border-gray-700 text-white;
+    }
+    
+    &-header {
+      @apply border-gray-700;
+    }
+    
+    &-footer {
+      @apply border-gray-700;
+    }
+  }
+  
+  // Close button
+  .btn-close {
+    @apply bg-gray-600;
+    
+    &:hover {
+      @apply bg-gray-500;
+    }
+  }
+  
+  // Progress bars
+  .progress {
+    @apply bg-gray-700;
+    
+    &-bar {
+      @apply bg-blue-600;
+    }
+  }
+  
+  // List groups
+  .list-group-item {
+    @apply bg-gray-800 border-gray-700 text-gray-300;
+    
+    &.active {
+      @apply bg-blue-900 border-blue-800 text-white;
+    }
+    
+    &:hover:not(.active) {
+      @apply bg-gray-700;
+    }
+  }
+  
+  // Breadcrumbs
+  .breadcrumb {
+    &-item {
+      @apply text-gray-400;
+      
+      &.active {
+        @apply text-gray-300;
+      }
+      
+      & + &::before {
+        @apply text-gray-500;
+      }
+    }
+  }
+  
+  // Pagination
+  .pagination {
+    .page-item {
+      .page-link {
+        @apply bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700 hover:border-gray-600;
+      }
+      
+      &.active .page-link {
+        @apply bg-blue-600 border-blue-600 text-white;
+      }
+      
+      &.disabled .page-link {
+        @apply bg-gray-800 border-gray-700 text-gray-500;
+      }
+    }
+  }
+  
+  // Custom components
+  .sidebar {
+    @apply bg-gray-800 border-r border-gray-700;
+    
+    &-header {
+      @apply border-b border-gray-700;
+    }
+    
+    &-menu {
+      .nav-link {
+        @apply text-gray-400 hover:bg-gray-700 hover:text-white;
+        
+        &.active {
+          @apply bg-blue-900/50 text-white;
+        }
+      }
+    }
+  }
+  
+  .main-content {
+    @apply bg-gray-900;
+  }
+  
+  // Custom utilities
+  .bg-light {
+    @apply bg-gray-800 !important;
+  }
+  
+  .text-muted {
+    @apply text-gray-400;
+  }
+  
+  .border {
+    @apply border-gray-700;
+  }
+  
+  // Override any light text colors that don't have enough contrast
+  .text-dark {
+    @apply text-white;
+  }
+  
+  // Custom dark mode toggle
+  .dark-mode-toggle {
+    .light-icon { @apply hidden; }
+    .dark-icon { @apply block; }
+  }
+
+  // Domain-specific tag colors (dark mode)
+  // Use lighter hues for better contrast on dark backgrounds
+  .domain-tag { font-style: italic; }
+  .domain-opgeheven { color: #f87171; } // red-400
+  .domain-ingevoegd { color: #34d399; } // green-400
+  .domain-w { color: #60a5fa; }        // blue-400
+  .domain-l { color: #a78bfa; }        // violet-400
+  .domain-ord { color: #f59e0b; }      // amber-500
+  .domain-opnieuw { color: #818cf8; }  // indigo-400
+  .domain-kb { color: #2dd4bf; }       // teal-400
+  .domain-hersteld { color: #34d399; } // emerald-400
+  .domain-dvr { color: #e879f9; }      // fuchsia-400
+  .domain-ar { color: #fb7185; }       // rose-400
+  .domain-nota { color: #94a3b8; }     // slate-400
+}
+
+// System preference detection
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    // Apply dark theme if system preference is dark and no explicit light mode is set
+    @extend .dark;
+  }
+}
+
+// Dark mode toggle transition
+dark-mode-transition {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+// Apply transition to all elements
+html {
+  @apply dark-mode-transition;
+  
+  *,
+  *::before,
+  *::after {
+    @apply dark-mode-transition;
+  }
+}

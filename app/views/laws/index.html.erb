@@ -1,0 +1,101 @@
+<div class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-sky/10 dark:to-sky/20 border-b border-blue-200 dark:border-sky/30 rounded-xl py-8 sm:py-12 md:py-16">
+  <div class="text-center px-4">
+    <div class="text-center mb-4">
+      <h1 class="text-3xl leading-tight font-extrabold text-gray-900 dark:text-sky sm:text-4xl sm:leading-10 md:text-5xl md:leading-none md:tracking-tight lg:text-6xl break-words">
+        <%= t(:app_title) %>
+      </h1>
+    </div>
+    <p class="text-xs sm:text-sm text-blue-600 dark:text-sky font-medium bg-blue-100 dark:bg-sky/20 px-3 py-1 rounded-full inline-block">
+      Alpha Version
+    </p>
+  </div>
+</div>
+
+<div class="bg-white dark:bg-midnight mt-8 mb-8">
+  <div class="text-center px-4">
+    <p class="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-mist max-w-4xl mx-auto">
+      <%== t(:introduction, ejustice: link_to(t(:legal_database), "https://www.ejustice.just.fgov.be", class: %w[font-medium text-blue-600 hover:text-blue-800 dark:text-sky dark:hover:opacity-80 underline].join(" "), target: "_blank", rel: "nofollow")) %>
+    </p>
+  </div>
+</div>
+
+<div>
+  <%= form_with url: laws_path, method: :get, class: "space-y-6", data: { turbo_frame: "_top", controller: 'search-validation' }, html: { 'data-action': 'submit->search-validation#validate', autocomplete: 'off' } do |form| %>
+    <div class="space-y-4" data-controller="filters-toggle">
+      <div class="flex flex-col sm:flex-row gap-2">
+        <div class="relative flex-grow">
+          <%= form.text_field :title,
+            placeholder: t(:search_placeholder),
+            value: params[:title],
+            class: %w[w-full rounded-md border-gray-300 dark:border-sky/50 dark:bg-navy dark:text-mist dark:placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:focus:border-sky dark:focus:ring-sky text-base].join(" ")
+          %>
+        </div>
+        <div class="flex gap-2 sm:contents">
+          <button type="button"
+                  class="flex-1 sm:flex-none px-4 py-2 border border-gray-300 dark:border-sky/50 bg-white dark:bg-navy text-gray-700 dark:text-mist rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-sky/10"
+                  data-action="click->filters-toggle#toggle"
+                  data-filters-toggle-target="button"
+                  aria-controls="filters-panel"
+                  aria-expanded="false">
+            <%= t(:filters_title) %>
+          </button>
+          <%= form.submit t(:search), class: %w[flex-1 sm:flex-none px-6 py-2 bg-[var(--accent-600)] hover:bg-[var(--accent-700)] dark:bg-[var(--accent-600)] dark:hover:bg-[var(--accent-700)] text-white dark:text-midnight font-semibold rounded-md shadow-sm cursor-pointer transition-colors duration-200].join(" ") %>
+        </div>
+      </div>
+      
+      <!-- Search Hints -->
+      <%= render 'laws/search_hints' %>
+      
+      <%= form.hidden_field :dark_mode, value: params[:dark_mode] if params[:dark_mode].present? %>
+      <%= render 'laws/filter_section', form: form %>
+    </div>
+   <% end %>
+  <!-- Mount target for the completed pill below the search bar -->
+  <div id="search-status-mount" class="w-full"></div>
+</div>
+
+  <!-- Results Section -->
+  <div>
+    <% if @validation_failed %>
+      <div class="mb-4 rounded-md border border-red-300 bg-red-50 p-4 text-red-800 dark:border-red-600/40 dark:bg-red-900/30 dark:text-red-200">
+        <p class="font-semibold"><%= t('filters.validation.incomplete') %></p>
+        <p class="mt-1"><%= t('filters.validation.fix') %></p>
+        <% if defined?(@missing_labels) && @missing_labels.present? %>
+          <% anchor_map = { types: '#filter-types', languages: '#filter-languages', scope: '#filter-scope' } %>
+          <ul class="mt-2 list-disc pl-6">
+            <% @missing_keys.each_with_index do |key, idx| %>
+              <% label = @missing_labels[idx] %>
+              <li>
+                <a href="<%= anchor_map[key] %>" class="underline decoration-red-400 hover:text-red-600 dark:hover:text-red-300"><%= label %></a>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% non_filter_keys = %w[per_page sort commit languages_present types_present scope_present]
+       has_query = request.query_parameters.except(*non_filter_keys).values.any?(&:present?)
+       from_submit = params[:commit].present?
+       frame_src = if @validation_failed || !(has_query || from_submit)
+         nil
+       else
+         laws_path(request.query_parameters.merge(frame: 1))
+       end %>
+    <% if frame_src.present? %>
+      <%= turbo_frame_tag 'laws_list', src: frame_src,
+            data: { controller: 'frame-status', frame_status_loading_value: t('loading_status.loading'), frame_status_completed_value: t('loading_status.completed'), frame_status_duration_value: 0, frame_status_mount_selector_value: '#search-status-mount' } do %>
+        <div class="bg-white dark:bg-midnight rounded-xl shadow-lg">
+          <div class="progress-top text-blue-600 dark:text-sky"></div>
+          <%= loading_skeleton_tag(kind: :list) %>
+        </div>
+      <% end %>
+    <% else %>
+      <%= turbo_frame_tag 'laws_list' %>
+    <% end %>
+    <noscript>
+      <div class="bg-white dark:bg-midnight rounded-xl shadow-lg overflow-hidden">
+        <%= render partial: 'laws/list', locals: { laws: @laws, pagy: @pagy } %>
+      </div>
+    </noscript>
+  </div>

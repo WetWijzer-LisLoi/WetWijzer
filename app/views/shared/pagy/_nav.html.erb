@@ -1,0 +1,97 @@
+<%# IMPORTANT: use '<%== ... ' instead of '<%= ... ' if you run this in rails %>
+
+<%# The a variable below is set to a lambda that generates the a tag %>
+<%# Usage: a_tag = a.(page_number, text, classes: nil, aria_label: nil) %>
+
+<% a = pagy_anchor(pagy, anchor_string:"data-turbo-action='advance'") %>
+
+<% content_for :prev do %>
+    <div class="min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-midnight text-sm font-medium text-gray-700 dark:text-mist hover:bg-gray-50 dark:hover:bg-[var(--accent-500)]/10 focus:z-10 focus:outline-none focus:ring-1 focus:ring-[var(--accent-500)] transition-colors duration-150">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+      </svg>
+    </div>
+<% end %>
+
+<% content_for :next do %>
+    <div class="min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-midnight text-sm font-medium text-gray-700 dark:text-mist hover:bg-gray-50 dark:hover:bg-[var(--accent-500)]/10 focus:z-10 focus:outline-none focus:ring-1 focus:ring-[var(--accent-500)] transition-colors duration-150">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+      </svg>
+    </div>
+<% end %>
+
+<nav class="w-full" role="navigation">
+  <div class="flex-1 flex justify-between sm:hidden">
+    <% if pagy.prev %>
+      <%== a.(pagy.prev, "Previous", classes:'page', aria_label:'previous') %>
+    <% else %>
+      <div></div>
+    <% end %>
+
+    <% if pagy.next %>
+      <%== a.(pagy.next, "Next", classes:'page', aria_label:'next') %>
+    <% else %>
+      <div></div>
+    <% end %>
+  </div>
+
+  <div class="flex items-center justify-between w-full">
+    <div>
+            <p class="text-sm text-gray-700 dark:text-mist">
+        <%= t('pagination.display') %>
+
+        <span class="font-medium">
+          <%= pagy.from %>
+        </span>
+
+        <%= t('pagination.to') %>
+
+        <span class="font-medium">
+          <%= pagy.to %>
+        </span>
+
+        <%= t('pagination.of') %>
+
+        <span class="font-medium">
+          <%= pagy.count %>
+        </span>
+
+        <%= t('pagination.results') %>
+      </p>
+    </div>
+
+    <div>
+      <nav class="flex items-center space-x-1" aria-label="<%= t('aria.pagination') %>">
+        <% if pagy.prev %>
+          <%== a.(pagy.prev, content_for(:prev), aria_label:'previous') %>
+        <% else %>
+          <%= content_for(:prev) %>
+        <% end %>
+
+        <% pagy.series.each do |item| # series example: [1, :gap, 7, 8, "9", 10, 11, :gap, 36] %>
+          <% case item %>
+          <% when Integer # page link %>
+            <a href="<%= pagy_url_for(pagy, item) %>" data-turbo-action="advance" class="min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-midnight text-sm font-medium text-gray-700 dark:text-mist hover:bg-gray-50 dark:hover:bg-[var(--accent-500)]/10 focus:z-10 focus:outline-none focus:ring-1 focus:ring-[var(--accent-500)] transition-colors duration-150">
+              <%= item %>
+            </a>
+          <% when String # current page %>
+            <span class="min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 border border-[var(--accent-600)] bg-[var(--accent-active-bg)] text-sm font-medium text-[var(--accent-600)] dark:text-mist">
+              <%= item %>
+            </span>
+          <% when :gap # page gap %>
+            <span class="min-w-[2rem] h-8 flex items-center justify-center px-2 py-1 text-gray-500">
+              &hellip;
+            </span>
+          <% end %>
+        <% end %>
+
+        <% if pagy.next %>
+          <%== a.(pagy.next, content_for(:next), aria_label:'next') %>
+        <% else %>
+          <%= content_for(:next) %>
+        <% end %>
+      </nav>
+    </div>
+  </div>
+</nav>

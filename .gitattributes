@@ -1,0 +1,25 @@
+# See https://git-scm.com/docs/gitattributes for more about git attribute files.
+
+# Mark the database schema as having been generated.
+db/schema.rb linguist-generated
+
+# Mark any vendored files as having been vendored.
+vendor/* linguist-vendored
+
+# Normalize line endings to LF for all text files (avoid CRLF in repo)
+* text=auto eol=lf
+
+# Enforce LF for Ruby-related files (explicit, complements global rule)
+*.{rb,rake,ru,gemspec} text eol=lf
+
+# Explicitly mark common binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.crt binary
+*.key binary
+*.pdf binary
+*.zip binary
+*.rb text eol=lf

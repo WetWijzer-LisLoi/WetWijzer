@@ -1,0 +1,95 @@
+AllCops:
+  TargetRubyVersion: 3.3
+  NewCops: enable
+  Exclude:
+    - 'db/schema.rb'
+    - 'db/schema-*.rb'
+    - 'db/schema - Copy.rb'
+    - 'db/migrate/**/*'
+    - 'db/migrate - Copy/**/*'
+    - 'db/migrate_pending/**/*'
+    - 'bin/**/*'
+    - 'node_modules/**/*'
+    - 'vendor/**/*'
+    - 'public/**/*'
+    - 'tmp/**/*'
+    - 'log/**/*'
+    - 'inspect_*.rb'
+    - 'analysis_scripts/**/*'
+    - 'script/**/*'
+  SuggestExtensions: false
+
+# Keep docs optional for app code
+Style/Documentation:
+  Enabled: false
+
+# Repository uses LF line endings (Git autocrlf=input)
+Layout/EndOfLine:
+  EnforcedStyle: lf
+
+# Increased from default 120 to match modern monitors and IDEs
+Layout/LineLength:
+  Max: 140
+
+# METRICS SETTINGS
+# Adjusted to be realistic for production Rails apps while maintaining quality
+
+# Method length: 15 lines (up from default 10)
+# This is more realistic while still encouraging short, focused methods
+Metrics/MethodLength:
+  Max: 15
+  CountComments: false
+  Exclude:
+    - 'test/**/*'
+    - 'lib/tasks/**/*'
+
+# ABC Size: 20 (up from default 17)
+# Allows for complex business logic without being excessive
+Metrics/AbcSize:
+  Max: 20
+  Exclude:
+    - 'test/**/*'
+    - 'lib/tasks/**/*'
+
+# Block length: Allow longer blocks in DSL contexts
+Metrics/BlockLength:
+  Max: 25
+  CountComments: false
+  Exclude:
+    - 'test/**/*'
+    - 'config/**/*'
+    - 'lib/tasks/**/*'
+
+# Class length: 150 lines (up from default 100)
+# Reasonable for complex models and service objects
+Metrics/ClassLength:
+  Max: 150
+  CountComments: false
+  Exclude:
+    - 'test/**/*'
+
+# Module length: 150 lines (up from default 100)
+Metrics/ModuleLength:
+  Max: 150
+  CountComments: false
+  Exclude:
+    - 'test/**/*'
+
+# Cyclomatic complexity: Keep at 8 (slightly up from default 7)
+Metrics/CyclomaticComplexity:
+  Max: 8
+  Exclude:
+    - 'test/**/*'
+    - 'lib/tasks/**/*'
+
+# Perceived complexity: Keep at 8
+Metrics/PerceivedComplexity:
+  Max: 8
+  Exclude:
+    - 'test/**/*'
+    - 'lib/tasks/**/*'
+
+# Parameter lists: Keep at default 5
+Metrics/ParameterLists:
+  Max: 5
+  CountKeywordArgs: true
