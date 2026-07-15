@@ -184,9 +184,12 @@ class ApplicationController < ActionController::Base
     @english_available ||= I18n.available_locales.include?(:en)
   end
 
-  # Maps a locale to the corresponding numeric language_id used in the database.
+  # Maps the current locale to the numeric language_id of the law text to load.
+  # Belgian legal texts exist only in Dutch (1) and French (2). German (de) has no
+  # source text and falls back to French (2); English (en) falls back to Dutch (1),
+  # or French (2) when a content_lang param/cookie requests it.
   # @param locale [String, Symbol] the locale code (defaults to I18n.locale)
-  # @return [Integer] 1 for Dutch (nl), 2 for French (fr), 3 for German (de). Defaults to 1.
+  # @return [Integer] 1 (Dutch) or 2 (French). Defaults to 1.
   def current_language_id(locale = I18n.locale)
     case locale.to_s
     when 'fr', 'de' then 2
