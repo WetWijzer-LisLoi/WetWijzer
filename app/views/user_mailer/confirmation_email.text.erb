@@ -1,0 +1,10 @@
+<%= t('mailer.confirmation.greeting', name: @user.name.presence || @user.email) %>
+
+<%= t('mailer.confirmation.body') %>
+
+<%= t('mailer.confirmation.button') %>
+<%= @confirmation_url %>
+
+<%= t('mailer.confirmation.expires') %>
+
+<%= t('mailer.confirmation.ignore') %>

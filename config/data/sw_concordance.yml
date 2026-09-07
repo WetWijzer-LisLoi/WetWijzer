@@ -1,0 +1,417 @@
+# Concordantietabel Strafwetboek (1867) → Nieuw Strafwetboek (2024)
+# Wet 29/02/2024 (Boek I & II) - B.S. 08/04/2024
+# Inwerkingtreding 01/09/2026
+# Bron: Belgisch Staatsblad, officiële wettekst
+# Format: [oud_art, nieuw_art]
+#
+# REBUILT 2026-09-04 from the consolidated texts themselves after a reader
+# reported that old art. 461 (diefstal) pointed at new art. 464 (afpersing).
+# The previous table was wrong in every section and was withdrawn. Each pair
+# below was derived by reading both articles and then re-checked by a second
+# pass that tried to disprove it; 10 of 272 proposed pairs were rejected and
+# are absent rather than guessed. "-" means the old article has no successor.
+# Volgorde: oplopend artikelnummer oud Sw.
+old_numac: "1867060850"
+new_numac: "2024002088"
+# Boek I (algemene bepalingen) is a separate law; "Boek I Art. N" cells link here.
+new_numac_boek1: "2024002052"
+
+label_nl: "Strafwetboek (1867) → Nieuw Strafwetboek"
+label_fr: "Code pénal (1867) → Nouveau Code pénal"
+source_nl: "Wet 29/02/2024 (B.S. 08/04/2024) · In werking 01/09/2026"
+source_fr: "Loi 29/02/2024 (M.B. 08/04/2024) · En vigueur 01/09/2026"
+transition_nl: "Lex mitior (art. 2, derde lid, nieuw Sw.): \"In geval van wijziging van de strafwet na het plegen van het misdrijf gelden de voor de dader meest gunstige bepalingen.\" Voor feiten van vóór 01/09/2026 past de rechter dus de gunstigste regeling toe. Let op het verschil: het oude art. 2, tweede lid Sw. sprak enkel over de straf (\"de minst zware straf\"), het nieuwe artikel over de bepalingen in hun geheel. Per dossier te beoordelen."
+transition_fr: "Lex mitior (art. 2, alinéa 3, nouveau C. pén.): \"En cas de modification de la loi pénale postérieurement à l'infraction, les dispositions les plus favorables seront appliquées à son auteur.\" Pour les faits antérieurs au 01/09/2026, le juge applique donc le régime le plus favorable. Nuance: l'ancien art. 2, alinéa 2 C. pén. ne visait que la peine (\"la peine la moins forte\"), le nouvel article vise les dispositions dans leur ensemble. À apprécier au cas par cas."
+
+# Strafniveaus: Art. 36 nieuw Sw. (hoofdstraffen natuurlijke personen)
+# De klassieke driedeling misdaad/wanbedrijf/overtreding wordt vervangen
+# door 8 niveaus. N1-6 = correctioneel, N7-8 = crimineel.
+strafniveaus:
+  legal_basis: "Art. 36 nieuw Sw. (Wet 29/02/2024 tot invoering Boek I nieuw Strafwetboek, B.S. 08/04/2024)"
+  legal_basis_url: "/laws/2024002052"
+  levels:
+    - level: 1
+      label_nl: "Niveau 1 - Geen gevangenisstraf"
+      label_fr: "Niveau 1 - Pas d'emprisonnement"
+      gevangenisstraf_nl: "Uitgesloten als hoofdstraf"
+      gevangenisstraf_fr: "Exclue comme peine principale"
+      beschrijving_nl: "Geldboete, werkstraf, probatiestraf of elektronisch toezicht. Gevangenisstraf kan niet worden opgelegd."
+      beschrijving_fr: "Amende, peine de travail, probation ou surveillance électronique. L'emprisonnement ne peut être prononcé."
+    - level: 2
+      label_nl: "Niveau 2 - 6 maanden tot 3 jaar"
+      label_fr: "Niveau 2 - 6 mois à 3 ans"
+      gevangenisstraf_nl: "6 maanden – 3 jaar"
+      gevangenisstraf_fr: "6 mois – 3 ans"
+      beschrijving_nl: "Gevangenisstraf is ultimum remedium: de rechter moet motiveren waarom een alternatieve straf (werkstraf, probatie, elektronisch toezicht) niet volstaat."
+      beschrijving_fr: "L'emprisonnement est l'ultimum remedium: le juge doit motiver pourquoi une peine alternative (travail, probation, surveillance électronique) ne suffit pas."
+    - level: 3
+      label_nl: "Niveau 3 - 3 tot 5 jaar"
+      label_fr: "Niveau 3 - 3 à 5 ans"
+      gevangenisstraf_nl: "3 – 5 jaar"
+      gevangenisstraf_fr: "3 – 5 ans"
+      beschrijving_nl: "Correctionele gevangenisstraf. Alternatieve straffen blijven mogelijk."
+      beschrijving_fr: "Emprisonnement correctionnel. Les peines alternatives restent possibles."
+    - level: 4
+      label_nl: "Niveau 4 - 5 tot 10 jaar"
+      label_fr: "Niveau 4 - 5 à 10 ans"
+      gevangenisstraf_nl: "5 – 10 jaar"
+      gevangenisstraf_fr: "5 – 10 ans"
+      beschrijving_nl: "Correctionele gevangenisstraf. Behandeling onder vrijheidsberoving mogelijk als alternatief."
+      beschrijving_fr: "Emprisonnement correctionnel. Traitement sous privation de liberté possible comme alternative."
+    - level: 5
+      label_nl: "Niveau 5 - 10 tot 15 jaar"
+      label_fr: "Niveau 5 - 10 à 15 ans"
+      gevangenisstraf_nl: "10 – 15 jaar"
+      gevangenisstraf_fr: "10 – 15 ans"
+      beschrijving_nl: "Correctionele gevangenisstraf. Hoogste correctioneel niveau."
+      beschrijving_fr: "Emprisonnement correctionnel. Niveau correctionnel le plus élevé."
+    - level: 6
+      label_nl: "Niveau 6 - 15 tot 20 jaar"
+      label_fr: "Niveau 6 - 15 à 20 ans"
+      gevangenisstraf_nl: "15 – 20 jaar"
+      gevangenisstraf_fr: "15 – 20 ans"
+      beschrijving_nl: "Correctionele gevangenisstraf. Grensgebied met criminele straffen."
+      beschrijving_fr: "Emprisonnement correctionnel. Zone frontière avec les peines criminelles."
+    - level: 7
+      label_nl: "Niveau 7 - 20 tot 30 jaar"
+      label_fr: "Niveau 7 - 20 à 30 ans"
+      gevangenisstraf_nl: "20 – 30 jaar"
+      gevangenisstraf_fr: "20 – 30 ans"
+      beschrijving_nl: "Criminele straf (opsluiting). Assisenzaken of gecorrectionaliseerd."
+      beschrijving_fr: "Peine criminelle (réclusion). Assises ou correctionnalisé."
+    - level: 8
+      label_nl: "Niveau 8 - Levenslang"
+      label_fr: "Niveau 8 - Perpétuité"
+      gevangenisstraf_nl: "Levenslange opsluiting"
+      gevangenisstraf_fr: "Réclusion à perpétuité"
+      beschrijving_nl: "Zwaarste straf. Behandeling onder vrijheidsberoving (18-20 jaar) kan als alternatief."
+      beschrijving_fr: "Peine la plus lourde. Traitement sous privation de liberté (18-20 ans) possible comme alternative."
+
+sections:
+  - heading_nl: "Valsheid in geschriften (art. 193-214)"
+    heading_fr: "Faux en écritures (art. 193-214)"
+    entries:
+      - ["Art. 193", "Art. 451"]
+      - ["Art. 194", "Art. 451-452"]
+      - ["Art. 195", "Art. 451-452"]
+      - ["Art. 196", "Art. 451"]
+      - ["Art. 197", "Art. 451"]
+      - ["Art. 198", "Art. 451"]
+      - ["Art. 199", "Art. 451"]
+      - ["Art. 199bis", "Art. 453-454"]
+      - ["Art. 200", "Art. 451"]
+      - ["Art. 201", "Art. 451"]
+      - ["Art. 202", "-"]
+      - ["Art. 203", "Art. 451"]
+      - ["Art. 204", "Art. 451"]
+      - ["Art. 205", "Art. 451"]
+      - ["Art. 206", "Art. 451"]
+      - ["Art. 207", "Art. 451"]
+      - ["Art. 208", "Art. 451-452"]
+      - ["Art. 209", "Art. 451"]
+      - ["Art. 210", "Art. 451"]
+      - ["Art. 210bis", "Art. 451"]
+      - ["Art. 211", "Art. 451-452"]
+      - ["Art. 212", "Art. 451"]
+      - ["Art. 213", "-"]
+      - ["Art. 214", "-"]
+
+  - heading_nl: "Ambtsmisdrijven en omkoping (art. 233-252)"
+    heading_fr: "Infractions des fonctionnaires et corruption (art. 233-252)"
+    entries:
+      - ["Art. 233", "Art. 627"]
+      - ["Art. 234", "Art. 628"]
+      - ["Art. 235", "-"]
+      - ["Art. 236", "-"]
+      - ["Art. 237", "Art. 629"]
+      - ["Art. 238", "-"]
+      - ["Art. 239", "Art. 630"]
+      - ["Art. 240", "Art. 634"]
+      - ["Art. 241", "Art. 635"]
+      - ["Art. 242", "-"]
+      - ["Art. 243", "Art. 636 (N3)"]
+      - ["Art. 244", "-"]
+      - ["Art. 245", "Art. 637"]
+      - ["Art. 246", "Art. 638"]
+      - ["Art. 247", "Art. 638"]
+      - ["Art. 248", "Art. 638"]
+      - ["Art. 250", "Art. 638-639"]
+      - ["Art. 251", "-"]
+      - ["Art. 252", "Art. 47 (boek I)"]
+
+  - heading_nl: "Weerspannigheid en smaad (art. 269-282)"
+    heading_fr: "Rébellion et outrage (art. 269-282)"
+    entries:
+      - ["Art. 269", "Art. 644"]
+      - ["Art. 270", "-"]
+      - ["Art. 271", "Art. 644"]
+      - ["Art. 272", "Art. 645 (N3)"]
+      - ["Art. 273", "Art. 646"]
+      - ["Art. 274", "-"]
+      - ["Art. 276", "Art. 247"]
+      - ["Art. 277", "-"]
+      - ["Art. 278", "Art. 202 (N2)"]
+      - ["Art. 280", "Art. 102, 116, 124, 202"]
+      - ["Art. 281", "-"]
+      - ["Art. 282", "Art. 247"]
+
+  - heading_nl: "Vereniging van misdadigers en bedreigingen (art. 322-331)"
+    heading_fr: "Association de malfaiteurs et menaces (art. 322-331)"
+    entries:
+      - ["Art. 322", "Art. 403"]
+      - ["Art. 323", "Art. 405 (N4)"]
+      - ["Art. 324", "Art. 404 (N3)"]
+      - ["Art. 325", "-"]
+      - ["Art. 326", "Art. 410"]
+      - ["Art. 327", "Art. 232 (N3)"]
+      - ["Art. 328", "Art. 234 (N2)"]
+      - ["Art. 329", "Art. 231"]
+      - ["Art. 330", "Art. 232 (N2)"]
+      - ["Art. 331", "-"]
+
+  - heading_nl: "Zedenmisdrijven: oude artikelen (opgeheven 01/06/2022)"
+    # the 2022 reform inserted arts 417/1-417/65 into the OLD code, so these
+    # targets resolve there, not in the Wetboek of 2024
+    new_numac: "1867060850"
+    heading_fr: "Infractions sexuelles: anciens articles (abrogés le 01/06/2022)"
+    note_nl: "De hervorming van 21 maart 2022 heeft deze artikelen niet hernummerd maar herschreven: het hele hoofdstuk is vervangen door de artikelen 417/5 e.v. van het oude Strafwetboek. Daardoor bestaat er geen artikelsgewijze concordantie, ook niet in de parlementaire voorbereiding; de wetgever heeft de opvolging enkel in bulk herformuleerd in de verwijzingsartikelen van de hervormingswet. Hieronder staat een specifiek artikel alleen waar de opvolging vaststaat; in de overige gevallen verwijzen we naar het hervormingsblok als geheel. De afdeling \"Zedenmisdrijven na de hervorming van 2022\" hieronder brengt die artikelen 417/x verder naar het nieuwe Strafwetboek."
+    note_fr: "La réforme du 21 mars 2022 n'a pas renuméroté ces articles mais les a réécrits: tout le chapitre a été remplacé par les articles 417/5 et suivants de l'ancien Code pénal. Il n'existe donc pas de concordance article par article, pas même dans les travaux préparatoires; le législateur n'a reformulé la succession qu'en bloc, dans les articles de renvoi de la loi de réforme. Ci-dessous, un article précis n'est indiqué que lorsque la succession est établie; sinon, le renvoi vise le bloc de la réforme. La section \"Infractions sexuelles après la réforme de 2022\" ci-dessous mène ces articles 417/x vers le nouveau Code pénal."
+    entries:
+      - ["Art. 372 (opgeheven)", "Art. 417/7"]
+      - ["Art. 373 (opgeheven)", "Art. 417/7"]
+      - ["Art. 374 (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 375 (opgeheven)", "Art. 417/11"]
+      - ["Art. 376 (opgeheven)", "Art. 417/12-417/13"]
+      - ["Art. 377 (opgeheven)", "Art. 417/21"]
+      - ["Art. 377bis (opgeheven)", "Art. 417/20"]
+      - ["Art. 377ter (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 377quater (opgeheven)", "Art. 417/24"]
+      - ["Art. 378 (opgeheven)", "Art. 417/59"]
+      - ["Art. 378bis (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 379 (opgeheven)", "Art. 417/25-417/26"]
+      - ["Art. 380 (opgeheven)", "Art. 417/27-417/38"]
+      - ["Art. 380bis (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 380ter (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 381 (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 382 (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 382bis (opgeheven)", "Art. 417/59"]
+      - ["Art. 382ter (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 382quater (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 382quinquies (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 383 (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 383bis (opgeheven)", "Art. 417/43-417/47"]
+      - ["Art. 383bis/1 (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 384 (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 385 (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 386 (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 387 (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 388 (opgeheven)", "Art. 417/5 e.v."]
+      - ["Art. 389 (opgeheven)", "Art. 417/5 e.v."]
+
+  - heading_nl: "Doodslag, moord en slagen (art. 392-422)"
+    heading_fr: "Homicide, assassinat et coups (art. 392-422)"
+    entries:
+      - ["Art. 392", "Boek I Art. 7"]
+      - ["Art. 392bis", "Art. 81"]
+      - ["Art. 393", "Art. 96 (N7)"]
+      - ["Art. 393bis", "Art. 102 (N8)"]
+      - ["Art. 394", "Art. 97 (N8)"]
+      - ["Art. 395", "Art. 101 (N8)"]
+      - ["Art. 396", "Art. 100 (N8)"]
+      - ["Art. 397", "Art. 96 (N7)"]
+      - ["Art. 397bis", "Art. 105"]
+      - ["Art. 398", "Art. 194 (voorbedachtheid: Art. 198) (N1)"]
+      - ["Art. 399", "Art. 195 (voorbedachtheid: Art. 198, 2°) (N2)"]
+      - ["Art. 400", "Art. 196 (voorbedachtheid: Art. 198, 3°) (N3)"]
+      - ["Art. 401", "Art. 197 (voorbedachtheid: Art. 198) (N4)"]
+      - ["Art. 401bis", "-"]
+      - ["Art. 402", "Art. 195 (N2)"]
+      - ["Art. 403", "Art. 196 (N3)"]
+      - ["Art. 404", "Art. 197 (N4)"]
+      - ["Art. 405", "Boek I Art. 9"]
+      - ["Art. 405bis", "Art. 200 (N2 e.v.)"]
+      - ["Art. 405quater", "Art. 199 (doodslag: Art. 99) (N2 e.v.)"]
+      - ["Art. 406", "Art. 317-318 (N1 / N2)"]
+      - ["Art. 407", "Art. 319-320 (N3 / N4)"]
+      - ["Art. 408", "Art. 321 (N5)"]
+      - ["Art. 409", "Art. 206-211 (N3 (basis))"]
+      - ["Art. 410", "Art. 201 (N2 e.v.)"]
+      - ["Art. 410bis", "Art. 202 (N2 e.v.)"]
+      - ["Art. 410ter", "Art. 204"]
+      - ["Art. 418", "Art. 106, Art. 217 (N2 / N1)"]
+      - ["Art. 419", "Art. 106 (verkeer: Art. 107, Art. 107/1) (N2 / N3 / N4)"]
+      - ["Art. 419bis", "-"]
+      - ["Art. 420", "Art. 217 (verkeer: Art. 218, Art. 218/1) (N1 / N2)"]
+      - ["Art. 420bis", "-"]
+      - ["Art. 421", "Art. 217 (N1)"]
+      - ["Art. 422", "-"]
+      - ["Art. 422bis", "Art. 299 (dood tot gevolg: Art. 301) (N2)"]
+      - ["Art. 422ter", "Art. 300 (dood tot gevolg: Art. 301)"]
+      - ["Art. 422quater", "Boek I Art. 29"]
+
+  - heading_nl: "Foltering en onmenselijke behandeling (art. 417/1-417/4/1)"
+    heading_fr: "Torture et traitement inhumain (art. 417/1-417/4/1)"
+    entries:
+      - ["Art. 417/1", "Art. 112, 120, 128"]
+      - ["Art. 417/2", "Art. 112 (verzwaard: Art. 113-118)"]
+      - ["Art. 417/3", "Art. 120 (verzwaard: Art. 121-126)"]
+      - ["Art. 417/4", "Art. 128 (verzwaard: Art. 129)"]
+      - ["Art. 417/4/1", "Art. 131, 1°"]
+
+  - heading_nl: "Zedenmisdrijven na de hervorming van 2022 (art. 417/5-417/64)"
+    heading_fr: "Infractions sexuelles après la réforme de 2022 (art. 417/5-417/64)"
+    note_nl: "De oude artikelen 372-389 werden opgeheven door de wet van 21 maart 2022 en vervangen door de artikelen 417/5 e.v. van het oude Strafwetboek. De opvolging naar het nieuwe Wetboek loopt via die artikelen, die hieronder staan."
+    note_fr: "Les anciens articles 372-389 ont été abrogés par la loi du 21 mars 2022 et remplacés par les articles 417/5 et suivants de l'ancien Code pénal. La succession vers le nouveau Code passe par ces articles, repris ci-dessous."
+    entries:
+      - ["Art. 417/5", "Art. 132"]
+      - ["Art. 417/6", "Art. 133"]
+      - ["Art. 417/7", "Art. 134"]
+      - ["Art. 417/8", "Art. 135"]
+      - ["Art. 417/9", "Art. 136"]
+      - ["Art. 417/10", "Art. 137"]
+      - ["Art. 417/11", "Art. 138"]
+      - ["Art. 417/12", "Art. 139"]
+      - ["Art. 417/13", "Art. 140"]
+      - ["Art. 417/14", "Art. 141"]
+      - ["Art. 417/15", "Art. 142"]
+      - ["Art. 417/16", "Art. 143"]
+      - ["Art. 417/17", "Art. 144"]
+      - ["Art. 417/18", "Art. 145"]
+      - ["Art. 417/19", "Art. 146"]
+      - ["Art. 417/20", "Art. 147"]
+      - ["Art. 417/21", "Art. 148"]
+      - ["Art. 417/22", "Art. 149"]
+      - ["Art. 417/23", "Art. 150"]
+      - ["Art. 417/24", "Art. 151"]
+      - ["Art. 417/25", "Art. 152 (N4)"]
+      - ["Art. 417/26", "Art. 153 (N5)"]
+      - ["Art. 417/27", "Art. 154 (N4)"]
+      - ["Art. 417/28", "Art. 155 (N5)"]
+      - ["Art. 417/29", "Art. 156"]
+      - ["Art. 417/30", "Art. 157 (N5)"]
+      - ["Art. 417/31", "Art. 158"]
+      - ["Art. 417/32", "Art. 159 (N5)"]
+      - ["Art. 417/33", "Art. 160 (N4)"]
+      - ["Art. 417/34", "Art. 161 (N5)"]
+      - ["Art. 417/35", "Art. 162 (N4)"]
+      - ["Art. 417/36", "Art. 163 (N5)"]
+      - ["Art. 417/37", "Art. 164 (N6)"]
+      - ["Art. 417/38", "Art. 165 (N3)"]
+      - ["Art. 417/39", "Art. 166"]
+      - ["Art. 417/40", "Art. 167 (N3)"]
+      - ["Art. 417/41", "Art. 168"]
+      - ["Art. 417/42", "Art. 169"]
+      - ["Art. 417/43", "Art. 170"]
+      - ["Art. 417/44", "Art. 171"]
+      - ["Art. 417/45", "Art. 172"]
+      - ["Art. 417/46", "Art. 173"]
+      - ["Art. 417/47", "Art. 174"]
+      - ["Art. 417/48", "Art. 175"]
+      - ["Art. 417/49", "Art. 176"]
+      - ["Art. 417/50", "Art. 181"]
+      - ["Art. 417/51", "Art. 182"]
+      - ["Art. 417/52", "Art. 183"]
+      - ["Art. 417/53", "Art. 184"]
+      - ["Art. 417/54", "Art. 185"]
+      - ["Art. 417/55", "Art. 186"]
+      - ["Art. 417/56", "Art. 187"]
+      - ["Art. 417/57", "Art. 188"]
+      - ["Art. 417/58", "Art. 189"]
+      - ["Art. 417/59", "Art. 190"]
+      - ["Art. 417/60", "Art. 686"]
+      - ["Art. 417/61", "-"]
+      - ["Art. 417/62", "Art. 191"]
+      - ["Art. 417/63", "Art. 192"]
+      - ["Art. 417/64", "Boek I Art. 32"]
+
+  - heading_nl: "Vrijheidsberoving, huisvredebreuk en belaging (art. 434-442ter)"
+    heading_fr: "Détention illégale, violation de domicile et harcèlement (art. 434-442ter)"
+    entries:
+      - ["Art. 434", "Art. 219 (N3)"]
+      - ["Art. 437", "Art. 230"]
+      - ["Art. 438", "-"]
+      - ["Art. 438bis", "Boek I Art. 29"]
+      - ["Art. 439", "Art. 348 (geweld/bedreiging: Art. 349, 1°)"]
+      - ["Art. 440", "Art. 349 (N3)"]
+      - ["Art. 441", "Boek I Art. 9"]
+      - ["Art. 442", "Art. 348"]
+      - ["Art. 442/1", "Art. 350 (ontruimingsbevel: Art. 351)"]
+      - ["Art. 442bis", "Art. 237 (verzwaard: Art. 238) (N2)"]
+      - ["Art. 442ter", "Boek I Art. 29"]
+
+  - heading_nl: "Diefstal en afpersing (art. 461-476)"
+    heading_fr: "Vol et extorsion (art. 461-476)"
+    entries:
+      - ["Art. 461", "Art. 463"]
+      - ["Art. 462", "-"]
+      - ["Art. 463", "Art. 465 (N2)"]
+      - ["Art. 464", "Art. 474"]
+      - ["Art. 465", "Boek I Art. 47"]
+      - ["Art. 466", "Boek I Art. 9"]
+      - ["Art. 467", "Art. 466 (N3)"]
+      - ["Art. 468", "Art. 467 (N3)"]
+      - ["Art. 469", "-"]
+      - ["Art. 470", "Art. 464 (straf: Art. 468, N3)"]
+      - ["Art. 471", "Art. 469 (N4)"]
+      - ["Art. 472", "Art. 469"]
+      - ["Art. 473", "Art. 469"]
+      - ["Art. 474", "Art. 469"]
+      - ["Art. 475", "Art. 98 (N8)"]
+      - ["Art. 476", "Boek I Art. 9"]
+
+  - heading_nl: "Misbruik van vertrouwen, oplichting en heling (art. 489-505bis)"
+    heading_fr: "Abus de confiance, escroquerie et recel (art. 489-505bis)"
+    entries:
+      - ["Art. 489", "Art. 490"]
+      - ["Art. 489bis", "Art. 490"]
+      - ["Art. 489ter", "Art. 491"]
+      - ["Art. 489quater", "Art. 489"]
+      - ["Art. 489quinquies", "Art. 492"]
+      - ["Art. 489sexies", "Art. 493 (N3)"]
+      - ["Art. 490", "-"]
+      - ["Art. 490bis", "Art. 496 (N2)"]
+      - ["Art. 490ter", "Art. 494"]
+      - ["Art. 490quater", "Art. 495"]
+      - ["Art. 491", "Art. 475 (N3)"]
+      - ["Art. 492", "-"]
+      - ["Art. 492bis", "Art. 476"]
+      - ["Art. 493", "Art. 477"]
+      - ["Art. 494", "Art. 478"]
+      - ["Art. 495", "Art. 664 (N1)"]
+      - ["Art. 495bis", "Art. 688 (N2)"]
+      - ["Art. 496", "Art. 479 (N3)"]
+      - ["Art. 497", "Art. 481"]
+      - ["Art. 497bis", "Art. 481"]
+      - ["Art. 498", "Art. 482"]
+      - ["Art. 499", "Art. 482-483"]
+      - ["Art. 500", "Art. 484-485 (N1)"]
+      - ["Art. 501", "Art. 485 (N1)"]
+      - ["Art. 501bis", "Art. 485 (N1)"]
+      - ["Art. 502", "Art. 484-485"]
+      - ["Art. 503", "Boek I Art. 70"]
+      - ["Art. 504", "-"]
+      - ["Art. 504bis", "Art. 487"]
+      - ["Art. 504ter", "Art. 487"]
+      - ["Art. 504quater", "Art. 488"]
+      - ["Art. 505", "Art. 501-502 (N3)"]
+      - ["Art. 505bis", "Art. 503"]
+
+  - heading_nl: "Vernieling en beschadiging (art. 510-525bis)"
+    heading_fr: "Destruction et dégradation (art. 510-525bis)"
+    entries:
+      - ["Art. 510", "Art. 508 (N5)"]
+      - ["Art. 511", "Art. 507 (N3)"]
+      - ["Art. 512", "Art. 505-506 (N2)"]
+      - ["Art. 513", "Art. 510"]
+      - ["Art. 514", "Boek I Art. 9"]
+      - ["Art. 514bis", "Art. 511"]
+      - ["Art. 515", "Boek I Art. 47"]
+      - ["Art. 516", "Art. 505 (N2)"]
+      - ["Art. 517", "-"]
+      - ["Art. 518", "Art. 509"]
+      - ["Art. 519", "Art. 512 (N1)"]
+      - ["Art. 520", "Art. 513"]
+      - ["Art. 521", "Art. 517 (N2)"]
+      - ["Art. 523", "Art. 514-516 (N1)"]
+      - ["Art. 524", "-"]
+      - ["Art. 525bis", "Art. 523"]

@@ -1,0 +1,16 @@
+<%= t('mailer.subscription_welcome.subject') %>
+
+<%= t('mailer.subscription_welcome.greeting', name: @user.name || @user.email) %>
+
+<%= t('mailer.subscription_welcome.body') %>
+
+<%= t('mailer.subscription_welcome.whats_included') %>
+- <%= t('mailer.subscription_welcome.feature_credits') %>
+- <%= t('mailer.subscription_welcome.feature_models') %>
+- <%= t('mailer.subscription_welcome.feature_jurisprudence') %>
+- <%= t('mailer.subscription_welcome.feature_support') %>
+
+<%= t('mailer.subscription_welcome.button') %>:
+<%= @chatbot_url %>
+
+<%= t('mailer.subscription_welcome.thanks') %>

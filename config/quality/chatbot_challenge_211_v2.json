@@ -1,0 +1,2198 @@
+{
+  "schema_version": 1,
+  "challenge_id": "wetwijzer-chatbot-challenge-211-v2",
+  "status": {
+    "historical": false,
+    "challenge_only": false,
+    "not_population_estimate": true,
+    "peer_review": "APPROVED by owner 2026-07-27 (session decision). Corrections for q2557/q2809 are anchored to intact FR/EN/DE translations; q2183/q2147 are reconstructions, with q2147 flagged weakest-anchor at review time."
+  },
+  "source_corpus": {
+    "path": "public/chatbot_questions.json",
+    "sha256": "3cbbabad10e2ba4ad1df2f17d7261a8c6f1fab62ff54f1a552b5f6b23787b38e",
+    "sha256_normalization": "CRLF normalized to LF before SHA-256",
+    "record_count": 3147
+  },
+  "recovery": {
+    "recovered_zero_based_index_file_sha256": "f72f7a8299e6df523cc6708d9fb0f08712e7f5d609d6c531152ef81fee206692",
+    "membership_cross_checks": [
+      "211 saved answer rows",
+      "11 saved judge batches",
+      "211 baseline-map keys",
+      "211 judgments from historical workflow wf_97224ccc-df4"
+    ]
+  },
+  "selection": {
+    "index_base": 0,
+    "seed": 42,
+    "design": "all questions from ten weak categories, fixed seeded samples from ten categories, then predefined lexical pins",
+    "full_categories": [
+      "PROCEDURERECHT",
+      "GRONDWET",
+      "MEDISCH",
+      "BURENRECHT",
+      "INTELLECTUEEL",
+      "SPORT",
+      "DIEREN",
+      "INTERNET",
+      "VERZEKERINGEN",
+      "OVERHEID"
+    ],
+    "sampled_category_counts": {
+      "SCHULDEN": 8,
+      "MILIEU": 6,
+      "BOUWEN": 8,
+      "ZAKENRECHT": 8,
+      "VERKEERSRECHT": 8,
+      "STRAFRECHT": 10,
+      "CONSUMENTENRECHT": 8,
+      "FAMILIERECHT": 8,
+      "FISCAAL": 10,
+      "VASTGOEDRECHT": 8
+    },
+    "lexical_pins": [
+      "source index 336",
+      "NL contains verjaringstermijn",
+      "NL contains beslagvrije",
+      "NL contains dwangsom",
+      "NL contains hoger beroep termijn",
+      "NL contains termijn voor hoger beroep"
+    ],
+    "membership_sha256": "74e22a91f3a036783b09930d0daf3395f6235bb6a66d6e17f6bbd9b47e4c8af0"
+  },
+  "known_corrupt_count": 0,
+  "questions": [
+    {
+      "id": "q0220",
+      "source_index": 219,
+      "known_corrupt": false,
+      "nl": "Adoptie procedure België?",
+      "fr": "Procédure d'adoption en Belgique ?",
+      "en": "Adoption procedure in Belgium?",
+      "de": "Adoptionsverfahren in Belgien?",
+      "category": "FAMILIERECHT"
+    },
+    {
+      "id": "q0231",
+      "source_index": 230,
+      "known_corrupt": false,
+      "nl": "Wat erven ouders als hun kind overlijdt?",
+      "fr": "Droit successoral des parents ?",
+      "en": "Inheritance rights of parents?",
+      "de": "Erbrecht der Eltern?",
+      "category": "FAMILIERECHT"
+    },
+    {
+      "id": "q0311",
+      "source_index": 310,
+      "known_corrupt": false,
+      "nl": "Algemene voorwaarden geldig?",
+      "fr": "Validité des conditions générales ?",
+      "en": "General terms and conditions valid?",
+      "de": "Sind Allgemeine Geschäftsbedingungen gültig?",
+      "category": "CONSUMENTENRECHT"
+    },
+    {
+      "id": "q0317",
+      "source_index": 316,
+      "known_corrupt": false,
+      "nl": "Informatieplicht verkoper?",
+      "fr": "Obligation d'information du vendeur ?",
+      "en": "Information obligation for seller?",
+      "de": "Informationspflicht des Verkäufers?",
+      "category": "CONSUMENTENRECHT"
+    },
+    {
+      "id": "q0324",
+      "source_index": 323,
+      "known_corrupt": false,
+      "nl": "Verjaringstermijn misdrijf?",
+      "fr": "Quel est le délai de prescription pour un crime ?",
+      "en": "Limitation period for crime?",
+      "de": "Verjährungsfrist eines Verbrechens?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q0331",
+      "source_index": 330,
+      "known_corrupt": false,
+      "nl": "Wat is minnelijke schikking?",
+      "fr": "Qu'estâ€‘ce qu'une transaction pénale ?",
+      "en": "What is an amicable settlement?",
+      "de": "Was ist eine auÃŸergerichtliche Einigung?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q0337",
+      "source_index": 336,
+      "known_corrupt": false,
+      "nl": "Wat is stalking (belaging) en hoe kan ik ermee omgaan?",
+      "fr": "Qu'estâ€‘ce que le harcèlement (stalking) ?",
+      "en": "What is stalking?",
+      "de": "Was ist Stalking?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q0369",
+      "source_index": 368,
+      "known_corrupt": false,
+      "nl": "Reservefonds VME verplicht?",
+      "fr": "Le fonds de réserve de la VME est-il obligatoire ?",
+      "en": "Reserve fund for VME mandatory?",
+      "de": "Ist ein Reservefonds der Miteigentümergemeinschaft (VME) obligatorisch?",
+      "category": "VASTGOEDRECHT"
+    },
+    {
+      "id": "q0374",
+      "source_index": 373,
+      "known_corrupt": false,
+      "nl": "Welke rechtbank bevoegd?",
+      "fr": "Quelle juridiction est compétente ?",
+      "en": "Which court has jurisdiction?",
+      "de": "Welches Gericht ist zuständig?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0375",
+      "source_index": 374,
+      "known_corrupt": false,
+      "nl": "Wat is een dagvaarding en hoe moet ik erop reageren?",
+      "fr": "Qu'est-ce qu'une assignation ?",
+      "en": "What is a summons?",
+      "de": "Was ist eine Klagezustellung?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0376",
+      "source_index": 375,
+      "known_corrupt": false,
+      "nl": "Hoeveel kost een rechtszaak in België?",
+      "fr": "Quels sont les frais d'une procédure judiciaire ?",
+      "en": "Costs of lawsuit?",
+      "de": "Kosten des Rechtsstreits?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0377",
+      "source_index": 376,
+      "known_corrupt": false,
+      "nl": "Hoger beroep termijn?",
+      "fr": "Quel est le délai pour interjeter appel ?",
+      "en": "Appeal period?",
+      "de": "Berufungsfrist?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0378",
+      "source_index": 377,
+      "known_corrupt": false,
+      "nl": "Hoe verloopt een cassatieprocedure?",
+      "fr": "Quelle est la procédure de pourvoi en cassation ?",
+      "en": "Cassation procedure?",
+      "de": "Kassationsverfahren?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0379",
+      "source_index": 378,
+      "known_corrupt": false,
+      "nl": "Verzet tegen vonnis?",
+      "fr": "Comment former opposition à un jugement ?",
+      "en": "Opposition to judgment?",
+      "de": "Einspruch gegen ein Versäumnisurteil?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0380",
+      "source_index": 379,
+      "known_corrupt": false,
+      "nl": "Wanneer kan de rechter een dwangsom opleggen?",
+      "fr": "Comment imposer une astreinte ?",
+      "en": "Imposing a penalty?",
+      "de": "Zwangsgeld verhängen?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0381",
+      "source_index": 380,
+      "known_corrupt": false,
+      "nl": "Beslag leggen procedure?",
+      "fr": "Quelle est la procédure de saisie ?",
+      "en": "Seizure procedure?",
+      "de": "Verfahren zur Anordnung einer Pfändung?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0382",
+      "source_index": 381,
+      "known_corrupt": false,
+      "nl": "Hoe werkt bewarend beslag op bezittingen?",
+      "fr": "Qu'est-ce que la saisie conservatoire ?",
+      "en": "Conservatory seizure?",
+      "de": "Konservatorische Pfändung?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0383",
+      "source_index": 382,
+      "known_corrupt": false,
+      "nl": "Hoe werkt uitvoerend beslag na een vonnis?",
+      "fr": "Qu'est-ce que la saisie-exécution ?",
+      "en": "Enforcement seizure?",
+      "de": "Pfändung im Rahmen der Zwangsvollstreckung?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0384",
+      "source_index": 383,
+      "known_corrupt": false,
+      "nl": "Wat doet gerechtsdeurwaarder?",
+      "fr": "Que fait un huissier de justice ?",
+      "en": "What does a bailiff do?",
+      "de": "Welche Aufgaben hat ein Gerichtsvollzieher?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0385",
+      "source_index": 384,
+      "known_corrupt": false,
+      "nl": "Juridische bijstand pro deo?",
+      "fr": "Qu'est-ce que l'assistance juridique pro deo ?",
+      "en": "Legal assistance pro bono?",
+      "de": "Pro-Deo-Rechtsbeistand?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0386",
+      "source_index": 385,
+      "known_corrupt": false,
+      "nl": "Rechtsbijstandsverzekering?",
+      "fr": "Qu'est-ce que l'assurance de protection juridique ?",
+      "en": "Legal expenses insurance?",
+      "de": "Rechtsschutzversicherung?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0387",
+      "source_index": 386,
+      "known_corrupt": false,
+      "nl": "Bemiddeling als alternatief?",
+      "fr": "La médiation comme alternative ?",
+      "en": "Mediation as an alternative?",
+      "de": "Mediation als Alternative?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0388",
+      "source_index": 387,
+      "known_corrupt": false,
+      "nl": "Arbitrage procedure?",
+      "fr": "Procédure d'arbitrage ?",
+      "en": "Arbitration procedure?",
+      "de": "Schiedsverfahren?",
+      "category": "PROCEDURERECHT"
+    },
+    {
+      "id": "q0418",
+      "source_index": 417,
+      "known_corrupt": false,
+      "nl": "Wat zijn de wettelijke regels rond het recht op betoging?",
+      "fr": "Droit de manifester ?",
+      "en": "Right to protest?",
+      "de": "Recht auf Demonstration?",
+      "category": "GRONDWET"
+    },
+    {
+      "id": "q0419",
+      "source_index": 418,
+      "known_corrupt": false,
+      "nl": "Gelijkheidsbeginsel grondwet?",
+      "fr": "Principe d'égalité dans la Constitution ?",
+      "en": "Principle of equality in the constitution?",
+      "de": "Gleichheitsgrundsatz in der Verfassung?",
+      "category": "GRONDWET"
+    },
+    {
+      "id": "q0420",
+      "source_index": 419,
+      "known_corrupt": false,
+      "nl": "Hoe is het recht op onderwijs gewaarborgd in België?",
+      "fr": "Droit à l'éducation ?",
+      "en": "Right to education?",
+      "de": "Recht auf Bildung?",
+      "category": "GRONDWET"
+    },
+    {
+      "id": "q0421",
+      "source_index": 420,
+      "known_corrupt": false,
+      "nl": "Vrijheid van godsdienst?",
+      "fr": "Liberté de religion ?",
+      "en": "Freedom of religion?",
+      "de": "Religionsfreiheit?",
+      "category": "GRONDWET"
+    },
+    {
+      "id": "q0422",
+      "source_index": 421,
+      "known_corrupt": false,
+      "nl": "Onschendbaarheid woning?",
+      "fr": "Inviolabilité du domicile ?",
+      "en": "Inviolability of home?",
+      "de": "Unverletzlichkeit der Wohnung?",
+      "category": "GRONDWET"
+    },
+    {
+      "id": "q0426",
+      "source_index": 425,
+      "known_corrupt": false,
+      "nl": "Sociale inspectie controle?",
+      "fr": "Contrôle par l'inspection sociale ?",
+      "en": "Social inspection control?",
+      "de": "Kontrolle durch die Sozialinspektion?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q0427",
+      "source_index": 426,
+      "known_corrupt": false,
+      "nl": "Valse dimona strafbaar?",
+      "fr": "La fausse déclaration Dimona est-elle punissable ?",
+      "en": "False Dimona is punishable?",
+      "de": "Ist eine gefälschte Dimona strafbar?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q0657",
+      "source_index": 656,
+      "known_corrupt": false,
+      "nl": "Verwerping nalatenschap?",
+      "fr": "Renonciation à la succession?",
+      "en": "Rejection of inheritance?",
+      "de": "Ausschlagung der Erbschaft?",
+      "category": "FAMILIERECHT"
+    },
+    {
+      "id": "q0660",
+      "source_index": 659,
+      "known_corrupt": false,
+      "nl": "Vereffening nalatenschap?",
+      "fr": "Liquidation de la succession?",
+      "en": "Settlement of estate?",
+      "de": "Abwicklung des Nachlasses?",
+      "category": "FAMILIERECHT"
+    },
+    {
+      "id": "q0683",
+      "source_index": 682,
+      "known_corrupt": false,
+      "nl": "Schenking voorbehoud vruchtgebruik?",
+      "fr": "Donation avec réserve d'usufruit?",
+      "en": "Donation with reservation of usufruct?",
+      "de": "Schenkung mit NieÃŸbrauchsvorbehalt?",
+      "category": "FAMILIERECHT"
+    },
+    {
+      "id": "q0689",
+      "source_index": 688,
+      "known_corrupt": false,
+      "nl": "Schenking tussen echtgenoten?",
+      "fr": "Donation entre époux?",
+      "en": "Donation between spouses?",
+      "de": "Schenkung zwischen Ehegatten?",
+      "category": "FAMILIERECHT"
+    },
+    {
+      "id": "q0738",
+      "source_index": 737,
+      "known_corrupt": false,
+      "nl": "Meeneembaarheid registratierechten?",
+      "fr": "Portabilité des droits d'enregistrement ?",
+      "en": "Transferability of registration fees?",
+      "de": "Ãœbertragbarkeit der Registrierungssteuer?",
+      "category": "FISCAAL"
+    },
+    {
+      "id": "q0988",
+      "source_index": 987,
+      "known_corrupt": false,
+      "nl": "Wat is de verjaringstermijn voor misdrijven?",
+      "fr": "Quel est le délai de prescription pour les délits?",
+      "en": "What is the statute of limitations for crimes?",
+      "de": "Was ist die Verjährungsfrist für Straftaten?",
+      "category": "ALGEMEEN"
+    },
+    {
+      "id": "q1003",
+      "source_index": 1002,
+      "known_corrupt": false,
+      "nl": "Wat is de wettelijke garantie op producten?",
+      "fr": "Quelle est la garantie légale sur les produits?",
+      "en": "What is the legal warranty on products?",
+      "de": "Was ist die gesetzliche Gewährleistung für Produkte?",
+      "category": "CONSUMENTENRECHT"
+    },
+    {
+      "id": "q1063",
+      "source_index": 1062,
+      "known_corrupt": false,
+      "nl": "Wat zijn mijn rechten als patiënt?",
+      "fr": "Quels sont mes droits en tant que patient?",
+      "en": "Wat zijn mijn rechten als patiënt?",
+      "de": "Welche Rechte stehen mir als Patient zu?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q1065",
+      "source_index": 1064,
+      "known_corrupt": false,
+      "nl": "Hoe dien ik een klacht in tegen een arts?",
+      "fr": "Comment déposer une plainte contre un médecin?",
+      "en": "Hoe dien ik een klacht in tegen een arts?",
+      "de": "Wie reiche ich eine Beschwerde gegen einen Arzt ein?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q1066",
+      "source_index": 1065,
+      "known_corrupt": false,
+      "nl": "Wat is euthanasie en wanneer is het toegestaan?",
+      "fr": "Qu'est-ce que l'euthanasie et quand est-elle autorisée?",
+      "en": "Wat is euthanasie en wanneer is het toegestaan?",
+      "de": "Was ist Euthanasie und wann ist sie erlaubt?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q1068",
+      "source_index": 1067,
+      "known_corrupt": false,
+      "nl": "Heb ik recht op inzage in mijn medisch dossier?",
+      "fr": "Ai-je le droit de consulter mon dossier médical?",
+      "en": "Heb ik recht op inzage in mijn medisch dossier?",
+      "de": "Habe ich das Recht auf Einsicht in meine Patientenakte?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q1245",
+      "source_index": 1244,
+      "known_corrupt": false,
+      "nl": "Wanneer geldt het verlaagd BTW-tarief van 6%?",
+      "fr": "TVA à 6 % ?",
+      "en": "Which supplies are subject to the 6% VAT rate?",
+      "de": "Welche Leistungen unterliegen dem 6%-Mehrwertsteuersatz?",
+      "category": "FISCAAL - BTW"
+    },
+    {
+      "id": "q1274",
+      "source_index": 1273,
+      "known_corrupt": false,
+      "nl": "Hoe wordt de gemeentebelasting berekend?",
+      "fr": "Précompte communal ?",
+      "en": "What is the municipal tax?",
+      "de": "Gemeindesteuer?",
+      "category": "FISCAAL - PERSONENBELASTING"
+    },
+    {
+      "id": "q1319",
+      "source_index": 1318,
+      "known_corrupt": false,
+      "nl": "Erfbelasting samenwonenden?",
+      "fr": "Droits de succession pour les cohabitants ?",
+      "en": "How is inheritance tax applied to cohabitants?",
+      "de": "Erbschaftssteuer bei Zusammenlebenden?",
+      "category": "FISCAAL - REGISTRATIE"
+    },
+    {
+      "id": "q1324",
+      "source_index": 1323,
+      "known_corrupt": false,
+      "nl": "Generatiesprong fiscaal?",
+      "fr": "Fiscalité du saut de génération ?",
+      "en": "What are the fiscal consequences of a generationâ€‘skipping transfer?",
+      "de": "Generationssprung steuerlich?",
+      "category": "FISCAAL - REGISTRATIE"
+    },
+    {
+      "id": "q1439",
+      "source_index": 1438,
+      "known_corrupt": false,
+      "nl": "Wat is de verjaringstermijn voor verschillende misdrijven?",
+      "fr": "Prescription des crimes ?",
+      "en": "Statute of limitations for a felony?",
+      "de": "Verjährung von Verbrechen?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q1444",
+      "source_index": 1443,
+      "known_corrupt": false,
+      "nl": "Hoe vraag ik een vergoeding aan bij het slachtofferfonds?",
+      "fr": "Fonds d'aide aux victimes ?",
+      "en": "Victims' fund?",
+      "de": "Opferfonds?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q1472",
+      "source_index": 1471,
+      "known_corrupt": false,
+      "nl": "Rechten defect product?",
+      "fr": "Droits en cas de produit défectueux ?",
+      "en": "What rights does a consumer have in respect of a defective product?",
+      "de": "Rechte bei einem mangelhaften Produkt?",
+      "category": "CONSUMENTENRECHT"
+    },
+    {
+      "id": "q1490",
+      "source_index": 1489,
+      "known_corrupt": false,
+      "nl": "Productaansprakelijkheid?",
+      "fr": "Responsabilité du fait des produits ?",
+      "en": "Product liability?",
+      "de": "Produkthaftung?",
+      "category": "CONSUMENTENRECHT"
+    },
+    {
+      "id": "q1525",
+      "source_index": 1524,
+      "known_corrupt": false,
+      "nl": "Welke rechten heeft een eigenaar van een onroerend goed?",
+      "fr": "Propriété ?",
+      "en": "Ownership?",
+      "de": "Eigentum?",
+      "category": "ZAKENRECHT"
+    },
+    {
+      "id": "q1532",
+      "source_index": 1531,
+      "known_corrupt": false,
+      "nl": "Verschil opstal erfpacht?",
+      "fr": "Différence entre le droit d'opstal et le bail emphytéotique ?",
+      "en": "Difference between right of superficies and emphyteusis?",
+      "de": "Unterschied zwischen Opstalrecht und Erbpacht?",
+      "category": "ZAKENRECHT"
+    },
+    {
+      "id": "q1533",
+      "source_index": 1532,
+      "known_corrupt": false,
+      "nl": "Hoe werkt vruchtgebruik op een woning?",
+      "fr": "Usufruit ?",
+      "en": "Usufruct?",
+      "de": "NieÃŸbrauch?",
+      "category": "ZAKENRECHT"
+    },
+    {
+      "id": "q1537",
+      "source_index": 1536,
+      "known_corrupt": false,
+      "nl": "Vergoeding onteigening?",
+      "fr": "Indemnité d'expropriation ?",
+      "en": "Compensation for expropriation?",
+      "de": "Entschädigung bei Enteignung?",
+      "category": "ZAKENRECHT"
+    },
+    {
+      "id": "q1538",
+      "source_index": 1537,
+      "known_corrupt": false,
+      "nl": "Hoe werkt ruilverkaveling van landbouwgrond?",
+      "fr": "Remembrement ?",
+      "en": "Land consolidation?",
+      "de": "Flurbereinigung?",
+      "category": "ZAKENRECHT"
+    },
+    {
+      "id": "q1539",
+      "source_index": 1538,
+      "known_corrupt": false,
+      "nl": "Verkavelingsvergunning?",
+      "fr": "Permis de lotir ?",
+      "en": "Subdivision permit?",
+      "de": "Parzellierungsgenehmigung?",
+      "category": "ZAKENRECHT"
+    },
+    {
+      "id": "q1542",
+      "source_index": 1541,
+      "known_corrupt": false,
+      "nl": "Overstromingsattest?",
+      "fr": "Attestation d'inondation ?",
+      "en": "Flood certificate?",
+      "de": "Hochwasserattest?",
+      "category": "ZAKENRECHT"
+    },
+    {
+      "id": "q1543",
+      "source_index": 1542,
+      "known_corrupt": false,
+      "nl": "Stedenbouwkundig attest?",
+      "fr": "Attestation urbanistique ?",
+      "en": "Urban planning certificate?",
+      "de": "Städtebauliches Attest?",
+      "category": "ZAKENRECHT"
+    },
+    {
+      "id": "q1553",
+      "source_index": 1552,
+      "known_corrupt": false,
+      "nl": "Wanneer mag de politie een bloedproef afnemen?",
+      "fr": "Prélèvement sanguin ?",
+      "en": "Blood test?",
+      "de": "Blutprobe?",
+      "category": "VERKEERSRECHT"
+    },
+    {
+      "id": "q1559",
+      "source_index": 1558,
+      "known_corrupt": false,
+      "nl": "Europees aanrijdingsformulier?",
+      "fr": "Constat européen d'accident ?",
+      "en": "European Accident Statement?",
+      "de": "Europäisches Unfallprotokoll?",
+      "category": "VERKEERSRECHT"
+    },
+    {
+      "id": "q1560",
+      "source_index": 1559,
+      "known_corrupt": false,
+      "nl": "Wanneer kan een verzekeraar regres uitoefenen?",
+      "fr": "Action en recours de l'assureur ?",
+      "en": "Insurance recourse?",
+      "de": "Regress der Versicherung?",
+      "category": "VERKEERSRECHT"
+    },
+    {
+      "id": "q1608",
+      "source_index": 1607,
+      "known_corrupt": false,
+      "nl": "Wat is de verjaringstermijn voor belastingschulden?",
+      "fr": "Prescription fiscale ?",
+      "en": "What are the limitation periods in tax law?",
+      "de": "Steuerrechtliche Verjährung?",
+      "category": "DIVERSE"
+    },
+    {
+      "id": "q1643",
+      "source_index": 1642,
+      "known_corrupt": false,
+      "nl": "Hoeveel belasting betaal ik op een inkomen van 40000 euro?",
+      "fr": "Combien d'impôt paie-je sur un revenu de 40 000 euros ?",
+      "en": "How much tax do I pay on an income of â‚¬40,000?",
+      "de": "Wie viel Steuern zahle ich bei einem Einkommen von 40.000 Euro?",
+      "category": "FISCAAL"
+    },
+    {
+      "id": "q1657",
+      "source_index": 1656,
+      "known_corrupt": false,
+      "nl": "Wat is de verjaringstermijn?",
+      "fr": "Quel est le délai de prescription ?",
+      "en": "What is the limitation period?",
+      "de": "Wie lautet die Verjährungsfrist?",
+      "category": "FISCAAL"
+    },
+    {
+      "id": "q1691",
+      "source_index": 1690,
+      "known_corrupt": false,
+      "nl": "Wat is de wachttijd voor gerechtelijke procedure?",
+      "fr": "Quel est le délai d'attente pour une procédure judiciaire ?",
+      "en": "What is the waiting period for judicial proceedings?",
+      "de": "Wie lange ist die Wartefrist für gerichtliche Verfahren?",
+      "category": "FAMILIERECHT"
+    },
+    {
+      "id": "q1755",
+      "source_index": 1754,
+      "known_corrupt": false,
+      "nl": "Hoe betwist ik een onderhoud met mijn verhuurder?",
+      "fr": "Comment contester un entretien avec mon bailleur ?",
+      "en": "How do I dispute a maintenance issue with my landlord?",
+      "de": "Wie kann ich Instandhaltungsarbeiten gegenüber meinem Vermieter anfechten?",
+      "category": "VASTGOEDRECHT"
+    },
+    {
+      "id": "q1893",
+      "source_index": 1892,
+      "known_corrupt": false,
+      "nl": "Kan ik ontslag nemen als ik verdacht word van belastingfraude?",
+      "fr": "Puis-je démissionner si je suis soupçonné de fraude fiscale ?",
+      "en": "Can I tender my resignation if I am suspected of tax fraud?",
+      "de": "Kann ich kündigen, wenn gegen mich der Verdacht auf Steuerbetrug besteht?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q1914",
+      "source_index": 1913,
+      "known_corrupt": false,
+      "nl": "Wat zijn de voorwaarden voor probatie?",
+      "fr": "Quelles sont les conditions pour la probation ?",
+      "en": "What are the conditions for probation?",
+      "de": "Welche Voraussetzungen gelten für Bewährung?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q1944",
+      "source_index": 1943,
+      "known_corrupt": false,
+      "nl": "Kan ik een testament krijgen na ziekteverlof?",
+      "fr": "Puisâ€‘je obtenir un testament après un congé maladie ?",
+      "en": "Can I make a will after sick leave?",
+      "de": "Kann ich nach einem Krankenstand ein Testament erhalten?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q1979",
+      "source_index": 1978,
+      "known_corrupt": false,
+      "nl": "Wat is de verjaringstermijn voor oplichting?",
+      "fr": "Quel est le délai de prescription pour escroquerie ?",
+      "en": "What is the limitation period for fraud?",
+      "de": "Was ist die Verjährungsfrist für Betrug?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q1985",
+      "source_index": 1984,
+      "known_corrupt": false,
+      "nl": "Wat is de verjaringstermijn voor drugs?",
+      "fr": "Quel est le délai de prescription pour les infractions liées aux drogues ?",
+      "en": "What is the limitation period for drug offences?",
+      "de": "Wie lange beträgt die Verjährungsfrist für Drogendelikte?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q2021",
+      "source_index": 2020,
+      "known_corrupt": false,
+      "nl": "Wat is de notariskosten bij aankoop woning?",
+      "fr": "Quels sont les frais de notaire lors de l'achat d'un logement ?",
+      "en": "What are the notary fees when purchasing a dwelling?",
+      "de": "Wie hoch sind die Notarkosten beim Kauf einer Immobilie?",
+      "category": "FISCAAL"
+    },
+    {
+      "id": "q2060",
+      "source_index": 2059,
+      "known_corrupt": false,
+      "nl": "Wat zijn mijn rechten bij een arbeidsongeval?",
+      "fr": "Quels sont mes droits en cas d'accident du travail ?",
+      "en": "What are my rights in the event of an occupational accident?",
+      "de": "Welche Rechte habe ich im Falle eines Arbeitsunfalls?",
+      "category": "CONSUMENTENRECHT"
+    },
+    {
+      "id": "q2065",
+      "source_index": 2064,
+      "known_corrupt": false,
+      "nl": "Hoe wordt alimentatie berekend in België?",
+      "fr": "Qu'estâ€‘ce que la pension alimentaire ?",
+      "en": "What is maintenance?",
+      "de": "Was ist Unterhalt?",
+      "category": "FISCAAL"
+    },
+    {
+      "id": "q2103",
+      "source_index": 2102,
+      "known_corrupt": false,
+      "nl": "Wat is invaliditeit?",
+      "fr": "Qu'est-ce que l'invalidité ?",
+      "en": "What is invalidity?",
+      "de": "Was versteht man unter Invalidität?",
+      "category": "FISCAAL"
+    },
+    {
+      "id": "q2128",
+      "source_index": 2127,
+      "known_corrupt": false,
+      "nl": "Wat is de verjaringstermijn voor geweld?",
+      "fr": "Quel est le délai de prescription pour des actes de violence ?",
+      "en": "What is the limitation period for acts of violence?",
+      "de": "Wie lautet die Verjährungsfrist für Gewalt?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q2147",
+      "source_index": 2146,
+      "known_corrupt": false,
+      "corrupt_reason": "category/question mismatch: marriage-contract question is labelled STRAFRECHT",
+      "nl": "Kan ik eerherstel krijgen na een veroordeling?",
+      "fr": "Puis-je obtenir une réhabilitation après une condamnation ?",
+      "en": "Can I obtain rehabilitation (expungement of my criminal record) after a conviction?",
+      "de": "Kann ich nach einer Verurteilung eine Rehabilitierung erhalten?",
+      "category": "STRAFRECHT",
+      "corrected_in_v2": true,
+      "correction_rationale": "All four languages corrupt (\"marriage contract after holiday\" in STRAFRECHT). Reconstructed from the \"Kan ik een X krijgen na Y?\" pattern + category: eerherstel (rehabilitation) after conviction. LEAST-ANCHORED correction - review closely."
+    },
+    {
+      "id": "q2155",
+      "source_index": 2154,
+      "known_corrupt": false,
+      "nl": "Wat is de verjaringstermijn voor verkeersovertreding?",
+      "fr": "Quel est le délai de prescription pour une infraction routière ?",
+      "en": "What is the limitation period for a traffic offence?",
+      "de": "Wie lautet die Verjährungsfrist für eine Verkehrsübertretung?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q2183",
+      "source_index": 2182,
+      "known_corrupt": false,
+      "corrupt_reason": "concept splice: maintenance payment is incorrectly combined with an occupational accident",
+      "nl": "Hoeveel alimentatie moet ik betalen voor mijn kinderen na een scheiding?",
+      "fr": "Combien de pension alimentaire dois-je payer pour mes enfants après une séparation ?",
+      "en": "How much child maintenance must I pay after a separation?",
+      "de": "Wie viel Unterhalt muss ich nach einer Trennung für meine Kinder zahlen?",
+      "category": "FAMILIERECHT",
+      "corrected_in_v2": true,
+      "correction_rationale": "All languages corrupt (\"maintenance for an occupational accident\"). Part of a corruption family (\"alimentatie voor ziekteverlof/ouderschapsverlof/reorganisatie/vakantie\"). Reconstructed to child maintenance after separation; checked non-duplicate vs existing alimentatie questions."
+    },
+    {
+      "id": "q2241",
+      "source_index": 2240,
+      "known_corrupt": false,
+      "nl": "Wat is de verjaringstermijn voor belastingfraude?",
+      "fr": "Quel est le délai de prescription pour la fraude fiscale ?",
+      "en": "What is the limitation period for tax fraud?",
+      "de": "Was ist die Verjährungsfrist für Steuerbetrug?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q2256",
+      "source_index": 2255,
+      "known_corrupt": false,
+      "nl": "Wat is de verjaringstermijn voor diefstal?",
+      "fr": "Quel est le délai de prescription pour le vol ?",
+      "en": "What is the limitation period for theft?",
+      "de": "Wie lange beträgt die Verjährungsfrist für Diebstahl?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q2279",
+      "source_index": 2278,
+      "known_corrupt": false,
+      "nl": "Hoelang duurt de proefperiode?",
+      "fr": "Quelle est la durée de la période d'essai ?",
+      "en": "How long does the probationary period last?",
+      "de": "Wie lange dauert die Probezeit?",
+      "category": "FISCAAL"
+    },
+    {
+      "id": "q2385",
+      "source_index": 2384,
+      "known_corrupt": false,
+      "nl": "Wat is de beslagvrije som voor loon?",
+      "fr": "Qu'est-ce que la quotité insaisissable du salaire ?",
+      "en": "What is the attachment-free amount for wages?",
+      "de": "Was ist der pfändungsfreie Betrag für Lohn?",
+      "category": "ARBEIDSRECHT"
+    },
+    {
+      "id": "q2514",
+      "source_index": 2513,
+      "known_corrupt": false,
+      "nl": "Wat zijn de boetes voor te snel rijden?",
+      "fr": "Quelles sont les amendes pour excès de vitesse ?",
+      "en": "What are the fines for speeding?",
+      "de": "Welche BuÃŸgelder drohen bei Geschwindigkeitsüberschreitung?",
+      "category": "VERKEERSRECHT"
+    },
+    {
+      "id": "q2522",
+      "source_index": 2521,
+      "known_corrupt": false,
+      "nl": "Wat als ik een verkeersboete niet kan betalen?",
+      "fr": "Que se passe-t-il si je ne peux pas payer une amende de circulation ?",
+      "en": "What if I cannot pay a traffic fine?",
+      "de": "Was passiert, wenn ich ein VerkehrsbuÃŸgeld nicht bezahlen kann?",
+      "category": "VERKEERSRECHT"
+    },
+    {
+      "id": "q2530",
+      "source_index": 2529,
+      "known_corrupt": false,
+      "nl": "Wat bij een verkeersongeval met gewonden?",
+      "fr": "Que faire en cas d'accident de la circulation avec des blessés ?",
+      "en": "What should be done in the event of a traffic accident with injuries?",
+      "de": "Was ist bei einem Verkehrsunfall mit Verletzten zu tun?",
+      "category": "VERKEERSRECHT"
+    },
+    {
+      "id": "q2541",
+      "source_index": 2540,
+      "known_corrupt": false,
+      "nl": "Wat is een Europees aanrijdingsformulier?",
+      "fr": "Qu'est-ce qu'un formulaire européen de constat d'accident ?",
+      "en": "What is the European Accident Report form?",
+      "de": "Was ist das Europäische Unfallberichtformular?",
+      "category": "VERKEERSRECHT"
+    },
+    {
+      "id": "q2557",
+      "source_index": 2556,
+      "known_corrupt": false,
+      "corrupt_reason": "underspecified wording: \"de cel\" does not identify pre-trial detention without the translation fields",
+      "nl": "Hoe werkt de voorlopige hechtenis in België?",
+      "fr": "Comment fonctionne la détention préventive en Belgique ?",
+      "en": "How does remand (pre-trial detention) work in Belgium?",
+      "de": "Wie funktioniert die Untersuchungshaft in Belgien?",
+      "category": "STRAFRECHT",
+      "corrected_in_v2": true,
+      "correction_rationale": "NL corrupt (\"de cel\"); EN preserved the intended question verbatim (remand/pre-trial detention). NL/FR/DE aligned to the intact EN."
+    },
+    {
+      "id": "q2580",
+      "source_index": 2579,
+      "known_corrupt": false,
+      "nl": "Wat als een bedrijf failliet gaat?",
+      "fr": "Que se passe-t-il si une entreprise fait faillite ?",
+      "en": "What happens if a company goes bankrupt?",
+      "de": "Was passiert, wenn ein Unternehmen insolvent wird?",
+      "category": "CONSUMENTENRECHT"
+    },
+    {
+      "id": "q2584",
+      "source_index": 2583,
+      "known_corrupt": false,
+      "nl": "Hoe bescherm ik me tegen oplichting?",
+      "fr": "Comment puis-je me protéger contre les escroqueries ?",
+      "en": "How can I protect myself against fraud?",
+      "de": "Wie kann ich mich gegen Betrug schützen?",
+      "category": "CONSUMENTENRECHT"
+    },
+    {
+      "id": "q2661",
+      "source_index": 2660,
+      "known_corrupt": false,
+      "nl": "Wat is een erfdienstbaarheid?",
+      "fr": "Qu'est-ce qu'une servitude ?",
+      "en": "What is an easement?",
+      "de": "Was ist eine Grunddienstbarkeit?",
+      "category": "VASTGOEDRECHT"
+    },
+    {
+      "id": "q2670",
+      "source_index": 2669,
+      "known_corrupt": false,
+      "nl": "Wat is een keuring elektriciteit?",
+      "fr": "Qu'est-ce qu'un contrôle de l'installation électrique ?",
+      "en": "What is an electrical inspection?",
+      "de": "Was ist eine Prüfung der elektrischen Anlage?",
+      "category": "VASTGOEDRECHT"
+    },
+    {
+      "id": "q2674",
+      "source_index": 2673,
+      "known_corrupt": false,
+      "nl": "Hoe werkt een Vereniging van Mede-Eigenaars?",
+      "fr": "Comment fonctionne une association de copropriétaires ?",
+      "en": "How does an owners' association (VME) operate?",
+      "de": "Wie funktioniert eine Miteigentümergemeinschaft (VME)?",
+      "category": "VASTGOEDRECHT"
+    },
+    {
+      "id": "q2675",
+      "source_index": 2674,
+      "known_corrupt": false,
+      "nl": "Wat zijn gemeenschappelijke kosten?",
+      "fr": "Quelles sont les charges communes ?",
+      "en": "What are common charges?",
+      "de": "Was sind Gemeinschaftskosten?",
+      "category": "VASTGOEDRECHT"
+    },
+    {
+      "id": "q2731",
+      "source_index": 2730,
+      "known_corrupt": false,
+      "nl": "Wanneer heb ik een bouwvergunning nodig?",
+      "fr": "Quand ai-je besoin d'un permis de bâtir ?",
+      "en": "When do I need a building permit?",
+      "de": "Wann benötige ich eine Baugenehmigung?",
+      "category": "BOUWEN"
+    },
+    {
+      "id": "q2733",
+      "source_index": 2732,
+      "known_corrupt": false,
+      "nl": "Mag ik zonder vergunning verbouwen?",
+      "fr": "Puis-je réaliser des travaux sans permis ?",
+      "en": "Am I permitted to carry out renovations without a permit?",
+      "de": "Darf ich ohne Genehmigung umbauen?",
+      "category": "BOUWEN"
+    },
+    {
+      "id": "q2737",
+      "source_index": 2736,
+      "known_corrupt": false,
+      "nl": "Wat is een EPB-aangifte?",
+      "fr": "Qu'est-ce qu'une déclaration PEB ?",
+      "en": "What is an EPB declaration?",
+      "de": "Was ist eine EPBâ€‘Meldung?",
+      "category": "BOUWEN"
+    },
+    {
+      "id": "q2738",
+      "source_index": 2737,
+      "known_corrupt": false,
+      "nl": "Wat zijn de afstandsregels tot de buren?",
+      "fr": "Quelles sont les règles de recul par rapport aux voisins ?",
+      "en": "What are the distance rules to neighbouring properties?",
+      "de": "Was sind die Abstandsregeln gegenüber den Nachbarn?",
+      "category": "BOUWEN"
+    },
+    {
+      "id": "q2741",
+      "source_index": 2740,
+      "known_corrupt": false,
+      "nl": "Wat is regularisatie van bouwwerken?",
+      "fr": "Qu'est-ce que la régularisation de travaux de construction ?",
+      "en": "What is regularisation of building works?",
+      "de": "Was ist die Regularisierung von Bauwerken?",
+      "category": "BOUWEN"
+    },
+    {
+      "id": "q2742",
+      "source_index": 2741,
+      "known_corrupt": false,
+      "nl": "Hoe lang is een bouwvergunning geldig?",
+      "fr": "Combien de temps un permis de construire est-il valable ?",
+      "en": "How long is a building permit valid for?",
+      "de": "Wie lange ist eine Baugenehmigung gültig?",
+      "category": "BOUWEN"
+    },
+    {
+      "id": "q2746",
+      "source_index": 2745,
+      "known_corrupt": false,
+      "nl": "Hoeveel lawaai mogen mijn buren maken?",
+      "fr": "Combien de bruit mes voisins sont-ils autorisés à faire ?",
+      "en": "How much noise may my neighbours make?",
+      "de": "Wie viel Lärm dürfen meine Nachbarn verursachen?",
+      "category": "BURENRECHT"
+    },
+    {
+      "id": "q2747",
+      "source_index": 2746,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor nachtlawaai?",
+      "fr": "Quelles sont les règles applicables au bruit nocturne ?",
+      "en": "What are the rules for nightâ€‘time noise?",
+      "de": "Welche Regelungen gelten für nächtlichen Lärm?",
+      "category": "BURENRECHT"
+    },
+    {
+      "id": "q2748",
+      "source_index": 2747,
+      "known_corrupt": false,
+      "nl": "Mag mijn buur een boom aan de grens planten?",
+      "fr": "Mon voisin est-il autorisé à planter un arbre en limite de propriété ?",
+      "en": "May my neighbour plant a tree on the boundary?",
+      "de": "Darf mein Nachbar einen Baum an der Grundstücksgrenze pflanzen?",
+      "category": "BURENRECHT"
+    },
+    {
+      "id": "q2749",
+      "source_index": 2748,
+      "known_corrupt": false,
+      "nl": "Wat als takken van de buur overhangen?",
+      "fr": "Que se passe-t-il si des branches du voisin surplombent ?",
+      "en": "What if branches from the neighbour overhang my property?",
+      "de": "Wat is te doen als Ã„ste des Nachbarn überhängen?",
+      "category": "BURENRECHT"
+    },
+    {
+      "id": "q2750",
+      "source_index": 2749,
+      "known_corrupt": false,
+      "nl": "Wat is burenhinder en wat kan ik ertegen doen?",
+      "fr": "Qu'est-ce que la gêne de voisinage ?",
+      "en": "What is neighbour nuisance?",
+      "de": "Was versteht man unter Nachbarbelästigung?",
+      "category": "BURENRECHT"
+    },
+    {
+      "id": "q2751",
+      "source_index": 2750,
+      "known_corrupt": false,
+      "nl": "Mag ik een schutting plaatsen op de grens?",
+      "fr": "Puis-je installer une clôture sur la limite de propriété ?",
+      "en": "May I place a fence on the boundary?",
+      "de": "Darf ich einen Zaun auf der Grundstücksgrenze errichten?",
+      "category": "BURENRECHT"
+    },
+    {
+      "id": "q2752",
+      "source_index": 2751,
+      "known_corrupt": false,
+      "nl": "Wat is mandeligheid?",
+      "fr": "Qu'est-ce que la mandeligheid ?",
+      "en": "What is mandeligheid?",
+      "de": "Was versteht man unter mandeligheid?",
+      "category": "BURENRECHT"
+    },
+    {
+      "id": "q2753",
+      "source_index": 2752,
+      "known_corrupt": false,
+      "nl": "Hoe meet ik de perceelgrens?",
+      "fr": "Comment mesurer la limite de la parcelle ?",
+      "en": "How do I measure the property boundary?",
+      "de": "Wie messe ich die Grundstücksgrenze?",
+      "category": "BURENRECHT"
+    },
+    {
+      "id": "q2754",
+      "source_index": 2753,
+      "known_corrupt": false,
+      "nl": "Wat als mijn buur op mijn grond bouwt?",
+      "fr": "Que faire si mon voisin construit sur mon terrain ?",
+      "en": "What if my neighbour builds on my land?",
+      "de": "Was geschieht, wenn mein Nachbar auf meinem Grundstück baut?",
+      "category": "BURENRECHT"
+    },
+    {
+      "id": "q2755",
+      "source_index": 2754,
+      "known_corrupt": false,
+      "nl": "Kan ik mijn buur dwingen een boom te kappen?",
+      "fr": "Puis-je contraindre mon voisin à abattre un arbre ?",
+      "en": "Can I force my neighbour to cut down a tree?",
+      "de": "Kann ich meinen Nachbarn zwingen, einen Baum zu fällen?",
+      "category": "BURENRECHT"
+    },
+    {
+      "id": "q2756",
+      "source_index": 2755,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor kippen houden?",
+      "fr": "Quelles sont les règles concernant la détention de poules ?",
+      "en": "What are the rules for keeping chickens?",
+      "de": "Welche Regeln gelten für die Haltung von Hühnern?",
+      "category": "BURENRECHT"
+    },
+    {
+      "id": "q2757",
+      "source_index": 2756,
+      "known_corrupt": false,
+      "nl": "Wat als de buren mijn uitzicht blokkeren?",
+      "fr": "Que puis-je faire si mes voisins obstruent ma vue ?",
+      "en": "What if the neighbours block my view?",
+      "de": "Was geschieht, wenn die Nachbarn meine Aussicht blockieren?",
+      "category": "BURENRECHT"
+    },
+    {
+      "id": "q2758",
+      "source_index": 2757,
+      "known_corrupt": false,
+      "nl": "Wat is de vrederechter?",
+      "fr": "Qu'est-ce que le juge de paix ?",
+      "en": "What is the justice of the peace?",
+      "de": "Was ist der Friedensrichter?",
+      "category": "BURENRECHT"
+    },
+    {
+      "id": "q2759",
+      "source_index": 2758,
+      "known_corrupt": false,
+      "nl": "Wat als ik mijn schulden niet kan betalen?",
+      "fr": "Que se passe-t-il si je ne peux pas payer mes dettes ?",
+      "en": "What if I cannot pay my debts?",
+      "de": "Was passiert, wenn ich meine Schulden nicht begleichen kann?",
+      "category": "SCHULDEN"
+    },
+    {
+      "id": "q2762",
+      "source_index": 2761,
+      "known_corrupt": false,
+      "nl": "Mag een deurwaarder mijn huis binnenkomen?",
+      "fr": "Un huissier de justice a-t-il le droit d'entrer dans mon domicile ?",
+      "en": "Is a bailiff permitted to enter my home?",
+      "de": "Darf ein Gerichtsvollzieher mein Haus betreten?",
+      "category": "SCHULDEN"
+    },
+    {
+      "id": "q2763",
+      "source_index": 2762,
+      "known_corrupt": false,
+      "nl": "Wat mag een deurwaarder in beslag nemen?",
+      "fr": "Quels biens un huissier de justice est-il autorisé à saisir ?",
+      "en": "What may a bailiff seize?",
+      "de": "Was darf ein Gerichtsvollzieher pfänden?",
+      "category": "SCHULDEN"
+    },
+    {
+      "id": "q2765",
+      "source_index": 2764,
+      "known_corrupt": false,
+      "nl": "Wat is de beslagvrije som?",
+      "fr": "Qu'estâ€‘ce que la quotité insaisissable ?",
+      "en": "What is the seizure-exempt amount?",
+      "de": "Was ist der pfändungsfreie Betrag?",
+      "category": "SCHULDEN"
+    },
+    {
+      "id": "q2766",
+      "source_index": 2765,
+      "known_corrupt": false,
+      "nl": "Wat is het verschil incassobureau en deurwaarder?",
+      "fr": "Quelle est la différence entre une société de recouvrement et un huissier de justice ?",
+      "en": "What is the difference between a debt-collection agency and a bailiff?",
+      "de": "Was ist der Unterschied zwischen einem Inkassobüro und einem Gerichtsvollzieher?",
+      "category": "SCHULDEN"
+    },
+    {
+      "id": "q2767",
+      "source_index": 2766,
+      "known_corrupt": false,
+      "nl": "Wat is verschoonbaarheid faillissement?",
+      "fr": "Qu'estâ€‘ce que l'excusabilité en cas de faillissement ?",
+      "en": "What is an excusable bankruptcy?",
+      "de": "Was bedeutet Verschoonbarkeit im Insolvenzverfahren?",
+      "category": "SCHULDEN"
+    },
+    {
+      "id": "q2771",
+      "source_index": 2770,
+      "known_corrupt": false,
+      "nl": "Hoelang is de verjaringstermijn voor schulden?",
+      "fr": "Quel est le délai de prescription pour les dettes ?",
+      "en": "What is the limitation period for debts?",
+      "de": "Wie lange ist die Verjährungsfrist für Schulden?",
+      "category": "SCHULDEN"
+    },
+    {
+      "id": "q2773",
+      "source_index": 2772,
+      "known_corrupt": false,
+      "nl": "Hoe vraag ik mijn medisch dossier op?",
+      "fr": "Comment puisâ€‘je obtenir mon dossier médical ?",
+      "en": "How can I request access to my medical file?",
+      "de": "Wie fordere ich meine Patientenakte an?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q2774",
+      "source_index": 2773,
+      "known_corrupt": false,
+      "nl": "Wat is informed consent?",
+      "fr": "Qu'estâ€‘ce que le consentement éclairé ?",
+      "en": "What is informed consent?",
+      "de": "Was ist die informierte Einwilligung?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q2775",
+      "source_index": 2774,
+      "known_corrupt": false,
+      "nl": "Wat als een arts een fout maakt?",
+      "fr": "Que se passeâ€‘tâ€‘il si un médecin commet une erreur ?",
+      "en": "What if a doctor makes a mistake?",
+      "de": "Was gilt, wenn ein Arzt einen Fehler begeht?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q2776",
+      "source_index": 2775,
+      "known_corrupt": false,
+      "nl": "Wat is het Fonds voor Medische Ongevallen?",
+      "fr": "Qu'estâ€‘ce que le Fonds des accidents médicaux ?",
+      "en": "What is the Fund for Medical Accidents?",
+      "de": "Was ist der Fonds für medizinische Unfälle?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q2777",
+      "source_index": 2776,
+      "known_corrupt": false,
+      "nl": "Hoe werkt euthanasie in België?",
+      "fr": "Comment fonctionne l'euthanasie en Belgique ?",
+      "en": "How does euthanasia work in Belgium?",
+      "de": "Wie funktioniert Euthanasie in Belgien?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q2778",
+      "source_index": 2777,
+      "known_corrupt": false,
+      "nl": "Wat is een voorafgaande wilsverklaring?",
+      "fr": "Qu'estâ€‘ce qu'une déclaration anticipée de volonté ?",
+      "en": "What is an advance directive?",
+      "de": "Was ist eine vorherige Willenserklärung?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q2779",
+      "source_index": 2778,
+      "known_corrupt": false,
+      "nl": "Hoe weiger ik een behandeling?",
+      "fr": "Comment puisâ€‘je refuser un traitement ?",
+      "en": "How can I refuse medical treatment?",
+      "de": "Wie lehne ich eine Behandlung ab?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q2780",
+      "source_index": 2779,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels rond orgaandonatie?",
+      "fr": "Quelles sont les règles en matière de don d'organes ?",
+      "en": "What are the rules regarding organ donation?",
+      "de": "Welche Regeln gelten für die Organspende?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q2781",
+      "source_index": 2780,
+      "known_corrupt": false,
+      "nl": "Hoe verwijder ik me uit het donorregister?",
+      "fr": "Comment puisâ€‘je me retirer du registre des donneurs d'organes ?",
+      "en": "How can I remove myself from the donor register?",
+      "de": "Wie kann ich mich aus dem Spenderregister austragen lassen?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q2782",
+      "source_index": 2781,
+      "known_corrupt": false,
+      "nl": "Wat is medisch beroepsgeheim?",
+      "fr": "Qu'estâ€‘ce que le secret médical ?",
+      "en": "What is medical professional secrecy?",
+      "de": "Was ist die ärztliche Schweigepflicht?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q2783",
+      "source_index": 2782,
+      "known_corrupt": false,
+      "nl": "Wanneer mag een arts beroepsgeheim doorbreken?",
+      "fr": "Quand un médecin peutâ€‘il déroger au secret professionnel ?",
+      "en": "When may a physician breach professional secrecy?",
+      "de": "Wann darf ein Arzt die ärztliche Schweigepflicht durchbrechen?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q2784",
+      "source_index": 2783,
+      "known_corrupt": false,
+      "nl": "Wat is een negatieve wilsverklaring?",
+      "fr": "Qu'estâ€‘ce qu'une déclaration de volonté négative ?",
+      "en": "What is a negative advance directive?",
+      "de": "Was ist eine negative Willenserklärung?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q2785",
+      "source_index": 2784,
+      "known_corrupt": false,
+      "nl": "Hoe werkt palliatieve zorg?",
+      "fr": "Comment fonctionnent les soins palliatifs ?",
+      "en": "How does palliative care work?",
+      "de": "Wie funktioniert die Palliativversorgung?",
+      "category": "MEDISCH"
+    },
+    {
+      "id": "q2786",
+      "source_index": 2785,
+      "known_corrupt": false,
+      "nl": "Wat is auteursrecht?",
+      "fr": "Qu'estâ€‘ce que le droit d'auteur ?",
+      "en": "What is copyright?",
+      "de": "Was ist das Urheberrecht?",
+      "category": "INTELLECTUEEL"
+    },
+    {
+      "id": "q2787",
+      "source_index": 2786,
+      "known_corrupt": false,
+      "nl": "Hoe lang duurt auteursrecht?",
+      "fr": "Quelle est la durée du droit d'auteur ?",
+      "en": "How long does copyright last?",
+      "de": "Wie lange besteht das Urheberrecht?",
+      "category": "INTELLECTUEEL"
+    },
+    {
+      "id": "q2788",
+      "source_index": 2787,
+      "known_corrupt": false,
+      "nl": "Wat is een handelsmerk?",
+      "fr": "Qu'estâ€‘ce qu'une marque commerciale ?",
+      "en": "What is a trade mark?",
+      "de": "Was ist ein Warenzeichen?",
+      "category": "INTELLECTUEEL"
+    },
+    {
+      "id": "q2789",
+      "source_index": 2788,
+      "known_corrupt": false,
+      "nl": "Hoe registreer ik een merk?",
+      "fr": "Comment enregistrer une marque ?",
+      "en": "How do I register a trade mark?",
+      "de": "Wie registriere ich ein Warenzeichen?",
+      "category": "INTELLECTUEEL"
+    },
+    {
+      "id": "q2790",
+      "source_index": 2789,
+      "known_corrupt": false,
+      "nl": "Hoe krijg ik een patent?",
+      "fr": "Comment obtenir un brevet ?",
+      "en": "How do I obtain a patent?",
+      "de": "Wie erhalte ich ein Patent?",
+      "category": "INTELLECTUEEL"
+    },
+    {
+      "id": "q2791",
+      "source_index": 2790,
+      "known_corrupt": false,
+      "nl": "Mag ik een foto van internet gebruiken?",
+      "fr": "Puisâ€‘je utiliser une photo provenant d'Internet ?",
+      "en": "May I use a photo from the internet?",
+      "de": "Darf ich ein Foto aus dem Internet verwenden?",
+      "category": "INTELLECTUEEL"
+    },
+    {
+      "id": "q2792",
+      "source_index": 2791,
+      "known_corrupt": false,
+      "nl": "Hoe bescherm ik mijn bedrijfsnaam?",
+      "fr": "Comment protéger le nom de mon entreprise ?",
+      "en": "How can I protect my business name?",
+      "de": "Wie schütze ich meinen Firmennamen?",
+      "category": "INTELLECTUEEL"
+    },
+    {
+      "id": "q2793",
+      "source_index": 2792,
+      "known_corrupt": false,
+      "nl": "Wat als iemand mijn werk kopieert?",
+      "fr": "Que faire si quelqu'un copie mon Å“uvre ?",
+      "en": "What if someone copies my work?",
+      "de": "Was passiert, wenn jemand mein Werk kopiert?",
+      "category": "INTELLECTUEEL"
+    },
+    {
+      "id": "q2794",
+      "source_index": 2793,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor muziek afspelen?",
+      "fr": "Quelles sont les règles pour la diffusion de musique ?",
+      "en": "What are the rules for playing music?",
+      "de": "Welche Regelungen gelten für das Abspielen von Musik?",
+      "category": "INTELLECTUEEL"
+    },
+    {
+      "id": "q2795",
+      "source_index": 2794,
+      "known_corrupt": false,
+      "nl": "Mag ik een parodie maken?",
+      "fr": "Aiâ€‘je le droit de faire une parodie ?",
+      "en": "Am I permitted to make a parody?",
+      "de": "Darf ich eine Parodie erstellen?",
+      "category": "INTELLECTUEEL"
+    },
+    {
+      "id": "q2796",
+      "source_index": 2795,
+      "known_corrupt": false,
+      "nl": "Hoe bescherm ik mijn design?",
+      "fr": "Comment protéger mon dessin ou modèle ?",
+      "en": "How can I protect my design?",
+      "de": "Wie schütze ich mein Design?",
+      "category": "INTELLECTUEEL"
+    },
+    {
+      "id": "q2797",
+      "source_index": 2796,
+      "known_corrupt": false,
+      "nl": "Ben ik verzekerd tijdens sport?",
+      "fr": "Suisâ€‘je assuré pendant la pratique d'un sport ?",
+      "en": "Am I insured while engaging in sport?",
+      "de": "Bin ich beim Sport versichert?",
+      "category": "SPORT"
+    },
+    {
+      "id": "q2798",
+      "source_index": 2797,
+      "known_corrupt": false,
+      "nl": "Wat als ik gewond raak tijdens een sportwedstrijd?",
+      "fr": "Que se passeâ€‘tâ€‘il si je suis blessé lors d'une compétition sportive ?",
+      "en": "What if I am injured during a sports competition?",
+      "de": "Was passiert, wenn ich mich während eines Sportwettkampfs verletze?",
+      "category": "SPORT"
+    },
+    {
+      "id": "q2799",
+      "source_index": 2798,
+      "known_corrupt": false,
+      "nl": "Hoe organiseer ik een evenement legaal?",
+      "fr": "Comment organiser légalement un événement ?",
+      "en": "How do I organise an event legally?",
+      "de": "Wie organisiere ich eine Veranstaltung rechtlich korrekt?",
+      "category": "SPORT"
+    },
+    {
+      "id": "q2800",
+      "source_index": 2799,
+      "known_corrupt": false,
+      "nl": "Wat is de aansprakelijkheid van een sportclub?",
+      "fr": "Quelle est la responsabilité d'un club sportif ?",
+      "en": "What is the liability of a sports club?",
+      "de": "Wie ist die Haftung eines Sportvereins?",
+      "category": "SPORT"
+    },
+    {
+      "id": "q2801",
+      "source_index": 2800,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor drones vliegen?",
+      "fr": "Quelles sont les règles pour piloter des drones ?",
+      "en": "What are the rules for flying drones?",
+      "de": "Welche Regeln gelten für das Fliegen von Drohnen?",
+      "category": "SPORT"
+    },
+    {
+      "id": "q2802",
+      "source_index": 2801,
+      "known_corrupt": false,
+      "nl": "Heb ik een vergunning nodig voor vissen?",
+      "fr": "Ai-je besoin d'un permis pour pêcher ?",
+      "en": "Do I need a permit to fish?",
+      "de": "Benötige ich eine Genehmigung zum Angeln?",
+      "category": "SPORT"
+    },
+    {
+      "id": "q2803",
+      "source_index": 2802,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor jagen in België?",
+      "fr": "Quelles sont les règles de chasse en Belgique ?",
+      "en": "What are the rules for hunting in Belgium?",
+      "de": "Welche Regeln gelten für die Jagd in Belgien?",
+      "category": "SPORT"
+    },
+    {
+      "id": "q2804",
+      "source_index": 2803,
+      "known_corrupt": false,
+      "nl": "Mag ik overal kamperen in België?",
+      "fr": "Puis-je camper partout en Belgique ?",
+      "en": "May I camp anywhere in Belgium?",
+      "de": "Darf ich überall in Belgien campen?",
+      "category": "SPORT"
+    },
+    {
+      "id": "q2805",
+      "source_index": 2804,
+      "known_corrupt": false,
+      "nl": "Wat is een vrijwilliger juridisch?",
+      "fr": "Qu'est-ce qu'un bénévole juridiquement ?",
+      "en": "What is the legal status of a volunteer?",
+      "de": "Was ist rechtlich unter einem Freiwilligen zu verstehen?",
+      "category": "SPORT"
+    },
+    {
+      "id": "q2806",
+      "source_index": 2805,
+      "known_corrupt": false,
+      "nl": "Wat als een vrijwilliger schade veroorzaakt?",
+      "fr": "Que se passe-t-il si un bénévole cause des dommages ?",
+      "en": "What if a volunteer causes damage?",
+      "de": "Was passiert, wenn ein Freiwilliger Schäden verursacht?",
+      "category": "SPORT"
+    },
+    {
+      "id": "q2807",
+      "source_index": 2806,
+      "known_corrupt": false,
+      "nl": "Mag ik alcohol verkopen op een evenement?",
+      "fr": "Puis-je vendre de l'alcool lors d'un événement ?",
+      "en": "May I sell alcohol at an event?",
+      "de": "Darf ich auf einer Veranstaltung Alkohol verkaufen?",
+      "category": "SPORT"
+    },
+    {
+      "id": "q2808",
+      "source_index": 2807,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor een loterij organiseren?",
+      "fr": "Quelles sont les règles pour organiser une loterie ?",
+      "en": "What are the rules for organising a lottery?",
+      "de": "Welche Regeln gelten für die Organisation einer Lotterie?",
+      "category": "SPORT"
+    },
+    {
+      "id": "q2809",
+      "source_index": 2808,
+      "known_corrupt": false,
+      "corrupt_reason": "malformed wording: \"wapenwit\" is not a valid Dutch firearms-licence term",
+      "nl": "Hoe krijg ik een wapenvergunning?",
+      "fr": "Comment obtenir une autorisation de détention d'arme ?",
+      "en": "How do I obtain a firearms licence?",
+      "de": "Wie erhalte ich eine Waffenerlaubnis?",
+      "category": "SPORT",
+      "corrected_in_v2": true,
+      "correction_rationale": "NL corrupt (\"wapenwit\"); FR/EN/DE all preserved the intended question (firearms licence). NL restored to wapenvergunning."
+    },
+    {
+      "id": "q2810",
+      "source_index": 2809,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor honden houden?",
+      "fr": "Quelles sont les règles pour la détention de chiens ?",
+      "en": "What are the rules for keeping dogs?",
+      "de": "Welche Regeln gelten für das Halten von Hunden?",
+      "category": "DIEREN"
+    },
+    {
+      "id": "q2811",
+      "source_index": 2810,
+      "known_corrupt": false,
+      "nl": "Moet ik mijn hond chippen?",
+      "fr": "Dois-je faire pucer mon chien ?",
+      "en": "Do I have to microchip my dog?",
+      "de": "Muss ich meinen Hund chippen lassen?",
+      "category": "DIEREN"
+    },
+    {
+      "id": "q2812",
+      "source_index": 2811,
+      "known_corrupt": false,
+      "nl": "Wat als mijn hond iemand bijt?",
+      "fr": "Que se passe-t-il si mon chien mord quelqu'un ?",
+      "en": "What if my dog bites someone?",
+      "de": "Was passiert, wenn mein Hund jemanden beiÃŸt?",
+      "category": "DIEREN"
+    },
+    {
+      "id": "q2813",
+      "source_index": 2812,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor gevaarlijke honden?",
+      "fr": "Quelles sont les règles concernant les chiens dangereux ?",
+      "en": "What are the rules for dangerous dogs?",
+      "de": "Welche Regeln gelten für gefährliche Hunde?",
+      "category": "DIEREN"
+    },
+    {
+      "id": "q2814",
+      "source_index": 2813,
+      "known_corrupt": false,
+      "nl": "Mag ik exotische dieren houden?",
+      "fr": "Puis-je détenir des animaux exotiques ?",
+      "en": "May I keep exotic animals?",
+      "de": "Darf ich exotische Tiere halten?",
+      "category": "DIEREN"
+    },
+    {
+      "id": "q2815",
+      "source_index": 2814,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor paarden houden?",
+      "fr": "Quelles sont les règles pour la détention de chevaux ?",
+      "en": "What are the rules for keeping horses?",
+      "de": "Welche Regeln gelten für das Halten von Pferden?",
+      "category": "DIEREN"
+    },
+    {
+      "id": "q2816",
+      "source_index": 2815,
+      "known_corrupt": false,
+      "nl": "Wat is dierenmishandeling juridisch?",
+      "fr": "Qu'est-ce que la maltraitance animale sur le plan juridique ?",
+      "en": "What is animal cruelty legally?",
+      "de": "Was bedeutet Tierquälerei rechtlich?",
+      "category": "DIEREN"
+    },
+    {
+      "id": "q2817",
+      "source_index": 2816,
+      "known_corrupt": false,
+      "nl": "Hoe meld ik dierenmishandeling?",
+      "fr": "Comment signaler la maltraitance animale ?",
+      "en": "How do I report animal cruelty?",
+      "de": "Wie melde ich Tierquälerei?",
+      "category": "DIEREN"
+    },
+    {
+      "id": "q2818",
+      "source_index": 2817,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor fokken?",
+      "fr": "Quelles sont les règles concernant l'élevage ?",
+      "en": "What are the rules for animal breeding?",
+      "de": "Welche Regeln gelten für die Zucht?",
+      "category": "DIEREN"
+    },
+    {
+      "id": "q2819",
+      "source_index": 2818,
+      "known_corrupt": false,
+      "nl": "Mag ik dieren verkopen?",
+      "fr": "Puis-je vendre des animaux ?",
+      "en": "May I sell animals?",
+      "de": "Darf ich Tiere verkaufen?",
+      "category": "DIEREN"
+    },
+    {
+      "id": "q2820",
+      "source_index": 2819,
+      "known_corrupt": false,
+      "nl": "Wat is cybercriminaliteit?",
+      "fr": "Qu'est-ce que la cybercriminalité ?",
+      "en": "What is cybercrime?",
+      "de": "Was ist Cyberkriminalität?",
+      "category": "INTERNET"
+    },
+    {
+      "id": "q2821",
+      "source_index": 2820,
+      "known_corrupt": false,
+      "nl": "Wat zijn de straffen voor hacking?",
+      "fr": "Quelles sont les sanctions pour le piratage informatique ?",
+      "en": "What are the penalties for hacking?",
+      "de": "Welche Strafen drohen für Hacking?",
+      "category": "INTERNET"
+    },
+    {
+      "id": "q2822",
+      "source_index": 2821,
+      "known_corrupt": false,
+      "nl": "Wat is online fraude?",
+      "fr": "Qu'est-ce que la fraude en ligne ?",
+      "en": "What is online fraud?",
+      "de": "Was ist Online-Betrug?",
+      "category": "INTERNET"
+    },
+    {
+      "id": "q2823",
+      "source_index": 2822,
+      "known_corrupt": false,
+      "nl": "Hoe meld ik internetfraude?",
+      "fr": "Comment signaler une fraude sur Internet ?",
+      "en": "How do I report online fraud?",
+      "de": "Wie melde ich Internetbetrug?",
+      "category": "INTERNET"
+    },
+    {
+      "id": "q2824",
+      "source_index": 2823,
+      "known_corrupt": false,
+      "nl": "Moet ik BTW rekenen bij online verkoop?",
+      "fr": "Dois-je facturer la TVA pour la vente en ligne ?",
+      "en": "Do I have to charge VAT on online sales?",
+      "de": "Muss ich bei Online-Verkäufen Mehrwertsteuer berechnen?",
+      "category": "INTERNET"
+    },
+    {
+      "id": "q2825",
+      "source_index": 2824,
+      "known_corrupt": false,
+      "nl": "Wat is phishing juridisch?",
+      "fr": "Qu'est-ce que le phishing sur le plan juridique ?",
+      "en": "What is phishing legally?",
+      "de": "Was ist Phishing juristisch?",
+      "category": "INTERNET"
+    },
+    {
+      "id": "q2826",
+      "source_index": 2825,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor online recensies?",
+      "fr": "Quelles sont les règles concernant les avis en ligne ?",
+      "en": "What are the rules for online reviews?",
+      "de": "Welche Regeln gelten für Online-Bewertungen?",
+      "category": "INTERNET"
+    },
+    {
+      "id": "q2827",
+      "source_index": 2826,
+      "known_corrupt": false,
+      "nl": "Wat is smaad op internet?",
+      "fr": "Qu'est-ce que la diffamation sur Internet ?",
+      "en": "What is defamation on the internet?",
+      "de": "Was ist Diffamierung im Internet?",
+      "category": "INTERNET"
+    },
+    {
+      "id": "q2828",
+      "source_index": 2827,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor influencers?",
+      "fr": "Quelles sont les règles pour les influenceurs ?",
+      "en": "What are the rules for influencers?",
+      "de": "Welche Vorschriften gelten für Influencer?",
+      "category": "INTERNET"
+    },
+    {
+      "id": "q2829",
+      "source_index": 2828,
+      "known_corrupt": false,
+      "nl": "Moet reclame op social media vermeld worden?",
+      "fr": "La publicité sur les réseaux sociaux doit-elle être mentionnée ?",
+      "en": "Must advertising on social media be disclosed?",
+      "de": "Muss Werbung in sozialen Medien als solche gekennzeichnet werden?",
+      "category": "INTERNET"
+    },
+    {
+      "id": "q2830",
+      "source_index": 2829,
+      "known_corrupt": false,
+      "nl": "Wat is een BA-verzekering?",
+      "fr": "Qu'est-ce qu'une assurance responsabilité civile (RC) ?",
+      "en": "What is third-party liability (BA) insurance?",
+      "de": "Was ist eine Haftpflichtversicherung (BA-Versicherung)?",
+      "category": "VERZEKERINGEN"
+    },
+    {
+      "id": "q2831",
+      "source_index": 2830,
+      "known_corrupt": false,
+      "nl": "Is een familiale verzekering verplicht?",
+      "fr": "L'assurance familiale est-elle obligatoire ?",
+      "en": "Is family liability insurance compulsory?",
+      "de": "Ist eine Familienhaftpflichtversicherung obligatorisch?",
+      "category": "VERZEKERINGEN"
+    },
+    {
+      "id": "q2832",
+      "source_index": 2831,
+      "known_corrupt": false,
+      "nl": "Wat dekt een familiale verzekering?",
+      "fr": "Que couvre une assurance familiale ?",
+      "en": "What does family liability insurance cover?",
+      "de": "Was deckt eine Familienhaftpflichtversicherung ab?",
+      "category": "VERZEKERINGEN"
+    },
+    {
+      "id": "q2833",
+      "source_index": 2832,
+      "known_corrupt": false,
+      "nl": "Wat is een rechtsbijstandsverzekering?",
+      "fr": "Qu'est-ce qu'une assurance protection juridique ?",
+      "en": "What is legal expenses insurance?",
+      "de": "Was ist eine Rechtsschutzversicherung?",
+      "category": "VERZEKERINGEN"
+    },
+    {
+      "id": "q2834",
+      "source_index": 2833,
+      "known_corrupt": false,
+      "nl": "Wanneer heb ik rechtsbijstand nodig?",
+      "fr": "Dans quels cas ai-je besoin d'une assistance juridique ?",
+      "en": "When do I need legal assistance?",
+      "de": "Wann benötige ich Rechtsbeistand?",
+      "category": "VERZEKERINGEN"
+    },
+    {
+      "id": "q2835",
+      "source_index": 2834,
+      "known_corrupt": false,
+      "nl": "Wat is een omniumverzekering?",
+      "fr": "Qu'est-ce qu'une assurance omnium ?",
+      "en": "What is comprehensive motor insurance?",
+      "de": "Was ist eine Omniumversicherung?",
+      "category": "VERZEKERINGEN"
+    },
+    {
+      "id": "q2836",
+      "source_index": 2835,
+      "known_corrupt": false,
+      "nl": "Wat dekt een brandverzekering?",
+      "fr": "Que couvre une assurance incendie ?",
+      "en": "What does fire insurance cover?",
+      "de": "Was deckt eine Feuerversicherung?",
+      "category": "VERZEKERINGEN"
+    },
+    {
+      "id": "q2837",
+      "source_index": 2836,
+      "known_corrupt": false,
+      "nl": "Is een brandverzekering verplicht?",
+      "fr": "L'assurance incendie est-elle obligatoire ?",
+      "en": "Is fire insurance compulsory?",
+      "de": "Ist eine Feuerversicherung verpflichtend?",
+      "category": "VERZEKERINGEN"
+    },
+    {
+      "id": "q2838",
+      "source_index": 2837,
+      "known_corrupt": false,
+      "nl": "Wat is een hospitalisatieverzekering?",
+      "fr": "Qu'est-ce qu'une assurance hospitalisation ?",
+      "en": "What is hospitalisation insurance?",
+      "de": "Was ist eine Krankenhauszusatzversicherung?",
+      "category": "VERZEKERINGEN"
+    },
+    {
+      "id": "q2839",
+      "source_index": 2838,
+      "known_corrupt": false,
+      "nl": "Wat als de verzekeraar niet betaalt?",
+      "fr": "Que se passe-t-il si l'assureur ne paie pas ?",
+      "en": "What if the insurer does not pay?",
+      "de": "Was geschieht, wenn der Versicherer nicht zahlt?",
+      "category": "VERZEKERINGEN"
+    },
+    {
+      "id": "q2840",
+      "source_index": 2839,
+      "known_corrupt": false,
+      "nl": "Wat is eigen risico franchise?",
+      "fr": "Qu'est-ce que la franchise (eigen risico) ?",
+      "en": "What is an excess (franchise)?",
+      "de": "Was ist der Selbstbehalt (Franchise)?",
+      "category": "VERZEKERINGEN"
+    },
+    {
+      "id": "q2841",
+      "source_index": 2840,
+      "known_corrupt": false,
+      "nl": "Hoe dien ik een klacht in tegen de overheid?",
+      "fr": "Comment introduire une plainte contre l'administration ?",
+      "en": "How do I file a complaint against the government?",
+      "de": "Wie reiche ich eine Beschwerde gegen die öffentliche Verwaltung ein?",
+      "category": "OVERHEID"
+    },
+    {
+      "id": "q2842",
+      "source_index": 2841,
+      "known_corrupt": false,
+      "nl": "Hoe ga ik in beroep tegen een overheidsbeslissing?",
+      "fr": "Comment faire appel d'une décision administrative ?",
+      "en": "How do I appeal a decision of a public authority?",
+      "de": "Wie lege ich gegen eine Verwaltungsentscheidung Berufung ein?",
+      "category": "OVERHEID"
+    },
+    {
+      "id": "q2843",
+      "source_index": 2842,
+      "known_corrupt": false,
+      "nl": "Wat is een ombudsman?",
+      "fr": "Qu'est-ce qu'un ombudsman ?",
+      "en": "What is an ombudsman?",
+      "de": "Was ist ein Ombudsmann?",
+      "category": "OVERHEID"
+    },
+    {
+      "id": "q2844",
+      "source_index": 2843,
+      "known_corrupt": false,
+      "nl": "Wat doet de federale ombudsman?",
+      "fr": "Que fait le Médiateur fédéral ?",
+      "en": "What does the Federal Ombudsman do?",
+      "de": "Was macht der föderale Ombudsmann?",
+      "category": "OVERHEID"
+    },
+    {
+      "id": "q2845",
+      "source_index": 2844,
+      "known_corrupt": false,
+      "nl": "Hoe vraag ik toegang tot overheidsdocumenten?",
+      "fr": "Comment demander l'accès aux documents administratifs ?",
+      "en": "How do I request access to government documents?",
+      "de": "Wie beantrage ich Zugang zu amtlichen Dokumenten?",
+      "category": "OVERHEID"
+    },
+    {
+      "id": "q2846",
+      "source_index": 2845,
+      "known_corrupt": false,
+      "nl": "Wat is een gemeentelijk reglement?",
+      "fr": "Qu'est-ce qu'un règlement communal ?",
+      "en": "What is a municipal regulation?",
+      "de": "Was ist eine kommunale Verordnung?",
+      "category": "OVERHEID"
+    },
+    {
+      "id": "q2847",
+      "source_index": 2846,
+      "known_corrupt": false,
+      "nl": "Hoe betwist ik een gemeentelijke belasting?",
+      "fr": "Comment contester une taxe communale ?",
+      "en": "How do I contest a municipal tax?",
+      "de": "Wie fechte ich eine kommunale Steuer an?",
+      "category": "OVERHEID"
+    },
+    {
+      "id": "q2848",
+      "source_index": 2847,
+      "known_corrupt": false,
+      "nl": "Wat is de Vlaamse ombudsman?",
+      "fr": "Qu'est-ce que le Médiateur flamand ?",
+      "en": "What is the Flemish Ombudsman?",
+      "de": "Was ist der flämische Ombudsmann?",
+      "category": "OVERHEID"
+    },
+    {
+      "id": "q2849",
+      "source_index": 2848,
+      "known_corrupt": false,
+      "nl": "Wat is een stedenbouwkundige inlichting?",
+      "fr": "Qu'est-ce qu'un renseignement urbanistique ?",
+      "en": "What is a town planning enquiry?",
+      "de": "Was ist eine städtebauliche Auskunft?",
+      "category": "OVERHEID"
+    },
+    {
+      "id": "q2850",
+      "source_index": 2849,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor afvalsortering?",
+      "fr": "Quelles sont les règles de tri des déchets ?",
+      "en": "What are the rules for waste sorting?",
+      "de": "Was sind die Regeln für die Abfallsortierung?",
+      "category": "MILIEU"
+    },
+    {
+      "id": "q2851",
+      "source_index": 2850,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor grondwater oppompen?",
+      "fr": "Quelles sont les règles pour le pompage des eaux souterraines ?",
+      "en": "What are the rules for groundwater extraction?",
+      "de": "Welche Vorschriften gelten für das Abpumpen von Grundwasser?",
+      "category": "MILIEU"
+    },
+    {
+      "id": "q2856",
+      "source_index": 2855,
+      "known_corrupt": false,
+      "nl": "Wat als mijn buur een houtkachel heeft?",
+      "fr": "Que se passe-t-il si mon voisin a un poêle à bois ?",
+      "en": "What if my neighbour has a wood-burning stove?",
+      "de": "Was gilt, wenn mein Nachbar einen Holzofen hat?",
+      "category": "MILIEU"
+    },
+    {
+      "id": "q2857",
+      "source_index": 2856,
+      "known_corrupt": false,
+      "nl": "Wat zijn de regels voor geluidsoverlast?",
+      "fr": "Quelles sont les règles en matière de nuisance sonore ?",
+      "en": "What are the rules on noise nuisance?",
+      "de": "Welche Regelungen gelten für Lärmbelästigung?",
+      "category": "MILIEU"
+    },
+    {
+      "id": "q3022",
+      "source_index": 3021,
+      "known_corrupt": false,
+      "nl": "Heb ik een rijbewijs nodig voor speed pedelec?",
+      "fr": "Ai-je besoin d'un permis de conduire pour un speed-pedelec ?",
+      "en": "Do I need a driving licence for a speed pedelec?",
+      "de": "Benötige ich einen Führerschein für ein Speed Pedelec?",
+      "category": "VERKEERSRECHT"
+    },
+    {
+      "id": "q3039",
+      "source_index": 3038,
+      "known_corrupt": false,
+      "nl": "Wanneer is hof van assisen bevoegd?",
+      "fr": "Quand la cour d'assises est-elle compétente ?",
+      "en": "When is the Court of Assizes competent?",
+      "de": "Wann ist der Assisenhof zuständig?",
+      "category": "STRAFRECHT"
+    },
+    {
+      "id": "q3072",
+      "source_index": 3071,
+      "known_corrupt": false,
+      "nl": "Wat is een voltooiingswaarborg?",
+      "fr": "Qu'est-ce qu'une garantie d'achèvement ?",
+      "en": "What is a completion guarantee?",
+      "de": "Was ist eine Fertigstellungsbürgschaft?",
+      "category": "VASTGOEDRECHT"
+    },
+    {
+      "id": "q3078",
+      "source_index": 3077,
+      "known_corrupt": false,
+      "nl": "Wat is tienjarige aansprakelijkheid?",
+      "fr": "Qu'est-ce que la responsabilité décennale ?",
+      "en": "What is tenâ€‘year liability?",
+      "de": "Was ist die zehnjährige Haftung?",
+      "category": "VASTGOEDRECHT"
+    },
+    {
+      "id": "q3128",
+      "source_index": 3127,
+      "known_corrupt": false,
+      "nl": "Kan ik nog een bankrekening openen met schulden?",
+      "fr": "Puisâ€‘je encore ouvrir un compte bancaire malgré des dettes ?",
+      "en": "Can I still open a bank account if I have debts?",
+      "de": "Kann ich trotz Schulden noch ein Bankkonto eröffnen?",
+      "category": "SCHULDEN"
+    },
+    {
+      "id": "q3129",
+      "source_index": 3128,
+      "known_corrupt": false,
+      "nl": "Wat is een basisbankdienst?",
+      "fr": "Qu'estâ€‘ce qu'un service bancaire de base ?",
+      "en": "What is a basic banking service?",
+      "de": "Was ist eine Basisbankdienstleistung?",
+      "category": "SCHULDEN"
+    },
+    {
+      "id": "q3131",
+      "source_index": 3130,
+      "known_corrupt": false,
+      "nl": "Wat is het bestand wanbetaling?",
+      "fr": "Qu'estâ€‘ce que le fichier des impayés ?",
+      "en": "What is the non-payment file?",
+      "de": "Was ist das Register für Zahlungsausfälle?",
+      "category": "SCHULDEN"
+    },
+    {
+      "id": "q3134",
+      "source_index": 3133,
+      "known_corrupt": false,
+      "nl": "Wanneer is EPC verplicht?",
+      "fr": "Quand le certificat PEB estâ€‘il obligatoire ?",
+      "en": "When is an EPC mandatory?",
+      "de": "Wann ist ein Energieausweis (EPC) verpflichtend?",
+      "category": "BOUWEN"
+    },
+    {
+      "id": "q3137",
+      "source_index": 3136,
+      "known_corrupt": false,
+      "nl": "Wat is de Vlaamse renovatieplicht?",
+      "fr": "Qu'estâ€‘ce que l'obligation de rénovation flamande ?",
+      "en": "What is the Flemish renovation obligation?",
+      "de": "Was ist die flämische Renovierungspflicht?",
+      "category": "BOUWEN"
+    },
+    {
+      "id": "q3139",
+      "source_index": 3138,
+      "known_corrupt": false,
+      "nl": "Wat is bodemsanering?",
+      "fr": "Qu'estâ€‘ce que l'assainissement des sols ?",
+      "en": "What is soil remediation?",
+      "de": "Was ist Bodensanierung?",
+      "category": "MILIEU"
+    },
+    {
+      "id": "q3141",
+      "source_index": 3140,
+      "known_corrupt": false,
+      "nl": "Wat is de saneringsplicht?",
+      "fr": "Qu'estâ€‘ce que l'obligation d'assainissement ?",
+      "en": "What is the remediation obligation?",
+      "de": "Was ist die Sanierungspflicht?",
+      "category": "MILIEU"
+    }
+  ],
+  "derived_from": {
+    "challenge_id": "wetwijzer-chatbot-challenge-211-historical-v1",
+    "corrected_question_ids": [
+      "q2147",
+      "q2183",
+      "q2557",
+      "q2809"
+    ],
+    "correction_date": "2026-07-27"
+  }
+}

@@ -1,0 +1,102 @@
+# Route/action security matrix (FBL-045).
+#
+# Every state-changing browser endpoint (POST/PATCH/PUT/DELETE) must have an
+# entry here; test/integration/route_security_matrix_test.rb enumerates the
+# live route set and FAILS when a new state-changing route lacks one, so this
+# file cannot silently drift from the application.
+#
+# Fields:
+#   auth       - none | session | admin_session | webhook_signature | harness_flag
+#   csrf       - required | token_in_body | signed_exception | samesite_exception | none_public
+#   ownership  - self | admin | token | n/a
+#   rate_limit - the Rack::Attack throttle or controller limiter that applies
+#   billing    - true when the action can charge credits or mutate billing
+#   unauthorized - expected status for an unauthenticated/foreign caller
+#
+# Regenerate the human-readable table with: rails security:route_matrix
+matrix:
+  geo_challenges#create: { auth: none, csrf: required, ownership: n/a, rate_limit: req/ip, billing: false, unauthorized: n/a }
+  sessions#create: { auth: none, csrf: required, ownership: n/a, rate_limit: login/ip, billing: false, unauthorized: n/a }
+  sessions#destroy: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  sessions#reactivate: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  registrations#create: { auth: none, csrf: required, ownership: n/a, rate_limit: registration limiter (AuthRateLimiting), billing: false, unauthorized: n/a }
+  registrations#resend_confirmation: { auth: none, csrf: required, ownership: n/a, rate_limit: AuthRateLimiting, billing: false, unauthorized: n/a }
+  password_resets#create: { auth: none, csrf: required, ownership: n/a, rate_limit: password_reset/ip + password_reset/email, billing: false, unauthorized: n/a }
+  password_resets#update: { auth: none, csrf: required, ownership: token, rate_limit: password_reset/ip, billing: false, unauthorized: 302 }
+  subscriptions#checkout: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  subscriptions#cancel: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  subscriptions#reactivate: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  subscriptions#crypto_checkout: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  credits#purchase: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  credits#crypto_purchase: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  donations#create: { auth: none, csrf: required, ownership: n/a, rate_limit: req/ip, billing: true, unauthorized: n/a }
+  webhooks/mollie#create: { auth: webhook_signature, csrf: signed_exception, ownership: n/a, rate_limit: req/ip, billing: true, unauthorized: 401 }
+  webhooks/coin_gate#create: { auth: webhook_signature, csrf: signed_exception, ownership: n/a, rate_limit: req/ip, billing: true, unauthorized: 401 }
+  csp_reports#create: { auth: none, csrf: none_public, ownership: n/a, rate_limit: req/ip, billing: false, unauthorized: n/a }
+  account#update: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  account#update_preferences: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  account#destroy: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  account#cancel_deletion: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  account#update_billing_info: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  two_factor#enable: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  two_factor#disable: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  two_factor#verify: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/sessions#create: { auth: none, csrf: samesite_exception, ownership: n/a, rate_limit: login/ip, billing: false, unauthorized: n/a }
+  admin/sessions#destroy: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/sessions#verify_otp: { auth: none, csrf: samesite_exception, ownership: pending-cookie-bound, rate_limit: login/ip, billing: false, unauthorized: n/a }
+  admin/sessions#confirm_reauth: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/dashboard#clear_all_rate_limits: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#add_credits: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  admin/users#remove_credits: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  admin/users#toggle_lock: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#grant_pro_credits: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  admin/users#confirm_user: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#send_password_reset: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#cancel_deletion: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#toggle_active: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#update_tier: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  admin/users#set_credits: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  admin/users#resend_verification: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#clear_rate_limits: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#reveal_pii: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#cleanup_unverified: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#create: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#destroy: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/chatbot_reports#update: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/chatbot_reports#destroy: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/invoices#regenerate: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  admin/invoices#send_email: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/invoices#sync_octopus: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  admin/invoices#check_octopus_status: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/invoices#push_to_dms: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/invoices#sync_all_octopus: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  admin/invoices#push_all_to_dms: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/invoices#create: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  admin/invoices#destroy: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  chatbot#create: { auth: session, csrf: required, ownership: self, rate_limit: chatbot limiter, billing: true, unauthorized: 302 }
+  chatbot#ask: { auth: session, csrf: required, ownership: self, rate_limit: chatbot limiter, billing: true, unauthorized: 302 }
+  api/chatbot_quality_probe#arm_rate_limit: { auth: harness_flag, csrf: signed_exception, ownership: n/a, rate_limit: n/a (disabled outside the quality harness), billing: false, unauthorized: 404 }
+  api/chatbot_quality_probe#cleanup_rate_limit: { auth: harness_flag, csrf: signed_exception, ownership: n/a, rate_limit: n/a, billing: false, unauthorized: 404 }
+  api/chatbot_quality_probe#reservation_audit: { auth: harness_flag, csrf: signed_exception, ownership: n/a, rate_limit: n/a, billing: false, unauthorized: 404 }
+  api/sample_question_clicks#create: { auth: none, csrf: token_in_body, ownership: n/a, rate_limit: sample-clicks/ip, billing: false, unauthorized: n/a }
+  api/chatbot#ask: { auth: session, csrf: required, ownership: self, rate_limit: chatbot credit gating, billing: true, unauthorized: 401 }
+  api/chatbot#feedback: { auth: none, csrf: required, ownership: analytic ownership check, rate_limit: req/ip, billing: false, unauthorized: n/a }
+  api/chatbot#report: { auth: session, csrf: required, ownership: self, rate_limit: 10/user/day, billing: false, unauthorized: 401 }
+  api/chatbot_ratings#update: { auth: session, csrf: required, ownership: signed token + self, rate_limit: chatbot_rating/ip, billing: false, unauthorized: 401 }
+  api/chatbot_saved_answers#save: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
+  api/chatbot_saved_answers#destroy_saved: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
+  api/chatbot#deep_analysis: { auth: session, csrf: required, ownership: self, rate_limit: deep-analysis quota, billing: true, unauthorized: 401 }
+  api/chatbot#log_slow_query: { auth: none, csrf: required, ownership: n/a, rate_limit: req/ip, billing: false, unauthorized: n/a }
+  api/chatbot_conversations#destroy_conversation: { auth: session, csrf: required, ownership: token, rate_limit: req/ip, billing: false, unauthorized: 401 }
+  api/chatbot_conversations#update_conversation: { auth: session, csrf: required, ownership: token, rate_limit: req/ip, billing: false, unauthorized: 401 }
+  api/chatbot_conversations#update_encrypted_payload: { auth: session, csrf: required, ownership: token, rate_limit: req/ip, billing: false, unauthorized: 401 }
+  api/chatbot_conversations#grant_consent: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
+  api/chatbot_conversations#revoke_consent: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
+  api/chatbot_conversations#import_conversations: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
+  api/bookmarks#create: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
+  api/bookmarks#destroy: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
+  api/bookmarks#update: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
+  api/bookmarks#import: { auth: session, csrf: required, ownership: self, rate_limit: req/ip + 1000-item/256KB caps, billing: false, unauthorized: 401 }
+  api/preferences#update: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
+  api/preferences#destroy: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
+  gdpr_takedown#create: { auth: none, csrf: required, ownership: n/a, rate_limit: 3/IP/hour (controller), billing: false, unauthorized: n/a }

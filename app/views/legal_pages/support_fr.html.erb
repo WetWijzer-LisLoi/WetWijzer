@@ -1,0 +1,41 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<div class="legal-page">
+<h1>Soutenez LisLoi</h1>
+
+    <div class="highlight">
+        <p><strong>LisLoi</strong> rend la l&eacute;gislation et la jurisprudence belges consultables et lisibles gratuitement &mdash; sans compte et sans mur payant. Le chatbot IA est une fonction payante : &agrave; l&rsquo;inscription vous recevez <%= RegistrationsController::STARTER_CREDITS %> cr&eacute;dits de d&eacute;part gratuits, ensuite des cr&eacute;dits ou un abonnement Pro sont n&eacute;cessaires, car chaque question au chatbot nous co&ucirc;te de l&rsquo;argent chez le fournisseur IA. La plateforme est g&eacute;r&eacute;e par une seule personne &mdash; un avocat convaincu que la loi elle-m&ecirc;me ne devrait pas &ecirc;tre derri&egrave;re un mur payant. Pour maintenir ce projet en ligne, nous avons besoin de votre soutien.</p>
+    </div>
+
+    <h2>Pourquoi votre soutien compte</h2>
+    <p>LisLoi co&ucirc;te de l&rsquo;argent &agrave; faire tourner : co&ucirc;ts de serveur, co&ucirc;ts IA pour chaque question du chatbot, stockage de plus de 175 000 d&eacute;cisions de justice, et le d&eacute;veloppement continu de nouvelles fonctionnalit&eacute;s. Votre soutien maintient la consultation et la lecture de la l&eacute;gislation et de la jurisprudence gratuites, et rend possibles les cr&eacute;dits de d&eacute;part pour les nouveaux utilisateurs.</p>
+
+    <h2>&#x2B50; Abonnez-vous &agrave; LisLoi Pro</h2>
+    <p>La meilleure fa&ccedil;on de soutenir LisLoi est de devenir <strong>abonn&eacute; Pro</strong>. Pour seulement <strong>&euro;2,99/mois</strong>, vous obtenez :</p>
+    <ul>
+        <li>&#x2B50; Acc&egrave;s &agrave; <strong>tous les niveaux d&rsquo;intelligence</strong> (G&eacute;nial, Cerveau, Omniscient)</li>
+        <li>&#x1F4AC; <strong><%= Subscription::PRO_MONTHLY_CREDITS %> cr&eacute;dits chatbot gratuits par mois</strong> (inclus dans l'abonnement)</li>
+        <li>&#x1F4DC; Recherche dans les <strong>documents parlementaires</strong> via le chatbot</li>
+        <li>&#x1F916; Acc&egrave;s &agrave; <strong>tous les mod&egrave;les IA</strong> (<%= chatbot_all_model_names %>)</li>
+    </ul>
+    <p><%= link_to pricing_path, class: "inline-flex items-center px-4 py-2 text-white rounded-lg font-semibold transition hover:opacity-90", style: "background: var(--accent-600-solid);" do %>
+        <svg class="w-4 h-4 mr-2 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1z"/></svg>
+        D&eacute;couvrir LisLoi Pro
+    <% end %></p>
+
+    <h2 id="donate">&#x2615; Faites un don ponctuel</h2>
+    <p>Vous souhaitez soutenir LisLoi sans abonnement ? Chaque contribution &mdash; aussi petite soit-elle &mdash; aide &agrave; couvrir les co&ucirc;ts des serveurs et &agrave; maintenir la plateforme en ligne.</p>
+    <%= render 'donations/form' %>
+
+    <h2>&#x1F4E2; Passez le mot</h2>
+    <p>Pas de budget ? Vous pouvez aussi soutenir LisLoi en faisant conna&icirc;tre le projet :</p>
+    <ul>
+        <li>&#x1F517; Partagez <a href="https://lisloi.be">lisloi.be</a> avec vos coll&egrave;gues, &eacute;tudiants et amis</li>
+        <li>&#x2B50; Donnez-nous une &eacute;toile sur <a href="https://github.com/WetWijzer-LisLoi/WetWijzer" target="_blank" rel="noopener">GitHub</a></li>
+        <li>&#x1F4AC; Mentionnez LisLoi sur les r&eacute;seaux sociaux ou dans les publications professionnelles</li>
+        <li>&#x1F4DD; Envoyez-nous vos commentaires &agrave; <a href="mailto:<%= contact_email %>"><%= contact_email %></a></li>
+    </ul>
+
+    <h2>&#x2764;&#xFE0F; Merci</h2>
+    <p>LisLoi existe gr&acirc;ce au soutien de nos abonn&eacute;s Pro, donateurs et utilisateurs. Chaque contribution &mdash; financi&egrave;re ou non &mdash; nous aide &agrave; garder le droit belge accessible &agrave; tous.</p>
+
+</div>

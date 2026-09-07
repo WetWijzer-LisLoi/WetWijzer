@@ -1,0 +1,23 @@
+<h2 style="color: #dc2626;"><%= t('mailer.deletion_final_warning.title') %></h2>
+
+<h3><%= t('mailer.deletion_final_warning.greeting', name: @user.name || @user.email) %></h3>
+
+<p><%= t('mailer.deletion_final_warning.body') %></p>
+
+<div class="warning-box" style="border-left-color: #dc2626; background-color: #fef2f2;">
+  <strong style="color: #dc2626;">⚠ <%= t('mailer.deletion_final_warning.tomorrow') %></strong>
+  <p style="margin: 8px 0 0; font-size: 13px; color: #991b1b;"><%= t('mailer.deletion_final_warning.last_chance') %></p>
+</div>
+
+<div class="button-wrapper">
+  <a href="<%= @reactivation_url %>" class="button" style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); background-color: #dc2626; color: #ffffff !important; text-decoration: none; padding: 15px 40px; border-radius: 10px; font-weight: 700; font-size: 15px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);"><%= t('mailer.deletion_final_warning.cancel_button', default: t('account.cancel_deletion')) %></a>
+</div>
+
+<div class="divider"></div>
+
+<div class="info-box">
+  <p style="margin: 0; font-size: 12px;">
+    <%= t('mailer.deletion_final_warning.link_text', default: 'Or copy this link to your browser:') %>
+  </p>
+  <p style="margin: 6px 0 0; font-size: 11px; word-break: break-all; opacity: 0.8;"><%= @reactivation_url %></p>
+</div>

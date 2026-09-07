@@ -1,0 +1,83 @@
+# config/recurring.yml
+# Recurring background jobs for WetWijzer
+# These are dispatched by Solid Queue's scheduler.
+
+# Check PEPPOL delivery status for invoices sent via Octopus
+peppol_status_check:
+  class: PeppolStatusJob
+  schedule: every 4 hours
+  queue: default
+
+# Repair analytics after a crash/outage between durable billing settlement and
+# its cross-database reporting projection.
+billing_analytics_reconciliation:
+  class: BillingAnalyticsReconciliationJob
+  schedule: "1-59/5 * * * *"
+  queue: default
+
+# Refund abandoned credit/deep reservations, while settling durable included
+# attempts and owner-scoped deliveries whose worker died before completion.
+billing_reservation_reconciliation:
+  class: BillingReservationReconciliationJob
+  schedule: "2-59/5 * * * *"
+  queue: default
+
+# Recover durable post-commit work and expired processing leases without
+# allowing any one work type to monopolize the queue.
+mollie_pending_work_reconciliation:
+  class: MolliePendingWorkReconciliationJob
+  schedule: "3-59/5 * * * *"
+  queue: default
+
+# Webhooks are primary; this bounded rotating poll repairs missed callbacks.
+mollie_provider_reconciliation:
+  class: MollieProviderReconciliationJob
+  schedule: every 15 minutes
+  queue: default
+
+# Recover CoinGate sales-invoice and refund-credit-note jobs.
+coin_gate_pending_work_reconciliation:
+  class: CoinGatePendingWorkReconciliationJob
+  schedule: "4-59/5 * * * *"
+  queue: default
+
+# Preserve paid access after cancellation or a failed renewal, then downgrade
+# at period end even when the subscriber never returns to the site.
+expire_cancelled_subscriptions:
+  class: ExpireCancelledSubscriptionsJob
+  schedule: "0 3 * * * Europe/Brussels"
+  queue: default
+
+# 90-day chatbot-report retention (FBL-030). Previously ran only when an
+# admin opened the reports page.
+chatbot_report_retention:
+  class: ChatbotReportRetentionJob
+  schedule: "30 2 * * * Europe/Brussels"
+  queue: default
+
+# Unverified-account lifecycle and due-deletion purge (FBL-030). This sweep
+# previously had NO scheduler: nothing purged accounts whose grace period had
+# passed unless the rake task was run by hand.
+account_deletion_sweep:
+  class: AccountDeletionSweepJob
+  schedule: "45 2 * * * Europe/Brussels"
+  queue: default
+
+# GDPR PII scrub. DELIBERATELY NOT ENABLED HERE YET: the systemd timer
+# ww-gdpr-scrub owns the daily production run (CI-guarded in
+# daily_rails_steps_regression_test.sh), and running both would be duplicate
+# ownership. Once the owner verifies the in-Puma Solid Queue scheduler,
+# uncomment this and retire the systemd unit plus the Whenever entry in
+# config/schedule.rb in the same change.
+# pii_scrub:
+#   class: PiiScrubJob
+#   schedule: "20 0 * * * Europe/Brussels"
+#   queue: default
+
+# Transactional-email outbox drain (FBL-032). Cheap no-op while the outbox
+# is empty (flag off); once DURABLE_TRANSACTIONAL_EMAIL is on it owns
+# confirmation/password-reset delivery with bounded retry.
+email_outbox_drain:
+  class: EmailOutboxDrainJob
+  schedule: "* * * * *"
+  queue: default

@@ -1,0 +1,195 @@
+/* ============================================================================
+ * GLOBAL BORDER FIXES - All non-original themes
+ * Fixes broken Tailwind opacity syntax that renders as white borders
+ * ============================================================================ */
+
+/* Show page: Page header gradient and border */
+.theme-blue, .theme-rose, .theme-amber, .theme-emerald, .theme-violet, .theme-fuchsia, .theme-pink {
+  .bg-gradient-to-r[class*="from-[var(--accent-500)]"] {
+    background-image: linear-gradient(to right, 
+      color-mix(in srgb, var(--accent-500) 5%, transparent),
+      color-mix(in srgb, var(--accent-500) 10%, transparent)) !important;
+    border-color: color-mix(in srgb, var(--accent-500) 20%, transparent) !important;
+  }
+}
+
+.theme-blue.dark, .dark .theme-blue,
+.theme-rose.dark, .dark .theme-rose,
+.theme-amber.dark, .dark .theme-amber,
+.theme-emerald.dark, .dark .theme-emerald,
+.theme-violet.dark, .dark .theme-violet,
+.theme-fuchsia.dark, .dark .theme-fuchsia,
+.theme-pink.dark, .dark .theme-pink {
+  .bg-gradient-to-r[class*="from-[var(--accent-500)]"] {
+    background-image: linear-gradient(to right, 
+      color-mix(in srgb, var(--accent-500) 10%, transparent),
+      color-mix(in srgb, var(--accent-500) 20%, transparent)) !important;
+    border-color: color-mix(in srgb, var(--accent-500) 30%, transparent) !important;
+  }
+}
+
+.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red {
+  .bg-gradient-to-r[class*="from-[var(--accent-500)]"] {
+    background-image: linear-gradient(to right, #f9fafb, #f3f4f6) !important;
+    border-color: #e5e7eb !important;
+  }
+}
+
+.theme-slate.dark, .dark .theme-slate,
+.theme-indigo.dark, .dark .theme-indigo,
+.theme-sky.dark, .dark .theme-sky,
+.theme-teal.dark, .dark .theme-teal,
+.theme-cyan.dark, .dark .theme-cyan,
+.theme-green.dark, .dark .theme-green,
+.theme-purple.dark, .dark .theme-purple,
+.theme-red.dark, .dark .theme-red {
+  .bg-gradient-to-r[class*="from-[var(--accent-500)]"] {
+    background-image: linear-gradient(to right, 
+      rgba(148, 163, 184, 0.05),
+      rgba(148, 163, 184, 0.10)) !important;
+    border-color: var(--border-card) !important;
+  }
+}
+
+/* Show page: All card borders */
+.theme-blue, .theme-rose, .theme-amber, .theme-emerald, .theme-violet, .theme-fuchsia, .theme-pink,
+.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red {
+  #external-links-card,
+  #document-info-card,
+  #title-card,
+  #main-toc-card,
+  #updated-laws-card,
+  #exdecs-card,
+  #articles-card {
+    border-color: #e5e7eb !important;
+  }
+}
+
+.theme-blue.dark, .dark .theme-blue,
+.theme-rose.dark, .dark .theme-rose,
+.theme-amber.dark, .dark .theme-amber,
+.theme-emerald.dark, .dark .theme-emerald,
+.theme-violet.dark, .dark .theme-violet,
+.theme-fuchsia.dark, .dark .theme-fuchsia,
+.theme-pink.dark, .dark .theme-pink,
+.theme-slate.dark, .dark .theme-slate,
+.theme-indigo.dark, .dark .theme-indigo,
+.theme-sky.dark, .dark .theme-sky,
+.theme-teal.dark, .dark .theme-teal,
+.theme-cyan.dark, .dark .theme-cyan,
+.theme-green.dark, .dark .theme-green,
+.theme-purple.dark, .dark .theme-purple,
+.theme-red.dark, .dark .theme-red {
+  #external-links-card,
+  #document-info-card,
+  #title-card,
+  #main-toc-card,
+  #updated-laws-card,
+  #exdecs-card,
+  #articles-card {
+    border-color: var(--border-card) !important;
+  }
+}
+
+/* Article separators */
+.theme-blue, .theme-rose, .theme-amber, .theme-emerald, .theme-violet, .theme-fuchsia, .theme-pink,
+.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red {
+  article.border-t {
+    border-color: #e5e7eb !important;
+  }
+}
+
+.theme-blue.dark, .dark .theme-blue,
+.theme-rose.dark, .dark .theme-rose,
+.theme-amber.dark, .dark .theme-amber,
+.theme-emerald.dark, .dark .theme-emerald,
+.theme-violet.dark, .dark .theme-violet,
+.theme-fuchsia.dark, .dark .theme-fuchsia,
+.theme-pink.dark, .dark .theme-pink,
+.theme-slate.dark, .dark .theme-slate,
+.theme-indigo.dark, .dark .theme-indigo,
+.theme-sky.dark, .dark .theme-sky,
+.theme-teal.dark, .dark .theme-teal,
+.theme-cyan.dark, .dark .theme-cyan,
+.theme-green.dark, .dark .theme-green,
+.theme-purple.dark, .dark .theme-purple,
+.theme-red.dark, .dark .theme-red {
+  article.border-t {
+    border-color: var(--border-separator) !important;
+  }
+}
+
+/* Pagination: hover backgrounds for buttons and links */
+.theme-blue, .theme-rose, .theme-amber, .theme-emerald, .theme-violet, .theme-fuchsia, .theme-pink {
+  .pagy-nav a:hover,
+  .pagy-nav > div:hover {
+    background-color: #f9fafb !important;
+  }
+}
+
+.theme-blue.dark, .dark .theme-blue,
+.theme-rose.dark, .dark .theme-rose,
+.theme-amber.dark, .dark .theme-amber,
+.theme-emerald.dark, .dark .theme-emerald,
+.theme-violet.dark, .dark .theme-violet,
+.theme-fuchsia.dark, .dark .theme-fuchsia,
+.theme-pink.dark, .dark .theme-pink {
+  .pagy-nav a:hover,
+  .pagy-nav > div:hover {
+    background-color: color-mix(in srgb, var(--accent-500) 10%, transparent) !important;
+  }
+}
+
+.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red {
+  .pagy-nav a:hover,
+  .pagy-nav > div:hover {
+    background-color: #f9fafb !important;
+  }
+}
+
+.theme-slate.dark, .dark .theme-slate,
+.theme-indigo.dark, .dark .theme-indigo,
+.theme-sky.dark, .dark .theme-sky,
+.theme-teal.dark, .dark .theme-teal,
+.theme-cyan.dark, .dark .theme-cyan,
+.theme-green.dark, .dark .theme-green,
+.theme-purple.dark, .dark .theme-purple,
+.theme-red.dark, .dark .theme-red {
+  .pagy-nav a:hover,
+  .pagy-nav > div:hover {
+    background-color: rgba(148, 163, 184, 0.10) !important;
+  }
+}
+
+/* Table row link buttons (Justel, Reflex) hover states */
+.theme-blue, .theme-rose, .theme-amber, .theme-emerald, .theme-violet, .theme-fuchsia, .theme-pink,
+.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red {
+  tbody a[href]:hover[class*="hover:bg-[var(--accent-500)]"] {
+    background-color: #f9fafb !important;
+  }
+}
+
+.theme-blue.dark, .dark .theme-blue,
+.theme-rose.dark, .dark .theme-rose,
+.theme-amber.dark, .dark .theme-amber,
+.theme-emerald.dark, .dark .theme-emerald,
+.theme-violet.dark, .dark .theme-violet,
+.theme-fuchsia.dark, .dark .theme-fuchsia,
+.theme-pink.dark, .dark .theme-pink {
+  tbody a[href]:hover[class*="hover:bg-[var(--accent-500)]"] {
+    background-color: color-mix(in srgb, var(--accent-500) 10%, transparent) !important;
+  }
+}
+
+.theme-slate.dark, .dark .theme-slate,
+.theme-indigo.dark, .dark .theme-indigo,
+.theme-sky.dark, .dark .theme-sky,
+.theme-teal.dark, .dark .theme-teal,
+.theme-cyan.dark, .dark .theme-cyan,
+.theme-green.dark, .dark .theme-green,
+.theme-purple.dark, .dark .theme-purple,
+.theme-red.dark, .dark .theme-red {
+  tbody a[href]:hover[class*="hover:bg-[var(--accent-500)]"] {
+    background-color: rgba(148, 163, 184, 0.10) !important;
+  }
+}

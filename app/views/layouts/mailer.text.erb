@@ -1,0 +1,11 @@
+<%= yield %>
+
+--
+<%= site_name %>
+<%= case I18n.locale
+    when :fr then 'Recherche juridique belge'
+    when :de then 'Belgische Rechtsrecherche'
+    when :en then 'Belgian legal research'
+    else 'Belgische wetgeving helder uitgelegd'
+    end %>
+<%= site_url %>

@@ -1,0 +1,172 @@
+<%= content_for :title, t('account.edit_profile') %>
+
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
+    <%= render 'layouts/account_sidebar' %>
+
+    <main class="flex-1 min-w-0">
+    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <%= t('account.edit_profile') %>
+    </h2>
+
+    <% if flash[:alert] %>
+      <div class="mb-4 p-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-lg">
+        <%= flash[:alert] %>
+      </div>
+    <% end %>
+
+    <%= form_with url: account_path, method: :patch, class: "space-y-6" do |f| %>
+      <!-- Name -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <%= t('account.profile_info') %>
+        </h3>
+        
+        <div class="mb-4">
+          <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('auth.name') %>
+          </label>
+          <input type="text" 
+                 name="name" 
+                 id="name" 
+                 value="<%= @user.name %>"
+                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-(--accent-500) focus:border-transparent"
+                 placeholder="<%= t('auth.name') %>">
+        </div>
+        
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+          <strong><%= t('auth.email') %>:</strong> <%= @user.email %>
+          <p class="text-xs mt-1"><%= t('account.email_cannot_change') %></p>
+        </div>
+      </div>
+
+      <!-- Invoice Language Preference -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          🌐 <%= t('account.invoice_language', default: 'Factuurtaal') %>
+        </h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <%= t('account.invoice_language_desc', default: 'Kies de taal voor uw facturen. Standaard wordt de taal van de website gebruikt.') %>
+        </p>
+
+        <div class="mb-2">
+          <label for="invoice_locale" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('account.invoice_language', default: 'Factuurtaal') %>
+          </label>
+          <select name="invoice_locale" 
+                  id="invoice_locale"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-(--accent-500) focus:border-transparent">
+            <option value="" <%= 'selected' if @user.invoice_locale.blank? %>>
+              🔄 <%= t('account.invoice_language_auto', default: 'Automatisch') %> (<%= { 'nl' => 'Nederlands', 'fr' => 'Français', 'de' => 'Deutsch' }[@user.locale] || 'Nederlands' %>)
+            </option>
+            <option value="nl" <%= 'selected' if @user.invoice_locale == 'nl' %>>🇧🇪 Nederlands (Factuur)</option>
+            <option value="fr" <%= 'selected' if @user.invoice_locale == 'fr' %>>🇧🇪 Français (Facture)</option>
+            <option value="de" <%= 'selected' if @user.invoice_locale == 'de' %>>🇩🇪 Deutsch (Rechnung)</option>
+            <option value="en" <%= 'selected' if @user.invoice_locale == 'en' %>>🇬🇧 English (Invoice)</option>
+          </select>
+        </div>
+        <p class="text-xs text-gray-400 dark:text-gray-500">
+          <%= t('account.invoice_language_note', default: 'Toekomstige facturen worden in de gekozen taal opgesteld. Bestaande facturen wijzigen niet.') %>
+        </p>
+      </div>
+
+      <!-- Change Password -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <%= t('account.change_password') %>
+        </h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <%= t('account.leave_blank_password') %>
+        </p>
+        
+        <div class="space-y-4">
+          <div data-controller="password-visibility">
+            <label for="current_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <%= t('account.current_password') %>
+            </label>
+            <div class="relative">
+              <input type="password" 
+                     name="current_password" 
+                     id="current_password"
+                     autocomplete="current-password"
+                     data-password-visibility-target="input"
+                     class="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-(--accent-500) focus:border-transparent">
+              <%= render 'shared/password_toggle' %>
+            </div>
+          </div>
+          
+          <div data-controller="password-visibility">
+            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <%= t('account.new_password') %>
+            </label>
+            <div class="relative">
+              <input type="password" 
+                     name="password" 
+                     id="password"
+                     autocomplete="new-password"
+                     data-password-visibility-target="input"
+                     minlength="8"
+                     class="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-(--accent-500) focus:border-transparent">
+              <%= render 'shared/password_toggle' %>
+            </div>
+            <div id="pw-strength" class="mt-2 hidden">
+              <div class="flex items-center gap-2">
+                <div class="flex-1 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                  <div id="pw-strength-bar" class="h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <span id="pw-strength-label" class="text-xs font-medium w-16 text-right"></span>
+              </div>
+            </div>
+            <script nonce="<%= content_security_policy_nonce %>">
+              function updatePasswordStrength(pw) {
+                var wrap = document.getElementById('pw-strength');
+                var bar = document.getElementById('pw-strength-bar');
+                var label = document.getElementById('pw-strength-label');
+                if (!pw) { wrap.classList.add('hidden'); return; }
+                wrap.classList.remove('hidden');
+                var score = 0;
+                if (pw.length >= 8) score++;
+                if (pw.length >= 12) score++;
+                if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+                if (/\d/.test(pw)) score++;
+                if (/[^a-zA-Z0-9]/.test(pw)) score++;
+                var pct = Math.min(score * 20, 100);
+                bar.style.width = pct + '%';
+                if (score <= 2) { bar.className = 'h-full rounded-full transition-all duration-300 bg-red-500'; label.textContent = '<%= t("account.pw_weak", default: "Zwak") %>'; label.className = 'text-xs font-medium w-16 text-right text-red-500'; }
+                else if (score <= 3) { bar.className = 'h-full rounded-full transition-all duration-300 bg-amber-500'; label.textContent = '<%= t("account.pw_medium", default: "Gemiddeld") %>'; label.className = 'text-xs font-medium w-16 text-right text-amber-500'; }
+                else { bar.className = 'h-full rounded-full transition-all duration-300 bg-green-500'; label.textContent = '<%= t("account.pw_strong", default: "Sterk") %>'; label.className = 'text-xs font-medium w-16 text-right text-green-500'; }
+              }
+              document.getElementById('password').addEventListener('input', function() { updatePasswordStrength(this.value); });
+            </script>
+          </div>
+          
+          <div data-controller="password-visibility">
+            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <%= t('account.confirm_password') %>
+            </label>
+            <div class="relative">
+              <input type="password" 
+                     name="password_confirmation" 
+                     id="password_confirmation"
+                     autocomplete="new-password"
+                     data-password-visibility-target="input"
+                     class="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-(--accent-500) focus:border-transparent">
+              <%= render 'shared/password_toggle' %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <%= link_to account_path, class: "text-gray-600 dark:text-gray-400 hover:underline" do %>
+          ← <%= t('common.cancel') %>
+        <% end %>
+        
+        <button type="submit" class="px-6 py-2 bg-(--accent-600-solid) text-white font-medium rounded-lg hover:bg-(--accent-700-solid) transition">
+          <%= t('common.save') %>
+        </button>
+      </div>
+    <% end %>
+    </main>
+  </div>
+</div>

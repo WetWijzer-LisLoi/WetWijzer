@@ -1,0 +1,36 @@
+{
+  "name": "app",
+  "private": true,
+  "engines": {
+    "node": "24.19.0"
+  },
+  "packageManager": "npm@11.17.0",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "test:reasoning-widget": "node --test test/javascript/chatbot_reasoning_widget_test.mjs",
+    "test:chatbot-ui": "node --test test/javascript/chatbot_reasoning_widget_test.mjs test/javascript/chatbot_markdown_test.mjs test/javascript/chatbot_progress_test.mjs test/javascript/chatbot_progress_phases_test.mjs test/javascript/chatbot_stream_events_test.mjs test/javascript/chatbot_send_request_test.mjs test/javascript/chatbot_model_preference_migration_test.mjs test/javascript/chatbot_message_safety_test.mjs test/javascript/chatbot_stream_timeout_test.mjs test/javascript/chatbot_suggestion_cost_test.mjs test/javascript/chatbot_deep_analysis_test.mjs test/javascript/chatbot_zk_consent_test.mjs test/javascript/chatbot_privacy_footer_test.mjs test/javascript/conversation_crypto_test.mjs test/javascript/pwa_storage_test.mjs test/javascript/pwa_fab_lift_test.mjs test/javascript/chatbot_rating_test.mjs test/javascript/chatbot_report_attribution_test.mjs test/javascript/chatbot_locked_tier_test.mjs test/javascript/vite_manifest_contract_test.mjs"
+  },
+  "dependencies": {
+    "@hotwired/stimulus": "^3.2.2",
+    "@hotwired/turbo-rails": "^8.0.23",
+    "@stimulus-components/auto-submit": "^6.0.0",
+    "@tailwindcss/forms": "^0.5.11",
+    "@tailwindcss/postcss": "^4.3.0",
+    "@tailwindcss/vite": "^4.3.0",
+    "autoprefixer": "^10.5.0",
+    "flatpickr": "^4.6.13",
+    "lodash.debounce": "^4.0.8",
+    "postcss": "^8.5.15",
+    "sass": "^1.100.0",
+    "stimulus-use": "^0.52.3",
+    "stimulus-vite-helpers": "^3.1.0",
+    "tailwindcss": "^4.3.0"
+  },
+  "devDependencies": {
+    "axe-core": "^4.13.0",
+    "vite": "^8.0.14",
+    "vite-plugin-ruby": "^5.2.2"
+  }
+}

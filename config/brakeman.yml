@@ -1,0 +1,9 @@
+# Brakeman scan scope (FBL-022). docs/ holds archived manual ops scripts and
+# reports that the application never requires, autoloads or executes - the
+# scan covers code the app can actually run. The archived
+# staging_chatbot_tests.rb command-injection warning was verified to build
+# its shell string purely from same-file literals before being descoped.
+# Suppressions of real app-code warnings live in config/brakeman.ignore,
+# one fingerprint each, with written justification and review dates.
+:skip_files:
+  - docs/

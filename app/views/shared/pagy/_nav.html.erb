@@ -1,0 +1,142 @@
+<%# IMPORTANT: use '<%== ... ' instead of '<%= ... ' if you run this in rails %>
+
+<%# Pagy v43 custom navigation with polished styling %>
+<%# In Pagy 43, series is protected - use send(:series) to access it %>
+
+<% content_for :prev do %>
+    <div class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-(--accent-500)/15 hover:border-gray-300 dark:hover:border-(--accent-500)/50 focus:z-10 focus:outline-hidden focus:ring-2 focus:ring-(--accent-500)/50 transition-all duration-150">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+      </svg>
+    </div>
+<% end %>
+
+<% content_for :next do %>
+    <div class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-(--accent-500)/15 hover:border-gray-300 dark:hover:border-(--accent-500)/50 focus:z-10 focus:outline-hidden focus:ring-2 focus:ring-(--accent-500)/50 transition-all duration-150">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+      </svg>
+    </div>
+<% end %>
+
+<nav class="w-full" role="navigation">
+  <div class="flex-1 flex justify-between sm:hidden">
+    <% if pagy.previous %>
+      <a href="<%= pagy.page_url(pagy.previous) %>" data-turbo-action="advance" aria-label="previous" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-(--accent-500)/15 transition-all duration-150">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+        </svg>
+        <%= t('pagination.previous', default: 'Vorige') %>
+      </a>
+    <% else %>
+      <div></div>
+    <% end %>
+
+    <% if pagy.next %>
+      <a href="<%= pagy.page_url(pagy.next) %>" data-turbo-action="advance" aria-label="next" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-(--accent-500)/15 transition-all duration-150">
+        <%= t('pagination.next', default: 'Volgende') %>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+        </svg>
+      </a>
+    <% else %>
+      <div></div>
+    <% end %>
+  </div>
+
+  <div class="flex items-center justify-between w-full">
+    <div>
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        <%= t('pagination.display') %>
+        <span class="font-semibold text-gray-900 dark:text-white"><%= pagy.from %></span>
+        <%= t('pagination.to') %>
+        <span class="font-semibold text-gray-900 dark:text-white"><%= pagy.to %></span>
+        <%= t('pagination.of') %>
+        <span class="font-semibold text-gray-900 dark:text-white"><%= pagy.count %></span>
+        <%= t('pagination.results') %>
+      </p>
+    </div>
+
+    <div>
+      <nav class="inline-flex items-center gap-1 p-1 bg-gray-100/80 dark:bg-gray-800/50 rounded-xl" aria-label="<%= t('aria.pagination') %>">
+        <% if pagy.previous %>
+          <%= link_to pagy.page_url(pagy.previous), 'data-turbo-action': 'advance', 'aria-label': 'previous', class: 'w-9 h-9 flex items-center justify-center rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-(--accent-500)/15 hover:text-(--accent-600) dark:hover:text-(--accent-400) focus:z-10 focus:outline-hidden focus:ring-2 focus:ring-(--accent-500)/50 transition-all duration-150' do %>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+            </svg>
+          <% end %>
+        <% else %>
+          <span class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-300 dark:text-gray-600 cursor-not-allowed">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+            </svg>
+          </span>
+        <% end %>
+
+        <%
+          # Pagy v43: Pagy::Offset doesn't have series, so we build it manually
+          # Generate a simple series: [1, 2, 3, current, last] with gaps
+          series = []
+          current = pagy.page
+          last = pagy.last
+          
+          if last <= 7
+            # Show all pages if 7 or fewer
+            series = (1..last).to_a
+          else
+            # Always show first page
+            series << 1
+            
+            # Add gap if needed
+            series << :gap if current > 4
+            
+            # Show pages around current
+            range_start = [2, current - 1].max
+            range_end = [current + 1, last - 1].min
+            series += (range_start..range_end).to_a
+            
+            # Add gap if needed  
+            series << :gap if current < last - 3
+            
+            # Always show last page
+            series << last unless series.include?(last)
+          end
+          
+          # Convert current page to string
+          series = series.map { |p| p == current ? current.to_s : p }
+        %>
+        <% series.each do |item| # series example: [1, :gap, 7, 8, "9", 10, 11, :gap, 36] %>
+          <% case item %>
+          <% when Integer # page link %>
+            <a href="<%= pagy.page_url(item) %>" data-turbo-action="advance" class="min-w-9 h-9 flex items-center justify-center px-3 rounded-lg bg-white dark:bg-gray-900 text-sm font-semibold tracking-tight text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-(--accent-500)/15 hover:text-(--accent-600) dark:hover:text-(--accent-400) focus:z-10 focus:outline-hidden focus:ring-2 focus:ring-(--accent-500)/50 transition-all duration-150">
+              <%= item %>
+            </a>
+          <% when String # current page %>
+            <span class="min-w-9 h-9 flex items-center justify-center px-3 rounded-lg bg-(--accent-600-solid) text-sm font-bold tracking-tight text-white shadow-md">
+              <%= item %>
+            </span>
+          <% when :gap # page gap %>
+            <span class="min-w-6 h-9 flex items-center justify-center text-gray-400 dark:text-gray-500">
+              &hellip;
+            </span>
+          <% end %>
+        <% end %>
+
+        <% if pagy.next %>
+          <%= link_to pagy.page_url(pagy.next), 'data-turbo-action': 'advance', 'aria-label': 'next', class: 'w-9 h-9 flex items-center justify-center rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-(--accent-500)/15 hover:text-(--accent-600) dark:hover:text-(--accent-400) focus:z-10 focus:outline-hidden focus:ring-2 focus:ring-(--accent-500)/50 transition-all duration-150' do %>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+            </svg>
+          <% end %>
+        <% else %>
+          <span class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-300 dark:text-gray-600 cursor-not-allowed">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+            </svg>
+          </span>
+        <% end %>
+      </nav>
+    </div>
+  </div>
+</nav>
+

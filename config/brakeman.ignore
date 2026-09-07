@@ -1,0 +1,383 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "File Access",
+      "warning_code": 16,
+      "fingerprint": "d9230def7ddedcc6b6ecb359751052a9772d6d7786e2b72a4a027e7d9d1e6bf3",
+      "check_name": "SendFile",
+      "message": "Model attribute used in file name",
+      "file": "app/controllers/admin/invoices_controller.rb",
+      "line": 104,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "code": "send_file(PlatformInvoice.find(params[:id]).safe_pdf_path, :filename => (\"factuur_#{PlatformInvoice.find(params[:id]).invoice_number}.pdf\"), :type => \"application/pdf\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::InvoicesController",
+        "method": "download"
+      },
+      "user_input": "PlatformInvoice.find(params[:id]).safe_pdf_path",
+      "confidence": "Medium",
+      "note": "The send_file argument is PlatformInvoice#safe_pdf_path, which realpath-resolves the stored path and returns nil unless it is an existing regular .pdf file strictly inside the realpath of the configured invoice output directory; the pdf_exists? gate is that same accessor's presence check, so no unverified path can reach send_file. params[:id] only selects the record (admin-authenticated controller); the pdf_path column is not mass-assignable and is written only by the server-side invoice generator, so no request input contributes any path component. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "File Access",
+      "warning_code": 16,
+      "fingerprint": "9c1c58d742767d4a76bf3442d40a6b3e6f9d844a04aed1045040b9c80d9b22c8",
+      "check_name": "SendFile",
+      "message": "Model attribute used in file name",
+      "file": "app/controllers/admin/invoices_controller.rb",
+      "line": 114,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "code": "send_file(PlatformInvoice.find(params[:id]).safe_xml_path, :filename => (\"factuur_#{PlatformInvoice.find(params[:id]).invoice_number}.xml\"), :type => \"application/xml\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::InvoicesController",
+        "method": "download_xml"
+      },
+      "user_input": "PlatformInvoice.find(params[:id]).safe_xml_path",
+      "confidence": "Medium",
+      "note": "send_file receives PlatformInvoice#safe_xml_path, which realpath-resolves the stored xml_path and rejects anything that is not an existing regular .xml file strictly under the realpath of the configured invoice output directory, so neither ../ traversal nor a symlink can escape it. The xml_exists? gate is the same accessor's presence check, the controller requires admin authentication, and xml_path is written only by the server-side generator (never from params), so the flagged value carries no attacker-controlled path component. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "HTTP Verb Confusion",
+      "warning_code": 118,
+      "fingerprint": "e8e1971c60a6d8564d656810646b9bb933fbfecdaa1dbb1f4ba04b4097fa7da1",
+      "check_name": "VerbConfusion",
+      "message": "Potential HTTP verb confusion. `HEAD` is routed like `GET` but `request.get?` will return `false`",
+      "file": "app/controllers/application_controller.rb",
+      "line": 121,
+      "link": "https://brakemanscanner.org/docs/warning_types/http_verb_confusion/",
+      "code": "request.get? ? (:found) : (:see_other)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "ApplicationController",
+        "method": "redirect_unported_classic_pages"
+      },
+      "user_input": "request.get?",
+      "confidence": "Weak",
+      "note": "request.get? here only chooses between 302 (:found) and 303 (:see_other) as the status of a host redirect that is issued unconditionally for all verbs; HEAD being treated as non-GET merely yields a 303 redirect to the identical Location instead of a 302. Nothing security-relevant (auth, CSRF, mutation) branches on the verb, so HEAD/GET confusion cannot bypass anything. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "HTTP Verb Confusion",
+      "warning_code": 118,
+      "fingerprint": "27012e63fe43b17bc9ede2742793f6febd692479c4f712ad1539eca892cc07a5",
+      "check_name": "VerbConfusion",
+      "message": "Potential HTTP verb confusion. `HEAD` is routed like `GET` but `request.get?` will return `false`",
+      "file": "app/controllers/application_controller.rb",
+      "line": 171,
+      "link": "https://brakemanscanner.org/docs/warning_types/http_verb_confusion/",
+      "code": "return false unless request.get?",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "ApplicationController",
+        "method": "redirect_if_wrong_domain!"
+      },
+      "user_input": "request.get?",
+      "confidence": "Weak",
+      "note": "The request.get? guard only exempts non-GET verbs (including HEAD) from an SEO/UX brand-domain canonicalization 301 triggered by an explicit ?locale= param. The redirect is not a security control: no authentication, authorization, CSRF, or state change is conditioned on reaching the canonical host, so a HEAD request bypassing the redirect just renders the same public page on the current host. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "HTTP Verb Confusion",
+      "warning_code": 118,
+      "fingerprint": "16efe74610a15396ecfaed60c413f794a5037780a6e39e76efcb26384bdf98e0",
+      "check_name": "VerbConfusion",
+      "message": "Potential HTTP verb confusion. `HEAD` is routed like `GET` but `request.get?` will return `false`",
+      "file": "app/controllers/application_controller.rb",
+      "line": 342,
+      "link": "https://brakemanscanner.org/docs/warning_types/http_verb_confusion/",
+      "code": "if request.get? then\n  cookies.signed[:return_to] = { :value => request.fullpath, :expires => 5.minutes.from_now, :httponly => true }\nend",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "ApplicationController",
+        "method": "store_location"
+      },
+      "user_input": "request.get?",
+      "confidence": "Weak",
+      "note": "request.get? gates writing the return_to cookie inclusively: HEAD requests simply do not get a stored return location, which fails closed \u2014 the auth redirect in require_authentication still fires for HEAD. The cookie is signed, httponly, path-only (request.fullpath) and expires in 5 minutes, and no code path in the app currently reads it back, so treating HEAD as non-GET cannot bypass any security control. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "File Access",
+      "warning_code": 16,
+      "fingerprint": "67c87c12b28faa25124265270fee6b4758b59457109502a8c4471fc1abf18b95",
+      "check_name": "SendFile",
+      "message": "Model attribute used in file name",
+      "file": "app/controllers/invoices_controller.rb",
+      "line": 14,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "code": "send_file(PlatformInvoice.find_by!(:id => params[:id], :user => current_user).safe_pdf_path, :filename => (\"factuur_#{PlatformInvoice.find_by!(:id => params[:id], :user => current_user).invoice_number}.pdf\"), :type => \"application/pdf\", :disposition => \"attachment\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "InvoicesController",
+        "method": "download"
+      },
+      "user_input": "PlatformInvoice.find_by!(:id => params[:id], :user => current_user).safe_pdf_path",
+      "confidence": "Medium",
+      "note": "The path passed to send_file is PlatformInvoice#safe_pdf_path, which realpath-resolves the stored value (defeating ../ and symlinks) and returns nil unless the resolved path is a regular .pdf file strictly inside the realpath of the configured invoice output directory (separator-suffixed prefix check). The pdf_exists? gate is safe_pdf_path.present?, so only a containment-verified path can reach send_file, and the record is scoped to current_user. pdf_path is additionally only ever written from the server-side invoice generator's output, never from request params. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "File Access",
+      "warning_code": 16,
+      "fingerprint": "194feea89af73290750b29aa474ed22e4184f49234bdbb385efb82c0cfd75ab6",
+      "check_name": "SendFile",
+      "message": "Model attribute used in file name",
+      "file": "app/controllers/invoices_controller.rb",
+      "line": 27,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "code": "send_file(PlatformInvoice.find_by!(:id => params[:id], :user => current_user).safe_xml_path, :filename => (\"factuur_#{PlatformInvoice.find_by!(:id => params[:id], :user => current_user).invoice_number}.xml\"), :type => \"application/xml\", :disposition => \"attachment\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "InvoicesController",
+        "method": "download_xml"
+      },
+      "user_input": "PlatformInvoice.find_by!(:id => params[:id], :user => current_user).safe_xml_path",
+      "confidence": "Medium",
+      "note": "send_file uses PlatformInvoice#safe_xml_path: the stored xml_path is realpath-resolved (so ../ sequences and symlinks cannot escape) and rejected unless it is an existing regular .xml file strictly under the realpath of the configured invoice output directory. xml_exists? is defined as safe_xml_path.present?, so the guard cannot be bypassed at this call site; the invoice is scoped to current_user; and xml_path is only ever written from the server-side generator's output, not from user input. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "File Access",
+      "warning_code": 16,
+      "fingerprint": "f1184a7289acdff93724ad2cb73f825d855d6a54823ffcc9ccf24bbd3745842b",
+      "check_name": "SendFile",
+      "message": "Parameter value used in file name",
+      "file": "app/controllers/jurisprudence_controller.rb",
+      "line": 122,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "code": "send_file(File.join(ENV.fetch(\"JURISPRUDENCE_IMAGES_DIR\", \"/mnt/HC_Volume_104299669/jurisprudence_images\"), params[:ecli].tr(\":\", \"_\").gsub(/[^a-zA-Z0-9_.-]/, \"\"), params[:filename]), :type => (((\"image/jpeg\" or \"image/png\") or \"application/octet-stream\")), :disposition => \"inline\", :filename => (\"#{params[:ecli].tr(\":\", \"_\").gsub(/[^a-zA-Z0-9_.-]/, \"\")}_#{params[:filename]}\"))",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "JurisprudenceController",
+        "method": "case_image"
+      },
+      "user_input": "params[:filename]",
+      "confidence": "Weak",
+      "note": "False positive. case_image serves extracted PDF images from a fixed base dir (ENV JURISPRUDENCE_IMAGES_DIR, line 110). Both user-controlled path components are neutralized before the File.join at line 111: params[:filename] must match the anchored allowlist \\A[a-zA-Z0-9_]+\\.[a-z]{3,4}\\z (line 104 - no separators, no '..', single dot), and params[:ecli] (route glob, may contain slashes) has all characters outside [a-zA-Z0-9_.-] stripped at line 107 with a blank/'..' reject at line 108. A resolved-path containment check (File.expand_path ... start_with?, line 114) backstops both; its trailing-separator weakness is moot since sanitized components cannot introduce separators. If any of the three guards (lines 104, 107-108, 114) is removed or loosened - especially the filename regex or the ecli separator strip - this warning must be re-evaluated. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "Denial of Service",
+      "warning_code": 76,
+      "fingerprint": "5db1f68c49fc328f38b8a03c22198379ed715dad9b149b738f874d943d05438d",
+      "check_name": "RegexDoS",
+      "message": "Parameter value used in regular expression",
+      "file": "app/helpers/application_helper.rb",
+      "line": 595,
+      "link": "https://brakemanscanner.org/docs/warning_types/denial_of_service/",
+      "code": "/(#{params[:title].to_s.strip.split(/\\s+/).reject(&:blank?).map do\n Regexp.escape(w)\n end.join(\"|\")})/i",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "ApplicationHelper",
+        "method": "keyword_replacer"
+      },
+      "user_input": "params[:title].to_s.strip.split(/\\s+/).reject(&:blank?).map",
+      "confidence": "Weak",
+      "note": "Every fragment interpolated into this pattern passes through Regexp.escape first (line 589 for the per-word flexible mode, line 586 for exact mode), so the regex is a pure alternation of literal strings with no user-controllable quantifiers, groups, or backreferences \u2014 the constructs catastrophic backtracking requires. It is matched only against short law titles, and params[:title] is a GET parameter bounded by URL length, so worst-case cost is linear, not exponential. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "19593525e594092fb9012e2363aef36a4246fe3d1a960d8f03008ddb22b7c1b5",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/jurisprudence_search_service.rb",
+      "line": 55,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "connection.execute(\"SELECT id, case_number, court, decision_date, summary\\nFROM cases #{(\"WHERE #{conditions.join(\" AND \")}\" or \"\")}\\nORDER BY #{(\"decision_date ASC\" or \"decision_date DESC\")}\\nLIMIT #{per_page.to_i.clamp(1, 200)} OFFSET #{(([page.to_i, 1].max - 1) * per_page.to_i.clamp(1, 200))}\\n\", bind_params)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "JurisprudenceSearchService",
+        "method": "self.search"
+      },
+      "user_input": "conditions.join(\" AND \")",
+      "confidence": "Medium",
+      "note": "False positive. The interpolated string is conditions.join(' AND ') inside JurisprudenceSearchService.search. Every element of conditions is a compile-time literal SQL fragment containing ? placeholders (build_conditions, lines 91-130); all user-derived values (query tokens, court, year, subject) go into bind_params and are passed as bound parameters to db.execute. The single fragment without a placeholder, language_condition, returns one of two hardcoded strings selected by comparing the locale symbol to :fr, so no request data can reach the SQL text. ORDER BY comes from a case statement yielding only 'decision_date ASC'/'decision_date DESC', and LIMIT/OFFSET are .to_i-clamped integers. If a future edit ever interpolates a user value directly into a conditions element instead of appending to bind_params, this ignore entry no longer applies and must be removed. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "56d9e223f50bfa0a4858b981fc1cb96784695c1b694236a957b52bbe8de355f3",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/law_search_service.rb",
+      "line": 392,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "scope.where(\"(tags IS NOT NULL AND (#{tag_sql}))\", *binds)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "LawSearchService",
+        "method": "self.perform_article_text_search_exact"
+      },
+      "user_input": "tag_sql",
+      "confidence": "Weak",
+      "note": "The interpolated tag_sql fragment (from build_tags_predicate_and_binds) contains only constant 'LOWER(tags) LIKE ?' placeholder templates joined with OR; the token count varies but no token text ever enters the SQL string. All values are bound parameters (*binds), and tokens are additionally restricted to [a-z0-9.-] by extract_tokens. Brakeman flags the interpolation because it cannot see that the helper returns a placeholder-only string. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "d179258780f67b369f096e4a32ca45ea27af8bad3e65ef5eae42b1852d521d1f",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/law_search_service.rb",
+      "line": 568,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "scope.where(\"#{\"(#{(([token] + (LEGAL_SYNONYMS[token] or [])).uniq or [token]).map do\n \"(LOWER(title) LIKE ? OR LOWER(tags) LIKE ?)\"\n end.join(\" OR \")})\"} AND #{\"(#{(([token] + (LEGAL_SYNONYMS[token] or [])).uniq or [token]).map do\n \"LOWER(title) LIKE ?\"\n end.join(\" OR \")})\"}\", *[\"%#{sanitize_sql_like(t)}%\", \"%#{sanitize_sql_like(t)}%\", \"%#{sanitize_sql_like(t)}%\"])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "LawSearchService",
+        "method": "self.perform_title_search_flexible"
+      },
+      "user_input": "(([token] + (LEGAL_SYNONYMS[token] or [])).uniq or [token]).map do\n \"(LOWER(title) LIKE ? OR LOWER(tags) LIKE ?)\"\n end.join(\" OR \")",
+      "confidence": "Weak",
+      "note": "The joined 'conditions' string contains only literal placeholder templates ('LOWER(title) LIKE ?' / '(LOWER(title) LIKE ? OR LOWER(tags) LIKE ?)'); only the number of placeholders depends on input, never the content. All search values are LIKE-escaped via ActiveRecord::Base.sanitize_sql_like and passed as bound parameters, and synonym expansion draws from the constant LEGAL_SYNONYMS hash. Brakeman flags the .join because it cannot prove the joined elements are constants. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "1311ef6f614a99eceede3c9d04dc7e6539ce6ceb6a2b4c5c1d116d74fae1c89e",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/law_search_service.rb",
+      "line": 600,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "scope.where(\"(tags IS NOT NULL AND (#{tag_sql}))\", *binds)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "LawSearchService",
+        "method": "self.combine_relations_by_rowid_or_tags"
+      },
+      "user_input": "tag_sql",
+      "confidence": "Weak",
+      "note": "Same helper as the line-392 finding: build_tags_predicate_and_binds returns a SQL fragment made solely of constant 'LOWER(tags) LIKE ?' placeholders joined with OR (only the placeholder count depends on input), and the user-derived LIKE patterns travel in the binds array as bound parameters. Tokens are charset-allowlisted (alnum, dot, hyphen) by extract_tokens, so neither SQL metacharacters nor LIKE wildcards can enter. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "b8918b9b440f5fd4fbda470740ce35a5b9cded7c34f787cd20a336ec6aedfb68",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/law_search_service.rb",
+      "line": 609,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "scope.where(\"legislation.rowid IN (#{(ActiveRecord::Base.connection.select_values(rel.select(\"legislation.rowid\").limit(500).to_sql) + ([] or ActiveRecord::Base.connection.select_values(scope.where(\"(tags IS NOT NULL AND (#{tag_sql}))\", *binds).select(\"legislation.rowid\").limit(500).to_sql))).uniq.map(&:to_i).join(\",\")})\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "LawSearchService",
+        "method": "self.combine_relations_by_rowid_or_tags"
+      },
+      "user_input": "(ActiveRecord::Base.connection.select_values(rel.select(\"legislation.rowid\").limit(500).to_sql) + ([] or ActiveRecord::Base.connection.select_values(scope.where(\"(tags IS NOT NULL AND (#{tag_sql}))\", *binds).select(\"legislation.rowid\").limit(500).to_sql))).uniq.map(&:to_i).join(\",\")",
+      "confidence": "Weak",
+      "note": "The rowid IN (...) list is built with .map(&:to_i) immediately before .join(','), which forces every element to an integer regardless of origin; no string can survive into the SQL. The IDs are themselves rowids returned by prior parameterized queries, and the empty case takes the scope.none branch. This literal-integer-list pattern is deliberate (fast indexed rowid fetch replacing a slow OR query, per the comment block at lines 575-585). [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "ae363d9d48e7f4d23a2c4e1e0b1a138ba4e8e87c26825ff1a1a9a8a2df28e434",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/law_search_service.rb",
+      "line": 910,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "Arel.sql(\"#{\"CASE WHEN is_core = 1 THEN 0 ELSE 1 END\"} ASC, #{build_tag_rank_clause(extract_tokens(normalize_query(params[:title])))} ASC, #{\"(#{extract_tokens(normalize_query(params[:title])).map do\n escaped = t.gsub(\"'\", \"''\")\n\"(CASE WHEN LOWER(title) LIKE '%#{t.gsub(\"'\", \"''\")}%' THEN 1 ELSE 0 END)\"\n end.join(\" + \")})\"} DESC, date DESC\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "LawSearchService",
+        "method": "self.apply_relevance_sort"
+      },
+      "user_input": "build_tag_rank_clause(extract_tokens(normalize_query(params[:title])))",
+      "confidence": "Medium",
+      "note": "Every dynamic value in this Arel.sql ORDER BY clause is a token produced by extract_tokens, whose scan regex allowlists characters to alphanumerics, dot, and hyphen \u2014 quotes, whitespace, LIKE wildcards, and backslashes cannot appear, so nothing can break out of the single-quoted LIKE literals. Single quotes are additionally doubled (gsub at lines 900/921) as defense in depth, which is a sufficient escape in SQLite string literals (no backslash escapes). ORDER BY cannot take bound parameters usefully here, hence the deliberate allowlist-then-interpolate design. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "b35f32920c15d7c8f685675cfa0e379a950518c9d064532bd98f706ff6f834fc",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/parliamentary_search_service.rb",
+      "line": 54,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "connection.execute(\"SELECT id, title, parliament, dossier_number, document_date, document_number, substr(content, 1, 120)\\nFROM documents #{(\"WHERE #{conditions.join(\" AND \")}\" or \"\")}\\nORDER BY #{(\"document_date ASC\" or \"document_date DESC\")}\\nLIMIT #{per_page.to_i.clamp(1, 200)} OFFSET #{(([page.to_i, 1].max - 1) * per_page.to_i.clamp(1, 200))}\\n\", bind_params)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "ParliamentarySearchService",
+        "method": "self.search"
+      },
+      "user_input": "conditions.join(\" AND \")",
+      "confidence": "Medium",
+      "note": "False positive. The interpolated string is conditions.join(' AND ') inside ParliamentarySearchService.search. Every element of conditions is a compile-time literal SQL fragment containing ? placeholders (build_conditions, lines 95-138); all user-derived values (query tokens, parliament, year, doc_type, lang) go into bind_params and are passed as bound parameters to db.execute. Unlike the jurisprudence service there is not even a branch-selected constant fragment: every condition uses a ? bind, including the year filter (strftime('%Y', document_date) = ? with year.to_s bound). ORDER BY comes from a case statement yielding only 'document_date ASC'/'document_date DESC', and LIMIT/OFFSET are .to_i-clamped integers. If a future edit ever interpolates a user value directly into a conditions element instead of appending to bind_params, this ignore entry no longer applies and must be removed. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 2,
+      "fingerprint": "75993b500cc8ce1cb5d639cc1a512bbbf749dee4898bacda7919077a1a661984",
+      "check_name": "CrossSiteScripting",
+      "message": "Unescaped parameter value",
+      "file": "app/views/laws/_classic_index.html.erb",
+      "line": 125,
+      "link": "https://brakemanscanner.org/docs/warning_types/cross_site_scripting",
+      "code": "(strip_tags((law.titel or law.title.to_s)) or law.respond_to?(:title) ? (strip_tags(law.title.to_s)) : (law.to_s)).gsub(/(#{Regexp.escape(params[:q].to_s.strip)})/i, \"<mark>\\\\1</mark>\")",
+      "render_path": null,
+      "location": {
+        "type": "template",
+        "template": "laws/_classic_index"
+      },
+      "user_input": "params[:q].to_s.strip",
+      "confidence": "Weak",
+      "note": "The parameter never reaches the output: it is used only as a Regexp.escape'd match pattern, and the '<mark>\\1</mark>' replacement re-inserts matched substrings of law_title, which is always the output of Rails strip_tags (FullSanitizer: tag-free text with &/</> entity-encoded, which is why Rails itself marks it html_safe). The html_safe string therefore contains only sanitizer-encoded title text plus the hardcoded <mark> tags. Revisit only if the highlighting ever switches to interpolating the query itself or drops the strip_tags step. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "b6849f4836f90ce20b810007080f879dea3bf10419c300d59754985973e648fe",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/laws/_law.html.erb",
+      "line": 40,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to((Unresolved Model).new.fisconet_url, :class => \"inline-flex items-center justify-center w-6 h-6 mx-auto border border-transparent text-xs font-medium rounded-md text-white bg-(--accent-600-solid) hover:bg-(--accent-700-solid) focus:outline-hidden focus:ring-1 focus:ring-offset-1 focus:ring-(--accent-500) transition-colors duration-200\", :title => t(:details).capitalize, :target => \"_blank\")",
+      "render_path": null,
+      "location": {
+        "type": "template",
+        "template": "laws/_law"
+      },
+      "user_input": "(Unresolved Model).new.fisconet_url",
+      "confidence": "Weak",
+      "note": "Dead branch: the guard `law.respond_to?(:fisconet?) && law.fisconet?` is false for every object rendered by this partial (Legislation has no fisconet column, and FisconetResult intentionally does not define fisconet? - see the design comment at fisconet_search_service.rb:26), and fisconet_url is not defined on any class in the codebase, so this href can never render. Revisit this ignore if fisconet_url is ever actually implemented; at that point the URL should come from the corpus source_url with a scheme allowlist. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "d770588cc3fcbe798182cd74cee401adf8bf895f2d378b8184b77ba2e21e4d8c",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/laws/_law.html.erb",
+      "line": 57,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to((Unresolved Model).new.fisconet_url, :class => \"inline-flex items-center justify-center w-6 h-6 mx-auto border border-amber-400 dark:border-amber-600 text-xs font-medium rounded-md text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-800/40 focus:outline-hidden focus:ring-1 focus:ring-offset-1 focus:ring-amber-500 transition-colors duration-200\", :target => \"_blank\", :rel => \"nofollow\", :title => \"FisconetPlus\")",
+      "render_path": null,
+      "location": {
+        "type": "template",
+        "template": "laws/_law"
+      },
+      "user_input": "(Unresolved Model).new.fisconet_url",
+      "confidence": "Weak",
+      "note": "Dead branch: the guard `law.respond_to?(:fisconet?) && law.fisconet?` is false for every object rendered by this partial (Legislation has no fisconet column, and FisconetResult intentionally does not define fisconet? - see the design comment at fisconet_search_service.rb:26), and fisconet_url is not defined on any class in the codebase, so this href can never render. Revisit this ignore if fisconet_url is ever actually implemented; at that point the URL should come from the corpus source_url with a scheme allowlist. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    }
+  ],
+  "updated": "2026-08-17",
+  "brakeman_version": "8.0.5"
+}

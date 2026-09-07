@@ -1,0 +1,499 @@
+    <div class="chatbot-header bg-white dark:bg-[#0f172a] px-4 py-2">
+      <!-- Hidden language select for JS compatibility -->
+      <select id="chatbot-language" class="hidden" data-chatbot-target="languageSelect">
+        <option value="nl" selected>Nederlands</option>
+      </select>
+
+      <%# ═══════════════════════════════════════════════════════════════════
+           TAB STRIP - Intelligence Level Selector
+           The tabs sit flush above the settings panel with no bottom border,
+           creating a visual connection: active tab → panel below it.
+           ═══════════════════════════════════════════════════════════════════ %>
+      <%# ═══════════════════════════════════════════════════════════════════
+           INTELLIGENCE + REASONING SLIDERS - "Magic Formula" design.
+           Horizontal range sliders with notch marks for each level.
+           Fun themes → glowing gradients, icons. Professional → clean.
+           ═══════════════════════════════════════════════════════════════════ %>
+      <% user_is_pro = current_user&.pro? %>
+      <% user_has_purchased = current_user&.advanced_intelligence_access? %>
+      <% user_model_tier = current_user&.current_tier || :free %>
+      <% intelligence_levels = LegalChatbotService::INTELLIGENCE_LEVELS %>
+      <% level_keys = intelligence_levels.keys %>
+      <% max_unlocked_index = level_keys.each_with_index.select { |id, _i|
+           config = intelligence_levels[id]
+           tier_accessible = LegalChatbotService.intelligence_tier_accessible?(
+             config[:tier], pro: user_is_pro, purchased: user_has_purchased
+           )
+           tier_accessible && config[:models].keys.any? { |model_id| LegalChatbotService.model_allowed?(model_id, user_model_tier) }
+         }.map(&:last).max || 0 %>
+      <% default_index = user_is_pro ? level_keys.index { |id| intelligence_levels[id][:default] } || 0 : level_keys.index('smart') || 0 %>
+      <% default_level = level_keys[default_index] %>
+
+      <div id="settings-panel">
+        <%# One top bar row: settings toggle · credits · cost · actions. The
+            expandable settings body sits directly below as part of the same
+            surface. IDs inside the cost readout are load-bearing for JS. %>
+        <% default_credits = intelligence_levels[default_level][:credits] %>
+        <div class="chat-topbar">
+          <button type="button"
+                  class="chat-topbar-toggle chat-topbar-toggle--open"
+                  data-action="click->chatbot#toggleSettingsPanel"
+                  aria-expanded="true"
+                  aria-controls="settings-collapse">
+            <span><%= case I18n.locale when :fr then 'Paramètres' when :de then 'Einstellungen' when :en then 'Settings' else 'Instellingen' end %></span>
+            <span class="chatbot-settings-caret" aria-hidden="true">›</span>
+          </button>
+
+          <div class="chat-topbar-cost" id="cost-summary-bar">
+            <%# Credit pools breakdown %>
+            <% if logged_in? %>
+              <div class="flex items-center gap-3 flex-wrap" id="credit-pools">
+  
+  
+                <%# Credits %>
+                <% user_credits = current_user.credits.to_i %>
+                  <div class="flex items-center gap-1 group" title="<%= case I18n.locale when :fr then 'Crédits' when :de then 'Credits' when :en then 'Credits' else 'Credits' end %>">
+                    <svg class="w-3 h-3 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-bold <%= user_credits < 5 ? 'text-orange-500 dark:text-orange-400' : 'text-gray-900 dark:text-white' %>" id="credits-value"><%= user_credits %></span>
+                    <span class="text-[10px] text-gray-400 dark:text-gray-500"><%= case I18n.locale when :fr then 'crédits' when :de then 'Credits' when :en then 'credits' else 'credits' end %></span>
+                  </div>
+  
+                <%# Hidden total for JS animation anchoring %>
+                <span class="hidden" id="credits-remaining-value"><%= current_user.total_available_credits %></span>
+              </div>
+            <% else %>
+              <a href="<%= login_path %>" class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:underline">
+                <%= case I18n.locale when :fr then 'Connectez-vous' when :de then 'Anmelden' when :en then 'Log in' else 'Log in' end %>
+              </a>
+            <% end %>
+  
+            <%# Cost per question + which pool will be charged %>
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm font-bold" style="color: var(--accent-500);" id="intelligence-credit-badge"><%= default_credits %></span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">cr/<%= case I18n.locale when :fr then 'question' when :de then 'Frage' when :en then 'question' else 'vraag' end %></span>
+              <span class="text-[10px] text-gray-400 dark:text-gray-500" id="reasoning-credit-breakdown"><%= default_credits %> <%= case I18n.locale when :fr then 'base' when :de then 'Basis' when :en then 'base' else 'basis' end %> + 0 <%= case I18n.locale when :fr then 'raisonnement' when :de then 'Denken' when :en then 'reasoning' else 'redeneren' end %> = <%= default_credits %> cr/<%= case I18n.locale when :fr then 'question' when :de then 'Frage' when :en then 'question' else 'vraag' end %></span>
+            </div>
+  
+          </div>
+
+          <div class="chat-topbar-actions">
+          <div class="flex items-center gap-3">
+            <button type="button"
+                    class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1"
+                    data-action="click->chatbot#toggleHistory"
+                    title="<%= case I18n.locale when :fr then 'Conversations' when :de then 'Gespräche' when :en then 'Conversations' else 'Gesprekken' end %>">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </button>
+            <button type="button"
+                    class="text-xs text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 flex items-center gap-1"
+                    data-action="click->chatbot#saveChatToHistory"
+                    title="<%= case I18n.locale when :fr then 'Sauvegarder le chat' when :de then 'Chat speichern' when :en then 'Save chat' else 'Chat opslaan' end %>">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+              </svg>
+            </button>
+            <%# Copy entire conversation %>
+            <button type="button"
+                    class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1"
+                    data-action="click->chatbot#copyConversation"
+                    title="<%= case I18n.locale when :fr then 'Copier le chat' when :de then 'Chat kopieren' when :en then 'Copy chat' else 'Chat kopiëren' end %>">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+              </svg>
+            </button>
+            <%# Export dropdown %>
+            <div class="relative" id="export-dropdown-wrap">
+              <button type="button"
+                      class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1"
+                      data-action="click->chatbot#toggleExportMenu"
+                      title="<%= case I18n.locale when :fr then 'Exporter' when :de then 'Exportieren' when :en then 'Export' else 'Exporteren' end %>">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+              </button>
+              <div id="export-dropdown-menu" class="hidden absolute right-0 bottom-full mb-1 w-40 bg-white dark:bg-[#0f172a] rounded-lg shadow-lg border border-gray-200 dark:border-[#1e293b] py-1 z-50">
+                <button type="button" data-action="click->chatbot#exportPDF"
+                        class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                  <span>📄</span> PDF
+                </button>
+                <button type="button" data-action="click->chatbot#exportWordConversation"
+                        class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                  <span>📝</span> Word (.docx)
+                </button>
+                <button type="button" data-action="click->chatbot#exportTXT"
+                        class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                  <span>📋</span> Text (.txt)
+                </button>
+                <button type="button" data-action="click->chatbot#exportTypstConversation"
+                        class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                  <span>🔤</span> Typst (.typ)
+                </button>
+                <button type="button" data-action="click->chatbot#exportOdtConversation"
+                        class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                  <span>📃</span> ODT (.fodt)
+                </button>
+              </div>
+            </div>
+            <button type="button"
+                    class="text-xs text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 flex items-center gap-1"
+                    data-action="click->chatbot#clearChat"
+                    data-translate="clear"
+                    title="<%= case I18n.locale when :fr then 'Effacer le chat' when :de then 'Chat löschen' when :en then 'Clear chat' else 'Chat wissen' end %>">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="chatbot-settings-body" id="settings-collapse" data-chatbot-target="settingsBody">
+
+        <%# ── Intelligence Slider ── %>
+        <div class="formula-section" id="intelligence-slider-section">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="text-xs font-semibold text-gray-700 dark:text-gray-200" data-translate="intelligence">
+              <%= case I18n.locale
+                  when :fr then 'Intelligence IA'
+                  when :de then 'KI-Intelligenz'
+                  when :en then 'AI Intelligence'
+                  else 'AI-Intelligentie'
+                  end %>
+            </span>
+            <span class="relative group cursor-help">
+              <span class="text-gray-400 hover:text-[var(--accent-500)] dark:text-gray-500 dark:hover:text-[var(--accent-400)] text-[11px] leading-none relative -top-0.5 transition-colors cursor-help" title="Info">ⓘ</span>
+              <div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-64 z-50 shadow-lg">
+                <%= case I18n.locale
+                    when :fr then "Glissez pour choisir la puissance de l'IA. Plus c'est haut, plus les réponses sont approfondies."
+                    when :de then 'Schieben Sie, um die KI-Stärke zu wählen. Höher = gründlichere Antworten.'
+                    when :en then 'Slide to choose AI power. Higher = more thorough answers.'
+                    else 'Schuif om de AI-kracht te kiezen. Hoger = grondigere antwoorden.'
+                  end %>
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-900"></div>
+              </div>
+            </span>
+            <span class="text-[11px] text-gray-500 dark:text-gray-400 ml-auto" id="intelligence-level-subtitle" aria-live="polite">
+              <span data-active-label><%= intelligence_levels.dig(default_level, :labels, I18n.locale) || intelligence_levels.dig(default_level, :labels, :nl) %></span>
+              <span data-active-desc class="text-gray-400 dark:text-gray-500">| <%= intelligence_levels.dig(default_level, :descriptions, I18n.locale) || intelligence_levels.dig(default_level, :descriptions, :nl) %></span>
+            </span>
+          </div>
+
+          <div class="slider-track-wrap relative">
+            <input type="range"
+                   id="intelligence-range"
+                   aria-label="<%= case I18n.locale when :fr then 'Niveau d&#39;intelligence' when :de then 'Intelligenzstufe' when :en then 'Intelligence level' else 'Intelligentieniveau' end %>"
+                   data-chatbot-target="intelligenceRange"
+                   data-action="input->chatbot#updateIntelligenceSlider"
+                   min="0" max="<%= level_keys.length - 1 %>"
+                   value="<%= default_index %>"
+                   step="1"
+                   class="formula-slider w-full"
+                   style="--slider-pct: <%= (default_index.to_f / (level_keys.length - 1) * 100).round %>%">
+            <%# Notch labels - absolutely positioned at slider stop percentages %>
+            <% total_stops = level_keys.length - 1 %>
+            <% roman_numerals = %w[I II III IV] %>
+            <div class="relative mt-0.5" style="height: 26px;">
+              <% level_keys.each_with_index do |level_id, idx| %>
+                <% config = intelligence_levels[level_id] %>
+                <% locked = idx > max_unlocked_index %>
+                <% pro_only = config[:models].values.all? { |model_config| model_config[:tier] == :pro } %>
+                <% label = config[:labels][I18n.locale] || config[:labels][:nl] %>
+                    <% roman = roman_numerals[idx] || (idx + 1).to_s %>
+                <% pro_hover_tip = case I18n.locale
+                                     when :fr then "Découvrez #{site_name} Pro →"
+                                     when :de then "Entdecken Sie #{site_name} Pro →"
+                                     when :en then "Check out #{site_name} Pro →"
+                                     else "Ontdek #{site_name} Pro →"
+                                     end %>
+                <% pct = total_stops > 0 ? (idx.to_f / total_stops * 100).round(2) : 0 %>
+                <button type="button"
+                        class="notch-label text-center leading-tight group cursor-pointer"
+                        style="position: absolute; left: calc(9px + (100% - 18px) * <%= pct / 100.0 %>); transform: translateX(-50%); width: calc((100% - 18px) / <%= total_stops %> + 4px);"
+                        data-notch-index="<%= idx %>"
+                        data-intelligence-level="<%= level_id %>"
+                        data-intelligence-credits="<%= config[:credits] %>"
+                        data-intelligence-locked="<%= locked ? 'true' : 'false' %>"
+                        data-intelligence-tier="<%= config[:tier] %>"
+                        data-supports-reasoning="<%= config[:supports_reasoning] ? 'true' : 'false' %>"
+                        data-default-reasoning="<%= config[:reasoning_effort] || 'low' %>"
+                        data-label-nl="<%= config[:labels][:nl] %>"
+                        data-label-fr="<%= config[:labels][:fr] %>"
+                        data-label-de="<%= config[:labels][:de] %>"
+                        data-label-en="<%= config[:labels][:en] %>"
+                        data-desc-nl="<%= config[:descriptions][:nl] %>"
+                        data-desc-fr="<%= config[:descriptions][:fr] %>"
+                        data-desc-de="<%= config[:descriptions][:de] %>"
+                        data-desc-en="<%= config[:descriptions][:en] %>"
+                        data-roman="<%= roman %>"
+                        data-action="click->chatbot#clickNotch">
+                  <span class="text-[10px] font-medium block
+                         <%= idx == default_index ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' %>
+                         notch-text" data-notch-text><%= label %></span>
+
+                  <% if locked %>
+                    <% if config[:tier] == :subscriber || pro_only %>
+                      <span class="pro-chip inline-block mt-0.5">PRO</span>
+                    <% else %>
+                      <span class="pro-chip inline-block mt-0.5">
+                        <%= case I18n.locale when :fr then 'Crédits' when :de then 'Credits' when :en then 'Credits' else 'Credits' end %>
+                      </span>
+                    <% end %>
+                    <%# Hover tooltip %>
+                    <span class="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-[9px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 shadow-lg">
+                      <% if config[:tier] == :subscriber || pro_only %>
+                        <%= pro_hover_tip %>
+                      <% else %>
+                        <%= case I18n.locale
+                            when :fr then 'Disponible avec des crédits ou Pro'
+                            when :de then 'Verfügbar mit Credits oder Pro'
+                            when :en then 'Available with credits or Pro'
+                            else 'Beschikbaar met credits of Pro'
+                            end %>
+                      <% end %>
+                    </span>
+                  <% end %>
+                </button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <%# ── Reasoning Slider (only for tiers that support it) ── %>
+        <% reasoning_upgrade = case I18n.locale
+                                when :fr then 'Raisonnement avancé réservé aux abonnés Pro'
+                                when :de then 'Erweitertes Denken nur für Pro-Abonnenten'
+                                when :en then 'Advanced reasoning is Pro-only'
+                                else 'Geavanceerd redeneren alleen voor Pro-abonnees'
+                                end %>
+        <% reasoning_levels = LegalChatbotService::REASONING_LEVELS %>
+        <% reasoning_keys = reasoning_levels.keys %>
+        <% default_reasoning_idx = reasoning_keys.index('low') || 0 %>
+        <div class="formula-section pt-2 border-t border-gray-200/50 dark:border-gray-700/30"
+             id="reasoning-controls"
+             style="<%= 'display:none' unless intelligence_levels.dig(default_level, :supports_reasoning) %>">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="text-xs font-semibold text-gray-700 dark:text-gray-200" data-translate="reasoning">
+              <%= case I18n.locale when :fr then 'Raisonnement' when :de then 'Denktiefe' when :en then 'Reasoning' else 'Redenering' end %>
+            </span>
+            <span class="relative group cursor-help">
+              <span class="text-gray-400 hover:text-[var(--accent-500)] dark:text-gray-500 dark:hover:text-[var(--accent-400)] text-[11px] leading-none relative -top-0.5 transition-colors cursor-help" title="Info">ⓘ</span>
+              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-64 z-50 shadow-lg">
+                <%= case I18n.locale
+                    when :fr then "Réglez la profondeur de raisonnement. Plus haut = analyse plus rigoureuse, mais coûte des crédits supplémentaires."
+                    when :de then 'Stellen Sie die Denktiefe ein. Höher = gründlichere Analyse, kostet aber zusätzliche Credits.'
+                    when :en then 'Set reasoning depth. Higher = more rigorous analysis but costs extra credits.'
+                    else 'Stel de redeneringsdiepte in. Hoger = grondiger analyse maar kost extra credits.'
+                  end %>
+                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+              </div>
+            </span>
+            <% unless user_is_pro %>
+              <span class="pro-chip">PRO</span>
+            <% end %>
+          </div>
+
+          <div class="slider-track-wrap relative <%= 'opacity-40 pointer-events-none' unless user_is_pro %>"
+               <%= "title=\"#{reasoning_upgrade}\"" unless user_is_pro %>>
+            <input type="range"
+                   id="reasoning-range"
+                   aria-label="<%= case I18n.locale when :fr then 'Niveau de raisonnement' when :de then 'Denkstufe' when :en then 'Reasoning level' else 'Redeneerniveau' end %>"
+                   data-chatbot-target="reasoningRange"
+                   data-action="input->chatbot#updateReasoningSlider"
+                   min="0" max="<%= reasoning_keys.length - 1 %>"
+                   value="<%= default_reasoning_idx %>"
+                   step="1"
+                   class="formula-slider formula-slider--reasoning w-full"
+                   style="--slider-pct: <%= (default_reasoning_idx.to_f / [reasoning_keys.length - 1, 1].max * 100).round %>%"
+                   <%= 'disabled' unless user_is_pro %>>
+            <% reasoning_total_stops = reasoning_keys.length - 1 %>
+            <div class="relative mt-0.5" style="height: 28px;">
+              <% reasoning_keys.each_with_index do |level_id, idx| %>
+                <% config = reasoning_levels[level_id] %>
+                <% label = config[:labels][I18n.locale] || config[:labels][:nl] %>
+                <% cost_label = config[:cost_labels][I18n.locale] || config[:cost_labels][:nl] %>
+                <% pct = reasoning_total_stops > 0 ? (idx.to_f / reasoning_total_stops * 100).round(2) : 0 %>
+                <button type="button"
+                        class="notch-label text-center leading-tight cursor-pointer"
+                        style="position: absolute; left: calc(9px + (100% - 18px) * <%= pct / 100.0 %>); transform: translateX(-50%);"
+                        data-notch-index="<%= idx %>"
+                        data-reasoning-level="<%= level_id %>"
+                        data-surcharge="<%= config[:surcharge] %>"
+                        data-estimated-seconds="<%= config[:estimated_seconds] %>"
+                        data-label-nl="<%= config[:labels][:nl] %>"
+                        data-label-fr="<%= config[:labels][:fr] %>"
+                        data-label-de="<%= config[:labels][:de] %>"
+                        data-label-en="<%= config[:labels][:en] %>"
+                        data-cost-label-nl="<%= config[:cost_labels][:nl] %>"
+                        data-cost-label-fr="<%= config[:cost_labels][:fr] %>"
+                        data-cost-label-de="<%= config[:cost_labels][:de] %>"
+                        data-cost-label-en="<%= config[:cost_labels][:en] %>"
+                        data-action="click->chatbot#clickReasoningNotch"
+
+                        <%= 'disabled' unless user_is_pro %>>
+                  <span class="text-[10px] font-medium block
+                         <%= idx == default_reasoning_idx ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' %>
+                         notch-text"><%= label %></span>
+                  <span class="text-[8px] block reasoning-cost-label <%= config[:surcharge] == 0 ? 'text-green-500 dark:text-green-400' : 'text-amber-500 dark:text-amber-400' %>"><%= cost_label %></span>
+                </button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+
+        <%# ── Model & Category Row ── %>
+        <div class="flex items-center gap-3 flex-wrap pt-2 border-t border-gray-200/50 dark:border-gray-700/30" id="model-controls">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400" data-translate="model">
+              <%= case I18n.locale when :fr then 'Modèle' when :de then 'Modell' when :en then 'Model' else 'Model' end %>:
+            </span>
+            <span class="relative group cursor-help">
+              <span class="text-gray-400 hover:text-[var(--accent-500)] dark:text-gray-500 dark:hover:text-[var(--accent-400)] text-[11px] leading-none relative -top-0.5 transition-colors cursor-help" title="Info">ⓘ</span>
+              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-64 z-50 shadow-lg">
+                <%= case I18n.locale
+                    when :fr then 'Le modèle AI utilisé pour répondre. Chaque niveau propose un modèle par défaut optimisé.'
+                    when :de then 'Das AI-Modell für die Antwort. Jede Stufe hat ein optimiertes Standardmodell.'
+                    when :en then 'The AI model used to answer. Each level has an optimized default model.'
+                    else 'Het AI-model dat antwoordt. Elk niveau heeft een geoptimaliseerd standaardmodel.'
+                  end %>
+                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+              </div>
+            </span>
+            <select id="model-select"
+                    aria-label="<%= case I18n.locale when :fr then 'Modèle IA' when :de then 'KI-Modell' when :en then 'AI model' else 'AI-model' end %>"
+                    data-chatbot-target="modelSelect"
+                    data-action="change->chatbot#updateModel"
+                    class="text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 px-1.5 py-0.5">
+              <% intelligence_levels.each do |level_id, config| %>
+                <% tier_accessible = LegalChatbotService.intelligence_tier_accessible?(
+                     config[:tier], pro: user_is_pro, purchased: user_has_purchased
+                   ) %>
+                <% config[:models].sort_by { |mid, mc| [(mc[:credits] || config[:credits]), LegalChatbot::ModelsConfig::AVAILABLE_MODELS.dig(mid, :cost_per_query_eur) || 0] }.each do |model_id, model_config| %>
+                  <% is_default = model_id == config[:default_model]
+                     model_locked = !tier_accessible || !LegalChatbotService.model_allowed?(model_id, user_model_tier) %>
+                  <%# Capability and supported level enum are derived from AVAILABLE_MODELS. %>
+                  <% model_reasoning_levels = LegalChatbotService.reasoning_levels_for_model(model_id)
+                     model_supports_reasoning = model_reasoning_levels.any?
+                     model_reasoning_surcharges = model_reasoning_levels.map { |rid| "#{rid}:#{LegalChatbotService.reasoning_surcharge_for_model(model_id, rid)}" }.join(',')
+                     model_base_label = case I18n.locale when :fr then 'base' when :de then 'Basis' when :en then 'base' else 'basis' end %>
+                  <option value="<%= model_id %>"
+                          data-intelligence="<%= level_id %>"
+                          data-tier="<%= config[:tier] %>"
+                          data-default="<%= is_default %>"
+                          data-estimated-seconds="<%= model_config[:estimated_seconds] || 15 %>"
+                          data-supports-reasoning="<%= model_supports_reasoning ? 'true' : 'false' %>"
+                          data-reasoning-levels="<%= model_reasoning_levels.join(',') %>"
+                          data-reasoning-surcharges="<%= model_reasoning_surcharges %>"
+                          data-default-reasoning="<%= config[:reasoning_effort] || 'low' %>"
+                          data-credits="<%= model_config[:credits] || config[:credits] %>"
+                          class="model-option"
+                          <%= 'disabled' if model_locked %>
+                          <%= 'selected' if model_id == config[:default_model] && level_id == 'smart' %>><%= model_locked ? '[Pro] ' : '' %><%= model_config[:name] %> (<%= model_config[:credits] || config[:credits] %> cr <%= model_base_label %>)
+                  </option>
+                <% end %>
+              <% end %>
+            </select>
+          </div>
+        </div>
+
+        <!-- Panel Row 2: Category + Sources -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 flex-wrap pt-1.5 border-t border-gray-200/60 dark:border-gray-700/40">
+          <!-- Category selector -->
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400" data-translate="profile">
+              <%= case I18n.locale when :fr then 'Catégorie' when :de then 'Kategorie' when :en then 'Category' else 'Categorie' end %>:
+            </span>
+            <span class="relative group cursor-help">
+              <span class="text-gray-400 hover:text-[var(--accent-500)] dark:text-gray-500 dark:hover:text-[var(--accent-400)] text-[11px] leading-none relative -top-0.5 transition-colors cursor-help" title="Info">ⓘ</span>
+              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-64 z-50 shadow-lg">
+                <%= case I18n.locale
+                    when :fr then "Choisissez un domaine juridique pour des réponses plus précises."
+                    when :de then 'Wählen Sie ein Rechtsgebiet für genauere Antworten.'
+                    when :en then 'Choose a legal domain for more targeted answers.'
+                    else 'Kies een rechtsdomein voor gerichtere antwoorden.'
+                  end %>
+                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+              </div>
+            </span>
+            <select id="profile-select"
+                    aria-label="<%= case I18n.locale when :fr then 'Profil juridique' when :de then 'Rechtsprofil' when :en then 'Legal profile' else 'Juridisch profiel' end %>"
+                    data-chatbot-target="profileSelect"
+                    data-action="change->chatbot#updateProfile"
+                    class="text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 px-1.5 py-0.5">
+              <% LegalChatbotService::CHATBOT_PROFILES.each do |profile_id, config| %>
+                <% name = config[:"name_#{I18n.locale}"] || config[:name_nl] %>
+                <option value="<%= profile_id %>" 
+                        data-icon="<%= config[:icon] %>"
+                        <%= 'selected' if profile_id == 'general' %>>
+                  <%= config[:icon] %> <%= name %>
+                </option>
+              <% end %>
+            </select>
+          </div>
+
+          <!-- Sources -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400" data-translate="sources">
+              <%= case I18n.locale when :fr then 'Sources' when :de then 'Quellen' when :en then 'Sources' else 'Bronnen' end %>:
+            </span>
+            <span class="relative group cursor-help">
+              <span class="text-gray-400 hover:text-[var(--accent-500)] dark:text-gray-500 dark:hover:text-[var(--accent-400)] text-[11px] leading-none relative -top-0.5 transition-colors cursor-help" title="Info">ⓘ</span>
+              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-64 z-50 shadow-lg">
+                <%= case I18n.locale
+                    when :fr then 'Sélectionnez les bases de données juridiques à consulter.'
+                    when :de then 'Wählen Sie die juristischen Datenbanken.'
+                    when :en then 'Select which legal databases to search.'
+                    else 'Kies welke juridische databanken doorzocht worden.'
+                  end %>
+                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+              </div>
+            </span>
+            <% pro_sources_locked = !current_user&.pro? %>
+            <div class="flex flex-wrap items-center gap-1">
+              <label class="source-checkbox inline-flex items-center gap-1 cursor-pointer px-1 py-0.5 rounded hover:bg-(--accent-50,#eff6ff) dark:hover:bg-gray-600 transition-colors">
+                <input type="checkbox" 
+                       id="source-legislation"
+                       data-chatbot-target="sourceLegislation"
+                       data-action="change->chatbot#updateSources"
+                       checked
+                       class="sr-only peer">
+                <span class="custom-check"></span>
+                <span class="text-xs text-gray-700 dark:text-gray-300" data-translate="legislation">
+                  <%= case I18n.locale when :fr then 'Législation' when :de then 'Gesetzgebung' when :en then 'Legislation' else 'Wetgeving' end %>
+                </span>
+              </label>
+              <label class="source-checkbox inline-flex items-center gap-1 px-1 py-0.5 rounded transition-colors <%= pro_sources_locked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-(--accent-50,#eff6ff) dark:hover:bg-gray-600' %>"<%= ' data-action="click->chatbot#handleLockedSource"'.html_safe if pro_sources_locked %>>
+                  <input type="checkbox"
+                         id="source-jurisprudence"
+                         data-chatbot-target="sourceJurisprudence"
+                         data-action="change->chatbot#updateSources"
+                         <%= 'disabled' if pro_sources_locked %>
+                         class="sr-only peer">
+                  <span class="custom-check"></span>
+                <span class="text-xs text-gray-700 dark:text-gray-300" data-translate="jurisprudence">
+                  <%= case I18n.locale when :fr then 'Jurisprudence' when :de then 'Rechtsprechung' when :en then 'Case law' else 'Rechtspraak' end %>
+                </span>
+                <% if pro_sources_locked %><span class="text-[9px] font-bold text-purple-600 dark:text-purple-300 ml-0.5">PRO</span><% end %>
+              </label>
+              <label class="source-checkbox inline-flex items-center gap-1 px-1 py-0.5 rounded transition-colors <%= pro_sources_locked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-(--accent-50,#eff6ff) dark:hover:bg-gray-600' %>"<%= ' data-action="click->chatbot#handleLockedSource"'.html_safe if pro_sources_locked %>>
+                <input type="checkbox"
+                       id="source-parliamentary"
+                       data-chatbot-target="sourceParliamentary"
+                       data-action="change->chatbot#updateSources"
+                         <%= 'disabled' if pro_sources_locked %>
+                       class="sr-only peer">
+                <span class="custom-check"></span>
+                <span class="text-xs text-gray-700 dark:text-gray-300" data-translate="parliamentary">
+                  <%= case I18n.locale when :fr then 'Travaux préparatoires' when :de then 'Parlamentarische Vorarbeiten' when :en then 'Parliamentary work' else 'Parlementaire voorbereidingen' end %>
+                </span>
+                <% if pro_sources_locked %><span class="text-[9px] font-bold text-purple-600 dark:text-purple-300 ml-0.5">PRO</span><% end %>
+              </label>
+            </div>
+          </div>
+        </div>
+        </div>
+
+      </div>
+      </div>
+    </div>

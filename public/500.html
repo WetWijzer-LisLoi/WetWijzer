@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <title>Interne fout — WetWijzer</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, width=device-width">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="/favicon.ico">
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      * { margin: 0; }
+
+      body {
+        background: #0b1120;
+        color: #c8d6e5;
+        display: grid;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        min-height: 100vh;
+        place-items: center;
+        padding: 2rem;
+      }
+
+      .container {
+        max-width: 540px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .logo {
+        margin-bottom: 2rem;
+      }
+      .logo a {
+        color: #38bdf8;
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        text-decoration: none;
+      }
+      .logo a:hover { color: #7dd3fc; }
+      .logo span { color: #64748b; font-weight: 400; }
+
+      .card {
+        background: rgba(30, 41, 59, 0.6);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: 1rem;
+        padding: 2.5rem 2rem;
+        backdrop-filter: blur(8px);
+      }
+
+      .status {
+        font-size: 3.5rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        color: #ef4444;
+        line-height: 1;
+        margin-bottom: 1.5rem;
+        animation: pulse-glow 3s ease-in-out infinite;
+      }
+      @keyframes pulse-glow {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+      }
+
+      .lang-block {
+        padding: 1rem 0;
+        border-bottom: none;
+      }
+      .lang-block:last-of-type { border-bottom: none; }
+
+      .lang-label {
+        display: inline-block;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #38bdf8;
+        background: rgba(56, 189, 248, 0.1);
+        padding: 0.15em 0.6em;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+      }
+
+      .lang-block h2 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #f1f5f9;
+        margin-bottom: 0.35rem;
+      }
+
+      .lang-block p {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        line-height: 1.5;
+      }
+
+      .actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 2rem;
+      }
+
+      .actions a, .actions button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35em;
+        font-size: 0.85rem;
+        padding: 0.6em 1.4em;
+        border-radius: 0.5em;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.15s ease;
+        cursor: pointer;
+        border: none;
+        font-family: inherit;
+      }
+
+      .btn-primary {
+        background: #38bdf8;
+        color: #0b1120;
+      }
+      .btn-primary:hover { background: #7dd3fc; }
+
+      .btn-secondary {
+        background: rgba(148, 163, 184, 0.12);
+        color: #94a3b8;
+        border: none;
+      }
+      .btn-secondary:hover {
+        background: rgba(148, 163, 184, 0.22);
+        color: #e2e8f0;
+      }
+
+      .btn-danger {
+        background: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+      }
+      .btn-danger:hover {
+        background: rgba(239, 68, 68, 0.25);
+        color: #fecaca;
+      }
+
+      .error-id {
+        margin-top: 1rem;
+        font-size: 0.65rem;
+        color: #475569;
+        font-family: ui-monospace, monospace;
+      }
+
+      .footer {
+        margin-top: 1.5rem;
+        font-size: 0.7rem;
+        color: #475569;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="logo">
+        <a href="/">WetWijzer</a>
+      </div>
+
+      <div class="card">
+        <div class="status">500</div>
+
+        <div class="lang-block">
+          <span class="lang-label">NL</span>
+          <h2>Interne serverfout</h2>
+          <p>Er is een onverwachte fout opgetreden. Ons team is op de hoogte gesteld. Probeer het later opnieuw.</p>
+        </div>
+
+        <div class="lang-block">
+          <span class="lang-label">FR</span>
+          <h2>Erreur interne du serveur</h2>
+          <p>Une erreur inattendue s'est produite. Notre équipe a été informée. Veuillez réessayer plus tard.</p>
+        </div>
+
+        <div class="lang-block">
+          <span class="lang-label">DE</span>
+          <h2>Interner Serverfehler</h2>
+          <p>Ein unerwarteter Fehler ist aufgetreten. Unser Team wurde benachrichtigt. Bitte versuchen Sie es später erneut.</p>
+        </div>
+
+        <div class="lang-block">
+          <span class="lang-label">EN</span>
+          <h2>Internal server error</h2>
+          <p>An unexpected error occurred. Our team has been notified. Please try again later.</p>
+        </div>
+
+        <div class="actions">
+          <button onclick="location.reload()" class="btn-primary">&#8635; Retry</button>
+          <a href="/" class="btn-secondary">&larr; Home</a>
+          <a href="mailto:info@wetwijzer.be?subject=500%20Error%20Report&body=URL:%20${encodeURIComponent(window.location.href)}" class="btn-danger" onclick="this.href=this.href.replace('${encodeURIComponent(window.location.href)}', encodeURIComponent(window.location.href))">&#9888; Report</a>
+        </div>
+
+        <div class="error-id" id="errorId"></div>
+      </div>
+
+      <div class="footer">WetWijzer &mdash; Open-source zoekmachine voor Belgische wetgeving en rechtspraak</div>
+    </div>
+
+    <script>
+      // Generate a unique error reference ID for support
+      var eid = 'ERR-' + Date.now().toString(36).toUpperCase();
+      document.getElementById('errorId').textContent = 'Ref: ' + eid;
+
+      // Fix report mailto link with actual URL
+      var reportLink = document.querySelector('.btn-danger');
+      if (reportLink) {
+        reportLink.href = 'mailto:info@wetwijzer.be?subject=500 Error (' + eid + ')&body=URL: ' + encodeURIComponent(window.location.href) + '%0ATime: ' + new Date().toISOString() + '%0ARef: ' + eid;
+      }
+    </script>
+  </body>
+</html>

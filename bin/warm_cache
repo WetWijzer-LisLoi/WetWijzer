@@ -1,0 +1,67 @@
+#!/bin/bash
+# Cache warmer for WetWijzer — warms fragment cache for laws with many articles.
+# Run after Puma starts to ensure fast first-render for users.
+# Installed as: /var/www/wetwijzer/current/bin/warm_cache
+#
+# Usage: bin/warm_cache [MIN_ARTICLES]
+#   MIN_ARTICLES: minimum article count to warm (default: 500)
+#
+# No log path in here on purpose. wetwijzer-cache-warm.service already routes
+# stdout and stderr with StandardOutput/StandardError=append: to
+# /var/log/wetwijzer-cache-warm.log. This script used to ALSO tee into that same
+# file, so every line was written twice, once by tee and once by systemd
+# capturing tee's stdout. Print to stdout and let the unit place it; run it by
+# hand and the output goes to your terminal, which is what you want.
+
+set -euo pipefail
+
+MIN=${1:-500}
+DB="/mnt/HC_Volume_104299669/wetwijzer-production-storage/laws.prod.sqlite3"
+HOST="https://wetwijzer.be"
+
+stamp() { date '+%Y-%m-%d %H:%M:%S'; }
+
+# ── Wait for Puma to be fully ready ──
+# Don't start warming until Puma can actually serve a request.
+#
+# The probe URL must be a route that actually exists. This polled /wetten, which
+# returns 404, so the loop could never succeed and the warmer aborted on every
+# single run (every entry in /var/log/wetwijzer-cache-warm.log ended in "Puma
+# not ready after 30 attempts"). Nothing was warmed for as long as that was
+# true. Accept any 2xx or 3xx: matching three literal codes is what made this
+# brittle to begin with.
+echo "$(stamp) Waiting for Puma to be ready..."
+for attempt in $(seq 1 30); do
+  if curl -so /dev/null -w '%{http_code}' --max-time 10 "$HOST/laws" 2>/dev/null \
+      | grep -qE '^(2|3)[0-9][0-9]$'; then
+    echo "$(stamp) Puma ready after $attempt attempts"
+    break
+  fi
+  if [ "$attempt" -eq 30 ]; then
+    echo "$(stamp) ERROR: Puma not ready after 30 attempts, aborting"
+    exit 1
+  fi
+  sleep 10
+done
+
+# Get list of big laws
+NUMACS=$(sqlite3 "$DB" \
+  "SELECT content_numac FROM articles WHERE language_id=1 GROUP BY content_numac HAVING COUNT(*) >= $MIN ORDER BY COUNT(*) DESC" 2>/dev/null)
+
+TOTAL=$(echo "$NUMACS" | grep -c .)
+echo "$(stamp) Starting cache warm: $TOTAL laws with $MIN+ articles"
+
+i=0
+for NUMAC in $NUMACS; do
+  i=$((i+1))
+  # Warm both languages for this law, then wait: the four sites are separate
+  # domains and language is a query parameter, so one host serves both.
+  curl -sL -o /dev/null --max-time 120 "$HOST/laws/$NUMAC/articles?language_id=1" &
+  curl -sL -o /dev/null --max-time 120 "$HOST/laws/$NUMAC/articles?language_id=2" &
+  wait
+  echo "$(date '+%H:%M:%S') [$i/$TOTAL] $NUMAC warmed"
+  # Brief pause to let other requests through
+  sleep 2
+done
+
+echo "$(stamp) Cache warm complete: $TOTAL laws warmed"

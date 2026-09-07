@@ -1,0 +1,14 @@
+<%= t('mailer.subscription_cancelled.subject') %>
+
+<%= t('mailer.subscription_cancelled.greeting', name: @user.name || @user.email) %>
+
+<%= t('mailer.subscription_cancelled.body') %>
+
+<% if @period_end %><%= t('mailer.subscription_cancelled.access_until') %> <%= @period_end.strftime('%d/%m/%Y') %>
+
+<% end %><%= t('mailer.subscription_cancelled.keep_free') %>
+
+<%= t('mailer.subscription_cancelled.resubscribe_button') %>:
+<%= @resubscribe_url %>
+
+<%= t('mailer.subscription_cancelled.farewell') %>

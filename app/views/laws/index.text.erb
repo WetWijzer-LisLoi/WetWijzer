@@ -1,0 +1,9 @@
+<%# Plain-text law list for curl users: date <TAB> numac <TAB> title.
+    Try: curl https://classic.wetwijzer.be/laws.txt?title=arbeid -%>
+# <%= t(:app_title) %> — <%= t(:results_found, count: (@pagy&.count || @laws&.size || 0)) %>
+<%- if @pagy && @pagy.pages > 1 -%>
+# page <%= @pagy.page %>/<%= @pagy.pages %> — next: <%= laws_url(request.query_parameters.merge(page: @pagy.page + 1, format: :txt)) if @pagy.page < @pagy.pages %>
+<%- end -%>
+<%- (@laws || []).each do |law| -%>
+<%= law.respond_to?(:datum) ? (law.datum.presence || law.date) : law.date %>	<%= law.numac %>	<%= raw strip_tags(((law.respond_to?(:titel) ? law.titel.presence : nil) || law.title).to_s).squish %>
+<%- end -%>

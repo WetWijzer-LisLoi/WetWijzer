@@ -1,0 +1,15 @@
+# Sort-by-year options for the laws filter (app/views/laws/_filter_section.html.erb).
+# These top-level sort_* keys were referenced via t(:sort_year_asc/desc) but never
+# defined, so the dropdown rendered raw "translation missing: <loc>.sort_year_*".
+nl:
+  sort_year_desc: "Jaar (aflopend)"
+  sort_year_asc: "Jaar (oplopend)"
+fr:
+  sort_year_desc: "Année (décroissant)"
+  sort_year_asc: "Année (croissant)"
+de:
+  sort_year_desc: "Jahr (absteigend)"
+  sort_year_asc: "Jahr (aufsteigend)"
+en:
+  sort_year_desc: "Year (descending)"
+  sort_year_asc: "Year (ascending)"

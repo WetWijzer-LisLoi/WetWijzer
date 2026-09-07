@@ -1,0 +1,32 @@
+<%# Secondary page chrome: author credit and the Praxis B2B strip. These sit
+    at the top of the page, under the title block, per owner direction. %>
+<div class="chatbot-page-aside mt-3">
+    <div class="mt-3">
+      <%= render 'shared/about_card', variant: :sidebar %>
+    </div>
+
+    <%# ── Praxis teaser strip - B2B lead gen for law firms ── %>
+    <a href="https://praxislegal.be" target="_blank" rel="noopener noreferrer"
+       class="mt-3 flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-xs group transition-all duration-300
+              border border-transparent hover:border-amber-300/50 dark:hover:border-amber-600/40
+              hover:shadow-md"
+       style="background: linear-gradient(135deg, rgba(201,169,98,0.08) 0%, rgba(201,169,98,0.03) 100%);">
+      <span class="flex-shrink-0" aria-hidden="true">
+        <img src="/images/logo-praxis-light.png" alt="" class="h-5 w-auto object-contain dark:hidden" loading="lazy">
+        <img src="/images/logo-praxis-horizontal.png" alt="" class="h-5 w-auto object-contain hidden dark:block" loading="lazy">
+      </span>
+      <span class="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+        <%= case I18n.locale
+            when :fr then '<strong>Implémentation de ce chatbot dans votre cabinet ?</strong> Bientôt possible !'
+            when :de then '<strong>Implementierung dieses Chatbots in Ihrer Kanzlei?</strong> Bald möglich!'
+            when :en then '<strong>Implement this chatbot in your law practice?</strong> Coming soon!'
+            else '<strong>Implementatie van deze chatbot in uw advocatenpraktijk?</strong> Binnenkort mogelijk!'
+            end.html_safe %>
+      </span>
+      <span class="ml-auto flex-shrink-0 text-[10px] font-semibold capitalize tracking-wider px-2 py-0.5 rounded-full transition-all
+                   text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-900/40
+                   group-hover:bg-amber-200 dark:group-hover:bg-amber-800/50">
+        Praxis →
+      </span>
+    </a>
+</div>

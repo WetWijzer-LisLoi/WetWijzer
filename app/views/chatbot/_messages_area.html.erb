@@ -1,0 +1,125 @@
+    <%# One scroll context: the transcript grows with the page (no internal
+        scrollbox, no second scrollbar); scroll-to-bottom targets the window. %>
+    <div class="chatbot-messages chatbot-messages--empty min-h-48 p-4 space-y-4"
+         data-chatbot-target="messages"
+         role="log"
+         aria-live="polite"
+         aria-label="<%= t('chatbot.messages', default: 'Chatberichten') %>">
+
+      <%# A compact starter card. The complete searchable catalogue already lives
+          in the adjacent question panel, so this welcome state deliberately
+          avoids a second category browser and nested scrollbar. %>
+      <%# Only :body and :questions are rendered, here and in chatbot_controller.js, which
+          builds the same shape client-side. An earlier layout also showed an eyebrow, a
+          title, the credit balance, a prompt label and a hint; 28b4dd32 reduced this to a
+          single assistant bubble with starter chips and dropped that markup, but left the
+          copy computing. Those five keys sat dead in all four languages for eleven days,
+          including a total_available_credits database call, while two controller tests kept
+          asserting them. Removed rather than restored, because ERB and JS agree on the
+          bubble shape and only the JS is authoritative after a chat is cleared. The credit
+          balance lives in _widget.html.erb now. %>
+      <% welcome_copy = case I18n.locale
+          when :fr
+            {
+              body: "Posez votre question en langage courant. #{site_name} consulte la législation, la jurisprudence et les travaux parlementaires.",
+              questions: [
+                ['arbeidsrecht', 'Quels sont mes droits en cas de licenciement ?'],
+                ['huurrecht', 'Mon bailleur peut-il augmenter le loyer ?'],
+                ['familierecht', "Comment se règle une succession sans testament ?"]
+              ]
+            }
+          when :de
+            {
+              body: "Stellen Sie Ihre Frage in eigenen Worten. #{site_name} durchsucht Gesetzgebung, Rechtsprechung und parlamentarische Dokumente.",
+              questions: [
+                ['arbeidsrecht', 'Welche Rechte habe ich bei einer Kündigung?'],
+                ['huurrecht', 'Darf mein Vermieter die Miete erhöhen?'],
+                ['familierecht', 'Wie wird ein Nachlass ohne Testament geregelt?']
+              ]
+            }
+          when :en
+            {
+              body: "Ask your question in your own words. #{site_name} searches legislation, case law, and parliamentary documents.",
+              questions: [
+                ['arbeidsrecht', 'What are my rights if I am dismissed?'],
+                ['huurrecht', 'Can my landlord increase the rent?'],
+                ['familierecht', 'How is an estate settled without a will?']
+              ]
+            }
+          else
+            {
+              body: "Stel uw vraag in uw eigen woorden. #{site_name} doorzoekt wetgeving, rechtspraak en parlementaire stukken.",
+              questions: [
+                ['arbeidsrecht', 'Wat zijn mijn rechten bij ontslag?'],
+                ['huurrecht', 'Mag mijn verhuurder de huurprijs verhogen?'],
+                ['familierecht', 'Hoe verloopt een nalatenschap zonder testament?']
+              ]
+            }
+        end %>
+      <%# The empty state is just the assistant's first chat bubble: same
+          bubble styling as any answer, followed by tappable starter chips. %>
+      <div class="chatbot-welcome-wrap">
+        <div class="message chatbot-welcome-card message-fade-in">
+          <p class="chatbot-welcome-copy"><%= welcome_copy[:body] %></p>
+
+          <div class="chatbot-starter-grid">
+            <% welcome_copy[:questions].each do |category, question| %>
+              <button type="button"
+                      class="chatbot-starter-question"
+                      data-action="click->chatbot#clickStarterSuggestion"
+                      data-sample-category="<%= category %>"
+                      data-question="<%= question %>">
+                <span><%= question %></span>
+              </button>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <% if @result %>
+        <div class="message p-3 rounded-lg ml-auto bg-(--accent-600-solid) text-white max-w-[85%]">
+          <div class="message-content"><%= params[:question] %></div>
+        </div>
+        
+        <div class="message p-3 rounded-lg bg-gray-100 dark:bg-[#0f172a] text-gray-800 dark:text-gray-300 max-w-[85%]">
+          <div class="message-content whitespace-pre-wrap"><%= @result[:answer] %></div>
+          
+          <% if @result[:sources]&.any? %>
+            <div class="message-sources mt-2 pt-2 border-t border-gray-200 dark:border-[#1e293b] text-xs">
+              <div class="font-medium text-gray-500 dark:text-gray-400 mb-1">
+                <%= t('chatbot.sources', default: 'Bronnen') %>:
+              </div>
+              <% @result[:sources].each_with_index do |source, index| %>
+                <%# Same scheme allowlist as the JS renderer (createSourcesElement):
+                    only http(s) and site-relative URLs — never javascript: etc. %>
+                <% safe_url = source[:url].to_s.match?(%r{\Ahttps?://|\A/}) ? source[:url] : nil %>
+                <div class="<%= safe_url ? 'text-(--accent-600) dark:text-(--accent-400) hover:underline' : 'text-gray-600 dark:text-gray-300' %>">
+                  <% if safe_url %>
+                    <a href="<%= safe_url %>" target="_blank" rel="noopener">
+                      <%= index + 1 %>. <%= source[:law_title] || source[:title] || source[:ecli] %>
+                      <% if source[:article_title] %> - <%= source[:article_title] %><% end %>
+                      <% if source[:relevance] %> (<%= [source[:relevance] * 100, 100].min.round(0) %>%)<% end %>
+                    </a>
+                  <% else %>
+                    <%= index + 1 %>. <%= source[:law_title] || source[:title] || source[:ecli] %>
+                    <% if source[:article_title] %> - <%= source[:article_title] %><% end %>
+                    <% if source[:relevance] %> (<%= (source[:relevance] * 100).round(0) %>%)<% end %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+          
+          <div class="message-meta mt-2 text-xs text-gray-400">
+            <%= @result[:response_time] %>s
+            <% if @result[:model] %> · <%= @result[:model] %><% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <% if @error %>
+        <div class="message p-3 rounded-lg bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 max-w-[85%]">
+          <div class="message-content"><%= @error %></div>
+        </div>
+      <% end %>
+    </div>

@@ -1,0 +1,392 @@
+    <%# Compute default_credits locally - ERB partials have isolated scope,
+        so the value set in _settings_panel.html.erb is not available here. %>
+    <% intelligence_levels = LegalChatbotService::INTELLIGENCE_LEVELS
+       level_keys = intelligence_levels.keys
+       _pro = current_user&.pro?
+       _didx = _pro ? (level_keys.index { |id| intelligence_levels[id][:default] } || 0) : (level_keys.index('smart') || 0)
+       default_credits = intelligence_levels[level_keys[_didx]][:credits] %>
+    <%# Composer row of the single chat surface: hairline on top, no own
+        background so it reads as part of the panel, not another box. %>
+    <div class="p-4 border-t border-gray-200 dark:border-[#1e293b]">
+        <%# ── Chat input (authenticated users only - chatbot requires login) ── %>
+        <div class="flex gap-3">
+          <textarea 
+            data-chatbot-target="input"
+            data-action="keydown->chatbot#handleKeydown input->chatbot#autoResizeWidget"
+            autocomplete="off"
+            aria-label="<%= case I18n.locale when :fr then 'Votre question juridique' when :de then 'Ihre Rechtsfrage' when :en then 'Your legal question' else 'Uw juridische vraag' end %>"
+            class="flex-1 resize-none rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 px-4 py-2 focus:ring-2 focus:ring-(--accent-500) focus:border-transparent"
+            rows="1"
+            style="max-height: 150px;"
+            placeholder="<%= case I18n.locale when :fr then 'Posez une question... (Shift+Enter = nouvelle ligne)' when :de then 'Stellen Sie eine Frage... (Shift+Enter = neue Zeile)' when :en then 'Ask a question... (Shift+Enter = new line)' else 'Stel een vraag... (Shift+Enter = nieuwe regel)' end %>" data-translate-placeholder="inputPlaceholder"><%= params[:question] %></textarea>
+          
+          <button type="button"
+                  data-chatbot-target="sendButton"
+                  data-action="click->chatbot#send"
+                  aria-label="<%= case I18n.locale when :fr then 'Envoyer la question' when :de then 'Frage senden' when :en then 'Send question' else 'Vraag versturen' end %>"
+                  class="send-button px-4 py-2 bg-(--accent-600-solid) hover:bg-(--accent-700-solid) disabled:bg-gray-400 text-white font-medium rounded-lg transition-all duration-200 flex items-center gap-1.5 shadow-md hover:shadow-lg active:scale-95">
+            <svg class="w-5 h-5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+            </svg>
+            <span class="hidden sm:inline" data-translate="send"><%= case I18n.locale when :fr then 'Envoyer' when :de then 'Senden' when :en then 'Send' else 'Verstuur' end %></span>
+            <span class="text-[10px] font-normal bg-black/25 px-1.5 py-0.5 rounded-full" id="send-credit-badge">−<%= default_credits %>cr</span>
+          </button>
+        </div>
+
+      <%# Long-question hint: complex questions are where the fast model's
+          material legal errors concentrate (2026-08 tax spot check: 27.5%
+          on the default model, near zero on a frontier one). Shown only to
+          users still on the fast tier, and only once a question grows long
+          enough to look multi-part. Purely advisory - it never changes the
+          selection, it opens the settings panel where the slider lives. %>
+      <div id="length-hint"
+           data-chatbot-target="lengthHint"
+           class="hidden mt-1.5 text-[11px] flex items-start gap-1.5 rounded-md border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 px-2 py-1.5 text-amber-800 dark:text-amber-200">
+        <svg class="w-3.5 h-3.5 flex-shrink-0 mt-px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+        <span>
+          <%= case I18n.locale
+              when :fr then 'Question détaillée. Les questions juridiques complexes obtiennent nettement de meilleures réponses avec un modèle plus puissant.'
+              when :de then 'Ausführliche Frage. Komplexe Rechtsfragen werden mit einem stärkeren Modell deutlich besser beantwortet.'
+              when :en then 'Detailed question. Complex legal questions are answered markedly better by a stronger model.'
+              else 'Uitgebreide vraag. Complexe juridische vragen worden merkbaar beter beantwoord door een sterker model.' end %>
+          <button type="button"
+                  data-action="click->chatbot#openModelSettings"
+                  class="underline font-semibold hover:no-underline focus:outline-none focus:ring-2 focus:ring-amber-400 rounded">
+            <%= case I18n.locale
+                when :fr then 'Choisir un modèle'
+                when :de then 'Modell wählen'
+                when :en then 'Choose a model'
+                else 'Kies een model' end %>
+          </button>
+        </span>
+      </div>
+
+      <% if logged_in? %>
+        <%# ── Credit Deduction Preview - shows exactly what will be charged ── %>
+        <% credits_count = current_user.credits.to_i %>
+        <div class="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1" id="deduction-preview" style="font-variant-numeric: tabular-nums;">
+          <svg class="w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span id="deduction-preview-text">
+            <% cr_s = default_credits > 1 ? 's' : '' %>
+            <% cr_word = case I18n.locale when :fr then "crédit#{cr_s}" when :de then "Credit#{cr_s}" else "credit#{cr_s}" end %>
+            <% if credits_count >= default_credits %>
+              <% if I18n.locale == :fr %>
+                <span class="font-semibold text-amber-600 dark:text-amber-400">−<%= default_credits %> <%= cr_word %></span>
+              <% else %>
+                <span class="font-semibold text-amber-600 dark:text-amber-400">−<%= default_credits %></span> <%= cr_word %>
+              <% end %>
+            <% else %>
+              <a href="<%= credits_path %>" class="font-semibold text-red-500 hover:text-red-600 dark:hover:text-red-400 hover:underline">⚠️ <%= case I18n.locale when :fr then 'crédits insuffisants' when :de then 'unzureichende Credits' when :en then 'insufficient credits' else 'onvoldoende credits' end %></a>
+            <% end %>
+          </span>
+        </div>
+      <% end %>
+      
+      <!-- Single loading indicator with animated progress bar -->
+      <div data-chatbot-target="loading" class="hidden mt-4">
+        <div class="w-full max-w-lg mx-auto">
+          <div class="bg-gray-200 dark:bg-gray-900 rounded-full h-2.5 overflow-hidden relative">
+            <div data-chatbot-target="progressBar" 
+                 class="progress-shimmer h-2.5 rounded-full"></div>
+          </div>
+          <%# FBL-047: polite live region - stage changes are announced, the
+              animated bar itself stays silent so there is no chatter. %>
+          <div data-chatbot-target="progressText"
+               role="status" aria-live="polite"
+               class="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+            <%= case I18n.locale when :fr then 'Traitement en cours...' when :de then 'Wird verarbeitet...' when :en then 'Processing...' else 'Bezig met verwerken...' end %>
+          </div>
+        </div>
+      </div>
+      <style nonce="<%= content_security_policy_nonce %>">
+        /* FBL-047: honor the vestibular-safety preference for the two
+           infinite/looping animations in the composer. */
+        @media (prefers-reduced-motion: reduce) {
+          .progress-shimmer { animation: none; }
+          .message-fade-in { animation: none; opacity: 1; }
+        }
+        /* Progress bar animation */
+        .progress-shimmer {
+          width: 0%;
+          transition: width 0.3s ease-out;
+          background: var(--accent-500);
+          background-size: 200% 100%;
+          animation: progress-move 1.5s linear infinite;
+        }
+        @keyframes progress-move {
+          0% { background-position: 100% 0; }
+          100% { background-position: -100% 0; }
+        }
+        
+        /* Message fade-in animation */
+        .message-fade-in {
+          animation: messageFadeIn 0.3s ease-out forwards;
+        }
+        @keyframes messageFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        /* Send button pulse on hover */
+        .send-button:hover:not(:disabled) {
+          animation: buttonPulse 0.3s ease-out;
+        }
+        @keyframes buttonPulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.02); }
+          100% { transform: scale(1); }
+        }
+        
+        /* ═══════════════════════════════════════════════
+           FORMULA SLIDER - custom range input styling
+           ═══════════════════════════════════════════════ */
+        .formula-slider {
+          -webkit-appearance: none;
+          appearance: none;
+          height: 6px;
+          border-radius: 3px;
+          outline: none;
+          cursor: pointer;
+          /* Filled track gradient using CSS variable */
+          background: linear-gradient(
+            to right,
+            var(--accent-500) 0%,
+            var(--accent-500) var(--slider-pct, 0%),
+            #d1d5db var(--slider-pct, 0%),
+            #d1d5db 100%
+          );
+          transition: background 0.15s ease;
+        }
+        .dark .formula-slider {
+          background: linear-gradient(
+            to right,
+            var(--accent-500) 0%,
+            var(--accent-500) var(--slider-pct, 0%),
+            #374151 var(--slider-pct, 0%),
+            #374151 100%
+          );
+        }
+        /* Thumb */
+        .formula-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: var(--accent-500);
+          border: 2px solid white;
+          box-shadow: 0 0 6px var(--accent-400), 0 2px 4px rgba(0,0,0,0.2);
+          cursor: grab;
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .formula-slider::-webkit-slider-thumb:hover {
+          transform: scale(1.15);
+          box-shadow: 0 0 12px var(--accent-400), 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .formula-slider::-webkit-slider-thumb:active {
+          cursor: grabbing;
+          transform: scale(1.05);
+        }
+        .formula-slider::-moz-range-thumb {
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: var(--accent-500);
+          border: 2px solid white;
+          box-shadow: 0 0 6px var(--accent-400), 0 2px 4px rgba(0,0,0,0.2);
+          cursor: grab;
+        }
+        .dark .formula-slider::-webkit-slider-thumb {
+          border-color: #1f2937;
+        }
+        .dark .formula-slider::-moz-range-thumb {
+          border-color: #1f2937;
+        }
+        /* Disabled slider */
+        .formula-slider:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+        .formula-slider:disabled::-webkit-slider-thumb {
+          cursor: not-allowed;
+          box-shadow: none;
+        }
+
+        /* Notch labels - absolutely positioned at slider stop percentages */
+        .notch-label {
+          background: none;
+          border: none;
+          padding: 2px 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          white-space: nowrap;
+          transition: transform 0.15s ease;
+          max-width: 70px;
+        }
+        /* Model capability filtering must win over the component's flex
+           display rule; otherwise unsupported reasoning stops remain clickable. */
+        #reasoning-controls .notch-label.hidden,
+        #reasoning-controls .notch-label[hidden] {
+          display: none !important;
+          pointer-events: none;
+        }
+        /* Prevent last notch from overflowing container */
+        .notch-label:last-child {
+          transform: translateX(-60%) !important;
+        }
+        .notch-label:first-child {
+          transform: translateX(-40%) !important;
+        }
+        .notch-label:hover:not(:disabled) {
+          transform: translateY(-1px);
+        }
+        .notch-label:hover:not(:disabled) .notch-text {
+          color: var(--accent-500) !important;
+        }
+
+        /* ═══════════════════════════════════════════════
+           FUN THEME - shimmer, glow, icons visible
+           Applied when html does NOT have theme-original or theme-blank
+           ═══════════════════════════════════════════════ */
+        @keyframes formulaShimmer {
+          0% { filter: brightness(1); }
+          50% { filter: brightness(1.15); }
+          100% { filter: brightness(1); }
+        }
+        .formula-slider:not(:disabled) {
+          animation: formulaShimmer 3s ease-in-out infinite;
+        }
+
+        /* ═══════════════════════════════════════════════
+           PROFESSIONAL THEMES - hide icons, no glow, no shimmer
+           Fun themes (original, blue, rose, amber, emerald, violet, fuchsia, pink)
+           keep the emojis visible.
+           ═══════════════════════════════════════════════ */
+        .theme-blank [data-fun-only],
+        .theme-slate [data-fun-only],
+        .theme-indigo [data-fun-only],
+        .theme-sky [data-fun-only],
+        .theme-teal [data-fun-only],
+        .theme-cyan [data-fun-only],
+        .theme-green [data-fun-only],
+        .theme-purple [data-fun-only],
+        .theme-red [data-fun-only] {
+          display: none !important;
+        }
+        .theme-blank .formula-slider,
+        .theme-slate .formula-slider,
+        .theme-indigo .formula-slider,
+        .theme-sky .formula-slider,
+        .theme-teal .formula-slider,
+        .theme-cyan .formula-slider,
+        .theme-green .formula-slider,
+        .theme-purple .formula-slider,
+        .theme-red .formula-slider {
+          animation: none !important;
+        }
+        .theme-blank .formula-slider::-webkit-slider-thumb,
+        .theme-slate .formula-slider::-webkit-slider-thumb,
+        .theme-indigo .formula-slider::-webkit-slider-thumb,
+        .theme-sky .formula-slider::-webkit-slider-thumb,
+        .theme-teal .formula-slider::-webkit-slider-thumb,
+        .theme-cyan .formula-slider::-webkit-slider-thumb,
+        .theme-green .formula-slider::-webkit-slider-thumb,
+        .theme-purple .formula-slider::-webkit-slider-thumb,
+        .theme-red .formula-slider::-webkit-slider-thumb {
+          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        /* Source checkbox hover effect - uses theme accent */
+        .source-checkbox {
+          transition: all 0.15s ease-out;
+        }
+        .source-checkbox:has(input:checked) {
+          background-color: var(--accent-active-bg);
+        }
+        .dark .source-checkbox:has(input:checked) {
+          background-color: var(--accent-active-bg);
+        }
+        /* Custom checkbox (replaces native browser checkbox) */
+        .custom-check {
+          width: 14px;
+          height: 14px;
+          min-width: 14px;
+          border-radius: 3px;
+          border: 1.5px solid #9ca3af;
+          background: #f3f4f6;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.15s ease-out;
+        }
+        .dark .custom-check {
+          border-color: #6b7280;
+          background: #374151;
+        }
+        /* Checked state */
+        .peer:checked ~ .custom-check {
+          background: var(--accent-600-solid);
+          border-color: var(--accent-600-solid);
+        }
+        .peer:checked ~ .custom-check::after {
+          content: '';
+          width: 4px;
+          height: 7px;
+          border: solid white;
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg) translateY(-1px);
+        }
+        /* FBL-047: the real checkbox is sr-only, so keyboard focus needs a
+           visible ring on its custom twin. */
+        .peer:focus-visible ~ .custom-check {
+          outline: 2px solid var(--accent-600-solid);
+          outline-offset: 2px;
+        }
+        /* Disabled/locked checkbox */
+        .custom-check-disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      </style>
+      
+      <!-- Typing indicator (shown in messages area while LLM is generating) -->
+      <div class="hidden p-3 rounded-lg bg-gray-100 dark:bg-[#0f172a] max-w-[85%] shadow-sm"
+           data-chatbot-target="typingIndicator"
+           role="status"
+           aria-label="<%= t('chatbot.thinking', default: 'Aan het nadenken...') %>">
+        <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
+          <div class="flex gap-1" aria-hidden="true">
+            <span class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+            <span class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+            <span class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+          </div>
+          <span><%= t('chatbot.thinking', default: 'Aan het nadenken...') %></span>
+        </div>
+      </div>
+      
+      <p class="mt-3 text-[10px] text-gray-500 dark:text-gray-400" data-translate="disclaimer">
+        <%= case I18n.locale when :fr then 'Ceci n\'est pas un avis juridique officiel. Les modèles IA peuvent faire des erreurs et peuvent halluciner*. Vérifiez toujours auprès des sources officielles.' when :de then 'Dies ist keine offizielle Rechtsberatung. KI-Modelle können Fehler machen und halluzinieren*. Überprüfen Sie immer bei offiziellen Quellen.' when :en then 'This is not official legal advice. AI models can make mistakes and may hallucinate*. Always verify with official sources.' else 'Dit is geen officieel juridisch advies. AI-modellen kunnen fouten maken en kunnen mogelijks hallucineren*. Verifieer informatie altijd bij officiële bronnen.' end %>
+      </p>
+      <p class="text-[10px] text-gray-500 dark:text-gray-400 italic mt-0.5" data-translate="footnote">
+        <%= case I18n.locale when :fr then '*Halluciner: inventer des informations qui semblent correctes mais qui sont fausses ou inexistantes.' when :de then '*Halluzinieren: Erfinden von Informationen, die korrekt erscheinen, aber faktisch falsch oder nicht existent sind.' when :en then '*Hallucinate: inventing information that appears correct but is factually wrong or non-existent.' else '*Hallucineren: het verzinnen van informatie die correct lijkt maar feitelijk onjuist of onbestaand is.' end %>
+        (<a href="https://www.ibm.com/think/topics/ai-hallucinations" target="_blank" class="underline hover:text-gray-600">IBM</a>)
+      </p>
+      <p class="mt-1.5 text-[10px] text-gray-400 dark:text-gray-500" data-translate="legalConsent">
+        <%= case I18n.locale
+            when :fr
+              raw("En utilisant ce chatbot, vous acceptez nos <a href=\"#{terms_of_service_path}\" target=\"_blank\" class=\"underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors\">conditions d'utilisation</a> et notre <a href=\"#{privacy_policy_path}\" target=\"_blank\" class=\"underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors\">politique de confidentialité</a>.")
+            when :de
+              raw("Durch die Nutzung dieses Chatbots stimmen Sie unseren <a href=\"#{terms_of_service_path}\" target=\"_blank\" class=\"underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors\">Nutzungsbedingungen</a> und unserer <a href=\"#{privacy_policy_path}\" target=\"_blank\" class=\"underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors\">Datenschutzerklärung</a> zu.")
+            when :en
+              raw("By using this chatbot you agree to our <a href=\"#{terms_of_service_path}\" target=\"_blank\" class=\"underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors\">terms of service</a> and <a href=\"#{privacy_policy_path}\" target=\"_blank\" class=\"underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors\">privacy policy</a>.")
+            else
+              raw("Door gebruik te maken van deze chatbot gaat u akkoord met onze <a href=\"#{terms_of_service_path}\" target=\"_blank\" class=\"underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors\">gebruiksvoorwaarden</a> en <a href=\"#{privacy_policy_path}\" target=\"_blank\" class=\"underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors\">privacybeleid</a>.")
+          end %>
+      </p>
+    </div>

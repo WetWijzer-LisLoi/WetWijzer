@@ -1,0 +1,61 @@
+<%
+  copy = {
+    nl: {
+      choose: 'Kies een bedrag:',
+      legal: 'Uw donatie is vrijwillig, geeft geen recht op goederen, diensten of andere tegenprestatie en is niet fiscaal aftrekbaar.',
+      checkout: 'De betaling wordt veilig afgehandeld op de betaalpagina van Mollie.',
+      button: 'Doneer %{amount}'
+    },
+    fr: {
+      choose: 'Choisissez un montant :',
+      legal: 'Votre don est volontaire, ne donne droit à aucun bien, service ou autre contrepartie et n’est pas déductible fiscalement.',
+      checkout: 'Le paiement est traité en toute sécurité sur la page de paiement de Mollie.',
+      button: 'Donner %{amount}'
+    },
+    en: {
+      choose: 'Choose an amount:',
+      legal: 'Your donation is voluntary, grants no goods, services, or other consideration, and is not tax-deductible.',
+      checkout: 'Payment is handled securely on Mollie’s hosted checkout page.',
+      button: 'Donate %{amount}'
+    },
+    de: {
+      choose: 'Wählen Sie einen Betrag:',
+      legal: 'Ihre Spende ist freiwillig, gewährt keine Waren, Dienstleistungen oder sonstige Gegenleistung und ist nicht steuerlich absetzbar.',
+      checkout: 'Die Zahlung wird sicher auf der von Mollie gehosteten Zahlungsseite abgewickelt.',
+      button: '%{amount} spenden'
+    }
+  }.fetch(I18n.locale.to_sym, nil) || {
+    choose: 'Kies een bedrag:',
+    legal: 'Uw donatie is vrijwillig, geeft geen recht op goederen, diensten of andere tegenprestatie en is niet fiscaal aftrekbaar.',
+    checkout: 'De betaling wordt veilig afgehandeld op de betaalpagina van Mollie.',
+    button: 'Doneer %{amount}'
+  }
+%>
+
+<div class="my-4" role="group" aria-label="<%= copy[:choose] %>">
+  <p><strong><%= copy[:choose] %></strong></p>
+  <div class="flex flex-wrap gap-2">
+    <% MolliePayment::DONATION_AMOUNTS_CENTS.each do |amount_cents| %>
+      <% amount = number_to_currency(amount_cents / 100.0, unit: '€', precision: 0, format: '%u%n') %>
+      <%= button_to format(copy[:button], amount: amount),
+                    donations_path,
+                    method: :post,
+                    params: { amount_cents: amount_cents },
+                    form: { class: 'inline-block', data: { turbo: false } },
+                    class: 'inline-flex items-center px-4 py-2 text-white rounded-lg font-semibold transition hover:opacity-90',
+                    style: 'background: var(--accent-600-solid);' %>
+    <% end %>
+  </div>
+</div>
+
+<p class="text-sm">
+  <%= copy[:legal] %>
+  <%= copy[:checkout] %>
+  <%= link_to case I18n.locale
+              when :fr then 'Voir les conditions'
+              when :de then 'Bedingungen ansehen'
+              when :en then 'View the terms'
+              else 'Bekijk de voorwaarden'
+              end,
+              terms_of_service_path %>.
+</p>

@@ -1,0 +1,41 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<div class="legal-page">
+<h1>Unterst&uuml;tzen Sie GesetzGuide</h1>
+
+    <div class="highlight">
+        <p><strong>GesetzGuide</strong> macht belgische Gesetzgebung und Rechtsprechung kostenlos durchsuchbar und lesbar &mdash; ohne Konto und ohne Bezahlschranke. Der KI-Chatbot ist eine kostenpflichtige Funktion: bei der Registrierung erhalten Sie <%= RegistrationsController::STARTER_CREDITS %> kostenlose Startcredits, danach sind Credits oder ein Pro-Abonnement erforderlich, denn jede Chatbot-Frage kostet uns beim KI-Anbieter Geld. Die Plattform wird von einer einzigen Person betrieben &mdash; einem Anwalt, der davon &uuml;berzeugt ist, dass das Gesetz selbst nicht hinter einer Bezahlschranke geh&ouml;rt. Um dieses Projekt am Laufen zu halten, brauchen wir Ihre Unterst&uuml;tzung.</p>
+    </div>
+
+    <h2>Warum Ihre Unterst&uuml;tzung wichtig ist</h2>
+    <p>GesetzGuide kostet Geld: Serverkosten, KI-Kosten f&uuml;r jede Chatbot-Frage, Speicherplatz f&uuml;r &uuml;ber 175.000 Gerichtsentscheidungen und die laufende Entwicklung neuer Funktionen. Ihre Unterst&uuml;tzung h&auml;lt das Suchen und Lesen von Gesetzgebung und Rechtsprechung kostenlos und erm&ouml;glicht die Startcredits f&uuml;r neue Nutzer.</p>
+
+    <h2>&#x2B50; GesetzGuide Pro-Abonnement</h2>
+    <p>Die beste M&ouml;glichkeit, GesetzGuide zu unterst&uuml;tzen, ist ein <strong>Pro-Abonnement</strong>. F&uuml;r nur <strong>&euro;2,99/Monat</strong> erhalten Sie:</p>
+    <ul>
+        <li>&#x2B50; Zugang zu <strong>allen Intelligenzstufen</strong> (Genial, Meisterhirn, Allwissend)</li>
+        <li>&#x1F4AC; <strong><%= Subscription::PRO_MONTHLY_CREDITS %> gratis Chatbot-Credits pro Monat</strong> (im Abonnement enthalten)</li>
+        <li>&#x1F4DC; Suche in <strong>parlamentarischen Dokumenten</strong> &uuml;ber den Chatbot</li>
+        <li>&#x1F916; Zugang zu <strong>allen KI-Modellen</strong> (<%= chatbot_all_model_names %>)</li>
+    </ul>
+    <p><%= link_to pricing_path, class: "inline-flex items-center px-4 py-2 text-white rounded-lg font-semibold transition hover:opacity-90", style: "background: var(--accent-600-solid);" do %>
+        <svg class="w-4 h-4 mr-2 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1z"/></svg>
+        GesetzGuide Pro entdecken
+    <% end %></p>
+
+    <h2 id="donate">&#x2615; Einmalig spenden</h2>
+    <p>M&ouml;chten Sie GesetzGuide ohne Abonnement unterst&uuml;tzen? Jeder Beitrag &mdash; egal wie klein &mdash; hilft, die Serverkosten zu decken und die Plattform online zu halten.</p>
+    <%= render 'donations/form' %>
+
+    <h2>&#x1F4E2; Erz&auml;hlen Sie es weiter</h2>
+    <p>Kein Budget? Sie k&ouml;nnen GesetzGuide auch unterst&uuml;tzen, indem Sie das Wort verbreiten:</p>
+    <ul>
+        <li>&#x1F517; Teilen Sie <a href="https://gesetzguide.be">gesetzguide.be</a> mit Kollegen, Studenten und Freunden</li>
+        <li>&#x2B50; Geben Sie uns einen Stern auf <a href="https://github.com/WetWijzer-LisLoi/WetWijzer" target="_blank" rel="noopener">GitHub</a></li>
+        <li>&#x1F4AC; Erw&auml;hnen Sie GesetzGuide in sozialen Medien oder Fachpublikationen</li>
+        <li>&#x1F4DD; Senden Sie uns Ihr Feedback an <a href="mailto:<%= contact_email %>"><%= contact_email %></a></li>
+    </ul>
+
+    <h2>&#x2764;&#xFE0F; Vielen Dank</h2>
+    <p>GesetzGuide existiert dank der Unterst&uuml;tzung unserer Pro-Abonnenten, Spender und Nutzer. Jeder Beitrag &mdash; finanziell oder nicht &mdash; hilft uns, das belgische Recht f&uuml;r alle zug&auml;nglich zu halten.</p>
+
+</div>

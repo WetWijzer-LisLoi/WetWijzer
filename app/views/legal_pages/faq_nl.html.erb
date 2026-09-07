@@ -1,0 +1,565 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<div class="legal-page">
+<h1>Veelgestelde vragen (FAQ)</h1>
+    <p class="last-updated">Laatst bijgewerkt: 9 juni 2026</p>
+
+    <div class="toc">
+        <strong>Inhoud</strong>
+        <ul>
+            <li><a href="#section-1">1. Algemeen</a></li>
+            <li><a href="#section-2">2. Account en registratie</a></li>
+            <li><a href="#section-3">3. AI-chatbot</a></li>
+            <li><a href="#section-4">4. Credits en betalingen</a></li>
+            <li><a href="#section-5">5. WetWijzer Pro</a></li>
+            <li><a href="#section-6">6. Rechtspraak en persoonsgegevens</a></li>
+            <li><a href="#section-7">7. Privacy en gegevensbescherming</a></li>
+            <li><a href="#section-8">8. AI-prestaties en kwaliteitscontrole</a></li>
+            <li><a href="#section-9">9. Technisch</a></li>
+            <li><a href="#section-10">10. Contact en ondersteuning</a></li>
+        </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 1: GENERAL (5 Q&As) -->
+    <!-- ============================================================ -->
+    <h2 id="section-1">1. Algemeen</h2>
+
+    <details>
+        <summary>Wat is WetWijzer?</summary>
+        <div>
+            <p>WetWijzer is een onofficieel zoek- en informatieplatform voor Belgische wetgeving. Het biedt doorzoekbare databanken van wetten, decreten, ordonnanties, rechtspraak en parlementaire stukken, aangevuld met een AI-chatbot die vragen over Belgisch recht beantwoordt.</p>
+            <p>De dienst is ook beschikbaar als <a href="https://lisloi.be">LisLoi</a> (Franstalig) en <a href="https://gesetzguide.be">GesetzGuide</a> (Duitstalig) en <a href="https://lexlibera.be">LexLibera</a> (Engelstalig).</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Is WetWijzer een officieel overheidsinitiatief?</summary>
+        <div>
+            <p>Nee. WetWijzer is onafhankelijk van de Belgische overheid, de rechterlijke macht, de Orde van Vlaamse Balies en alle andere offici&euml;le instanties. De informatie op het platform is afkomstig van publieke bronnen zoals het Belgisch Staatsblad, Justel, Reflex, JuPortal en EUR-Lex.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Is de informatie op WetWijzer juridisch advies?</summary>
+        <div>
+            <p><strong>Nee.</strong> Alle informatie op WetWijzer, inclusief de antwoorden van de AI-chatbot, is uitsluitend bedoeld voor algemene informatieve doeleinden. Er wordt geen advocaat-cli&euml;ntrelatie gecre&euml;erd. Raadpleeg altijd een gekwalificeerde advocaat of juridisch adviseur voor uw specifieke situatie.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Is WetWijzer gratis te gebruiken?</summary>
+        <div>
+            <p>Het zoeken in de wetgevingsdatabank is volledig gratis en vereist geen account. Voor de chatbot ontvangt u bij registratie <strong><%= RegistrationsController::STARTER_CREDITS %> gratis startcredits</strong>. Aanvullende credits kunnen worden gekocht, of u kunt een WetWijzer Pro-abonnement nemen voor uitgebreide functionaliteit.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>In welke talen is WetWijzer beschikbaar?</summary>
+        <div>
+            <p>De interface is beschikbaar in het Nederlands, Frans, Duits en Engels. De AI-chatbot beantwoordt vragen in de taal die u selecteert. De wetgevingsdatabank bevat teksten in hun oorspronkelijke publicatietaal.</p>
+        </div>
+    </details>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 2: ACCOUNT (4 Q&As) -->
+    <!-- ============================================================ -->
+    <h2 id="section-2">2. Account en registratie</h2>
+
+    <details>
+        <summary>Heb ik een account nodig?</summary>
+        <div>
+            <p>Het doorzoeken van de wetgevingsdatabank vereist geen account. Een account is vereist om de chatbot te gebruiken. Een account is ook nodig om:</p>
+            <ul>
+                <li>Credits aan te kopen</li>
+                <li>Een WetWijzer Pro-abonnement te nemen</li>
+                <li>Bladwijzers op te slaan</li>
+                <li>Voorkeuren permanent te bewaren</li>
+                <li>Gesprekken op te slaan in uw profiel</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Welke gegevens zijn nodig voor registratie?</summary>
+        <div>
+            <p>Alleen een e-mailadres en wachtwoord. Uw naam is optioneel. Wij vragen niet om telefoonnummer, adres of andere persoonsgegevens.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Hoe verwijder ik mijn account?</summary>
+        <div>
+            <p>U kunt uw account verwijderen via de accountpagina. Na het bevestigen wordt uw account gepland voor definitieve wissing na 30 dagen. Gedurende deze periode kunt u contact opnemen om de verwijdering te annuleren. Na 30 dagen worden alle persoonsgegevens onherroepelijk gewist.</p>
+            <p>Niet-gebruikte credits worden bij verwijdering niet gerestitueerd.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Wat gebeurt er als ik mijn e-mail niet bevestig?</summary>
+        <div>
+            <p>Onbevestigde accounts worden na 72 uur automatisch verwijderd. U kunt zich daarna opnieuw registreren.</p>
+        </div>
+    </details>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 3: CHATBOT (6 Q&As) -->
+    <!-- ============================================================ -->
+    <h2 id="section-3">3. AI-chatbot</h2>
+
+    <details>
+        <summary>Hoe werkt de AI-chatbot?</summary>
+        <div>
+            <p>De chatbot gebruikt Retrieval-Augmented Generation (RAG): uw vraag wordt eerst vergeleken met de Belgische wetgevingsdatabank om relevante wetsartikelen te vinden, waarna een groot taalmodel (LLM) een antwoord formuleert op basis van die bronnen.</p>
+            <p>Dit verbetert de nauwkeurigheid in vergelijking met een standaard chatbot, maar elimineert niet alle risico's op onjuistheden.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Wat zijn de intelligentieniveaus?</summary>
+        <div>
+            <%= render 'legal_pages/chatbot_pricing_table', locale: :nl %>
+            <p>Geselecteerde modellen van het Slim-niveau zijn beschikbaar voor elke gebruiker met een account; bij registratie ontvangt u <%= RegistrationsController::STARTER_CREDITS %> gratis startcredits om de chatbot te testen. Welke Slim-modellen gratis zijn, staat op de prijzenpagina en kan wijzigen. De overige Slim-modellen en de niveaus Geniaal, Meesterbrein en Alwetend zijn exclusief voor Pro-abonnees.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Hoe wordt de redeneringsdiepte bepaald?</summary>
+        <div>
+            <p>De beschikbare keuzes hangen af van het gekozen model. Mistral Small 4 biedt Snel en Diepgaand; modellen waarvan de provider drie inspanningsniveaus ondersteunt bieden ook Gebalanceerd. De ingestelde toeslagen zijn <strong><%= chatbot_reasoning_surcharge_list %> credits</strong>. Een toeslag wordt alleen aangerekend wanneer het model de gekozen modus ondersteunt en gebruikt; het exacte totaal staat vóór verzending in beeld.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Kan ik de chatbot-antwoorden vertrouwen?</summary>
+        <div>
+            <p><strong>Nee, niet zonder verificatie.</strong> De AI-chatbot kan:</p>
+            <ul>
+                <li>Onjuiste informatie presenteren als feit (&quot;hallucinaties&quot;)</li>
+                <li>Verouderde wetgeving citeren</li>
+                <li>Juridische concepten verkeerd interpreteren</li>
+                <li>Niet-bestaande wetten of artikelen noemen</li>
+            </ul>
+            <p>Controleer antwoorden altijd met de offici&euml;le bronnen of raadpleeg een juridisch professional. Het geniale niveau levert doorgaans nauwkeurigere antwoorden dan het eenvoudige niveau.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Wat is het verschil tussen de chatbot en Google?</summary>
+        <div>
+            <p>De WetWijzer-chatbot is specifiek getraind op en gekoppeld aan de Belgische wetgevingsdatabank. In tegenstelling tot een generieke zoekmachine:</p>
+            <ul>
+                <li>Doorzoekt de chatbot rechtstreeks de volledige tekst van Belgische wetten, decreten en ordonnanties</li>
+                <li>Citeert de chatbot specifieke wetsartikelen met bronvermelding</li>
+                <li>Formuleert de chatbot een samenhangend antwoord in plaats van een lijst met links</li>
+                <li>Kan iedereen de rechtspraakdatabank en de parlementaire stukken op de site gratis doorzoeken; via de chatbot zijn rechtspraak en parlementaire stukken voorbehouden aan Pro-abonnees</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Worden mijn chatbot-gesprekken opgeslagen?</summary>
+        <div>
+            <p><strong>Standaard bewaren wij uw gesprekken niet.</strong> Schakelt u geschiedenis in mét een opslagwachtwoord, dan wordt alleen de opgeslagen kopie in uw browser versleuteld (AES-256-GCM) vóór verzending. Wij ontvangen dan cijfertekst en een met uw wachtwoord versleutelde mastersleutel en kunnen die opgeslagen inhoud zonder dat wachtwoord niet ontsleutelen. Slaat u geschiedenis op zonder opslagwachtwoord, dan is zij op onze server versleuteld maar beheren wij de sleutel en kunnen wij de opgeslagen inhoud lezen.</p>
+            <p>Uw actuele vraag en relevante recente context worden voor beantwoording altijd tijdelijk in leesbare vorm verwerkt door WetWijzer, Azure OpenAI voor retrieval (en bij Diep zoeken eventueel Mistral Small voor HyDE-verrijking) en de geselecteerde antwoordprovider. Er wordt geen ongeversleutelde gespreksinhoud in <code>localStorage</code> of <code>sessionStorage</code> bewaard.</p>
+            <p>Onze analytische database bewaart aan uw account gekoppelde pseudonieme metadata (rechtsgebied, taal, intelligentieniveau, credits), maar geen leesbare vraagtekst en geen vraagvingerafdruk.</p>
+            <p>Zie ons <a href="/privacy-policy">privacybeleid (sectie 3.4)</a> voor alle details.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Waar worden mijn vragen verwerkt?</summary>
+        <div>
+            <p><%= chatbot_processing_location_summary(:nl) %></p>
+        </div>
+    </details>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 4: CREDITS (5 Q&As) -->
+    <!-- ============================================================ -->
+    <h2 id="section-4">4. Credits en betalingen</h2>
+
+    <details>
+        <summary>Wat zijn credits?</summary>
+        <div>
+            <p>Credits zijn digitale tegoeden waarmee u de AI-chatbot kunt raadplegen. De basisprijs hangt af van het gekozen model; ondersteund optioneel redeneren kan een toeslag toevoegen:</p>
+            <%= render 'legal_pages/chatbot_pricing_table', locale: :nl %>
+        </div>
+    </details>
+
+    <details>
+        <summary>Hoeveel gratis credits krijg ik?</summary>
+        <div>
+            <p>Bij registratie ontvangt elke gebruiker <strong><%= RegistrationsController::STARTER_CREDITS %> gratis startcredits</strong>. Aanvullende credits kunnen worden gekocht. Geniaal, Meesterbrein en Alwetend vereisen een Pro-abonnement.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Verlopen credits?</summary>
+        <div>
+            <p>Nee. Alle credits zijn permanent en vervallen nooit, ongeacht of ze afkomstig zijn van uw maandelijkse Pro-toewijzing, gekochte pakketten of startcredits.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Kan ik credits terugkrijgen?</summary>
+        <div>
+            <p>Credits zijn niet restitueerbaar. Wordt een betaling terugbetaald of teruggeboekt (chargeback), dan worden de met die betaling toegekende credits evenredig teruggenomen; het saldo kan daardoor tijdelijk negatief worden en wordt met volgende aankopen verrekend. Bij een technische storing waardoor credits ten onrechte zijn afgeschreven, kunt u contact opnemen via <a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a> en schrijven wij de credits handmatig bij.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Welke betaalmethoden worden aanvaard?</summary>
+        <div>
+            <p>Via Mollie worden gangbare betaalmethoden aangeboden, waaronder Bancontact, debet- en kredietkaarten en andere Europese betaalmethoden. Wij slaan geen kaart- of bankgegevens op; de betaling wordt via de beveiligde Mollie-checkout verwerkt.</p>
+        </div>
+    </details>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 5: PRO (8 Q&As - value proposition) -->
+    <!-- ============================================================ -->
+    <h2 id="section-5">5. WetWijzer Pro</h2>
+
+    <details>
+        <summary>Wat biedt WetWijzer Pro?</summary>
+        <div>
+            <table>
+                <tr>
+                    <th>Kenmerk</th>
+                    <th>Gratis account</th>
+                    <th>WetWijzer Pro (&euro;2,99/maand)</th>
+                </tr>
+                <tr>
+                    <td>Wetgeving zoeken</td>
+                    <td>Onbeperkt</td>
+                    <td>Onbeperkt</td>
+                </tr>
+                <tr>
+                    <td>Chatbot-credits</td>
+                    <td><%= RegistrationsController::STARTER_CREDITS %> startcredits</td>
+                    <td><strong><%= Subscription::PRO_MONTHLY_CREDITS %> per maand</strong> + bijkoopbaar</td>
+                </tr>
+                <tr>
+                    <td>Intelligentieniveaus</td>
+                    <td>Slim (geselecteerde modellen)</td>
+                    <td><strong>Alle 4 niveaus</strong> incl. Geniaal, Meesterbrein en Alwetend</td>
+                </tr>
+                <tr>
+                    <td>AI-modellen</td>
+                    <td><%= chatbot_model_names_for_access(:free) %></td>
+                    <td><strong>Alle modellen</strong> (<%= chatbot_all_model_names %>)</td>
+                </tr>
+                <tr>
+                    <td>Rechtspraakdatabank</td>
+                    <td>✅ 175.000+ gepseudonimiseerde arresten</td>
+                    <td>✅ 175.000+ gepseudonimiseerde arresten</td>
+                </tr>
+                <tr>
+                    <td>Rechtspraak via chatbot</td>
+                    <td>❌</td>
+                    <td>✅</td>
+                </tr>
+                <tr>
+                    <td>Parlementaire stukken (databank)</td>
+                    <td>✅ Browsen</td>
+                    <td>✅ Browsen</td>
+                </tr>
+                <tr>
+                    <td>Parlementaire stukken via chatbot</td>
+                    <td>❌</td>
+                    <td>✅</td>
+                </tr>
+
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>Waarom zou ik upgraden naar Pro?</summary>
+        <div>
+            <p>WetWijzer Pro is ontworpen voor iedereen die regelmatig juridisch onderzoek doet. De belangrijkste redenen om te upgraden:</p>
+            <ul>
+                <li><strong>Premium AI:</strong> Geniaal (<%= chatbot_model_names_for_level(:genius, :nl) %>), Meesterbrein (<%= chatbot_model_names_for_level(:mastermind, :nl) %>) en Alwetend (<%= chatbot_model_names_for_level(:omniscient, :nl) %>) bieden de krachtigere opties.</li>
+                <li><strong>Alle AI-modellen:</strong> Pro-abonnees krijgen toegang tot alle geconfigureerde modellen: <%= chatbot_all_model_names %>. Vergelijk resultaten en kies het model dat het beste werkt voor uw specifieke vraag.</li>
+                <li><strong>Rechtspraak via de chatbot:</strong> laat de chatbot ook zoeken in de rechtspraakdatabank (175.000+ gepseudonimiseerde arresten) en relevante arresten aanhalen in zijn antwoord. De databank zelf blijft op de site gratis te doorzoeken voor iedereen.</li>
+                <li><strong>Parlementaire stukken:</strong> laat de chatbot ook zoeken in Kamer-, Senaat-, Vlaams Parlement- en Waals Parlement-documenten voor de wetgevingsgeschiedenis achter een wet.</li>
+                <li><strong>Betaalbaar:</strong> <%= Subscription::PRO_MONTHLY_CREDITS %> gratis credits per maand plus bijkoopmogelijkheid.</li>
+                <li><strong>Korting op creditpakketten:</strong> Pro-abonnees krijgen 30% korting op extra creditpakketten.</li>
+                <li><strong>Lage prijs:</strong> &euro;2,99 per maand is een fractie van de kosten van vergelijkbare juridische databanken.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Voor wie is WetWijzer Pro bedoeld?</summary>
+        <div>
+            <ul>
+                <li><strong>Advocaten en juristen:</strong> snel wetsartikelen en relevante rechtspraak opzoeken, jurisprudentie doorzoeken, en juridische vragen laten beantwoorden met bronvermelding.</li>
+                <li><strong>Rechtenstudenten:</strong> examenvoorbereiding, scriptiemateriaal opzoeken, en juridische concepten verkennen met een AI-assistent die de volledige Belgische wetgeving doorzocht.</li>
+                <li><strong>Bedrijfsjuristen en compliance officers:</strong> snel specifieke regelgeving vinden en de wetgevingsgeschiedenis raadplegen.</li>
+                <li><strong>Notarissen, vastgoedprofessionals en ambtenaren:</strong> snelle toegang tot de actuele wetteksten en relevante arresten.</li>
+                <li><strong>Geïnteresseerde burgers:</strong> wie diepgaander wil begrijpen welke wetten van toepassing zijn op een specifieke situatie.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Hoeveel kost WetWijzer Pro?</summary>
+        <div>
+            <p>&euro;2,99 per maand, inclusief BTW. Het abonnement wordt maandelijks verlengd en kan op elk moment worden opgezegd. Er is geen jaarcontract of opzegtermijn.</p>
+            <p>Ter vergelijking: commerci&euml;le juridische databanken zoals Jura of Strada lex kosten doorgaans honderden euro's per maand.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Kan ik Pro eerst uitproberen?</summary>
+        <div>
+            <p>Met de <%= RegistrationsController::STARTER_CREDITS %> startcredits bij registratie kunt u de chatbot al direct testen op de geselecteerde Slim-modellen. De rechtspraakdatabank en de parlementaire stukken kunt u op de site gratis doorzoeken. Pro voegt daar de niveaus Geniaal, Meesterbrein en Alwetend aan toe, plus rechtspraak en parlementaire stukken via de chatbot. Aangezien Pro maandelijks opzegbaar is zonder opzegtermijn, kunt u het risicovrij &eacute;&eacute;n maand uitproberen voor slechts &euro;2,99.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Hoe zeg ik mijn Pro-abonnement op?</summary>
+        <div>
+            <p>U kunt op elk moment opzeggen via uw accountpagina. Het abonnement blijft actief tot het einde van de lopende factureringsperiode. Er vindt geen restitutie plaats bij tussentijdse opzegging, maar u behoudt alle Pro-functionaliteit tot het einde van de periode.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Wat gebeurt er met mijn credits als ik opzeg?</summary>
+        <div>
+            <p>Alle credits blijven beschikbaar, ook na opzegging van uw Pro-abonnement. U ontvangt niet langer uw maandelijkse <%= Subscription::PRO_MONTHLY_CREDITS %> gratis credits en u verliest de toegang tot de Pro-modellen van het Slim-niveau, tot de niveaus Geniaal, Meesterbrein en Alwetend en tot rechtspraak en parlementaire stukken via de chatbot. De rechtspraakdatabank zelf blijft op de site gratis te doorzoeken voor iedereen.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Ontvang ik een factuur?</summary>
+        <div>
+            <p>Ja. Na elke betaling ontvangt u een factuur via e-mail. Zakelijke klanten met een Belgisch BTW-nummer ontvangen facturen via het PEPPOL-netwerk conform de Belgische wet inzake verplichte B2B e-facturatie.</p>
+        </div>
+    </details>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 6: CASE LAW & PD (6 Q&As) -->
+    <!-- ============================================================ -->
+    <h2 id="section-6">6. Rechtspraak en persoonsgegevens</h2>
+
+    <details>
+        <summary>Wat bevat de rechtspraakdatabank?</summary>
+        <div>
+            <p>De rechtspraakdatabank bevat gepubliceerde rechterlijke uitspraken van Belgische rechtbanken, afkomstig van JuPortal. Alle uitspraken worden v&oacute;&oacute;r publicatie op ons platform automatisch gepseudonimiseerd.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Wat betekent pseudonimisering van arresten?</summary>
+        <div>
+            <p>Wij verwerken alle rechterlijke uitspraken automatisch met Named Entity Recognition (NER) in het Nederlands en het Frans. Dit systeem:</p>
+            <ul>
+                <li><strong>Vervangt persoonsnamen door initialen</strong> &mdash; bijv. &quot;Jan Peeters&quot; wordt &quot;J. P.&quot;</li>
+                <li><strong>Verwijdert of maskeert</strong> e-mailadressen, telefoonnummers, rijksregisternummers en IBAN-nummers</li>
+            </ul>
+            <p>Het resultaat is dat u in de meeste arresten alleen initialen ziet in plaats van volledige namen.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Ik herken mijn initialen in een arrest. Zijn dat mijn persoonsgegevens?</summary>
+        <div>
+            <p>Wanneer u in een arrest initialen aantreft (bijv. &quot;J. P.&quot;), dan is dat het resultaat van onze pseudonimisering. Initialen alleen zijn doorgaans niet direct herleidbaar tot een natuurlijk persoon. Zij vormen echter wel een <strong>pseudoniem</strong> in de zin van de AVG: in combinatie met de overige context in het arrest (datum, rechtbank, feiten) kan een betrokken partij zichzelf mogelijk herkennen.</p>
+            <p>Indien u zich herkent in een gepseudonimiseerd arrest en u wenst dat het arrest verder wordt aangepast of verwijderd van het platform, kunt u een verzoek indienen (zie hieronder).</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Ik vind mijn volledige naam in een arrest. Hoe kan dat?</summary>
+        <div>
+            <p>Ondanks onze automatische NER-verwerking kan het voorkomen dat bepaalde namen niet correct zijn gedetecteerd en dus <strong>niet gepseudonimiseerd</strong> zijn. Dit kan gebeuren bij:</p>
+            <ul>
+                <li>Ongebruikelijke naamstructuren of spellingen</li>
+                <li>Namen die samenvallen met gewone woorden</li>
+                <li>Technische verwerkingsfouten bij het parsen van het oorspronkelijke document</li>
+            </ul>
+            <p><strong>Wij betreuren dit.</strong> Het betreft een tekortkoming van het automatische proces, niet een bewuste keuze. U kunt een verwijderingsverzoek indienen en wij zullen uw gegevens zo snel mogelijk aanvullend maskeren.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Hoe vraag ik verwijdering van mijn persoonsgegevens uit een arrest aan?</summary>
+        <div>
+            <p>Stuur een e-mail naar <a href="mailto:privacy@wetwijzer.be">privacy@wetwijzer.be</a> met:</p>
+            <ul>
+                <li>Uw naam</li>
+                <li>Het ECLI-nummer van het arrest (te vinden bovenaan het arrest op onze website)</li>
+                <li>Een beschrijving van de aangetroffen persoonsgegevens (initialen, volledige naam, adres, etc.)</li>
+            </ul>
+            <p>Wij behandelen uw verzoek binnen <strong>30 dagen</strong> conform Art. 17 AVG. Mogelijke maatregelen zijn:</p>
+            <ul>
+                <li>Aanvullende pseudonimisering van de resterende persoonsgegevens</li>
+                <li>Volledige verwijdering van het arrest van ons platform</li>
+            </ul>
+            <p class="small">Wij zijn niet de oorspronkelijke uitgever van het arrest. Verwijdering van ons platform betekent niet dat het arrest wordt verwijderd uit de oorspronkelijke bron (JuPortal). Voor verwijdering bij de bron kunt u zich wenden tot de betreffende rechtbank of JuPortal.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Waarom worden arresten niet ge&iuml;ndexeerd door zoekmachines?</summary>
+        <div>
+            <p>Gerechtelijke uitspraken bevatten potentieel gevoelige persoonsgegevens. Hoewel de rechtspraakdatabank gratis toegankelijk is voor iedereen, nemen wij de volgende maatregelen om verantwoord met deze gegevens om te gaan:</p>
+            <ul>
+                <li>Arresten worden niet ge&iuml;ndexeerd door zoekmachines (noindex, robots.txt)</li>
+                <li>Alle arresten worden automatisch gepseudonimiseerd (NER)</li>
+                <li>Bij misbruik kan de toegang worden ingetrokken</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 7: PRIVACY (5 Q&As) -->
+    <!-- ============================================================ -->
+    <h2 id="section-7">7. Privacy en gegevensbescherming</h2>
+
+    <details>
+        <summary>Welke gegevens verzamelt WetWijzer?</summary>
+        <div>
+            <p>Wij verzamelen minimale gegevens:</p>
+            <ul>
+                <li><strong>Zonder account:</strong> standaard serverlogboeken (IP-adres, User-Agent) voor beveiligingsdoeleinden, bewaard voor 90 dagen. De browser kan uitsluitend beperkte functionele PWA-gegevens bewaren: een statische offlinepagina in Cache Storage en, nadat u de installatiemelding sluit of de app installeert, een tijdstempel in localStorage die na 30 dagen bij de eerstvolgende opening wordt verwijderd. Er wordt geen leesbare gespreksinhoud in die opslag geplaatst.</li>
+                <li><strong>Met account:</strong> e-mailadres, optionele naam, taalvoorkeur, creditgebruik, bladwijzers en UI-voorkeuren (serveropslag)</li>
+                <li><strong>Chatbot-gebruik:</strong> aan uw account gekoppelde pseudonieme metadata (waaronder rechtsgebied, taal, model, credits, kosten en responstijd), maar geen leesbare vraagtekst of vraagvingerafdruk.</li>
+            </ul>
+            <p>Zie ons volledige <a href="/privacy-policy">privacybeleid</a>.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Kan de beheerder zien wat ik aan de chatbot vraag?</summary>
+        <div><p><strong>Tijdens de beantwoording wordt uw actuele vraag tijdelijk in leesbare vorm verwerkt</strong> door WetWijzer, Azure OpenAI voor retrieval, bij Diep zoeken eventueel Mistral Small voor HyDE-verrijking, en de geselecteerde antwoordprovider. Standaard bewaren wij die inhoud daarna niet. Voor geschiedenis die u mét een opslagwachtwoord bewaart, ontvangt de server alleen cijfertekst en een versleutelde mastersleutel; zonder het opslagwachtwoord kunnen wij die opgeslagen kopie niet ontsleutelen. Geschiedenis die u zonder opslagwachtwoord bewaart, kunnen wij wel lezen omdat wij de serversleutel beheren. Onze analytische database (<code>chatbot_analytics</code>) bewaart geen leesbare vraagtekst en geen vraagvingerafdruk.</p></div>
+            <div><p><strong>Uitzondering - Melden:</strong> Wanneer u op de knop <em>Melden</em> (🚩) klikt bij een antwoord, worden zowel uw vraag als het antwoord doorgestuurd naar de beheerder voor kwaliteitscontrole. Dit wordt duidelijk aangegeven in de interface vóórdat u bevestigt. Het melden is volledig vrijwillig.</p></div>
+        </div>
+    </details>
+
+    <details>
+        <summary>Gebruikt WetWijzer cookies?</summary>
+        <div>
+            <p>Voor beveiligde formulieren plaatsen wij een strikt noodzakelijke, versleutelde browsersessiecookie (<code>_wetwijzer_csrf_session</code>). Die bevat uitsluitend CSRF-beveiligingsstaat en geen authenticatie-, bedrijfs- of trackinggegevens. Na het inloggen gebruikt WetWijzer daarnaast een ondertekende authenticatiecookie (<code>session_token</code>). Buiten de EU/EER/Zwitserland/Verenigd Koninkrijk kan na de eenmalige beveiligingscontrole tijdelijk een functionele verificatiecookie worden geplaatst, zoals uitgelegd in het privacybeleid.</p>
+            <p><strong>Beperkte functionele browseropslag:</strong> de PWA bewaart uitsluitend de statische offlinepagina in Cache Storage. Als u de installatiemelding sluit of de app installeert, onderdrukt een tijdstempel in localStorage de melding gedurende 30 dagen. Omdat de app die opslag alleen kan opruimen wanneer zij wordt geopend, kunnen de bytes na die termijn blijven staan totdat u de app opnieuw opent; dan wordt de vervallen tijdstempel verwijderd. Die opslag bevat geen vraagtekst, antwoordtekst, tracking-ID of advertentieprofiel. Wij gebruiken geen tracking-cookies, advertentiecookies of Google Analytics.</p>
+            <p>Voor websitestatistieken gebruiken wij Umami, een open-source privacyvriendelijke oplossing die geen cookies plaatst en geen persoonsgegevens verzamelt.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Waar worden mijn gegevens opgeslagen?</summary>
+        <div>
+            <p>Al uw gegevens worden verwerkt binnen de EU/EER:</p>
+            <ul>
+                <li><strong>Applicatieservers:</strong> Duitsland (Hetzner)</li>
+                <li><strong>AI-verwerking:</strong> <%= chatbot_processing_location_summary(:nl) %></li>
+                <li><strong>Betalingen:</strong> Nederland (Mollie B.V.)</li>
+                <li><strong>E-mail:</strong> Zwitserland (Migadu, adequaatheidsbesluit)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Wat zijn mijn rechten onder de AVG?</summary>
+        <div>
+            <p>U heeft recht op inzage, rectificatie, wissing, beperking, overdraagbaarheid en bezwaar. U kunt deze rechten uitoefenen door een e-mail te sturen naar <a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a> of door uw account te verwijderen via de accountpagina. Wij reageren binnen 30 dagen.</p>
+            <p>U kunt ook een klacht indienen bij de <a href="https://www.gegevensbeschermingsautoriteit.be">Gegevensbeschermingsautoriteit</a>.</p>
+        </div>
+    </details>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 8: AI PERFORMANCE (benchmark data) -->
+    <!-- ============================================================ -->
+    <h2 id="section-8">8. AI-prestaties en kwaliteitscontrole</h2>
+
+    <details>
+        <summary>Hoe goed presteren de AI-modellen?</summary>
+        <div>
+            <p>De kwaliteit verschilt per vraag, beschikbare bronnen en redeneerstand. Daarom publiceren wij geen vaste kwaliteitsscore of rangschikking zonder een actuele, volledig geverifieerde benchmark.</p>
+            <p>WetWijzer herijkt de aangeboden modellen momenteel op een grotere steekproef van Belgische juridische vragen, met bijzondere aandacht voor brongetrouwheid, correcte citaten en hallucinaties. Behandel elk AI-antwoord intussen als een startpunt en controleer de gekoppelde officiële bronnen.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Welke opties zijn beschikbaar?</summary>
+        <div>
+            <p><strong>Dagelijks gebruik:</strong> Slim (<%= chatbot_base_credit_range_for(:smart, :nl) %> basis) - de laagste creditkost.</p>
+            <p><strong>Diepgaande analyse:</strong> Geniaal (<%= chatbot_base_credit_range_for(:genius, :nl) %> basis) - <%= chatbot_model_names_for_level(:genius, :nl) %>.</p>
+            <p><strong>Uitgebreide analyse:</strong> Meesterbrein (<%= chatbot_base_credit_range_for(:mastermind, :nl) %> basis) - <%= chatbot_model_names_for_level(:mastermind, :nl) %>.</p>
+            <p><strong>Alternatief modelperspectief:</strong> Alwetend (<%= chatbot_base_credit_range_for(:omniscient, :nl) %> basis) - <%= chatbot_model_names_for_level(:omniscient, :nl) %>.</p>
+            <div class="highlight">
+                <strong>Tip:</strong> De beschikbare redeneringsopties hangen af van het gekozen model. Ondersteunde modi kosten <%= chatbot_reasoning_surcharge_list %> credits extra; het exacte totaal staat vóór verzending in beeld.
+            </div>
+        </div>
+    </details>
+
+    <details>
+        <summary>Hoe worden de AI-modellen getest?</summary>
+        <div>
+            <p>Wij gebruiken een versiebeheerde steekproef met vragen uit verschillende Belgische rechtsgebieden en moeilijkheidsniveaus:</p>
+            <ul>
+                <li><strong>Brongetrouwheid:</strong> ondersteunen de gekoppelde officiële bronnen de juridische beweringen?</li>
+                <li><strong>Citaten:</strong> bestaan aangehaalde wetsartikelen en citaten werkelijk en zijn ze correct weergegeven?</li>
+                <li><strong>Volledigheid en relevantie:</strong> beantwoordt het model de vraag zonder onbewezen details toe te voegen?</li>
+            </ul>
+            <p>Dezelfde vragen worden per model en redeneringsstand uitgevoerd. Geautomatiseerde controles worden aangevuld met handmatige verificatie; conclusies worden pas gepubliceerd nadat de volledige steekproef is afgerond.</p>
+        </div>
+    </details>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 9: TECHNICAL -->
+    <!-- ============================================================ -->
+    <h2 id="section-9">9. Technisch</h2>
+
+    <details>
+        <summary>Is WetWijzer open source?</summary>
+        <div>
+            <p>Ja. De broncode is beschikbaar op <a href="https://github.com/WetWijzer-LisLoi/WetWijzer">GitHub</a> onder de MIT-licentie. Iedereen kan de code inzien, verifi&euml;ren en bijdragen.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Welke browsers worden ondersteund?</summary>
+        <div>
+            <p>WetWijzer werkt in alle moderne browsers: Chrome, Firefox, Safari en Edge. Internet Explorer wordt niet ondersteund.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Hoe actueel is de wetgevingsdatabank?</summary>
+        <div>
+            <p>De databank wordt regelmatig bijgewerkt op basis van het Belgisch Staatsblad en andere offici&euml;le bronnen. Wij streven naar actualiteit, maar kunnen niet garanderen dat alle teksten de meest recente geconsolideerde versie bevatten. Controleer bij twijfel altijd de offici&euml;le publicatie via <a href="https://www.ejustice.just.fgov.be">Justel</a>.</p>
+        </div>
+    </details>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 10: CONTACT (3 Q&As) -->
+    <!-- ============================================================ -->
+    <h2 id="section-10">10. Contact en ondersteuning</h2>
+
+    <details>
+        <summary>Hoe kan ik contact opnemen?</summary>
+        <div>
+            <p>U kunt ons bereiken via:</p>
+            <ul>
+                <li><strong>Algemene vragen:</strong> <a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a></li>
+                <li><strong>Privacyverzoeken en verwijdering persoonsgegevens uit rechtspraak:</strong> <a href="mailto:privacy@wetwijzer.be">privacy@wetwijzer.be</a></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Kan ik WetWijzer financieel steunen?</summary>
+        <div>
+            <p>Ja. Naast het kopen van credits of een Pro-abonnement kunt u een vrijwillige donatie doen via onze <%= link_to 'donatiepagina', support_page_path(anchor: 'donate') %>. Donaties zijn niet-terugbetaalbaar, geven geen recht op een tegenprestatie en zijn niet fiscaal aftrekbaar. Elke bijdrage helpt ons de wetgevingsdatabank gratis toegankelijk te houden.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Ik heb een bug gevonden. Waar kan ik dit melden?</summary>
+        <div>
+            <p>U kunt bugs melden via e-mail (<a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a>) of door een issue aan te maken op onze <a href="https://github.com/WetWijzer-LisLoi/WetWijzer/issues">GitHub repository</a>. Voor beveiligingsproblemen kunt u ons bereiken via <a href="mailto:security@wetwijzer.be">security@wetwijzer.be</a> (zie ook ons <a href="/.well-known/security.txt">security.txt</a>-bestand).</p>
+        </div>
+    </details>
+</div>

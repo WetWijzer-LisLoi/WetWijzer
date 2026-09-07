@@ -1,0 +1,51 @@
+  <div class="mb-3">
+    <div class="flex items-center gap-3">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2" data-translate="title">
+        <%= site_name %> <%= case I18n.locale when :fr then 'Chatbot Juridique' when :de then 'Juristischer Chatbot' when :en then 'Legal Chatbot' else 'Juridische Chatbot' end %>
+      </h1>
+      <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold tracking-wide capitalize
+                   bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300
+                   border border-amber-300 dark:border-amber-600/50 shadow-sm
+                   animate-pulse-slow mb-2">
+        <%= case I18n.locale when :fr then 'Version alpha' when :de then 'Alpha-Version' when :en then 'Alpha version' else 'Alfaversie' end %>
+      </span>
+    </div>
+
+    <%# One collapsed notice row: the alpha warning stays visible, the full
+        privacy and international text lives behind the disclosure. %>
+    <details class="chatbot-notice">
+      <summary>
+        <span class="chatbot-notice-flag">⚠</span>
+        <span><%= case I18n.locale
+             when :fr then 'Version alpha · confidentialité et infos internationales'
+             when :de then 'Alpha-Version · Datenschutz und internationale Hinweise'
+             when :en then 'Alpha version · privacy and international notes'
+             else 'Alfaversie · privacy en internationale info'
+             end %></span>
+      </summary>
+      <div class="mt-3 px-4 py-3 rounded-lg bg-gray-50 dark:bg-[#0f172a]/60 border border-gray-200 dark:border-[#1e293b] text-xs text-gray-600 dark:text-gray-400 space-y-1">
+      <p data-translate="alphaBanner">
+        <%= raw(case I18n.locale
+            when :fr then '<span class="text-amber-600 dark:text-amber-400 font-semibold">⚠ Alpha.</span> Chatbot en développement. Fonctionnalités et tarifs peuvent évoluer.'
+            when :de then '<span class="text-amber-600 dark:text-amber-400 font-semibold">⚠ Alpha.</span> Chatbot in Entwicklung. Funktionen und Preise können sich ändern.'
+            when :en then '<span class="text-amber-600 dark:text-amber-400 font-semibold">⚠ Alpha.</span> Chatbot under development. Features and pricing may change.'
+            else '<span class="text-amber-600 dark:text-amber-400 font-semibold">⚠ Alfaversie.</span> Chatbot in ontwikkeling. Functionaliteit en prijzen kunnen veranderen.'
+            end) %>
+      </p>
+      <p data-translate="privacyBanner">
+        <%= raw(case I18n.locale
+             when :fr then '🔒 <strong>Confidentialité.</strong> Les fournisseurs utilisent un traitement à portée européenne (zone de données UE Azure avec DataZoneStandard pour tous les modèles Azure proposés ; point de terminaison UE dédié de Mistral ; profils géographiques UE AWS) ; consultez la politique de confidentialité pour les transferts encadrés déclarés par les fournisseurs. <strong>WetWijzer ne conserve pas le texte de vos questions par défaut.</strong> Des métadonnées pseudonymes liées à votre compte (notamment langue, temps de réponse et coût) sont enregistrées. Les conversations ne sont pas sauvegardées, sauf si vous activez explicitement l\'historique. <details class="privacy-fineprint"><summary>Détails sur le traitement et le chiffrement</summary><span class="opacity-70 text-[10px]">Avec un mot de passe de stockage unique d’au moins 12 caractères, l\'historique enregistré est chiffré dans votre navigateur (AES-256-GCM). Nous conservons le sel et la clé principale enveloppée, pas la clé déchiffrée ; un mot de passe faible pourrait être deviné hors ligne si ces valeurs étaient exposées. Sans mot de passe, nous gérons la clé serveur. Votre question actuelle et le contexte pertinent sont traités temporairement en clair par Azure OpenAI pour la recherche, éventuellement par Mistral Small pour HyDE en recherche approfondie, puis par le fournisseur de réponse sélectionné. Les crédits paient la réponse générée ; l\'enregistrement de l\'historique est une étape distincte.</span></details>'
+             when :de then '🔒 <strong>Datenschutz.</strong> Die Anbieter nutzen EU-begrenzte Verarbeitung (Azure EU Data Zone mit DataZoneStandard für alle angebotenen Azure-Modelle; dedizierter EU-Endpunkt von Mistral; AWS-EU-Geografieprofile); Einzelheiten zu den von Anbietern offengelegten abgesicherten Übermittlungen stehen in der Datenschutzerklärung. <strong>WetWijzer speichert Fragetext standardmäßig nicht.</strong> Mit Ihrem Konto verknüpfte pseudonyme Metadaten (unter anderem Sprache, Antwortzeit und Kosten) werden erfasst. Gespräche werden nur gespeichert, wenn Sie den Verlauf aktivieren. <details class="privacy-fineprint"><summary>Details zu Verarbeitung und Verschlüsselung</summary><span class="opacity-70 text-[10px]">Mit einem einzigartigen Speicherpasswort von mindestens 12 Zeichen wird der gespeicherte Verlauf im Browser verschlüsselt (AES-256-GCM). Wir speichern Salt und umhüllten Hauptschlüssel, nicht den entschlüsselten Schlüssel; bei Offenlegung könnte ein schwaches Passwort offline erraten werden. Ohne Passwort verwalten wir den Serverschlüssel. Ihre aktuelle Frage und der relevante Kontext werden vorübergehend im Klartext durch Azure OpenAI für das Retrieval, bei tiefer Suche optional durch Mistral Small für HyDE und anschließend durch den gewählten Antwortanbieter verarbeitet. Credits bezahlen die erzeugte Antwort; das Speichern des Verlaufs ist ein separater Schritt.</span></details>'
+             when :en then '🔒 <strong>Privacy.</strong> Providers use EU-scoped processing (Azure EU Data Zone with DataZoneStandard for all offered Azure models; Mistral’s dedicated EU endpoint; AWS EU geographic profiles); see the privacy policy for provider-disclosed safeguarded transfers. <strong>WetWijzer does not store question text by default.</strong> Pseudonymous metadata linked to your account (including language, response time and cost) is logged. Conversations are saved only if you enable history. <details class="privacy-fineprint"><summary>Details on processing and encryption</summary><span class="opacity-70 text-[10px]">With a unique storage password of at least 12 characters, saved history is encrypted in your browser (AES-256-GCM). We store the salt and wrapped master key, not the unwrapped key; a weak password could be guessed offline if those values were exposed. Without a password, we hold the server key. Your current question and relevant context are processed temporarily in readable form by Azure OpenAI for retrieval, optionally by Mistral Small for HyDE in Deep search, and then by the selected answer provider. Credits pay for the generated answer; saving history is a separate step.</span></details>'
+             else '🔒 <strong>Privacy.</strong> Providers gebruiken verwerking met een EU-bereik (Azure EU Data Zone met DataZoneStandard voor alle aangeboden Azure-modellen; het specifieke EU-eindpunt van Mistral; AWS EU-geografieprofielen); zie het privacybeleid voor door providers gemelde beveiligde doorgiften. <strong>WetWijzer slaat vraagtekst standaard niet op.</strong> Aan uw account gekoppelde pseudonieme metadata (waaronder taal, responstijd en kosten) wordt bijgehouden. Gesprekken worden enkel bewaard als u geschiedenis inschakelt. <details class="privacy-fineprint"><summary>Details over verwerking en versleuteling</summary><span class="opacity-70 text-[10px]">Met een uniek opslagwachtwoord van minstens 12 tekens wordt de opgeslagen geschiedenis in uw browser versleuteld (AES-256-GCM). Wij bewaren het salt en de versleutelde mastersleutel, niet de ontsleutelde sleutel; bij blootstelling kan een zwak wachtwoord offline worden geraden. Zonder wachtwoord beheren wij de serversleutel. Uw actuele vraag en relevante context worden tijdelijk in leesbare vorm verwerkt door Azure OpenAI voor retrieval, bij Diep zoeken eventueel door Mistral Small voor HyDE en daarna door de geselecteerde antwoordprovider. Credits betalen het gegenereerde antwoord; het bewaren van geschiedenis is een afzonderlijke stap.</span></details>'
+             end) %>
+      </p>
+      <p data-translate="internationalBanner">
+        <%# Hardcoded to English on purpose - aimed at international crowd %>
+          <%= raw('🌍 <strong>International?</strong> Choose <strong>EN/INT</strong> at the top. The chatbot responds in your input language.') %>
+      </p>
+      </div>
+    </details>
+
+    <%= render 'chatbot/page_aside' %>
+  </div>

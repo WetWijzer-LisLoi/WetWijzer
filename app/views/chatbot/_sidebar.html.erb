@@ -1,0 +1,79 @@
+  <%# Sample-question panel: right column on desktop, below chat on mobile.
+      It stays in normal document flow; only its question list scrolls. %>
+  <%# Collapsed state: hidden panel + floating re-open tab %>
+  <div id="sidebar-wrapper" class="lg:w-[350px] lg:shrink-0 lg:self-stretch lg:overflow-hidden lg:flex lg:flex-col mt-6 lg:mt-28 transition-all duration-300 ease-in-out">
+  <%# Deliberately NOT a <form>: the CSP (no unsafe-inline) blocks inline
+      onsubmit handlers, so Enter in the search field would trigger a real
+      GET submission and wipe the conversation. A div can't be submitted. %>
+  <div role="presentation" class="lg:flex lg:flex-1 lg:min-h-0 lg:flex-col">
+  <div class="bg-white dark:bg-[#0f172a] rounded-xl shadow-lg p-4 lg:flex lg:flex-1 lg:min-h-0 lg:flex-col lg:overflow-hidden lg:max-h-full">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white" data-translate="sampleQuestions">
+        <%= case I18n.locale when :fr then 'Exemples de questions' when :de then 'Beispielfragen' when :en then 'Sample questions' else 'Voorbeeldvragen' end %> (<span id="question-count">2545</span>)
+      </h2>
+      <div class="flex items-center gap-2">
+        <select id="category-filter" aria-label="<%= case I18n.locale when :fr then 'Filtrer par catégorie' when :de then 'Nach Kategorie filtern' when :en then 'Filter by category' else 'Filter op categorie' end %>" class="text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-[#080d19] dark:text-gray-300">
+          <option value="all" data-translate="allCategories"><%= case I18n.locale when :fr then 'Toutes catégories' when :de then 'Alle Kategorien' when :en then 'All categories' else 'Alle categorieën' end %></option>
+        </select>
+        <%# Hide sidebar button %>
+        <button type="button" id="sidebar-hide-btn"
+                class="hidden lg:inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-(--accent-400) hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title="<%= case I18n.locale when :fr then 'Masquer le panneau' when :de then 'Panel ausblenden' when :en then 'Hide panel' else 'Paneel verbergen' end %>">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+    
+    <div class="mb-3">
+      <input type="text" id="question-search" autocomplete="off" name="q-search-nofill" aria-label="<%= case I18n.locale when :fr then 'Rechercher dans les conversations' when :de then 'Gespräche durchsuchen' when :en then 'Search conversations' else 'Zoeken in gesprekken' end %>" placeholder="<%= case I18n.locale when :fr then 'Rechercher...' when :de then 'Suchen...' when :en then 'Search...' else 'Zoeken...' end %>" data-translate-placeholder="search" 
+             class="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-[#080d19] dark:text-gray-300 px-3 py-2">
+    </div>
+    
+    <style nonce="<%= content_security_policy_nonce %>">
+      /* ═══ Theme-aware dark-mode overrides ═══
+         Replaces hardcoded slate (#1e293b, #080d19) borders & backgrounds
+         with theme CSS variables so every accent theme looks cohesive. */
+
+      /* Sidebar category separators */
+      .dark .sidebar-cat-group { border-color: var(--border-divider, rgba(100,116,139,0.12)) !important; }
+      .dark .sidebar-cat-body > li + li { border-color: var(--border-divider, rgba(100,116,139,0.08)) !important; }
+      .dark .sidebar-cat-toggle { background: var(--surface-header-bg, #0f172a) !important; }
+      .dark .sidebar-cat-toggle:hover { background: var(--accent-active-bg, rgba(56,189,248,0.10)) !important; }
+
+      /* Message source dividers */
+      .dark .message-sources { border-color: var(--border-divider, rgba(100,116,139,0.12)) !important; }
+
+      /* Export dropdown */
+      .dark #export-dropdown-menu { border-color: var(--border-card, rgba(100,116,139,0.20)) !important; }
+
+      /* Sample question hover in sidebar */
+      .dark .sample-question:hover { background: var(--accent-active-bg, rgba(56,189,248,0.08)) !important; }
+    </style>
+
+    <div id="questions-list" class="h-64 lg:h-auto lg:flex-1 lg:min-h-0 overflow-y-auto">
+        <div class="p-4 text-center text-gray-500" id="questions-loading"><%= case I18n.locale when :fr then 'Chargement des questions...' when :de then 'Fragen werden geladen...' when :en then 'Loading questions...' else 'Vragen laden...' end %></div>
+    </div>
+    <div class="hidden lg:flex shrink-0 items-start gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+      <svg class="w-4 h-4 mt-0.5 shrink-0 text-[var(--accent-500)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a10.7 10.7 0 01-4-.75L3 20l1.2-3.2A7.3 7.3 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+      </svg>
+      <span>
+        <%= case I18n.locale
+            when :fr then "Vous ne trouvez pas votre question ? Recherchez ci-dessus ou posez votre propre question dans le chatbot."
+            when :de then "Ihre Frage ist nicht dabei? Suchen Sie oben oder stellen Sie Ihre eigene Frage im Chatbot."
+            when :en then "Cannot find your question? Search above or ask your own question in the chatbot."
+            else "Uw vraag niet gevonden? Zoek hierboven of stel uw eigen vraag in de chatbot."
+            end %>
+      </span>
+    </div>
+  </div>
+  </div>
+  </div>
+
+  <%# Floating tab to re-open the sidebar when collapsed (desktop only) %>
+  <button type="button" id="sidebar-show-btn"
+          class="hidden fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-[#1e293b] border-r-0 rounded-l-lg shadow-lg px-1.5 py-3 text-gray-500 dark:text-gray-400 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 group"
+          title="<%= case I18n.locale when :fr then 'Afficher les questions' when :de then 'Fragen anzeigen' when :en then 'Show questions' else 'Vragen tonen' end %>">
+    <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7M19 19l-7-7 7-7"/></svg>
+    <span style="writing-mode: vertical-rl; text-orientation: mixed;" class="text-[10px] font-medium mt-1.5 tracking-wider capitalize"><%= case I18n.locale when :fr then 'Questions' when :de then 'Fragen' when :en then 'Questions' else 'Vragen' end %></span>
+  </button>

@@ -1,0 +1,154 @@
+<%# ═══════════════════════════════════════════════════════════════
+    GDPR CONSENT MODAL - Conversation Storage (Art. 6(1)(a))
+    Shown once when a logged-in user first uses the chatbot.
+    Must explicitly consent before conversations are persisted server-side.
+    ═══════════════════════════════════════════════════════════════ %>
+<div id="consent-modal" class="hidden fixed inset-0 z-[9999] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="consent-title">
+  <%# Backdrop %>
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" data-action="click->chatbot#declineConsentDialog"></div>
+
+  <%# Dialog %>
+  <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all">
+    <%# Header %>
+    <div class="px-6 pt-6 pb-4">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+        </div>
+        <h3 id="consent-title" class="text-lg font-semibold text-gray-900 dark:text-white">
+          <% case I18n.locale
+             when :fr %>Historique des conversations
+          <% when :de %>Gesprächsverlauf
+          <% when :en %>Conversation History
+          <% else %>Gespreksgeschiedenis
+          <% end %>
+        </h3>
+      </div>
+
+      <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
+        <% case I18n.locale
+           when :fr %>
+          Souhaitez-vous que vos conversations soient sauvegardées dans votre compte&nbsp;? Cela vous permet de retrouver vos questions et réponses précédentes.
+        <% when :de %>
+          Möchten Sie, dass Ihre Gespräche in Ihrem Konto gespeichert werden? So können Sie frühere Fragen und Antworten wiederfinden.
+        <% when :en %>
+          Would you like your conversations to be saved in your account? This allows you to find your previous questions and answers.
+        <% else %>
+          Wilt u dat uw gesprekken worden opgeslagen in uw account? Zo kunt u eerdere vragen en antwoorden terugvinden.
+        <% end %>
+      </p>
+
+      <%# Key points %>
+      <div class="space-y-2 mb-4">
+        <div class="flex items-start gap-2">
+          <svg class="w-4 h-4 mt-0.5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <span class="text-xs text-gray-600 dark:text-gray-400">
+            <% case I18n.locale
+               when :fr %>Avec un mot de passe de stockage&nbsp;: l’historique enregistré est chiffré dans votre navigateur et nous ne pouvons pas le déchiffrer sans ce mot de passe. Sans mot de passe&nbsp;: chiffré sur notre serveur, mais lisible par nous. La question actuelle et le contexte pertinent sont toujours traités temporairement en clair pour répondre.
+            <% when :de %>Mit einem Speicherpasswort: Der gespeicherte Verlauf wird im Browser verschlüsselt und kann von uns ohne dieses Passwort nicht entschlüsselt werden. Ohne Passwort: auf unserem Server verschlüsselt, aber für uns lesbar. Die aktuelle Frage und der relevante Kontext werden zur Beantwortung weiterhin vorübergehend im Klartext verarbeitet.
+            <% when :en %>With a storage password: saved history is encrypted in your browser and we cannot decrypt it without that password. Without a password: encrypted on our server, but readable by us. The current question and relevant context are still processed temporarily in readable form to answer.
+            <% else %>Met een opslagwachtwoord: de opgeslagen geschiedenis wordt in uw browser versleuteld en kan door ons zonder dat wachtwoord niet worden ontsleuteld. Zonder wachtwoord: versleuteld op onze server, maar leesbaar voor ons. De actuele vraag en relevante context worden voor beantwoording nog steeds tijdelijk in leesbare vorm verwerkt.
+            <% end %>
+          </span>
+        </div>
+        <div class="flex items-start gap-2">
+          <svg class="w-4 h-4 mt-0.5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <span class="text-xs text-gray-600 dark:text-gray-400">
+            <% case I18n.locale
+               when :fr %>Supprimable à tout moment depuis votre compte
+            <% when :de %>Jederzeit löschbar über Ihr Konto
+            <% when :en %>Deletable at any time from your account
+            <% else %>Op elk moment verwijderbaar vanuit uw account
+            <% end %>
+          </span>
+        </div>
+        <div class="flex items-start gap-2">
+          <svg class="w-4 h-4 mt-0.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+          <span class="text-xs text-gray-600 dark:text-gray-400">
+            <% case I18n.locale
+               when :fr %>Vos questions peuvent contenir des données personnelles sensibles. En activant cette option, vous consentez au traitement de ces données (RGPD Art.&nbsp;6(1)(a)).
+            <% when :de %>Ihre Fragen können sensible personenbezogene Daten enthalten. Durch die Aktivierung stimmen Sie der Verarbeitung dieser Daten zu (DSGVO Art.&nbsp;6(1)(a)).
+            <% when :en %>Your questions may contain sensitive personal data. By enabling this, you consent to the processing of such data (GDPR Art.&nbsp;6(1)(a)).
+            <% else %>Uw vragen kunnen gevoelige persoonsgegevens bevatten. Door dit in te schakelen geeft u toestemming voor de verwerking hiervan (AVG Art.&nbsp;6(1)(a)).
+            <% end %>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <%# ZK storage password fields - used locally to derive the encryption key %>
+    <div class="px-6 pb-3">
+      <label for="consent-password-input" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+        <% case I18n.locale
+           when :fr %>🔑 Mot de passe de stockage (facultatif)
+        <% when :de %>🔑 Speicherpasswort (optional)
+        <% when :en %>🔑 Storage password (optional)
+        <% else %>🔑 Opslagwachtwoord (optioneel)
+        <% end %>
+      </label>
+      <input type="password" id="consent-password-input"
+             class="w-full text-sm px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+             placeholder="<% case I18n.locale
+                when :fr %>Choisissez un mot de passe de stockage
+             <% when :de %>Speicherpasswort wählen
+             <% when :en %>Choose a storage password
+             <% else %>Kies een opslagwachtwoord<% end %>"
+             autocomplete="new-password" minlength="12" maxlength="256"
+             aria-describedby="consent-password-help" />
+
+      <label for="consent-password-confirmation-input" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mt-3 mb-1.5">
+        <% case I18n.locale
+           when :fr %>Confirmez le mot de passe de stockage
+        <% when :de %>Speicherpasswort bestätigen
+        <% when :en %>Confirm storage password
+        <% else %>Bevestig het opslagwachtwoord
+        <% end %>
+      </label>
+      <input type="password" id="consent-password-confirmation-input"
+             class="w-full text-sm px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+             placeholder="<% case I18n.locale
+                when :fr %>Répétez le mot de passe de stockage
+             <% when :de %>Speicherpasswort wiederholen
+             <% when :en %>Repeat the storage password
+             <% else %>Herhaal het opslagwachtwoord<% end %>"
+             autocomplete="new-password" minlength="12" maxlength="256"
+             aria-describedby="consent-password-help" />
+      <p id="consent-password-help" class="mt-1 text-[10px] text-gray-400 dark:text-gray-500">
+        <% case I18n.locale
+           when :fr %>Utilisez au moins 12 caractères et une phrase unique. Ce mot de passe reste dans votre navigateur et n’est jamais transmis au serveur. Le serveur conserve toutefois le sel et la clé principale chiffrée&nbsp;: un mot de passe faible pourrait donc être deviné hors ligne en cas d’exposition. Nous ne pouvons ni le récupérer ni le réinitialiser. La réinitialisation de votre mot de passe de connexion ne le modifie pas. Laissez les deux champs vides pour le stockage standard lisible par WetWijzer.
+        <% when :de %>Verwenden Sie mindestens 12 Zeichen und eine einzigartige Passphrase. Dieses Passwort bleibt in Ihrem Browser und wird nie an den Server gesendet. Der Server speichert jedoch das Salt und den verschlüsselten Hauptschlüssel; bei einer Offenlegung könnte ein schwaches Passwort daher offline erraten werden. Wir können es weder wiederherstellen noch zurücksetzen. Das Zurücksetzen Ihres Anmeldepassworts ändert es nicht. Lassen Sie beide Felder leer, um den für WetWijzer lesbaren Standardspeicher zu verwenden.
+        <% when :en %>Use at least 12 characters and a unique passphrase. This password stays in your browser and is never sent to the server. The server does store the salt and wrapped master key, so a weak password could be guessed offline if those values were exposed. We cannot recover or reset it. Resetting your login password does not change it. Leave both fields empty for standard storage that WetWijzer can read.
+        <% else %>Gebruik minstens 12 tekens en een unieke wachtzin. Dit wachtwoord blijft in uw browser en wordt nooit naar de server verzonden. De server bewaart wel het salt en de versleutelde mastersleutel; bij blootstelling kan een zwak wachtwoord dus offline worden geraden. Wij kunnen het niet herstellen of resetten. Uw inlogwachtwoord resetten wijzigt het niet. Laat beide velden leeg voor standaardopslag die WetWijzer kan lezen.
+        <% end %>
+      </p>
+    </div>
+
+    <%# Actions %>
+    <div class="px-6 pb-6 flex flex-col sm:flex-row gap-3">
+      <button type="button"
+              id="consent-accept-btn"
+              data-action="click->chatbot#acceptConsentDialog"
+              class="flex-1 px-4 py-2.5 text-sm font-medium rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm">
+        <% case I18n.locale
+           when :fr %>Activer l'historique
+        <% when :de %>Verlauf aktivieren
+        <% when :en %>Enable History
+        <% else %>Geschiedenis inschakelen
+        <% end %>
+      </button>
+      <button type="button"
+              id="consent-decline-btn"
+              data-action="click->chatbot#declineConsentDialog"
+              class="flex-1 px-4 py-2.5 text-sm font-medium rounded-xl text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+        <% case I18n.locale
+           when :fr %>Non merci
+        <% when :de %>Nein danke
+        <% when :en %>No thanks
+        <% else %>Nee bedankt
+        <% end %>
+      </button>
+    </div>
+  </div>
+</div>

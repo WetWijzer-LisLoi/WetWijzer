@@ -1,0 +1,243 @@
+<% @title = @member[:name] %>
+<% party_colors = ParliamentaryHelper::PARTY_COLORS %>
+<% color = party_colors[@member[:party]] || '#888888' %>
+
+<div class="max-w-4xl mx-auto px-4">
+  <!-- Back link -->
+  <div class="mb-6">
+    <a href="<%= mp_directory_path(legislature: @legislature) %>" class="text-sm text-(--accent-600) dark:text-(--accent-400) hover:underline">
+      ← <% case I18n.locale when :fr %>Retour aux députés<% when :de %>Zurück zu Abgeordneten<% when :en %>Back to members<% else %>Terug naar kamerleden<% end %>
+    </a>
+  </div>
+
+  <!-- Profile Header -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+    <div class="flex items-start gap-5">
+      <!-- Profile photo -->
+      <div class="w-20 h-20 rounded-full shrink-0 shadow-lg overflow-hidden border-3" style="border-color: <%= color %>">
+        <img src="https://www.dekamer.be/site/wwwroot/images/cv/ksegna_<%= @legislature %>/<%= @member[:dekamer_key] %>.jpg"
+             alt="<%= @member[:name] %>"
+             class="w-full h-full object-cover"
+             data-controller="mp-photo"
+             data-key="<%= @member[:dekamer_key] %>"
+             data-leg="<%= @legislature %>"
+             data-fallback-initial="<%= @member[:name]&.chars&.first&.upcase || '?' %>"
+             data-fallback-color="<%= color %>">
+      </div>
+
+      <div class="flex-1 min-w-0">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1"><%= @member[:name] %></h1>
+
+        <div class="flex flex-wrap items-center gap-3 mt-2">
+          <% if @member[:party].present? %>
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium text-white" style="background-color: <%= color %>">
+              <%= @member[:party] %>
+            </span>
+          <% end %>
+
+          <span class="text-sm text-gray-500 dark:text-gray-400">
+            <% case I18n.locale when :fr %>Législature<% when :de %>Legislaturperiode<% when :en %>Legislature<% else %>Legislatuur<% end %> <%= @legislature %>
+          </span>
+
+          <% if @member[:kieskring].present? %>
+            <span class="text-sm text-gray-500 dark:text-gray-400">
+              📍 <%= @member[:kieskring] %>
+            </span>
+          <% end %>
+        </div>
+
+        <% if @member[:list_position].present? || @member[:vote_count].present? %>
+          <div class="flex flex-wrap items-center gap-3 mt-2">
+            <% if @member[:list_position].present? %>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
+                #<%= @member[:list_position] %>
+                <span class="text-xs opacity-70"><% if I18n.locale == :fr %>sur la liste<% elsif I18n.locale == :de %>auf der Liste<% else %>op de lijst<% end %></span>
+              </span>
+            <% end %>
+            <% if @member[:vote_count].present? && @member[:vote_count].to_i > 0 %>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-(--accent-100,#dbeafe) dark:bg-(--accent-900,#1e3a5f)/30 text-(--accent-700) dark:text-(--accent-400)">
+                🗳 <%= number_with_delimiter(@member[:vote_count]) %>
+                <span class="text-xs opacity-70"><% if I18n.locale == :fr %>voix<% elsif I18n.locale == :de %>Stimmen<% else %>stemmen<% end %></span>
+              </span>
+            <% end %>
+            <% if @member[:election_constituency].present? %>
+              <span class="text-xs text-gray-400 dark:text-gray-500">
+                <% if I18n.locale == :fr %>Circonscription<% elsif I18n.locale == :de %>Wahlkreis<% else %>Kieskring<% end %>: <%= @member[:election_constituency] %>
+              </span>
+            <% end %>
+          </div>
+        <% end %>
+
+        <!-- External link -->
+        <div class="mt-4">
+          <a href="<%= @dekamer_url %>" target="_blank" rel="noopener noreferrer"
+             class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 dark:bg-sky/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-sky/20 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+            <% case I18n.locale when :fr %>Profil sur lachambre.be<% when :de %>Profil auf dekamer.be<% when :en %>Profile on dekamer.be<% else %>Profiel op dekamer.be<% end %>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authored Dossiers -->
+  <% if @authored_dossiers.present? %>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-8">
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+        <span class="text-xl">📋</span>
+        <% case I18n.locale when :fr %>Dossiers<% when :de %>Dossiers<% when :en %>Dossiers<% else %>Dossiers<% end %>
+        <span class="text-sm font-normal text-gray-500 dark:text-gray-400">(<%= @authored_dossiers.size %>)</span>
+      </h2>
+
+      <div class="space-y-3">
+        <% @authored_dossiers.each do |d| %>
+          <a href="<%= parliamentary_work_path(q: "#{@legislature}K#{d[:nummer]}") %>" class="block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-sky/5 transition-all group">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-mono text-sm font-semibold text-gray-900 dark:text-white"><%= @legislature %>K<%= d[:nummer] %></span>
+                  <% if d[:type].present? %>
+                    <span class="px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-sky/10 text-gray-600 dark:text-gray-400"><%= d[:type] %></span>
+                  <% end %>
+                </div>
+                <% if d[:auteurs].present? %>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate"><%= d[:auteurs] %></p>
+                <% end %>
+                <% if d[:filing_date].present? %>
+                  <p class="text-xs text-gray-400 mt-0.5">📅 <%= d[:filing_date] %></p>
+                <% end %>
+              </div>
+              <div class="text-right shrink-0">
+                <% if d[:status].present? %>
+                  <%
+                    status = d[:status].to_s.downcase
+                    badge_class = case status
+                                  when /aangenomen|adopté|goedgekeurd|bekrachtigd/ then 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                  when /verworpen|rejeté/ then 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                  when /behandeling|commission|en cours/ then 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                  else 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                                  end
+                  %>
+                  <span class="px-2 py-0.5 rounded text-xs font-medium <%= badge_class %>"><%= d[:status] %></span>
+                <% end %>
+                <% if d[:vote_result].present? %>
+                  <% vr = d[:vote_result].to_s %>
+                  <% if vr.match?(/AANGENOMEN|ADOPTÉE/i) %>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 mt-1">✅ <%= vr %></span>
+                  <% elsif vr.match?(/VERWORPEN|REJETÉE/i) %>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 mt-1">❌ <%= vr %></span>
+                  <% else %>
+                    <p class="text-xs text-gray-400 mt-1">🗳️ <%= vr %></p>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          </a>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Voting Behavior Section %>
+  <% if @vote_history.present? %>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-8">
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+        <span class="text-xl">🗳️</span>
+        <% case I18n.locale when :fr %>Comportement de vote<% when :de %>Abstimmungsverhalten<% when :en %>Voting behaviour<% else %>Stemgedrag<% end %>
+        <span class="text-sm font-normal text-gray-500 dark:text-gray-400">(<%= @vote_stats[:total] %> <% case I18n.locale when :fr %>votes<% when :de %>Stimmen<% when :en %>votes<% else %>stemmen<% end %>)</span>
+      </h2>
+
+      <%# Summary stats %>
+      <div class="flex flex-wrap items-center gap-4 mb-5 p-3 rounded-xl bg-gray-50 dark:bg-sky/5">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+          <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400"><%= @vote_stats[:yes] %></span>
+          <span class="text-xs text-gray-500"><% case I18n.locale when :fr %>Pour<% when :de %>Ja<% when :en %>Yes<% else %>Ja<% end %></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-red-500"></span>
+          <span class="text-sm font-semibold text-red-700 dark:text-red-400"><%= @vote_stats[:no] %></span>
+          <span class="text-xs text-gray-500"><% case I18n.locale when :fr %>Contre<% when :de %>Nein<% when :en %>No<% else %>Neen<% end %></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+          <span class="text-sm font-semibold text-amber-700 dark:text-amber-400"><%= @vote_stats[:abstention] %></span>
+          <span class="text-xs text-gray-500"><% case I18n.locale when :fr %>Abstention<% when :de %>Enthaltung<% when :en %>Abstention<% else %>Onthouding<% end %></span>
+        </div>
+
+        <%# Mini bar %>
+        <div class="flex-1 min-w-[100px]">
+          <% total = [@vote_stats[:total], 1].max %>
+          <% yes_pct = (@vote_stats[:yes].to_f / total * 100).round(1) %>
+          <% no_pct = (@vote_stats[:no].to_f / total * 100).round(1) %>
+          <% abs_pct = (@vote_stats[:abstention].to_f / total * 100).round(1) %>
+          <div class="w-full h-[6px] rounded-full overflow-hidden flex bg-gray-200 dark:bg-gray-700" title="<%= @vote_stats[:yes] %> Ja · <%= @vote_stats[:no] %> Neen · <%= @vote_stats[:abstention] %> Onthouding">
+            <div class="h-full bg-emerald-500" style="width: <%= yes_pct %>%"></div>
+            <div class="h-full bg-red-500" style="width: <%= no_pct %>%"></div>
+            <div class="h-full bg-amber-400" style="width: <%= abs_pct %>%"></div>
+          </div>
+        </div>
+      </div>
+
+      <%# Vote timeline %>
+      <div class="space-y-2" id="vote-history-list">
+        <% @vote_history.each_with_index do |vote, idx| %>
+          <% vote_href = vote[:dossier_nummer] ? parliamentary_work_path(q: "#{@legislature}K#{vote[:dossier_nummer]}") : nil %>
+          <% tag_name = vote_href ? :a : :div %>
+          <% tag_attrs = { class: "flex items-start gap-3 p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-sky/5 transition-all #{'hidden vote-extra' if idx >= 20}" } %>
+          <% tag_attrs[:href] = vote_href if vote_href %>
+          <%= content_tag(tag_name, **tag_attrs) do %>
+            <%# Choice indicator %>
+            <div class="shrink-0 mt-0.5">
+              <% case vote[:choice] %>
+              <% when 'yes' %>
+                <span class="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-sm">👍</span>
+              <% when 'no' %>
+                <span class="w-7 h-7 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-sm">👎</span>
+              <% when 'abstention' %>
+                <span class="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-sm">🤷</span>
+              <% end %>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-gray-800 dark:text-gray-300 leading-snug truncate" title="<%= vote[:title] %>">
+                <% if vote[:dossier_nummer] %>
+                  <span class="font-mono text-xs font-semibold text-gray-500 mr-1"><%= @legislature %>K<%= vote[:dossier_nummer] %></span>
+                <% end %>
+                <%= vote[:title].present? ? vote[:title].truncate(100) : '-' %>
+              </p>
+              <div class="flex items-center gap-3 mt-1">
+                <% if vote[:vote_date].present? %>
+                  <span class="text-xs text-gray-400">📅 <%= vote[:vote_date] %></span>
+                <% end %>
+                <% if vote[:passed] == 1 %>
+                  <span class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✅ <% case I18n.locale when :fr %>Adopté<% when :de %>Angenommen<% when :en %>Adopted<% else %>Aangenomen<% end %></span>
+                <% elsif vote[:passed] == 0 %>
+                  <span class="text-xs text-red-600 dark:text-red-400 font-medium">❌ <% case I18n.locale when :fr %>Rejeté<% when :de %>Abgelehnt<% when :en %>Rejected<% else %>Verworpen<% end %></span>
+                <% end %>
+                <span class="text-xs text-gray-400">
+                  👍<%= vote[:yes_count] %> · 👎<%= vote[:no_count] %> · 🤷<%= vote[:abstention_count] %>
+                </span>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+
+      <% if @vote_history.size > 20 %>
+        <div class="mt-4 text-center">
+          <button type="button"
+                  onclick="document.querySelectorAll('#vote-history-list .vote-extra').forEach(function(e){e.classList.remove('hidden')});this.parentElement.remove()"
+                  class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 dark:bg-sky/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-sky/20 transition-colors cursor-pointer">
+            <% case I18n.locale when :fr %>Afficher tout (<%= @vote_history.size %>)<% when :de %>Alle anzeigen (<%= @vote_history.size %>)<% when :en %>Show all (<%= @vote_history.size %>)<% else %>Toon alles (<%= @vote_history.size %>)<% end %>
+          </button>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+
+

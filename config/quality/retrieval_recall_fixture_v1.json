@@ -1,0 +1,11 @@
+{
+  "comment": "Retrieval-miss exemplars from the 2026-08-04 withheld-answer mining (cluster: governing statute in corpus but never retrieved). Each question was judged POOR because retrieval surfaced wrong-domain hits while the named statute sat in the corpus. Used by scripts/eval_retrieval_recall.rb; extend as new misses are confirmed.",
+  "cases": [
+    { "id": "q0422", "question": "Onschendbaarheid woning?", "expected_numac": "1994021048", "note": "De gecoordineerde Grondwet, Art. 15; baseline retrieved Vienna diplomatic convention + vastgoedmakelaar deontology" },
+    { "id": "q0521", "question": "Groepsverzekering pensioen?", "expected_numac": "2003022481", "note": "WAP 28-4-2003; baseline retrieved statutory-pension KB nr. 50" },
+    { "id": "q0928", "question": "Wat is het Sociaal Strafwetboek?", "expected_numac": "2010A09589", "note": "Sociaal Strafwetboek itself; baseline retrieved the NEW 2024 Strafwetboek" },
+    { "id": "q2930", "question": "Wat is een pop-up huur?", "expected_numac": "2016036108", "note": "Vlaams decreet 17-6-2016 huur korte duur handel en ambacht; baseline claimed the term has no legal meaning" },
+    { "id": "cao109a", "question": "Heb ik recht om de concrete reden van mijn ontslag te kennen?", "expected_numac": "2014A01545", "note": "CAO nr. 109 Art. 3 (right to the concrete reasons). Added 2026-08-05: the 2026-08-04 brief filed this cluster as outside the corpus, but CAO 109 is present with 24 ART rows. Private sector: CAO 109 Art. 2 applies to workers under an arbeidsovereenkomst; the Wet 13-3-2024 (2024002270) is the OVERHEIDSSECTOR counterpart and must not be the expected hit here" },
+    { "id": "cao109b", "question": "Wat is een kennelijk onredelijk ontslag?", "expected_numac": "2014A01545", "note": "CAO nr. 109 Art. 8 defines it, Art. 9 sets the compensation" }
+  ]
+}

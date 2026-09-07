@@ -1,0 +1,906 @@
+<%# Floating chatbot widget - WhatsApp-style chat bubble %>
+<%
+  # Pre-compute localized strings for accessibility
+  widget_title_text = case I18n.locale when :fr then "LisLoi Chatbot Juridique" when :de then "GesetzGuide Juristischer Chatbot" when :en then "LexLibera Legal Chatbot" else "WetWijzer Juridische Chatbot" end
+  open_label  = case I18n.locale when :fr then 'Ouvrir le chatbot juridique' when :de then 'Juristischen Chatbot öffnen' when :en then 'Open legal chatbot' else 'Juridische chatbot openen' end
+  close_label = case I18n.locale when :fr then 'Fermer le chatbot' when :de then 'Chatbot schließen' when :en then 'Close chatbot' else 'Chatbot sluiten' end
+  send_label  = case I18n.locale when :fr then 'Envoyer le message' when :de then 'Nachricht senden' when :en then 'Send message' else 'Bericht versturen' end
+  tooltip_text = case I18n.locale when :fr then 'LisLoi Chatbot Juridique' when :de then 'GesetzGuide Juristischer Chatbot' when :en then 'LexLibera Legal Chatbot' else 'WetWijzer Juridische Chatbot' end
+  subtitle_text = case I18n.locale when :fr then 'Alimenté par IA' when :de then 'KI-gestützt' when :en then 'AI-powered' else 'AI-gestuurd' end
+
+  messages_label = case I18n.locale when :fr then 'Messages du chatbot' when :de then 'Chatbot-Nachrichten' when :en then 'Chatbot messages' else 'Chatbot berichten' end
+%>
+<div id="chatbot-widget-container"
+     class="fixed bottom-6 right-6 z-50 no-print"
+     data-controller="chatbot"
+     data-chatbot-language-value="<%= I18n.locale %>"
+     data-chatbot-source-value="legislation"
+     data-chatbot-use-local-value="false"
+     <%# The FLOATING widget must start COLLAPSED (just the FAB). A prior commit
+         "Auto-open chatbot widget on page load" set this to true, which opened
+         the panel on every page — a 400px corner box on desktop but a
+         full-screen block on mobile. The dedicated /chatbot page (index.html.erb)
+         keeps open=true; the floating widget does not. %>
+     data-chatbot-open-value="false"
+     data-chatbot-has-credits-value="<%= current_user && current_user.credits.to_i > 0 ? 'true' : 'false' %>"
+     data-chatbot-praxis-linked-value="<%= current_user&.praxis_linked_at.present? ? 'true' : 'false' %>"
+     data-chatbot-pro-value="<%= current_user&.advanced_intelligence_access? ? 'true' : 'false' %>">
+
+  <%# Auth state for JS - enables server-side conversation/bookmark persistence in widget %>
+  <div id="chatbot-auth-state" class="hidden"
+       data-logged-in="<%= current_user ? 'true' : 'false' %>"
+       data-consent="<%= current_user&.conversation_storage_consented? ? 'true' : 'false' %>"></div>
+
+  <style nonce="<%= content_security_policy_nonce %>">
+    /* Widget animations */
+    .chatbot-widget-enter {
+      animation: widgetSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .chatbot-widget-exit {
+      animation: widgetSlideDown 0.2s cubic-bezier(0.4, 0, 1, 1) forwards;
+    }
+    @keyframes widgetSlideUp {
+      from { opacity: 0; transform: translateY(16px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes widgetSlideDown {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(16px) scale(0.95); }
+    }
+    .message-fade-in {
+      animation: messageFadeIn 0.3s ease-out forwards;
+    }
+    @keyframes messageFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* Pulse animation for the FAB when first appearing */
+    .chatbot-fab-pulse {
+      animation: fabEntrance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+                 fabPulse 2s ease-in-out 1.6s 3;
+    }
+    @keyframes fabEntrance {
+      0%   { opacity: 0; transform: scale(0.3) translateY(20px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes fabPulse {
+      0%, 100% { box-shadow: 0 4px 14px rgba(0,0,0,0.15); transform: scale(1); }
+      50% { box-shadow: 0 4px 24px rgba(var(--accent-rgb, 37 99 235), 0.5); transform: scale(1.08); }
+    }
+    /* Bigger hover for the FAB */
+    #chatbot-fab:hover {
+      transform: scale(1.2) !important;
+      box-shadow: 0 8px 30px rgba(var(--accent-rgb, 37 99 235), 0.4) !important;
+    }
+    /* Context toast notification - pops out of the FAB */
+    #chatbot-context-toast {
+      position: absolute;
+      bottom: 100%;
+      right: 0;
+      margin-bottom: 12px;
+      width: max-content;
+      max-width: min(320px, calc(100vw - 3rem));
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.4;
+      cursor: pointer;
+      pointer-events: auto;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.05);
+      background: linear-gradient(135deg, var(--accent-600-solid, #2563eb), var(--accent-700-solid, #1d4ed8));
+      color: #fff;
+      opacity: 0;
+      transform: translateY(8px) scale(0.95);
+      transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #chatbot-context-toast.toast-visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    /* On mobile with bottom bar, position toast above the bar */
+    @media (max-width: 640px) {
+      body:has(#mobile-bottom-bar) #chatbot-context-toast {
+        position: fixed;
+        bottom: 56px;
+        right: 0.75rem;
+        left: auto;
+        margin-bottom: 0;
+      }
+      body:has(#mobile-bottom-bar) #chatbot-context-toast::after {
+        display: none;
+      }
+    }
+    #chatbot-context-toast.toast-exit {
+      opacity: 0;
+      transform: translateY(8px) scale(0.95);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    /* Small triangle pointer toward FAB */
+    #chatbot-context-toast::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      right: 20px;
+      width: 12px;
+      height: 12px;
+      background: var(--accent-700-solid, #1d4ed8);
+      transform: rotate(45deg);
+      border-radius: 0 0 3px 0;
+    }
+    #chatbot-context-toast .toast-law-title {
+      font-weight: 600;
+    }
+    #chatbot-context-toast .toast-cta {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      opacity: 0.75;
+    }
+    #chatbot-context-toast .toast-close {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 14px;
+      line-height: 1;
+      color: rgba(255,255,255,0.6);
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s;
+    }
+    #chatbot-context-toast .toast-close:hover {
+      color: #fff;
+      background: rgba(255,255,255,0.15);
+    }
+
+    /* Smooth textarea auto-resize */
+    #chatbot-widget-container textarea {
+      min-height: 38px;
+      max-height: 100px;
+    }
+    /* Messages area - vertically resizable */
+    #chatbot-widget-panel [data-chatbot-target="messages"] {
+      resize: none;
+      overflow-y: auto;
+      min-height: 120px;
+    }
+    /* Default panel size - max-height in CSS so JS can safely clear inline styles */
+    #chatbot-widget-panel {
+      max-height: min(520px, calc(100dvh - 120px));
+      transition: max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                  width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                  height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    /* Expanded mode - much larger panel */
+    #chatbot-widget-panel.widget-expanded {
+      max-height: calc(100dvh - 100px) !important;
+      height: calc(100dvh - 100px) !important;
+      width: min(800px, calc(100vw - 2rem)) !important;
+    }
+    #chatbot-widget-panel.widget-expanded [data-chatbot-target="messages"] {
+      min-height: 400px;
+    }
+    /* Drag handle cursor on header */
+    .widget-drag-handle {
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .widget-drag-handle:active,
+    .widget-dragging .widget-drag-handle {
+      cursor: grabbing;
+    }
+    /* Prevent text selection during drag/resize */
+    .widget-dragging,
+    .widget-resizing {
+      user-select: none !important;
+      -webkit-user-select: none !important;
+    }
+    /* Resize handles - invisible edges and corners for all-direction resizing */
+    .widget-resize-edge, .widget-resize-corner {
+      position: absolute;
+      z-index: 10;
+    }
+    .widget-resize-n { top: -3px; left: 8px; right: 8px; height: 6px; cursor: n-resize; }
+    .widget-resize-s { bottom: -3px; left: 8px; right: 8px; height: 6px; cursor: s-resize; }
+    .widget-resize-w { left: -3px; top: 8px; bottom: 8px; width: 6px; cursor: w-resize; }
+    .widget-resize-e { right: -3px; top: 8px; bottom: 8px; width: 6px; cursor: e-resize; }
+    .widget-resize-nw { top: -4px; left: -4px; width: 12px; height: 12px; cursor: nw-resize; }
+    .widget-resize-ne { top: -4px; right: -4px; width: 12px; height: 12px; cursor: ne-resize; }
+    .widget-resize-sw { bottom: -4px; left: -4px; width: 12px; height: 12px; cursor: sw-resize; }
+    .widget-resize-se { bottom: -4px; right: -4px; width: 12px; height: 12px; cursor: se-resize; }
+    /* When widget is custom-positioned, use fixed positioning for container */
+    #chatbot-widget-container.widget-custom-pos {
+      bottom: auto !important;
+      right: auto !important;
+    }
+    /* Mobile: full-width widget - override drag/resize */
+    @media (max-width: 640px) {
+      /* Default mobile FAB position - close to bottom edge */
+      #chatbot-widget-container:not(.widget-custom-pos) {
+        bottom: 1rem !important;
+        right: 1rem !important;
+      }
+      /* Hide the floating FAB when the page has a docked bottom bar */
+      body:has(#mobile-bottom-bar) #chatbot-fab {
+        display: none !important;
+      }
+      /* Push chatbot panel above the bottom bar */
+      body:has(#mobile-bottom-bar) #chatbot-widget-container:not(.widget-custom-pos) {
+        bottom: 0 !important;
+        right: 0 !important;
+      }
+      #chatbot-fab {
+        width: 3.25rem !important;
+        height: 3.25rem !important;
+      }
+      #chatbot-fab svg {
+        width: 1.5rem !important;
+        height: 1.5rem !important;
+      }
+      #chatbot-widget-panel {
+        /* Full-screen chat on mobile so the page underneath is fully covered.
+           It was a card with margins (100vw-1.5rem wide, bottom:70px, top gap),
+           which left the homepage visible around it -> a confusing "double view". */
+        position: fixed !important;
+        inset: 0 !important;
+        /* NOT width: 100vw. The vw unit measures the layout viewport INCLUDING
+           the scrollbar (and, in an edge-to-edge PWA, system insets), so it
+           resolves WIDER than the visible area - measured live: 100vw = 500px
+           against a 485px viewport, i.e. 15px of horizontal overflow that let
+           the page pan sideways ("weirdly wide" on mobile, 2026-08-19).
+           inset: 0 already stretches a fixed element to exactly the viewport;
+           auto !important is needed because the resize feature writes an
+           inline width that would otherwise win. */
+        width: auto !important;
+        height: 100dvh !important;
+        max-width: none !important;
+        max-height: none !important;
+        border-radius: 0 !important;
+      }
+      /* Resize/drag affordances are meaningless on touch: the panel is
+         fullscreen (inset: 0) so there is nothing to resize, and the handles
+         sit a few px OUTSIDE the panel edge by design - at every phone width
+         measured (320/360/390/414) they were the only elements extending past
+         the viewport, which is what makes the page feel draggably wide.
+         Remove them from layout on mobile rather than only changing cursor. */
+      .widget-resize-edge, .widget-resize-corner { display: none !important; }
+      .widget-drag-handle { cursor: default !important; }
+      #chatbot-widget-container.widget-custom-pos {
+        bottom: 1rem !important;
+        right: 1rem !important;
+        left: auto !important;
+        top: auto !important;
+      }
+    }
+    /* Print: hide widget */
+    @media print {
+      #chatbot-widget-container { display: none !important; }
+    }
+    /* Accessibility: respect reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .chatbot-widget-enter,
+      .chatbot-widget-exit,
+      .message-fade-in,
+      .chatbot-fab-pulse {
+        animation: none !important;
+      }
+      #chatbot-widget-container *,
+      #chatbot-widget-container *::before,
+      #chatbot-widget-container *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+      }
+    }
+    /* High-contrast focus ring for keyboard users */
+    #chatbot-widget-container :focus-visible {
+      outline: 3px solid var(--accent-500, #3b82f6) !important;
+      outline-offset: 2px !important;
+    }
+    /* Ensure focus ring visible in dark mode */
+    @media (prefers-color-scheme: dark) {
+      #chatbot-widget-container :focus-visible {
+        outline-color: var(--accent-400, #60a5fa) !important;
+      }
+    }
+  </style>
+
+  <%# Floating Action Button (FAB) %>
+  <button type="button"
+          id="chatbot-fab"
+          data-chatbot-target="toggleButton"
+          data-action="keydown->chatbot#handleFabKeydown mousedown->chatbot#startFabDrag touchstart->chatbot#startFabDrag"
+          aria-label="<%= open_label %>"
+          aria-expanded="false"
+          aria-controls="chatbot-widget-panel"
+          aria-haspopup="dialog"
+          class="chatbot-fab-pulse group relative w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-(--accent-500) cursor-pointer"
+          style="background: linear-gradient(135deg, var(--accent-600-solid, #2563eb), var(--accent-700-solid, #1d4ed8));">
+
+    <%# Chat icon (shown when closed) %>
+    <svg data-chatbot-target="fabIconChat" class="w-6 h-6 text-white transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+    </svg>
+    <%# Close icon (shown when open) %>
+    <svg data-chatbot-target="fabIconClose" class="w-6 h-6 text-white transition-transform duration-300 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+    </svg>
+    <%# Notification badge %>
+    <span class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-sm"
+          data-chatbot-target="badge"
+          aria-label="1 nieuw bericht">1</span>
+    <%# Tooltip - hidden from screen readers (redundant with aria-label) %>
+    <span class="absolute right-full mr-3 px-3 py-1.5 bg-gray-900 dark:bg-gray-700 text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg"
+          aria-hidden="true"
+          role="tooltip">
+      <%= tooltip_text %>
+    </span>
+  </button>
+
+  <%# Context-aware toast notification - shown on law pages instead of auto-opening the panel %>
+  <div id="chatbot-context-toast" class="hidden" role="status" aria-live="polite"></div>
+
+  <%# Chat Panel - dialog role with focus trap %>
+  <div id="chatbot-widget-panel"
+       class="hidden absolute bottom-[4.5rem] right-0 w-[400px] max-w-[calc(100vw-2rem)] bg-white dark:bg-[#0f172a] rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col"
+       data-chatbot-target="widget"
+       role="dialog"
+       aria-modal="false"
+       aria-label="<%= widget_title_text %>">
+
+    <%# Header - also serves as drag handle for moving the widget %>
+    <div class="shrink-0 px-4 py-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 widget-drag-handle"
+         data-action="mousedown->chatbot#startDrag touchstart->chatbot#startDrag dblclick->chatbot#resetWidgetLayout"
+         style="background: linear-gradient(135deg, var(--accent-600-solid, #2563eb), var(--accent-700-solid, #1d4ed8));">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center" aria-hidden="true">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+          </svg>
+        </div>
+        <div>
+          <span class="font-semibold text-white text-sm" id="chatbot-widget-title"><%= widget_title_text %></span>
+          <span class="block text-[10px] text-white/70" aria-hidden="true">
+            <%= subtitle_text %>
+          </span>
+        </div>
+      </div>
+      <div class="flex items-center gap-1" role="toolbar" aria-label="<%= case I18n.locale when :fr then 'Actions du chatbot' when :de then 'Chatbot-Aktionen' when :en then 'Chatbot actions' else 'Chatbot acties' end %>">
+
+        <%# Reset position - snap widget back to original corner %>
+        <button type="button"
+                id="widget-reset-position-btn"
+                data-action="click->chatbot#resetWidgetPosition"
+                aria-label="<%= case I18n.locale when :fr then 'Position d\'origine' when :de then 'Ursprungsposition' when :en then 'Reset position' else 'Oorspronkelijke positie' end %>"
+                title="<%= case I18n.locale when :fr then 'Position d\'origine' when :de then 'Ursprungsposition' when :en then 'Reset position' else 'Oorspronkelijke positie' end %>"
+                class="p-1.5 hover:bg-white/20 rounded-lg transition-colors text-white/80 hover:text-white focus:bg-white/20 opacity-30 cursor-default pointer-events-none"
+                disabled>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4"/>
+          </svg>
+        </button>
+
+        <%# Maximize / Restore toggle %>
+        <button type="button"
+                id="widget-maximize-btn"
+                data-action="click->chatbot#resetWidgetLayout"
+                aria-label="<%= case I18n.locale when :fr then 'Agrandir' when :de then 'Vergrößern' when :en then 'Maximize' else 'Vergroten' end %>"
+                title="<%= case I18n.locale when :fr then 'Agrandir' when :de then 'Vergrößern' when :en then 'Maximize' else 'Vergroten' end %>"
+                class="p-1.5 hover:bg-white/20 rounded-lg transition-colors text-white/80 hover:text-white cursor-pointer focus:bg-white/20">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2"/>
+          </svg>
+        </button>
+
+        <%# Minimize - hides widget but keeps position %>
+        <button type="button"
+                data-action="click->chatbot#toggle"
+                aria-label="<%= close_label %>"
+                class="p-1.5 hover:bg-white/20 rounded-lg transition-colors text-white/80 hover:text-white cursor-pointer focus:bg-white/20">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <%# Messages area %>
+    <div class="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50 dark:bg-[#080d19]"
+         data-chatbot-target="messages"
+         role="log"
+         aria-live="polite"
+         aria-label="<%= messages_label %>"
+         aria-relevant="additions"
+         tabindex="0"
+         style="min-height: 200px;"></div>
+
+    <%# Typing indicator %>
+    <div class="hidden px-3 py-2 bg-gray-50 dark:bg-[#080d19]"
+         data-chatbot-target="typingIndicator"
+         role="status"
+         aria-label="<%= t('chatbot.thinking', default: 'Aan het nadenken...') %>">
+      <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
+        <div class="flex gap-1" aria-hidden="true">
+          <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+          <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+          <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+        </div>
+        <span><%= t('chatbot.thinking', default: 'Aan het nadenken...') %></span>
+      </div>
+    </div>
+
+    <%# Compact progress bar %>
+    <div data-chatbot-target="loading" class="hidden px-3 py-2 bg-gray-50 dark:bg-[#080d19]" role="status">
+      <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+        <div data-chatbot-target="progressBar"
+             class="h-1.5 rounded-full transition-[width] duration-300"
+             style="width: 0%; background: var(--accent-600-solid, #2563eb);"
+             role="progressbar"
+             aria-valuenow="0"
+             aria-valuemin="0"
+             aria-valuemax="100"></div>
+      </div>
+      <div data-chatbot-target="progressText" class="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-1" aria-live="polite"></div>
+    </div>
+
+    <%# ── Collapsible Options Panel - ALL settings, compact ── %>
+    <%
+      intelligence_levels_widget = LegalChatbotService::INTELLIGENCE_LEVELS
+      user_is_pro_widget = defined?(current_user) && current_user&.pro?
+      user_has_purchased_widget = defined?(current_user) && current_user&.advanced_intelligence_access?
+      user_logged_in_widget = defined?(current_user) && current_user.present?
+      widget_model_tier = user_logged_in_widget ? current_user.current_tier : :free
+
+    %>
+    <div id="widget-options-panel"
+         class="hidden shrink-0 border-t border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-[#0f172a]/90"
+         data-chatbot-target="widgetOptionsPanel">
+      <div class="px-3 py-2 space-y-1.5">
+
+        <%# ROW 1: Intelligence pills (label + cost) %>
+        <div class="flex items-center justify-between gap-1">
+          <div class="flex items-center gap-0.5" id="widget-intelligence-pills">
+            <% roman_numerals_w = %w[I II III IV] %>
+            <% intelligence_levels_widget.each_with_index do |(level_id, config), widx| %>
+              <% tier_locked = !LegalChatbotService.intelligence_tier_accessible?(
+                   config[:tier], pro: user_is_pro_widget, purchased: user_has_purchased_widget
+                 )
+                 locked = tier_locked || config[:models].keys.none? { |model_id| LegalChatbotService.model_allowed?(model_id, widget_model_tier) } %>
+              <% label = config[:labels][I18n.locale] || config[:labels][:nl] %>
+              <% roman = roman_numerals_w[widx] || (widx + 1).to_s %>
+              <button type="button"
+                      class="widget-intel-pill relative flex items-center gap-0.5 px-1.5 py-1 rounded-md text-[10px] font-medium whitespace-nowrap transition-all duration-150 cursor-pointer
+                             <%= locked ? 'opacity-50 hover:opacity-70' : '' %> hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm
+                             <%= level_id == 'smart' ? 'bg-white dark:bg-gray-700 shadow-sm ring-1 ring-gray-200 dark:ring-gray-600 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' %>"
+                      data-widget-level="<%= level_id %>"
+                      data-widget-credits="<%= config[:credits] %>"
+                      data-widget-locked="<%= locked %>"
+                      data-widget-locked-tier="<%= config[:tier] %>"
+                      data-widget-label="<%= label %>"
+                      data-widget-roman="<%= roman %>"
+                      data-widget-desc="<%= config[:descriptions][I18n.locale] || config[:descriptions][:nl] %>"
+                      data-widget-model="<%= config[:default_model] %>"
+                      data-widget-default-reasoning="<%= config[:reasoning_effort] || 'low' %>"
+                      data-action="click->chatbot#selectWidgetIntelligence"
+                      title="<%= label %><%= ' - PRO' if locked %>">
+                <span><%= label %></span>
+                <% if locked %>
+                  <span class="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 text-[6px] text-white rounded-full flex items-center justify-center font-bold leading-none">P</span>
+                <% end %>
+              </button>
+            <% end %>
+          </div>
+          <%# Credit balance %>
+          <% if user_logged_in_widget %>
+            <span class="text-[10px] font-semibold tabular-nums shrink-0" style="color: var(--accent-500);" id="widget-credits-display"
+                  title="<%= case I18n.locale when :fr then 'Crédits restants' when :de then 'Verbleibende Credits' when :en then 'Remaining credits' else 'Resterende credits' end %>">
+<%# Grouped per locale: a Dutch reader expects 1.051, not 1051. This is where the balance
+    lives since 28b4dd32 moved it out of the welcome card. %>
+              <%= number_with_delimiter(current_user.total_available_credits,
+                                        delimiter: I18n.locale == :en ? ',' : '.') %>cr
+            </span>
+          <% else %>
+            <a href="<%= login_path %>" class="text-[10px] text-gray-400 hover:underline shrink-0">Login</a>
+          <% end %>
+        </div>
+
+        <%# ROW 2: Model + Category dropdowns side by side %>
+        <div class="flex items-center gap-1.5">
+          <select id="widget-model-select"
+                  data-chatbot-target="widgetModelSelect"
+                  data-action="change->chatbot#updateWidgetModel"
+                  class="text-[10px] rounded border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 px-1 py-0.5 flex-1 min-w-0 truncate">
+            <% intelligence_levels_widget.each do |level_id, config| %>
+              <% tier_accessible = LegalChatbotService.intelligence_tier_accessible?(
+                   config[:tier], pro: user_is_pro_widget, purchased: user_has_purchased_widget
+                 ) %>
+              <% config[:models].sort_by { |mid, mc| [(mc[:credits] || config[:credits]), LegalChatbot::ModelsConfig::AVAILABLE_MODELS.dig(mid, :cost_per_query_eur) || 0] }.each do |model_id, model_config| %>
+                <% is_default = model_id == config[:default_model]
+                   model_locked = !tier_accessible || !LegalChatbotService.model_allowed?(model_id, widget_model_tier)
+                   model_reasoning_levels = LegalChatbotService.reasoning_levels_for_model(model_id)
+                   model_supports_reasoning = model_reasoning_levels.any?
+                   model_reasoning_surcharges = model_reasoning_levels.map { |rid| "#{rid}:#{LegalChatbotService.reasoning_surcharge_for_model(model_id, rid)}" }.join(',')
+                   model_base_label = case I18n.locale when :fr then 'base' when :de then 'Basis' when :en then 'base' else 'basis' end %>
+                <option value="<%= model_id %>"
+                        data-intelligence="<%= level_id %>"
+                        data-default="<%= is_default %>"
+                        data-supports-reasoning="<%= model_supports_reasoning ? 'true' : 'false' %>"
+                        data-reasoning-levels="<%= model_reasoning_levels.join(',') %>"
+                        data-reasoning-surcharges="<%= model_reasoning_surcharges %>"
+                        data-default-reasoning="<%= config[:reasoning_effort] || 'low' %>"
+                        data-credits="<%= model_config[:credits] || config[:credits] %>"
+                        class="widget-model-opt"
+                        <%= 'disabled' if model_locked %>
+                        <%= 'selected' if level_id == 'smart' && is_default %>><%= model_config[:name] %> (<%= model_config[:credits] || config[:credits] %> cr <%= model_base_label %>)<%= ' (PRO)' if model_locked %>
+                </option>
+              <% end %>
+            <% end %>
+          </select>
+          <select id="widget-profile-select"
+                  data-chatbot-target="widgetProfileSelect"
+                  data-action="change->chatbot#updateWidgetProfile"
+                  class="text-[10px] rounded border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 px-1 py-0.5 w-24 truncate">
+            <% LegalChatbotService::CHATBOT_PROFILES.each do |profile_id, config| %>
+              <% name = config[:"name_#{I18n.locale}"] || config[:name_nl] %>
+              <option value="<%= profile_id %>" <%= 'selected' if profile_id == 'general' %>><%= config[:icon] %> <%= name %></option>
+            <% end %>
+          </select>
+        </div>
+        <div id="widget-reasoning-credit-breakdown" class="text-[9px] text-gray-400 dark:text-gray-500 tabular-nums"><%= LegalChatbotService.credits_for_model('smart', LegalChatbotService.model_for_intelligence('smart')) %> <%= case I18n.locale when :fr then 'base' when :de then 'Basis' when :en then 'base' else 'basis' end %> + 0 <%= case I18n.locale when :fr then 'raisonnement' when :de then 'Denken' when :en then 'reasoning' else 'redeneren' end %> = <%= LegalChatbotService.credits_for_model('smart', LegalChatbotService.model_for_intelligence('smart')) %> cr/<%= case I18n.locale when :fr then 'question' when :de then 'Frage' when :en then 'question' else 'vraag' end %></div>
+
+        <%# ROW 3: Sources (abbreviated) + actions %>
+        <div class="flex items-center justify-between gap-1">
+          <div class="flex items-center gap-1.5">
+            <label class="inline-flex items-center gap-0.5 cursor-pointer text-[10px] text-gray-600 dark:text-gray-400">
+              <input type="checkbox"
+                     id="widget-src-leg"
+                     data-chatbot-target="widgetSrcLegislation"
+                     data-action="change->chatbot#updateWidgetSources"
+                     checked
+                     class="w-3 h-3 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-1 focus:ring-blue-500">
+              <span title="<%= case I18n.locale when :fr then 'Législation' when :de then 'Gesetzgebung' when :en then 'Legislation' else 'Wetgeving' end %>">
+                <%= case I18n.locale when :fr then 'Lég.' when :de then 'Ges.' when :en then 'Leg.' else 'Wet.' end %>
+              </span>
+            </label>
+            <label class="inline-flex items-center gap-0.5 cursor-pointer text-[10px] text-gray-600 dark:text-gray-400">
+              <input type="checkbox"
+                     id="widget-src-jur"
+                     data-chatbot-target="widgetSrcJurisprudence"
+                     data-action="change->chatbot#updateWidgetSources"
+                     <%= 'disabled' if !current_user&.pro? %>
+                     class="w-3 h-3 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-1 focus:ring-blue-500">
+              <span><%= case I18n.locale when :fr then 'Jur.' when :de then 'Rspr.' when :en then 'Cas.' else 'Rspr.' end %></span>
+            </label>
+            <label class="inline-flex items-center gap-0.5 cursor-pointer text-[10px] text-gray-600 dark:text-gray-400">
+              <input type="checkbox"
+                     id="widget-src-parl"
+                     data-chatbot-target="widgetSrcParliamentary"
+                     data-action="change->chatbot#updateWidgetSources"
+                     <%= 'disabled' if !current_user&.pro? %>
+                     class="w-3 h-3 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-1 focus:ring-blue-500">
+              <span title="<%= case I18n.locale when :fr then 'Travaux préparatoires' when :de then 'Parlamentarische Vorarbeiten' when :en then 'Parliamentary' else 'Parlementair' end %>">
+                <%= case I18n.locale when :fr then 'Parl.' when :de then 'Parl.' when :en then 'Parl.' else 'Parl.' end %>
+              </span>
+            </label>
+          </div>
+          <%# Action buttons (icon-only) %>
+          <div class="flex items-center gap-0.5">
+            <button type="button" data-action="click->chatbot#toggleHistory"
+                    class="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-(--accent-400) hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    title="<%= case I18n.locale when :fr then 'Historique' when :de then 'Verlauf' when :en then 'History' else 'Geschiedenis' end %>">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
+            <button type="button" data-action="click->chatbot#saveChatToHistory"
+                    class="p-1 rounded text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    title="<%= case I18n.locale when :fr then 'Sauvegarder' when :de then 'Speichern' when :en then 'Save' else 'Opslaan' end %>">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+            </button>
+            <button type="button" data-action="click->chatbot#clearChat"
+                    class="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-(--accent-400) hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    title="<%= case I18n.locale when :fr then 'Effacer' when :de then 'Löschen' when :en then 'Clear' else 'Wissen' end %>">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+            <button type="button" data-action="click->chatbot#copyConversation"
+                    class="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-(--accent-400) hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    title="<%= case I18n.locale when :fr then 'Copier le chat' when :de then 'Chat kopieren' when :en then 'Copy chat' else 'Chat kopiëren' end %>">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </button>
+            <a href="<%= chatbot_path %>"
+               class="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-(--accent-400) hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+               title="<%= case I18n.locale when :fr then 'Ouvrir la page chatbot' when :de then 'Chatbot-Seite öffnen' when :en then 'Open chatbot page' else 'Chatbot-pagina openen' end %>">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <%# Input area %>
+    <div class="shrink-0 p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f172a]">
+      <div class="flex gap-2 items-end" role="form" aria-label="<%= case I18n.locale when :fr then 'Poser une question' when :de then 'Frage stellen' when :en then 'Ask a question' else 'Stel een vraag' end %>">
+        <label for="chatbot-widget-input" class="sr-only"><%= t('chatbot.placeholder', default: 'Stel een vraag...') %></label>
+        <textarea
+          id="chatbot-widget-input"
+          data-chatbot-target="input"
+          data-action="keydown->chatbot#handleKeydown input->chatbot#autoResizeWidget"
+          class="flex-1 resize-none rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-(--accent-500) focus:border-transparent transition-all"
+          rows="1"
+          autocomplete="off"
+          placeholder="<%= t('chatbot.placeholder', default: 'Stel een vraag...') %>"></textarea>
+
+        <button type="button"
+                data-chatbot-target="sendButton"
+                data-action="click->chatbot#send"
+                aria-label="<%= send_label %>"
+                class="shrink-0 w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-200 cursor-pointer focus:ring-2 focus:ring-(--accent-500) focus:ring-offset-2"
+                style="background: linear-gradient(135deg, var(--accent-600-solid, #2563eb), var(--accent-700-solid, #1d4ed8));">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+          </svg>
+        </button>
+      </div>
+      <%# Footer: gear toggle + active level indicator + credit breakdown %>
+      <div class="flex items-center justify-between mt-2">
+        <button type="button"
+                id="widget-options-toggle"
+                data-action="click->chatbot#toggleWidgetOptions"
+                aria-expanded="false"
+                aria-controls="widget-options-panel"
+                class="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-(--accent-400) transition-colors cursor-pointer group"
+                title="<%= case I18n.locale when :fr then 'Options' when :de then 'Optionen' when :en then 'Options' else 'Opties' end %>">
+          <svg class="w-3 h-3 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span id="widget-level-indicator" aria-live="polite"><span data-widget-active-label><%= case I18n.locale when :fr then 'Intelligence IA' when :de then 'KI-Intelligenz' when :en then 'AI Intelligence' else 'AI-Intelligentie' end %>: <%= LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :labels, I18n.locale) || LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :labels, :nl) %></span> <span data-widget-active-desc class="text-gray-300 dark:text-gray-600">- <%= LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :descriptions, I18n.locale) || LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :descriptions, :nl) %></span></span>
+        </button>
+        <% if user_logged_in_widget %>
+          <%
+            credits_count = current_user.credits.to_i
+            cr_label = case I18n.locale when :fr then 'crédits' when :de then 'Credits' when :en then 'credits' else 'credits' end
+          %>
+          <span class="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums" id="widget-credit-breakdown"
+                title="<%= case I18n.locale when :fr then 'Crédits' when :de then 'Credits' when :en then 'Credits' else 'Credits' end %>">
+            <span id="widget-credits-value"><%= credits_count %></span> <%= cr_label %>
+          </span>
+        <% else %>
+          <span class="text-[10px] text-gray-300 dark:text-gray-600" aria-hidden="true">
+            <%= site_name %>
+          </span>
+        <% end %>
+      </div>
+    <%# Legal disclaimer - small print (matches main chatbot page) %>
+      <p class="mt-1.5 text-[9px] leading-[1.4] text-gray-400 dark:text-gray-500 px-0.5">
+        <%= case I18n.locale
+            when :fr then 'Ceci n\'est pas un avis juridique officiel. Les modèles IA peuvent halluciner*.'
+            when :de then 'Dies ist keine offizielle Rechtsberatung. KI-Modelle können halluzinieren*.'
+            when :en then 'This is not official legal advice. AI models may hallucinate*.'
+            else 'Dit is geen officieel juridisch advies. AI-modellen kunnen hallucineren*.'
+            end %>
+        <a href="https://www.ibm.com/think/topics/ai-hallucinations" target="_blank" class="underline hover:text-gray-600 dark:hover:text-(--accent-400)">(IBM)</a><br>
+        <%= case I18n.locale
+            when :fr
+              raw("En utilisant ce chatbot, vous acceptez nos <a href=\"#{terms_of_service_path}\" target=\"_blank\" class=\"underline hover:text-gray-600 dark:hover:text-(--accent-400)\">conditions</a> et <a href=\"#{privacy_policy_path}\" target=\"_blank\" class=\"underline hover:text-gray-600 dark:hover:text-(--accent-400)\">confidentialité</a>.")
+            when :de
+              raw("Mit der Nutzung stimmen Sie unseren <a href=\"#{terms_of_service_path}\" target=\"_blank\" class=\"underline hover:text-gray-600 dark:hover:text-(--accent-400)\">Nutzungsbedingungen</a> und <a href=\"#{privacy_policy_path}\" target=\"_blank\" class=\"underline hover:text-gray-600 dark:hover:text-(--accent-400)\">Datenschutzerklärung</a> zu.")
+            when :en
+              raw("By using this chatbot you agree to our <a href=\"#{terms_of_service_path}\" target=\"_blank\" class=\"underline hover:text-gray-600 dark:hover:text-(--accent-400)\">terms</a> and <a href=\"#{privacy_policy_path}\" target=\"_blank\" class=\"underline hover:text-gray-600 dark:hover:text-(--accent-400)\">privacy policy</a>.")
+            else
+              raw("Door gebruik gaat u akkoord met onze <a href=\"#{terms_of_service_path}\" target=\"_blank\" class=\"underline hover:text-gray-600 dark:hover:text-(--accent-400)\">gebruiksvoorwaarden</a> en <a href=\"#{privacy_policy_path}\" target=\"_blank\" class=\"underline hover:text-gray-600 dark:hover:text-(--accent-400)\">privacybeleid</a>.")
+            end %>
+      </p>
+    </div>
+
+    <%# Resize handles - all edges and corners for resizing the widget %>
+    <div class="widget-resize-edge widget-resize-n" data-resize-dir="n" data-action="mousedown->chatbot#startResize touchstart->chatbot#startResize" aria-hidden="true"></div>
+    <div class="widget-resize-edge widget-resize-s" data-resize-dir="s" data-action="mousedown->chatbot#startResize touchstart->chatbot#startResize" aria-hidden="true"></div>
+    <div class="widget-resize-edge widget-resize-w" data-resize-dir="w" data-action="mousedown->chatbot#startResize touchstart->chatbot#startResize" aria-hidden="true"></div>
+    <div class="widget-resize-edge widget-resize-e" data-resize-dir="e" data-action="mousedown->chatbot#startResize touchstart->chatbot#startResize" aria-hidden="true"></div>
+    <div class="widget-resize-corner widget-resize-nw" data-resize-dir="nw" data-action="mousedown->chatbot#startResize touchstart->chatbot#startResize" aria-hidden="true"></div>
+    <div class="widget-resize-corner widget-resize-ne" data-resize-dir="ne" data-action="mousedown->chatbot#startResize touchstart->chatbot#startResize" aria-hidden="true"></div>
+    <div class="widget-resize-corner widget-resize-sw" data-resize-dir="sw" data-action="mousedown->chatbot#startResize touchstart->chatbot#startResize" aria-hidden="true"></div>
+    <div class="widget-resize-corner widget-resize-se" data-resize-dir="se" data-action="mousedown->chatbot#startResize touchstart->chatbot#startResize" aria-hidden="true"></div>
+  </div>
+
+  <%# GDPR consent modal — must be INSIDE the data-controller="chatbot" div for
+      its accept/decline data-actions to route. position:fixed, so DOM placement
+      doesn't affect the widget layout. Never double-rendered: the layout only
+      renders this widget when controller_name != 'chatbot'. %>
+  <%= render 'chatbot/consent_modal' %>
+</div>
+<script nonce="<%= content_security_policy_nonce %>">
+  // Context-aware toast on content pages - shows a small notification near the FAB
+  // Supports: law pages, jurisprudence case pages, parliamentary document pages
+  (function() {
+    var ctxMeta = document.querySelector('meta[name="chatbot-context"]');
+    if (!ctxMeta) return; // Not a content page - skip
+
+    // Only show once per page navigation
+    if (window._chatbotToastShown) return;
+
+    var lang = document.documentElement.lang || 'nl';
+    var contextType = ctxMeta.dataset.contextType || 'law';
+    var msg;
+
+    if (contextType === 'jurisprudence') {
+      // Case law page - offer "brass tacks" analysis
+      var court = ctxMeta.dataset.caseCourt || '';
+      var caseNum = ctxMeta.dataset.caseNumber || '';
+      var shortRef = court + (caseNum ? ' ' + caseNum.split(':').pop() : '');
+      msg = {
+        nl: { line: '⚖️ Ik zie dat u een arrest van <span class="toast-law-title">' + shortRef + '</span> leest.', cta: 'Geef me de kern van deze zaak!' },
+        fr: { line: '⚖️ Je vois que vous lisez un arrêt de <span class="toast-law-title">' + shortRef + '</span>.', cta: 'Donnez-moi l\'essentiel de cette affaire !' },
+        de: { line: '⚖️ Ich sehe, dass Sie ein Urteil von <span class="toast-law-title">' + shortRef + '</span> lesen.', cta: 'Geben Sie mir das Wesentliche dieses Falles!' },
+        en: { line: '⚖️ I see you\'re reading a <span class="toast-law-title">' + shortRef + '</span> ruling.', cta: 'Give me the brass tacks of this case!' }
+      };
+    } else if (contextType === 'parliamentary') {
+      // Parliamentary document - offer summary
+      var docTitle = ctxMeta.dataset.docTitle || '';
+      var docParl = ctxMeta.dataset.docParliament || '';
+      var shortTitle = docTitle.length > 60 ? docTitle.substring(0, 57) + '…' : docTitle;
+      msg = {
+        nl: { line: '🏛️ Ik zie dat u een parlementair stuk van <span class="toast-law-title">' + docParl + '</span> bekijkt.', cta: 'Vat dit document voor mij samen!' },
+        fr: { line: '🏛️ Je vois que vous consultez un document parlementaire (<span class="toast-law-title">' + docParl + '</span>).', cta: 'Résumez ce document pour moi !' },
+        de: { line: '🏛️ Ich sehe, dass Sie ein parlamentarisches Dokument (<span class="toast-law-title">' + docParl + '</span>) ansehen.', cta: 'Fassen Sie dieses Dokument für mich zusammen!' },
+        en: { line: '🏛️ I see you\'re viewing a parliamentary document from <span class="toast-law-title">' + docParl + '</span>.', cta: 'Summarize this document for me!' }
+      };
+    } else {
+      // Law page (default) - existing behavior
+      var lawTitle = ctxMeta.dataset.lawTitle;
+      if (!lawTitle) return;
+      msg = {
+        nl: { line: '📜 Ik zie dat u <span class="toast-law-title">' + lawTitle + '</span> bekijkt.', cta: 'Stel mij gerust uw vragen hierover!' },
+        fr: { line: '📜 Je vois que vous consultez <span class="toast-law-title">' + lawTitle + '</span>.', cta: 'Posez-moi vos questions à ce sujet!' },
+        de: { line: '📜 Ich sehe, dass Sie <span class="toast-law-title">' + lawTitle + '</span> ansehen.', cta: 'Stellen Sie mir Ihre Fragen dazu!' },
+        en: { line: '📜 I see you\'re viewing <span class="toast-law-title">' + lawTitle + '</span>.', cta: 'Ask me anything about it!' }
+      };
+    }
+
+    var localMsg = msg[lang] || msg.nl;
+
+    function showToast() {
+      // Mobile: suppress entirely. The "I see you're viewing X" toast reappeared
+      // on every law page (Turbo re-runs this script) and, sitting over page
+      // content on a small screen, an accidental tap opened the full chat panel
+      // — "keeps popping up and blocks everything". The FAB / bottom-bar Chat
+      // button is enough on mobile.
+      if (window.matchMedia && window.matchMedia('(max-width: 640px)').matches) return;
+      // Desktop: show at most once per session (was re-showing every navigation).
+      if (window._chatbotToastShown) return;
+      window._chatbotToastShown = true;
+      var toast = document.getElementById('chatbot-context-toast');
+      if (!toast) return;
+
+      // Don't show if chat panel is already open
+      var panel = document.getElementById('chatbot-widget-panel');
+      if (panel && !panel.classList.contains('hidden')) return;
+
+      // Build toast content
+      toast.innerHTML = '<span class="toast-close" title="Close">&times;</span>' +
+                        '<div>' + localMsg.line + '</div>' +
+                        '<span class="toast-cta">' + localMsg.cta + '</span>';
+
+      // Show with animation
+      toast.classList.remove('hidden', 'toast-exit');
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          toast.classList.add('toast-visible');
+        });
+      });
+
+      // Click toast body → open chat panel
+      toast.addEventListener('click', function(e) {
+        if (e.target.classList.contains('toast-close')) {
+          dismissToast();
+          return;
+        }
+        dismissToast();
+        // Open the chatbot panel
+        var ctrlEl = document.querySelector('[data-controller~="chatbot"]');
+        if (ctrlEl) {
+          var app = window.Stimulus || (window.Application && window.Application.application);
+          if (app) {
+            var ctrl = app.getControllerForElementAndIdentifier(ctrlEl, 'chatbot');
+            if (ctrl && typeof ctrl.toggle === 'function') {
+              ctrl.toggle();
+            }
+          }
+        }
+      });
+
+      // Auto-dismiss after 8 seconds
+      window._chatbotToastTimer = setTimeout(dismissToast, 8000);
+    }
+
+    function dismissToast() {
+      clearTimeout(window._chatbotToastTimer);
+      var toast = document.getElementById('chatbot-context-toast');
+      if (!toast) return;
+      toast.classList.remove('toast-visible');
+      toast.classList.add('toast-exit');
+      setTimeout(function() { toast.classList.add('hidden'); }, 250);
+    }
+
+    // Law pages: wait for turbo frame; jurisprudence/parliamentary: show after 1.5s
+    if (contextType === 'law') {
+      var frame = document.querySelector('turbo-frame#law_articles');
+      if (frame) {
+        frame.addEventListener('turbo:frame-load', function() {
+          setTimeout(showToast, 600);
+        }, { once: true });
+        // Fallback: if frame already loaded (cached), show after 3s
+        setTimeout(function() {
+          if (!window._chatbotToastShown) showToast();
+        }, 3000);
+      } else {
+        // No frame (e.g., fisconet page)
+        setTimeout(showToast, 1500);
+      }
+    } else {
+      // Jurisprudence and parliamentary pages - show after 1.5s
+      setTimeout(showToast, 1500);
+    }
+  })();
+</script>
+
+<%# Mobile PWA: keep the widget inside the VISIBLE viewport.
+
+    Measured on the owner's installed PWA (2026-08-19): the layout viewport is
+    466px wide while only 411px is visible (visualViewport.width=411,
+    offsetLeft up to 54, scale=1). A position:fixed element resolves its
+    offsets against the LAYOUT viewport, so `right: 1rem` put the FAB at
+    x=398..450 - past the visible edge, leaving a sliver of it tappable.
+
+    Offset the container by however much of the layout viewport is hidden on
+    the right, and follow the visual viewport as it pans. Kept free of ERB so
+    test/javascript/chatbot_widget_visual_viewport_test.mjs can extract and
+    execute it directly. %>
+<script nonce="<%= content_security_policy_nonce %>">
+/* ww-visual-viewport-pin:start */
+(function () {
+  var MOBILE = '(max-width: 640px)';
+
+  // Pixels of the layout viewport hidden beyond the visible right edge, plus
+  // the inset the design asks for. null means "nothing hidden, use the CSS".
+  function computeInset(layoutWidth, visibleOffset, visibleWidth, base) {
+    var hidden = Math.round(layoutWidth - (visibleOffset + visibleWidth));
+    if (!(hidden > 1)) return null;
+    return hidden + base;
+  }
+
+  function pin() {
+    var vv = window.visualViewport;
+    var box = document.getElementById('chatbot-widget-container');
+    if (!vv || !box) return;
+    // Desktop, and a widget the user dragged, keep their own positioning.
+    if (!window.matchMedia(MOBILE).matches ||
+        (box.className || '').indexOf('widget-custom-pos') !== -1) {
+      box.style.removeProperty('right');
+      return;
+    }
+    // A docked bottom bar pins the widget flush right (right: 0).
+    var base = document.getElementById('mobile-bottom-bar') ? 0 : 16;
+    var inset = computeInset(window.innerWidth, vv.offsetLeft, vv.width, base);
+    if (inset === null) { box.style.removeProperty('right'); }
+    else { box.style.setProperty('right', inset + 'px', 'important'); }
+  }
+
+  window.__wwWidgetPin = { compute: computeInset, pin: pin };
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', pin);
+    window.visualViewport.addEventListener('scroll', pin);
+  }
+  window.addEventListener('orientationchange', pin);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', pin);
+  } else { pin(); }
+})();
+/* ww-visual-viewport-pin:end */
+</script>

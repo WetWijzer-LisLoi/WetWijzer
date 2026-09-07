@@ -1,0 +1,29 @@
+# Tracked files over 1 MiB that predate the FBL-090 size gate. Grandfathered:
+# they stay until the owner defines retrieval URLs and retention for moving
+# generated outputs to object storage (deleting archives needs explicit
+# authority). NEW files above the cap fail CI unless deliberately added here
+# with a reason.
+#
+# Classification (FBL-090 inventory):
+#   generated result  - re-creatable by re-running a documented job
+#   corpus snapshot   - point-in-time data extract, kept as evidence
+docs/QUALITY_DIAGNOSIS_2026-07-16.json
+docs/archive/test-scripts/justel_all_numacs.json
+docs/archive/test-scripts/v081_weekly_output.txt
+docs/archive/wetwijzer-python/wib92_extraction_result.json
+scripts/archive/chatbot-quality/chatbot_1000_results.json
+test/results/golden/full_qa_dump_v31.txt
+test/results/golden/golden_answers_20260211_004610.json
+test/results/golden/golden_gpt_20260407_062803.json
+test/results/golden/golden_gpt_20260522_214825.json
+test/results/golden/golden_gpt_20260522_214825_patched.json
+test/results/golden/golden_scored_20260211_082612.json
+test/results/golden/golden_scored_20260211_090544.json
+test/results/golden/golden_scored_v31_20260211_131119.json
+test/results/qa_500/qa_500_intermediate_20260118_145330.jsonl
+test/results/qa_500/qa_500_results_20260118_145330.jsonl
+test/results/quality_500/quality_500_results_20260128_083146.json
+test/results/quality_500/quality_500_results_20260128_094910.json
+test/results/quality_500/quality_500_results_20260128_105423.json
+test/results/quality_500/quality_500_results_20260128_122446.json
+test/results/quality_500/quality_500_results_20260128_130035.json

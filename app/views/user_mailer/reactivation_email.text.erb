@@ -1,0 +1,7 @@
+<%= t('mailer.reactivation.title', default: 'Reactivate Your Account') %>
+
+<%= t('mailer.reactivation.greeting', name: @user.name || @user.email, default: "Hello #{@user.name || @user.email}") %>
+
+<%= t('mailer.reactivation.body', default: 'Click the link below to reactivate your account:') %>
+
+<%= @reactivation_url %>

@@ -1,0 +1,369 @@
+/* ============================================================================
+ * ORIGINAL THEME - Classic hardcoded blue/green/amber colors
+ * ============================================================================ */
+
+/* Original theme - Table row hover (CSS overrides for !important precedence) */
+.theme-original tr:hover {
+  background-color: #eff6ff !important; /* blue-50 */
+}
+
+.theme-original.dark tr:hover,
+.dark .theme-original tr:hover {
+  background-color: rgba(56, 189, 248, 0.10) !important;
+}
+
+/* Original theme - Table borders and dividers (force production colors) */
+/* Target the actual elements that have borders applied by Tailwind's divide-y */
+.theme-original tbody > tr {
+  border-color: #f3f4f6 !important; /* gray-100 */
+}
+
+.theme-original.dark tbody > tr,
+.dark .theme-original tbody > tr {
+  border-color: rgba(56, 189, 248, 0.10) !important; /* sky/10 - subtle */
+}
+
+.theme-original thead > tr {
+  border-color: #bfdbfe !important; /* blue-200 */
+}
+
+.theme-original.dark thead > tr,
+.dark .theme-original thead > tr {
+  border-color: rgba(56, 189, 248, 0.50) !important; /* sky/50 */
+}
+
+/* All other themes - Table header borders and gradients */
+/* Fun themes - Use theme colors for gradients */
+.theme-blue thead,
+.theme-rose thead,
+.theme-amber thead,
+.theme-emerald thead,
+.theme-violet thead,
+.theme-fuchsia thead,
+.theme-pink thead {
+  background-image: linear-gradient(to right, 
+    color-mix(in srgb, var(--accent-500) 5%, transparent),
+    color-mix(in srgb, var(--accent-500) 10%, transparent)) !important;
+}
+
+.theme-blue.dark thead,
+.dark .theme-blue thead,
+.theme-rose.dark thead,
+.dark .theme-rose thead,
+.theme-amber.dark thead,
+.dark .theme-amber thead,
+.theme-emerald.dark thead,
+.dark .theme-emerald thead,
+.theme-violet.dark thead,
+.dark .theme-violet thead,
+.theme-fuchsia.dark thead,
+.dark .theme-fuchsia thead,
+.theme-pink.dark thead,
+.dark .theme-pink thead {
+  background-image: linear-gradient(to right, 
+    color-mix(in srgb, var(--accent-500) 20%, transparent),
+    color-mix(in srgb, var(--accent-500) 30%, transparent)) !important;
+}
+
+/* Professional themes - Minimal gradients */
+.theme-slate thead,
+.theme-indigo thead,
+.theme-sky thead,
+.theme-teal thead,
+.theme-cyan thead,
+.theme-green thead,
+.theme-purple thead,
+.theme-red thead {
+  background-image: linear-gradient(to right, #f9fafb, #f3f4f6) !important; /* gray-50 to gray-100 */
+}
+
+.theme-slate.dark thead,
+.dark .theme-slate thead,
+.theme-indigo.dark thead,
+.dark .theme-indigo thead,
+.theme-sky.dark thead,
+.dark .theme-sky thead,
+.theme-teal.dark thead,
+.dark .theme-teal thead,
+.theme-cyan.dark thead,
+.dark .theme-cyan thead,
+.theme-green.dark thead,
+.dark .theme-green thead,
+.theme-purple.dark thead,
+.dark .theme-purple thead,
+.theme-red.dark thead,
+.dark .theme-red thead {
+  background-image: linear-gradient(to right, 
+    rgba(148, 163, 184, 0.05),
+    rgba(148, 163, 184, 0.10)) !important; /* subtle gray gradient */
+}
+
+/* Table header row borders for all non-original themes */
+.theme-blue thead > tr,
+.theme-rose thead > tr,
+.theme-amber thead > tr,
+.theme-emerald thead > tr,
+.theme-violet thead > tr,
+.theme-fuchsia thead > tr,
+.theme-pink thead > tr,
+.theme-slate thead > tr,
+.theme-indigo thead > tr,
+.theme-sky thead > tr,
+.theme-teal thead > tr,
+.theme-cyan thead > tr,
+.theme-green thead > tr,
+.theme-purple thead > tr,
+.theme-red thead > tr {
+  border-color: rgba(59, 130, 246, 0.20) !important; /* blue-500/20 for light mode */
+}
+
+.theme-blue.dark thead > tr,
+.dark .theme-blue thead > tr,
+.theme-rose.dark thead > tr,
+.dark .theme-rose thead > tr,
+.theme-amber.dark thead > tr,
+.dark .theme-amber thead > tr,
+.theme-emerald.dark thead > tr,
+.dark .theme-emerald thead > tr,
+.theme-violet.dark thead > tr,
+.dark .theme-violet thead > tr,
+.theme-fuchsia.dark thead > tr,
+.dark .theme-fuchsia thead > tr,
+.theme-pink.dark thead > tr,
+.dark .theme-pink thead > tr,
+.theme-slate.dark thead > tr,
+.dark .theme-slate thead > tr,
+.theme-indigo.dark thead > tr,
+.dark .theme-indigo thead > tr,
+.theme-sky.dark thead > tr,
+.dark .theme-sky thead > tr,
+.theme-teal.dark thead > tr,
+.dark .theme-teal thead > tr,
+.theme-cyan.dark thead > tr,
+.dark .theme-cyan thead > tr,
+.theme-green.dark thead > tr,
+.dark .theme-green thead > tr,
+.theme-purple.dark thead > tr,
+.dark .theme-purple thead > tr,
+.theme-red.dark thead > tr,
+.dark .theme-red thead > tr {
+  border-color: var(--border-header) !important;
+}
+
+/* Original theme - Filter section border */
+.theme-original #filters-panel {
+  border-color: #e5e7eb !important; /* gray-200 */
+}
+
+.theme-original.dark #filters-panel,
+.dark .theme-original #filters-panel {
+  border-color: rgba(56, 189, 248, 0.50) !important; /* sky/50 - matches production */
+}
+
+/* Original theme - Show page: All cards and borders */
+/* Page header gradient background and border */
+.theme-original .bg-gradient-to-r[class*="from-[var(--accent-500)]"] {
+  background-image: linear-gradient(to right, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.10)) !important;
+  border-color: rgba(59, 130, 246, 0.20) !important;
+}
+
+.theme-original.dark .bg-gradient-to-r[class*="from-[var(--accent-500)]"],
+.dark .theme-original .bg-gradient-to-r[class*="from-[var(--accent-500)]"] {
+  background-image: linear-gradient(to right, rgba(56, 189, 248, 0.10), rgba(56, 189, 248, 0.20)) !important;
+  border-color: rgba(56, 189, 248, 0.30) !important;
+}
+
+/* All card borders on show page (external links, doc info, title, toc, updated laws, exdecs, articles) */
+.theme-original #external-links-card,
+.theme-original #document-info-card,
+.theme-original #title-card,
+.theme-original #main-toc-card,
+.theme-original #updated-laws-card,
+.theme-original #exdecs-card,
+.theme-original .bg-white.dark\:bg-navy.rounded-xl {
+  border-color: #e5e7eb !important; /* gray-200 */
+}
+
+.theme-original.dark #external-links-card,
+.theme-original.dark #document-info-card,
+.theme-original.dark #title-card,
+.theme-original.dark #main-toc-card,
+.theme-original.dark #updated-laws-card,
+.theme-original.dark #exdecs-card,
+.theme-original.dark .bg-white.dark\:bg-navy.rounded-xl,
+.dark .theme-original #external-links-card,
+.dark .theme-original #document-info-card,
+.dark .theme-original #title-card,
+.dark .theme-original #main-toc-card,
+.dark .theme-original #updated-laws-card,
+.dark .theme-original #exdecs-card,
+.dark .theme-original .bg-white.dark\:bg-navy.rounded-xl {
+  border-color: rgba(56, 189, 248, 0.30) !important; /* sky/30 */
+}
+
+/* Article separators */
+.theme-original article[class*="border-t"] {
+  border-color: #e5e7eb !important; /* gray-200 */
+}
+
+.theme-original.dark article[class*="border-t"],
+.dark .theme-original article[class*="border-t"] {
+  border-color: rgba(56, 189, 248, 0.40) !important; /* sky/40 */
+}
+
+/* Loading box border and background */
+.theme-original .rounded-lg.border[class*="bg-[var(--accent-500)]"] {
+  background-color: rgba(59, 130, 246, 0.10) !important;
+  border-color: rgba(59, 130, 246, 0.20) !important;
+}
+
+.theme-original.dark .rounded-lg.border[class*="bg-[var(--accent-500)]"],
+.dark .theme-original .rounded-lg.border[class*="bg-[var(--accent-500)]"] {
+  background-color: rgba(56, 189, 248, 0.10) !important;
+  border-color: rgba(56, 189, 248, 0.40) !important;
+}
+
+.theme-original .badge-language {
+  background-color: #dbeafe; /* blue-100 */
+  color: #1e40af; /* blue-800 */
+}
+
+.theme-original.dark .badge-language,
+.dark .theme-original .badge-language {
+  background-color: rgba(56, 189, 248, 0.20); /* sky/20 */
+  color: #38bdf8; /* sky */
+}
+
+.theme-original .badge-type {
+  background-color: #dcfce7; /* green-100 */
+  color: #166534; /* green-800 */
+}
+
+.theme-original.dark .badge-type,
+.dark .theme-original .badge-type {
+  background-color: rgba(34, 197, 94, 0.30); /* green-900/30 */
+  color: #4ade80; /* green-400 */
+}
+
+.theme-original .badge-date {
+  background-color: #dbeafe; /* blue-100 */
+  color: #1e40af; /* blue-800 - matches production */
+}
+
+.theme-original.dark .badge-date,
+.dark .theme-original .badge-date {
+  background-color: rgba(56, 189, 248, 0.20); /* sky/20 */
+  color: #38bdf8; /* sky */
+}
+
+.theme-original .badge-tag {
+  background-color: #dbeafe; /* blue-100 */
+  color: #1e40af; /* blue-800 - matches production */
+  border-color: #bfdbfe; /* blue-200 */
+}
+
+.theme-original.dark .badge-tag,
+.dark .theme-original .badge-tag {
+  background-color: rgba(56, 189, 248, 0.20); /* sky/20 */
+  color: #38bdf8; /* sky */
+  border-color: rgba(56, 189, 248, 0.40); /* sky/40 */
+}
+
+.theme-original .btn-toggle-active {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.theme-original .btn-toggle-active:hover {
+  background-color: #bfdbfe;
+  filter: none;
+}
+
+.theme-original.dark .btn-toggle-active,
+.dark .theme-original .btn-toggle-active {
+  background-color: rgba(56, 189, 248, 0.20);
+  color: #38bdf8;
+}
+
+.theme-original.dark .btn-toggle-active:hover,
+.dark .theme-original .btn-toggle-active:hover {
+  background-color: rgba(56, 189, 248, 0.30);
+  filter: none;
+}
+
+/* Original theme - Keep amber/yellow for exdecs */
+.theme-original .btn-toggle-exdecs,
+.theme-original .badge-exdec-count {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.theme-original .btn-toggle-exdecs:hover {
+  background-color: #fde68a;
+  filter: none;
+}
+
+.theme-original.dark .btn-toggle-exdecs,
+.dark .theme-original .btn-toggle-exdecs,
+.theme-original.dark .badge-exdec-count,
+.dark .theme-original .badge-exdec-count {
+  background-color: rgba(245, 158, 11, 0.20);
+  color: #fbbf24;
+}
+
+.theme-original.dark .btn-toggle-exdecs:hover,
+.dark .theme-original .btn-toggle-exdecs:hover {
+  background-color: rgba(245, 158, 11, 0.30);
+  filter: none;
+}
+
+/* Original theme - Executive decision cards with yellow background */
+.theme-original .exdec-card {
+  background-color: #fffbeb !important; /* amber-50 */
+  border-color: #fde68a !important; /* amber-200 */
+}
+
+.theme-original .exdec-header {
+  background-color: #fef3c7 !important; /* amber-100 */
+  border-color: #fcd34d !important; /* amber-300 */
+}
+
+.theme-original .exdec-content {
+  background-color: #fefce8 !important; /* yellow-50 - very light */
+}
+
+.theme-original.dark .exdec-card,
+.dark .theme-original .exdec-card {
+  background-color: rgba(245, 158, 11, 0.15) !important; /* amber with transparency */
+  border-color: rgba(245, 158, 11, 0.30) !important;
+}
+
+.theme-original.dark .exdec-header,
+.dark .theme-original .exdec-header {
+  background-color: rgba(245, 158, 11, 0.20) !important;
+  border-color: rgba(245, 158, 11, 0.40) !important;
+}
+
+.theme-original.dark .exdec-content,
+.dark .theme-original .exdec-content {
+  background-color: rgba(245, 158, 11, 0.10) !important;
+}
+
+/* Original theme - Executive decision NUMAC links in amber/yellow */
+.theme-original .link-exdec-numac {
+  color: #b45309 !important;
+}
+
+.theme-original .link-exdec-numac:hover {
+  color: #92400e !important;
+}
+
+.theme-original.dark .link-exdec-numac,
+.dark .theme-original .link-exdec-numac {
+  color: #fbbf24 !important;
+}
+
+.theme-original.dark .link-exdec-numac:hover,
+.dark .theme-original .link-exdec-numac:hover {
+  color: #fde047 !important;
+}

@@ -1,0 +1,78 @@
+<div class="px-4 pb-4 md:px-6 md:pb-6">
+  <% if type != 'jurisprudence' %>
+    <section class="pt-2">
+      <h3 class="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <span><%= case I18n.locale when :fr then 'Travaux préparatoires' when :de then 'Parlamentarische Vorarbeiten' when :en then 'Preparatory works' else 'Parlementaire voorbereidingen' end %></span>
+        <span class="text-xs text-gray-400">(<%= parliamentary_total.to_i %>)</span>
+      </h3>
+
+      <% if related_parliamentary.present? %>
+        <div class="space-y-1">
+          <% related_parliamentary.each do |doc| %>
+            <% destination =
+                 if doc[:source] == :vlaamse_codex && doc[:pdf_url].present?
+                   doc[:pdf_url]
+                 elsif doc[:source] == :dossier_summary && doc[:dossier_url].present?
+                   doc[:dossier_url]
+                 else
+                   parliamentary_path(doc[:id])
+                 end %>
+            <% external = destination.to_s.match?(%r{\Ahttps?://}i) %>
+            <%= link_to destination,
+                        class: 'block rounded-lg p-2 transition-colors hover:bg-purple-50 dark:hover:bg-purple-900/20',
+                        target: (external ? '_blank' : nil),
+                        rel: (external ? 'noopener noreferrer' : nil) do %>
+              <div class="text-sm text-gray-900 dark:text-white">
+                <%= doc[:title].presence&.truncate(80) || doc[:document_number] || doc[:dossier_number] %>
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">
+                <%= [doc[:parliament], doc[:dossier_number], doc[:document_type]].compact_blank.join(' · ') %>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+        <%= link_to parliamentary_work_path(numac: lookup_numac),
+                    class: 'mt-2 inline-flex text-xs text-purple-600 hover:underline dark:text-purple-400' do %>
+          <%= case I18n.locale when :fr then 'Voir tous les travaux préparatoires' when :de then 'Alle parlamentarischen Dokumente ansehen' when :en then 'View all preparatory works' else 'Alle parlementaire documenten bekijken' end %>
+        <% end %>
+      <% else %>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          <%= case I18n.locale when :fr then 'Aucun travail préparatoire lié trouvé.' when :de then 'Keine verknüpften parlamentarischen Dokumente gefunden.' when :en then 'No linked preparatory works found.' else 'Geen gekoppelde parlementaire voorbereiding gevonden.' end %>
+        </p>
+      <% end %>
+    </section>
+  <% end %>
+
+  <% if type != 'parliamentary' %>
+    <section class="<%= type == 'all' ? 'mt-4 border-t border-gray-200 pt-4 dark:border-gray-700' : 'pt-2' %>">
+      <h3 class="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <span><%= case I18n.locale when :fr then 'Jurisprudence' when :de then 'Rechtsprechung' when :en then 'Case law' else 'Rechtspraak' end %></span>
+        <span class="text-xs text-gray-400">(<%= jurisprudence_total.to_i %>)</span>
+      </h3>
+
+      <% if related_jurisprudence.present? %>
+        <div class="space-y-1">
+          <% related_jurisprudence.each do |case_item| %>
+            <%= link_to jurisprudence_path(case_item[:case_number]),
+                        class: 'block rounded-lg p-2 transition-colors hover:bg-(--accent-50,#eff6ff) dark:hover:bg-(--accent-900,#1e3a5f)/20' do %>
+              <div class="font-mono text-sm text-gray-900 dark:text-white">
+                <%= case_item[:case_number].to_s.truncate(60) %>
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">
+                <%= [case_item[:court], case_item[:decision_date], case_item[:subject_matter]].compact_blank.join(' · ').truncate(140) %>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+        <%= link_to jurisprudence_index_path,
+                    class: 'mt-2 inline-flex text-xs text-(--accent-600) hover:underline dark:text-(--accent-400)' do %>
+          <%= case I18n.locale when :fr then 'Rechercher dans la jurisprudence' when :de then 'In der Rechtsprechung suchen' when :en then 'Search case law' else 'Zoeken in rechtspraak' end %>
+        <% end %>
+      <% else %>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          <%= case I18n.locale when :fr then 'Aucune jurisprudence liée trouvée.' when :de then 'Keine verknüpfte Rechtsprechung gefunden.' when :en then 'No linked case law found.' else 'Geen gekoppelde rechtspraak gevonden.' end %>
+        </p>
+      <% end %>
+    </section>
+  <% end %>
+</div>

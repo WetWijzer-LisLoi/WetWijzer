@@ -1,0 +1,31 @@
+<% locale = local_assigns.fetch(:locale, I18n.locale).to_sym %>
+<% privacy_columns = local_assigns.fetch(:privacy_columns, false) %>
+<% copy = chatbot_pricing_copy(locale) %>
+<table data-chatbot-pricing-source="models-config">
+    <tr>
+        <th><%= copy[:level] %></th>
+        <th><%= copy[:base_credits] %></th>
+        <th><%= copy[:models] %></th>
+        <th><%= copy[:total_credits] %></th>
+        <% if privacy_columns %>
+            <th><%= copy[:providers] %></th>
+            <th><%= copy[:locations] %></th>
+        <% end %>
+    </tr>
+    <% chatbot_pricing_rows(locale).each do |row| %>
+        <tr data-chatbot-level="<%= row[:id] %>">
+            <td><strong><%= row[:label] %></strong></td>
+            <td><%= chatbot_credit_range(row[:base_credits], locale) %></td>
+            <td><%= row[:models].map { |model| "#{model[:name]} (#{model[:base_credits]} cr)" }.join(', ') %></td>
+            <td><%= chatbot_credit_range(row[:total_credits], locale) %></td>
+            <% if privacy_columns %>
+                <td><%= row[:providers].join(' / ') %></td>
+                <td><%= row[:locations].join(' / ') %></td>
+            <% end %>
+        </tr>
+    <% end %>
+</table>
+<p class="small" data-chatbot-reasoning-pricing="models-config">
+    <strong><%= copy[:reasoning] %>:</strong>
+    <%= format(copy[:reasoning_text], surcharges: chatbot_reasoning_surcharge_list) %>
+</p>

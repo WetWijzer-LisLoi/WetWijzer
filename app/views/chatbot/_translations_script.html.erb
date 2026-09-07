@@ -1,0 +1,567 @@
+  <script nonce="<%= content_security_policy_nonce %>">
+    var allQuestions = [];
+    var currentLang = '<%= case I18n.locale when :fr then 'fr' when :de then 'de' when :en then 'en' else 'nl' end %>';
+    
+    // UI translations
+    var translations = {
+      nl: {
+        title: 'WetWijzer Juridische Chatbot',
+        intelligence: 'AI-Intelligentie:',
+        profile: 'Categorie:',
+        sources: 'Bronnen:',
+        legislation: 'Wetgeving',
+        jurisprudence: 'Rechtspraak',
+        parliamentary: 'Parlementaire voorbereidingen',
+        fisconet: 'Fiscaliteit',
+        both: 'Beide',
+        clear: 'Wissen',
+        send: 'Verstuur',
+        disclaimer: 'Dit is geen officieel juridisch advies. AI-modellen kunnen fouten maken en kunnen mogelijks hallucineren*. Verifieer informatie altijd bij officiële bronnen.',
+        footnote: '*Hallucineren: het verzinnen van informatie die correct lijkt maar feitelijk onjuist of onbestaand is. (<a href="https://www.ibm.com/think/topics/ai-hallucinations" target="_blank" class="underline hover:text-gray-600">IBM</a>)',
+        sampleQuestions: 'Voorbeeldvragen',
+        allCategories: 'Alle categorieën',
+        search: 'Zoeken...',
+        inputPlaceholder: 'Stel een vraag... (Shift+Enter = nieuwe regel)',
+        welcome: '<%= raw(j("Hallo! Ik ben de #{site_name} Juridische Chatbot. Stel uw vraag over Belgische wetgeving - ik doorzoek wetgeving, rechtspraak en parlementaire stukken.\n\n🔒 **Privacy:** Standaard slaan wij uw gesprekken niet op. Met een uniek opslagwachtwoord van minstens 12 tekens wordt alleen de opgeslagen geschiedenis in uw browser versleuteld; wij bewaren salt en versleutelde mastersleutel, niet de ontsleutelde sleutel. Bij blootstelling kan een zwak wachtwoord offline worden geraden. Uw actuele vraag en relevante context worden voor beantwoording wel tijdelijk in leesbare vorm verwerkt. Meer info op onze [AI-beveiligingspagina](/ai-security).")) %>',
+        noQuestionsFound: 'Geen vragen gevonden',
+        loadingQuestions: 'Vragen laden...',
+        errorLoading: 'Fout bij laden vragen',
+        profileTooltip: 'Het kiezen van de juiste categorie verbetert de antwoordkwaliteit. Onze tests tonen dat gespecialiseerde categorieën 10-15% hogere scores behalen. Niet zeker? Kies "Algemeen Recht".',
+        legalConsent: 'Door gebruik te maken van deze chatbot gaat u akkoord met onze <a href="/terms-of-service" target="_blank" class="underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors">gebruiksvoorwaarden</a> en <a href="/privacy-policy" target="_blank" class="underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors">privacybeleid</a>.',
+        alphaBanner: '<strong>Alfa-versie.</strong> Deze juridische chatbot is actief in ontwikkeling. Functionaliteit, antwoordkwaliteit en prijzen kunnen veranderen. De huidige prijzen weerspiegelen deze vroege teststatus. Bedankt voor uw geduld!',
+        privacyBanner: '<strong>Privacy.</strong> Providers gebruiken verwerking met een EU-bereik (Azure EU Data Zone met DataZoneStandard voor alle aangeboden Azure-modellen; het specifieke EU-eindpunt van Mistral; AWS EU-geografieprofielen); zie het privacybeleid voor door providers gemelde beveiligde doorgiften. <strong>WetWijzer slaat vraagtekst standaard niet op.</strong> Aan uw account gekoppelde pseudonieme metadata (waaronder taal, responstijd en kosten) wordt bijgehouden. Gesprekken worden enkel bewaard als u geschiedenis inschakelt. <span class="opacity-70 text-[10px]">Met een uniek opslagwachtwoord van minstens 12 tekens wordt de opgeslagen geschiedenis in uw browser versleuteld (AES-256-GCM). Wij bewaren salt en versleutelde mastersleutel, niet de ontsleutelde sleutel; bij blootstelling kan een zwak wachtwoord offline worden geraden. Zonder wachtwoord beheren wij de serversleutel. Uw actuele vraag en relevante context worden tijdelijk in leesbare vorm verwerkt door Azure OpenAI voor retrieval, bij Diep zoeken eventueel door Mistral Small voor HyDE en daarna door de geselecteerde antwoordprovider. Credits betalen het gegenereerde antwoord; het bewaren van geschiedenis is een afzonderlijke stap.</span>',
+        internationalBanner: '🌍 <strong>International?</strong> Choose <strong>EN/INT</strong> at the top. The chatbot responds in your input language.'
+      },
+      fr: {
+        title: 'LisLoi Chatbot Juridique',
+        intelligence: 'Intelligence IA:',
+        profile: 'Catégorie:',
+        sources: 'Sources:',
+        legislation: 'Législation',
+        jurisprudence: 'Jurisprudence',
+        parliamentary: 'Travaux préparatoires',
+        fisconet: 'Fiscalité',
+        both: 'Les deux',
+        clear: 'Effacer',
+        send: 'Envoyer',
+        disclaimer: 'Ceci n\'est pas un avis juridique officiel. Les modèles IA peuvent faire des erreurs et peuvent halluciner*. Vérifiez toujours auprès des sources officielles.',
+        footnote: '*Halluciner: inventer des informations qui semblent correctes mais qui sont fausses ou inexistantes. (<a href="https://www.ibm.com/think/topics/ai-hallucinations" target="_blank" class="underline hover:text-gray-600">IBM</a>)',
+        sampleQuestions: 'Exemples de questions',
+        allCategories: 'Toutes catégories',
+        search: 'Rechercher...',
+        inputPlaceholder: 'Posez une question... (Shift+Entrée = nouvelle ligne)',
+        welcome: '<%= raw(j("Bonjour! Je suis le Chatbot Juridique #{site_name}. Posez votre question sur la législation belge - j\'analyse la loi, la jurisprudence et les travaux parlementaires.\n\n🔒 **Confidentialité:** Par défaut, nous n\'enregistrons pas vos conversations. Avec un mot de passe de stockage unique d’au moins 12 caractères, seul l\'historique enregistré est chiffré dans votre navigateur ; nous conservons le sel et la clé principale enveloppée, pas la clé déchiffrée. Un mot de passe faible pourrait être deviné hors ligne si ces valeurs étaient exposées. Votre question actuelle et le contexte pertinent sont néanmoins traités temporairement en clair afin de répondre. Plus d\'infos sur notre [page sécurité IA](/ai-security).")) %>',
+        noQuestionsFound: 'Aucune question trouvée',
+        loadingQuestions: 'Chargement des questions...',
+        errorLoading: 'Erreur lors du chargement',
+        profileTooltip: 'Choisir la bonne catégorie améliore la qualité des réponses. Nos tests montrent que les catégories spécialisées obtiennent des scores 10-15% plus élevés. Pas sûr? Gardez "Juridique Général".',
+        legalConsent: 'En utilisant ce chatbot, vous acceptez nos <a href="/terms-of-service" target="_blank" class=\"underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors\">conditions d\'utilisation</a> et notre <a href="/privacy-policy" target="_blank" class=\"underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors\">politique de confidentialité</a>.',
+        alphaBanner: '<strong>Version Alpha.</strong> Ce chatbot juridique est en développement actif. Les fonctionnalités, la qualité des réponses et les prix peuvent changer. Les tarifs actuels reflètent ce statut de test précoce. Merci pour votre patience!',
+        privacyBanner: '<strong>Confidentialité.</strong> Les fournisseurs utilisent un traitement à portée européenne (zone de données UE Azure avec DataZoneStandard pour tous les modèles Azure proposés ; point de terminaison UE dédié de Mistral ; profils géographiques UE AWS) ; consultez la politique de confidentialité pour les transferts encadrés déclarés par les fournisseurs. <strong>WetWijzer ne conserve pas le texte des questions par défaut.</strong> Des métadonnées pseudonymes liées à votre compte (notamment langue, temps de réponse et coût) sont enregistrées. Les conversations ne sont sauvegardées que si vous activez l’historique. <span class="opacity-70 text-[10px]">Avec un mot de passe de stockage unique d’au moins 12 caractères, l’historique enregistré est chiffré dans votre navigateur (AES-256-GCM). Nous conservons le sel et la clé principale enveloppée, pas la clé déchiffrée ; un mot de passe faible pourrait être deviné hors ligne si ces valeurs étaient exposées. Sans mot de passe, nous gérons la clé serveur. Votre question actuelle et le contexte pertinent sont traités temporairement en clair par Azure OpenAI pour la recherche, éventuellement par Mistral Small pour HyDE en recherche approfondie, puis par le fournisseur de réponse sélectionné. Les crédits paient la réponse générée ; l’enregistrement de l’historique est une étape distincte.</span>',
+        internationalBanner: '🌍 <strong>International?</strong> Choose <strong>EN/INT</strong> at the top. The chatbot responds in your input language.'
+      },
+      en: {
+        title: '<%= site_name %> Legal Chatbot',
+        intelligence: 'AI Intelligence:',
+        profile: 'Category:',
+        sources: 'Sources:',
+        legislation: 'Legislation',
+        jurisprudence: 'Case Law',
+        parliamentary: 'Preparatory Works',
+        fisconet: 'Tax Law',
+        both: 'Both',
+        clear: 'Clear',
+        send: 'Send',
+        disclaimer: 'This is not official legal advice. AI models can make mistakes and may hallucinate*. Always verify with official sources.',
+        footnote: '*Hallucinate: inventing information that appears correct but is factually wrong or non-existent. (<a href=\"https://www.ibm.com/think/topics/ai-hallucinations\" target=\"_blank\" class=\"underline hover:text-gray-600\">IBM</a>)',
+        sampleQuestions: 'Sample Questions',
+        allCategories: 'All categories',
+        search: 'Search...',
+        inputPlaceholder: 'Ask a question... (Shift+Enter = new line)',
+        welcome: '<%= raw(j("Hello! I'm the #{site_name} Legal Chatbot. Ask your question about Belgian legislation - I analyze laws, case law, and parliamentary documents.\n\n🔒 **Privacy:** By default we do not store your conversations. With a unique storage password of at least 12 characters, only saved history is encrypted in your browser; we store the salt and wrapped master key, not the unwrapped key. A weak password could be guessed offline if those values were exposed. Your current question and relevant context are still processed temporarily in readable form to answer. More info on our [AI security page](/ai-security).")) %>',
+        noQuestionsFound: 'No questions found',
+        loadingQuestions: 'Loading questions...',
+        errorLoading: 'Error loading questions',
+        profileTooltip: 'Choosing the right category improves answer quality. Our tests show specialized categories score 10-15% higher. Not sure? Keep "General Legal".',
+        legalConsent: 'By using this chatbot you agree to our <a href="/terms-of-service" target="_blank" class="underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors">terms of service</a> and <a href="/privacy-policy" target="_blank" class="underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors">privacy policy</a>.',
+        alphaBanner: '<strong>Alpha Version.</strong> This legal chatbot is under active development. Features, answer quality and pricing may change. Current pricing reflects this early-access status. Thank you for your patience!',
+        privacyBanner: '<strong>Privacy.</strong> Providers use EU-scoped processing (Azure EU Data Zone with DataZoneStandard for all offered Azure models; Mistral’s dedicated EU endpoint; AWS EU geographic profiles); see the privacy policy for provider-disclosed safeguarded transfers. <strong>WetWijzer does not store question text by default.</strong> Pseudonymous metadata linked to your account (including language, response time and cost) is logged. Conversations are saved only if you enable history. <span class="opacity-70 text-[10px]">With a unique storage password of at least 12 characters, saved history is encrypted in your browser (AES-256-GCM). We store the salt and wrapped master key, not the unwrapped key; a weak password could be guessed offline if those values were exposed. Without a password, we hold the server key. Your current question and relevant context are processed temporarily in readable form by Azure OpenAI for retrieval, optionally by Mistral Small for HyDE in Deep search, and then by the selected answer provider. Credits pay for the generated answer; saving history is a separate step.</span>',
+        internationalBanner: '🌍 <strong>International?</strong> You\'re in the right place. The chatbot responds in your input language.'
+      },
+      de: {
+        title: '<%= site_name %> Juristischer Chatbot',
+        intelligence: 'KI-Intelligenz:',
+        profile: 'Kategorie:',
+        sources: 'Quellen:',
+        legislation: 'Gesetzgebung',
+        jurisprudence: 'Rechtsprechung',
+        parliamentary: 'Parlamentarische Vorarbeiten',
+        fisconet: 'Steuerrecht',
+        both: 'Beide',
+        clear: 'Löschen',
+        send: 'Senden',
+        disclaimer: 'Dies ist keine offizielle Rechtsberatung. KI-Modelle können Fehler machen und halluzinieren*. Überprüfen Sie immer bei offiziellen Quellen.',
+        footnote: '*Halluzinieren: Erfinden von Informationen, die korrekt erscheinen, aber faktisch falsch oder nicht existent sind. (<a href=\"https://www.ibm.com/think/topics/ai-hallucinations\" target=\"_blank\" class=\"underline hover:text-gray-600\">IBM</a>)',
+        sampleQuestions: 'Beispielfragen',
+        allCategories: 'Alle Kategorien',
+        search: 'Suchen...',
+        inputPlaceholder: 'Stellen Sie eine Frage... (Shift+Enter = neue Zeile)',
+        welcome: '<%= raw(j("Hallo! Ich bin der juristische Chatbot von #{site_name}. Stellen Sie Ihre Frage zur belgischen Gesetzgebung - ich analysiere Gesetze, Rechtsprechung und parlamentarische Dokumente.\n\n🔒 **Datenschutz:** Standardmäßig speichern wir Ihre Gespräche nicht. Mit einem einzigartigen Speicherpasswort von mindestens 12 Zeichen wird nur der gespeicherte Verlauf im Browser verschlüsselt; wir speichern Salt und umhüllten Hauptschlüssel, nicht den entschlüsselten Schlüssel. Bei Offenlegung könnte ein schwaches Passwort offline erraten werden. Ihre aktuelle Frage und der relevante Kontext werden zur Beantwortung dennoch vorübergehend im Klartext verarbeitet. Weitere Infos auf unserer [KI-Sicherheitsseite](/ai-security).")) %>',
+        noQuestionsFound: 'Keine Fragen gefunden',
+        loadingQuestions: 'Fragen werden geladen...',
+        errorLoading: 'Fehler beim Laden',
+        profileTooltip: 'Die Wahl der richtigen Kategorie verbessert die Antwortqualität. Unsere Tests zeigen, dass spezialisierte Kategorien 10-15% höhere Ergebnisse erzielen. Nicht sicher? Behalten Sie "Allgemeines Recht".',
+        legalConsent: 'Durch die Nutzung dieses Chatbots stimmen Sie unseren <a href="/terms-of-service" target="_blank" class="underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Nutzungsbedingungen</a> und unserer <a href="/privacy-policy" target="_blank" class="underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Datenschutzerklärung</a> zu.',
+        alphaBanner: '<strong>Alpha-Version.</strong> Dieser juristische Chatbot wird aktiv weiterentwickelt. Funktionen, Antwortqualität und Preise können sich ändern. Die aktuellen Preise spiegeln diesen frühen Teststatus wider. Danke für Ihre Geduld!',
+        privacyBanner: '<strong>Datenschutz.</strong> Die Anbieter nutzen EU-begrenzte Verarbeitung (Azure EU Data Zone mit DataZoneStandard für alle angebotenen Azure-Modelle; dedizierter EU-Endpunkt von Mistral; AWS-EU-Geografieprofile); Einzelheiten zu abgesicherten Übermittlungen stehen in der Datenschutzerklärung. <strong>WetWijzer speichert Fragetext standardmäßig nicht.</strong> Mit Ihrem Konto verknüpfte pseudonyme Metadaten (unter anderem Sprache, Antwortzeit und Kosten) werden erfasst. Gespräche werden nur gespeichert, wenn Sie den Verlauf aktivieren. <span class="opacity-70 text-[10px]">Mit einem einzigartigen Speicherpasswort von mindestens 12 Zeichen wird der gespeicherte Verlauf im Browser verschlüsselt (AES-256-GCM). Wir speichern Salt und umhüllten Hauptschlüssel, nicht den entschlüsselten Schlüssel; bei Offenlegung könnte ein schwaches Passwort offline erraten werden. Ohne Passwort verwalten wir den Serverschlüssel. Ihre aktuelle Frage und der relevante Kontext werden vorübergehend im Klartext durch Azure OpenAI für das Retrieval, bei tiefer Suche optional durch Mistral Small für HyDE und anschließend durch den gewählten Antwortanbieter verarbeitet. Credits bezahlen die erzeugte Antwort; das Speichern des Verlaufs ist ein separater Schritt.</span>',
+        internationalBanner: '🌍 <strong>International?</strong> Choose <strong>EN/INT</strong> at the top. The chatbot responds in your input language.'
+      }
+    };
+    
+    // Expose translations for Stimulus controller (welcome message after clear)
+    window.chatbotTranslations = translations;
+    
+    // ═══════════════════════════════════════════════
+    // PERSISTENCE BRIDGE - syncs full-page UI with Stimulus chatbot controller
+    // Uses PreferencesStore (in-memory for anon, server-API for logged-in)
+    // This preferences bridge uses no browser persistence for anonymous users.
+    // Separate documented PWA and encrypted ZK-retry storage are out of scope.
+    // ═══════════════════════════════════════════════
+    function saveChatbotPrefs(partial) {
+      try {
+        // Sync widget Stimulus controller attributes if present
+        var widgetContainer = document.querySelector('[data-controller="chatbot"]');
+        if (widgetContainer) {
+          if (partial.intelligence) widgetContainer.setAttribute('data-chatbot-intelligence-value', partial.intelligence);
+          if (partial.model) widgetContainer.setAttribute('data-chatbot-model-override-value', partial.model);
+          // Profile/category intentionally NOT synced — resets to "general" each session.
+          if (partial.source) widgetContainer.setAttribute('data-chatbot-source-value', partial.source);
+        }
+        // Persist via PreferencesStore if available (server-side for logged-in users)
+        if (window.prefsStore) {
+          window.prefsStore.set('chatbot_prefs', Object.assign(window.prefsStore.get('chatbot_prefs') || {}, partial));
+        }
+      } catch(e) { /* ignore */ }
+    }
+    
+    // On page load: restore saved preferences into full-page UI elements
+    (function restoreFullPagePrefs() {
+      var prefs = window.prefsStore ? window.prefsStore.get('chatbot_prefs') : null;
+      if (!prefs || Object.keys(prefs).length === 0) return;
+      
+      // Restore model dropdown
+      if (prefs.model) {
+        var modelSel = document.getElementById('model-select');
+        if (modelSel) {
+          var opt = modelSel.querySelector('option[value="' + prefs.model + '"]');
+          if (opt && !opt.disabled && !opt.hidden) opt.selected = true;
+        }
+      }
+      
+      
+      // Profile/category intentionally NOT restored — always starts at "general".
+      // Auto-sets when user clicks a sample question.
+    })();
+    
+    // Wire model-select change to save preferences
+    (function() {
+      var modelSel = document.getElementById('model-select');
+      if (modelSel) {
+        modelSel.addEventListener('change', function() {
+          saveChatbotPrefs({ model: modelSel.value });
+        });
+      }
+      // Profile/category intentionally NOT saved — resets to "general" each session.
+    })();
+    // NOTE: the in-page language-switch pipeline (switchPageLanguage,
+    // updateCategoryFilter, updateProfileFilter, switchQuestionTab, the
+    // [data-switch-lang] wiring and the data-translate applier) was removed as
+    // dead code: the lang buttons were dropped in commit 7475504a and the
+    // #lang-primary/#tab-nl elements no longer exist. Page language comes from
+    // I18n server-side; the chatbot language from data-chatbot-language-value.
+
+    var categoryInfo = {
+      // ── Main categories ──
+      'ALGEMEEN':           { nl: 'Algemeen',           en: 'General',              fr: 'Général',                    de: 'Allgemein' },
+      'ARBEIDSRECHT':       { nl: 'Arbeidsrecht',       en: 'Employment Law',       fr: 'Droit du Travail',           de: 'Arbeitsrecht' },
+      'BESTUURSRECHT':      { nl: 'Bestuursrecht',      en: 'Administrative Law',   fr: 'Droit Administratif',        de: 'Verwaltungsrecht' },
+      'BOUWEN':             { nl: 'Bouwrecht',          en: 'Construction Law',     fr: 'Droit de la Construction',   de: 'Baurecht' },
+      'BURENRECHT':         { nl: 'Burenrecht',         en: 'Neighbour Law',        fr: 'Droit de Voisinage',         de: 'Nachbarrecht' },
+      'CONSUMENTENRECHT':   { nl: 'Consumentenrecht',   en: 'Consumer Law',         fr: 'Droit de la Consommation',   de: 'Verbraucherrecht' },
+      'DIEREN':             { nl: 'Dierenrecht',        en: 'Animal Law',           fr: 'Droit des Animaux',          de: 'Tierrecht' },
+      'DIVERSE':            { nl: 'Diverse',            en: 'Miscellaneous',        fr: 'Divers',                     de: 'Verschiedenes' },
+      'DRUGS':              { nl: 'Drugs & Alcohol',    en: 'Drugs & Alcohol',      fr: 'Drogues & Alcool',           de: 'Drogen & Alkohol' },
+      'ERFRECHT':           { nl: 'Erfrecht',           en: 'Inheritance Law',      fr: 'Droit des Successions',      de: 'Erbrecht' },
+      'FAMILIERECHT':       { nl: 'Familierecht',       en: 'Family Law',           fr: 'Droit de la Famille',        de: 'Familienrecht' },
+      'FISCAAL':            { nl: 'Fiscaal Recht',      en: 'Tax Law',              fr: 'Droit Fiscal',               de: 'Steuerrecht' },
+      'GRONDWET':           { nl: 'Grondwet',           en: 'Constitution',         fr: 'Constitution',               de: 'Verfassung' },
+      'HUURRECHT':          { nl: 'Huurrecht',          en: 'Rental Law',           fr: 'Droit du Bail',              de: 'Mietrecht' },
+      'INTELLECTUEEL':      { nl: 'Intellectueel Eigendom', en: 'Intellectual Property', fr: 'Propriété Intellectuelle', de: 'Geistiges Eigentum' },
+      'INTERNET':           { nl: 'Internetrecht',      en: 'Internet Law',         fr: 'Droit de l\'Internet',       de: 'Internetrecht' },
+      'MEDISCH':            { nl: 'Medisch Recht',      en: 'Medical Law',          fr: 'Droit Médical',              de: 'Medizinrecht' },
+      'MILIEU':             { nl: 'Milieurecht',        en: 'Environmental Law',    fr: 'Droit de l\'Environnement',  de: 'Umweltrecht' },
+      'OVERHEID':           { nl: 'Overheidszaken',     en: 'Government Affairs',   fr: 'Affaires Gouvernementales',  de: 'Regierungsangelegenheiten' },
+      'PRIVACY':            { nl: 'Privacy & Data',     en: 'Privacy & Data',       fr: 'Vie Privée & Données',       de: 'Datenschutz & Daten' },
+      'PROCEDURERECHT':     { nl: 'Procedurerecht',     en: 'Procedural Law',       fr: 'Droit Procédural',           de: 'Verfahrensrecht' },
+      'SCHULDEN':           { nl: 'Schuldenrecht',      en: 'Debt Law',             fr: 'Droit des Dettes',           de: 'Schuldenrecht' },
+      'SOCIALE ZEKERHEID':  { nl: 'Sociale Zekerheid',  en: 'Social Security',      fr: 'Sécurité Sociale',           de: 'Sozialversicherung' },
+      'SPORT':              { nl: 'Sportrecht',         en: 'Sports Law',           fr: 'Droit du Sport',             de: 'Sportrecht' },
+      'STRAFRECHT':         { nl: 'Strafrecht',         en: 'Criminal Law',         fr: 'Droit Pénal',                de: 'Strafrecht' },
+      'VASTGOEDRECHT':      { nl: 'Vastgoedrecht',      en: 'Real Estate Law',      fr: 'Droit Immobilier',           de: 'Immobilienrecht' },
+      'VENNOOTSCHAPSRECHT': { nl: 'Vennootschapsrecht', en: 'Company Law',          fr: 'Droit des Sociétés',         de: 'Gesellschaftsrecht' },
+      'VERKEERSRECHT':      { nl: 'Verkeersrecht',      en: 'Traffic Law',          fr: 'Droit de la Circulation',    de: 'Verkehrsrecht' },
+      'VERZEKERINGEN':      { nl: 'Verzekeringsrecht',  en: 'Insurance Law',        fr: 'Droit des Assurances',       de: 'Versicherungsrecht' },
+      'VREEMDELINGENRECHT': { nl: 'Vreemdelingenrecht', en: 'Immigration Law',      fr: 'Droit des Étrangers',        de: 'Ausländerrecht' },
+      'ZAKENRECHT':         { nl: 'Zakenrecht',         en: 'Property Law',         fr: 'Droit des Biens',            de: 'Sachenrecht' },
+      // ── Subcategory qualifiers (for compound "X - Y" categories) ──
+      'INDIVIDUEEL':      { nl: 'Individueel',        en: 'Individual',         fr: 'Individuel',             de: 'Individuell' },
+      'COLLECTIEF':       { nl: 'Collectief',         en: 'Collective',         fr: 'Collectif',              de: 'Kollektiv' },
+      'LOON':             { nl: 'Loon',               en: 'Wages',              fr: 'Salaire',                de: 'Gehalt' },
+      'ONTSLAG':          { nl: 'Ontslag',            en: 'Dismissal',          fr: 'Licenciement',           de: 'Kündigung' },
+      'VAKANTIE':         { nl: 'Vakantie',           en: 'Holiday',            fr: 'Vacances',               de: 'Urlaub' },
+      'ZIEKTE':           { nl: 'Ziekte',             en: 'Illness',            fr: 'Maladie',                de: 'Krankheit' },
+      'BTW':              { nl: 'BTW',                en: 'VAT',                fr: 'TVA',                    de: 'MwSt' },
+      'PERSONENBELASTING':{ nl: 'Personenbelasting',  en: 'Income Tax',         fr: 'Impôt des Personnes',    de: 'Einkommensteuer' },
+      'REGISTRATIE':      { nl: 'Registratierechten', en: 'Registration Fees',  fr: 'Droits d\'Enregistrement', de: 'Registrierungsgebühren' }
+    };
+    
+    function getCategoryDisplay(cat, lang) {
+      var catUpper = cat.toUpperCase().replace(/\s*\(\d+\)\s*$/, '').trim();
+      
+      // Compound categories like "ARBEIDSRECHT - INDIVIDUEEL"
+      if (catUpper.includes(' - ')) {
+        var parts = catUpper.split(' - ');
+        var mainKey = parts[0].trim();
+        var subKey = parts[1].trim();
+        var mainLabel = categoryInfo[mainKey] ? (categoryInfo[mainKey][lang] || categoryInfo[mainKey].nl) : (mainKey.charAt(0) + mainKey.slice(1).toLowerCase());
+        var subLabel = categoryInfo[subKey] ? (categoryInfo[subKey][lang] || categoryInfo[subKey].nl) : (subKey.charAt(0) + subKey.slice(1).toLowerCase());
+        return mainLabel + ' – ' + subLabel;
+      }
+      
+      // Exact match
+      if (categoryInfo[catUpper]) {
+        return categoryInfo[catUpper][lang] || categoryInfo[catUpper].nl;
+      }
+      
+      // Longest-key includes match
+      var bestKey = null;
+      for (var key in categoryInfo) {
+        if (catUpper.includes(key) && (!bestKey || key.length > bestKey.length)) {
+          bestKey = key;
+        }
+      }
+      if (bestKey) {
+        return categoryInfo[bestKey][lang] || categoryInfo[bestKey].nl;
+      }
+      
+      // Title-case fallback
+      return cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase();
+    }
+    
+    function getShortCategory(cat) {
+      return cat.replace(/\s*\(\d+\)\s*$/, '').trim();
+    }
+    
+    function filterQuestions() {
+      var search = document.getElementById('question-search').value.toLowerCase();
+      var category = document.getElementById('category-filter').value;
+      
+      var filtered = allQuestions.filter(function(q) {
+        var matchSearch = !search || q.nl.toLowerCase().includes(search) || (q.en && q.en.toLowerCase().includes(search));
+        // Parent-category prefix matching: selecting "ARBEIDSRECHT" matches
+        // "ARBEIDSRECHT", "ARBEIDSRECHT - INDIVIDUEEL", "ARBEIDSRECHT - ONTSLAG", etc.
+        var matchCategory = category === 'all' || q.category === category || q.category.startsWith(category + ' - ');
+        return matchSearch && matchCategory;
+      });
+      
+      document.getElementById('question-count').textContent = filtered.length;
+      renderQuestions(filtered);
+    }
+    
+    // Mapping from sidebar category keys to profile dropdown values
+    var SIDEBAR_CAT_TO_PROFILE = {
+      // ── Exact matches (1:1 mapping) ──
+      'ARBEIDSRECHT':       'labor',
+      'HUURRECHT':          'real_estate',
+      'VASTGOEDRECHT':      'real_estate',
+      'FAMILIERECHT':       'family',
+      'ERFRECHT':           'family',
+      'STRAFRECHT':         'criminal',
+      'FISCAAL':            'tax',
+      'VENNOOTSCHAPSRECHT': 'corporate',
+      'CONSUMENTENRECHT':   'consumer',
+      'VREEMDELINGENRECHT': 'migration',
+      'SOCIALE ZEKERHEID':  'social',
+      'BESTUURSRECHT':      'administrative',
+      'PRIVACY':            'privacy',
+      // ── Best-fit mappings (no exact profile) ──
+      'BOUWEN':             'real_estate',    // construction → real estate domain
+      'BURENRECHT':         'real_estate',    // neighbor disputes → real estate domain
+      'ZAKENRECHT':         'real_estate',    // property law → real estate domain
+      'VERKEERSRECHT':      'criminal',       // traffic law → criminal (most relevant profile)
+      'DRUGS':              'criminal',       // drug offenses → criminal
+      'PROCEDURERECHT':     'administrative', // procedural law → administrative
+      'OVERHEID':           'administrative', // government → administrative
+      'GRONDWET':           'administrative', // constitutional → administrative
+      'MEDISCH':            'social',         // medical law → social security (healthcare)
+      'VERZEKERINGEN':      'consumer',       // insurance → consumer protection
+      'SCHULDEN':           'consumer',       // debt → consumer protection
+      'INTERNET':           'privacy',        // internet law → privacy
+      'INTELLECTUEEL':      'corporate',      // IP → corporate
+      'SPORT':              'labor',          // sports law → labor (employment context)
+      'DIEREN':             'consumer',       // animal law → consumer (pet ownership)
+      'MILIEU':             'administrative', // environmental → administrative
+      'DIVERSE':            'general',        // truly general questions
+      'ALGEMEEN':           'general'         // general questions
+    };
+
+    // Category icons for visual consistency with chatbot pills
+    var categoryIcons = {
+      'ARBEIDSRECHT':       '⚖️',
+      'HUURRECHT':          '🏠',
+      'VASTGOEDRECHT':      '🏠',
+      'FAMILIERECHT':       '👨‍👩‍👧',
+      'ERFRECHT':           '📜',
+      'STRAFRECHT':         '',
+      'FISCAAL':            '💰',
+      'VENNOOTSCHAPSRECHT': '🏢',
+      'CONSUMENTENRECHT':   '🛒',
+      'VREEMDELINGENRECHT': '🌍',
+      'SOCIALE ZEKERHEID':  '🏥',
+      'BESTUURSRECHT':      '🏛️',
+      'PRIVACY':            '🔒',
+      'ALGEMEEN':           '📋',
+      'BOUWEN':             '🔨',
+      'BURENRECHT':         '🏡',
+      'DIEREN':             '🐾',
+      'DIVERSE':            '📂',
+      'DRUGS':              '🚫',
+      'GRONDWET':           '📖',
+      'INTELLECTUEEL':      '',
+      'INTERNET':           '🌐',
+      'MEDISCH':            '⚕️',
+      'MILIEU':             '🌿',
+      'OVERHEID':           '🏛️',
+      'PROCEDURERECHT':     '📑',
+      'SCHULDEN':           '💳',
+      'SPORT':              '⚽',
+      'VERKEERSRECHT':      '🚗',
+      'VERZEKERINGEN':      '🛡️',
+      'ZAKENRECHT':         '🏗️'
+    };
+
+    function getIconForCategory(cat) {
+      var mainCat = cat.toUpperCase().split(' - ')[0].trim();
+      return categoryIcons[mainCat] || '📋';
+    }
+
+    function getProfileForCategory(cat) {
+      var mainCat = cat.toUpperCase().split(' - ')[0].trim();
+      return SIDEBAR_CAT_TO_PROFILE[mainCat] || 'general';
+    }
+
+    function renderQuestions(questions) {
+      var container = document.getElementById('questions-list');
+      var t = translations[currentLang] || translations.nl;
+      if (questions.length === 0) {
+        container.innerHTML = '<div class="p-4 text-center text-gray-500">' + t.noQuestionsFound + '</div>';
+        return;
+      }
+      
+      var grouped = {};
+      questions.forEach(function(q) {
+        var shortCat = getShortCategory(q.category);
+        if (!grouped[shortCat]) grouped[shortCat] = [];
+        grouped[shortCat].push(q);
+      });
+      var catKeys = Object.keys(grouped);
+      // Auto-expand if 3 or fewer categories, collapse if many
+      var autoExpand = catKeys.length <= 3;
+
+      var html = '';
+      for (var cat in grouped) {
+        var icon = getIconForCategory(cat);
+        var display = getCategoryDisplay(cat, currentLang);
+        var expandClass = autoExpand ? '' : ' hidden';
+        var chevronClass = autoExpand ? ' rotate-180' : '';
+        
+        html += '<div class="sidebar-cat-group border-b border-gray-200 dark:border-[#1e293b]/50 last:border-0">';
+        // Clickable category header
+        html += '<button type="button" class="sidebar-cat-toggle w-full flex items-center gap-1.5 px-3 py-2 bg-gray-100/80 dark:bg-[#080d19] hover:bg-gray-200/80 dark:hover:bg-[#0c1526] transition-colors duration-150 text-left">';
+        html += '<span class="text-xs font-semibold text-gray-700 dark:text-gray-300 flex-1">' + icon + ' ' + display + ' <span class="text-gray-400 dark:text-gray-500 font-normal">(' + grouped[cat].length + ')</span></span>';
+        html += '<svg class="sidebar-chevron w-3.5 h-3.5 text-gray-400 dark:text-gray-500 transition-transform duration-200' + chevronClass + '" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>';
+        html += '</button>';
+        // Collapsible question list
+        html += '<ul class="sidebar-cat-body divide-y divide-gray-100 dark:divide-[#1e293b]/40' + expandClass + '">';
+        grouped[cat].forEach(function(q) {
+          var displayText = (currentLang !== 'nl' && q[currentLang]) ? q[currentLang] : q.nl;
+           html += '<li><button type="button" class="w-full text-left px-3 py-2 text-sm text-(--accent-600) dark:text-(--accent-400) hover:bg-(--accent-50,#eff6ff) dark:hover:bg-[#0f172a] sample-question transition-colors duration-150" data-question="' + displayText.replace(/"/g, '&quot;') + '" data-category="' + cat + '"><span class="opacity-40 mr-1.5">→</span>' + displayText + '</button></li>';
+        });
+        html += '</ul></div>';
+      }
+      container.innerHTML = html;
+      
+      // Wire up accordion toggles
+      container.querySelectorAll('.sidebar-cat-toggle').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var body = this.nextElementSibling;
+          var chevron = this.querySelector('.sidebar-chevron');
+          if (body) body.classList.toggle('hidden');
+          if (chevron) chevron.classList.toggle('rotate-180');
+        });
+      });
+      
+      // Re-attach click handlers with category auto-select
+      container.querySelectorAll('.sample-question').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var question = this.getAttribute('data-question');
+          var category = this.getAttribute('data-category');
+          var input = document.querySelector('[data-chatbot-target="input"]');
+          if (input) {
+            input.value = question;
+            input.focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Fire-and-forget anonymous click tracking (no cookies, no user data)
+            try {
+              var trackData = JSON.stringify({ question: question, category: category, language: currentLang });
+              if (navigator.sendBeacon) {
+                navigator.sendBeacon('/api/sample_question_clicks', new Blob([trackData], { type: 'application/json' }));
+              } else {
+                fetch('/api/sample_question_clicks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: trackData, keepalive: true }).catch(function() {});
+              }
+            } catch(e) { /* tracking is best-effort */ }
+
+            // Auto-select the matching profile in the Categorie dropdown
+            if (category) {
+              var profileId = getProfileForCategory(category);
+              var profileSelect = document.getElementById('profile-select');
+              if (profileSelect && profileSelect.value !== profileId) {
+                profileSelect.value = profileId;
+                profileSelect.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            }
+
+            // Pulse the send button to draw attention
+            var sendBtn = document.querySelector('[data-chatbot-target="sendButton"]');
+            if (sendBtn) {
+              sendBtn.classList.add('ring-4', 'ring-offset-2', 'scale-105');
+              sendBtn.style.setProperty('--tw-ring-color', 'var(--accent-400-solid, #60a5fa)');
+              setTimeout(function() {
+                sendBtn.classList.remove('ring-4', 'ring-offset-2', 'scale-105');
+              }, 1500);
+            }
+          }
+        });
+      });
+    }
+    
+    // Document-level turbo:load listeners survive Turbo navigations: without
+    // deregistration each /chatbot visit stacked another copy, and on
+    // non-chatbot pages the handler threw on missing #category-filter.
+    if (window._chatbotQuestionsLoadHandler) {
+      document.removeEventListener('turbo:load', window._chatbotQuestionsLoadHandler);
+    }
+    window._chatbotQuestionsLoadHandler = function() {
+      // Only act on pages that actually render the questions sidebar
+      if (!document.getElementById('questions-list')) return;
+
+      // Load questions - reuse Stimulus-loaded data if available, else fetch
+      var loadPromise = window.allQuestions && window.allQuestions.length > 0
+        ? Promise.resolve(window.allQuestions)
+        : fetch('/chatbot_questions.json').then(function(r) { return r.json(); });
+
+      loadPromise
+        .then(function(data) {
+          allQuestions = data;
+          window.allQuestions = data; // sync both references
+
+          // Populate category filter with PARENT categories only
+          // e.g. "ARBEIDSRECHT - INDIVIDUEEL" → "ARBEIDSRECHT"
+          var parentCats = [...new Set(data.map(function(q) {
+            return q.category.split(' - ')[0].trim();
+          }))];
+          var select = document.getElementById('category-filter');
+          if (!select) return;
+
+          // Clear any existing options (except the "all" option) to prevent duplicates
+          while (select.options.length > 1) {
+            select.remove(select.options.length - 1);
+          }
+
+          // Sort categories alphabetically by their translated display name
+          parentCats.sort(function(a, b) {
+            var labelA = getCategoryDisplay(a, currentLang);
+            var labelB = getCategoryDisplay(b, currentLang);
+            return labelA.localeCompare(labelB);
+          });
+          parentCats.forEach(function(cat) {
+            var opt = document.createElement('option');
+            opt.value = cat;
+            var icon = typeof getIconForCategory === 'function' ? getIconForCategory(cat) : '';
+            // Count all questions matching this parent (including subcategories)
+            var count = data.filter(function(q) { return q.category === cat || q.category.startsWith(cat + ' - '); }).length;
+            opt.textContent = icon + ' ' + getCategoryDisplay(cat, currentLang) + ' (' + count + ')';
+            select.appendChild(opt);
+          });
+
+          filterQuestions();
+        })
+        .catch(function(err) {
+          var list = document.getElementById('questions-list');
+          if (!list) return;
+          var t = translations[currentLang] || translations.nl;
+          list.innerHTML = '<div class="p-4 text-center text-red-500">' + t.errorLoading + '</div>';
+        });
+    };
+    document.addEventListener('turbo:load', window._chatbotQuestionsLoadHandler);
+
+    // Wire up question filter controls (replaces inline onchange/oninput blocked by CSP)
+    var catFilter = document.getElementById('category-filter');
+    var qSearch = document.getElementById('question-search');
+    if (catFilter) catFilter.addEventListener('change', function() { filterQuestions(); });
+    if (qSearch) qSearch.addEventListener('input', function() { filterQuestions(); });
+
+    // ── Sidebar collapse/expand toggle ──
+    (function() {
+      var sidebar = document.getElementById('sidebar-wrapper');
+      var hideBtn = document.getElementById('sidebar-hide-btn');
+      var showBtn = document.getElementById('sidebar-show-btn');
+      if (!sidebar || !hideBtn || !showBtn) return;
+
+      function collapseSidebar() {
+        sidebar.style.width = '0';
+        sidebar.style.opacity = '0';
+        sidebar.style.overflow = 'hidden';
+        sidebar.style.padding = '0';
+        sidebar.style.margin = '0';
+        sidebar.style.minWidth = '0';
+        showBtn.classList.remove('hidden');
+        showBtn.classList.add('flex', 'flex-col', 'items-center');
+        if (window.prefsStore) window.prefsStore.set('sidebar_state', 'collapsed');
+      }
+
+      function expandSidebar() {
+        sidebar.style.width = '';
+        sidebar.style.opacity = '';
+        sidebar.style.overflow = '';
+        sidebar.style.padding = '';
+        sidebar.style.margin = '';
+        sidebar.style.minWidth = '';
+        showBtn.classList.add('hidden');
+        showBtn.classList.remove('flex', 'flex-col', 'items-center');
+        if (window.prefsStore) window.prefsStore.set('sidebar_state', 'expanded');
+      }
+
+      hideBtn.addEventListener('click', collapseSidebar);
+      showBtn.addEventListener('click', expandSidebar);
+
+      // Restore saved preference (desktop only)
+      if (window.innerWidth >= 1024) {
+        var savedState = window.prefsStore ? window.prefsStore.get('sidebar_state') : null;
+        if (savedState === 'collapsed') {
+          collapseSidebar();
+        }
+      }
+    })();
+  </script>

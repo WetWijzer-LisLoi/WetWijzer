@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "description": "Required exact health response for activation of a manifest-bound main article FAISS generation. The tracked faiss_serve.py implements this contract only when explicitly started with --main-publication-root.",
+  "legacy_vector_count_health_is_insufficient": true,
+  "required_health_fields": {
+    "status": {
+      "type": "string",
+      "const": "ok"
+    },
+    "ready": {
+      "type": "boolean",
+      "const": true
+    },
+    "generation": {
+      "type": "string",
+      "pattern": "^main-faiss-sha256-[0-9a-f]{64}$"
+    },
+    "manifest_schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "index_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "ids_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "indexed_vectors": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "index_size": {
+      "type": "integer",
+      "minimum": 1,
+      "must_equal": "indexed_vectors"
+    },
+    "ids_count": {
+      "type": "integer",
+      "minimum": 1,
+      "must_equal": "indexed_vectors"
+    },
+    "embedding_model": {
+      "type": "string",
+      "const": "text-embedding-3-large"
+    },
+    "embedding_dimension": {
+      "type": "integer",
+      "const": 3072
+    },
+    "dimension": {
+      "type": "integer",
+      "const": 3072,
+      "must_equal": "embedding_dimension"
+    },
+    "metric_type": {
+      "type": "integer"
+    },
+    "source_laws_generation": {
+      "type": "string",
+      "pattern": "^laws-sha256-[0-9a-f]{64}$"
+    },
+    "indexed_source_content_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "search_compatibility_requirement": {
+    "endpoint": "POST /search",
+    "unchanged_top_level_response_fields": [
+      "results",
+      "search_time_ms",
+      "total_indexed"
+    ],
+    "unchanged_result_fields": [
+      "article_id",
+      "similarity"
+    ]
+  }
+}

@@ -1,0 +1,46 @@
+# Progressive Web App strings: the "add to home screen" install banner and the
+# offline fallback page. Kept in one file across all four locales/domains.
+nl:
+  pwa:
+    install:
+      body: "Zet de app op je beginscherm voor snelle toegang."
+      button: "Installeren"
+      ios: "Tik op de deelknop en kies “Zet op beginscherm”."
+      dismiss: "Sluiten"
+    offline:
+      title: "Je bent offline"
+      body: "Er is momenteel geen internetverbinding. Controleer je verbinding en probeer opnieuw."
+      retry: "Opnieuw proberen"
+fr:
+  pwa:
+    install:
+      body: "Ajoutez l’app à votre écran d’accueil pour un accès rapide."
+      button: "Installer"
+      ios: "Touchez le bouton Partager puis « Sur l’écran d’accueil »."
+      dismiss: "Fermer"
+    offline:
+      title: "Vous êtes hors ligne"
+      body: "Aucune connexion Internet pour le moment. Vérifiez votre connexion et réessayez."
+      retry: "Réessayer"
+de:
+  pwa:
+    install:
+      body: "Fügen Sie die App zum Startbildschirm hinzu für schnellen Zugriff."
+      button: "Installieren"
+      ios: "Tippen Sie auf Teilen und dann „Zum Home-Bildschirm“."
+      dismiss: "Schließen"
+    offline:
+      title: "Sie sind offline"
+      body: "Derzeit keine Internetverbindung. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut."
+      retry: "Erneut versuchen"
+en:
+  pwa:
+    install:
+      body: "Add the app to your home screen for quick access."
+      button: "Install"
+      ios: "Tap the Share button, then “Add to Home Screen”."
+      dismiss: "Close"
+    offline:
+      title: "You are offline"
+      body: "There is currently no internet connection. Check your connection and try again."
+      retry: "Try again"

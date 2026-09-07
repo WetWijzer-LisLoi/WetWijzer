@@ -1,0 +1,21 @@
+<% pwa_loc = %w[nl fr de en].include?(I18n.locale.to_s) ? I18n.locale.to_s : 'nl' %>
+<div id="pwa-install-banner" data-turbo-permanent
+     style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:1000;align-items:center;gap:.75rem;
+            padding:.75rem 1rem;padding-bottom:calc(.75rem + env(safe-area-inset-bottom));
+            background:#0f172a;color:#f1f5f9;box-shadow:0 -4px 16px rgba(0,0,0,.35);
+            font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;">
+  <img src="/pwa/icon-<%= pwa_loc %>-192.png" alt="" width="40" height="40" style="border-radius:9px;flex:none;" />
+  <div style="flex:1;min-width:0;line-height:1.3;">
+    <strong style="display:block;font-size:.95rem;"><%= site_name %></strong>
+    <span style="font-size:.85rem;color:#cbd5e1;"><%= t('pwa.install.body') %></span>
+    <span id="pwa-ios-hint" style="display:none;font-size:.85rem;color:#cbd5e1;"><%= t('pwa.install.ios') %></span>
+  </div>
+  <button id="pwa-install-button" type="button"
+          style="display:none;flex:none;background:#3b82f6;color:#fff;border:0;border-radius:9px;
+                 padding:.55rem 1rem;font-size:.9rem;font-weight:600;cursor:pointer;">
+    <%= t('pwa.install.button') %>
+  </button>
+  <button id="pwa-install-dismiss" type="button" aria-label="<%= t('pwa.install.dismiss') %>"
+          style="flex:none;background:transparent;border:0;color:#94a3b8;font-size:1.5rem;line-height:1;
+                 cursor:pointer;padding:.25rem .5rem;">&times;</button>
+</div>

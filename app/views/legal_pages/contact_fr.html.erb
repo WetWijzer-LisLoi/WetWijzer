@@ -1,0 +1,24 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<div class="legal-page">
+<h1>Contact</h1>
+
+    <h2>E-mail</h2>
+    <p>Pour toute question, remarque ou signalement, vous pouvez nous contacter à&nbsp;:</p>
+    <p>
+      <a href="mailto:<%= contact_email %>"><%= contact_email %></a>
+    </p>
+
+    <h2>Éditeur responsable</h2>
+    <p>Me Gauthier Berth</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400">Avocat au Barreau de Bruxelles (Ordre néerlandophone)</p>
+
+    <h2>Délai de réponse</h2>
+    <p>Nous nous efforçons de répondre à tous les messages dans un délai de <strong>2 jours ouvrables</strong>.</p>
+
+    <h2>Demandes liées à la vie privée</h2>
+    <p>Pour les demandes au titre du RGPD, vous pouvez utiliser notre <a href="<%= gdpr_takedown_path %>">formulaire RGPD</a> ou envoyer un e-mail à <a href="mailto:<%= contact_email %>"><%= contact_email %></a>.</p>
+
+    <h2>Signaler un bug ou contribuer</h2>
+    <p>LisLoi est un logiciel open source. Vous pouvez signaler des bugs et des suggestions via <a href="https://github.com/WetWijzer-LisLoi/WetWijzer/issues" target="_blank" rel="noopener">GitHub Issues</a>.</p>
+
+</div>

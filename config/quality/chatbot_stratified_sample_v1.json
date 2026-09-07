@@ -1,0 +1,948 @@
+{
+  "challenge_id": "wetwijzer-chatbot-stratified-151-v1",
+  "status": {
+    "predeclared": true,
+    "predeclared_at": "2026-07-27",
+    "purpose": "Category-stratified validation sample gate (handoff step 4), run after the 211-v2 challenge gate and before any full-population capture.",
+    "population_file": "public/chatbot_questions.json",
+    "population_sha256": "da2887b1f09a96741e5cbd8cd63ecf6911532de56f82d311d8429704d8ebe42c",
+    "population_count": 3147,
+    "sampling_rule": {
+      "strata": "category",
+      "allocation": "per category: max(2, round(population_count * 120 / 3147)), capped at stratum size",
+      "selection_within_stratum": "ascending SHA256(seed + \":\" + question_id) hex; take first n_c",
+      "seed": "wetwijzer-stratified-gate-2026-07-27",
+      "question_ids": "q%04d by 1-based position in the population file",
+      "deterministic": true,
+      "no_rng": true
+    },
+    "allocation_by_category": {
+      "ALGEMEEN": {
+        "population": 278,
+        "selected": 11
+      },
+      "ARBEIDSRECHT": {
+        "population": 319,
+        "selected": 12
+      },
+      "ARBEIDSRECHT - COLLECTIEF": {
+        "population": 41,
+        "selected": 2
+      },
+      "ARBEIDSRECHT - INDIVIDUEEL": {
+        "population": 71,
+        "selected": 3
+      },
+      "ARBEIDSRECHT - LOON": {
+        "population": 36,
+        "selected": 2
+      },
+      "ARBEIDSRECHT - ONTSLAG": {
+        "population": 41,
+        "selected": 2
+      },
+      "ARBEIDSRECHT - VAKANTIE": {
+        "population": 32,
+        "selected": 2
+      },
+      "ARBEIDSRECHT - ZIEKTE": {
+        "population": 27,
+        "selected": 2
+      },
+      "BESTUURSRECHT": {
+        "population": 20,
+        "selected": 2
+      },
+      "BOUWEN": {
+        "population": 21,
+        "selected": 2
+      },
+      "BURENRECHT": {
+        "population": 13,
+        "selected": 2
+      },
+      "CONSUMENTENRECHT": {
+        "population": 129,
+        "selected": 5
+      },
+      "DIEREN": {
+        "population": 10,
+        "selected": 2
+      },
+      "DIVERSE": {
+        "population": 54,
+        "selected": 2
+      },
+      "DRUGS": {
+        "population": 6,
+        "selected": 2
+      },
+      "ERFRECHT": {
+        "population": 93,
+        "selected": 4
+      },
+      "FAMILIERECHT": {
+        "population": 307,
+        "selected": 12
+      },
+      "FISCAAL": {
+        "population": 405,
+        "selected": 15
+      },
+      "FISCAAL - BTW": {
+        "population": 29,
+        "selected": 2
+      },
+      "FISCAAL - PERSONENBELASTING": {
+        "population": 29,
+        "selected": 2
+      },
+      "FISCAAL - REGISTRATIE": {
+        "population": 23,
+        "selected": 2
+      },
+      "GRONDWET": {
+        "population": 5,
+        "selected": 2
+      },
+      "HUURRECHT": {
+        "population": 119,
+        "selected": 5
+      },
+      "INTELLECTUEEL": {
+        "population": 11,
+        "selected": 2
+      },
+      "INTERNET": {
+        "population": 10,
+        "selected": 2
+      },
+      "MEDISCH": {
+        "population": 17,
+        "selected": 2
+      },
+      "MILIEU": {
+        "population": 12,
+        "selected": 2
+      },
+      "OVERHEID": {
+        "population": 9,
+        "selected": 2
+      },
+      "PRIVACY": {
+        "population": 36,
+        "selected": 2
+      },
+      "PROCEDURERECHT": {
+        "population": 15,
+        "selected": 2
+      },
+      "SCHULDEN": {
+        "population": 24,
+        "selected": 2
+      },
+      "SOCIALE ZEKERHEID": {
+        "population": 298,
+        "selected": 11
+      },
+      "SPORT": {
+        "population": 13,
+        "selected": 2
+      },
+      "STRAFRECHT": {
+        "population": 189,
+        "selected": 7
+      },
+      "VASTGOEDRECHT": {
+        "population": 101,
+        "selected": 4
+      },
+      "VENNOOTSCHAPSRECHT": {
+        "population": 134,
+        "selected": 5
+      },
+      "VERKEERSRECHT": {
+        "population": 78,
+        "selected": 3
+      },
+      "VERZEKERINGEN": {
+        "population": 11,
+        "selected": 2
+      },
+      "VREEMDELINGENRECHT": {
+        "population": 61,
+        "selected": 2
+      },
+      "ZAKENRECHT": {
+        "population": 20,
+        "selected": 2
+      }
+    },
+    "request_contract": {
+      "language": "nl",
+      "model": "mistral-small",
+      "expected_provider_model": "mistral-small-2603",
+      "intelligence": "smart",
+      "reasoning_effort": "low",
+      "source": "legislation",
+      "repetitions": 1
+    }
+  },
+  "questions": [
+    {
+      "id": "q0006",
+      "category": "ARBEIDSRECHT - INDIVIDUEEL",
+      "nl": "Wat is een geheimhoudingsbeding?"
+    },
+    {
+      "id": "q0020",
+      "category": "ARBEIDSRECHT - INDIVIDUEEL",
+      "nl": "Voorbeelden dringende reden?"
+    },
+    {
+      "id": "q0047",
+      "category": "ARBEIDSRECHT - INDIVIDUEEL",
+      "nl": "Adoptieverlof hoelang?"
+    },
+    {
+      "id": "q0084",
+      "category": "ARBEIDSRECHT - COLLECTIEF",
+      "nl": "Bevoegdheden ondernemingsraad?"
+    },
+    {
+      "id": "q0102",
+      "category": "ARBEIDSRECHT - COLLECTIEF",
+      "nl": "Vertrouwenspersoon verplicht?"
+    },
+    {
+      "id": "q0119",
+      "category": "SOCIALE ZEKERHEID",
+      "nl": "Controle werklozen RVA?"
+    },
+    {
+      "id": "q0133",
+      "category": "SOCIALE ZEKERHEID",
+      "nl": "Kinesitherapie terugbetaling?"
+    },
+    {
+      "id": "q0181",
+      "category": "FAMILIERECHT",
+      "nl": "Minimumleeftijd huwelijk?"
+    },
+    {
+      "id": "q0216",
+      "category": "FAMILIERECHT",
+      "nl": "Betwisting vaderschap?"
+    },
+    {
+      "id": "q0229",
+      "category": "FAMILIERECHT",
+      "nl": "Wat erven kinderen volgens het Belgisch erfrecht?"
+    },
+    {
+      "id": "q0236",
+      "category": "FAMILIERECHT",
+      "nl": "Hoe testament opmaken?"
+    },
+    {
+      "id": "q0241",
+      "category": "FAMILIERECHT",
+      "nl": "Wanneer is een handgift rechtsgeldig?"
+    },
+    {
+      "id": "q0281",
+      "category": "HUURRECHT",
+      "nl": "Opzegtermijn huurcontract 9 jaar?"
+    },
+    {
+      "id": "q0302",
+      "category": "CONSUMENTENRECHT",
+      "nl": "Rechten bij defect product?"
+    },
+    {
+      "id": "q0318",
+      "category": "CONSUMENTENRECHT",
+      "nl": "Terugbetaling bij annulatie?"
+    },
+    {
+      "id": "q0353",
+      "category": "VENNOOTSCHAPSRECHT",
+      "nl": "Ontbinding vennootschap?"
+    },
+    {
+      "id": "q0356",
+      "category": "VENNOOTSCHAPSRECHT",
+      "nl": "Stemrecht aandeelhouders?"
+    },
+    {
+      "id": "q0375",
+      "category": "PROCEDURERECHT",
+      "nl": "Wat is een dagvaarding en hoe moet ik erop reageren?"
+    },
+    {
+      "id": "q0388",
+      "category": "PROCEDURERECHT",
+      "nl": "Arbitrage procedure?"
+    },
+    {
+      "id": "q0404",
+      "category": "DRUGS",
+      "nl": "Welke straf staat op drugsbezit in België?"
+    },
+    {
+      "id": "q0408",
+      "category": "DRUGS",
+      "nl": "Alcohol op openbare weg?"
+    },
+    {
+      "id": "q0421",
+      "category": "GRONDWET",
+      "nl": "Vrijheid van godsdienst?"
+    },
+    {
+      "id": "q0422",
+      "category": "GRONDWET",
+      "nl": "Onschendbaarheid woning?"
+    },
+    {
+      "id": "q0453",
+      "category": "ARBEIDSRECHT",
+      "nl": "Brugpensioen leeftijd?"
+    },
+    {
+      "id": "q0464",
+      "category": "ARBEIDSRECHT",
+      "nl": "Is een prikklok verplicht op het werk?"
+    },
+    {
+      "id": "q0478",
+      "category": "ARBEIDSRECHT",
+      "nl": "Medisch attest termijn?"
+    },
+    {
+      "id": "q0497",
+      "category": "ARBEIDSRECHT",
+      "nl": "Ouderschapsverlof leeftijd kind?"
+    },
+    {
+      "id": "q0551",
+      "category": "SOCIALE ZEKERHEID",
+      "nl": "Deeltijds werk pensioen impact?"
+    },
+    {
+      "id": "q0648",
+      "category": "FAMILIERECHT",
+      "nl": "Draagmoederschap in buitenland?"
+    },
+    {
+      "id": "q0671",
+      "category": "FAMILIERECHT",
+      "nl": "Punctuele erfovereenkomst?"
+    },
+    {
+      "id": "q0703",
+      "category": "FISCAAL",
+      "nl": "Hoe werkt BTW-verlegging in de bouw?"
+    },
+    {
+      "id": "q0728",
+      "category": "FISCAAL",
+      "nl": "Huurinkomsten belasting?"
+    },
+    {
+      "id": "q0767",
+      "category": "ALGEMEEN",
+      "nl": "Aansprakelijkheid ouders?"
+    },
+    {
+      "id": "q0783",
+      "category": "ALGEMEEN",
+      "nl": "Hoe vestig ik een hypotheek op een onroerend goed?"
+    },
+    {
+      "id": "q0811",
+      "category": "ALGEMEEN",
+      "nl": "Hoe werkt een inbreng in natura bij een vennootschap?"
+    },
+    {
+      "id": "q0824",
+      "category": "ALGEMEEN",
+      "nl": "Gedwongen tussenkomst?"
+    },
+    {
+      "id": "q0839",
+      "category": "ALGEMEEN",
+      "nl": "Wat is een grosse van een vonnis?"
+    },
+    {
+      "id": "q0844",
+      "category": "ALGEMEEN",
+      "nl": "Onmiddellijke intrekking rijbewijs?"
+    },
+    {
+      "id": "q1003",
+      "category": "CONSUMENTENRECHT",
+      "nl": "Wat is de wettelijke garantie op producten?"
+    },
+    {
+      "id": "q1006",
+      "category": "CONSUMENTENRECHT",
+      "nl": "Wat zijn mijn rechten bij een defect product?"
+    },
+    {
+      "id": "q1029",
+      "category": "VENNOOTSCHAPSRECHT",
+      "nl": "Wat is bestuurdersaansprakelijkheid?"
+    },
+    {
+      "id": "q1031",
+      "category": "ALGEMEEN",
+      "nl": "Wat is het UBO-register?"
+    },
+    {
+      "id": "q1045",
+      "category": "ALGEMEEN",
+      "nl": "Hoe vraag ik toegang tot bestuursdocumenten?"
+    },
+    {
+      "id": "q1068",
+      "category": "MEDISCH",
+      "nl": "Heb ik recht op inzage in mijn medisch dossier?"
+    },
+    {
+      "id": "q1099",
+      "category": "DIVERSE",
+      "nl": "Wat zegt het Hof van Cassatie over arbeidsovereenkomsten?"
+    },
+    {
+      "id": "q1100",
+      "category": "CONSUMENTENRECHT",
+      "nl": "Is er rechtspraak over consumentenrechten bij online aankopen?"
+    },
+    {
+      "id": "q1104",
+      "category": "ALGEMEEN",
+      "nl": "Zijn er nieuwe regels voor telewerk sinds COVID?"
+    },
+    {
+      "id": "q1107",
+      "category": "ALGEMEEN",
+      "nl": "Wat is er veranderd aan de fiscale regels voor tweede verblijven?"
+    },
+    {
+      "id": "q1115",
+      "category": "ARBEIDSRECHT - ONTSLAG",
+      "nl": "Wat is tegenopzegging?"
+    },
+    {
+      "id": "q1147",
+      "category": "ARBEIDSRECHT - ONTSLAG",
+      "nl": "Ontslag uitzendkracht?"
+    },
+    {
+      "id": "q1155",
+      "category": "ARBEIDSRECHT - LOON",
+      "nl": "Wat regelt paritair comité 200 voor bedienden?"
+    },
+    {
+      "id": "q1158",
+      "category": "ARBEIDSRECHT - LOON",
+      "nl": "Hoeveel RSZ werkgever?"
+    },
+    {
+      "id": "q1203",
+      "category": "ARBEIDSRECHT - VAKANTIE",
+      "nl": "Hoeveel wettelijke feestdagen?"
+    },
+    {
+      "id": "q1214",
+      "category": "ARBEIDSRECHT - VAKANTIE",
+      "nl": "Hoeveel verlof krijg ik als bloeddonor?"
+    },
+    {
+      "id": "q1238",
+      "category": "ARBEIDSRECHT - ZIEKTE",
+      "nl": "Aangepast werk weigeren?"
+    },
+    {
+      "id": "q1240",
+      "category": "ARBEIDSRECHT - ZIEKTE",
+      "nl": "Ziektebreuk berekenen?"
+    },
+    {
+      "id": "q1264",
+      "category": "FISCAAL - BTW",
+      "nl": "Wat is het BTW-tarief voor schoonmaakdiensten?"
+    },
+    {
+      "id": "q1267",
+      "category": "FISCAAL - BTW",
+      "nl": "BTW verkoop onroerend?"
+    },
+    {
+      "id": "q1279",
+      "category": "FISCAAL - PERSONENBELASTING",
+      "nl": "Hoeveel roerende voorheffing?"
+    },
+    {
+      "id": "q1296",
+      "category": "FISCAAL - PERSONENBELASTING",
+      "nl": "Belastingvermindering renovatie?"
+    },
+    {
+      "id": "q1307",
+      "category": "FISCAAL - REGISTRATIE",
+      "nl": "Erfbelasting Wallonië tarieven?"
+    },
+    {
+      "id": "q1319",
+      "category": "FISCAAL - REGISTRATIE",
+      "nl": "Erfbelasting samenwonenden?"
+    },
+    {
+      "id": "q1335",
+      "category": "ERFRECHT",
+      "nl": "Erft wettelijk samenwonende?"
+    },
+    {
+      "id": "q1365",
+      "category": "FAMILIERECHT",
+      "nl": "Vrederechter bevoegd?"
+    },
+    {
+      "id": "q1375",
+      "category": "FAMILIERECHT",
+      "nl": "Onderhoudsgeld indexatie?"
+    },
+    {
+      "id": "q1398",
+      "category": "HUURRECHT",
+      "nl": "Mag ik mijn huurwoning onderverhuren?"
+    },
+    {
+      "id": "q1454",
+      "category": "VENNOOTSCHAPSRECHT",
+      "nl": "Wat is het UBO-register en wie moet zich registreren?"
+    },
+    {
+      "id": "q1514",
+      "category": "SOCIALE ZEKERHEID",
+      "nl": "Hoe werkt de maximumfactuur in de gezondheidszorg?"
+    },
+    {
+      "id": "q1519",
+      "category": "SOCIALE ZEKERHEID",
+      "nl": "Wanneer heb ik als zelfstandige recht op het overbruggingsrecht?"
+    },
+    {
+      "id": "q1521",
+      "category": "SOCIALE ZEKERHEID",
+      "nl": "Wat zijn de voorwaarden voor brugpensioen (SWT)?"
+    },
+    {
+      "id": "q1534",
+      "category": "ZAKENRECHT",
+      "nl": "Wat is het verschil tussen naakte eigendom en vruchtgebruik?"
+    },
+    {
+      "id": "q1543",
+      "category": "ZAKENRECHT",
+      "nl": "Stedenbouwkundig attest?"
+    },
+    {
+      "id": "q1587",
+      "category": "DIVERSE",
+      "nl": "Wanneer is een werk beschermd door auteursrecht?"
+    },
+    {
+      "id": "q1674",
+      "category": "SOCIALE ZEKERHEID",
+      "nl": "Hoe bereken ik mijn een dertiende maand?"
+    },
+    {
+      "id": "q1676",
+      "category": "VASTGOEDRECHT",
+      "nl": "Hoe betwist ik een huurverhoging met mijn verhuurder?"
+    },
+    {
+      "id": "q1677",
+      "category": "ARBEIDSRECHT",
+      "nl": "Hoelang duurt de proefperiode voor deeltijds?"
+    },
+    {
+      "id": "q1692",
+      "category": "FISCAAL",
+      "nl": "Kan ik persoonlijk aansprakelijk zijn?"
+    },
+    {
+      "id": "q1697",
+      "category": "SOCIALE ZEKERHEID",
+      "nl": "Hoeveel werkloosheidsuitkering krijg ik na ouderschapsverlof?"
+    },
+    {
+      "id": "q1699",
+      "category": "FISCAAL",
+      "nl": "Wat is een globaal medisch dossier?"
+    },
+    {
+      "id": "q1765",
+      "category": "SOCIALE ZEKERHEID",
+      "nl": "Wat is de wachttijd voor maaltijdcheques?"
+    },
+    {
+      "id": "q1777",
+      "category": "STRAFRECHT",
+      "nl": "Kan ik een huwelijkscontract krijgen na ouderschapsverlof?"
+    },
+    {
+      "id": "q1797",
+      "category": "FISCAAL",
+      "nl": "Kan ik alimentatie stopzetten?"
+    },
+    {
+      "id": "q1840",
+      "category": "BESTUURSRECHT",
+      "nl": "Wat is de termijn voor klacht indienen?"
+    },
+    {
+      "id": "q1847",
+      "category": "FISCAAL",
+      "nl": "Hoeveel BTW moet ik betalen op voeding?"
+    },
+    {
+      "id": "q1860",
+      "category": "ARBEIDSRECHT",
+      "nl": "Wat zijn de sancties voor onterecht ontslag door de werkgever?"
+    },
+    {
+      "id": "q1926",
+      "category": "ARBEIDSRECHT",
+      "nl": "Hoe bereken ik mijn opzegvergoeding na 5 jaar?"
+    },
+    {
+      "id": "q1928",
+      "category": "VASTGOEDRECHT",
+      "nl": "Hoeveel registratierechten betaal ik in Brussel?"
+    },
+    {
+      "id": "q1980",
+      "category": "BESTUURSRECHT",
+      "nl": "Kan de overheid thuiswerken zonder mijn toestemming?"
+    },
+    {
+      "id": "q1987",
+      "category": "STRAFRECHT",
+      "nl": "Hoelang kan de politie mij klacht indienen?"
+    },
+    {
+      "id": "q1993",
+      "category": "VENNOOTSCHAPSRECHT",
+      "nl": "Wat zijn de verplichtingen van een biologische?"
+    },
+    {
+      "id": "q1994",
+      "category": "STRAFRECHT",
+      "nl": "Hoe lang blijft maaltijdcheques op mijn strafblad?"
+    },
+    {
+      "id": "q2021",
+      "category": "FISCAAL",
+      "nl": "Wat is de notariskosten bij aankoop woning?"
+    },
+    {
+      "id": "q2030",
+      "category": "VASTGOEDRECHT",
+      "nl": "Hoe betwist ik een lawaai met mijn verhuurder?"
+    },
+    {
+      "id": "q2071",
+      "category": "ARBEIDSRECHT",
+      "nl": "Wat is de opzegtermijn bij ontslag na 2 jaar anciënniteit?"
+    },
+    {
+      "id": "q2102",
+      "category": "FISCAAL",
+      "nl": "Wat is het verschil tussen vennootschapsbelasting en onroerende voorheffing?"
+    },
+    {
+      "id": "q2123",
+      "category": "FAMILIERECHT",
+      "nl": "Kan ik verlof aanvragen zonder toestemming van mijn ex?"
+    },
+    {
+      "id": "q2127",
+      "category": "FISCAAL",
+      "nl": "Hoeveel kost een notaris voor oprichting?"
+    },
+    {
+      "id": "q2176",
+      "category": "FISCAAL",
+      "nl": "Wat kost een doktersbezoek?"
+    },
+    {
+      "id": "q2188",
+      "category": "FISCAAL",
+      "nl": "Hoeveel belasting op crypto?"
+    },
+    {
+      "id": "q2192",
+      "category": "STRAFRECHT",
+      "nl": "Wat is het verschil tussen gewoon ontslag en verbreking?"
+    },
+    {
+      "id": "q2251",
+      "category": "FISCAAL",
+      "nl": "Hoeveel BTW moet ik betalen op elektronica?"
+    },
+    {
+      "id": "q2294",
+      "category": "FISCAAL",
+      "nl": "Wat is gezinshereniging?"
+    },
+    {
+      "id": "q2323",
+      "category": "FISCAAL",
+      "nl": "Kan ik hypotheeklening claimen als gepensioneerde?"
+    },
+    {
+      "id": "q2341",
+      "category": "ARBEIDSRECHT",
+      "nl": "Mag mijn werkgever mij ontslaan tijdens ziekte?"
+    },
+    {
+      "id": "q2356",
+      "category": "ARBEIDSRECHT",
+      "nl": "Hoe werkt een arbeidsovereenkomst bepaalde duur?"
+    },
+    {
+      "id": "q2363",
+      "category": "ARBEIDSRECHT",
+      "nl": "Wat is een beschermde werknemer?"
+    },
+    {
+      "id": "q2426",
+      "category": "HUURRECHT",
+      "nl": "Wat zijn grote herstellingen?"
+    },
+    {
+      "id": "q2448",
+      "category": "FAMILIERECHT",
+      "nl": "Wat zijn de rechten van grootouders?"
+    },
+    {
+      "id": "q2454",
+      "category": "FAMILIERECHT",
+      "nl": "Wat zijn de rechten van stiefouders?"
+    },
+    {
+      "id": "q2499",
+      "category": "ERFRECHT",
+      "nl": "Hoe bereken je de reserve?"
+    },
+    {
+      "id": "q2503",
+      "category": "ERFRECHT",
+      "nl": "Hoe werkt omzetting vruchtgebruik?"
+    },
+    {
+      "id": "q2507",
+      "category": "ERFRECHT",
+      "nl": "Hoe erven wettelijk samenwonenden?"
+    },
+    {
+      "id": "q2532",
+      "category": "VERKEERSRECHT",
+      "nl": "Wat zijn de straffen voor vluchtmisdrijf?"
+    },
+    {
+      "id": "q2534",
+      "category": "VERKEERSRECHT",
+      "nl": "Wat is een speekseltest?"
+    },
+    {
+      "id": "q2654",
+      "category": "VASTGOEDRECHT",
+      "nl": "Wat is een compromis?"
+    },
+    {
+      "id": "q2697",
+      "category": "SOCIALE ZEKERHEID",
+      "nl": "Wat is het ziekenfonds?"
+    },
+    {
+      "id": "q2707",
+      "category": "PRIVACY",
+      "nl": "Moet ik een privacybeleid hebben?"
+    },
+    {
+      "id": "q2735",
+      "category": "BOUWEN",
+      "nl": "Wat is een meldingsplichtig werk?"
+    },
+    {
+      "id": "q2755",
+      "category": "BURENRECHT",
+      "nl": "Kan ik mijn buur dwingen een boom te kappen?"
+    },
+    {
+      "id": "q2757",
+      "category": "BURENRECHT",
+      "nl": "Wat als de buren mijn uitzicht blokkeren?"
+    },
+    {
+      "id": "q2771",
+      "category": "SCHULDEN",
+      "nl": "Hoelang is de verjaringstermijn voor schulden?"
+    },
+    {
+      "id": "q2781",
+      "category": "MEDISCH",
+      "nl": "Hoe verwijder ik me uit het donorregister?"
+    },
+    {
+      "id": "q2791",
+      "category": "INTELLECTUEEL",
+      "nl": "Mag ik een foto van internet gebruiken?"
+    },
+    {
+      "id": "q2795",
+      "category": "INTELLECTUEEL",
+      "nl": "Mag ik een parodie maken?"
+    },
+    {
+      "id": "q2798",
+      "category": "SPORT",
+      "nl": "Wat als ik gewond raak tijdens een sportwedstrijd?"
+    },
+    {
+      "id": "q2804",
+      "category": "SPORT",
+      "nl": "Mag ik overal kamperen in België?"
+    },
+    {
+      "id": "q2814",
+      "category": "DIEREN",
+      "nl": "Mag ik exotische dieren houden?"
+    },
+    {
+      "id": "q2815",
+      "category": "DIEREN",
+      "nl": "Wat zijn de regels voor paarden houden?"
+    },
+    {
+      "id": "q2824",
+      "category": "INTERNET",
+      "nl": "Moet ik BTW rekenen bij online verkoop?"
+    },
+    {
+      "id": "q2825",
+      "category": "INTERNET",
+      "nl": "Wat is phishing juridisch?"
+    },
+    {
+      "id": "q2831",
+      "category": "VERZEKERINGEN",
+      "nl": "Is een familiale verzekering verplicht?"
+    },
+    {
+      "id": "q2838",
+      "category": "VERZEKERINGEN",
+      "nl": "Wat is een hospitalisatieverzekering?"
+    },
+    {
+      "id": "q2845",
+      "category": "OVERHEID",
+      "nl": "Hoe vraag ik toegang tot overheidsdocumenten?"
+    },
+    {
+      "id": "q2849",
+      "category": "OVERHEID",
+      "nl": "Wat is een stedenbouwkundige inlichting?"
+    },
+    {
+      "id": "q2851",
+      "category": "MILIEU",
+      "nl": "Wat zijn de regels voor grondwater oppompen?"
+    },
+    {
+      "id": "q2874",
+      "category": "ALGEMEEN",
+      "nl": "Wat is een verzoekschrift?"
+    },
+    {
+      "id": "q2927",
+      "category": "ARBEIDSRECHT",
+      "nl": "Mag ik werken na pensioen?"
+    },
+    {
+      "id": "q2930",
+      "category": "HUURRECHT",
+      "nl": "Wat is een pop-up huur?"
+    },
+    {
+      "id": "q2937",
+      "category": "HUURRECHT",
+      "nl": "Wat is een woningkwaliteitsonderzoek?"
+    },
+    {
+      "id": "q3002",
+      "category": "FISCAAL",
+      "nl": "Wat zijn de straffen voor belastingontduiking?"
+    },
+    {
+      "id": "q3024",
+      "category": "VERKEERSRECHT",
+      "nl": "Wat is rijbewijs A1 A2 A?"
+    },
+    {
+      "id": "q3034",
+      "category": "STRAFRECHT",
+      "nl": "Wat is een raadkamer?"
+    },
+    {
+      "id": "q3035",
+      "category": "STRAFRECHT",
+      "nl": "Wat doet de raadkamer?"
+    },
+    {
+      "id": "q3037",
+      "category": "STRAFRECHT",
+      "nl": "Wat is een politierechtbank?"
+    },
+    {
+      "id": "q3095",
+      "category": "SOCIALE ZEKERHEID",
+      "nl": "Wat is schuldbemiddeling?"
+    },
+    {
+      "id": "q3107",
+      "category": "PRIVACY",
+      "nl": "Wat is een verwerker?"
+    },
+    {
+      "id": "q3112",
+      "category": "VREEMDELINGENRECHT",
+      "nl": "Wat is een C-visum (kort verblijf) en hoe vraag ik het aan?"
+    },
+    {
+      "id": "q3115",
+      "category": "VREEMDELINGENRECHT",
+      "nl": "Wat is een machtiging tot voorlopig verblijf?"
+    },
+    {
+      "id": "q3128",
+      "category": "SCHULDEN",
+      "nl": "Kan ik nog een bankrekening openen met schulden?"
+    },
+    {
+      "id": "q3138",
+      "category": "BOUWEN",
+      "nl": "Wat zijn de isolatienormen Vlaanderen?"
+    },
+    {
+      "id": "q3142",
+      "category": "MILIEU",
+      "nl": "Wat is een brownfield?"
+    }
+  ]
+}

@@ -1,0 +1,644 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<% content_for :head do %>
+<style>
+  .ai-security-hero {
+    background: linear-gradient(135deg, #0d1b2a 0%, #1b2838 50%, #0a1628 100%);
+    border-radius: 12px;
+    padding: 40px 30px;
+    margin: 0 0 35px 0;
+    text-align: center;
+    color: #e0e7ef;
+    position: relative;
+    overflow: hidden;
+  }
+  .ai-security-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 30% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 50%, rgba(16, 185, 129, 0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .ai-security-hero .shield-icon {
+    font-size: 3.5rem;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .ai-security-hero h2 {
+    color: #f0f4f8 !important;
+    border: none !important;
+    margin: 0 0 10px 0 !important;
+    font-size: 1.6rem !important;
+    font-weight: 700;
+    padding: 0 !important;
+  }
+  .ai-security-hero p {
+    color: #94a3b8;
+    font-size: 1rem;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  .security-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 20px 0 30px 0;
+  }
+  .security-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    background: #fafbfc;
+    transition: box-shadow 0.2s;
+  }
+  .security-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .security-card .card-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .security-card h4 {
+    margin: 0 0 6px 0 !important;
+    font-size: 0.95rem !important;
+    color: var(--tw-prose-headings, #1e293b) !important;
+  }
+  .security-card p {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.4;
+  }
+  .pledge-box {
+    background: #ecfdf5;
+    border: 2px solid #10b981;
+    border-radius: 10px;
+    padding: 24px;
+    margin: 25px 0;
+  }
+  .pledge-box h3 {
+    color: #065f46 !important;
+    margin-top: 0 !important;
+    font-size: 1.15rem !important;
+  }
+  .pledge-box ul { margin-bottom: 0; }
+  .pledge-box li { margin: 6px 0; }
+  .cert-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 15px 0;
+  }
+  .cert-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #334155;
+  }
+  .flow-diagram {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 24px;
+    margin: 20px 0;
+    text-align: center;
+  }
+  .flow-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: #334155;
+  }
+  .flow-step {
+    background: #e0f2fe;
+    border: 1px solid #7dd3fc;
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-align: center;
+    min-width: 90px;
+  }
+  .flow-step .step-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+  .flow-arrow { color: #94a3b8; font-size: 1.2rem; }
+  .dark .ai-security-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  }
+  .dark .security-card {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  .dark .security-card h4 { color: #e2e8f0 !important; }
+  .dark .security-card p { color: #94a3b8; }
+  .dark .pledge-box {
+    background: #064e3b;
+    border-color: #10b981;
+    color: #d1fae5;
+  }
+  .dark .pledge-box h3 { color: #6ee7b7 !important; }
+  .dark .cert-badge {
+    background: #1e293b;
+    border-color: #475569;
+    color: #cbd5e1;
+  }
+  .dark .flow-diagram { background: #1e293b; border-color: #334155; }
+  .dark .flow-step { background: #1e3a5f; border-color: #3b82f6; color: #e2e8f0; }
+  .dark .flow-steps { color: #e2e8f0; }
+  .dark .flow-arrow { color: #64748b; }
+</style>
+<% end %>
+
+<div class="legal-page">
+<h1>Sécurité de l'IA &amp; confidentialité</h1>
+    <p class="last-updated">Dernière mise à jour : 22 juillet 2026</p>
+
+    <!-- HERO -->
+    <div class="ai-security-hero">
+        <span class="shield-icon">🛡️</span>
+        <h2>Vos questions juridiques restent privées</h2>
+        <p>Lorsque vous posez une question juridique à WetWijzer, votre question actuelle et le contexte récent pertinent sont traités temporairement en clair afin de générer la réponse. Par défaut, nous ne conservons pas ce contenu conversationnel sur notre serveur. Si vous choisissez d'enregistrer l'historique avec un mot de passe de stockage, la copie enregistrée est chiffrée en zero-knowledge dans votre navigateur (AES-256-GCM) avant d'atteindre notre serveur - nous ne conservons alors que du texte chiffré que nous ne pouvons pas déchiffrer sans votre mot de passe.</p>
+    </div>
+
+    <!-- AT A GLANCE -->
+    <h2>En un coup d'œil</h2>
+    <div class="security-grid">
+        <div class="security-card">
+            <span class="card-icon">🔒</span>
+            <h4>Chiffrement zero-knowledge</h4>
+            <p>Les conversations que vous enregistrez avec un mot de passe de stockage sont chiffrées dans votre navigateur (AES-256-GCM) avant transmission - notre serveur ne reçoit alors que du texte chiffré illisible</p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">🔐</span>
+            <h4>TLS 1.2+ en transit</h4>
+            <p>TLS protège le contenu des messages en transit et réduit fortement le risque d'interception ; les métadonnées de connexion et les terminaux compromis restent hors de cette protection</p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">🇪🇺</span>
+            <h4>Traitement à portée UE et garanties</h4>
+            <p><%= chatbot_processing_location_summary(:fr) %></p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">🚫</span>
+            <h4>Contrôles propres à chaque fournisseur</h4>
+            <p>Azure OpenAI et AWS Bedrock déclarent ne pas utiliser le contenu d'inférence pour entraîner les modèles de fondation. Les conditions commerciales de Mistral prévoient des exceptions définies ; les paramètres du compte et le contrat applicable sont donc déterminants</p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">🗂️</span>
+            <h4>L'enregistrement est facultatif</h4>
+            <p>Le chatbot requiert un compte. Par défaut, nous ne conservons aucune conversation sur notre serveur. Les utilisateurs connectés peuvent enregistrer leurs conversations : si vous définissez un mot de passe de stockage, elles sont chiffrées en zero-knowledge avec votre propre clé ; si vous enregistrez sans mot de passe, nous les conservons chiffrées sur notre serveur mais nous pouvons les lire</p>
+        </div>
+        <div class="security-card">
+            <span class="card-icon">👤</span>
+            <h4>Indéchiffrable sans le mot de passe</h4>
+            <p>Pour l'historique enregistré en zero-knowledge, nous conservons le texte chiffré, un sel et une clé principale enveloppée par votre mot de passe de stockage. Nous ne détenons pas la clé déchiffrée, mais un mot de passe faible pourrait être deviné hors ligne si ces valeurs étaient exposées. La protection dépend aussi de votre navigateur et du code client que nous fournissons.</p>
+        </div>
+    </div>
+
+    <!-- PLEDGE -->
+    <div class="pledge-box">
+        <h3>🤝 Notre engagement de confidentialité</h3>
+        <ul>
+            <li><strong>Nous ne pouvons pas déchiffrer sans ce mot de passe l'historique enregistré avec un mot de passe de stockage</strong> - la copie enregistrée est chiffrée dans votre navigateur (zero-knowledge AES-256-GCM). Si vous enregistrez l'historique sans mot de passe, nous le conservons chiffré sur notre serveur, mais nous détenons la clé et pouvons en lire le contenu enregistré. La question actuelle et le contexte pertinent sont toujours traités temporairement en clair afin de répondre</li>
+            <li><strong>Nous ne journalisons ni le texte ni une empreinte de votre question</strong> - seules des métadonnées pseudonymes liées à votre compte (comme la langue, le temps de réponse et le coût) sont conservées</li>
+            <li><strong>Nous ne vendons jamais vos données</strong> - ni aux annonceurs, ni aux courtiers en données, à personne</li>
+            <li><strong>Nous limitons le partage avec les fournisseurs</strong> - votre question est transmise à Azure OpenAI à portée UE pour la recherche et au fournisseur de réponse sélectionné ; la recherche approfondie peut aussi utiliser Mistral Small via le point de terminaison UE dédié de Mistral pour l'expansion HyDE. Elle n'est jamais vendue ni partagée à des fins publicitaires</li>
+            <li><strong>Nous ne vous profilons jamais</strong> - nous ne construisons ni profils comportementaux, ni graphes d'intérêts, ni segments marketing</li>
+        </ul>
+    </div>
+
+    <!-- HOW YOUR QUESTION TRAVELS -->
+    <h2>1. Comment votre question voyage</h2>
+    <p>Lorsque vous saisissez une question juridique et appuyez sur « Envoyer », voici le trajet exact que votre message parcourt :</p>
+
+    <div class="flow-diagram">
+        <div class="flow-steps">
+            <div class="flow-step"><span class="step-icon">💻</span>Votre navigateur</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step"><span class="step-icon">🔐</span>TLS 1.2+</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step"><span class="step-icon">🇩🇪</span>Notre serveur<br><small>(Hetzner, Allemagne)</small></div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step"><span class="step-icon">🔐</span>TLS 1.2+</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step"><span class="step-icon">🇪🇺</span>Recherche Azure + fournisseur de réponse<br><small>(routes à portée UE)</small></div>
+        </div>
+        <p style="margin-top: 15px; font-size: 0.85rem; color: #64748b;">Chaque trajet réseau utilise un chiffrement de transport. WetWijzer, la recherche Azure et le fournisseur de réponse sélectionné traitent le contenu en clair à leurs points de terminaison ; il ne s'agit pas d'un traitement de bout en bout ni zero-knowledge.</p>
+    </div>
+
+    <h3>Étape par étape :</h3>
+    <ol>
+        <li><strong>Votre navigateur → Notre serveur :</strong> Votre question transite en HTTPS avec <strong>TLS 1.2 ou supérieur</strong>. Votre fournisseur d'accès ne peut normalement pas lire le contenu du message, mais peut encore voir des métadonnées de connexion telles que le domaine ou l'adresse IP de destination.</li>
+        <li><strong>Notre serveur → recherche auprès des fournisseurs :</strong> Nous envoyons votre question via <strong>TLS 1.2+</strong> à un déploiement d'embeddings Azure OpenAI à portée UE afin d'interroger nos index juridiques. La recherche approfondie peut aussi utiliser Mistral Small via le point de terminaison UE dédié de Mistral pour générer des variantes HyDE.</li>
+        <li><strong>Notre serveur → fournisseur de réponse sélectionné :</strong> Votre question et les articles pertinents sont envoyés à sa configuration à portée UE via <strong>TLS 1.2+</strong>. Les connexions utilisent des identifiants authentifiés propres au fournisseur (identifiants Azure et Mistral ; AWS Signature Version 4).</li>
+        <li><strong>Le fournisseur d'IA traite votre question :</strong> Le modèle d'IA génère une réponse. Le chiffrement au repos et la conservation suivent les garanties documentées du service et du contrat du fournisseur sélectionné ; ce traitement n'est zero-knowledge ni pour nous ni pour ce fournisseur. Les conditions propres à chaque fournisseur ci-dessous décrivent le traitement du contenu API pour l'entraînement.</li>
+        <li><strong>La réponse revient :</strong> La réponse de l'IA revient à votre navigateur par le même chemin chiffré.</li>
+    </ol>
+
+    <!-- WHAT OUR AI PROVIDERS GUARANTEE -->
+    <h2>2. Ce que garantissent nos fournisseurs d'IA</h2>
+    <p>Nous utilisons <strong>trois API de fournisseurs IA de niveau entreprise</strong> avec des configurations à portée européenne. <%= chatbot_processing_location_summary(:fr) %></p>
+
+    <h3>2.1 Utilisation du contenu API par les fournisseurs</h3>
+    <p>L'entraînement et la conservation dépendent du fournisseur, du service, de l'offre et de la configuration du compte. Ils ne constituent pas une garantie commune de conservation nulle :</p>
+    <div class="highlight">
+        <p><strong>Microsoft Azure OpenAI (déploiements à portée UE) :</strong> "Your prompts (inputs), completions (outputs), embeddings, and training data are NOT available to other customers, NOT available to OpenAI, NOT used to improve OpenAI models, NOT used to train, retrain, or improve any Microsoft or third-party foundation models."</p>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 0;">- <a href="https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy" target="_blank" rel="noopener">Microsoft Azure OpenAI Data, Privacy, and Security Documentation</a></p>
+    </div>
+    <div class="highlight" style="margin-top: 15px;">
+        <p><strong>Mistral AI (France) :</strong> WetWijzer utilise des modèles API hors Labs. Les conditions commerciales actuelles de Mistral prévoient néanmoins des exceptions à sa position de non-entraînement, notamment les retours, les contenus signalés par la modération, certains usages gratuits sans retrait, les modèles Labs et les dispositions d'un bon de commande. L'offre, les paramètres et le contrat applicables prévalent donc.</p>
+    </div>
+    <div class="highlight" style="margin-top: 15px;">
+        <p><strong>Amazon Web Services Bedrock :</strong> AWS indique que les données clients ne servent pas à entraîner les modèles de fondation. Nous appelons depuis Francfort des profils d'inférence géographiques préfixés <code>eu.</code> ; les requêtes peuvent être routées dans la géographie UE documentée du profil et ne sont pas limitées à Francfort.</p>
+    </div>
+    <p>Les contrats, bons de commande et conditions de traitement des données des fournisseurs régissent ces garanties. Leur portée doit être vérifiée pour les comptes WetWijzer configurés ; la documentation et les certifications des fournisseurs ne certifient pas WetWijzer lui-même.</p>
+
+    <h3>2.2 Normes de chiffrement</h3>
+    <table>
+        <tr>
+            <th>Couche de protection</th>
+            <th>Norme</th>
+            <th>Ce que cela signifie</th>
+        </tr>
+        <tr>
+            <td><strong>Chiffrement zero-knowledge</strong></td>
+            <td>AES-256-GCM (Web Crypto API)</td>
+            <td>Les conversations que vous enregistrez avec un mot de passe de stockage sont chiffrées dans votre navigateur avant transmission. Notre serveur ne reçoit et ne conserve alors que du texte chiffré illisible &mdash; sans la clé pour le déchiffrer. Si vous enregistrez sans mot de passe, notre serveur détient la clé et peut lire le contenu.</td>
+        </tr>
+        <tr>
+            <td><strong>Chiffrement en transit</strong></td>
+            <td>TLS 1.2 ou supérieur</td>
+            <td>TLS protège la confidentialité et l'intégrité en transit, sans pouvoir exclure un appareil, un terminal ou une infrastructure de confiance compromis</td>
+        </tr>
+        <tr>
+            <td><strong>Chiffrement au repos (fournisseur d'IA)</strong></td>
+            <td>Chiffrement au repos (propre au fournisseur et au service)</td>
+            <td>Nos fournisseurs configurés documentent le chiffrement au repos ; les algorithmes et certifications exacts diffèrent selon le service. Le traitement par le fournisseur n'est pas zero-knowledge</td>
+        </tr>
+        <tr>
+            <td><strong>Gestion des clés</strong></td>
+            <td>PBKDF2 + AES-GCM côté client</td>
+            <td>La clé d'enveloppement est dérivée de votre mot de passe de stockage au moyen de 600 000 itérations PBKDF2. La clé principale déchiffrée et la clé d'enveloppement ne quittent pas le navigateur ; notre serveur conserve le sel et la clé principale enveloppée. Les nouveaux mots de passe de stockage doivent comporter au moins 12 caractères, mais leur robustesse reste importante</td>
+        </tr>
+        <tr>
+            <td><strong>Géographie du traitement / contrôles de localisation</strong></td>
+            <td>Contrôles de déploiement à portée européenne</td>
+            <td>Configurations à portée européenne : DataZoneStandard dans la zone de données UE Azure pour tous les modèles Azure proposés, point de terminaison API régional UE/AELE de Mistral (donc pas uniquement les États membres de l’UE) et profils géographiques UE AWS</td>
+        </tr>
+    </table>
+
+    <h3>2.3 Surveillance des abus</h3>
+    <p>La surveillance de sécurité et la conservation opérationnelle des fournisseurs ne sont pas la même chose que l'entraînement des modèles. Pour les services configurés :</p>
+    <ul>
+        <li><strong>Azure OpenAI :</strong> la documentation actuelle de Microsoft indique que la classification automatisée des abus ne conserve pas elle-même les requêtes ou réponses. Des échantillons ou schémas signalés peuvent toutefois être conservés pour un examen humain autorisé, sauf approbation d'une surveillance des abus modifiée</li>
+        <li><strong>Mistral AI :</strong> la conservation, le retrait de l'entraînement et la conservation nulle dépendent de l'offre, des contrôles du compte, de la catégorie du modèle et des conditions commerciales ; le contenu signalé par la modération constitue une exception définie</li>
+        <li><strong>AWS Bedrock :</strong> les contrôles de conservation et le traitement de sécurité dépendent du modèle invoqué et de la configuration du service</li>
+    </ul>
+    <p>La conservation opérationnelle et l'examen de sécurité autorisé dépendent donc du fournisseur et de la configuration du compte. Ils ne sont pas zero-knowledge.</p>
+    <div class="legal-notice">
+        <p><strong>Note de transparence :</strong> Les systèmes de sécurité du contenu visent les contenus potentiellement nuisibles, et non la recherche juridique ordinaire. Des faux positifs peuvent néanmoins survenir, y compris pour des questions bénignes de droit du travail ou du bail.</p>
+    </div>
+
+    <h3>2.4 Portée européenne et transferts encadrés</h3>
+    <p><%= chatbot_processing_location_summary(:fr) %></p>
+    <ul>
+        <li><strong>Mistral AI :</strong> Opère depuis la France - une société européenne soumise au droit français et au droit de l'UE</li>
+        <li><strong>Azure OpenAI :</strong> tous les modèles proposés de la famille GPT-5 utilisent <code>DataZoneStandard</code> dans la zone de données UE Azure et les requêtes peuvent être routées dans l'EU Data Boundary documentée par Microsoft. Pour les modèles proposés, nous n'utilisons <strong>pas</strong> Standard régional, Global Standard ni Global Provisioned</li>
+        <li><strong>AWS Bedrock :</strong> profils géographiques <code>eu.</code> appelés depuis eu-central-1 ; les requêtes peuvent être routées dans la géographie UE documentée du profil</li>
+        <li>Les routes sélectionnées sont à portée européenne ; leurs limites précises et les réserves de transfert déclarées figurent ci-dessus</li>
+    </ul>
+
+    <!-- COMPLIANCE -->
+    <h2>3. Certifications &amp; conformité</h2>
+    <p>Les certifications et attestations des fournisseurs varient selon l'entité juridique, le service cloud, la région et la portée du compte. Elles ne certifient pas WetWijzer lui-même et le RGPD est une loi, pas une certification.</p>
+
+    <div class="cert-badges">
+        <span class="cert-badge">Portée propre au fournisseur</span>
+        <span class="cert-badge">Vérifier le service sélectionné</span>
+    </div>
+
+    <table>
+        <tr>
+            <th>Source de preuve</th>
+            <th>Limitation de portée</th>
+        </tr>
+        <tr>
+            <td><strong>Microsoft Service Trust Portal</strong></td>
+            <td>Microsoft publie des rapports d'audit et certificats propres aux services ; le service Azure et la région exacts doivent entrer dans leur portée</td>
+        </tr>
+        <tr>
+            <td><strong>AWS Compliance Center / Artifact</strong></td>
+            <td>AWS publie des preuves propres aux services et régions ; la couverture doit être vérifiée pour Bedrock et la région ou le profil invoqué</td>
+        </tr>
+        <tr>
+            <td><strong>Documentation contractuelle et de sécurité de Mistral</strong></td>
+            <td>Les garanties applicables dépendent de l'offre WetWijzer, des contrôles du compte, de la catégorie du modèle et du bon de commande</td>
+        </tr>
+        <tr>
+            <td><strong>WetWijzer</strong></td>
+            <td>Utilise ces services fournisseurs mais n'hérite pas de leurs certifications ; les contrôles et obligations juridiques propres à WetWijzer restent distincts</td>
+        </tr>
+    </table>
+    <p class="small">Consultez les preuves actuelles propres aux services dans le <a href="https://servicetrust.microsoft.com/" target="_blank" rel="noopener">Microsoft Service Trust Portal</a>, l'<a href="https://aws.amazon.com/compliance/" target="_blank" rel="noopener">AWS Compliance Center</a> et la documentation contractuelle et de sécurité applicable de Mistral.</p>
+
+    <!-- WHAT WE STORE -->
+    <h2>4. Ce que nous conservons (et ce que nous ne conservons pas)</h2>
+
+    <h3>4.1 Ce que nous conservons</h3>
+    <table>
+        <tr>
+            <th>Donnée</th>
+            <th>Exemple</th>
+            <th>Durée</th>
+            <th>Finalité</th>
+        </tr>
+        <tr>
+            <td>Langue sélectionnée</td>
+            <td>NL / FR / EN / DE</td>
+            <td>Durée de vie du compte ; effacée lors de la suppression du compte</td>
+            <td>Statistiques pseudonymes liées au compte</td>
+        </tr>
+        <tr>
+            <td>Domaine juridique choisi</td>
+            <td>« Législation » / « Jurisprudence »</td>
+            <td>Durée de vie du compte ; effacée lors de la suppression du compte</td>
+            <td>Optimisation pseudonyme liée au compte</td>
+        </tr>
+        <tr>
+            <td>Niveau d'intelligence choisi</td>
+            <td>Malin / Cerveau</td>
+            <td>Durée de vie du compte ; effacée lors de la suppression du compte</td>
+            <td>Planification pseudonyme liée au compte</td>
+        </tr>
+        <tr>
+            <td>Crédits déduits</td>
+            <td>1, 4, 6–8 ou 10</td>
+            <td>Durée de vie du compte</td>
+            <td>Facturation</td>
+        </tr>
+        <tr>
+            <td>Temps de réponse</td>
+            <td>2,3 secondes</td>
+            <td>Durée de vie du compte ; effacée lors de la suppression du compte</td>
+            <td>Surveillance pseudonyme liée au compte</td>
+        </tr>
+        <tr>
+            <td>Contexte de conversation</td>
+            <td>Fenêtre pour les questions de suivi</td>
+            <td>Par requête/session ; historique enregistré uniquement avec consentement</td>
+            <td>Permettre les questions de suivi et l'historique facultatif</td>
+        </tr>
+    </table>
+
+    <h3>4.2 Ce que nous ne mettons pas dans les analyses ou journaux applicatifs ordinaires</h3>
+    <div class="highlight--success">
+        <p><strong>Comment cela fonctionne en pratique :</strong> Nous ne stockons ni texte lisible ni empreinte déterministe de question dans les analyses du chatbot ou les journaux applicatifs ordinaires. Le texte brut est traité en mémoire pour la recherche Azure, l'enrichissement HyDE facultatif via Mistral Small et le fournisseur de réponse sélectionné, puis n'est pas volontairement persisté par WetWijzer après la requête ; la mémoire applicative n'est pas effacée cryptographiquement. Les réponses explicitement enregistrées, l'historique consenti et les signalements sont des choix de stockage distincts décrits ci-dessous. La prévention des abus utilise un hash IP salé ; puisqu'il reste un identifiant pseudonyme pendant sept jours, nous ne le qualifions pas d'anonyme.</p>
+    </div>
+    <table>
+        <tr>
+            <th>Donnée</th>
+            <th>Conservée ?</th>
+            <th>Comment</th>
+        </tr>
+        <tr>
+            <td><strong>Le texte de votre question</strong></td>
+            <td>Pas dans les analyses ou journaux ordinaires</td>
+            <td>Conservé uniquement si vous activez l'historique lisible, enregistrez explicitement une réponse ou soumettez un signalement ; l'historique protégé par mot de passe contient du texte chiffré</td>
+        </tr>
+        <tr>
+            <td><strong>La réponse de l'IA</strong></td>
+            <td>Pas dans les analyses ou journaux ordinaires</td>
+            <td>Seuls les décomptes de jetons y sont journalisés. Le contenu est conservé uniquement via l'historique lisible, une réponse explicitement enregistrée ou un signalement ; l'historique protégé contient du texte chiffré</td>
+        </tr>
+        <tr>
+            <td><strong>Les articles sources référencés</strong></td>
+            <td>Nombre dans les analyses ; identifiants dans l'état enregistré</td>
+            <td>Les analyses conservent le nombre de sources. L'état conversationnel enregistré peut contenir les identifiants NUMAC cités, y compris pour l'historique protégé par mot de passe</td>
+        </tr>
+        <tr>
+            <td><strong>Votre adresse IP</strong></td>
+            <td>❌ Jamais en clair</td>
+            <td>Conservée sous forme de hash SHA-256 salé et pseudonyme, puis effacée automatiquement après 7 jours</td>
+        </tr>
+        <tr>
+            <td><strong>L'historique de conversation</strong></td>
+            <td>🔒 Non conservé sans votre consentement</td>
+            <td>Par défaut, nous ne conservons <strong>pas</strong> votre conversation sur notre serveur ; les messages récents ne sont envoyés qu'avec chaque question pour fournir le contexte, puis supprimés. Nous ne conservons <strong>aucun contenu de conversation non chiffré</strong> dans le localStorage ou le sessionStorage. Si un enregistrement zero-knowledge est interrompu, une enveloppe de reprise contenant uniquement du texte chiffré peut rester dans le localStorage. Elle ne peut être renvoyée que tant que la revendication serveur associée reste valide (cinq minutes après son émission et généralement moins à compter de la réception de la réponse). L'application la supprime après confirmation du serveur, retrait du consentement ou &mdash; lorsqu'elle est active &mdash; expiration de la revendication ; si le navigateur était fermé, le nettoyage a lieu à la prochaine ouverture de WetWijzer. Le serveur refuse toute enveloppe expirée. Si vous optez pour l'enregistrement avec un mot de passe de stockage, la conversation est conservée chiffrée en zero-knowledge (AES-256-GCM) &mdash; nous ne pouvons pas en déchiffrer le contenu. Si vous optez pour l'enregistrement sans mot de passe de stockage, la conversation est conservée chiffrée sur notre serveur, mais nous pouvons en lire le contenu pour répondre aux questions de suivi. Les conversations enregistrées sont conservées jusqu'à ce que vous les supprimiez ou fermiez votre compte. La conversation active est suivie sur notre serveur ; l'enveloppe de reprise chiffrée constitue la seule exception de persistance dans le navigateur pour les <em>données de conversation</em>.</td>
+        </tr>
+    </table>
+    <p class="small">* Choix de stockage explicites : « Enregistrer la réponse » conserve la question et la réponse sélectionnées dans votre compte ; « Signaler » (🚩) les envoie à l'administrateur pour contrôle qualité après confirmation. Ces enregistrements sont chiffrés au repos sur le serveur, mais lisibles par WetWijzer.</p>
+
+    <!-- OUR OWN INFRASTRUCTURE -->
+    <h2>5. La sécurité de notre propre serveur</h2>
+    <p>Vos données ne sont pas seulement en sécurité chez nos fournisseurs d'IA - notre propre infrastructure est également renforcée :</p>
+    <table>
+        <tr>
+            <th>Mesure</th>
+            <th>Mise en œuvre</th>
+        </tr>
+        <tr>
+            <td><strong>Emplacement du serveur</strong></td>
+            <td>Hetzner, Allemagne (UE) - centre de données certifié ISO 27001</td>
+        </tr>
+        <tr>
+            <td><strong>HTTPS partout</strong></td>
+            <td>TLS 1.2+ avec HSTS (HTTP Strict Transport Security) ; les navigateurs compatibles reçoivent l'instruction d'utiliser HTTPS après réception de la politique</td>
+        </tr>
+        <tr>
+            <td><strong>Stockage des mots de passe</strong></td>
+            <td>Hachage bcrypt salé ; il résiste à l'inversion directe, mais les mots de passe faibles peuvent encore être devinés lors d'une attaque hors ligne</td>
+        </tr>
+        <tr>
+            <td><strong>Secrets 2FA</strong></td>
+            <td>Chiffrés en AES-256 dans la base de données</td>
+        </tr>
+        <tr>
+            <td><strong>En-têtes de sécurité</strong></td>
+            <td>CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy</td>
+        </tr>
+        <tr>
+            <td><strong>Limitation de débit</strong></td>
+            <td>Protection contre la force brute - le compte est verrouillé après 5 tentatives de connexion échouées</td>
+        </tr>
+        <tr>
+            <td><strong>Pseudonymisation des IP</strong></td>
+            <td>Les identifiants SHA-256 salés sont traités comme pseudonymes et effacés automatiquement après 7 jours</td>
+        </tr>
+        <tr>
+            <td><strong>Analytique</strong></td>
+            <td>Umami auto-hébergé pour des analyses agrégées, sans cookie et internes - ni Google Analytics ni traceur publicitaire intersite</td>
+        </tr>
+    </table>
+
+    <!-- DATA FLOW SUMMARY -->
+    <h2>6. Récapitulatif complet du flux de données</h2>
+    <table>
+        <tr>
+            <th>De</th>
+            <th>Vers</th>
+            <th>Données envoyées</th>
+            <th>Chiffrement</th>
+            <th>Conservation</th>
+        </tr>
+        <tr>
+            <td>Votre navigateur</td>
+            <td>Notre serveur (Allemagne)</td>
+            <td>Votre question</td>
+            <td>TLS 1.2+</td>
+            <td>Non volontairement persistée par WetWijzer sans choix explicite d'enregistrement, de signalement ou de consentement ; traitée en mémoire par requête</td>
+        </tr>
+        <tr>
+            <td>Notre serveur</td>
+            <td>Recherche Azure OpenAI (route à portée UE)</td>
+            <td>Question pour l'embedding de recherche ; la recherche approfondie peut aussi utiliser Mistral Small pour créer des variantes HyDE</td>
+            <td>TLS 1.2+</td>
+            <td>Le traitement opérationnel et de sécurité propre au service Azure s'applique ; non utilisée pour entraîner les modèles de fondation</td>
+        </tr>
+        <tr>
+            <td>Notre serveur</td>
+            <td>Fournisseur de réponse sélectionné (route à portée UE)</td>
+            <td>Question + articles pertinents</td>
+            <td>TLS 1.2+</td>
+            <td>Propre au fournisseur, à l'offre, au modèle et à la configuration du compte ; voir sections 2.1–2.3</td>
+        </tr>
+        <tr>
+            <td>Fournisseur de réponse sélectionné</td>
+            <td>Notre serveur</td>
+            <td>Réponse de l'IA</td>
+            <td>TLS 1.2+</td>
+            <td>Propre au fournisseur, à l'offre, au modèle et à la configuration du compte ; voir sections 2.1–2.3</td>
+        </tr>
+        <tr>
+            <td>Notre serveur</td>
+            <td>Votre navigateur</td>
+            <td>Réponse de l'IA + liens sources</td>
+            <td>TLS 1.2+</td>
+            <td>Le contenu non chiffré reste uniquement dans la mémoire de travail du navigateur. Aucune donnée de conversation non chiffrée n'est conservée dans le localStorage ou le sessionStorage. Un enregistrement zero-knowledge interrompu peut conserver une enveloppe de reprise contenant uniquement du texte chiffré dans le localStorage. Elle devient inutilisable à l'expiration de la revendication serveur, cinq minutes après son émission, et est nettoyée à l'expiration ou à la prochaine ouverture.</td>
+        </tr>
+    </table>
+
+    <!-- COMPARISON -->
+    <h2>7. Comment nous nous comparons</h2>
+    <p>Contrairement aux chatbots d'IA grand public, WetWijzer utilise des fournisseurs d'IA de qualité entreprise avec des configurations à portée UE et les réserves de transfert déclarées ci-dessus :</p>
+    <table>
+        <tr>
+            <th>Caractéristique</th>
+            <th>ChatGPT grand public</th>
+            <th>WetWijzer (multi-fournisseurs)</th>
+        </tr>
+        <tr>
+            <td>Utilisation par le fournisseur pour l'entraînement</td>
+            <td>Dépend du produit, de l'offre et des paramètres</td>
+            <td><strong>Azure/AWS déclarent ne pas entraîner les modèles de fondation avec les services d'inférence configurés ; les conditions Mistral prévoient des exceptions définies</strong></td>
+        </tr>
+        <tr>
+            <td>Envoi vers OpenAI / ChatGPT grand public</td>
+            <td>Oui</td>
+            <td><strong>Non - la recherche utilise le service professionnel Azure OpenAI de Microsoft ; les fournisseurs de réponse sélectionnés sont indiqués ci-dessus</strong></td>
+        </tr>
+        <tr>
+            <td>Les données quittent l'UE</td>
+            <td>Oui (serveurs américains)</td>
+            <td><strong>Portée UE par configuration ; des transferts temporaires encadrés peuvent avoir lieu lorsque les fournisseurs les déclarent</strong></td>
+        </tr>
+        <tr>
+            <td>Couverture contractuelle / DPA</td>
+            <td>Dépend du produit et de l'offre</td>
+            <td><strong>Propre au fournisseur et au compte ; le DPA/bon de commande applicable doit être vérifié</strong></td>
+        </tr>
+        <tr>
+            <td>Assurance ISO / SOC</td>
+            <td>Variable</td>
+            <td><strong>Propre au service du fournisseur ; cela ne certifie pas WetWijzer lui-même</strong></td>
+        </tr>
+        <tr>
+            <td>L'exploitant peut-il lire le contenu de la conversation ?</td>
+            <td>Dépend du fournisseur</td>
+            <td><strong>La question actuelle et le contexte pertinent sont lisibles pendant le traitement de la réponse. Ensuite, nous ne pouvons pas déchiffrer directement l'historique protégé par un mot de passe ; l'historique standard, les réponses enregistrées et les signalements sont lisibles par WetWijzer. Le texte et les empreintes déterministes de questions ne sont pas conservés dans les journaux applicatifs ordinaires.</strong></td>
+        </tr>
+    </table>
+
+    <!-- WARNING -->
+    <h2>8. Une note de bon sens</h2>
+    <div class="warning">
+        <p><strong>⚠️ Malgré toutes ces protections, nous vous conseillons :</strong></p>
+        <ul>
+            <li>Ne partagez pas de documents d'identification personnelle (numéros d'identité, numéros de sécurité sociale) dans les conversations avec le chatbot</li>
+            <li>Ne partagez pas de données commerciales confidentielles ou de secrets d'affaires</li>
+            <li>Le chatbot fournit des <strong>orientations informatives</strong>, et non des conseils juridiques - consultez toujours un avocat qualifié pour les décisions juridiques importantes</li>
+        </ul>
+    </div>
+
+    <h3>8.1 Utilisateurs de Tor, VPN &amp; proxy</h3>
+    <div class="warning">
+        <p><strong>🧅 Avis important pour les utilisateurs de Tor Browser, de VPN et de proxy :</strong></p>
+        <p>WetWijzer est conçu pour les <strong>utilisateurs situés dans l'UE</strong>. Si votre connexion semble provenir de <strong>l'extérieur de l'UE</strong>, il vous sera demandé de compléter un contrôle de sécurité unique (<a href="/privacy-policy#section-10-3">preuve de travail ALTCHA</a>) avant d'accéder à la plateforme.</p>
+    </div>
+    <p>Cela vous concerne si vous utilisez :</p>
+    <ul>
+        <li><strong>Tor Browser :</strong> Les nœuds de sortie Tor se situent presque toujours en dehors de l'UE (généralement aux États-Unis, au Canada ou en Asie). Notre serveur voit l'adresse IP du nœud de sortie, et non la vôtre - ce qui donne l'impression d'une visite hors UE.</li>
+        <li><strong>Services VPN :</strong> Si votre serveur de sortie VPN se trouve en dehors de l'UE/EEE/Suisse/Royaume-Uni, vous déclencherez le même contrôle géo-sécurité.</li>
+        <li><strong>Proxys d'entreprise :</strong> Certaines chaînes de proxy d'entreprise acheminent le trafic via des passerelles situées hors UE.</li>
+    </ul>
+    <h4>Ce que cela signifie en pratique :</h4>
+    <table>
+        <tr>
+            <th>Scénario</th>
+            <th>Contrôle géo ?</th>
+            <th>Pouvez-vous utiliser le chatbot ?</th>
+        </tr>
+        <tr>
+            <td>Navigateur ordinaire, adresse IP de l'UE</td>
+            <td>❌ Aucun contrôle nécessaire</td>
+            <td>✅ Oui, immédiatement</td>
+        </tr>
+        <tr>
+            <td>VPN avec sortie dans l'UE (par ex. Pays-Bas, Allemagne)</td>
+            <td>❌ Aucun contrôle nécessaire</td>
+            <td>✅ Oui</td>
+        </tr>
+        <tr>
+            <td>VPN avec sortie hors UE (par ex. États-Unis, Singapour)</td>
+            <td>✅ Défi ALTCHA unique</td>
+            <td>✅ Oui, après vérification</td>
+        </tr>
+        <tr>
+            <td>Tor Browser (nœud de sortie aléatoire)</td>
+            <td>✅ Défi ALTCHA (probable)</td>
+            <td>✅ Oui, après vérification</td>
+        </tr>
+    </table>
+    <div class="legal-notice">
+        <p><strong>Note de confidentialité pour les utilisateurs de Tor :</strong> Nous respectons votre droit de naviguer anonymement. Le contrôle géo-sécurité ne vous identifie pas ; il vérifie une preuve de travail entre votre navigateur et notre serveur auto-hébergé sans transmettre le défi à un fournisseur CAPTCHA tiers. Sachez toutefois que lorsque vous utilisez Tor, votre trafic sort par un <strong>nœud relais tiers</strong> que vous ne contrôlez pas. Bien que le chiffrement TLS protège le contenu de vos questions au chatbot vis-à-vis de l'exploitant du nœud de sortie, ce nœud peut voir quel site web vous visitez (wetwijzer.be). Il s'agit d'une propriété de Tor lui-même, et non de notre plateforme.</p>
+    </div>
+    <p><strong>Recommandation :</strong> Si vous utilisez un VPN pour votre confidentialité, un <strong>serveur de sortie situé dans l'UE</strong> (par ex. Pays-Bas, Allemagne, France, Suède) évitera généralement le contrôle géo. Cela ne garantit pas que le trajet réseau physique vers notre serveur reste entièrement dans l'UE.</p>
+
+    <!-- FURTHER READING -->
+    <h2>9. Pour aller plus loin</h2>
+    <ul>
+        <li><a href="/privacy-policy">Politique de confidentialité de WetWijzer</a> - notre politique de confidentialité complète et conforme au RGPD</li>
+        <li><a href="https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy" target="_blank" rel="noopener">Azure OpenAI Data, Privacy, and Security</a> - documentation officielle de Microsoft</li>
+        <li><a href="https://legal.mistral.ai/terms/commercial-terms-of-service" target="_blank" rel="noopener">Conditions commerciales de Mistral</a> et <a href="https://docs.mistral.ai/admin/monitor-comply/privacy-data-controls" target="_blank" rel="noopener">contrôles de confidentialité</a> - exceptions contractuelles et contrôles de compte actuels</li>
+        <li><a href="https://aws.amazon.com/bedrock/security-compliance/" target="_blank" rel="noopener">AWS Bedrock Security & Compliance</a> - documentation de sécurité d'Amazon</li>
+        <li><a href="https://servicetrust.microsoft.com/" target="_blank" rel="noopener">Microsoft Service Trust Portal</a> - vérifier les certifications de conformité</li>
+        <li><a href="https://www.microsoft.com/licensing/docs/view/Microsoft-Products-and-Services-Data-Protection-Addendum-DPA" target="_blank" rel="noopener">Microsoft Data Protection Addendum (DPA)</a> - le contrat de protection des données juridiquement contraignant</li>
+    </ul>
+
+    <div class="legal-notice">
+        <p><strong>Des questions sur notre sécurité de l'IA ?</strong></p>
+        <p>Contactez-nous à l'adresse <a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a> - nous nous ferons un plaisir de vous expliquer en détail tout aspect de notre architecture de sécurité.</p>
+    </div>
+</div>

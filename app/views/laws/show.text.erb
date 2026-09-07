@@ -1,0 +1,34 @@
+<%# Plain-text law detail for curl users.
+    Try: curl https://classic.wetwijzer.be/laws/1992041050.txt -%>
+<%- if @law.present? -%>
+<%= raw strip_tags(@law.title.to_s).squish %>
+
+NUMAC: <%= @law.numac %>
+<%= t(:date_label) %>: <%= @law.date %>
+<%- if @law.respond_to?(:justel) && @law.justel.present? -%>
+Justel: <%= @law.justel %>
+<%- end -%>
+
+<%- if @articles.present? -%>
+<%- @articles.each do |article| -%>
+<%- art_type = determine_article_type(article.article_title, article.article_text, article.article_type) -%>
+<%- if art_type == :section_heading || art_type == :abolished_section -%>
+
+== <%= raw strip_tags(article.article_text.to_s).squish %> ==
+
+<%- else -%>
+<%- if article.article_title.present? && article.article_title.strip != '#' -%>
+<%= article.article_title.strip %>
+<%- end -%>
+<%= raw strip_tags(article.article_text.to_s).gsub(/\r\n?/, "\n").gsub(/\n{3,}/, "\n\n").strip %>
+
+<%- end -%>
+<%- end -%>
+<%- elsif @content&.respond_to?(:introd) && @content.introd.present? -%>
+<%= raw strip_tags(@content.introd.to_s).squish %>
+<%- else -%>
+<%= t(:no_articles_available, default: 'Geen artikelen beschikbaar.') %>
+<%- end -%>
+<%- else -%>
+<%= t(:law_not_found) %>
+<%- end -%>

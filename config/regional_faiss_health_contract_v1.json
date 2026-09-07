@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "description": "Required exact health response for activation and quality provenance of a strict regional FAISS manifest schema-3 generation with immutable main/laws lineage.",
+  "legacy_generation_and_count_health_is_insufficient": true,
+  "required_health_fields": {
+    "status": { "type": "string", "const": "ok" },
+    "ready": { "type": "boolean", "const": true },
+    "generation": {
+      "type": "string",
+      "pattern": "^regional-faiss-sha256-[0-9a-f]{64}$"
+    },
+    "manifest_schema_version": { "type": "integer", "const": 3 },
+    "manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "index_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "ids_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "metadata_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "indexed_vectors": { "type": "integer", "minimum": 1 },
+    "index_size": {
+      "type": "integer",
+      "minimum": 1,
+      "must_equal": "indexed_vectors"
+    },
+    "ids_count": {
+      "type": "integer",
+      "minimum": 1,
+      "must_equal": "indexed_vectors"
+    },
+    "meta_entries": {
+      "type": "integer",
+      "minimum": 1,
+      "must_equal": "indexed_vectors"
+    },
+    "dimension": { "type": "integer", "const": 3072 },
+    "metric_type": { "type": "integer", "enum": [0, 1] },
+    "metric": { "type": "string", "enum": ["inner_product", "l2->cosine"] },
+    "meta_backend": { "type": "string", "const": "sqlite" },
+    "required_meta_fields": {
+      "type": "array",
+      "const": ["source", "title", "text", "url"]
+    },
+    "positional_ids_required": { "type": "boolean", "const": true },
+    "source_main_generation": {
+      "type": "string",
+      "pattern": "^main-faiss-sha256-[0-9a-f]{64}$"
+    },
+    "source_main_manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "source_main_index_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "source_main_ids_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "source_laws_generation": {
+      "type": "string",
+      "pattern": "^laws-sha256-[0-9a-f]{64}$"
+    },
+    "source_laws_database_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  },
+  "search_compatibility_requirement": {
+    "endpoint": "POST /search",
+    "unchanged_top_level_response_fields": [
+      "results",
+      "search_time_ms",
+      "total_indexed"
+    ],
+    "unchanged_result_fields": [
+      "article_id",
+      "similarity"
+    ]
+  }
+}

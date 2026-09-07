@@ -1,0 +1,8 @@
+<%= t('mailer.unverified_warning.title', default: 'Please Verify Your Email') %>
+
+<%= t('mailer.unverified_warning.greeting', name: @user.name || @user.email, default: "Hello #{@user.name || @user.email}") %>
+
+<%= t('mailer.unverified_warning.body', default: 'Your email address has not been verified yet. Please verify to keep your account active.') %>
+
+<%= t('mailer.unverified_warning.button', default: 'Verify your email:') %>
+<%= @confirmation_url %>

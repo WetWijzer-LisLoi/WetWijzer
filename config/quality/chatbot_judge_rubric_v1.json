@@ -1,0 +1,40 @@
+{
+  "rubric_id": "wetwijzer-chatbot-legal-quality-v1",
+  "version": 1,
+  "purpose": "Blind legal-quality judgment of one saved chatbot capture using only the captured question, complete answer, and complete returned sources.",
+  "instructions": [
+    "Judge each repetition independently and do not infer quality from other repetitions.",
+    "Do not reward polished wording when the legal rule, jurisdiction, scope, date, or citation is materially wrong.",
+    "Treat a decisive legal claim as unsupported when neither the answer nor the returned source evidence gives a verifiable legal basis.",
+    "A purported direct quotation must be supported by the returned source evidence. A fabricated or unverifiable direct quotation is POOR.",
+    "A retrieval refusal or claim that the sources contain no answer is POOR when the question calls for a normal answer that the corpus should cover.",
+    "Evaluate the requested language, directness, completeness, material qualifications, source relevance, citation-to-source consistency, and hallucination risk.",
+    "A POOR judgment must name at least one failure category. A GOOD judgment must have no failure categories.",
+    "Return one JSON judgment conforming to chatbot_judgment_schema_v1.json."
+  ],
+  "verdicts": {
+    "GOOD": "Correct, directly responsive, sufficiently complete for the question, appropriately qualified, and grounded in relevant returned sources; no material fabrication or citation defect.",
+    "ACCEPTABLE": "Substantively useful and mostly correct, with only minor omissions, imprecision, presentation issues, or non-decisive sourcing gaps that would not materially mislead the user.",
+    "POOR": "Materially incorrect, misleading, non-responsive, wrongly scoped, unsupported on a decisive point, missing an answer because retrieval failed, in the wrong language, or containing a fabricated quotation/source/citation."
+  },
+  "failure_categories": [
+    "material_legal_error",
+    "outdated_or_wrong_jurisdiction",
+    "retrieval_failure_or_refusal",
+    "fabricated_quote",
+    "fabricated_or_mismatched_citation",
+    "unsupported_decisive_claim",
+    "missing_material_qualification",
+    "nonresponsive_or_incomplete",
+    "wrong_language",
+    "source_quality_or_relevance",
+    "other"
+  ],
+  "quote_support_values": [
+    "not_applicable",
+    "supported",
+    "unsupported",
+    "unverifiable_from_returned_sources"
+  ],
+  "blindness_requirement": "The judge must not receive baseline/final labels, aggregate scores, prior verdicts, or release identity beyond what is necessary to resolve legal currentness."
+}

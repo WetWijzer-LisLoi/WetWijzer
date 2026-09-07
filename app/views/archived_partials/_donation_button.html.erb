@@ -1,0 +1,11 @@
+<%# Optional footer donation shortcut. The live support page contains the
+     CSRF-protected fixed-amount Mollie forms. This shortcut performs no
+     mutation and only navigates to that page. %>
+
+<%= link_to support_page_path(anchor: 'donate'),
+            class: "inline-flex items-center px-4 py-2 bg-[#FF5E5B] hover:bg-[#e54542] text-white rounded-md transition-colors duration-150 ease-out motion-reduce:transition-none text-sm font-medium" do %>
+  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+  </svg>
+  <span><%= t('footer.support_us') %></span>
+<% end %>

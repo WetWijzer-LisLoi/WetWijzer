@@ -1,0 +1,24 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<div class="legal-page">
+<h1>Contact</h1>
+
+    <h2>E-mail</h2>
+    <p>Voor vragen, opmerkingen of meldingen kunt u ons bereiken via:</p>
+    <p>
+      <a href="mailto:<%= contact_email %>"><%= contact_email %></a>
+    </p>
+
+    <h2>Verantwoordelijke uitgever</h2>
+    <p>Mr. Gauthier Berth</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400">Advocaat bij de Nederlandstalige Orde van Advocaten bij de Balie te Brussel</p>
+
+    <h2>Reactietijd</h2>
+    <p>Wij streven ernaar om alle berichten binnen <strong>2 werkdagen</strong> te beantwoorden.</p>
+
+    <h2>Privacygerelateerde verzoeken</h2>
+    <p>Voor verzoeken op grond van de AVG (GDPR) kunt u ons <a href="<%= gdpr_takedown_path %>">GDPR-formulier</a> gebruiken of een e-mail sturen naar <a href="mailto:<%= contact_email %>"><%= contact_email %></a>.</p>
+
+    <h2>Bug melden of bijdragen</h2>
+    <p>WetWijzer is open source. Bugs en suggesties kunt u melden via <a href="https://github.com/WetWijzer-LisLoi/WetWijzer/issues" target="_blank" rel="noopener">GitHub Issues</a>.</p>
+
+</div>

@@ -1,0 +1,437 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<div class="legal-page">
+<h1>H&auml;ufig gestellte Fragen (FAQ)</h1>
+    <p class="last-updated">Letzte Aktualisierung: 9. Juni 2026</p>
+
+    <div class="toc">
+        <strong>Inhalt</strong>
+        <ul>
+            <li><a href="#section-1">1. Allgemeines</a></li>
+            <li><a href="#section-2">2. Konto und Registrierung</a></li>
+            <li><a href="#section-3">3. KI-Chatbot</a></li>
+            <li><a href="#section-4">4. Credits und Zahlungen</a></li>
+            <li><a href="#section-5">5. WetWijzer Pro</a></li>
+            <li><a href="#section-6">6. Rechtsprechung und personenbezogene Daten</a></li>
+            <li><a href="#section-7">7. Datenschutz</a></li>
+            <li><a href="#section-8">8. KI-Leistung und Qualitätskontrolle</a></li>
+            <li><a href="#section-9">9. Technisches</a></li>
+            <li><a href="#section-10">10. Kontakt und Support</a></li>
+        </ul>
+    </div>
+
+    <h2 id="section-1">1. Allgemeines</h2>
+
+    <details>
+        <summary>Was ist GesetzGuide?</summary>
+        <div>
+            <p>GesetzGuide ist eine inoffizielle Such- und Informationsplattform f&uuml;r belgische Gesetzgebung. Sie bietet durchsuchbare Datenbanken von Gesetzen, Dekreten, Verordnungen, Rechtsprechung und parlamentarischen Dokumenten, erg&auml;nzt durch einen KI-Chatbot, der Fragen zum belgischen Recht beantwortet.</p>
+            <p>Der Dienst ist auch verf&uuml;gbar als <a href="https://wetwijzer.be">WetWijzer</a> (Niederl&auml;ndisch) und <a href="https://lisloi.be">LisLoi</a> (Franz&ouml;sisch) und <a href="https://lexlibera.be">LexLibera</a> (Englisch).</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Ist GesetzGuide eine offizielle Regierungsinitiative?</summary>
+        <div><p>Nein. GesetzGuide ist unabh&auml;ngig von der belgischen Regierung, der Justiz, der Anwaltskammer und allen anderen offiziellen Instanzen. Die Informationen stammen aus &ouml;ffentlichen Quellen wie dem Belgischen Staatsblatt, Justel, Reflex, JuPortal und EUR-Lex.</p></div>
+    </details>
+
+    <details>
+        <summary>Sind die Informationen auf GesetzGuide eine Rechtsberatung?</summary>
+        <div><p><strong>Nein.</strong> Alle Informationen, einschlie&szlig;lich der Antworten des KI-Chatbots, dienen ausschlie&szlig;lich allgemeinen Informationszwecken. Es wird kein Mandatsverh&auml;ltnis begr&uuml;ndet. Konsultieren Sie stets einen qualifizierten Rechtsanwalt f&uuml;r Ihre spezifische Situation.</p></div>
+    </details>
+
+    <details>
+        <summary>Ist GesetzGuide kostenlos?</summary>
+        <div><p>Die Suche in der Gesetzesdatenbank ist vollst&auml;ndig kostenlos und erfordert kein Konto. F&uuml;r den KI-Chatbot erh&auml;lt jeder registrierte Benutzer <%= RegistrationsController::STARTER_CREDITS %> Startcredits. Zus&auml;tzliche Credits k&ouml;nnen gekauft werden, oder Sie k&ouml;nnen ein WetWijzer Pro-Abonnement abschlie&szlig;en.</p></div>
+    </details>
+
+    <details>
+        <summary>In welchen Sprachen ist GesetzGuide verf&uuml;gbar?</summary>
+        <div><p>Die Oberfl&auml;che ist auf Niederl&auml;ndisch, Franz&ouml;sisch, Deutsch und Englisch verf&uuml;gbar. Der KI-Chatbot antwortet in der von Ihnen gew&auml;hlten Sprache. Die Gesetzesdatenbank enth&auml;lt Texte in ihrer urspr&uuml;nglichen Publikationssprache.</p></div>
+    </details>
+
+    <h2 id="section-2">2. Konto und Registrierung</h2>
+
+    <details>
+        <summary>Ben&ouml;tige ich ein Konto?</summary>
+        <div>
+            <p>Die Suche in der Gesetzesdatenbank erfordert kein Konto. Ein Konto wird ben&ouml;tigt f&uuml;r:</p>
+            <ul>
+                <li>Die Nutzung des KI-Chatbots</li>
+                <li>Den Kauf von Credits</li>
+                <li>Ein WetWijzer Pro-Abonnement</li>
+                <li>Lesezeichen zu speichern</li>
+                <li>Einstellungen dauerhaft zu speichern</li>
+                <li>Gespr&auml;che in Ihrem Profil zu speichern</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Welche Daten werden f&uuml;r die Registrierung ben&ouml;tigt?</summary>
+        <div><p>Nur eine E-Mail-Adresse und ein Passwort. Ihr Name ist optional. Wir fragen nicht nach Telefonnummer, Adresse oder anderen pers&ouml;nlichen Daten.</p></div>
+    </details>
+
+    <details>
+        <summary>Wie l&ouml;sche ich mein Konto?</summary>
+        <div>
+            <p>Sie k&ouml;nnen Ihr Konto &uuml;ber die Kontoseite l&ouml;schen. Nach Best&auml;tigung wird Ihr Konto zur endg&uuml;ltigen L&ouml;schung nach 30 Tagen vorgemerkt. W&auml;hrend dieser Zeit k&ouml;nnen Sie die L&ouml;schung r&uuml;ckg&auml;ngig machen. Nach 30 Tagen werden alle personenbezogenen Daten unwiderruflich gel&ouml;scht.</p>
+            <p>Nicht verwendete Credits werden bei L&ouml;schung nicht erstattet.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Was passiert, wenn ich meine E-Mail nicht best&auml;tige?</summary>
+        <div><p>Unbest&auml;tigte Konten werden nach 72 Stunden automatisch gel&ouml;scht. Sie k&ouml;nnen sich danach erneut registrieren.</p></div>
+    </details>
+
+    <h2 id="section-3">3. KI-Chatbot</h2>
+
+    <details>
+        <summary>Wie funktioniert der KI-Chatbot?</summary>
+        <div>
+            <p>Der Chatbot verwendet Retrieval-Augmented Generation (RAG): Ihre Frage wird zun&auml;chst mit der belgischen Gesetzesdatenbank abgeglichen, um relevante Gesetzesartikel zu finden, dann formuliert ein gro&szlig;es Sprachmodell (LLM) eine Antwort auf Basis dieser Quellen.</p>
+            <p>Dies verbessert die Genauigkeit im Vergleich zu einem Standard-Chatbot, eliminiert aber nicht alle Risiken von Ungenauigkeiten.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Was sind die Intelligenzstufen?</summary>
+        <div>
+            <%= render 'legal_pages/chatbot_pricing_table', locale: :de %>
+            <p>Kostenlose Benutzer erhalten <%= RegistrationsController::STARTER_CREDITS %> Startcredits f&uuml;r ausgew&auml;hlte Modelle der Stufe Schlau (welche, steht auf der Preisseite und kann sich &auml;ndern). Die &uuml;brigen Schlau-Modelle sowie Genial, Meisterhirn und Allwissend sind exklusiv f&uuml;r Pro-Abonnenten. <%= chatbot_processing_location_summary(:de) %></p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Kann ich den Chatbot-Antworten vertrauen?</summary>
+        <div>
+            <p><strong>Nein, nicht ohne &Uuml;berpr&uuml;fung.</strong> Der KI-Chatbot kann:</p>
+            <ul>
+                <li>Falsche Informationen als Fakten pr&auml;sentieren (&bdquo;Halluzinationen&ldquo;)</li>
+                <li>Veraltete Gesetzgebung zitieren</li>
+                <li>Juristische Konzepte falsch interpretieren</li>
+                <li>Nicht existierende Gesetze oder Artikel nennen</li>
+            </ul>
+            <p>&Uuml;berpr&uuml;fen Sie Antworten stets anhand offizieller Quellen oder konsultieren Sie einen Rechtsexperten.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Was unterscheidet den Chatbot von Google?</summary>
+        <div>
+            <p>Der GesetzGuide-Chatbot ist spezifisch mit der belgischen Gesetzesdatenbank verbunden. Im Gegensatz zu einer allgemeinen Suchmaschine:</p>
+            <ul>
+                <li>Durchsucht der Chatbot direkt den Volltext belgischer Gesetze, Dekrete und Verordnungen</li>
+                <li>Zitiert der Chatbot spezifische Gesetzesartikel mit Quellenangabe</li>
+                <li>Formuliert der Chatbot eine zusammenh&auml;ngende Antwort statt einer Linkliste</li>
+                <li>K&ouml;nnen alle Besucher die Rechtsprechungs- und Parlamentsdatenbank auf der Website kostenlos durchsuchen, ohne Konto; via Chatbot stehen Rechtsprechung und parlamentarische Dokumente Pro-Abonnenten zur Verf&uuml;gung</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Werden meine Chatbot-Gespr&auml;che gespeichert?</summary>
+        <div>
+            <p><strong>Standardm&auml;&szlig;ig speichern wir Ihre Gespr&auml;che nicht.</strong> Wenn Sie den Verlauf mit einem Speicherpasswort aktivieren, wird die gespeicherte Kopie vor der &Uuml;bertragung in Ihrem Browser verschl&uuml;sselt (Zero-Knowledge AES-256-GCM), und wir k&ouml;nnen sie ohne dieses Passwort nicht entschl&uuml;sseln. Wenn Sie den Verlauf ohne Speicherpasswort speichern, ist er auf unserem Server verschl&uuml;sselt, aber wir verwalten den Schl&uuml;ssel und k&ouml;nnen den gespeicherten Inhalt lesen.</p>
+            <p>Ihre aktuelle Frage und der relevante j&uuml;ngste Kontext werden zur Beantwortung immer vor&uuml;bergehend im Klartext von WetWijzer, Azure OpenAI f&uuml;r das Retrieval (und bei tiefer Suche optional Mistral Small f&uuml;r die HyDE-Anreicherung) sowie dem gew&auml;hlten Antwortanbieter verarbeitet. Unverschl&uuml;sselter Gespr&auml;chsinhalt wird nicht in <code>localStorage</code> oder <code>sessionStorage</code> gespeichert.</p>
+            <p>Unsere analytische Datenbank speichert kontoverkn&uuml;pfte pseudonyme Nutzungsmetadaten (darunter Rechtsgebiet, Sprache, Modell, Credits, Kosten und Antwortzeit), aber weder lesbaren Fragetext noch einen Fragen-Fingerabdruck.</p>
+            <p>Siehe unsere <a href="/privacy-policy">Datenschutzrichtlinie (Abschnitt 3.4)</a> f&uuml;r alle Details.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Wo werden meine Fragen verarbeitet?</summary>
+        <div><p><%= chatbot_processing_location_summary(:de) %></p></div>
+    </details>
+
+    <h2 id="section-4">4. Credits und Zahlungen</h2>
+
+    <details>
+        <summary>Was sind Credits?</summary>
+        <div>
+            <p>Credits sind digitale Guthaben, mit denen Sie den KI-Chatbot nutzen k&ouml;nnen. Der Basispreis hängt vom gewählten Modell ab; unterstütztes optionales Denken kann einen Aufschlag hinzufügen:</p>
+            <%= render 'legal_pages/chatbot_pricing_table', locale: :de %>
+        </div>
+    </details>
+
+    <details>
+        <summary>Wie viele Gratis-Credits erhalte ich?</summary>
+        <div><p>Jeder registrierte Benutzer erh&auml;lt <%= RegistrationsController::STARTER_CREDITS %> kostenlose Startcredits. Diese werden automatisch gutgeschrieben. Gratis-Credits funktionieren mit ausgew&auml;hlten Modellen der Stufe Schlau. Die &uuml;brigen Schlau-Modelle sowie Genial, Meisterhirn und Allwissend erfordern ein Pro-Abonnement.</p></div>
+    </details>
+
+    <details>
+        <summary>Verfallen Credits?</summary>
+        <div>
+            <p>Nein. Alle Credits sind permanent und verfallen nie, unabh&auml;ngig davon, ob sie aus Ihrer monatlichen Pro-Zuteilung, gekauften Paketen oder Startcredits stammen.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Kann ich Credits zur&uuml;ckerhalten?</summary>
+        <div><p>Credits sind nicht erstattungsf&auml;hig. Wird eine Zahlung erstattet oder zur&uuml;ckgebucht (Chargeback), werden die mit dieser Zahlung gew&auml;hrten Credits anteilig zur&uuml;ckgenommen; der Saldo kann dadurch vor&uuml;bergehend negativ werden und wird mit sp&auml;teren K&auml;ufen verrechnet. Bei einem technischen Fehler, durch den Credits zu Unrecht abgebucht wurden, k&ouml;nnen Sie uns unter <a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a> kontaktieren, und wir schreiben die Credits manuell gut.</p></div>
+    </details>
+
+    <details>
+        <summary>Welche Zahlungsmethoden werden akzeptiert?</summary>
+        <div><p>&Uuml;ber Mollie werden g&auml;ngige Zahlungsmethoden angeboten, darunter Bancontact, Debit- und Kreditkarten sowie weitere europ&auml;ische Zahlungsmethoden. Wir speichern keine Karten- oder Bankdaten; die Zahlung wird in der sicheren Mollie-Checkout-Umgebung verarbeitet.</p></div>
+    </details>
+
+    <h2 id="section-5">5. WetWijzer Pro</h2>
+
+    <details>
+        <summary>Was bietet WetWijzer Pro?</summary>
+        <div>
+            <table>
+                <tr><th>Funktion</th><th>Gratis-Konto</th><th>WetWijzer Pro (&euro;2,99/Monat)</th></tr>
+                <tr><td>Gesetzgebung durchsuchen</td><td>Unbegrenzt</td><td>Unbegrenzt</td></tr>
+                <tr><td>Chatbot-Credits</td><td><%= RegistrationsController::STARTER_CREDITS %> Startcredits + kaufbar</td><td><strong><%= Subscription::PRO_MONTHLY_CREDITS %> pro Monat</strong> + kaufbar</td></tr>
+                <tr><td>Intelligenzstufen</td><td>Schlau (ausgew&auml;hlte Modelle)</td><td><strong>Alle 4 Stufen</strong></td></tr>
+                <tr><td>KI-Modelle</td><td><%= chatbot_model_names_for_access(:free) %></td><td><strong>Alle Modelle</strong> (<%= chatbot_all_model_names %>)</td></tr>
+                <tr><td>Rechtsprechungsdatenbank</td><td>✅ 175.000+ pseudonymisierte Urteile</td><td>✅ 175.000+ pseudonymisierte Urteile</td></tr>
+                <tr><td>Parlamentsdatenbank</td><td>✅ Durchsuchen</td><td>✅ Durchsuchen</td></tr>
+                <tr><td>Rechtsprechung via Chatbot</td><td>Nicht verf&uuml;gbar</td><td><strong>Verf&uuml;gbar</strong></td></tr>
+                <tr><td>Parlamentarische Dokumente via Chatbot</td><td>Nicht verf&uuml;gbar</td><td><strong>Verf&uuml;gbar</strong></td></tr>
+
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>Warum sollte ich auf Pro upgraden?</summary>
+        <div>
+            <p>WetWijzer Pro ist f&uuml;r alle konzipiert, die regelm&auml;&szlig;ig juristische Recherchen durchf&uuml;hren:</p>
+            <ul>
+                <li><strong>Intelligentere KI:</strong> Genial (<%= chatbot_model_names_for_level(:genius, :de) %>), Meisterhirn (<%= chatbot_model_names_for_level(:mastermind, :de) %>) und Allwissend (<%= chatbot_model_names_for_level(:omniscient, :de) %>) bieten die leistungsfähigeren Optionen.</li>
+                <li><strong>Alle KI-Modelle:</strong> Pro-Abonnenten erhalten Zugang zu allen KI-Modellen im erweiterten Dropdown-Men&uuml;, einschlie&szlig;lich GPT-5.6 Luna, GPT-5.6 Terra und mehr.</li>
+                <li><strong>Rechtsprechung via Chatbot:</strong> Lassen Sie den Chatbot auch in der Rechtsprechungsdatenbank (175.000+ pseudonymisierte Urteile) suchen. Das Durchsuchen der Datenbank auf der Website bleibt f&uuml;r alle kostenlos, ohne Konto.</li>
+                <li><strong>Parlamentarische Dokumente:</strong> Lassen Sie den Chatbot auch in Kammer- und Senatsdokumenten suchen.</li>
+                <li><strong>Ausreichendes Budget:</strong> <%= Subscription::PRO_MONTHLY_CREDITS %> gratis Credits pro Monat f&uuml;r regelm&auml;&szlig;ige Nutzung.</li>
+                <li><strong>30% Rabatt auf Credit-Pakete:</strong> Pro-Abonnenten zahlen 30% weniger f&uuml;r zus&auml;tzliche Credit-Pakete.</li>
+                <li><strong>G&uuml;nstiger Preis:</strong> &euro;2,99 pro Monat ist ein Bruchteil der Kosten vergleichbarer juristischer Datenbanken.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>F&uuml;r wen ist WetWijzer Pro gedacht?</summary>
+        <div>
+            <ul>
+                <li><strong>Rechtsanw&auml;lte und Juristen:</strong> Schnell Gesetzesartikel und relevante Rechtsprechung nachschlagen.</li>
+                <li><strong>Jurastudenten:</strong> Pr&uuml;fungsvorbereitung, Recherchematerial f&uuml;r Abschlussarbeiten, juristische Konzepte erkunden.</li>
+                <li><strong>Unternehmensjuristen und Compliance-Beauftragte:</strong> Schnell spezifische Regelungen finden.</li>
+                <li><strong>Notare, Immobilienprofis und Beamte:</strong> Schneller Zugriff auf aktuelle Gesetzestexte und relevante Urteile.</li>
+                <li><strong>Interessierte B&uuml;rger:</strong> Tieferes Verst&auml;ndnis der anwendbaren Gesetze.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Was kostet WetWijzer Pro?</summary>
+        <div>
+            <p>&euro;2,99 pro Monat, inklusive MwSt. Das Abonnement wird monatlich verl&auml;ngert und kann jederzeit gek&uuml;ndigt werden. Kein Jahresvertrag, keine K&uuml;ndigungsfrist.</p>
+            <p>Zum Vergleich: Kommerzielle juristische Datenbanken wie Jura oder Strada lex kosten in der Regel Hunderte Euro pro Monat.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Kann ich Pro erst ausprobieren?</summary>
+        <div><p>Mit den <%= RegistrationsController::STARTER_CREDITS %> kostenlosen Startcredits k&ouml;nnen Sie den Chatbot bereits auf den ausgew&auml;hlten Schlau-Modellen testen. Die Rechtsprechungsdatenbank ist auf der Website f&uuml;r alle frei zug&auml;nglich, ohne Konto. Pro f&uuml;gt die Stufen Genial, Meisterhirn und Allwissend sowie Rechtsprechung und parlamentarische Dokumente via Chatbot hinzu. Da Pro monatlich ohne K&uuml;ndigungsfrist k&uuml;ndbar ist, k&ouml;nnen Sie es risikofrei einen Monat lang ausprobieren.</p></div>
+    </details>
+
+    <details>
+        <summary>Wie k&uuml;ndige ich mein Pro-Abonnement?</summary>
+        <div><p>Sie k&ouml;nnen jederzeit &uuml;ber Ihre Kontoseite k&uuml;ndigen. Das Abonnement bleibt bis zum Ende der laufenden Abrechnungsperiode aktiv. Bei vorzeitiger K&uuml;ndigung erfolgt keine Erstattung, aber Sie behalten alle Pro-Funktionen bis zum Periodenende.</p></div>
+    </details>
+
+    <details>
+        <summary>Was passiert mit meinen Credits, wenn ich k&uuml;ndige?</summary>
+        <div><p>Alle Credits bleiben verf&uuml;gbar, auch nach K&uuml;ndigung Ihres Pro-Abonnements. Sie erhalten nicht mehr Ihre monatlichen <%= Subscription::PRO_MONTHLY_CREDITS %> gratis Credits und verlieren den Zugang zu den Pro-Modellen der Stufe Schlau, zu den h&ouml;heren Intelligenzstufen (Genial, Meisterhirn, Allwissend) sowie zu Rechtsprechung und parlamentarischen Dokumenten via Chatbot. Das Durchsuchen der Rechtsprechungsdatenbank auf der Website bleibt f&uuml;r alle kostenlos.</p></div>
+    </details>
+
+    <details>
+        <summary>Erhalte ich eine Rechnung?</summary>
+        <div><p>Ja. Nach jeder Zahlung erhalten Sie eine Rechnung per E-Mail. Gesch&auml;ftskunden mit einer belgischen USt-IdNr. erhalten Rechnungen &uuml;ber das PEPPOL-Netzwerk gem&auml;&szlig; dem belgischen Gesetz zur verpflichtenden B2B-E-Rechnungsstellung.</p></div>
+    </details>
+
+    <h2 id="section-6">6. Rechtsprechung und personenbezogene Daten</h2>
+
+    <details>
+        <summary>Was enth&auml;lt die Rechtsprechungsdatenbank?</summary>
+        <div><p>Die Rechtsprechungsdatenbank enth&auml;lt ver&ouml;ffentlichte Gerichtsentscheidungen belgischer Gerichte, stammend von JuPortal. Alle Entscheidungen werden vor der Ver&ouml;ffentlichung auf unserer Plattform automatisch pseudonymisiert.</p></div>
+    </details>
+
+    <details>
+        <summary>Was bedeutet Pseudonymisierung von Urteilen?</summary>
+        <div>
+            <p>Wir verarbeiten alle Gerichtsentscheidungen automatisch mit Named Entity Recognition (NER) auf Niederl&auml;ndisch und Franz&ouml;sisch. Dieses System:</p>
+            <ul>
+                <li><strong>Ersetzt Personennamen durch Initialen</strong> &mdash; z.B. wird &bdquo;Jan Peeters&ldquo; zu &bdquo;J. P.&ldquo;</li>
+                <li><strong>Entfernt oder maskiert</strong> E-Mail-Adressen, Telefonnummern, Nationalregisternummern und IBAN-Nummern</li>
+            </ul>
+            <p>Das Ergebnis ist, dass Sie in den meisten Urteilen nur Initialen statt vollst&auml;ndiger Namen sehen.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Ich erkenne meine Initialen in einem Urteil. Handelt es sich um meine personenbezogenen Daten?</summary>
+        <div>
+            <p>Wenn Sie in einem Urteil Initialen finden (z.B. &bdquo;J. P.&ldquo;), ist dies das Ergebnis unserer Pseudonymisierung. Initialen allein sind in der Regel nicht direkt einer nat&uuml;rlichen Person zuordenbar. Sie bilden jedoch ein <strong>Pseudonym</strong> im Sinne der DSGVO: In Kombination mit dem &uuml;brigen Kontext des Urteils (Datum, Gericht, Sachverhalt) kann sich eine beteiligte Partei m&ouml;glicherweise selbst erkennen.</p>
+            <p>Wenn Sie sich in einem pseudonymisierten Urteil erkennen und w&uuml;nschen, dass es weiter angepasst oder von der Plattform entfernt wird, k&ouml;nnen Sie einen Antrag stellen (siehe unten).</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Ich finde meinen vollst&auml;ndigen Namen in einem Urteil. Wie ist das m&ouml;glich?</summary>
+        <div>
+            <p>Trotz unserer automatischen NER-Verarbeitung kann es vorkommen, dass bestimmte Namen nicht korrekt erkannt und daher <strong>nicht pseudonymisiert</strong> wurden. Dies kann auftreten bei:</p>
+            <ul>
+                <li>Ungew&ouml;hnlichen Namensstrukturen oder Schreibweisen</li>
+                <li>Namen, die mit gew&ouml;hnlichen W&ouml;rtern &uuml;bereinstimmen</li>
+                <li>Technischen Verarbeitungsfehlern beim Parsen des Originaldokuments</li>
+            </ul>
+            <p><strong>Wir bedauern dies.</strong> Es handelt sich um eine Unzul&auml;nglichkeit des automatischen Prozesses, nicht um eine bewusste Entscheidung. Sie k&ouml;nnen einen L&ouml;schantrag stellen, und wir werden Ihre Daten so schnell wie m&ouml;glich zus&auml;tzlich maskieren.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Wie beantrage ich die L&ouml;schung meiner personenbezogenen Daten aus einem Urteil?</summary>
+        <div>
+            <p>Senden Sie eine E-Mail an <a href="mailto:privacy@wetwijzer.be">privacy@wetwijzer.be</a> mit:</p>
+            <ul>
+                <li>Ihrem Namen</li>
+                <li>Der ECLI-Nummer des Urteils (oben auf dem Urteil auf unserer Website zu finden)</li>
+                <li>Einer Beschreibung der gefundenen personenbezogenen Daten (Initialen, vollst&auml;ndiger Name, Adresse usw.)</li>
+            </ul>
+            <p>Wir bearbeiten Ihren Antrag innerhalb von <strong>30 Tagen</strong> gem&auml;&szlig; Art. 17 DSGVO. M&ouml;gliche Ma&szlig;nahmen sind:</p>
+            <ul>
+                <li>Zus&auml;tzliche Pseudonymisierung der verbleibenden personenbezogenen Daten</li>
+                <li>Vollst&auml;ndige Entfernung des Urteils von unserer Plattform</li>
+            </ul>
+            <p class="small">Wir sind nicht der urspr&uuml;ngliche Herausgeber des Urteils. Die Entfernung von unserer Plattform bedeutet nicht, dass das Urteil aus der Originalquelle (JuPortal) entfernt wird.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Warum werden Urteile nicht von Suchmaschinen indexiert?</summary>
+        <div>
+            <p>Gerichtsentscheidungen enthalten potenziell sensible personenbezogene Daten. Obwohl die Rechtsprechungsdatenbank f&uuml;r alle frei zug&auml;nglich ist, ergreifen wir folgende Ma&szlig;nahmen zum verantwortungsvollen Umgang mit diesen Daten:</p>
+            <ul>
+                <li>Urteile werden nicht von Suchmaschinen indexiert (noindex, robots.txt)</li>
+                <li>Alle Urteile werden automatisch pseudonymisiert (NER)</li>
+                <li>Bei Missbrauch kann der Zugang entzogen werden</li>
+            </ul>
+        </div>
+    </details>
+
+    <h2 id="section-7">7. Datenschutz</h2>
+
+    <details>
+        <summary>Welche Daten erhebt GesetzGuide?</summary>
+        <div>
+            <p>Wir erheben minimale Daten:</p>
+            <ul>
+                <li><strong>Ohne Konto:</strong> nur Standard-Serverprotokolle (IP-Adresse, User-Agent) f&uuml;r Sicherheitszwecke, 90 Tage aufbewahrt. Der Browser kann ausschlie&szlig;lich begrenzte funktionale PWA-Daten speichern: eine statische Offline-Seite in Cache Storage und, nachdem Sie den Installationshinweis schlie&szlig;en oder die App installieren, einen Zeitstempel in localStorage, der beim ersten Aufruf nach 30 Tagen entfernt wird. Dort werden keine lesbaren Gespr&auml;chsinhalte abgelegt.</li>
+                <li><strong>Mit Konto:</strong> E-Mail-Adresse, optionaler Name, Sprachpr&auml;ferenz, Creditverbrauch, Lesezeichen und UI-Einstellungen (Serverspeicherung)</li>
+                <li><strong>Chatbot-Nutzung:</strong> kontoverkn&uuml;pfte pseudonyme Nutzungsmetadaten (darunter Rechtsgebiet, Sprache, Modell, Credits, Kosten und Antwortzeit), aber weder lesbarer Fragetext noch ein Fragen-Fingerabdruck.</li>
+            </ul>
+            <p>Siehe unsere vollst&auml;ndige <a href="/privacy-policy">Datenschutzrichtlinie</a>.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Kann der Administrator sehen, was ich den Chatbot frage?</summary>
+        <div>
+            <div><p><strong>Nein.</strong> Unsere analytische Datenbank (<code>chatbot_analytics</code>) speichert weder Fragetext noch einen Fragen-Fingerabdruck. Die Frage wird im Serverspeicher f&uuml;r Azure-Retrieval, optionale HyDE-Anreicherung &uuml;ber Mistral Small bei tiefer Suche und den gew&auml;hlten Antwortanbieter verarbeitet und danach gel&ouml;scht. Der Administrator sieht kontoverkn&uuml;pfte pseudonyme Nutzungsmetadaten wie Rechtsgebiet, Sprache, Modell, Kosten und Antwortzeit.</p></div>
+            <div><p><strong>Ausnahme &mdash; Melden:</strong> Wenn Sie auf die Schaltfl&auml;che <em>Melden</em> (🚩) bei einer Antwort klicken, werden sowohl Ihre Frage als auch die Antwort an den Administrator zur Qualit&auml;tskontrolle gesendet. Dies wird in der Oberfl&auml;che deutlich angezeigt, bevor Sie best&auml;tigen. Das Melden ist v&ouml;llig freiwillig.</p></div>
+        </div>
+    </details>
+
+    <details>
+        <summary>Verwendet GesetzGuide Cookies?</summary>
+        <div>
+            <p>F&uuml;r gesch&uuml;tzte Formulare setzen wir ein unbedingt erforderliches, verschl&uuml;sseltes Browser-Sitzungs-Cookie (<code>_wetwijzer_csrf_session</code>). Es enth&auml;lt ausschlie&szlig;lich CSRF-Sicherheitsstatus und keine Authentifizierungs-, Gesch&auml;fts- oder Trackingdaten. Nach der Anmeldung verwendet GesetzGuide zus&auml;tzlich ein signiertes Authentifizierungs-Cookie (<code>session_token</code>). Au&szlig;erhalb der EU/des EWR, der Schweiz oder des Vereinigten K&ouml;nigreichs kann nach der einmaligen Sicherheitspr&uuml;fung vor&uuml;bergehend ein funktionales Verifizierungscookie gesetzt werden, wie in der Datenschutzerkl&auml;rung beschrieben.</p>
+            <p><strong>Begrenzter funktionaler Browser-Speicher:</strong> Die PWA speichert ausschlie&szlig;lich die statische Offline-Seite in Cache Storage. Wenn Sie den Installationshinweis schlie&szlig;en oder die App installieren, unterdr&uuml;ckt ein Zeitstempel in localStorage den Hinweis 30 Tage lang. Da die App diesen Speicher nur entfernen kann, wenn sie ausgef&uuml;hrt wird, k&ouml;nnen die Bytes nach Ablauf dieser Frist bis zu Ihrem n&auml;chsten Aufruf erhalten bleiben; dann wird der abgelaufene Zeitstempel entfernt. Diese Speicherung enth&auml;lt keinen Frage- oder Antworttext, keine Tracking-Kennung und kein Werbeprofil. Wir verwenden keine Tracking-Cookies, Werbe-Cookies oder Google Analytics.</p>
+            <p>F&uuml;r Website-Statistiken verwenden wir Umami, eine datenschutzfreundliche Open-Source-L&ouml;sung, die keine Cookies setzt und keine personenbezogenen Daten erhebt.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Wo werden meine Daten gespeichert?</summary>
+        <div>
+            <p>Alle Ihre Daten werden innerhalb der EU/des EWR verarbeitet:</p>
+            <ul>
+                <li><strong>Anwendungsserver:</strong> Deutschland (Hetzner)</li>
+                <li><strong>KI-Verarbeitung:</strong> <%= chatbot_processing_location_summary(:de) %></li>
+                <li><strong>Zahlungen:</strong> Niederlande (Mollie B.V.)</li>
+                <li><strong>E-Mail:</strong> Schweiz (Migadu, Angemessenheitsbeschluss)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Welche Rechte habe ich nach der DSGVO?</summary>
+        <div>
+            <p>Sie haben Recht auf Auskunft, Berichtigung, L&ouml;schung, Einschr&auml;nkung, Daten&uuml;bertragbarkeit und Widerspruch. Sie k&ouml;nnen diese Rechte aus&uuml;ben, indem Sie eine E-Mail an <a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a> senden oder Ihr Konto &uuml;ber die Kontoseite l&ouml;schen. Wir antworten innerhalb von 30 Tagen.</p>
+            <p>Sie k&ouml;nnen auch eine Beschwerde bei der <a href="https://www.gegevensbeschermingsautoriteit.be">Datenschutzbeh&ouml;rde</a> einreichen.</p>
+        </div>
+    </details>
+
+    <h2 id="section-8">8. KI-Leistung und Qualitätskontrolle</h2>
+
+    <details>
+        <summary>Wie gut sind die KI-Modelle?</summary>
+        <div>
+            <p>Die Qualität hängt von der Frage, den verfügbaren Quellen und der Denktiefe ab. Deshalb veröffentlichen wir keine feste Qualitätsnote oder Rangliste ohne einen aktuellen, vollständig verifizierten Benchmark.</p>
+            <p>WetWijzer prüft die angebotenen Modelle derzeit anhand einer größeren Stichprobe belgischer Rechtsfragen neu. Besonderes Augenmerk gilt der Quellentreue, korrekten Zitaten und Halluzinationen. Behandeln Sie jede KI-Antwort als Ausgangspunkt und prüfen Sie die verlinkten offiziellen Quellen.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Welche Optionen stehen zur Verfügung?</summary>
+        <div>
+            <p><strong>Alltagsfragen:</strong> Schlau (<%= chatbot_base_credit_range_for(:smart, :de) %> Basis) &mdash; die niedrigsten Credit-Kosten.</p>
+            <p><strong>Tiefgehende Analyse:</strong> Genial (<%= chatbot_base_credit_range_for(:genius, :de) %> Basis) &mdash; <%= chatbot_model_names_for_level(:genius, :de) %>.</p>
+            <p><strong>Umfassende Analyse:</strong> Meisterhirn (<%= chatbot_base_credit_range_for(:mastermind, :de) %> Basis) &mdash; <%= chatbot_model_names_for_level(:mastermind, :de) %>.</p>
+            <p><strong>Andere Modellperspektive:</strong> Allwissend (<%= chatbot_base_credit_range_for(:omniscient, :de) %> Basis) &mdash; <%= chatbot_model_names_for_level(:omniscient, :de) %>.</p>
+        </div>
+    </details>
+
+    <h2 id="section-9">9. Technisches</h2>
+
+    <details>
+        <summary>Ist GesetzGuide Open Source?</summary>
+        <div><p>Ja. Der Quellcode ist auf <a href="https://github.com/WetWijzer-LisLoi/WetWijzer">GitHub</a> unter der MIT-Lizenz verf&uuml;gbar. Jeder kann den Code einsehen, &uuml;berpr&uuml;fen und dazu beitragen.</p></div>
+    </details>
+
+    <details>
+        <summary>Welche Browser werden unterst&uuml;tzt?</summary>
+        <div><p>GesetzGuide funktioniert in allen modernen Browsern: Chrome, Firefox, Safari und Edge. Internet Explorer wird nicht unterst&uuml;tzt.</p></div>
+    </details>
+
+    <details>
+        <summary>Wie aktuell ist die Gesetzesdatenbank?</summary>
+        <div><p>Die Datenbank wird regelm&auml;&szlig;ig auf Basis des Belgischen Staatsblatts und anderer offizieller Quellen aktualisiert. Wir streben nach Aktualit&auml;t, k&ouml;nnen aber nicht garantieren, dass alle Texte die neueste konsolidierte Version enthalten. &Uuml;berpr&uuml;fen Sie im Zweifelsfall stets die offizielle Publikation &uuml;ber <a href="https://www.ejustice.just.fgov.be">Justel</a>.</p></div>
+    </details>
+
+    <h2 id="section-10">10. Kontakt und Support</h2>
+
+    <details>
+        <summary>Wie kann ich Kontakt aufnehmen?</summary>
+        <div>
+            <ul>
+                <li><strong>Allgemeine Fragen:</strong> <a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a></li>
+                <li><strong>Datenschutzanfragen und L&ouml;schung personenbezogener Daten aus Urteilen:</strong> <a href="mailto:privacy@wetwijzer.be">privacy@wetwijzer.be</a></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Kann ich GesetzGuide finanziell unterst&uuml;tzen?</summary>
+        <div><p>Ja. Neben dem Kauf von Credits oder einem Pro-Abonnement k&ouml;nnen Sie eine freiwillige Spende &uuml;ber unsere <%= link_to 'Spendenseite', support_page_path(anchor: 'donate') %> leisten. Spenden sind nicht erstattungsf&auml;hig, gew&auml;hren keine Gegenleistung und sind nicht steuerlich absetzbar. Jeder Beitrag hilft, die Gesetzesdatenbank kostenlos zug&auml;nglich zu halten.</p></div>
+    </details>
+
+    <details>
+        <summary>Ich habe einen Fehler gefunden. Wo kann ich diesen melden?</summary>
+        <div><p>Sie k&ouml;nnen Fehler per E-Mail (<a href="mailto:info@wetwijzer.be">info@wetwijzer.be</a>) oder durch Erstellen eines Issues in unserem <a href="https://github.com/WetWijzer-LisLoi/WetWijzer/issues">GitHub-Repository</a> melden. F&uuml;r Sicherheitsl&uuml;cken kontaktieren Sie uns bitte unter <a href="mailto:security@wetwijzer.be">security@wetwijzer.be</a> (siehe auch unsere <a href="/.well-known/security.txt">security.txt</a>-Datei).</p></div>
+    </details>
+</div>

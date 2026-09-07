@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wetwijzer.be/schemas/chatbot_judgment_v1.json",
+  "title": "WetWijzer chatbot legal-quality judgment v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "capture_key",
+    "capture_record_sha256",
+    "rubric_id",
+    "rubric_sha256",
+    "verdict",
+    "reason",
+    "failure_categories",
+    "quote_support",
+    "confidence",
+    "judge",
+    "judged_at"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "verdict": { "const": "POOR" } },
+        "required": ["verdict"]
+      },
+      "then": {
+        "properties": { "failure_categories": { "minItems": 1 } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "verdict": { "const": "GOOD" } },
+        "required": ["verdict"]
+      },
+      "then": {
+        "properties": { "failure_categories": { "maxItems": 0 } }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "quote_support": {
+            "enum": ["unsupported", "unverifiable_from_returned_sources"]
+          }
+        },
+        "required": ["quote_support"]
+      },
+      "then": {
+        "properties": { "verdict": { "const": "POOR" } }
+      }
+    }
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "capture_key": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "capture_record_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 of the exact UTF-8 JSON bytes for the capture record, excluding its JSONL line terminator."
+    },
+    "rubric_id": { "const": "wetwijzer-chatbot-legal-quality-v1" },
+    "rubric_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "verdict": { "enum": ["GOOD", "ACCEPTABLE", "POOR"] },
+    "reason": { "type": "string", "minLength": 1 },
+    "failure_categories": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "material_legal_error",
+          "outdated_or_wrong_jurisdiction",
+          "retrieval_failure_or_refusal",
+          "fabricated_quote",
+          "fabricated_or_mismatched_citation",
+          "unsupported_decisive_claim",
+          "missing_material_qualification",
+          "nonresponsive_or_incomplete",
+          "wrong_language",
+          "source_quality_or_relevance",
+          "other"
+        ]
+      }
+    },
+    "quote_support": {
+      "enum": [
+        "not_applicable",
+        "supported",
+        "unsupported",
+        "unverifiable_from_returned_sources"
+      ]
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "judge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "model", "prompt_sha256"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "prompt_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "temperature": { "type": ["number", "null"] }
+      }
+    },
+    "judged_at": { "type": "string", "format": "date-time" }
+  }
+}

@@ -1,0 +1,41 @@
+<%= render 'legal_pages/legal_page_styles' %>
+<div class="legal-page">
+<h1>Support LexLibera</h1>
+
+    <div class="highlight">
+        <p><strong>LexLibera</strong> makes Belgian legislation and case law free to search and read &mdash; no account, no paywall. The AI chatbot is a paid feature: you receive <%= RegistrationsController::STARTER_CREDITS %> free starter credits when you register, after which credits or a Pro subscription are required, because every chatbot question costs us money at the AI provider. The platform is run by one person &mdash; a lawyer who believes the law itself should not be behind a paywall. To keep this project running, we need your support.</p>
+    </div>
+
+    <h2>Why your support matters</h2>
+    <p>LexLibera costs money to run: server costs, AI costs for every chatbot question, storage for 175,000+ court decisions, and ongoing development of new features. Your support keeps searching and reading legislation and case law free, and makes the starter credits for new users possible.</p>
+
+    <h2>&#x2B50; Subscribe to LexLibera Pro</h2>
+    <p>The best way to support LexLibera is to become a <strong>Pro subscriber</strong>. For just <strong>&euro;2.99/month</strong>, you get:</p>
+    <ul>
+        <li>&#x2B50; Access to <strong>all intelligence levels</strong> (Genius, Mastermind, Omniscient)</li>
+        <li>&#x1F4AC; <strong><%= Subscription::PRO_MONTHLY_CREDITS %> free chatbot credits per month</strong> (for Pro subscribers)</li>
+        <li>&#x1F4DC; Search <strong>parliamentary documents</strong> via the chatbot</li>
+        <li>&#x1F916; Access to <strong>all AI models</strong> (<%= chatbot_all_model_names %>)</li>
+    </ul>
+    <p><%= link_to pricing_path, class: "inline-flex items-center px-4 py-2 text-white rounded-lg font-semibold transition hover:opacity-90", style: "background: var(--accent-600-solid);" do %>
+        <svg class="w-4 h-4 mr-2 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1z"/></svg>
+        View LexLibera Pro
+    <% end %></p>
+
+    <h2 id="donate">&#x2615; Make a one-time donation</h2>
+    <p>Want to support LexLibera without a subscription? Every contribution &mdash; no matter how small &mdash; helps cover server costs and keep the platform online.</p>
+    <%= render 'donations/form' %>
+
+    <h2>&#x1F4E2; Spread the word</h2>
+    <p>No budget? You can also support LexLibera by spreading the word:</p>
+    <ul>
+        <li>&#x1F517; Share <a href="https://lexlibera.be">lexlibera.be</a> with colleagues, students and friends</li>
+        <li>&#x2B50; Give us a star on <a href="https://github.com/WetWijzer-LisLoi/WetWijzer" target="_blank" rel="noopener">GitHub</a></li>
+        <li>&#x1F4AC; Mention LexLibera on social media or in professional publications</li>
+        <li>&#x1F4DD; Send us your feedback at <a href="mailto:<%= contact_email %>"><%= contact_email %></a></li>
+    </ul>
+
+    <h2>&#x2764;&#xFE0F; Thank you</h2>
+    <p>LexLibera exists thanks to the support of our Pro subscribers, donors and users. Every contribution &mdash; financial or not &mdash; helps us keep Belgian law accessible to everyone.</p>
+
+</div>

@@ -1,0 +1,49 @@
+<% content_for :preheader do %><%= t('mailer.confirmation.body') %><% end %>
+
+<p style="color: #2563eb; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; line-height: 1.4; margin: 0 0 10px; text-transform: uppercase;">
+  <%= site_name %>
+</p>
+
+<h1 style="color: #14213d; font-family: Arial, Helvetica, sans-serif; font-size: 25px; font-weight: 700; line-height: 1.25; margin: 0 0 16px;">
+  <%= t('mailer.confirmation.greeting', name: @user.name.presence || @user.email) %>
+</h1>
+
+<p style="color: #334155; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 1.65; margin: 0 0 26px;">
+  <%= t('mailer.confirmation.body') %>
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 24px;">
+  <tr>
+    <td align="center" bgcolor="#2563eb" style="background-color: #2563eb; border-radius: 8px;">
+      <a href="<%= @confirmation_url %>" class="button" style="background-color: #2563eb; border: 1px solid #2563eb; border-radius: 8px; color: #ffffff !important; display: inline-block; font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: 700; line-height: 1.2; padding: 14px 26px; text-align: center; text-decoration: none;">
+        <%= t('mailer.confirmation.button') %>
+      </a>
+    </td>
+  </tr>
+</table>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; margin: 0 0 24px;">
+  <tr>
+    <td width="4" bgcolor="#2563eb" style="background-color: #2563eb; font-size: 0; line-height: 0; width: 4px;">&nbsp;</td>
+    <td style="color: #1e3a8a; font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 1.55; padding: 12px 14px;">
+      <strong><%= t('mailer.confirmation.expires') %></strong>
+    </td>
+  </tr>
+</table>
+
+<p style="color: #64748b; font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 1.6; margin: 0 0 24px;">
+  <%= t('mailer.confirmation.ignore') %>
+</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top: 1px solid #e2e8f0;">
+  <tr>
+    <td style="padding-top: 20px;">
+      <p style="color: #64748b; font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 1.5; margin: 0 0 7px;">
+        <%= t('mailer.confirmation.link_text') %>
+      </p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; line-height: 1.5; margin: 0; overflow-wrap: anywhere; word-break: break-all;">
+        <a href="<%= @confirmation_url %>" style="color: #2563eb; text-decoration: underline;"><%= @confirmation_url %></a>
+      </p>
+    </td>
+  </tr>
+</table>

@@ -1,0 +1,251 @@
+﻿<%= render 'legal_pages/legal_page_styles' %>
+<div class="legal-page">
+<h1>Änderungshistorie Rechtliche Dokumente</h1>
+    <p>Diese Seite dokumentiert alle wichtigen Änderungen an unseren rechtlichen Dokumenten.</p>
+
+    <h2>Nutzungsbedingungen</h2>
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 3.2</span>
+            <span class="version-date">4. September 2026</span>
+        </div>
+        <ul>
+            <li>Kostenloser Plan klargestellt: 5 Startcredits bei der Registrierung, einmalig; es gibt keine wöchentliche Auffüllung kostenloser Credits (faktisch seit Juli 2026)</li>
+            <li>Startcredits funktionieren mit ausgewählten Modellen der Stufe Schlau, gekennzeichnet auf der Preisseite; die übrigen Schlau-Modelle erfordern Pro. Zu diesem Datum ist Mistral Small 4 das kostenlose Modell; Mistral Large 3 erfordert ab jetzt Pro</li>
+            <li>Rechtsprechungsdatenbank: die angegebene Zahl ist auf 175.000+ Urteile korrigiert (nach der Bereinigung vom August 2026)</li>
+            <li>Abschnitte 10.2 und 10.3.1: klargestellt, dass Credits bei Erstattung oder Rückbuchung einer Zahlung anteilig zurückgenommen werden; bei einer Abonnementzahlung endet zudem der Pro-Zugang für diesen Zeitraum</li>
+            <li>Bezeichnung der ersten Stufe vereinheitlicht: „Schlau“ (zuvor teils „Klug“)</li>
+            <li>Rechtsprechung und parlamentarische Dokumente via Chatbot sind ab jetzt WetWijzer Pro vorbehalten; die Rechtsprechungs- und Parlamentsdatenbank selbst bleiben auf der Website für alle kostenlos durchsuchbar, ohne Konto. Die Vergleichstabelle in Abschnitt 10.3 wurde um die Zeile „Rechtsprechung via Chatbot“ erweitert</li>
+        </ul>
+        <p><a href="/terms-of-service" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 2.8</span>
+            <span class="version-date">6. Juni 2026</span>
+        </div>
+        <ul>
+            <li>Abschnitt 9.1a hinzugefügt: Anonymer Chatbot-Zugang für belgische Besucher (3 Fragen/Woche, Klug, nur Gesetzgebung, kein Konto erforderlich)</li>
+            <li>Geo-Gating dokumentiert: anonymer Zugang auf belgische IP-Adressen beschränkt</li>
+            <li>Anonyme Kontingent-Verfolgung über verschlüsseltes <code>_ww_anon</code>-Cookie (keine personenbezogenen Daten)</li>
+            <li><strong>Entfernt (9. Juli 2026):</strong> dieser anonyme Chatbot-Zugang für belgische Besucher wurde zurückgezogen. Der Chatbot erfordert nun ein kostenloses Konto (bei der Registrierung erhalten Sie kostenlose Startcredits); es gibt keinen anonymen Chatbot-Zugang.</li>
+        </ul>
+        <p><a href="/terms-of-service" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 2.9</span>
+            <span class="version-date">7. Juni 2026</span>
+        </div>
+        <ul>
+            <li>Intelligenzsystem von 5 auf 4 Stufen konsolidiert: Klug, Genial, Meisterhirn, Allwissend</li>
+            <li>Stufen Schlauer und Am Schlausten entfernt - Modelle als Auswahl innerhalb Klug verfügbar</li>
+            <li>Creditverbrauch aktualisiert: 1/4/6–8/10 pro Frage pro Stufe</li>
+            <li>Allwissend-Stufe (damaliges Claude-Opus-Modell, 10 Credits) hinzugefügt</li>
+            <li>Gratis-Credits funktionieren jetzt nur noch mit Klug (vorher auch Schlauer)</li>
+        </ul>
+        <p><a href="/terms-of-service" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 2.6</span>
+            <span class="version-date">3. Juni 2026</span>
+        </div>
+        <ul>
+            <li>Abschnitt 3.2a hinzugefügt: Inhaltssprachpräferenz (LexLibera cookie-basierte NL/FR-Auswahl)</li>
+            <li>Rechtsprechungsabschnitt in 3.2b umnummeriert</li>
+        </ul>
+        <p><a href="/terms-of-service" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 2.5</span>
+            <span class="version-date">2. Juni 2026</span>
+        </div>
+        <ul>
+            <li>5-Stufen-Intelligenzsystem: Klug, Schlauer, Am Schlausten, Genial, Meisterhirn (vorher 3 Stufen) <em>- ersetzt durch 4 Stufen in v2.9</em></li>
+            <li>Anbieter-Routing für die damals angebotenen Modelle aktualisiert; die aktuelle Datenschutzerklärung beschreibt die heutigen Verarbeitungsregionen und Garantien</li>
+            <li>Creditverbrauch aktualisiert: 1/2/3/4/6 pro Frage pro Stufe <em>- aktualisiert in v2.9</em></li>
+            <li>Pro-Preis geändert auf €2,99/Monat (vorher €4,99)</li>
+            <li>Pro-Credits aktualisiert auf 15/Monat (vorher 30)</li>
+            <li>Gratis-Credits: 3 pro Woche (vorher 5 pro Monat) <em>- seit Juli 2026: 5 Willkommenscredits, einmalig; eine wöchentliche Auffüllung gibt es nicht mehr</em></li>
+            <li>Anthropic PBC als direkter Unterauftragsverarbeiter entfernt (jetzt über Azure AI Services)</li>
+            <li>Abschnitt 8.5 vereinfacht: keine US-Verarbeitung mehr</li>
+        </ul>
+        <p><a href="/terms-of-service" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 2.0</span>
+            <span class="version-date">1. Februar 2026</span>
+        </div>
+        <ul>
+            <li>Erweiterte Definitionsabschnitt hinzugefügt</li>
+            <li>SLA und Verfügbarkeitsgarantien verdeutlicht</li>
+            <li>KI-Haftungsausschluss mit Halluzinationswarnung erweitert</li>
+            <li>Verbraucherrechte-Abschnitt mit aktueller Gesetzgebung aktualisiert</li>
+            <li>Englische und deutsche Versionen hinzugefügt</li>
+        </ul>
+        <p><a href="/terms-of-service" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 1.0</span>
+            <span class="version-date">1. Januar 2025</span>
+        </div>
+        <ul>
+            <li>Erstveröffentlichung</li>
+        </ul>
+    </div>
+
+    <h2>Datenschutzrichtlinie</h2>
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 3.6</span>
+            <span class="version-date">28. August 2026</span>
+        </div>
+        <ul>
+            <li>Die Chatbot-Bewertung ist jetzt eine Note von 1 bis 10 statt "Gut"/"Schlecht", mit höchstens drei optionalen festen Gründen und ohne Freitextfeld</li>
+            <li>Zu den erfassten Metadaten hinzugefügt: verwendetes Modell und Anbieter, gewähltes Profil, Reasoning-Einstellung, Generierungsgrenzen sowie Versionsnummern unserer Prompt- und Suchkonfiguration</li>
+            <li>Bestätigt, dass Frage und Antwort bei einer Bewertung weder gesendet noch gespeichert noch als Fingerabdruck abgelegt werden und Administratoren ausschließlich aggregierte Zahlen sehen</li>
+            <li>Unverändert: Nur die separate Funktion "Melden" übermittelt Frage und Antwort, nach Ihrer ausdrücklichen Einwilligung</li>
+        </ul>
+        <p><a href="/privacy-policy" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 3.5</span>
+            <span class="version-date">22. Juli 2026</span>
+        </div>
+        <ul>
+            <li>Beide Speichermodi klargestellt: serverseitig verschlüsselter Verlauf bleibt für WetWijzer technisch lesbar; mit Speicherpasswort geschützter Verlauf ist Zero-Knowledge-verschlüsselt</li>
+            <li>Klargestellt, dass die aktuelle Frage und der relevante Kontext während der Beantwortung vorübergehend in lesbarer Form durch WetWijzer und die ausgewählten KI-Dienste verarbeitet werden</li>
+            <li>Die begrenzte localStorage-Wiederholung mit ausschließlich Zero-Knowledge-Chiffretext und Protokolldaten ausdrücklich dokumentiert: Das Anspruchstoken ist kurzlebig; nach Ablauf entfernt eine aktive Seite den Umschlag per Zeitgeber, andernfalls beim nächsten Öffnen</li>
+            <li>FAQ berichtigt: Die PWA speichert eine statische Offline-Seite und einen Zeitstempel, der den Installationshinweis 30 Tage lang unterdrückt; da die Bereinigung nur bei laufender App erfolgen kann, wird ein abgelaufener Zeitstempel beim nächsten Aufruf entfernt</li>
+        </ul>
+        <p><a href="/privacy-policy" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 3.1</span>
+            <span class="version-date">6. Juni 2026</span>
+        </div>
+        <ul>
+            <li>Abschnitt 3.4a hinzugefügt: Anonymer Chatbot-Zugang - Datenverarbeitung ohne Kontoerstellung</li>
+            <li>Anonymes Kontingent-Cookie (<code>_ww_anon</code>) dokumentiert: verschlüsselt, enthält nur Kalenderwoche und Fragenanzahl, läuft automatisch nach 8 Tagen ab</li>
+            <li>Geo-Gating über GeoIP2 dokumentiert: IP wird geprüft, aber nie für anonyme Benutzer gespeichert</li>
+            <li>Rechtsgrundlage für anonymen Zugang: Art. 6(1)(f) DSGVO (berechtigtes Interesse an der Diensterbringung)</li>
+            <li><strong>Entfernt (9. Juli 2026):</strong> der anonyme Chatbot-Zugang und das <code>_ww_anon</code>-Kontingent-Cookie wurden zurückgezogen; der Chatbot erfordert nun ein Konto. Der IP-Hash des Chatbots wird nur zur Ratenbegrenzung / Missbrauchsprävention gespeichert und nach 7 Tagen gelöscht.</li>
+            <li>Cookie-Tabelle mit <code>_ww_anon</code>-Eintrag aktualisiert</li>
+        </ul>
+        <p><a href="/privacy-policy" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 3.0</span>
+            <span class="version-date">3. Juni 2026</span>
+        </div>
+        <ul>
+            <li>Abschnitt 10.2 hinzugefügt: Inhaltssprachpräferenz-Cookies für LexLibera (cookie_consent und content_lang)</li>
+            <li>Abschnitt 10 Einleitung aktualisiert: LexLibera Cookie-Zustimmungsbanner dokumentiert</li>
+            <li>Analytics-Abschnitt in 10.3, No-Tracking-Abschnitt in 10.4 umnummeriert</li>
+        </ul>
+        <p><a href="/privacy-policy" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 2.9</span>
+            <span class="version-date">2. Juni 2026</span>
+        </div>
+        <ul>
+            <li>Intelligenzsystem auf 4 Stufen konsolidiert (Klug, Genial, Meisterhirn, Allwissend) mit Verarbeitungsort pro Stufe</li>
+            <li>Historische Angaben zum Anbieter-Routing aktualisiert; für heutige Verarbeitungsregionen und Garantien gilt die aktuelle Datenschutzerklärung</li>
+            <li>Unterauftragsverarbeitertabelle aktualisiert: Anthropic PBC durch Azure AI Services (Microsoft) ersetzt</li>
+            <li>Abschnitt 6.2 geändert von "Optionale Übermittlung in die USA" zu "Keine Drittlandübermittlung"</li>
+            <li>Credit-Abbuchung aktualisiert auf 1-10 Credits pro Frage</li>
+        </ul>
+        <p><a href="/privacy-policy" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 2.3</span>
+            <span class="version-date">26. Mai 2026</span>
+        </div>
+        <ul>
+            <li>GesetzGuide als dritte Marke hinzugefügt</li>
+
+        </ul>
+        <p><a href="/privacy-policy" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 2.1</span>
+            <span class="version-date">24. Mai 2026</span>
+        </div>
+        <ul>
+            <li>Datenschutzfreundliche Analyse (Umami) wiedereingeführt - ohne Cookies, selbst gehostet in der EU</li>
+            <li>Abschnitte 10.2 und 10.3 mit Umami-Offenlegung aktualisiert</li>
+        </ul>
+        <p><a href="/privacy-policy" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 2.0</span>
+            <span class="version-date">1. Februar 2026</span>
+        </div>
+        <ul>
+            <li>DSGVO-Rechtsgrundlagentabelle hinzugefügt</li>
+            <li>Auftragsverarbeiter vollständig dokumentiert</li>
+            <li>Abschnitt zu automatisierter Entscheidungsfindung hinzugefügt</li>
+            <li>Aufbewahrungsfristen verdeutlicht</li>
+            <li>Englische und deutsche Versionen hinzugefügt</li>
+        </ul>
+        <p><a href="/privacy-policy" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 1.0</span>
+            <span class="version-date">1. Januar 2025</span>
+        </div>
+        <ul>
+            <li>Erstveröffentlichung</li>
+        </ul>
+    </div>
+
+    <h2>Impressum</h2>
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 1.0</span>
+            <span class="version-date">1. Februar 2026</span>
+        </div>
+        <ul>
+            <li>Erstveröffentlichung mit Betreiberinformationen, Hosting-Details und Open-Source-Hinweis</li>
+        </ul>
+        <p><a href="/imprint" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+
+    <h2>Barrierefreiheitserklärung</h2>
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">Version 1.0</span>
+            <span class="version-date">1. Februar 2026</span>
+        </div>
+        <ul>
+            <li>Erstveröffentlichung mit WCAG 2.1 AA Konformitätsstatus</li>
+        </ul>
+        <p><a href="/accessibility-statement" class="doc-link">Aktuelle Version ansehen →</a></p>
+    </div>
+</div>
