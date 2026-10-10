@@ -34,6 +34,7 @@
     <h2>Wie GesetzGuide finanziert wird</h2>
     <p>GesetzGuide wird durch <strong>WetWijzer Pro</strong>-Abonnements und Chatbot-Credits finanziert.</p>
     <p>Sie k&ouml;nnen GesetzGuide auch direkt &uuml;ber unsere <%= link_to 'Spendenseite', support_page_path(anchor: 'donate') %> unterst&uuml;tzen.</p>
+    <%= render 'donations/disabled_notice' unless MollieConfiguration.donations_enabled? %>
 
     <h2>Kontakt</h2>
     <p>Kontaktieren Sie mich &uuml;ber mein <a href="https://www.advocaat.be/nl/zoek-een-advocaat/advocaat/63fee2a5-637a-4839-a5a6-c833482f1e3a" target="_blank" rel="noopener">advocaat.be-Profil</a> oder über <a href="https://www.linkedin.com/in/gauthier-b-017447138/" target="_blank" rel="noopener">LinkedIn</a>.</p>

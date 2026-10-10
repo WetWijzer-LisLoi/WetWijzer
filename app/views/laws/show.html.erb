@@ -8,7 +8,7 @@
   "@type": "Legislation",
   "name": strip_tags(@law.title.to_s).truncate(500),
   "legislationIdentifier": @law.numac,
-  "inLanguage": @language_id == 1 ? "nl" : "fr",
+  "inLanguage": { 1 => "nl", 3 => "de" }.fetch(@language_id, "fr"),
   "legislationDate": @law.date.presence,
   "url": request.original_url.split('?').first,
   "publisher": {
@@ -37,7 +37,8 @@
     sat flush against the first card ("stuck", reported 2026-08-19). mb-6 is
     the site convention for this header - the fisconet variant of this very
     block, the jurisprudence page header and the card rhythm all use it. %>
-<div class="mb-6" data-controller="articles-loading" data-articles-loading-frame-value="law_articles">
+<div class="mb-6" data-controller="articles-loading" data-articles-loading-frame-value="law_articles"
+     data-articles-loading-done-label-value="<%= t('articles.loaded_articles', default: 'Artikelen geladen') %>">
   <div class="bg-linear-to-r from-(--accent-500)/5 to-(--accent-500)/10 dark:from-(--accent-500)/10 dark:to-(--accent-500)/20 rounded-xl px-4 py-2 md:px-6 md:py-3">
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
       <div class="flex items-center gap-3">
@@ -46,16 +47,33 @@
         </h1>
         <%# Loading indicator - shown while articles turbo frame is loading %>
         <div data-articles-loading-target="indicator" class="inline-flex items-center gap-2 px-2 py-1 md:px-3 md:py-1.5 text-xs md:text-sm font-medium rounded-lg bg-(--accent-500)/10 text-(--accent-700) dark:text-(--accent-400) border border-(--accent-500)/20">
-          <svg class="animate-spin h-3 w-3 md:h-4 md:w-4 no-print" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg class="animate-spin motion-reduce:animate-none h-3 w-3 md:h-4 md:w-4 no-print" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <span class="hidden sm:inline no-print"><%= t('articles.loading_articles', default: 'Artikelen laden...') %></span>
+          <span class="hidden sm:inline no-print" data-articles-loading-target="label" aria-live="polite"><%= t('articles.loading_articles', default: 'Artikelen laden...') %></span>
           <%# Print warning - only visible in print when articles still loading %>
           <span class="print-loading-warning"><%= case I18n.locale when :fr then "ATTENTION: Les articles sont encore en cours de chargement. Veuillez attendre que tous les articles soient chargés avant d'imprimer." when :de then 'ACHTUNG: Artikel werden noch geladen. Bitte warten Sie, bis alle Artikel geladen sind, bevor Sie drucken.' when :en then 'WARNING: Articles are still loading. Please wait until all articles are loaded before printing.' else 'LET OP: Artikelen worden nog geladen. Wacht tot alle artikelen geladen zijn voordat u afdrukt.' end %></span>
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-2 no-print">
+        <% if german_site? %>
+        <%# Language versions: on the German site one pill per other language
+            the law is served in (German, French, Dutch), as on the case-law
+            page; a law without a German text has no DE pill. %>
+        <% Array(@language_versions).reject { |id| id == @language_id }.each do |version_id| %>
+          <% version_label = law_language_label(version_id) %>
+          <%= link_to law_path(@law, language_id: version_id),
+                      class: "inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
+                      data: { law_language_version: version_label },
+                      title: t('german_text.show_version', language: version_label) do %>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+            </svg>
+            <span class="hidden sm:inline"><%= version_label %></span>
+          <% end %>
+        <% end %>
+        <% else %>
         <%# Language switch link %>
         <% other_language_id = @language_id == 1 ? 2 : 1 %>
         <%= link_to law_path(@law, language_id: other_language_id),
@@ -66,7 +84,10 @@
           </svg>
           <span class="hidden sm:inline"><%= @language_id == 1 ? 'FR' : 'NL' %></span>
         <% end %>
-        <%# Side by side comparison link %>
+        <% end %>
+        <%# Side by side comparison link: NL against FR, so not for a law the
+            German site holds in German only %>
+        <% if !german_site? || Array(@language_versions).intersect?(HasLanguage::SITE_LANGUAGE_IDS) %>
         <%= link_to compare_law_path(@law),
                     class: "inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
                     title: case I18n.locale when :fr then "Comparer NL et FR côte à côte" when :de then "NL und FR nebeneinander vergleichen" when :en then "Compare NL and FR side by side" else "NL en FR naast elkaar vergelijken" end do %>
@@ -75,9 +96,11 @@
           </svg>
           <span class="hidden sm:inline"><%= case I18n.locale when :fr then 'Comparer' when :de then 'Vergleichen' when :en then 'Compare' else 'Vergelijk' end %></span>
         <% end %>
+        <% end %>
         <%# Print button %>
         <button type="button"
                 id="print-law-btn"
+                data-controller="print" data-action="print#fire"
                 class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
                 title="<%= case I18n.locale when :fr then 'Imprimer' when :de then 'Drucken' when :en then 'Print' else 'Afdrukken' end %>">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
@@ -205,7 +228,7 @@
     <div id="toc-sidebar-panel" data-sidebar-toggle-target="panel" class="hidden fixed inset-y-0 left-0 z-40 w-80 max-w-[85vw] transform -translate-x-full transition-transform duration-300 ease-in-out motion-reduce:transition-none p-2 md:p-0 order-2 md:order-1 md:static md:inset-auto md:z-auto md:w-80 md:min-w-80 md:max-w-80 md:shrink-0 md:sticky md:top-0 md:self-start pr-2 md:pr-0 space-y-6">
 
       <!-- Table of Contents -->
-      <div id="toc-card-sidebar" class="relative bg-white dark:bg-gray-800 rounded-xl shadow-sm" data-controller="sidebar-auto-open">
+      <div id="toc-card-sidebar" class="relative bg-white dark:bg-gray-800 rounded-xl shadow-sm focus:outline-hidden" data-controller="sidebar-auto-open">
         <!-- Sidebar handle: full-height clickable area on the right edge -->
         <button type="button"
                 class="hidden md:flex items-center justify-center absolute top-0 right-0 z-1002 w-8 h-full rounded-none rounded-r-xl border-0 shadow-none bg-transparent text-gray-500 hover:text-gray-700 dark:text-(--accent-500)/60 dark:hover:text-(--accent-500) transition-colors duration-200 ease-out motion-reduce:transition-none hover:bg-transparent active:bg-transparent cursor-pointer"
@@ -230,88 +253,17 @@
       <%= case I18n.locale when :fr then 'Consulté le' when :de then 'Abgerufen am' when :en then 'Accessed on' else 'Geraadpleegd op' end %>: <%= Date.today.strftime('%d-%m-%Y') %>
     </div>
 
+    <% if german_site? %>
+      <%= render 'german_text_notice', law: @law, notice: @german_notice, versions: @language_versions %>
+    <% end %>
+
     <!-- External Links -->
     <div id="external-links-card" class="no-print bg-white dark:bg-gray-800 rounded-xl shadow-sm scroll-mt-24">
       <%= render 'external_links', law: @law %>
     </div>
 
     <!-- Related Sources (Parliamentary Work, Jurisprudence) - lazy-loaded on button click -->
-    <div id="related-sources-card" class="no-print bg-white dark:bg-gray-800 rounded-xl shadow-sm scroll-mt-24">
-      <div class="p-4 md:p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-3">
-          <%= case I18n.locale when :fr then 'Sources connexes' when :de then 'Verwandte Quellen' when :en then 'Related sources' else 'Gerelateerde bronnen' end %>
-        </h2>
-        <div class="flex flex-wrap gap-2">
-          <!-- Parliamentary Work Button -->
-          <button type="button" id="btn-load-parliamentary"
-                  data-source-type="parliamentary"
-                  class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-            </svg>
-            <%= case I18n.locale when :fr then 'Travaux préparatoires' when :de then 'Parlamentarische Vorarbeiten' else 'Parlementaire voorbereidingen' end %>
-          </button>
-          <%# Jurisprudence button (public since June 2026) %>
-          <button type="button" id="btn-load-jurisprudence"
-                  data-source-type="jurisprudence"
-                  class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-amber-300 dark:border-amber-600 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
-            </svg>
-            <%= case I18n.locale when :fr then 'Jurisprudence' when :de then 'Rechtsprechung' else 'Rechtspraak' end %>
-          </button>
-        </div>
-      </div>
-      <div id="parliamentary-content" class="hidden"></div>
-      <div id="jurisprudence-content" class="hidden"></div>
-    </div>
-
-    <script nonce="<%= content_security_policy_nonce %>">
-      function loadRelatedSource(type, btn) {
-        var container = document.getElementById(type + '-content');
-        if (!container) return;
-
-        // If already loaded, just toggle visibility
-        if (container.dataset.loaded === 'true') {
-          container.classList.toggle('hidden');
-          return;
-        }
-
-        // Show loading state
-        btn.disabled = true;
-        var origHTML = btn.innerHTML;
-        btn.innerHTML = '<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <%= case I18n.locale when :fr then 'Chargement…' when :de then 'Laden…' when :en then 'Loading…' else 'Laden…' end %>';
-
-        fetch('<%= related_sources_law_path(@law.numac, language_id: @language_id) %>&type=' + type, {
-          headers: { 'Accept': 'text/html' }
-        })
-        .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
-        .then(function(html) {
-          container.innerHTML = html;
-          container.dataset.loaded = 'true';
-          container.classList.remove('hidden');
-          btn.innerHTML = origHTML;
-          btn.disabled = false;
-        })
-        .catch(function() {
-          container.innerHTML = '<div class="px-4 pb-4 text-sm text-red-600 dark:text-red-400"><%= case I18n.locale when :fr then "Échec du chargement" when :de then "Laden fehlgeschlagen" when :en then "Loading failed" else "Laden mislukt" end %></div>';
-          container.classList.remove('hidden');
-          btn.innerHTML = origHTML;
-          btn.disabled = false;
-        });
-      }
-
-      // Bind buttons via event listeners (CSP-compliant, no inline onclick)
-      // Print button (CSP-compliant)
-      var printBtn = document.getElementById('print-law-btn');
-      if (printBtn) printBtn.addEventListener('click', function() { window.print(); });
-
-      document.querySelectorAll('[data-source-type]').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          loadRelatedSource(this.dataset.sourceType, this);
-        });
-      });
-    </script>
+    <%= render 'laws/related_sources_card', numac: @law.numac, language_id: @language_id, card_class: 'shadow-sm' %>
 
     <!-- Document Metadata -->
     <div id="document-info-card" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm scroll-mt-24">
@@ -324,9 +276,15 @@
     </div>
  
     <!-- Static TOC section under Title (always visible, collapsible) -->
+    <%# WW-WER-01: a very long table of contents is summarised here rather
+        than repeated before the text; the sidebar holds all of it. %>
     <% if @content.present? && @content.toc.present? %>
     <div id="main-toc-card" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm scroll-mt-24">
-      <%= render 'toc', content: @content, articles: @articles, hide_header: false, scrollable: false, track: false, variant: :main %>
+      <% if large_law_toc?(@content) %>
+        <%= render 'toc_summary', count: law_toc_entries(@content).size %>
+      <% else %>
+        <%= render 'toc', content: @content, articles: @articles, hide_header: false, scrollable: false, track: false, variant: :main %>
+      <% end %>
     </div>
     <% end %>
     
@@ -376,11 +334,16 @@
                 </div>
               </div>
               <% if @estimated_load_seconds %>
-                <%# Animated progress bar that fills over the estimated duration %>
-                <div class="w-full h-1.5 rounded-full bg-(--accent-500)/10 dark:bg-(--accent-500)/20 overflow-hidden">
+                <%# WW-UI-05: an estimate of progress, driven by the script below.
+                    A CSS transition from 0% to 95% started before the first
+                    paint, so the browser showed 95% at once and the bar then
+                    stood still. Hidden from assistive technology: the text
+                    above states the same estimate. %>
+                <div class="w-full h-1.5 rounded-full bg-(--accent-500)/10 dark:bg-(--accent-500)/20 overflow-hidden" aria-hidden="true">
                   <div id="skeleton-progress-bar"
                        class="h-full rounded-full bg-(--accent-500) dark:bg-(--accent-400) transition-none"
-                       style="width: 0%; transition: width <%= @estimated_load_seconds %>s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                       data-estimate-seconds="<%= @estimated_load_seconds %>"
+                       style="width: 0%;"></div>
                 </div>
               <% end %>
               <script nonce="<%= content_security_policy_nonce %>">
@@ -388,11 +351,22 @@
                   var t0 = performance.now(), el = document.getElementById('skeleton-stopwatch');
                   if (!el) return;
                   var bar = document.getElementById('skeleton-progress-bar');
-                  // Kick off progress bar animation on next frame
-                  if (bar) requestAnimationFrame(function(){ bar.style.width = '95%'; });
+                  var estimate = bar ? parseFloat(bar.getAttribute('data-estimate-seconds')) : 0;
+                  // An estimate, not a measurement: it advances from the first
+                  // sample, slows past the estimated duration and stays below
+                  // 90% until the articles arrive and replace it. With reduced
+                  // motion it moves once a second.
+                  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                  var drawn = -1;
                   var iv = setInterval(function(){
                     if (!document.contains(el)) { clearInterval(iv); return; }
-                    el.textContent = ((performance.now() - t0) / 1000).toFixed(1) + 's';
+                    var seconds = (performance.now() - t0) / 1000;
+                    el.textContent = seconds.toFixed(1) + 's';
+                    if (!bar || !(estimate > 0)) return;
+                    var at = reduce ? Math.floor(seconds) : seconds;
+                    if (at === drawn) return;
+                    drawn = at;
+                    bar.style.width = (90 * (1 - Math.exp(-2 * at / estimate))).toFixed(1) + '%';
                   }, 100);
                 })();
               </script>
@@ -408,23 +382,30 @@
 <% end %>
 
 <%# Shared copy dropdown for articles - placed at DOM root to avoid inheriting
-    malformed <b> tags from article text rendering (font-weight:900 pollution) %>
-<div id="shared-copy-menu" class="hidden fixed w-40 bg-white dark:bg-gray-800 rounded-md shadow-md border border-gray-200 dark:border-gray-700 py-0.5 z-9999">
-  <button type="button" data-copy-action="link"
+    malformed <b> tags from article text rendering (font-weight:900 pollution).
+    WW-COPY-01: article_copy_menu_controller opens it from an article number
+    and copies through utils/article_copy.js, the clipboard controller's code. %>
+<%= render 'shared/clipboard_messages' %>
+<div id="shared-copy-menu" class="hidden fixed w-40 bg-white dark:bg-gray-800 rounded-md shadow-md border border-gray-200 dark:border-gray-700 py-0.5 z-9999"
+     data-controller="article-copy-menu"
+     data-article-copy-menu-link-copied-value="<%= t(:link_copied) %>"
+     data-article-copy-menu-text-copied-value="<%= t(:text_copied) %>"
+     data-article-copy-menu-citation-copied-value="<%= t(:clean_text_copied) %>">
+  <button type="button" data-action="article-copy-menu#copyLink"
           class="w-full px-2.5 py-1.5 text-left text-xs font-normal text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 transition-colors">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 shrink-0 opacity-60">
       <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
     </svg>
     <%= t(:copy_article_link) %>
   </button>
-  <button type="button" data-copy-action="text"
+  <button type="button" data-action="article-copy-menu#copyText"
           class="w-full px-2.5 py-1.5 text-left text-xs font-normal text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 transition-colors">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 shrink-0 opacity-60">
       <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M9.5 4.5A1.5 1.5 0 0111 3h2a1.5 1.5 0 011.5 1.5V6H17a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V8a2 2 0 012-2h2.5V4.5z" />
     </svg>
     <%= t(:copy_article_text) %>
   </button>
-  <button type="button" data-copy-action="clean"
+  <button type="button" data-action="article-copy-menu#copyCitation"
           class="w-full px-2.5 py-1.5 text-left text-xs font-normal text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 transition-colors">
     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 shrink-0 opacity-60" viewBox="0 0 20 20" fill="currentColor">
       <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
@@ -432,113 +413,4 @@
     <%= t(:copy_clean_text) %>
   </button>
 </div>
-
-<script nonce="<%= content_security_policy_nonce %>">
-(function() {
-  var menu = document.getElementById('shared-copy-menu');
-  if (!menu) return;
-  var currentPermalink = null;
-  var currentSource = null;
-
-  // Full citation cleaning: DOM manipulation + regex cleanup
-  // Mirrors clipboard_controller.js copyCleanText logic
-  function cleanForCitation(sourceEl) {
-    if (!sourceEl) return '';
-
-    var clone = sourceEl.cloneNode(true);
-
-    // Remove references section
-    var refsSection = clone.querySelector('.references-section');
-    if (refsSection) refsSection.remove();
-
-    // Remove ref-markers (the [N and ]N parts)
-    clone.querySelectorAll('.ref-marker').forEach(function(el) { el.remove(); });
-
-    // Remove .reference wrappers that now only contain deleted-text indicators
-    // (whitespace/ellipsis from [N ... ]N patterns where brackets were stripped)
-    clone.querySelectorAll('.reference').forEach(function(ref) {
-      var text = (ref.textContent || '').trim();
-      if (!text || /^[\.…\s]+$/.test(text)) {
-        ref.remove();
-      }
-    });
-
-    // Remove modification markers and domain tags
-    clone.querySelectorAll('.modification-marker').forEach(function(el) { el.remove(); });
-    clone.querySelectorAll('.domain-tag').forEach(function(el) { el.remove(); });
-
-    // Insert newlines for block elements to preserve structure
-    clone.querySelectorAll('br').forEach(function(br) {
-      br.insertAdjacentText('beforebegin', '\n');
-    });
-    clone.querySelectorAll('p, div').forEach(function(el) {
-      el.insertAdjacentText('beforebegin', '\n');
-      el.insertAdjacentText('afterend', '\n');
-    });
-
-    // Extract text and apply regex cleanup
-    var rawText = clone.innerText || '';
-    return rawText
-      .replace(/\[\d+\s*\.{3}\s*\d*\]/g, '')   // Remove [1 ... 1] ASCII markers
-      .replace(/\[\d+\s*\u2026\s*\d*\]/g, '')       // Remove [1 … 1] Unicode markers
-      .replace(/\[\d+\s/g, '')                   // Remove standalone opening [N markers
-      .replace(/\]\d+/g, '')                     // Remove standalone closing ]N markers
-      .replace(/\[\d+\]/g, '')                   // Remove [N] markers
-      .replace(/(?:^|\s)\.{3}(?:\s|$)/gm, ' ')  // Remove orphaned '...'
-      .replace(/(?:^|\s)\u2026(?:\s|$)/gm, ' ')      // Remove orphaned '…'
-      .replace(/\t/g, ' ')                       // Tabs to spaces
-      .split('\n')
-      .map(function(line) { return line.replace(/ +/g, ' ').trim(); })
-      .filter(function(line, i, arr) {
-        if (line) return true;
-        if (i > 0 && arr[i - 1]) return true;
-        return false;
-      })
-      .join('\n')
-      .replace(/\n{3,}/g, '\n\n')               // Max 2 consecutive newlines
-      .trim();
-  }
-
-  document.addEventListener('click', function(e) {
-    // Handle clicks on article numbers (e.g., "Art. 5.66.")
-    var artNum = e.target.closest('.article-number');
-    if (artNum) {
-      // Walk up to the article container that holds permalink/source data
-      var container = artNum.closest('[data-permalink]');
-      if (container) {
-        e.preventDefault();
-        e.stopPropagation();
-        currentPermalink = container.dataset.permalink;
-        currentSource = container.dataset.source;
-        var rect = artNum.getBoundingClientRect();
-        menu.style.top = (rect.bottom + 4) + 'px';
-        menu.style.left = rect.left + 'px';
-        menu.classList.remove('hidden');
-        return;
-      }
-    }
-    var action = e.target.closest('[data-copy-action]');
-    if (action && currentPermalink) {
-      var act = action.dataset.copyAction;
-      if (act === 'link') {
-        var url = window.location.origin + window.location.pathname + '#' + currentPermalink;
-        navigator.clipboard.writeText(url).catch(function(){});
-      } else {
-        var el = document.querySelector(currentSource);
-        if (el) {
-          var text = act === 'clean'
-            ? cleanForCitation(el)
-            : el.innerText;
-          navigator.clipboard.writeText(text).catch(function(){});
-        }
-      }
-      menu.classList.add('hidden');
-      return;
-    }
-    if (!e.target.closest('#shared-copy-menu')) {
-      menu.classList.add('hidden');
-    }
-  });
-})();
-</script>
 <% end %>

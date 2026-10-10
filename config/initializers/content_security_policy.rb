@@ -5,7 +5,7 @@
 
 # FBL-046 step 2 - measured inventory of real external RESOURCE origins
 # (link hrefs do not count; CSP governs loads):
-#   script-src : the configurable umami analytics host (layout line ~509)
+#   script-src : the shared, pinned umami analytics host (BrandingHelper)
 #   img-src    : www.dekamer.be (MP portrait photos on parliamentary pages)
 #   connect-src: the umami host (script.js posts its events there)
 # Everything else the frontend loads is same-origin or data:. Step 3 (replace
@@ -48,7 +48,12 @@ end
 # enforcement (step 6). Origins are the measured step-2 inventory:
 # analytics.wetwijzer.be (umami script + its event POSTs) and
 # www.dekamer.be (MP portraits). Violations POST to /csp-report, which
-# logs directive + blocked host only. The enforced policy is unchanged.
+# records only fixed directive/origin/page-brand categories. Unknown hosts
+# are never echoed, and retained daily counts survive Rails.cache cleanup.
+# Counts are unauthenticated client claims, not proof of compatibility: use
+# security:csp_measurements plus real browser/resource checks before changing
+# enforcement. No report or a saturated/unavailable window is not a clean gate.
+# The enforced policy is unchanged.
 module CspReportOnly
   UMAMI = 'https://analytics.wetwijzer.be'
   NONCE_ENV_KEY = 'action_dispatch.content_security_policy_nonce'

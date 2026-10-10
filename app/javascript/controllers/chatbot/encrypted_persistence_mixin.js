@@ -349,14 +349,45 @@ export const encryptedPersistenceMethods = {
     return completion
   },
 
+  // Open the history drawer AND show the unlock prompt in it, for the gates a
+  // user actually walks into (send, deep analysis). This cannot live inside
+  // _showZkUnlockPrompt: _initZeroKnowledge() calls that one at connect, and
+  // the drawer would then slide over the chat on every page load.
+  // toggleHistory() renders the list synchronously up to its
+  // "_zkKeyMaterial && !_masterKey" branch, so the field exists right after.
+  _revealZkUnlockPrompt() {
+    const sidebar = this.element.querySelector('.chat-history-sidebar')
+    if (!sidebar || sidebar.classList.contains('hidden')) {
+      this.toggleHistory()
+    } else {
+      this._showZkUnlockPrompt()
+    }
+    this.element.querySelector('#zk-unlock-password')?.focus()
+  },
+
   // Show a small inline password prompt to unlock ZK encryption.
   // Renders into the history sidebar list; if the sidebar hasn't been opened
   // yet this no-ops and renderHistoryList() shows the prompt on first open.
+  // User-initiated gates call _revealZkUnlockPrompt() instead, which opens the
+  // drawer first.
   _showZkUnlockPrompt() {
     const container = this.element.querySelector('.chat-history-list')
     if (!container) return
 
     const _t = (map) => map[this.languageValue] || map.nl
+    // "Opslagwachtwoord", never the bare word: it is NOT the login password
+    // (the consent dialog that created it, and the forgot-link below, both use
+    // this term). The field says autocomplete="new-password" for the same
+    // reason the consent dialog's two fields do: with "current-password" the
+    // password manager offered the saved site login here, and "off" would not
+    // stop it, because browsers ignore that value on a password field.
+    const storagePasswordLabel = _t({
+      nl: 'Opslagwachtwoord',
+      fr: 'Mot de passe de stockage',
+      de: 'Speicherpasswort',
+      en: 'Storage password'
+    })
+    const unlockLabel = _t({ nl: 'Ontgrendelen', fr: 'Déverrouiller', de: 'Entsperren', en: 'Unlock' })
     container.innerHTML = `
       <div class="p-4 text-center">
         <div class="w-10 h-10 mx-auto mb-2 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
@@ -366,23 +397,25 @@ export const encryptedPersistenceMethods = {
         </div>
         <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
           ${_t({
-            nl: 'Voer uw wachtwoord in om opgeslagen gesprekken te ontsleutelen',
-            fr: 'Entrez votre mot de passe pour déchiffrer les conversations',
-            de: 'Geben Sie Ihr Passwort ein, um gespeicherte Gespräche zu entschlüsseln',
-            en: 'Enter your password to decrypt saved conversations'
+            nl: 'Voer uw opslagwachtwoord in om opgeslagen gesprekken te ontsleutelen',
+            fr: 'Entrez votre mot de passe de stockage pour déchiffrer les conversations',
+            de: 'Geben Sie Ihr Speicherpasswort ein, um gespeicherte Gespräche zu entschlüsseln',
+            en: 'Enter your storage password to decrypt saved conversations'
           })}
         </p>
         <form id="zk-unlock-form" class="flex gap-2">
           <input type="password" id="zk-unlock-password"
                  class="flex-1 text-xs px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                 placeholder="${_t({ nl: 'Wachtwoord', fr: 'Mot de passe', de: 'Passwort', en: 'Password' })}"
-                 autocomplete="current-password" />
+                 placeholder="${storagePasswordLabel}"
+                 aria-label="${storagePasswordLabel}"
+                 autocomplete="new-password" />
           <button type="submit"
+                  title="${unlockLabel}" aria-label="${unlockLabel}"
                   class="px-3 py-2 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
-            🔓
+            <span aria-hidden="true">🔓</span>
           </button>
         </form>
-        <p id="zk-unlock-error" class="hidden mt-2 text-xs text-red-500"></p>
+        <p id="zk-unlock-error" role="alert" class="hidden mt-2 text-xs text-red-500"></p>
         <button type="button"
                 data-action="click->chatbot#disableAndDeleteHistory"
                 data-history-disable-control
@@ -418,8 +451,11 @@ export const encryptedPersistenceMethods = {
         this._restoreActiveConversation()
       } else {
         if (errorEl) {
-          errorEl.textContent = { nl: 'Onjuist wachtwoord', fr: 'Mot de passe incorrect', de: 'Falsches Passwort', en: 'Incorrect password' }[this.languageValue] || 'Onjuist wachtwoord'
+          // Un-hide FIRST: the paragraph is display:none until then, so text
+          // written into it raises no live-region event and a screen reader
+          // user was left with a cleared field and silence.
           errorEl.classList.remove('hidden')
+          errorEl.textContent = { nl: 'Onjuist opslagwachtwoord', fr: 'Mot de passe de stockage incorrect', de: 'Falsches Speicherpasswort', en: 'Incorrect storage password' }[this.languageValue] || 'Onjuist opslagwachtwoord'
         }
         passwordInput?.focus()
       }

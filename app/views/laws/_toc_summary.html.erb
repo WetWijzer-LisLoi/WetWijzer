@@ -1,0 +1,27 @@
+<%# WW-WER-01: the main card of a law whose table of contents is very long
+    (the Wetboek van economisch recht has about 2,000 entries). Repeating it
+    here put the law text some 145,000 pixels down the page; the full,
+    searchable table of contents is in the sidebar (#toc-sidebar-panel). The
+    button opens it through sidebar-toggle, whose sync() keeps aria-expanded
+    true to the panel. Print has no sidebar, so it says where the list is. %>
+<div class="p-6" data-toc-summary>
+  <h2 class="text-xl font-bold text-gray-800 dark:text-(--accent-500)"><%= t(:toc).capitalize %></h2>
+  <p class="mt-2 text-sm text-gray-700 dark:text-gray-300 print:hidden"><%= t('toc_summary.text', count: count) %></p>
+  <p class="hidden print:block mt-2 text-sm" data-toc-summary-print><%= t('toc_summary.print', count: count) %></p>
+  <div class="mt-4 flex flex-wrap gap-3 print:hidden">
+    <button type="button"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-(--accent-600-solid) text-white hover:bg-(--accent-700-solid) focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--accent-500) transition-colors"
+            data-sidebar-toggle-target="button"
+            data-action="sidebar-toggle#toggle"
+            aria-controls="toc-sidebar-panel"
+            aria-expanded="false"
+            data-toc-summary-open>
+      <%= t('toc_summary.open') %>
+    </button>
+    <a href="#tekst"
+       class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--accent-500) transition-colors"
+       data-toc-summary-text>
+      <%= t('toc_summary.to_text') %>
+    </a>
+  </div>
+</div>

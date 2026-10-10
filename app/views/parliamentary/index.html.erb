@@ -1,5 +1,5 @@
 <% @title = case I18n.locale when :fr then 'Travaux Préparatoires Belges' when :de then 'Belgische Gesetzgebungsvorarbeiten' when :en then 'Belgian Parliamentary Preparatory Works' else 'Belgische Parlementaire Voorbereidingen' end %>
-<% parl_labels = { 'chamber' => 'Kamer', 'senate' => 'Senaat', 'vlaams' => 'Vlaams Parlement', 'brussels' => 'Brussels Parlement', 'waals' => 'Waals Parlement' } %>
+<% parl_labels = t('public_navigation.parliaments').stringify_keys %>
 
 <div class="max-w-6xl mx-auto px-4">
   <!-- Header with count -->
@@ -17,6 +17,30 @@
       end %>
     </p>
   </div>
+
+  <%# WW-LINK-01: which relation a law's "view all" list shows; the count
+      matches the law page's panel %>
+  <% if @numac.present? && @relation_status %>
+    <%= tag.div class: 'mb-8 rounded-xl border border-gray-200 bg-white p-4 text-sm dark:border-gray-700 dark:bg-gray-800',
+                data: { relation_status: @relation_status,
+                        relation_count: (@total_count if @relation_status == :verified) }.compact do %>
+      <p class="font-medium text-gray-900 dark:text-white">
+        <%= t("related_sources.index.#{@relation_status}", law: @relation_law_title.presence || @numac) %>
+      </p>
+      <% if @relation_dossiers.present? %>
+        <p class="mt-1 flex flex-wrap gap-x-3 text-xs">
+          <% @relation_dossiers.each do |dossier| %>
+            <%= link_to "#{t("related_sources.parliamentary.#{dossier.parliament}")} #{dossier.label}", dossier.url,
+                        target: '_blank', rel: 'noopener noreferrer',
+                        class: 'text-(--link-color) hover:text-(--link-hover-color) hover:underline' %>
+          <% end %>
+        </p>
+      <% end %>
+      <% if @relation_status == :unverified %>
+        <p class="mt-1 text-xs text-gray-600 dark:text-gray-400"><%= t('related_sources.parliamentary.unverified_note') %></p>
+      <% end %>
+    <% end %>
+  <% end %>
 
   <!-- Recent Documents (shown when no search is active) -->
   <% unless @query.present? || @parliament.present? || @year.present? || @legislature.present? || @numac.present? %>

@@ -47,11 +47,10 @@ module Api
 
       # Never expose a row under a storage mode that disagrees with the
       # account. This also quarantines historical inconsistent transitions.
-      if conversation.zero_knowledge? != generation.present?
-        raise ZeroKnowledgeStateConflict
-      end
+      raise ZeroKnowledgeStateConflict if conversation.zero_knowledge? != generation.present?
       return conversation unless conversation.zero_knowledge?
       raise ZeroKnowledgeStateConflict unless @zero_knowledge_read_consented && generation.present?
+
       if conversation.zk_key_generation.present?
         raise ZeroKnowledgeStateConflict unless conversation.zk_key_generation == generation
 
@@ -110,9 +109,7 @@ module Api
         return render_zero_knowledge_state_conflict
       end
 
-      if conversation.zk_key_generation.blank?
-        conversation.bind_zk_key_generation!(current_generation, expected_revision: expected_revision)
-      end
+      conversation.bind_zk_key_generation!(current_generation, expected_revision: expected_revision) if conversation.zk_key_generation.blank?
 
       true
     rescue ActiveRecord::StaleObjectError, ActiveRecord::RecordNotFound
@@ -229,7 +226,7 @@ module Api
         conversation.reload
       else
         Rails.logger.error(
-          "Zero-knowledge revision rollback failed " \
+          'Zero-knowledge revision rollback failed ' \
           "(conversation=#{claim[:conversation_id]}, claimed=#{claim[:claimed_revision]})"
         )
       end

@@ -98,30 +98,25 @@
   <p>De factuur is bijgevoegd als PDF.</p>
 <% end %>
 
-<%# UBL XML attachment notice for B2B %>
+<%# UBL/XML is a readable copy, not proof of Peppol delivery. %>
 <% if @is_b2b && @invoice.xml_exists? %>
   <% case @locale
      when :fr then %>
-    <p><em>La facture électronique (UBL/XML) pour PEPPOL est également jointe.</em></p>
+    <p><em><%= t('invoice_delivery.ubl_copy') %></em></p>
   <% when :de then %>
-    <p><em>Die elektronische Rechnung (UBL/XML) für PEPPOL ist ebenfalls beigefügt.</em></p>
+    <p><em><%= t('invoice_delivery.ubl_copy') %></em></p>
   <% when :en then %>
-    <p><em>The electronic invoice (UBL/XML) for PEPPOL is also attached.</em></p>
+    <p><em><%= t('invoice_delivery.ubl_copy') %></em></p>
   <% else %>
-    <p><em>De elektronische factuur (UBL/XML) voor PEPPOL is eveneens bijgevoegd.</em></p>
+    <p><em><%= t('invoice_delivery.ubl_copy') %></em></p>
   <% end %>
 <% end %>
 
-<%# PEPPOL delivery confirmation badge %>
-<% if @peppol_sent %>
+<%# Submission and delivery are distinct states. %>
+<% unless @peppol_state == :not_applicable %>
   <div>
     <span style="display: inline-block; background: #dcfce7; color: #15803d; border: 1px solid #86efac; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; margin-top: 8px;">
-      <% case @locale
-         when :fr then %>✅ Également envoyé via PEPPOL<%
-         when :de then %>✅ Auch über PEPPOL gesendet<%
-         when :en then %>✅ Also sent via PEPPOL<%
-         else %>✅ Ook verzonden via PEPPOL<%
-         end %>
+      <%= t("invoice_delivery.peppol.#{@peppol_state}") %>
     </span>
   </div>
 <% end %>

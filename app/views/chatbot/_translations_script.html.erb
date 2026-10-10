@@ -5,7 +5,7 @@
     // UI translations
     var translations = {
       nl: {
-        title: 'WetWijzer Juridische Chatbot',
+        title: '<%= j site_name %> Juridische Chatbot',
         intelligence: 'AI-Intelligentie:',
         profile: 'Categorie:',
         sources: 'Bronnen:',
@@ -33,7 +33,7 @@
         internationalBanner: '🌍 <strong>International?</strong> Choose <strong>EN/INT</strong> at the top. The chatbot responds in your input language.'
       },
       fr: {
-        title: 'LisLoi Chatbot Juridique',
+        title: '<%= j site_name %> Chatbot Juridique',
         intelligence: 'Intelligence IA:',
         profile: 'Catégorie:',
         sources: 'Sources:',
@@ -134,7 +134,7 @@
         if (widgetContainer) {
           if (partial.intelligence) widgetContainer.setAttribute('data-chatbot-intelligence-value', partial.intelligence);
           if (partial.model) widgetContainer.setAttribute('data-chatbot-model-override-value', partial.model);
-          // Profile/category intentionally NOT synced — resets to "general" each session.
+          // Profile/category intentionally NOT synced: resets to "general" each session.
           if (partial.source) widgetContainer.setAttribute('data-chatbot-source-value', partial.source);
         }
         // Persist via PreferencesStore if available (server-side for logged-in users)
@@ -159,7 +159,7 @@
       }
       
       
-      // Profile/category intentionally NOT restored — always starts at "general".
+      // Profile/category intentionally NOT restored: always starts at "general".
       // Auto-sets when user clicks a sample question.
     })();
     
@@ -171,7 +171,7 @@
           saveChatbotPrefs({ model: modelSel.value });
         });
       }
-      // Profile/category intentionally NOT saved — resets to "general" each session.
+      // Profile/category intentionally NOT saved: resets to "general" each session.
     })();
     // NOTE: the in-page language-switch pipeline (switchPageLanguage,
     // updateCategoryFilter, updateProfileFilter, switchQuestionTab, the
@@ -262,12 +262,27 @@
       return cat.replace(/\s*\(\d+\)\s*$/, '').trim();
     }
     
+    /* ww-question-search-pin:start */
+    // The list renders questionText(), so the filter has to search exactly
+    // that string. It used to search q.nl and q.en whatever the site language:
+    // "licenciement" found 1 of 89 rows on the French site and "kündigung" 0
+    // of 132 on the German one, while "loyer" returned French rows that only
+    // matched the hidden English "employer" and showed no visible match.
+    function questionText(q, lang) {
+      return (lang !== 'nl' && q[lang]) ? q[lang] : q.nl;
+    }
+
+    function questionMatchesSearch(q, lang, search) {
+      return !search || questionText(q, lang).toLowerCase().includes(search);
+    }
+    /* ww-question-search-pin:end */
+
     function filterQuestions() {
       var search = document.getElementById('question-search').value.toLowerCase();
       var category = document.getElementById('category-filter').value;
-      
+
       var filtered = allQuestions.filter(function(q) {
-        var matchSearch = !search || q.nl.toLowerCase().includes(search) || (q.en && q.en.toLowerCase().includes(search));
+        var matchSearch = questionMatchesSearch(q, currentLang, search);
         // Parent-category prefix matching: selecting "ARBEIDSRECHT" matches
         // "ARBEIDSRECHT", "ARBEIDSRECHT - INDIVIDUEEL", "ARBEIDSRECHT - ONTSLAG", etc.
         var matchCategory = category === 'all' || q.category === category || q.category.startsWith(category + ' - ');
@@ -360,6 +375,15 @@
       return SIDEBAR_CAT_TO_PROFILE[mainCat] || 'general';
     }
 
+    // F3: the click counter stores only WW-PRIV-01's category keys and refuses
+    // anything else, so a list label ("ARBEIDSRECHT - INDIVIDUEEL") goes as
+    // its key ("arbeidsrecht"), or "general". The keys come from the server.
+    var TRACKED_CATEGORIES = <%= raw json_escape(SampleQuestionClick::CATEGORIES.to_json) %>;
+    function trackedCategory(cat) {
+      var base = String(cat || '').split(' - ')[0].trim().toLowerCase();
+      return TRACKED_CATEGORIES.indexOf(base) >= 0 ? base : 'general';
+    }
+
     function renderQuestions(questions) {
       var container = document.getElementById('questions-list');
       var t = translations[currentLang] || translations.nl;
@@ -388,13 +412,13 @@
         html += '<div class="sidebar-cat-group border-b border-gray-200 dark:border-[#1e293b]/50 last:border-0">';
         // Clickable category header
         html += '<button type="button" class="sidebar-cat-toggle w-full flex items-center gap-1.5 px-3 py-2 bg-gray-100/80 dark:bg-[#080d19] hover:bg-gray-200/80 dark:hover:bg-[#0c1526] transition-colors duration-150 text-left">';
-        html += '<span class="text-xs font-semibold text-gray-700 dark:text-gray-300 flex-1">' + icon + ' ' + display + ' <span class="text-gray-400 dark:text-gray-500 font-normal">(' + grouped[cat].length + ')</span></span>';
+        html += '<span class="text-xs font-semibold text-gray-700 dark:text-gray-300 flex-1">' + icon + ' ' + display + ' <span class="text-gray-600 dark:text-gray-400 font-normal">(' + grouped[cat].length + ')</span></span>';
         html += '<svg class="sidebar-chevron w-3.5 h-3.5 text-gray-400 dark:text-gray-500 transition-transform duration-200' + chevronClass + '" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>';
         html += '</button>';
         // Collapsible question list
         html += '<ul class="sidebar-cat-body divide-y divide-gray-100 dark:divide-[#1e293b]/40' + expandClass + '">';
         grouped[cat].forEach(function(q) {
-          var displayText = (currentLang !== 'nl' && q[currentLang]) ? q[currentLang] : q.nl;
+          var displayText = questionText(q, currentLang);
            html += '<li><button type="button" class="w-full text-left px-3 py-2 text-sm text-(--accent-600) dark:text-(--accent-400) hover:bg-(--accent-50,#eff6ff) dark:hover:bg-[#0f172a] sample-question transition-colors duration-150" data-question="' + displayText.replace(/"/g, '&quot;') + '" data-category="' + cat + '"><span class="opacity-40 mr-1.5">→</span>' + displayText + '</button></li>';
         });
         html += '</ul></div>';
@@ -419,12 +443,21 @@
           var input = document.querySelector('[data-chatbot-target="input"]');
           if (input) {
             input.value = question;
-            input.focus();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Scroll to the composer, not to the top of the page. The top was
+            // right when the composer sat there; since the transcript grew
+            // above it, the click filled a field a screen or more below the
+            // fold and then scrolled away from it, so it looked like nothing
+            // happened and the send-button pulse below played off-screen.
+            input.focus({ preventScroll: true });
+            input.scrollIntoView({ block: 'center', behavior: 'smooth' });
 
-            // Fire-and-forget anonymous click tracking (no cookies, no user data)
+            // Fire-and-forget anonymous click tracking (no cookies, no user data).
+            // sendBeacon cannot set headers, so the CSRF token travels in the
+            // body, as for the welcome card's starters (FBL-043; F3).
             try {
-              var trackData = JSON.stringify({ question: question, category: category, language: currentLang });
+              var csrf = document.querySelector('meta[name="csrf-token"]');
+              var trackData = JSON.stringify({ question: question, category: trackedCategory(category), language: currentLang,
+                                               authenticity_token: csrf ? csrf.content : null });
               if (navigator.sendBeacon) {
                 navigator.sendBeacon('/api/sample_question_clicks', new Blob([trackData], { type: 'application/json' }));
               } else {
@@ -536,6 +569,11 @@
         sidebar.style.padding = '0';
         sidebar.style.margin = '0';
         sidebar.style.minWidth = '0';
+        // Width 0 alone left the category select, the search field and every
+        // question button in the tab order, so Tab walked through dozens of
+        // invisible controls. inert takes them out of focus and out of the
+        // accessibility tree; the re-open tab sits outside the wrapper.
+        sidebar.inert = true;
         showBtn.classList.remove('hidden');
         showBtn.classList.add('flex', 'flex-col', 'items-center');
         if (window.prefsStore) window.prefsStore.set('sidebar_state', 'collapsed');
@@ -548,13 +586,16 @@
         sidebar.style.padding = '';
         sidebar.style.margin = '';
         sidebar.style.minWidth = '';
+        sidebar.inert = false;
         showBtn.classList.add('hidden');
         showBtn.classList.remove('flex', 'flex-col', 'items-center');
         if (window.prefsStore) window.prefsStore.set('sidebar_state', 'expanded');
       }
 
-      hideBtn.addEventListener('click', collapseSidebar);
-      showBtn.addEventListener('click', expandSidebar);
+      // Focus moves only on the user's own click: the restore below runs at
+      // page load, where stealing focus would scroll the page.
+      hideBtn.addEventListener('click', function() { collapseSidebar(); showBtn.focus(); });
+      showBtn.addEventListener('click', function() { expandSidebar(); hideBtn.focus(); });
 
       // Restore saved preference (desktop only)
       if (window.innerWidth >= 1024) {

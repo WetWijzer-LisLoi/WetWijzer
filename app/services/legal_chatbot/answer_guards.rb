@@ -49,7 +49,13 @@ module LegalChatbot
     end
 
     def validate_answer_quotes(text, sources)
+      text = fold_quote_continuations(text)
       source_records = sources.filter_map do |source|
+        # A German row verifies a quote only as a binding German original
+        # (SourceFields#german_original_source?); a German translation is
+        # never evidence, whatever path brought it here.
+        next if german_row_source?(source) && !german_original_source?(source)
+
         raw = source[:article_text] || source[:text] || source[:full_text] || source[:content]
         tokens = normalized_quote_tokens(raw)
         next if tokens.empty?
@@ -102,6 +108,60 @@ module LegalChatbot
       guarded
     end
 
+    # A blockquote whose opening quotation mark its ">" lines do not close
+    # continues on the unprefixed lines that follow: the statute's next
+    # sentence or its items (1°, 2°), which the guard never read (open item
+    # of 2026-09-29; 12 of the 304 blockquotes in the German answers v4
+    # evaluation's French answers, 2026-10-04). Those lines are folded into
+    # the block, prefixed ">", up to the line that closes the mark, never
+    # past a blank line, an attribution line, a heading or another block,
+    # and QUOTE_CONTINUATION_MAX_LINES at most; the guard then verifies them
+    # with the quotation they belong to, and removes them with it. The
+    # model's own bullets after a closed quotation (9 of 304) are left alone.
+    QUOTE_CONTINUATION_MAX_LINES = 12
+    QUOTE_CONTINUATION_STOP = /\A\s*(?:[—–-]\s*\[|\[[^\]]*\]\(|[—–(]|#|\*\*|\|)/
+    BLOCKQUOTE_LINE = /\A {0,3}(?:(?:[-*+]|\d{1,2}[.)]) +)?>/
+
+    def fold_quote_continuations(text)
+      return text unless text.is_a?(String) && text.include?('>')
+
+      lines = text.split("\n", -1)
+      index = 0
+      while index < lines.length
+        unless lines[index].match?(BLOCKQUOTE_LINE)
+          index += 1
+          next
+        end
+        block_end = index
+        block_end += 1 while block_end < lines.length && lines[block_end].match?(BLOCKQUOTE_LINE)
+        body = lines[index...block_end].map { |line| line.sub(/\A {0,3}(?:(?:[-*+]|\d{1,2}[.)]) +)?>\s?/, '') }.join("\n")
+        index = block_end
+        next unless unclosed_quotation_mark?(body)
+
+        folded = 0
+        while index < lines.length && folded < QUOTE_CONTINUATION_MAX_LINES
+          line = lines[index]
+          break if line.strip.empty? || line.match?(BLOCKQUOTE_LINE) || line.match?(QUOTE_CONTINUATION_STOP)
+
+          lines[index] = "> #{line.strip}"
+          folded += 1
+          index += 1
+          break unless unclosed_quotation_mark?("#{body}\n#{line}")
+
+          body = "#{body}\n#{line}"
+        end
+      end
+      lines.join("\n")
+    end
+
+    # true when the text opens a quotation mark it does not close: an odd
+    # number of straight double quotes, or more « or “ than » or ”.
+    def unclosed_quotation_mark?(text)
+      return true if text.count('"').odd?
+
+      text.count('«“') > text.count('»”')
+    end
+
     def strip_all_blockquotes(text)
       stripped = 0
       result = text.gsub(MARKDOWN_BLOCKQUOTE_PATTERN) do |block|
@@ -129,7 +189,7 @@ module LegalChatbot
       jurisprudence_targets = []
       external_targets = []
 
-      links.each do |_label, href|
+      links.map(&:last).each do |href|
         if (match = href.match(%r{(?:https?://(?:www\.)?wetwijzer\.be)?/laws/([^?#/)\s]+)([^)\s]*)}i))
           numac = match[1].match?(/\Afisconet_\d+\z/i) ? match[1].upcase : match[1]
           article_number = link_article_number(match[2])
@@ -168,7 +228,7 @@ module LegalChatbot
     end
 
     def extract_blockquote_text(block)
-      value = block.lines.map { |line| line.sub(/^[ ]{0,3}>\s?/, '') }.join(' ').strip
+      value = block.lines.map { |line| line.sub(/^ {0,3}(?:(?:[-*+]|\d{1,2}[.)]) +)?>\s?/, '') }.join(' ').strip
       value = value.sub(/\s+[—–-]\s+\[[^\]]+\]\([^)]+\).*\z/, '')
       value = value.sub(PLAIN_QUOTE_ARTICLE_ATTRIBUTION_SUFFIX_PATTERN, '')
       value.gsub!(/\A["“”'‘’]+|["“”'‘’]+\z/, '')
@@ -317,7 +377,6 @@ module LegalChatbot
       @last_citation_guard_result&.fetch(:passed, false) == true
     end
 
-
     # CitationGuard: after LinkGuard and auto-linkification, every supported
     # article citation should be a Markdown link copied from a retrieved source.
     # Any numeric Art./Artikel/Article reference that remains in ordinary prose
@@ -354,6 +413,9 @@ module LegalChatbot
         article_number = retrieved_source_article_number(source)
         [url.to_s, article_number] if url.present? && article_number.present?
       end.to_set
+      # The pairs whose German text is binding law: only they may be cited
+      # with ?language_id=3, the German text of the law page on gesetzguide.
+      allowed_german_pairs = german_original_pairs(sources)
 
       # The marker must itself look like an article token so a verified first
       # item does not hide an unlinked list tail ("Art. 2bis en 2ter"). Keep it
@@ -368,7 +430,7 @@ module LegalChatbot
       # cannot hide a fabricated article citation. Exact regional source URLs
       # are accepted only with their retrieved article number.
       prose = text.gsub(MARKDOWN_BLOCKQUOTE_PATTERN, '')
-      prose = citation_visible_text(prose, allowed_pairs, allowed_external_pairs, verified_sentinel)
+      prose = citation_visible_text(prose, allowed_pairs, allowed_external_pairs, verified_sentinel, allowed_german_pairs)
               .gsub(%r{</?(?:strong|b|em|i|code)\b[^>]*>}i, '')
               .gsub(/[*_~`]+/, '')
               .gsub(/&(?:nbsp|#0*160|#x0*a0);/i, ' ')
@@ -388,7 +450,7 @@ module LegalChatbot
          .map { |number| "Art. #{number.gsub(/[[:space:]\u00A0\u2007\u202F]+/, '')}" }
          .uniq
 
-      cited_pairs = verified_article_citation_pairs(text, allowed_pairs, allowed_external_pairs)
+      cited_pairs = verified_article_citation_pairs(text, allowed_pairs, allowed_external_pairs, allowed_german_pairs)
       cited_numacs = required_drug_regime_numacs(cited_pairs)
       missing_required_regimes = required_numacs - cited_numacs
       cited_external_pairs = verified_external_article_citation_pairs(text, allowed_external_pairs)
@@ -429,7 +491,7 @@ module LegalChatbot
       end
     end
 
-    def verified_article_citation_pairs(text, allowed_pairs, allowed_external_pairs = Set.new)
+    def verified_article_citation_pairs(text, allowed_pairs, allowed_external_pairs = Set.new, german_pairs = Set.new)
       text.to_s.scan(MARKDOWN_LINK_PATTERN).filter_map do |markdown|
         next if markdown.start_with?('!')
 
@@ -438,9 +500,9 @@ module LegalChatbot
 
         label = parsed[1]
         href = parsed[2]
-        next unless verified_article_citation_link?(label, href, allowed_pairs, allowed_external_pairs)
+        next unless verified_article_citation_link?(label, href, allowed_pairs, allowed_external_pairs, german_pairs)
 
-        target = href.match(%r{\A/laws/([^/?#]+)(?:\?language_id=[12])?#art[-_]([^?#[:space:]]+)\z}i)
+        target = href.match(%r{\A/laws/([^/?#]+)(?:\?language_id=[123])?#art[-_]([^?#[:space:]]+)\z}i)
         next unless target
 
         numac = target[1].match?(/\Afisconet_\d+\z/i) ? target[1].upcase : target[1]
@@ -463,7 +525,7 @@ module LegalChatbot
       end.to_set
     end
 
-    def citation_visible_text(text, allowed_pairs, allowed_external_pairs, verified_sentinel)
+    def citation_visible_text(text, allowed_pairs, allowed_external_pairs, verified_sentinel, german_pairs = Set.new)
       text.gsub(MARKDOWN_LINK_PATTERN) do |markdown|
         parsed = markdown.match(/\A!?\[([^\]\n]+)\]\(([^)\n]+)\)\z/)
         next markdown unless parsed
@@ -474,7 +536,7 @@ module LegalChatbot
         # its alt text and target happen to resemble a retrieved article link.
         next label if markdown.start_with?('!')
 
-        if verified_article_citation_link?(label, href, allowed_pairs, allowed_external_pairs)
+        if verified_article_citation_link?(label, href, allowed_pairs, allowed_external_pairs, german_pairs)
           mask_verified_article_number(label, verified_sentinel)
         else
           label
@@ -482,12 +544,17 @@ module LegalChatbot
       end
     end
 
-    def verified_article_citation_link?(label, href, allowed_pairs, allowed_external_pairs = Set.new)
+    # ?language_id=1 or 2 (or none) is accepted for any retrieved pair;
+    # ?language_id=3 only for a pair in german_pairs, a retrieved binding
+    # German original (SourceFields#german_original_pairs). On an NL or FR
+    # pair it opens no binding text, so it is not verified and the article
+    # number stays visible to the scanner, which blocks the answer.
+    def verified_article_citation_link?(label, href, allowed_pairs, allowed_external_pairs = Set.new, german_pairs = Set.new)
       label_match = label.match(SINGLE_ARTICLE_CITATION_PATTERN)
       return false unless label_match
 
       label_number = normalize_article_number(label_match[:number])
-      target = href.match(%r{\A/laws/([^/?#]+)(?:\?language_id=[12])?#art[-_][^?#[:space:]]+\z}i)
+      target = href.match(%r{\A/laws/([^/?#]+)(?:\?language_id=([123]))?#art[-_][^?#[:space:]]+\z}i)
       unless target
         return false unless href.match?(%r{\Ahttps?://[^[:space:]]+\z}i)
 
@@ -496,7 +563,9 @@ module LegalChatbot
 
       numac = target[1].match?(/\Afisconet_\d+\z/i) ? target[1].upcase : target[1]
       href_number = link_article_number(href)
-      label_number == href_number && allowed_pairs.include?([numac, href_number])
+      return false unless label_number == href_number && allowed_pairs.include?([numac, href_number])
+
+      target[2] != '3' || german_pairs.include?([numac, href_number])
     end
 
     def mark_citation_guard_failure!(result)

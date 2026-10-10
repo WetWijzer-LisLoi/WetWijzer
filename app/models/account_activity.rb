@@ -30,6 +30,9 @@ class AccountActivity < AccountRecord
     deactivated_by_admin
     reactivated_by_admin
     deletion_cancelled_by_admin
+    abuse_suspended_by_admin
+    abuse_unsuspended_by_admin
+    abuse_suspension_reason_changed_by_admin
     verification_resent_by_admin
     permanently_deleted_by_admin
     pro_credits_granted

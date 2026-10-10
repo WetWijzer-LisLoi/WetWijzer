@@ -1,4 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
+import { getLocale } from '../utils/locale'
+import { uiText } from '../utils/ui_translations'
 
 // ═══════════════════════════════════════════════════════════════════
 // Global Search - Tabbed autocomplete with instant article lookup
@@ -224,7 +226,7 @@ export default class extends Controller {
   renderItem(item, type) {
     const icon = this.iconFor(type)
     return `
-      <a href="${item.url}" class="gs-item">
+      <a href="${this.escapeAttribute(item.url)}" class="gs-item">
         <span class="shrink-0 mt-0.5 text-gray-400">${icon}</span>
         <div class="min-w-0 flex-1">
           <div class="gs-item-title">${this.escapeHtml(item.title)}</div>
@@ -310,6 +312,17 @@ export default class extends Controller {
     return div.innerHTML
   }
 
+  // WW-SEC-15: escapeHtml leaves quotes alone (a text node never escapes
+  // them), so an attribute value gets its own escaping.
+  escapeAttribute(text) {
+    return String(text ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+  }
+
   // ── Icons ──
 
   iconFor(type) {
@@ -341,7 +354,7 @@ export default class extends Controller {
   // ── Localized strings ──
 
   get locale() {
-    return document.documentElement.lang || 'nl'
+    return getLocale()
   }
 
   tabLabel(key) {
@@ -349,32 +362,32 @@ export default class extends Controller {
       nl: { all: 'Alles', legislation: 'Wetgeving', jurisprudence: 'Rechtspraak', parliamentary: 'Dossiers' },
       fr: { all: 'Tout', legislation: 'Législation', jurisprudence: 'Jurisprudence', parliamentary: 'Dossiers' },
       de: { all: 'Alle', legislation: 'Gesetzgebung', jurisprudence: 'Rechtsprechung', parliamentary: 'Dossiers' },
-      en: { all: 'All', legislation: 'Legislation', jurisprudence: 'Case law', parliamentary: 'Dossiers' }
+      en: { all: 'All', legislation: 'Legislation', jurisprudence: 'Case law', parliamentary: 'Parliamentary work' }
     }
     return (labels[this.locale] || labels.nl)[key] || key
   }
 
   articleLabel() {
-    return this.locale === 'fr' ? 'Articles' : 'Artikelen'
+    return uiText('articles')
   }
 
   legislationLabel() {
-    return this.locale === 'nl' ? 'Wetgeving' : (this.locale === 'fr' ? 'Législation' : 'Legislation')
+    return uiText('legislation')
   }
 
   jurisprudenceLabel() {
-    return this.locale === 'nl' ? 'Rechtspraak' : (this.locale === 'fr' ? 'Jurisprudence' : 'Case law')
+    return uiText('jurisprudence')
   }
 
   parliamentaryLabel() {
-    return this.locale === 'nl' ? 'Parlementaire stukken' : (this.locale === 'fr' ? 'Travaux parlementaires' : 'Parliamentary work')
+    return uiText('parliamentary')
   }
 
   viewAllText() {
-    return this.locale === 'nl' ? 'Bekijk alle →' : (this.locale === 'fr' ? 'Voir tout →' : 'View all →')
+    return uiText('viewAll')
   }
 
   noResultsText() {
-    return this.locale === 'nl' ? 'Geen resultaten gevonden' : (this.locale === 'fr' ? 'Aucun résultat trouvé' : 'No results found')
+    return uiText('noResults')
   }
 }

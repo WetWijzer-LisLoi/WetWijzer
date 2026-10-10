@@ -8,6 +8,18 @@ NUMAC: <%= @law.numac %>
 <%- if @law.respond_to?(:justel) && @law.justel.present? -%>
 Justel: <%= @law.justel %>
 <%- end -%>
+<%- if @german_notice -%>
+
+<%= raw @german_notice[:label] %>
+<%= raw [
+      "#{t('german_text.source')}: #{@german_notice[:source_name]}",
+      (@german_notice[:source_url] && "<#{@german_notice[:source_url]}>"),
+      (@german_notice[:fetched_on] && "(#{t('german_text.fetched_on', date: @german_notice[:fetched_on])})")
+    ].compact.join(' ') %>
+<%- elsif german_site? && @law.language_id == 2 && !Array(@language_versions).include?(HasLanguage::GERMAN_LANGUAGE_ID) -%>
+
+<%= t('german_text.french_fallback') %>
+<%- end -%>
 
 <%- if @articles.present? -%>
 <%- @articles.each do |article| -%>

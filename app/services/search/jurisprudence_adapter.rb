@@ -29,13 +29,16 @@ module Search
       sql = "SELECT id, case_number, court, decision_date, language_id FROM cases #{where_clause} ORDER BY decision_date DESC LIMIT ?"
       params << limit
 
-      db.execute(sql, params).map do |row|
+      db.execute(sql, params).filter_map do |row|
+        next if row[1].to_s.strip.empty?
+
         lang_id = row[4].to_s == '2' ? 2 : 1
         {
           id: row[0],
           title: truncate(row[1], 60),
           subtitle: "#{row[2]} - #{row[3]}",
-          url: "/jurisprudence/#{row[1]}?language_id=#{lang_id}",
+          # WW-SEC-15: the imported case number is encoded as a path segment.
+          url: Rails.application.routes.url_helpers.jurisprudence_path(ecli: row[1].to_s, language_id: lang_id),
           source: source_name,
           score: 1.0
         }

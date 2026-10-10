@@ -463,8 +463,8 @@ class ChatbotQualityProvenance
         raise Unavailable, 'main FAISS indexed-content expectation is invalid'
       end
 
-      before = path.stat
-      identity = ['laws-content', path.to_s, *stable_file_identity(before), expected_digest, expected_count]
+      before = laws_file_identity(path)
+      identity = ['laws-content-v2', path.to_s, *before, expected_digest, expected_count]
       @artifact_digest_cache_mutex ||= Mutex.new
       @artifact_digest_cache ||= {}
       memo = @artifact_digest_cache_mutex.synchronize { @artifact_digest_cache[identity] }
@@ -485,8 +485,8 @@ class ChatbotQualityProvenance
 
       digest, seen = indexed_laws_content_digest(path, ids_path)
       verdict = digest == expected_digest && seen == expected_count
-      after = path.stat
-      held_still = stable_file_identity(before) == stable_file_identity(after)
+      after = laws_file_identity(path)
+      held_still = before == after
       # The SQLite snapshot makes the computation itself consistent even if a
       # writer landed mid-scan, but a verdict is only cacheable when the file
       # identity in the key still describes the state that was scanned.
@@ -1023,6 +1023,41 @@ class ChatbotQualityProvenance
         stat.mtime.to_i, stat.mtime.nsec,
         stat.ctime.to_i, stat.ctime.nsec
       ]
+    end
+
+    # SQLite content can change in the WAL while the main database's stat
+    # tuple remains unchanged. Keep the cache key bounded: the database header
+    # is only the small change-counter/schema region, and the WAL contributes
+    # its identity plus its header and last complete frame header. Do not read
+    # the mutable -shm file; its lock bytes cause harmless cache churn.
+    def laws_file_identity(path)
+      stat = path.stat
+      header = File.open(path, 'rb') { |handle| handle.read(96).to_s }
+      header_marker = header.byteslice(24, 72).to_s.unpack1('H*')
+      wal = Pathname.new("#{path}-wal")
+      wal_marker = if wal.file? && !wal.symlink?
+                     wal_stat = wal.stat
+                     first = File.open(wal, 'rb') { |handle| handle.read(32).to_s }
+                     page_size = header.byteslice(16, 2).to_s.unpack1('n')
+                     page_size = 65_536 if page_size == 1
+                     page_size = 4096 unless page_size&.positive?
+                     payload = [wal_stat.size - 32, 0].max
+                     frame_size = page_size + 24
+                     frames = payload / frame_size
+                     last = if frames.positive?
+                              File.open(wal, 'rb') do |handle|
+                                handle.seek(32 + ((frames - 1) * frame_size))
+                                handle.read(24).to_s
+                              end
+                            else
+                              ''.b
+                            end
+                     [stable_file_identity(wal_stat), first.unpack1('H*'),
+                      last.unpack1('H*'), (payload % frame_size)]
+                   else
+                     ['absent']
+                   end
+      [*stable_file_identity(stat), header_marker, wal_marker]
     end
 
     def canonical_digest_value(value)

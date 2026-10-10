@@ -177,6 +177,7 @@ nl:
     show_exdecs_tooltip: "Toon de uitvoeringsbesluiten onder de artikelen"
     loading_message: "Even geduld, artikelen worden geladen…"
     loading_articles: "Artikelen laden..."
+    loaded_articles: "Artikelen geladen"
     view_articles: "Klik hier om artikelen te bekijken"
     exdecs_disabled: "Uitvoeringsbesluiten niet geladen"
     load_anyway: "Laden"
@@ -208,6 +209,11 @@ nl:
   ov_pdf: "overzicht PDF"
   title_details: "titel"
   toc: "inhoudstafel"
+  toc_summary:
+    text: "Deze wet heeft een lange inhoudstafel van %{count} onderdelen. Die staat volledig, en doorzoekbaar, in de zijbalk."
+    open: "Inhoudstafel openen"
+    to_text: "Naar de tekst"
+    print: "De volledige inhoudstafel (%{count} onderdelen) staat op de webpagina."
   updates: "Deze tekst heeft de volgende tekst(en) gewijzigd"
   exdecs_title: "Uitvoeringsbesluit(en)"
   exdecs:
@@ -226,11 +232,62 @@ nl:
   search_mode_hint: "Standaard: flexibel (alle woorden). Aanvinken: exacte woordvolgorde."
   search_hints_no_results_with_exact: "Geen resultaten gevonden. Probeer minder specifieke zoektermen te gebruiken of schakel de optie 'exacte match' uit."
   search_hints_no_results_without_exact: " Probeer met de filter 'Exacte overeenkomst' voor precieze resultaten."
+  # WW-LINK-01..03: the law page's related-sources panel and the parliamentary
+  # index's relation banner
+  related_sources:
+    heading: "Gerelateerde bronnen"
+    parliamentary:
+      heading: "Parlementaire voorbereidingen"
+      verified: "Geverifieerd"
+      verified_note: "Nagekeken aan de hand van het officiële dossier."
+      dossier_not_in_corpus: "De documenten van dit dossier staan nog niet in onze databank; zie het officiële dossier."
+      unverified: "Automatisch gekoppeld, niet geverifieerd"
+      unverified_note: "Deze documenten dragen het nummer van deze wet in onze parlementaire databank. Die koppeling is automatisch gemaakt en niet nagekeken; ze kan ook latere wijzigingen of andere teksten bevatten."
+      empty: "Geen parlementaire voorbereidingen gekoppeld in onze index."
+      unavailable: "De parlementaire voorbereidingen zijn tijdelijk niet beschikbaar."
+      view_all: "Alle documenten bekijken (%{count})"
+      view_all_unverified: "Alle automatisch gekoppelde documenten bekijken (%{count})"
+      chamber: "Kamer"
+      senate: "Senaat"
+      official_dossier: "Officieel dossier"
+    vlaams:
+      heading: "Vlaams Parlement"
+      note: "Documenten die het Vlaams Parlement aan dit decreet koppelt."
+      no_document: "geen document online"
+    jurisprudence:
+      heading: "Rechtspraak"
+      empty: "Geen gekoppelde rechtspraak gevonden."
+      not_indexed: "Geen gekoppelde rechtspraak in de huidige index."
+      unavailable: "De gekoppelde rechtspraak is tijdelijk niet beschikbaar."
+      search: "Zoeken in rechtspraak"
+      view_all: "Alle gekoppelde uitspraken bekijken (%{count})"
+      view_available: "Beschikbare gekoppelde uitspraken bekijken (%{count})"
+      incomplete: "Onze index bevat %{count} gekoppelde uitspraken, maar de opgeslagen lijst is nog niet volledig bijgewerkt. Er zijn momenteel %{available} uitspraken beschikbaar."
+      previous: "Vorige"
+      next: "Volgende"
+      page: "Pagina %{page} van %{pages}"
+      pagination: "Paginering van gekoppelde rechtspraak"
+    status:
+      loading: "Laden…"
+      loaded: "%{source} geladen"
+      failed: "Laden mislukt. Probeer opnieuw."
+    index:
+      verified: "Parlementaire voorbereidingen van %{law}, nagekeken aan de hand van het officiële dossier"
+      unverified: "Documenten die automatisch aan %{law} gekoppeld zijn, niet geverifieerd"
+      empty: "Geen documenten gekoppeld aan %{law} in onze index."
   popular_laws:
     title: "Veelgebruikte wetgeving"
+    source_toggle: "Bronnen tonen of verbergen"
+    source_tabs: "Brontabbladen"
     hint: ""
     show: "toon"
     hide: "verberg"
+    catalogue:
+      civil_book_seven: "Burgerlijk Wetboek - Boek 7 \"Bijzondere contracten\""
+      future_from_september_2027: "(inwerkingtreding: 1 september 2027)"
+      criminal_code_1867: "(oud) Strafwetboek 1867"
+      new_criminal_code_book_one: "Nieuw Strafwetboek - Boek I"
+      new_criminal_code_book_two: "Nieuw Strafwetboek - Boek II"
     categories:
       civil: "Burgerlijk recht"
       criminal: "Strafrecht"
@@ -319,6 +376,14 @@ nl:
   clean_text_copied: "Citaat gekopieerd!"
   filter_references: "Verberg wijzigingen en referenties"
   text_copied: "Tekst gekopieerd!"
+  # WW-COPY-01: the clipboard controller's words (shared/_clipboard_messages)
+  clipboard:
+    copied: "Gekopieerd!"
+    copy_failed: "Kopiëren is mislukt. Probeer het opnieuw."
+    nothing_to_copy: "Er is niets om te kopiëren."
+    consulted_on: "Geraadpleegd op"
+    contents: "Inhoud"
+    citation: "citaat"
 
   # Parliamentary preparations
   parliamentary_preparations: "Parlementaire werkzaamheden"
@@ -369,7 +434,7 @@ nl:
     imprint: "Colofon"
     accessibility: "Toegankelijkheid"
     faq: "FAQ"
-    ai_security: "AI Security"
+    ai_security: "AI-beveiliging"
     pricing: "Prijzen"
   
   # Accessibility labels
@@ -394,8 +459,9 @@ nl:
   switch_to_dutch: "NL"
 
   chatbot:
+    noscript: "De juridische assistent bouwt zijn antwoorden live op en werkt alleen met JavaScript. Schakel JavaScript in om een vraag te stellen."
     messages: "Chatberichten"
-    title: "WetWijzer Juridische Chatbot"
+    title: "%{brand} Juridische Chatbot"
     subtitle: "POC - AI-gestuurde Belgische Wetgeving Q&A"
     widget_title: "Juridische Chatbot"
     language: "Taal"
@@ -490,8 +556,35 @@ nl:
   auth:
     signed_in: "Succesvol ingelogd"
     signed_out: "Succesvol uitgelogd"
+    pending_sign_in_not_cancelled: "U bent uitgelogd, maar een begonnen aanmelding met tweestapsverificatie kon niet worden geannuleerd. Ze vervalt binnen 5 minuten."
+    pending_sign_in_not_replaced: "Een eerder begonnen aanmelding met tweestapsverificatie in deze browser kon niet worden geannuleerd, dus er is geen nieuwe gestart. Probeer het over enkele minuten opnieuw."
     invalid_credentials: "Ongeldig e-mailadres of wachtwoord"
     account_disabled: "Uw account is gedeactiveerd"
+    access_unavailable: "De toegang tot dit account is niet beschikbaar. Neem contact met ons op als u denkt dat dit een vergissing is."
+    too_many_attempts: "Te veel pogingen. Probeer het later opnieuw."
+    registration_unavailable: "Registreren is tijdelijk niet mogelijk. Probeer het over enkele minuten opnieuw."
+    registration_country_restricted:
+      title: "Registreren kan alleen vanuit België"
+      message: "U kunt alleen een nieuw account aanmaken via een internetverbinding in België. U kunt de website wel blijven bekijken of inloggen op een bestaand account."
+      browse: "Website bekijken"
+    # WW-ABUSE-01: the registration proof-of-work state
+    signup_challenge:
+      title: "Korte veiligheidscontrole"
+      explanation: "Om geautomatiseerde registraties tegen te gaan, voert uw browser een korte controle uit voordat het account wordt aangemaakt. Dit duurt enkele seconden en vraagt niets van u."
+      password_again: "Vul uw wachtwoord opnieuw in: om veiligheidsredenen bewaren we het niet."
+      noscript: "Deze controle vereist JavaScript. Schakel JavaScript in, of probeer het later opnieuw."
+      noscript_help_html: "Kunt u JavaScript niet inschakelen? %{contact}, dan helpen we u verder."
+      noscript_contact: "Neem contact met ons op"
+      label: "Ik ben geen robot"
+      loading: "Laden…"
+      verifying: "Controle bezig…"
+      verified: "Gecontroleerd"
+      ready: "Controle voltooid. U kunt uw account nu aanmaken."
+      failed: "De controle is mislukt. Laad de pagina opnieuw en probeer het nog eens."
+      expired: "De controle is verlopen. Laad de pagina opnieuw."
+      wait: "Wacht tot de controle voltooid is."
+      reload: "Opnieuw laden"
+      verify: "Controleren"
     login_required: "Log in om door te gaan"
     account_created: "Account succesvol aangemaakt"
     email_confirmed: "E-mail bevestigd. U kunt nu inloggen."
@@ -522,6 +615,18 @@ nl:
     password_blank: "Wachtwoord mag niet leeg zijn."
     passwords_dont_match: "Wachtwoorden komen niet overeen."
     password_min_length: "Minimaal 8 tekens"
+    show_password: "Wachtwoord tonen"
+    hide_password: "Wachtwoord verbergen"
+    password_strength:
+      label: "Wachtwoordsterkte"
+      empty: "Voer een wachtwoord in"
+      labels: ["Zeer zwak", "Zwak", "Redelijk", "Goed", "Sterk"]
+      requirements:
+        length: "Minimaal 8 tekens"
+        uppercase: "Hoofdletter"
+        lowercase: "Kleine letter"
+        number: "Cijfer"
+        special: "Speciaal teken (optioneel)"
     back_to_login: "Terug naar inloggen"
     no_account: "Nog geen account?"
     have_account: "Al een account?"
@@ -544,6 +649,7 @@ nl:
     account_reactivated: "Uw account is geheractiveerd. U kunt nu inloggen."
     invalid_reactivation_link: "Deze heractiveringslink is ongeldig of verlopen."
   subscriptions:
+    title: "Abonnement"
     invalid_tier: "Ongeldig abonnementstype"
     payment_error: "Betaling mislukt. Probeer opnieuw."
     payment_success: "Betaling geslaagd! Uw abonnement is actief."
@@ -593,47 +699,47 @@ nl:
     contact_sales: "Neem contact op"
   mailer:
     reactivation:
-      subject: "Heractiveer uw WetWijzer-account"
+      subject: "Heractiveer uw %{brand}-account"
       greeting: "Hallo %{name},"
       body: "U heeft gevraagd om uw account te heractiveren. Klik op de onderstaande knop om te bevestigen."
       button: "Account heractiveren"
       link_text: "Of kopieer deze link naar uw browser:"
       ignore: "Als u dit niet heeft aangevraagd, kunt u deze e-mail negeren."
     deletion_scheduled:
-      subject: "Uw WetWijzer-account wordt over 30 dagen verwijderd"
+      subject: "Uw %{brand}-account wordt over 30 dagen verwijderd"
       title: "Accountverwijdering gepland"
       greeting: "Beste %{name},"
       body: "Wij bevestigen dat uw verzoek tot accountverwijdering is ontvangen. Uw account en alle bijbehorende gegevens worden over 30 dagen definitief verwijderd."
       date_label: "Verwijderingsdatum"
       undo_info: "Bent u van gedachten veranderd? U kunt de verwijdering op elk moment annuleren door op onderstaande knop te klikken of door opnieuw in te loggen."
     deletion_final_warning:
-      subject: "LAATSTE WAARSCHUWING: Uw WetWijzer-account wordt morgen verwijderd"
+      subject: "LAATSTE WAARSCHUWING: Uw %{brand}-account wordt morgen verwijderd"
       title: "Laatste waarschuwing"
       greeting: "Beste %{name},"
-      body: "Dit is een laatste herinnering dat uw WetWijzer-account morgen definitief wordt verwijderd."
+      body: "Dit is een laatste herinnering dat uw %{brand}-account morgen definitief wordt verwijderd."
       tomorrow: "Uw account wordt morgen verwijderd"
       last_chance: "Dit is uw laatste kans om de verwijdering te annuleren. Na morgen kunnen uw gegevens niet meer worden hersteld."
     deletion_completed:
-      subject: "Uw WetWijzer-account is verwijderd"
+      subject: "Uw %{brand}-account is verwijderd"
       title: "Account verwijderd"
-      body: "Uw WetWijzer-account is definitief verwijderd. De volgende gegevens zijn gewist:"
+      body: "Uw %{brand}-account is definitief verwijderd. De volgende gegevens zijn gewist:"
       item_profile: "Profiel en persoonlijke instellingen"
       item_history: "Zoekgeschiedenis en chatgeschiedenis"
       item_bookmarks: "Bladwijzers en opgeslagen items"
-      farewell: "Bedankt dat u WetWijzer heeft gebruikt. U bent altijd welkom om een nieuw account aan te maken."
+      farewell: "Bedankt dat u %{brand} heeft gebruikt. U bent altijd welkom om een nieuw account aan te maken."
     subscription_welcome:
-      subject: "Welkom bij Pro! 🎉 - WetWijzer"
+      subject: "Welkom bij Pro! 🎉 - %{brand}"
       greeting: "Hallo %{name},"
       body: "Bedankt voor uw abonnement op Pro! U heeft nu toegang tot alle premium functies."
       whats_included: "Wat zit er in uw Pro-abonnement:"
       feature_credits: "40 gratis credits per maand"
       feature_models: "Alle 4 AI-niveaus (Level I–IV)"
       feature_jurisprudence: "Rechtspraak en parlementaire stukken via de chatbot"
-      feature_support: "Steun WetWijzer"
+      feature_support: "Steun %{brand}"
       button: "Begin met vragen stellen"
-      thanks: "Bedankt voor uw steun aan WetWijzer! Uw abonnement helpt ons het platform draaiende te houden en te verbeteren."
+      thanks: "Bedankt voor uw steun aan %{brand}! Uw abonnement helpt ons het platform draaiende te houden en te verbeteren."
     subscription_cancelled:
-      subject: "Uw Pro-abonnement is opgezegd - WetWijzer"
+      subject: "Uw Pro-abonnement is opgezegd - %{brand}"
       greeting: "Hallo %{name},"
       body: "Het spijt ons u te zien vertrekken. Uw Pro-abonnement is opgezegd."
       access_until: "U behoudt Pro-toegang tot:"
@@ -642,9 +748,9 @@ nl:
       resubscribe_button: "Opnieuw abonneren op Pro"
       farewell: "We hopen u snel weer te zien. Als u vragen heeft, aarzel niet om contact met ons op te nemen."
     payment_failed:
-      subject: "Betaling mislukt voor uw Pro-abonnement - WetWijzer"
+      subject: "Betaling mislukt voor uw Pro-abonnement - %{brand}"
       greeting: "Hallo %{name},"
-      body: "We konden uw laatste betaling voor uw WetWijzer Pro-abonnement niet verwerken."
+      body: "We konden uw laatste betaling voor uw %{brand} Pro-abonnement niet verwerken."
       status_label: "Status"
       status_past_due: "Uw abonnement is achterstallig. Werk uw betaalmethode bij om uw Pro-functies te behouden."
       decline_reason: "Reden:"
@@ -652,15 +758,15 @@ nl:
       update_button: "Betaalmethode bijwerken"
       contact: "Heeft u vragen? Neem gerust contact met ons op."
     confirmation:
-      subject: "Bevestig uw e-mailadres - WetWijzer"
+      subject: "Bevestig uw e-mailadres - %{brand}"
       greeting: "Hallo %{name},"
-      body: "Bedankt voor uw registratie bij WetWijzer. Klik op de onderstaande knop om uw e-mailadres te bevestigen."
+      body: "Bedankt voor uw registratie bij %{brand}. Klik op de onderstaande knop om uw e-mailadres te bevestigen."
       button: "E-mail bevestigen"
       link_text: "Of kopieer deze link naar uw browser:"
       expires: "Deze link is 24 uur geldig."
       ignore: "Als u zich niet heeft geregistreerd, kunt u deze e-mail negeren."
     password_reset:
-      subject: "Wachtwoord herstellen - WetWijzer"
+      subject: "Wachtwoord herstellen - %{brand}"
       title: "Wachtwoord herstellen"
       greeting: "Hallo %{name},"
       body: "U heeft een verzoek ingediend om uw wachtwoord te herstellen. Klik op de onderstaande knop om een nieuw wachtwoord in te stellen."
@@ -670,9 +776,9 @@ nl:
       expires: "Deze link is 2 uur geldig."
       ignore: "Als u dit verzoek niet heeft ingediend, kunt u deze e-mail negeren."
     welcome:
-      subject: "Welkom bij WetWijzer"
+      subject: "Welkom bij %{brand}"
     usage_warning:
-      subject: "U heeft %{percent}%% van uw limiet bereikt - WetWijzer"
+      subject: "U heeft %{percent}%% van uw limiet bereikt - %{brand}"
       title: "Gebruikslimiet bijna bereikt"
       greeting: "Hallo %{name},"
       body: "U heeft %{percent}%% van uw credits gebruikt."
@@ -680,10 +786,10 @@ nl:
       upgrade_prompt: "Upgrade naar Pro voor meer credits."
       upgrade_button: "Upgraden"
     unverified_warning:
-      subject: "Bevestig uw e-mailadres - WetWijzer"
-      subject_final: "Laatste kans: bevestig uw e-mailadres - WetWijzer"
+      subject: "Bevestig uw e-mailadres - %{brand}"
+      subject_final: "Laatste kans: bevestig uw e-mailadres - %{brand}"
       greeting: "Hallo %{name},"
-      body: "U heeft zich geregistreerd bij WetWijzer, maar uw e-mailadres is nog niet bevestigd."
+      body: "U heeft zich geregistreerd bij %{brand}, maar uw e-mailadres is nog niet bevestigd."
       button: "E-mail nu bevestigen"
       link_text: "Of kopieer deze link naar uw browser:"
       deadline: "⚠ Uw account wordt verwijderd als u uw e-mailadres niet binnen 7 dagen bevestigt."
@@ -697,24 +803,26 @@ nl:
       not_you: "Was u dit niet? Wijzig dan onmiddellijk uw wachtwoord."
       review_button: "Account controleren"
       login:
-        subject: "Nieuwe aanmelding op uw account - WetWijzer"
+        subject: "Nieuwe aanmelding op uw account - %{brand}"
         title: "Nieuwe aanmelding gedetecteerd"
-        message: "Er is zojuist ingelogd op uw WetWijzer-account."
+        message: "Er is zojuist ingelogd op uw %{brand}-account."
       password_changed:
-        subject: "Uw wachtwoord is gewijzigd - WetWijzer"
+        subject: "Uw wachtwoord is gewijzigd - %{brand}"
         title: "Wachtwoord gewijzigd"
         message: "Uw wachtwoord is zojuist gewijzigd."
       account_locked:
-        subject: "Uw account is vergrendeld - WetWijzer"
+        subject: "Uw account is vergrendeld - %{brand}"
         title: "Account vergrendeld"
         message: "Uw account is tijdelijk vergrendeld vanwege meerdere mislukte inlogpogingen."
       registration_attempt:
-        subject: "Iemand heeft geprobeerd te registreren met uw e-mailadres - WetWijzer"
+        subject: "Iemand heeft geprobeerd te registreren met uw e-mailadres - %{brand}"
         title: "Registratiepoging gedetecteerd"
         message: "Iemand heeft geprobeerd een nieuw account aan te maken met uw e-mailadres. Als u dit niet was, hoeft u niets te doen. Uw account is veilig."
   filter_articles: "Zoek artikel…"
   to_top: "Naar boven"
   account:
+    invoices: "Facturen"
+    invoices_subtitle: "Uw facturen en creditnota’s"
     tier_free: "Gratis"
     title: "Mijn Account"
     info: "Accountgegevens"
@@ -730,6 +838,7 @@ nl:
     delete_account_desc: "Verwijder uw account en alle bijbehorende gegevens permanent"
     delete: "Verwijderen"
     delete_confirm: "Weet u zeker dat u uw account wilt verwijderen? Dit kan niet ongedaan worden gemaakt."
+    delete_final: "Ja, verwijder mijn account"
     delete_checkbox_confirm: "Ik bevestig dat ik mijn account wil verwijderen en begrijp dat alle gegevens na 30 dagen definitief worden gewist."
     schedule_deletion: "Account verwijderen"
     deletion_grace_period: "Uw account wordt na 30 dagen definitief verwijderd. U kunt dit in de tussentijd ongedaan maken."
@@ -772,6 +881,7 @@ nl:
     2fa_enabled: "2FA is ingeschakeld!"
     2fa_disabled: "2FA is uitgeschakeld."
     2fa_setup_expired: "Sessie verlopen. Start opnieuw."
+    2fa_replace_first: "2FA staat al aan. Schakel 2FA eerst uit (met uw wachtwoord) om een nieuwe authenticator in te stellen."
     invalid_otp: "Ongeldige code. Probeer opnieuw."
     disable_2fa_confirm: "Weet u zeker dat u 2FA wilt uitschakelen?"
     backup_codes: "Reservecodes"
@@ -823,6 +933,26 @@ nl:
       otp_enabled: "2FA ingeschakeld"
       otp_disabled: "2FA uitgeschakeld"
       profile_updated: "Profiel bijgewerkt"
+  invoices:
+    number: "Nummer"
+    date: "Datum"
+    type: "Type"
+    total: "Totaal"
+    status: "Status"
+    download: "Downloaden"
+    type_subscription: "Abonnement"
+    type_credits: "Credits"
+    type_credit_note: "Creditnota"
+    type_chargeback_reversal: "Terugdraaiing terugboeking"
+    type_other: "Overig"
+    excl_vat: "excl. btw"
+    status_sent: "Verzonden"
+    status_processing: "In verwerking"
+    status_failed: "Mislukt"
+    empty_title: "Nog geen facturen"
+    empty_description: "Facturen voor abonnementen en aankoop van credits verschijnen hier."
+    pdf_not_found: "PDF-factuur niet gevonden."
+    xml_not_found: "UBL-XML-bestand niet gevonden."
   common:
     save: "Opslaan"
     cancel: "Annuleren"
@@ -831,6 +961,25 @@ nl:
   classic:
     switch_modern: "Moderne versie"
     pagination_hint: "Eerste %{count} pagina's getoond. Gebruik de zoekfilters hierboven om specifieke wetgeving te vinden."
+    # On a modern page that cannot work without JavaScript
+    no_js:
+      notice: "Deze pagina werkt alleen met JavaScript. Zet JavaScript aan om ze te gebruiken."
+      classic_link: "Wetgeving lezen zonder JavaScript kan op de klassieke site."
+    theme:
+      label: "Weergave"
+      system: "Systeem"
+      light: "Licht"
+      dark: "Donker"
+    table_scroll: "Tabel; schuif horizontaal om alles te zien"
+    related:
+      label: "Gerelateerde bronnen"
+      parliamentary: "Parlementaire voorbereidingen"
+      jurisprudence: "Rechtspraak"
+    toc:
+      skip_to_text: "Ga naar de tekst"
+    search:
+      reset: "Wissen"
+      title_label: "Zoek op titel"
   back_to_list: "Terug naar overzicht"
   search_prompt: "Zoek naar Belgische wetgeving via het zoekveld hierboven."
   law_not_found: "Wet niet gevonden."
@@ -857,6 +1006,8 @@ nl:
     all_courts: "Alle hoven"
     search: "Zoeken"
     no_results: "Geen arresten gevonden"
+    search_failed: "De rechtspraak kon nu niet worden doorzocht. Probeer het later opnieuw."
+    listing_limit: "De lijst van recente uitspraken stopt hier. Gebruik de zoekfunctie of de filters om oudere uitspraken te vinden."
     back_to_list: "Terug naar overzicht"
     full_text: "Volledige tekst"
     summary: "Samenvatting"
@@ -864,6 +1015,7 @@ nl:
 
   # Bookmarks
   bookmarks:
+    noscript: "Uw bladwijzers en mappen worden met JavaScript geladen en beheerd. Schakel JavaScript in om ze te bekijken."
     title: "Bladwijzers"
     add: "Bladwijzer toevoegen"
     remove: "Bladwijzer verwijderen"
@@ -910,8 +1062,13 @@ nl:
 
   # Praxis cross-sell banner (shown to non-Praxis users on profile page)
   praxis_banner:
-    title: "Op zoek naar (betaalbare) beheerssoftware voor uw advocatenpraktijk?"
-    description: "Documentbeheer, cliëntenbeheer, facturatie, AI-assistent - alles in één desktopapplicatie en dat zonder de bank te breken! Koop Praxis en steun WetWijzer / LisLoi / GesetzGuide / LexLibera!"
+    title: "Praxis: praktijksoftware voor uw advocatenkantoor"
+    description: "Praxis is nog in ontwikkeling. Het geplande pakket combineert dossiers, documenten, tijdsregistratie en facturatie, met juridische AI in Plus. Van de makers van WetWijzer / LisLoi / GesetzGuide / LexLibera."
     cta: "Ontdek Praxis"
-    tagline: "Vanaf €15/maand - door de makers van WetWijzer / LisLoi / GesetzGuide / LexLibera"
+    tagline: "Geplande lanceringsprijzen voor 1 gebruiker: Essentials €%{essentials}/maand · Plus met AI €%{plus}/maand (excl. btw)"
+    teaser_title: "Praxis is in ontwikkeling"
+    teaser_description: "Gepland praktijkbeheer met juridische AI in Plus. Ontdek het project."
 
+  # Roll-call votes on dossier and MP pages; see en.yml.
+  parliamentary:
+    roll_call_votes_end: "De gegevens over naamstemmingen stoppen op 20 juli 2023 omdat de bron niet meer publiceert. Latere stemmingen worden hier niet getoond."

@@ -2,18 +2,25 @@
 
 require 'sqlite3'
 
-# Service to query parliamentary documents from the separate parliamentary database
-# Used by LegalChatbotService to enrich answers with preparatory documents
+# Legacy/dormant NUMAC-context utility for querying parliamentary documents
+# from the separate Chamber database.
 class ParliamentaryContextService
   CHAMBER_DB_PATH = Rails.root.join('storage', 'chamber.sqlite3').to_s
+  MAX_DOCUMENTS = 50
 
   def initialize(language: 'nl')
-    @language = language
+    # Keep the chatbot's source language rule identical to the law-page
+    # resolver: Dutch gets Dutch documents; every other locale gets French.
+    @language = ParliamentaryRelations.document_language(language.to_s.downcase)
   end
 
   # Check if parliamentary database exists
   def self.available?
-    File.exist?(CHAMBER_DB_PATH)
+    File.file?(chamber_db_path)
+  end
+
+  def self.chamber_db_path
+    ENV.fetch('CHAMBER_DB') { CHAMBER_DB_PATH }
   end
 
   # Get parliamentary context for a NUMAC
@@ -34,36 +41,41 @@ class ParliamentaryContextService
   def documents_for_numac(numac, limit: 5)
     return [] unless self.class.available?
 
-    db = SQLite3::Database.new(CHAMBER_DB_PATH)
-    db.results_as_hash = true
+    limit = bounded_limit(limit)
+    reviewed = ParliamentaryRelations.manifest.for_law(numac)
 
-    # First try direct numac link
-    docs = db.execute(<<~SQL, [numac, limit])
-      SELECT parliament, legislature, dossier_number, document_number,
-             document_type, title, content, pdf_url
-      FROM documents
-      WHERE legislation_numac = ?
-      ORDER BY parliament, legislature, dossier_number, document_number
-      LIMIT ?
-    SQL
+    with_database do |db|
+      # A reviewed relation is an exact, human-approved dossier predicate.
+      # Never supplement it with automatic NUMAC or dossier_links rows: both
+      # are corpus hints and may point at unrelated later amendments.
+      return reviewed_documents(db, reviewed.dossiers, limit) if reviewed
 
-    # If no direct link, try via dossier_links table
-    if docs.empty?
-      docs = db.execute(<<~SQL, [numac, limit])
+      # Ordinary laws retain the historic order: their direct NUMAC relation
+      # first, then the corpus's dossier_links fallback.
+      docs = db.execute(<<~SQL, [numac.to_s, @language, limit])
+        SELECT parliament, legislature, dossier_number, document_number,
+               document_type, title, content, pdf_url
+        FROM documents
+        WHERE legislation_numac = ? AND language = ?
+        ORDER BY parliament, legislature, dossier_number, document_number
+        LIMIT ?
+      SQL
+
+      return docs unless docs.empty?
+      return [] unless dossier_links_table?(db)
+
+      db.execute(<<~SQL, [numac.to_s, @language, limit])
         SELECT DISTINCT d.parliament, d.legislature, d.dossier_number,
                d.document_number, d.document_type, d.title, d.content, d.pdf_url
         FROM dossier_links dl
         JOIN documents d ON dl.parliament = d.parliament
           AND dl.legislature = d.legislature
           AND dl.dossier_number = d.dossier_number
-        WHERE dl.legislation_numac = ?
+        WHERE dl.legislation_numac = ? AND d.language = ?
         ORDER BY d.parliament, d.legislature, d.dossier_number, d.document_number
         LIMIT ?
       SQL
     end
-
-    db.close
-    docs
   rescue SQLite3::Exception => e
     Rails.logger.warn("Parliamentary DB query error: #{e.message}")
     []
@@ -73,17 +85,18 @@ class ParliamentaryContextService
   def dossier_links_for_numac(numac)
     return [] unless self.class.available?
 
-    db = SQLite3::Database.new(CHAMBER_DB_PATH)
-    db.results_as_hash = true
+    reviewed = ParliamentaryRelations.manifest.for_law(numac)
+    return reviewed.dossiers.map { |dossier| reviewed_dossier_link(dossier) } if reviewed
 
-    links = db.execute(<<~SQL, [numac])
-      SELECT parliament, legislature, dossier_number
-      FROM dossier_links
-      WHERE legislation_numac = ?
-    SQL
+    with_database do |db|
+      return [] unless dossier_links_table?(db)
 
-    db.close
-    links
+      db.execute(<<~SQL, [numac.to_s])
+        SELECT parliament, legislature, dossier_number
+        FROM dossier_links
+        WHERE legislation_numac = ?
+      SQL
+    end
   rescue SQLite3::Exception => e
     Rails.logger.warn("Parliamentary DB query error: #{e.message}")
     []
@@ -93,21 +106,63 @@ class ParliamentaryContextService
   def self.stats
     return {} unless available?
 
-    db = SQLite3::Database.new(CHAMBER_DB_PATH)
-
-    stats = {}
-    stats[:total_documents] = db.get_first_value('SELECT COUNT(*) FROM documents').to_i
-    stats[:with_content] = db.get_first_value("SELECT COUNT(*) FROM documents WHERE content IS NOT NULL AND content != ''").to_i
-    stats[:linked_numacs] = db.get_first_value('SELECT COUNT(DISTINCT legislation_numac) FROM documents WHERE legislation_numac IS NOT NULL').to_i
-
-    db.close
-    stats
+    db = SQLite3::Database.new(chamber_db_path, readonly: true)
+    db.busy_timeout = 5000
+    {
+      total_documents: db.get_first_value('SELECT COUNT(*) FROM documents').to_i,
+      with_content: db.get_first_value("SELECT COUNT(*) FROM documents WHERE content IS NOT NULL AND content != ''").to_i,
+      linked_numacs: db.get_first_value('SELECT COUNT(DISTINCT legislation_numac) FROM documents WHERE legislation_numac IS NOT NULL').to_i
+    }
   rescue SQLite3::Exception => e
     Rails.logger.error("Parliamentary stats error: #{e.message}")
     {}
+  ensure
+    db&.close
   end
 
   private
+
+  def with_database
+    db = SQLite3::Database.new(self.class.chamber_db_path, readonly: true)
+    db.results_as_hash = true
+    db.busy_timeout = 5000
+    yield db
+  ensure
+    db&.close
+  end
+
+  def bounded_limit(value)
+    value.to_i.clamp(1, MAX_DOCUMENTS)
+  end
+
+  # Older, read-only Chamber snapshots did not always include this optional
+  # automatic-link table. Treat its absence as no fallback, not an error that
+  # is logged once for every request.
+  def dossier_links_table?(db)
+    db.get_first_value("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'dossier_links' LIMIT 1") == 1
+  end
+
+  def reviewed_documents(db, dossiers, limit)
+    predicates = dossiers.map do |dossier|
+      variants = dossier.number_variants
+      "(parliament = ? AND legislature = ? AND dossier_number IN (#{(['?'] * variants.length).join(', ')}))"
+    end
+    binds = dossiers.flat_map { |dossier| [dossier.parliament, dossier.legislature, *dossier.number_variants] }
+
+    db.execute(<<~SQL, [@language, *binds, limit])
+      SELECT parliament, legislature, dossier_number, document_number,
+             document_type, title, content, pdf_url
+      FROM documents
+      WHERE language = ? AND (#{predicates.join(' OR ')})
+      ORDER BY parliament, legislature, dossier_number, document_number
+      LIMIT ?
+    SQL
+  end
+
+  def reviewed_dossier_link(dossier)
+    { 'parliament' => dossier.parliament, 'legislature' => dossier.legislature,
+      'dossier_number' => dossier.number.to_s }
+  end
 
   def format_documents(docs, max_content_length)
     header = @language == 'fr' ? '## Travaux préparatoires' : '## Voorbereidende werken'
@@ -123,7 +178,9 @@ class ParliamentaryContextService
       title = doc['title'] || ''
 
       parts << "### #{parliament} #{dossier}/#{doc_num} (#{doc_type})"
-      parts << "**#{title}**" if title.present?
+      # A site page title ("Request Rejected", the search page's heading) is
+      # not the document's; the heading above already identifies it.
+      parts << "**#{title}**" unless ParliamentaryHelper.generic_parl_title?(title)
 
       if doc['content'].present?
         # Filter bilingual content before truncating for the chatbot prompt

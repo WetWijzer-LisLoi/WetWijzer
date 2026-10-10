@@ -1,0 +1,54 @@
+<%# External links for a ruling, in the same card the legislation pages use
+    (laws/_external_links). Built from the helpers, never from the stored url
+    directly: juportal_content_url / juportal_pdf_link for JuPortal rows,
+    raadvst_source_url (validated and rebuilt) for judgments fetched from the
+    Council's own site, whose address serves the PDF itself, and
+    raadvst_key_url (derived from the key) for Council judgments and orders
+    that keep JuPortal's text. %>
+<% link_class = "text-(--link-color) hover:text-(--link-hover-color) hover:underline" %>
+<% external_icon = capture do %>
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline-block ml-1" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-4.5 0V6.75A.75.75 0 0114.25 6h1.5a.75.75 0 01.75.75v1.5m-4.5 0h4.5m-4.5 0l6-6" />
+  </svg>
+<% end %>
+<% download_icon = capture do %>
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline-block ml-1" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+  </svg>
+<% end %>
+<div class="p-4 md:p-6" data-controller="collapse" data-collapse-expanded-value="true">
+  <button type="button" class="w-full flex items-center justify-between text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--accent-500) group transition-colors" data-action="click->collapse#toggle" data-collapse-target="button" aria-label="<%= t('aria.toggle_external_links') %>" aria-expanded="true">
+    <h2 class="text-xl font-bold text-gray-800 dark:text-(--accent-500) group-hover:text-(--accent-600) transition-colors">
+      <%= t(:external_links).strip.capitalize %>
+    </h2>
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor" data-collapse-target="icon">
+      <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
+    </svg>
+  </button>
+
+  <ul class="space-y-2 mt-4" data-collapse-target="content">
+    <% if juportal_url %>
+      <li>
+        <a href="<%= juportal_url %>" class="<%= link_class %>" target="_blank" rel="noopener nofollow">
+          <%= case I18n.locale when :fr then 'JuPortal (source officielle)' when :de then 'JuPortal (offizielle Quelle)' when :en then 'JuPortal (official source)' else 'JuPortal (officiële bron)' end %><%= external_icon %>
+        </a>
+      </li>
+    <% end %>
+    <%# The scanned original, only when JuPortal actually holds one: roughly one
+        case in eight has no scan behind it, and the link used to 404 for all of them. %>
+    <% if juportal_pdf.present? %>
+      <li>
+        <a href="<%= juportal_pdf %>" class="<%= link_class %>" target="_blank" rel="noopener nofollow">
+          <%= case I18n.locale when :fr then 'PDF original (JuPortal)' when :de then 'Original-PDF (JuPortal)' when :en then 'Original PDF (JuPortal)' else 'Origineel PDF (JuPortal)' end %><%= download_icon %>
+        </a>
+      </li>
+    <% end %>
+    <% if raadvst_url %>
+      <li>
+        <a href="<%= raadvst_url %>" class="<%= link_class %>" target="_blank" rel="noopener nofollow">
+          <%= case I18n.locale when :fr then "PDF original (Conseil d'État)" when :de then 'Original-PDF (Staatsrat)' when :en then 'Original PDF (Council of State)' else 'Origineel PDF (Raad van State)' end %><%= download_icon %>
+        </a>
+      </li>
+    <% end %>
+  </ul>
+</div>

@@ -17,7 +17,7 @@ module ChatbotApi
 
     class << self
       def capacity
-        raw = ENV['CHATBOT_MAX_CONCURRENT_ASKS']
+        raw = ENV.fetch('CHATBOT_MAX_CONCURRENT_ASKS', nil)
         return DEFAULT_MAX_CONCURRENT_ASKS if raw.nil? || raw.strip.empty?
 
         value = Integer(raw, exception: false)

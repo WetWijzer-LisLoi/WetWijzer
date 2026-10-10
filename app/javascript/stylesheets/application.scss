@@ -343,7 +343,10 @@
     @apply text-gray-300;
   }
   .dark a:not(.reference a):not(.reference *) {
-    @apply text-sky hover:opacity-80;
+    /* Keep the sky foreground opaque. The former hover opacity faded it below
+       4.5:1 on several dark theme backgrounds; an underline gives the hover
+       affordance without changing its contrast. */
+    @apply text-sky hover:underline;
   }
   .dark .reference a {
     color: inherit !important;
@@ -504,6 +507,16 @@ table {
   }
 }
 
+/* Table defaults are unlayered and override Tailwind alignment utilities.
+ * Scope justification to law titles, leaving dates and controls alone. */
+.results-table td.law-result-title {
+  text-align: justify;
+  text-align-last: start;
+  text-justify: inter-word;
+  hyphens: auto;
+  overflow-wrap: break-word;
+}
+
 .article-content {
   table {
     @apply my-8;
@@ -546,6 +559,17 @@ table {
 
 html, body {
   background-color: var(--page-bg);
+}
+
+/* Calm, distinct surfaces in every accent theme. Large neighbouring washes
+ * of the same hue made the hero and canvas compete; colour stays on actions. */
+.homepage-hero {
+  background: var(--surface-header-bg);
+  border: 1px solid var(--surface-border);
+}
+
+.homepage-chat-well {
+  background: var(--surface-well-bg);
 }
 
 /* =============================================
@@ -933,7 +957,12 @@ html, body {
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    /* `none`, not translateY(0): animation-fill-mode is forwards, so the last
+     * keyframe sticks, and a retained transform makes the animated element
+     * the containing block for its position:fixed descendants. The chatbot's
+     * consent dialog was then centred on the chat column and clipped by the
+     * card's overflow-x-hidden instead of covering the viewport. */
+    transform: none;
   }
 }
 
@@ -1218,9 +1247,14 @@ html, body {
   z-index: 1;
 }
 
-/* Assistant bubble (welcome + every real answer share this look). */
+/* Assistant bubble (welcome + every real answer share this look).
+ * :not(.bg-red-100) spares the error bubble: this rule is unlayered, so it
+ * beats the layered Tailwind utilities regardless of specificity, and every
+ * failure on /chatbot (timeout, connection error, out of credits, the
+ * server-rendered @error block) was repainted as an ordinary answer. The same
+ * error is red in the widget, whose container has no .chatbot-messages. */
 .chatbot-welcome-card,
-.chatbot-messages .message:not(.ml-auto) {
+.chatbot-messages .message:not(.ml-auto):not(.bg-red-100) {
   max-width: 85%;
   padding: 0.75rem 0.9rem;
   color: var(--text-primary);
@@ -1231,7 +1265,7 @@ html, body {
 }
 
 .dark .chatbot-welcome-card,
-.dark .chatbot-messages .message:not(.ml-auto) {
+.dark .chatbot-messages .message:not(.ml-auto):not(.bg-red-100) {
   color: #e2e8f0;
   background: #1a2436;
   border-color: #26334a;
@@ -1269,7 +1303,7 @@ html, body {
   border-radius: 0.25rem;
   font-size: 8px;
   font-weight: 700;
-  color: var(--accent-600, #2563eb);
+  color: var(--accent-700, #1d4ed8);
   background: color-mix(in srgb, var(--accent-500, #3b82f6) 12%, white);
 }
 
@@ -1283,6 +1317,40 @@ html, body {
  * silent truncation. */
 .message-content {
   overflow-wrap: anywhere;
+}
+
+/* Answer prose aligns on both edges; the last line stays natural. Headings,
+ * lists, code and tables retain their readable alignment, as do user/error
+ * bubbles. Shared markup covers both the page and the floating widget. */
+.message:not(.ml-auto):not(.bg-red-100) .message-content {
+  text-align: justify;
+  text-align-last: start;
+  text-justify: inter-word;
+  hyphens: auto;
+}
+
+.message-content :is(h1, h2, h3, h4, h5, h6, ul, ol, pre, table) {
+  text-align: start;
+}
+
+.message-content :is(pre, code) {
+  hyphens: none;
+}
+
+/* The meta row under an answer carries the response time, the icon buttons
+ * and the rating invitation. The invitation cannot shrink (its trigger is
+ * white-space: nowrap), so on one non-wrapping line it pushed the buttons
+ * against the time at the left edge and hung out of the bubble - clipped
+ * mid-word by the panel's overflow-x-hidden in the widget and on phones.
+ * Wrapping gives the invitation the line its own margin-top already assumes,
+ * and puts the buttons back at the right end of the first line. */
+.message-meta {
+  flex-wrap: wrap;
+  row-gap: 0.25rem;
+}
+
+.message-meta > .ww-rating-invite {
+  flex: 1 0 100%;
 }
 
 /* ── Chatbot page structure: one-line notice, collapsible settings, aside ── */
@@ -1512,17 +1580,63 @@ html, body {
   align-items: center;
 }
 
+/* The invitation under an answer. Tinted rather than bordered-and-boxed: it
+   is a request, not a warning, and it sits under every answer so it has to be
+   quiet enough to live there. `position: relative` matters - the rating panel
+   anchors to this element. */
+.ww-rating-invite {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  /* --accent-50/200 rather than color-mix: the minifier emits a SOLID
+     var(--accent-500) fallback before every color-mix, so a browser
+     without support would paint this block fully saturated with muted
+     text on it. These tokens resolve in every theme and both modes. */
+  border: 1px solid var(--accent-200);
+  background: var(--accent-50);
+}
+
+.ww-rating-invite-text {
+  margin: 0;
+  flex: 1 1 16rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+/* Once rated, the ask has been answered - drop the tint so it stops asking. */
+.ww-rating-invite:has(.ww-rating-trigger-rated) {
+  border-color: transparent;
+  background: transparent;
+}
+
 .ww-rating-trigger {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.25rem;
+  padding: 0.3125rem 0.625rem;
   border-radius: 0.375rem;
-  transition: color 0.15s ease;
+  border: 1px solid var(--accent-300);
+  background: var(--accent-100);
+  color: var(--accent-700);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
   cursor: pointer;
 }
 
-.ww-rating-trigger:hover { color: var(--accent-500, #3b82f6); }
+.dark .ww-rating-trigger { color: var(--accent-400); }
+
+.ww-rating-trigger:hover {
+  background: var(--accent-200);
+  border-color: var(--accent-400);
+}
 
 .ww-rating-trigger:focus-visible {
   outline: 2px solid var(--accent-500, #3b82f6);
@@ -1530,6 +1644,12 @@ html, body {
 }
 
 .ww-rating-trigger-rated { color: var(--accent-600, #2563eb); font-weight: 600; }
+
+/* At 320-360px even a full-width invitation is narrower than the trigger's
+   min-content width, so the label was cut off at the bubble's edge. */
+@media (max-width: 360px) {
+  .ww-rating-trigger { white-space: normal; }
+}
 
 .ww-rating-panel {
   position: absolute;

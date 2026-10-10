@@ -22,38 +22,22 @@
           when :fr
             {
               body: "Posez votre question en langage courant. #{site_name} consulte la législation, la jurisprudence et les travaux parlementaires.",
-              questions: [
-                ['arbeidsrecht', 'Quels sont mes droits en cas de licenciement ?'],
-                ['huurrecht', 'Mon bailleur peut-il augmenter le loyer ?'],
-                ['familierecht', "Comment se règle une succession sans testament ?"]
-              ]
+              questions: StarterQuestionCatalog::WELCOME.fetch('fr')
             }
           when :de
             {
               body: "Stellen Sie Ihre Frage in eigenen Worten. #{site_name} durchsucht Gesetzgebung, Rechtsprechung und parlamentarische Dokumente.",
-              questions: [
-                ['arbeidsrecht', 'Welche Rechte habe ich bei einer Kündigung?'],
-                ['huurrecht', 'Darf mein Vermieter die Miete erhöhen?'],
-                ['familierecht', 'Wie wird ein Nachlass ohne Testament geregelt?']
-              ]
+              questions: StarterQuestionCatalog::WELCOME.fetch('de')
             }
           when :en
             {
               body: "Ask your question in your own words. #{site_name} searches legislation, case law, and parliamentary documents.",
-              questions: [
-                ['arbeidsrecht', 'What are my rights if I am dismissed?'],
-                ['huurrecht', 'Can my landlord increase the rent?'],
-                ['familierecht', 'How is an estate settled without a will?']
-              ]
+              questions: StarterQuestionCatalog::WELCOME.fetch('en')
             }
           else
             {
               body: "Stel uw vraag in uw eigen woorden. #{site_name} doorzoekt wetgeving, rechtspraak en parlementaire stukken.",
-              questions: [
-                ['arbeidsrecht', 'Wat zijn mijn rechten bij ontslag?'],
-                ['huurrecht', 'Mag mijn verhuurder de huurprijs verhogen?'],
-                ['familierecht', 'Hoe verloopt een nalatenschap zonder testament?']
-              ]
+              questions: StarterQuestionCatalog::WELCOME.fetch('nl')
             }
         end %>
       <%# The empty state is just the assistant's first chat bubble: same
@@ -91,7 +75,7 @@
               </div>
               <% @result[:sources].each_with_index do |source, index| %>
                 <%# Same scheme allowlist as the JS renderer (createSourcesElement):
-                    only http(s) and site-relative URLs — never javascript: etc. %>
+                    only http(s) and site-relative URLs, never javascript: etc. %>
                 <% safe_url = source[:url].to_s.match?(%r{\Ahttps?://|\A/}) ? source[:url] : nil %>
                 <div class="<%= safe_url ? 'text-(--accent-600) dark:text-(--accent-400) hover:underline' : 'text-gray-600 dark:text-gray-300' %>">
                   <% if safe_url %>

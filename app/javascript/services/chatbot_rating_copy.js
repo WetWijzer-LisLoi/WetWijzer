@@ -10,6 +10,28 @@
 
 const COPY = {
   rate: { nl: "Beoordeel", fr: "Évaluer", de: "Bewerten", en: "Rate" },
+  // The invitation. It says the chatbot is still in development on purpose:
+  // it is both true and the reason the answer is worth rating, and people
+  // give feedback far more readily when they are told why it is wanted.
+  // Kept to one sentence - this sits under every answer.
+  invite: {
+    nl: "Deze chatbot is nog volop in ontwikkeling. Wilt u ons helpen door de kwaliteit van dit antwoord te beoordelen?",
+    fr: "Ce chatbot est encore en plein développement. Pourriez-vous nous aider en évaluant la qualité de cette réponse ?",
+    de: "Dieser Chatbot befindet sich noch in der Entwicklung. Würden Sie uns helfen und die Qualität dieser Antwort bewerten?",
+    en: "This chatbot is still under active development. Would you help us by rating the quality of this answer?"
+  },
+  inviteAction: {
+    nl: "Antwoord beoordelen",
+    fr: "Évaluer la réponse",
+    de: "Antwort bewerten",
+    en: "Rate this answer"
+  },
+  inviteThanks: {
+    nl: "Bedankt voor uw beoordeling.",
+    fr: "Merci pour votre évaluation.",
+    de: "Danke für Ihre Bewertung.",
+    en: "Thank you for your rating."
+  },
   question: {
     nl: "Hoe nuttig was dit antwoord?",
     fr: "Dans quelle mesure cette réponse a-t-elle été utile ?",

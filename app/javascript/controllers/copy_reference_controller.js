@@ -20,7 +20,7 @@
  */
 import { Controller } from "@hotwired/stimulus"
 import { showToast } from '../utils/toast'
-import { isDutch } from '../utils/locale'
+import { uiText } from '../utils/ui_translations'
 import { prefs } from '../services/preferences_store'
 
 export default class extends Controller {
@@ -130,21 +130,21 @@ export default class extends Controller {
     const parts = []
     
     if (this.hasArticleValue && this.articleValue) {
-      const articleWord = this.isDutch ? "artikel" : "l'article"
+      const articleWord = uiText('citationArticle')
       parts.push(`${articleWord} ${this.articleValue}`)
       
       if (this.hasParagraphValue && this.paragraphValue) {
         parts.push(`§ ${this.paragraphValue}`)
       }
       
-      const ofWord = this.isDutch ? "van het" : "du"
+      const ofWord = uiText('citationOf')
       parts.push(ofWord)
     }
     
     parts.push(this.titleValue || this.numacValue)
     
     if (this.hasDateValue && this.dateValue) {
-      const bsLabel = this.isDutch ? "BS" : "MB"
+      const bsLabel = uiText('citationGazette')
       parts.push(`(${bsLabel} ${this.formatDate(this.dateValue)})`)
     }
     
@@ -210,7 +210,7 @@ export default class extends Controller {
 
   copyToClipboard(text) {
     const showFeedback = () => {
-      showToast(this.isDutch ? "Referentie gekopieerd!" : "Référence copiée!")
+      showToast(uiText('citationCopied'))
       
       // Close menu after copy
       if (this.hasMenuTarget) {
@@ -246,7 +246,4 @@ export default class extends Controller {
     }
   }
 
-  get isDutch() {
-    return isDutch()
-  }
 }

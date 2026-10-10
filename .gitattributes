@@ -20,3 +20,6 @@
 # Windows batch files must be CRLF
 *.bat text eol=crlf
 *.cmd text eol=crlf
+
+# Raw source responses kept byte for byte (the German lane's provenance fixtures)
+test/fixtures/german/** -text

@@ -44,6 +44,7 @@
       .btn-secondary { background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: none; }
       .btn-secondary:hover { background: rgba(148, 163, 184, 0.22); color: #e2e8f0; }
       .footer { margin-top: 1.5rem; font-size: 0.7rem; color: #475569; }
+      .actions a { flex-wrap: wrap; max-width: 100%; justify-content: center; text-align: center; }
     </style>
   </head>
   <body>
@@ -53,29 +54,29 @@
       </div>
       <div class="card">
         <div class="status">400</div>
-        <div class="lang-block">
+        <div class="lang-block" lang="nl">
           <span class="lang-label">NL</span>
           <h2>Ongeldig verzoek</h2>
           <p>Het verzoek kon niet worden verwerkt. Controleer de URL en probeer het opnieuw.</p>
         </div>
-        <div class="lang-block">
+        <div class="lang-block" lang="fr">
           <span class="lang-label">FR</span>
           <h2>Requête invalide</h2>
           <p>La requête n'a pas pu être traitée. Vérifiez l'URL et réessayez.</p>
         </div>
-        <div class="lang-block">
+        <div class="lang-block" lang="de">
           <span class="lang-label">DE</span>
           <h2>Ungültige Anfrage</h2>
           <p>Die Anfrage konnte nicht verarbeitet werden. Überprüfen Sie die URL und versuchen Sie es erneut.</p>
         </div>
-        <div class="lang-block">
+        <div class="lang-block" lang="en">
           <span class="lang-label">EN</span>
           <h2>Bad request</h2>
           <p>The request could not be processed. Please check the URL and try again.</p>
         </div>
         <div class="actions">
-          <a href="javascript:history.back()" class="btn-primary">&#8635; Back</a>
-          <a href="/" class="btn-secondary">&larr; Home</a>
+          <a href="/" onclick="history.back(); return false" class="btn-primary">&#8635; <span lang="nl">Terug</span> / <span lang="fr">Retour</span> / <span lang="de">Zurück</span> / <span lang="en">Back</span></a>
+          <a href="/" class="btn-secondary">&larr; <span lang="nl">Startpagina</span> / <span lang="fr">Accueil</span> / <span lang="de">Startseite</span> / <span lang="en">Home</span></a>
         </div>
       </div>
       <div class="footer">WetWijzer &mdash; Open-source zoekmachine voor Belgische wetgeving en rechtspraak</div>

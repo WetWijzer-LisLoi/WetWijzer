@@ -21,7 +21,7 @@
         🏛️ <% case I18n.locale when :fr %>Hémicycle historique (1894–2024)<% when :de %>Historischer Halbkreis (1894–2024)<% when :en %>Historical hemicycle (1894–2024)<% else %>Historisch hemicyclus (1894–2024)<% end %>
       </a>
       <a href="<%= vlpar_index_path %>" class="text-sm text-(--accent-600) dark:text-(--accent-400) hover:underline">
-        🦁 <% if I18n.locale == :fr %>Parlement flamand<% elsif I18n.locale == :de %>Flämisches Parlament<% else %>Vlaams Parlement<% end %>
+        🦁 <%= t('public_navigation.parliaments.vlaams') %>
       </a>
     </div>
   </div>
@@ -32,7 +32,7 @@
       <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
         <span class="text-xl">🏛️</span>
         <% case I18n.locale when :fr %>Hémicycle<% when :de %>Halbkreis<% when :en %>Hemicycle<% else %>Hemicyclus<% end %>
-        - <span class="text-(--accent-600) dark:text-(--accent-400)"><% case I18n.locale when :fr %>Législature<% when :de %>Legislaturperiode<% when :en %>Legislature<% else %>Legislature<% end %> <%= @legislature %></span>
+        - <span class="text-(--accent-600) dark:text-(--accent-400)"><%= t('public_navigation.legislature') %> <%= @legislature %></span>
       </h2>
 
       <div class="flex flex-col lg:flex-row items-center gap-6">
@@ -97,7 +97,7 @@
 
             <!-- Center label -->
             <text x="250" y="255" text-anchor="middle" fill="currentColor" class="text-gray-600 dark:text-gray-400 text-xs font-semibold" font-size="12">
-              <%= total_seats %> <% case I18n.locale when :fr %>sièges<% when :de %>Sitze<% when :en %>seats<% else %>seats<% end %>
+              <%= total_seats %> <%= t('public_navigation.seats') %>
             </text>
           </svg>
         </div>
@@ -171,7 +171,7 @@
 
       <% if @party_filter.present? || @name_filter.present? %>
         <a href="<%= mp_directory_path(legislature: @legislature) %>" class="px-4 py-2 text-gray-500 hover:text-gray-700 dark:hover:text-(--accent-400) text-sm">
-          ✕ Reset
+          ✕ <%= t('public_navigation.reset_filters') %>
         </a>
       <% end %>
     </form>

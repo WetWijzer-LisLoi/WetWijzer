@@ -26,6 +26,31 @@ module LegalChatbot
       'brussels' => /(?<![[:alnum:]])(?:brussel(?:s|se)?|bruxelles|bruxellois(?:e|es)?|brüssel|brüsseler|brussels)(?![[:alnum:]])/iu
     }.freeze
     UNSUPPORTED_GERMAN_COMMUNITY_PATTERN = /(?<![[:alnum:]])(?:deutschsprachige(?:n|r|s)?\s+gemeinschaft|ostbelgien|communaut[eé]\s+germanophone|duitstalige\s+gemeenschap|german-speaking\s+community)(?![[:alnum:]])/iu
+    # Family benefits, in every language the chatbot takes. Asked for the
+    # German-speaking Community, they are refused before retrieval
+    # (.unsupported_corpus_question?).
+    UNSUPPORTED_CORPUS_SUBJECT_PATTERN = /\b(?:groeipakket|kinderbijslag|allocations?\s+familiales|kindergeld|child\s+benefit|family\s+allowance)\b/i
+    GERMAN_COMMUNITY = 'german_community'
+
+    # The regions and the Community a question names, as the guards read the
+    # question text: REGION_SOURCES keys in their order, then
+    # GERMAN_COMMUNITY. The German question translation keeps the reader's
+    # question when its French names others
+    # (GermanQuestionTranslation#check_failure).
+    def self.named_regions(question)
+      text = question.to_s
+      named = REGION_SOURCES.select { |source| text.match?(REGION_PATTERNS.fetch(source)) }
+      named << GERMAN_COMMUNITY if text.match?(UNSUPPORTED_GERMAN_COMMUNITY_PATTERN)
+      named
+    end
+
+    # Family benefits in the German-speaking Community. The regional corpus
+    # has no source of that Community, so the answer path refuses such a
+    # question before any retrieval (SearchFanOut#unsupported_regional_corpus_question?).
+    def self.unsupported_corpus_question?(question)
+      text = question.to_s
+      text.match?(UNSUPPORTED_GERMAN_COMMUNITY_PATTERN) && text.match?(UNSUPPORTED_CORPUS_SUBJECT_PATTERN)
+    end
 
     def initialize(embedding_service:, language: 'nl')
       @language = language
@@ -33,9 +58,15 @@ module LegalChatbot
       @embedding_service = embedding_service
     end
 
+    # nil after a search the FAISS service answered, 'semantic_unavailable'
+    # when it did not. Read by the fan-out right after #search returns.
+    attr_reader :retrieval_degradation
+
     # Search regional legislation via FAISS
     # Returns array of document hashes with source, title, similarity, metadata.
     def search(question_embedding, question: nil, limit: 5)
+      # Reset first: one service instance can serve more than one ask.
+      @retrieval_degradation = nil
       require 'net/http'
       require 'json'
 
@@ -54,8 +85,11 @@ module LegalChatbot
         http.request(request)
       end
 
+      # Both failure branches return the same [] as "no regional hit", so they
+      # say so here; the empty-result return below deliberately does not.
       unless response.is_a?(Net::HTTPSuccess)
         Rails.logger.warn("[Regional FAISS] HTTP error: #{response.code}")
+        @retrieval_degradation = 'semantic_unavailable'
         return []
       end
 
@@ -65,7 +99,7 @@ module LegalChatbot
 
       # Convert to standard format, filtering by similarity threshold.
       # The faiss server merges the regional_meta.json sidecar into each
-      # result (source/title/article_number at TOP level — there is no nested
+      # result (source/title/article_number at TOP level; there is no nested
       # 'metadata' key). Similarity is cosine (higher=better) since the
       # metric-aware server conversion of 2026-07-13.
       docs = faiss_results.filter_map do |fr|
@@ -106,6 +140,7 @@ module LegalChatbot
       scoped_docs
     rescue StandardError => e
       Rails.logger.warn("[Regional FAISS] Error: #{e.class}")
+      @retrieval_degradation = 'semantic_unavailable'
       []
     end
 

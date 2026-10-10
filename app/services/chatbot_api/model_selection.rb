@@ -79,9 +79,9 @@ module ChatbotApi
         @credits_to_deduct = 1
       end
 
-      return if @service_bypass
+      return if @service_bypass || @model_tier_denied
 
-      @model_tier_denied ||= !LegalChatbotService.model_allowed?(@model, @user_tier)
+      @model_tier_denied = !LegalChatbotService.model_allowed?(@model, @user_tier)
     end
 
     def sanitized_requested_effort

@@ -16,12 +16,8 @@
         <img src="/images/logo-praxis-horizontal.png" alt="" class="h-5 w-auto object-contain hidden dark:block" loading="lazy">
       </span>
       <span class="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-        <%= case I18n.locale
-            when :fr then '<strong>Implémentation de ce chatbot dans votre cabinet ?</strong> Bientôt possible !'
-            when :de then '<strong>Implementierung dieses Chatbots in Ihrer Kanzlei?</strong> Bald möglich!'
-            when :en then '<strong>Implement this chatbot in your law practice?</strong> Coming soon!'
-            else '<strong>Implementatie van deze chatbot in uw advocatenpraktijk?</strong> Binnenkort mogelijk!'
-            end.html_safe %>
+        <strong><%= t('praxis_banner.teaser_title') %></strong>
+        <%= t('praxis_banner.teaser_description') %>
       </span>
       <span class="ml-auto flex-shrink-0 text-[10px] font-semibold capitalize tracking-wider px-2 py-0.5 rounded-full transition-all
                    text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-900/40

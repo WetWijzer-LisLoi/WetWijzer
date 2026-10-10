@@ -9,8 +9,8 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-  static targets = ["indicator"];
-  static values = { frame: String };
+  static targets = ["indicator", "label"];
+  static values = { frame: String, doneLabel: String };
 
   connect() {
     this.onFrameLoad = this.onFrameLoad.bind(this);
@@ -113,6 +113,12 @@ export default class extends Controller {
         timer.textContent = elapsed + "s ✓";
       }
 
+      // WW-UI-05: the words follow the state, before the fade, so the
+      // checkmark never stands beside "loading" (a polite live region).
+      if (this.hasLabelTarget && this.doneLabelValue) {
+        this.labelTarget.textContent = this.doneLabelValue;
+      }
+
       // Replace spinner with checkmark
       const spinner = this.indicatorTarget.querySelector(".animate-spin");
       if (spinner) {
@@ -126,10 +132,15 @@ export default class extends Controller {
         this.indicatorTarget.classList.add(
           "opacity-0",
           "transition-opacity",
-          "duration-500"
+          "duration-500",
+          "motion-reduce:transition-none"
         );
         setTimeout(() => {
           this.indicatorTarget.classList.add("hidden");
+          // Theme utilities can keep an opacity-zero hidden pill as an
+          // inline flex box. An inline !important declaration is the final
+          // layout fence after the completion message has been announced.
+          this.indicatorTarget.style.setProperty("display", "none", "important");
         }, 500);
       }, 1500);
     }

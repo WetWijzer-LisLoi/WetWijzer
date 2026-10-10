@@ -63,7 +63,7 @@ class SiteBrand
   # request ever arrives on them the attribution is still true.
   HOSTS = KEYS.each_with_object({}) do |key, registry|
     domain = CANONICAL_DOMAINS.fetch(key)
-    ["#{domain}", "www.#{domain}", "classic.#{domain}", "staging.#{domain}"].each do |host|
+    [domain.to_s, "www.#{domain}", "classic.#{domain}", "staging.#{domain}"].each do |host|
       registry[host] = key
     end
   end.freeze

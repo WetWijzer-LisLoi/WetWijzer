@@ -32,11 +32,14 @@ Rails.application.configure do
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
   config.force_ssl = true
 
-  # Log to production.log file + STDOUT (for journalctl)
+  # One request log: log/production.log. The second copy on STDOUT never
+  # reached journalctl, because Puma's unit appends STDOUT to
+  # /var/log/wetwijzer/production.log, so every request line and its client
+  # address was kept twice, the copy for about two more weeks (F10, D12).
   config.log_tags = [:request_id]
-  file_logger = ActiveSupport::Logger.new(Rails.root.join('log', 'production.log'), 5, 50.megabytes)
-  broadcast_logger = ActiveSupport::BroadcastLogger.new(file_logger, ActiveSupport::Logger.new($stdout))
-  config.logger = ActiveSupport::TaggedLogging.new(broadcast_logger)
+  config.logger = ActiveSupport::TaggedLogging.new(
+    ActiveSupport::Logger.new(Rails.root.join('log', 'production.log'), 5, 50.megabytes)
+  )
 
   # Change to "debug" to log everything (including potentially personally-identifiable information!)
   config.log_level = ENV.fetch('RAILS_LOG_LEVEL', 'info')
@@ -57,7 +60,7 @@ Rails.application.configure do
   }
 
   # Durable background jobs via Solid Queue. Runs in-process inside Puma (see
-  # config/puma.rb `plugin :solid_queue`, gated on SOLID_QUEUE_IN_PUMA) — no
+  # config/puma.rb `plugin :solid_queue`, gated on SOLID_QUEUE_IN_PUMA): no
   # separate worker/systemd unit, so no root needed. Jobs persist in the dedicated
   # storage/queue.sqlite3, so verification/reset emails survive worker restarts;
   # the previous :async adapter kept jobs in-memory and dropped them on every

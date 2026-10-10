@@ -1,0 +1,367 @@
+# Evidence-backed popular-law badges, audited 2026-10-08.
+# Full inventory and interpretation: docs/ops/popular-law-abbreviation-audit-2026-10-08.md.
+# A missing locale label intentionally renders no badge; never infer initials.
+# New Criminal Code I/II suffixes are house book qualifiers, not separate standard citations.
+# English labels are intentionally absent; German is retained only where Belgian usage is attested.
+
+"1804032150":
+  labels: {"nl":"oud BW","fr":"anc. C. civ."}
+  classification: style
+  sources: ["https://vena.be/afkortingen-wetgeving/","https://www.unamur.be/sites/default/files/2024-05/guiab-bi16001_corpus_final-1.pdf","https://www.wolterskluwer.com/fr-be/expert-insights/the-proof-of-a-new-law"]
+
+"2022A32057":
+  labels: {"nl":"NBW","fr":"NCC"}
+  classification: established
+  sources: ["https://www.rdc-tbh.be/article/?docEtiq=rdc_tbh2019_2p328","https://www.wolterskluwer.com/fr-be/expert-insights/the-proof-of-a-new-law"]
+
+"2026A05775":
+  # The civil-code family badge is already displayed on Book 1.
+  labels: {}
+  classification: omitted_repeated_family
+  sources: ["https://www.rdc-tbh.be/article/?docEtiq=rdc_tbh2019_2p328","https://www.wolterskluwer.com/fr-be/expert-insights/the-proof-of-a-new-law"]
+
+"1967101052":
+  labels: {"nl":"Ger.W.","fr":"C. jud."}
+  classification: established
+  sources: ["https://vena.be/afkortingen-wetgeving/","https://www.unamur.be/sites/default/files/2024-05/guiab-bi16001_corpus_final-1.pdf"]
+
+"1976071406":
+  labels: {}
+  classification: unverified
+  sources: ["https://cass.justitie.belgium.be/cass/ac/2001-05.pdf","https://socialsecurity.belgium.be/nl/netwerk/hulpkas-voor-werkloosheidsuitkeringen-hvw"]
+
+"1867060850":
+  labels: {"nl":"Sw.","fr":"C. pén.","de":"StGB"}
+  classification: style
+  sources: ["https://vena.be/afkortingen-wetgeving/","https://www.unamur.be/sites/default/files/2024-05/guiab-bi16001_corpus_final-1.pdf","https://ostbelgienlive.be/PortalData/30/Resources/dokumente/arbeitsdokumente/Glossar_StGB.pdf#page=28"]
+
+"2024002052":
+  labels: {"nl":"Sw. I","fr":"C. pén. I","de":"StGB I"}
+  classification: house_book_qualifier
+  sources: ["https://www.wolterskluwer.com/nl-be/expert-insights/new-penal-code","https://ostbelgienlive.be/PortalData/30/Resources/dokumente/arbeitsdokumente/Glossar_StGB.pdf#page=28"]
+
+"2024002088":
+  labels: {"nl":"Sw. II","fr":"C. pén. II","de":"StGB II"}
+  classification: house_book_qualifier
+  sources: ["https://www.wolterskluwer.com/nl-be/expert-insights/new-penal-code","https://ostbelgienlive.be/PortalData/30/Resources/dokumente/arbeitsdokumente/Glossar_StGB.pdf#page=28"]
+
+"1878041750":
+  labels: {"nl":"V.T.Sv.","fr":"T.P.C.I.C."}
+  classification: established
+  sources: ["https://www.ordevanvlaamsebalies.be/nl/rechtspraak-advocatuur/de-burgerlijke-vordering-in-strafzaken-verjaart-volgens-het-gemene-recht","https://pure.unamur.be/ws/portalfiles/portal/51614023/D658.pdf#page=44"]
+
+"1808111701":
+  labels: {"nl":"Sv.","fr":"C. i. cr."}
+  classification: style
+  sources: ["https://vena.be/afkortingen-wetgeving/","https://www.unamur.be/sites/default/files/2024-05/guiab-bi16001_corpus_final-1.pdf"]
+
+"2010A09589":
+  labels: {"nl":"Soc.Sw.","fr":"C. pén. soc."}
+  classification: style
+  sources: ["https://emploi.belgique.be/fr/actualites/modification-du-code-penal-social-publication-au-moniteur-dune-loi-du-15-mai-2024","https://www.unamur.be/sites/default/files/2024-05/guiab-bi16001_corpus_final-1.pdf"]
+
+"2024003317":
+  labels: {}
+  classification: descriptive
+  sources: ["https://etaamb.openjustice.be/fr/loi-du-09-avril-2024_n2024003317"]
+
+"1992000606":
+  labels: {"nl":"WPA","fr":"LFP"}
+  classification: established
+  sources: ["https://www.dekamer.be/FLWB/pdf/54/2647/54K2647001.pdf"]
+
+"1921022450":
+  labels: {}
+  classification: unverified
+  sources: []
+
+"2007000528":
+  labels: {}
+  classification: unverified
+  sources: []
+
+"1994021048":
+  labels: {"nl":"Gw.","fr":"Const."}
+  classification: style
+  sources: ["https://vena.be/afkortingen-wetgeving/","https://www.unamur.be/sites/default/files/2024-05/guiab-bi16001_corpus_final-1.pdf"]
+
+"1894041255":
+  labels: {"nl":"Kiesw.","fr":"C. élect."}
+  classification: style
+  sources: ["https://vena.be/afkortingen-wetgeving/","https://www.unamur.be/sites/default/files/2024-05/guiab-bi16001_corpus_final-1.pdf"]
+
+"1984900065":
+  labels: {"nl":"WBN","fr":"C. nat."}
+  classification: style
+  sources: ["https://vena.be/afkortingen-wetgeving/","https://www.unamur.be/sites/default/files/2024-05/guiab-bi16001_corpus_final-1.pdf"]
+
+"2019A40586":
+  labels: {"nl":"WVV","fr":"CSA"}
+  classification: established
+  sources: ["https://www.dekamer.be/doc/FLWB/pdf/55/3231/55K3231001.pdf"]
+
+"2013A11134":
+  labels: {"nl":"WER","fr":"CDE"}
+  classification: established
+  sources: ["https://vena.be/afkortingen-wetgeving/","https://www.dekamer.be/doc/FLWB/pdf/55/3231/55K3231001.pdf"]
+
+"1973100550":
+  labels: {"nl":"EOV","fr":"CBE"}
+  classification: established
+  sources: ["https://www.dekamer.be/FLWB/pdf/53/0405/53K0405001.pdf"]
+
+"1978070303":
+  labels: {"nl":"AOW","fr":"LCT"}
+  classification: established
+  sources: ["https://emploi.belgique.be/fr/themes/jours-feries-et-conges/conge-de-naissance","https://www.hetacv.be/docs/default-source/acv-csc-docsitemap/9000-militant/9370-centrales/9630-lbc-nvk-cne/9660-publicaties-voor-militanten-brochures-pour-militants/20251218-arbeidsovereenkomstengids.pdf","https://www.larcier-intersentia.com/media/wysiwyg/FR/Content-marketing/Managing-Lawyer/PDF/427045JSY_ML_23_4_N28_Web.pdf"]
+
+"1996012650":
+  labels: {"fr":"LBE"}
+  classification: established
+  sources: ["https://evenements.emploi.belgique.be/sites/default/files/content/events/dias_bosa_2019.pdf"]
+
+"1968120503":
+  labels: {}
+  classification: descriptive
+  sources: ["https://docs.vlaamsparlement.be/pfile?id=1935228"]
+
+"1971062850":
+  labels: {}
+  classification: descriptive
+  sources: ["https://www.socialsecurity.be/employer/instructions/ltds/fr/latest/instructions/fill_in_dmfa_ltds/input_model/performance_or_absence/performance_and_absence_codification.html"]
+
+"1967033001":
+  labels: {}
+  classification: descriptive
+  sources: []
+
+"2016021053":
+  labels: {"fr":"LMP"}
+  classification: established
+  sources: ["https://www.uvcw.be/marches-publics/vos-questions/art-6833"]
+
+"1971031602":
+  labels: {}
+  classification: unverified
+  sources: ["https://employment.belgium.be/en/node/3292"]
+
+"1963082803":
+  labels: {}
+  classification: descriptive
+  sources: []
+
+"1965041207":
+  labels: {}
+  classification: descriptive
+  sources: ["https://socialsecurity.belgium.be/sites/default/files/content/docs/nl/publicaties/btsz/66/btsz-66-1.pdf"]
+
+"1974010407":
+  labels: {}
+  classification: unverified
+  sources: ["https://werk.belgie.be/nl/themas/feestdagen-en-verloven/feestdagen"]
+
+"1987012597":
+  labels: {}
+  classification: descriptive
+  sources: ["https://natlex.ilo.org/dyn/natlex2/natlex2/files/download/3715/BEL-3715.pdf"]
+
+"birth_leave":
+  # Article 30 is a shortcut into the Employment Contracts Act listed above.
+  labels: {}
+  classification: omitted_repeated_family
+  sources: ["https://emploi.belgique.be/fr/themes/jours-feries-et-conges/conge-de-naissance","https://www.hetacv.be/docs/default-source/acv-csc-docsitemap/9000-militant/9370-centrales/9630-lbc-nvk-cne/9660-publicaties-voor-militanten-brochures-pour-militants/20251218-arbeidsovereenkomstengids.pdf","https://www.larcier-intersentia.com/media/wysiwyg/FR/Content-marketing/Managing-Lawyer/PDF/427045JSY_ML_23_4_N28_Web.pdf","https://emploi.belgique.be/fr/themes/jours-feries-et-conges/conge-de-naissance"]
+
+"2001013224":
+  labels: {}
+  classification: descriptive
+  sources: ["https://etaamb.openjustice.be/fr/arrete-royal-du-12-decembre-2001_n2001013224.html"]
+
+"1948092002":
+  labels: {}
+  classification: descriptive
+  sources: ["https://werk.belgie.be/sites/default/files/content/documents/Sociaal%20overleg/Regelgeving/Wet%20van%2020%20september%201948%20houdende%20organisatie%20van%20het%20bedrijfsleven.pdf"]
+
+"2007201609":
+  labels: {"nl":"SWT","fr":"RCC"}
+  classification: corrected_identity
+  sources: ["https://etaamb.openjustice.be/nl/koninklijk-besluit-van-03-mei-2007_n2007201609.html","https://www.rva.be/statistieken/methodologie/betaalstatistieken-federaal/variabelen-andere-variabelen","https://public-search.werk.belgie.be/website-download-service/joint-work-convention/32201/32201-2020-005375.pdf"]
+
+"1971041001":
+  labels: {"fr":"LAT"}
+  classification: established
+  sources: ["https://www.fedris.be/fr/propos-de-fedris"]
+
+"1998012088":
+  labels: {}
+  classification: descriptive
+  sources: ["https://cnt-nar.be/fr/dossiers-thematiques/restructurations"]
+
+"2007002098":
+  labels: {"fr":"LG"}
+  classification: established
+  sources: ["https://conseildelegalite.be/media/471/download?inline="]
+
+"2007002099":
+  labels: {"fr":"LAD"}
+  classification: established
+  sources: ["https://www.unia.be/fr/lois-f%C3%A9d%C3%A9rales-antidiscrimination-en-d%C3%A9tail/loi-antidiscrimination-en-d%C3%A9tail"]
+
+"1967072702":
+  labels: {"nl":"KB nr. 38","fr":"AR n° 38"}
+  classification: numbered_instrument
+  sources: ["https://www.ejustice.just.fgov.be/cgi_loi/article.pl?language=fr&numac_search=1967072702&view_numac=1967072702"]
+
+"tax_wib92":
+  labels: {"nl":"WIB 92","fr":"CIR 92"}
+  classification: established
+  sources: ["https://financien.belgium.be/sites/default/files/downloads/121-273-2022-nl.pdf","https://finances.belgium.be/sites/default/files/downloads/121-273-2022-fr.pdf"]
+
+"tax_kb_wib92":
+  labels: {"nl":"KB/WIB 92","fr":"AR/CIR 92"}
+  classification: established
+  sources: ["https://financien.belgium.be/sites/default/files/downloads/121-273-2022-nl.pdf","https://finances.belgium.be/sites/default/files/downloads/121-273-2022-fr.pdf"]
+
+"tax_vat":
+  labels: {"nl":"WBTW","fr":"C.TVA"}
+  classification: style
+  sources: ["https://vena.be/afkortingen-wetgeving/","https://www.fiscologue.be/fiscoloog/text.aspx?id=24004&l=FR"]
+
+"tax_registration":
+  labels: {"nl":"W.Reg.","fr":"C. enr."}
+  classification: style
+  sources: ["https://finances.belgium.be/sites/default/files/downloads/management-plan-10-01-22%20FR.pdf","https://shop.wolterskluwer.eu/INTERSHOP/web/WFS/WoltersKluwerBE-ShopBE-Site/-/-/fr_FR/ViewProductAttachment-OpenFile?DirectoryPath=inhoud&FileName=BPTIBERGFYI25001_toc.pdf&LocaleId=fr_FR&UnitName=WoltersKluwerBE-ShopBE"]
+
+"tax_succession":
+  labels: {"nl":"W.Succ.","fr":"C. succ."}
+  classification: style
+  sources: ["https://vena.be/afkortingen-wetgeving/","https://www.fiscologue.be/fiscoloog/text.aspx?id=25237&l=FR"]
+
+"2013036154":
+  labels: {"nl":"VCF","fr":"VCF"}
+  classification: established
+  sources: ["https://finance.belgium.be/sites/default/files/Statistieken_SD/FM_MF_TS_StM/MF2021_V01_complet.pdf"]
+
+"1991013192":
+  labels: {}
+  classification: descriptive
+  sources: ["https://rapportannuel.onem.be/declaration-de-confidentialite-onem/"]
+
+"1994071451":
+  labels: {"nl":"ZIV-wet","fr":"Loi AMI"}
+  classification: established
+  sources: ["https://www.inami.fgov.be/SiteCollectionDocuments/informatieblad-bijzonder-nummer-bulletin-information-hors-serie-2014.pdf","https://www.inami.fgov.be/SiteCollectionDocuments/bulletin-information-2011-2.pdf"]
+
+"2002022559":
+  labels: {"fr":"Loi DIS"}
+  classification: established
+  sources: ["https://primabook.mi-is.be/nl/wonen/inleiding","https://www.mi-is.be/sites/default/files/statistics/mi-is_2016.4_bulletin_fr.pdf"]
+
+"1967102410":
+  labels: {"nl":"KB nr. 50","fr":"AR n° 50"}
+  classification: numbered_instrument
+  sources: ["https://www.ejustice.just.fgov.be/cgi_loi/article.pl?language=fr&numac_search=1967102410&view_numac=1967102410"]
+
+"1967061510":
+  labels: {}
+  classification: removed
+  sources: ["https://www.ejustice.just.fgov.be/cgi_loi/article.pl?language=fr&numac_search=1967061510&view_numac=1967061510"]
+
+"2001022201":
+  labels: {"nl":"IGO","fr":"GRAPA"}
+  classification: established
+  sources: ["https://www.sfpd.fgov.be/nl/recht-op-pensioen/igo","https://www.sfpd.fgov.be/fr/droit-a-la-pension/grapa"]
+
+"2024202431":
+  labels: {}
+  classification: descriptive
+  sources: ["https://www.sfpd.fgov.be/files/3284/recueil-pensions-de-fonctionnaires-octobre-2024.pdf"]
+
+"2020A43545":
+  labels: {"nl":"VCW"}
+  classification: established
+  sources: ["https://vena.be/afkortingen-wetgeving/"]
+
+"2009A35738":
+  labels: {"nl":"VCRO","fr":"VCRO"}
+  classification: established
+  sources: ["https://vena.be/afkortingen-wetgeving/","https://codex.vlaanderen.be/PrintDocument.ashx?geannoteerd=false&id=1018245"]
+
+"2018015087":
+  labels: {}
+  classification: descriptive
+  sources: ["https://codex.vlaanderen.be/PrintDocument.ashx?geannoteerd=false&id=1029963"]
+
+"2017040697":
+  labels: {}
+  classification: descriptive
+  sources: []
+
+"2018201408":
+  labels: {}
+  classification: descriptive
+  sources: ["https://wallex.wallonie.be/files/pdfs/21/5046_D%C3%A9cret_relatif_au_bail_d%27habitation_01-09-2018-28-02-2019.pdf"]
+
+"1968031601":
+  labels: {"nl":"WVW"}
+  classification: established
+  sources: ["https://www.nelsonvanlocke.be/nl/tools/wetgeving/","https://libstore.ugent.be/fulltxt/RUG01/002/349/578/RUG01-002349578_2017_0001_AC.pdf"]
+
+"1989011371":
+  labels: {"nl":"WAM","fr":"WAM"}
+  classification: established
+  sources: ["https://www.wanted.law/fr/Most-Wanted/Wanted-Facts/Article/Id/23266/Quand-dois-je-souscrire-une-assurance-automobile-obligatoire","https://www.lachambre.be/FLWB/pdf/56/1235/56K1235001.pdf"]
+
+"2023044829":
+  labels: {"nl":"KVH"}
+  classification: corrected
+  sources: ["https://www.vlaamsparlement.be/nl/kaderdecreet-vlaamse-handhaving-kvh","https://www.vlaanderen.be/agentschap-justitie-en-handhaving/handhavingsbeleid-in-vlaanderen/kaderdecreet-vlaamse-handhaving"]
+
+"2013A31614":
+  labels: {}
+  classification: descriptive
+  sources: ["https://www.unamur.be/sites/default/files/2024-05/guiab-bi16001_corpus_final-1.pdf#page=66"]
+
+"1951043003":
+  labels: {}
+  classification: descriptive
+  sources: []
+
+"1969110450":
+  labels: {"fr":"L.B.F."}
+  classification: established
+  sources: ["https://www.reseau-radis.be/wp-content/uploads/2021/07/Guide-redaction-contrat_final-1.pdf"]
+
+"1971070904":
+  labels: {}
+  classification: descriptive
+  sources: []
+
+"2014036510":
+  labels: {}
+  classification: unverified
+  sources: []
+
+"2010035645":
+  labels: {}
+  classification: unverified
+  sources: []
+
+"1980121550":
+  labels: {}
+  classification: unverified
+  sources: []
+
+"2002022737":
+  labels: {"fr":"L.D.P."}
+  classification: established
+  sources: ["https://pure.unamur.be/ws/portalfiles/portal/55020374/6409.pdf"]
+
+"2019A12565":
+  labels: {}
+  classification: unverified
+  sources: ["https://etaamb.openjustice.be/fr/loi-du-08-mai-2019_n2019012565","https://vena.be/afkortingen-wetgeving/"]
+
+"2014A15009":
+  labels: {"fr":"C. cons."}
+  classification: style
+  sources: ["https://research.dial.uclouvain.be/server/api/core/bitstreams/658a86a3-ddec-4c22-a31f-4deb39cd5088/content","https://vena.be/afkortingen-wetgeving/"]

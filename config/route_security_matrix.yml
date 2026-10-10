@@ -19,7 +19,7 @@ matrix:
   sessions#create: { auth: none, csrf: required, ownership: n/a, rate_limit: login/ip, billing: false, unauthorized: n/a }
   sessions#destroy: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
   sessions#reactivate: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
-  registrations#create: { auth: none, csrf: required, ownership: n/a, rate_limit: registration limiter (AuthRateLimiting), billing: false, unauthorized: n/a }
+  registrations#create: { auth: none, csrf: required, ownership: n/a, rate_limit: RegistrationAdmissionPolicy + signup/ip, billing: false, unauthorized: n/a }
   registrations#resend_confirmation: { auth: none, csrf: required, ownership: n/a, rate_limit: AuthRateLimiting, billing: false, unauthorized: n/a }
   password_resets#create: { auth: none, csrf: required, ownership: n/a, rate_limit: password_reset/ip + password_reset/email, billing: false, unauthorized: n/a }
   password_resets#update: { auth: none, csrf: required, ownership: token, rate_limit: password_reset/ip, billing: false, unauthorized: 302 }
@@ -54,6 +54,9 @@ matrix:
   admin/users#send_password_reset: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
   admin/users#cancel_deletion: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
   admin/users#toggle_active: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#suspend_for_abuse: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#change_abuse_suspension_reason: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#lift_abuse_suspension: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
   admin/users#update_tier: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
   admin/users#set_credits: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
   admin/users#resend_verification: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
@@ -74,7 +77,7 @@ matrix:
   admin/invoices#create: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
   admin/invoices#destroy: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
   chatbot#create: { auth: session, csrf: required, ownership: self, rate_limit: chatbot limiter, billing: true, unauthorized: 302 }
-  chatbot#ask: { auth: session, csrf: required, ownership: self, rate_limit: chatbot limiter, billing: true, unauthorized: 302 }
+  chatbot#ask: { auth: none, csrf: required, ownership: n/a, rate_limit: req/ip, billing: false, unauthorized: 410 } # retired (WW-SEC-17): answers 410, no provider, no ledger
   api/chatbot_quality_probe#arm_rate_limit: { auth: harness_flag, csrf: signed_exception, ownership: n/a, rate_limit: n/a (disabled outside the quality harness), billing: false, unauthorized: 404 }
   api/chatbot_quality_probe#cleanup_rate_limit: { auth: harness_flag, csrf: signed_exception, ownership: n/a, rate_limit: n/a, billing: false, unauthorized: 404 }
   api/chatbot_quality_probe#reservation_audit: { auth: harness_flag, csrf: signed_exception, ownership: n/a, rate_limit: n/a, billing: false, unauthorized: 404 }
@@ -86,12 +89,12 @@ matrix:
   api/chatbot_saved_answers#save: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
   api/chatbot_saved_answers#destroy_saved: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
   api/chatbot#deep_analysis: { auth: session, csrf: required, ownership: self, rate_limit: deep-analysis quota, billing: true, unauthorized: 401 }
-  api/chatbot#log_slow_query: { auth: none, csrf: required, ownership: n/a, rate_limit: req/ip, billing: false, unauthorized: n/a }
   api/chatbot_conversations#destroy_conversation: { auth: session, csrf: required, ownership: token, rate_limit: req/ip, billing: false, unauthorized: 401 }
   api/chatbot_conversations#update_conversation: { auth: session, csrf: required, ownership: token, rate_limit: req/ip, billing: false, unauthorized: 401 }
   api/chatbot_conversations#update_encrypted_payload: { auth: session, csrf: required, ownership: token, rate_limit: req/ip, billing: false, unauthorized: 401 }
   api/chatbot_conversations#grant_consent: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
   api/chatbot_conversations#revoke_consent: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
+  api/chatbot_conversations#finish_history_cleanup: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
   api/chatbot_conversations#import_conversations: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
   api/bookmarks#create: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }
   api/bookmarks#destroy: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 401 }

@@ -8,7 +8,7 @@
 import { ConversationCrypto } from "../../services/conversation_crypto"
 
 export const historyMethods = {
-  // NOTE: every method in this object literal must be defined exactly once —
+  // NOTE: every method in this object literal must be defined exactly once:
   // JS object literal property overwriting means only the LAST definition
   // survives (this silently killed renderHistoryList/getConversationHistory
   // duplicates in the past).
@@ -42,21 +42,33 @@ export const historyMethods = {
 
   // Check if we should persist conversations server-side
 
+  // WW-PRIV-10: a fetch started before the conversation context changed (a
+  // revocation bumps the epoch) applies nothing. null means "stale, change
+  // nothing", which differs from an empty history.
   async getConversationHistory() {
     if (!this._isLoggedIn()) return []
 
+    const epoch = this._conversationContextEpoch || 0
+    const current = () => epoch === (this._conversationContextEpoch || 0)
     try {
       const response = await fetch('/api/chatbot/conversations')
+      if (!current()) return null
       if (!response.ok) return []
       const data = await response.json()
+      if (!current()) return null
 
       // Update consent state from server response
       if (data.consent !== undefined) {
         this._setConsentState(data.consent)
       }
+      // WW-PRIV-10: a history deletion the server still has to finish.
+      if (data.history_cleanup_pending !== undefined) {
+        this._setHistoryCleanupPending(data.history_cleanup_pending)
+      }
 
       return data.conversations || []
     } catch (e) {
+      if (!current()) return null
       console.warn('Failed to fetch conversation history:', e)
       return []
     }
@@ -303,6 +315,20 @@ export const historyMethods = {
     const id = event.currentTarget?.dataset?.conversationHistoryId
     if (!id) return
 
+    // A mis-tap here cannot be taken back: the DELETE below destroys ciphertext
+    // nobody can recover, and the button sits against the right edge of a row
+    // whose own padding opens the conversation instead. Now that the button is
+    // permanently visible where nothing can hover, a thumb finds it on every
+    // row. Same window.confirm as disableAndDeleteHistory, which guards the
+    // same loss one level up.
+    const warning = {
+      nl: 'Dit gesprek definitief verwijderen? Dit kan niet ongedaan worden gemaakt.',
+      fr: 'Supprimer définitivement cette conversation ? Cette action est irréversible.',
+      de: 'Dieses Gespräch endgültig löschen? Das lässt sich nicht rückgängig machen.',
+      en: 'Permanently delete this conversation? This cannot be undone.'
+    }[this.languageValue] || 'Dit gesprek definitief verwijderen? Dit kan niet ongedaan worden gemaakt.'
+    if (!window.confirm(warning)) return false
+
     try {
       const response = await fetch(`/api/chatbot/conversations/${encodeURIComponent(id)}`, {
         method: 'DELETE',
@@ -337,6 +363,15 @@ export const historyMethods = {
       }
 
       await this.renderHistoryList()
+      // The redraw destroys the button that was just pressed, so focus fell to
+      // <body>: a keyboard user had to Tab in from the top of the page again,
+      // and with no success toast a screen reader said nothing at all about a
+      // row that had disappeared.
+      this._focusHistoryList()
+      this._showToast?.(
+        { nl: 'Gesprek verwijderd.', fr: 'Conversation supprimée.', de: 'Gespräch gelöscht.', en: 'Conversation deleted.' }[this.languageValue] || 'Gesprek verwijderd.',
+        'success'
+      )
       return true
     } catch (e) {
       console.error('Delete conversation failed:', e)
@@ -349,9 +384,113 @@ export const historyMethods = {
   },
 
   _syncHistoryConsentControls() {
-    const enabled = Boolean(this._hasConsent)
+    const consented = Boolean(this._hasConsent)
+    // WW-PRIV-10: a deletion the server could not finish stays visible, with
+    // its retry, whether or not history is still switched on.
+    const cleanupPending = Boolean(this._historyCleanupPending)
     this.element?.querySelectorAll?.('[data-history-storage-actions]').forEach(element => {
-      element.classList.toggle('hidden', !enabled)
+      element.classList.toggle('hidden', !consented && !cleanupPending)
+      element.querySelectorAll?.('[data-history-disable-control]').forEach(control => {
+        control.classList.toggle('hidden', !consented)
+      })
+      element.querySelectorAll?.('[data-history-cleanup]').forEach(block => {
+        block.classList.toggle('hidden', !cleanupPending)
+      })
+    })
+  },
+
+  // WW-PRIV-10: what the page says about a history deletion the server could
+  // not finish at once.
+  _historyCleanupMessage(kind) {
+    const messages = {
+      partial: {
+        nl: 'Geschiedenis is uitgeschakeld, maar nog niet alle opgeslagen gesprekken konden worden verwijderd. Dat wordt automatisch opnieuw geprobeerd.',
+        fr: "L'historique est désactivé, mais toutes les conversations enregistrées n'ont pas encore pu être supprimées. La suppression sera relancée automatiquement.",
+        de: 'Der Verlauf ist deaktiviert, aber noch nicht alle gespeicherten Gespräche konnten gelöscht werden. Das Löschen wird automatisch wiederholt.',
+        en: 'History is switched off, but not all saved conversations could be deleted yet. Deletion will be retried automatically.'
+      },
+      status: {
+        nl: 'Geschiedenis is uitgeschakeld. Het verwijderen van uw opgeslagen gesprekken is nog niet voltooid.',
+        fr: "L'historique est désactivé. La suppression de vos conversations enregistrées n'est pas encore terminée.",
+        de: 'Der Verlauf ist deaktiviert. Das Löschen Ihrer gespeicherten Gespräche ist noch nicht abgeschlossen.',
+        en: 'History is switched off. Deleting your saved conversations has not finished yet.'
+      },
+      retry: { nl: 'Verwijderen opnieuw proberen', fr: 'Relancer la suppression', de: 'Löschen erneut versuchen', en: 'Retry deletion' },
+      done: {
+        nl: 'Uw opgeslagen gesprekken zijn verwijderd.',
+        fr: 'Vos conversations enregistrées ont été supprimées.',
+        de: 'Ihre gespeicherten Gespräche wurden gelöscht.',
+        en: 'Your saved conversations have been deleted.'
+      },
+      still: {
+        nl: 'Verwijderen is nog niet gelukt. Het wordt automatisch opnieuw geprobeerd.',
+        fr: "La suppression n'a pas encore abouti. Elle sera relancée automatiquement.",
+        de: 'Das Löschen ist noch nicht gelungen. Es wird automatisch wiederholt.',
+        en: 'Deletion has not succeeded yet. It will be retried automatically.'
+      },
+      grant_blocked: {
+        nl: 'Geschiedenis kan pas weer worden ingeschakeld als uw eerder opgeslagen gesprekken zijn verwijderd. Probeer het later opnieuw.',
+        fr: "L'historique pourra être réactivé une fois vos conversations enregistrées précédemment supprimées. Réessayez plus tard.",
+        de: 'Der Verlauf kann erst wieder aktiviert werden, wenn Ihre früher gespeicherten Gespräche gelöscht sind. Bitte versuchen Sie es später erneut.',
+        en: 'History can be switched on again once your earlier saved conversations have been deleted. Please try again later.'
+      }
+    }[kind]
+    return messages[this.languageValue] || messages.nl
+  },
+
+  _setHistoryCleanupPending(pending) {
+    this._historyCleanupPending = Boolean(pending)
+    this._syncHistoryConsentControls?.()
+  },
+
+  // WW-PRIV-10: finishes a history deletion the server could not complete,
+  // through its own endpoint: it needs no consent and never withdraws one, so
+  // a page left open cannot touch history stored after a new grant. No
+  // confirmation: the user already chose to delete.
+  async retryHistoryCleanup(event) {
+    event?.preventDefault?.()
+    event?.stopPropagation?.()
+    if (this._historyCleanupRetryInFlight) return this._historyCleanupRetryInFlight
+
+    const request = (async () => {
+      this._setHistoryCleanupBusy(true)
+      try {
+        const response = await fetch('/api/chatbot/conversations/history_cleanup', {
+          method: 'DELETE',
+          headers: { 'X-CSRF-Token': this.csrfToken }
+        })
+        let result = null
+        try { result = await response.json() } catch (_) { /* validated below */ }
+        if (response.ok && result?.success === true && result?.history_cleanup_pending === false) {
+          this._setHistoryCleanupPending(false)
+          this._showToast?.(this._historyCleanupMessage('done'), 'success')
+          await this.renderHistoryList?.()
+          return true
+        }
+        this._showToast?.(this._historyCleanupMessage('still'), 'error')
+        return false
+      } catch (error) {
+        console.error('[History] Deletion retry failed:', error)
+        this._showToast?.(this._historyCleanupMessage('still'), 'error')
+        return false
+      } finally {
+        this._setHistoryCleanupBusy(false)
+      }
+    })()
+
+    this._historyCleanupRetryInFlight = request
+    try {
+      return await request
+    } finally {
+      if (this._historyCleanupRetryInFlight === request) this._historyCleanupRetryInFlight = null
+    }
+  },
+
+  _setHistoryCleanupBusy(busy) {
+    this.element?.querySelectorAll?.('[data-history-cleanup-retry]').forEach(button => {
+      button.disabled = busy
+      if (busy) button.setAttribute('aria-busy', 'true')
+      else button.removeAttribute('aria-busy')
     })
   },
 
@@ -443,6 +582,17 @@ export const historyMethods = {
         })
         let result = null
         try { result = await response.json() } catch (_) { /* validated below */ }
+
+        // WW-PRIV-10: the withdrawal is committed but the deletion is not
+        // finished (the server retries it). Clear the local state as for a
+        // full success, say what is still pending, and offer the retry.
+        if (response.status === 503 && result?.error === 'history_deletion_failed' && result?.consent === false) {
+          this._resetConversationStorageClientState()
+          this._setHistoryCleanupPending(true)
+          this._showToast?.(this._historyCleanupMessage('partial'), 'error')
+          await this.renderHistoryList?.()
+          return false
+        }
         if (!response.ok || result?.success !== true) {
           throw new Error(result?.error || `HTTP ${response.status || 'error'}`)
         }
@@ -450,6 +600,7 @@ export const historyMethods = {
         // Destructive local reset happens only after the server explicitly
         // confirms success. A timeout/HTML response never destroys the key.
         this._resetConversationStorageClientState()
+        this._setHistoryCleanupPending(false)
         this._showToast?.(
           { nl: 'Gespreksgeschiedenis uitgeschakeld en verwijderd.', fr: 'Historique désactivé et supprimé.', de: 'Gesprächsverlauf deaktiviert und gelöscht.', en: 'Conversation history disabled and deleted.' }[this.languageValue] || 'Gespreksgeschiedenis uitgeschakeld en verwijderd.',
           'success'
@@ -509,10 +660,24 @@ export const historyMethods = {
       return
     }
 
+    // WW-PRIV-10: a newer render, or a changed conversation context (a
+    // revocation bumps the epoch), wins over this one after every await. Still
+    // the latest render but the context moved: render again under it.
+    const epoch = this._conversationContextEpoch || 0
+    const render = (this._historyRenderSequence = (this._historyRenderSequence || 0) + 1)
+    const superseded = () => {
+      if (render !== this._historyRenderSequence) return true
+      if (epoch === (this._conversationContextEpoch || 0)) return false
+
+      this.renderHistoryList()
+      return true
+    }
+
     // Show loading
     container.innerHTML = '<div class="p-4 text-center"><div class="animate-spin w-5 h-5 border-2 border-gray-300 border-t-blue-500 rounded-full mx-auto"></div></div>'
 
     const history = await this.getConversationHistory()
+    if (superseded() || history === null) return
 
     if (!this._shouldPersist()) {
       const _t = (map) => map[this.languageValue] || map.nl
@@ -558,27 +723,52 @@ export const historyMethods = {
       }
       return { ...conv, title }
     }))
+    if (superseded()) return
+
+    const _t = (map) => map[this.languageValue] || map.nl
+    // Tooltip and accessible name of the row's delete button. It read "Delete"
+    // on all four sites.
+    const deleteLabel = _t({ nl: 'Verwijderen', fr: 'Supprimer', de: 'Löschen', en: 'Delete' })
+    // The same map as _getExportDate. 'de' used to fall through to en-GB, so
+    // gesetzguide.be showed "12 Oct" where German reads "12. Okt.".
+    const dateLocale = { nl: 'nl-BE', fr: 'fr-BE', de: 'de-DE', en: 'en-GB' }[this.languageValue] || 'nl-BE'
 
     container.innerHTML = decryptedHistory.map(conv => {
       const name = this._escapeHtml(conv.title || 'Conversation')
       const date = new Date(conv.updated_at || conv.created_at)
-      const timeStr = date.toLocaleDateString(this.languageValue === 'nl' ? 'nl-BE' : this.languageValue === 'fr' ? 'fr-BE' : 'en-GB', { day: 'numeric', month: 'short' })
+      const timeStr = date.toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' })
       const msgCount = conv.message_count || 0
+      // French counts zero as singular.
+      const single = this.languageValue === 'fr' ? msgCount < 2 : msgCount === 1
+      const msgLabel = single
+        ? _t({ nl: 'bericht', fr: 'message', de: 'Nachricht', en: 'message' })
+        : _t({ nl: 'berichten', fr: 'messages', de: 'Nachrichten', en: 'messages' })
 
+      // The title block is a real <button>, so Tab stops on every conversation
+      // and Enter or Space opens it: as a plain div the row could only be
+      // opened with a mouse. It carries no action of its own; its click bubbles
+      // to the row, which keeps the whole row clickable and loads exactly once.
+      //
+      // The delete button must never be invisible while it can be pressed.
+      // group-hover compiles inside @media (hover:hover), so on a phone or
+      // tablet it stayed at opacity 0 for good and a tap on the right end of a
+      // row deleted the conversation instead of opening it; by keyboard, Tab
+      // landed on it with nothing to see and Enter deleted. p-1.5 rather than
+      // p-1 keeps the box it offers a thumb at 26px, over the 24px floor.
       return `
         <div class="group flex items-center gap-2 p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
              data-action="click->chatbot#loadFromHistory"
              data-conversation-history-id="${conv.id}">
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">${name}</p>
-            <p class="text-xs text-gray-400 dark:text-gray-500">${timeStr} · ${msgCount} msg</p>
-          </div>
+          <button type="button" class="flex-1 min-w-0 text-left cursor-pointer">
+            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 truncate">${name}</span>
+            <span class="block text-xs text-gray-400 dark:text-gray-500">${timeStr} · ${msgCount} ${msgLabel}</span>
+          </button>
           <button type="button"
                   data-action="click->chatbot#deleteFromHistory"
                   data-conversation-history-id="${conv.id}"
-                  class="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all"
-                  title="Delete">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  class="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100 p-1.5 text-gray-400 hover:text-red-500 transition-all"
+                  title="${deleteLabel}" aria-label="${deleteLabel}">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
             </svg>
           </button>
@@ -759,11 +949,20 @@ export const historyMethods = {
     const focusables = () => Array.from(modal.querySelectorAll(
       'button:not([disabled]), input:not([disabled]), a[href]'
     )).filter((el) => el.offsetParent !== null)
-    focusables()[0]?.focus()
+    // Focus goes to the card, not to the first control. That control is the
+    // password field: on a phone it raised the keyboard over a dialog the user
+    // had not read yet, and scrolled the card past its title to reach it.
+    const card = modal.querySelector('[data-consent-card]')
+    const initial = card || focusables()[0]
+    initial?.focus()
 
     this._consentTrapHandler = (event) => {
       if (event.key === 'Escape') {
+        // Stopped here on purpose, like the locked-tier dialog: the widget's
+        // own Escape handler on document would otherwise close the whole chat
+        // panel behind this dialog and snap a dragged widget back to its corner.
         event.preventDefault()
+        event.stopPropagation()
         this.declineConsentDialog()
         return
       }
@@ -772,7 +971,7 @@ export const historyMethods = {
       if (items.length === 0) return
       const first = items[0]
       const last = items[items.length - 1]
-      if (event.shiftKey && document.activeElement === first) {
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === card)) {
         event.preventDefault()
         last.focus()
       } else if (!event.shiftKey && document.activeElement === last) {
@@ -783,13 +982,37 @@ export const historyMethods = {
     modal.addEventListener('keydown', this._consentTrapHandler)
   },
 
+  // Where focus lands when renderHistoryList() has just replaced whatever the
+  // user pressed: the sidebar's "Inschakelen" button on an accept, a row's
+  // delete button after a delete. The list is the nearest thing still there.
+  // Not the question box: on a phone that raises the keyboard underneath the
+  // open sidebar.
+  _focusHistoryList() {
+    const list = this.element?.querySelector?.('.chat-history-sidebar:not(.hidden) .chat-history-list')
+    if (!list) return false
+    list.setAttribute('tabindex', '-1')
+    list.focus({ preventScroll: true })
+    return true
+  },
+
+  // Runs on EVERY close, accept as well as decline. The accept paths only hid
+  // the dialog, which hides the focused button with it: focus fell to <body>
+  // and a keyboard or screen-reader user lost their place in the chat.
   _teardownConsentTrap(modal) {
     if (this._consentTrapHandler && modal) {
       modal.removeEventListener('keydown', this._consentTrapHandler)
       this._consentTrapHandler = null
     }
-    this._consentPreviousFocus?.focus?.()
+    const opener = this._consentPreviousFocus
     this._consentPreviousFocus = null
+    if (!opener) return
+    if (opener.isConnected) {
+      opener.focus?.()
+      return
+    }
+    // One opener does not survive an accept: the sidebar's "Inschakelen"
+    // button, replaced when renderHistoryList() redraws the list it sits in.
+    if (!this._focusHistoryList()) this._focusChatbotFallback?.()
   },
 
   async acceptConsentDialog() {
@@ -918,7 +1141,18 @@ export const historyMethods = {
           'success'
         )
         this.renderHistoryList()
+        // After renderHistoryList(), which replaces the list synchronously: the
+        // teardown has to see whether the opener survived it.
+        this._teardownConsentTrap(modal)
         return true
+      }
+
+      // WW-PRIV-10: history from an earlier withdrawal is still being
+      // deleted; the server grants nothing until it is gone.
+      if (res.status === 503 && result?.error === 'history_cleanup_pending') {
+        const cleanupError = new Error('Earlier history is still being deleted')
+        cleanupError.code = 'history_cleanup_pending'
+        throw cleanupError
       }
 
       if (!res.ok || result?.zero_knowledge !== true ||
@@ -940,9 +1174,16 @@ export const historyMethods = {
         'success'
       )
       this.renderHistoryList()
+      this._teardownConsentTrap(modal) // after the list redraw, as above
       return true
     } catch (e) {
       console.error('[ZK] Secure history setup failed:', e)
+      if (e?.code === 'history_cleanup_pending') {
+        this._setHistoryCleanupPending(true)
+        this._showToast(this._historyCleanupMessage('grant_blocked'), 'error')
+        passwordInput?.focus()
+        return false
+      }
       this._showToast(
         (e?.code === 'conversation_storage_mode_conflict'
           ? {
@@ -977,8 +1218,15 @@ export const historyMethods = {
         },
         body: JSON.stringify({})
       })
-      const result = res.ok ? await res.json() : null
+      let result = null
+      try { result = await res.json() } catch (_) { /* validated below */ }
 
+      // WW-PRIV-10: history from an earlier withdrawal is still being deleted.
+      if (res.status === 503 && result?.error === 'history_cleanup_pending') {
+        this._setHistoryCleanupPending(true)
+        this._showToast(this._historyCleanupMessage('grant_blocked'), 'error')
+        return false
+      }
       if (!res.ok || result?.zero_knowledge !== false) {
         throw new Error(`Standard consent was not confirmed (${res.status})`)
       }
@@ -1002,6 +1250,9 @@ export const historyMethods = {
         'success'
       )
       this.renderHistoryList()
+      // After renderHistoryList(): the teardown has to see whether the opener
+      // survived the list redraw (see _teardownConsentTrap).
+      this._teardownConsentTrap(modal)
       return true
     } catch (e) {
       console.error('[History] Standard consent failed:', e)

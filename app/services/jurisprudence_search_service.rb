@@ -28,8 +28,8 @@ class JurisprudenceSearchService
 
       db = connection
       conditions, bind_params = build_conditions(db, query, court, year, locale, subject: subject,
-                                                search_body: search_body,
-                                                date_from: date_from, date_to: date_to)
+                                                                                 search_body: search_body,
+                                                                                 date_from: date_from, date_to: date_to)
 
       where_clause = conditions.any? ? "WHERE #{conditions.join(' AND ')}" : ''
 

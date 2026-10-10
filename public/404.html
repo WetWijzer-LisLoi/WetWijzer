@@ -131,6 +131,7 @@
         font-size: 0.7rem;
         color: #475569;
       }
+      .actions a { flex-wrap: wrap; max-width: 100%; justify-content: center; text-align: center; }
     </style>
   </head>
   <body>
@@ -142,33 +143,33 @@
       <div class="card">
         <div class="status">404</div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="nl">
           <span class="lang-label">NL</span>
           <h2>Pagina niet gevonden</h2>
           <p>De pagina die u zoekt bestaat niet of is verplaatst.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="fr">
           <span class="lang-label">FR</span>
           <h2>Page non trouvée</h2>
           <p>La page que vous recherchez n'existe pas ou a été déplacée.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="de">
           <span class="lang-label">DE</span>
           <h2>Seite nicht gefunden</h2>
           <p>Die gesuchte Seite existiert nicht oder wurde verschoben.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="en">
           <span class="lang-label">EN</span>
           <h2>Page not found</h2>
           <p>The page you are looking for does not exist or has been moved.</p>
         </div>
         <div class="actions">
-          <a href="/laws" class="btn-primary">&#128269; Search</a>
-          <a href="javascript:history.back()" class="btn-secondary">&larr; Back</a>
-          <a href="/" class="btn-secondary">Home</a>
+          <a href="/laws" class="btn-primary">&#128269; <span lang="nl">Zoeken</span> / <span lang="fr">Rechercher</span> / <span lang="de">Suchen</span> / <span lang="en">Search</span></a>
+          <a href="/" onclick="history.back(); return false" class="btn-secondary">&larr; <span lang="nl">Terug</span> / <span lang="fr">Retour</span> / <span lang="de">Zurück</span> / <span lang="en">Back</span></a>
+          <a href="/" class="btn-secondary"><span lang="nl">Startpagina</span> / <span lang="fr">Accueil</span> / <span lang="de">Startseite</span> / <span lang="en">Home</span></a>
         </div>
       </div>
 

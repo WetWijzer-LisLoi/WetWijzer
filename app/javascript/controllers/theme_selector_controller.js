@@ -21,11 +21,27 @@ export default class extends Controller {
   }
 
   connect() {
-    // Apply stored theme on connect, default to 'original' (classic look) when none
+    this._connected = true
+    // Apply an already-hydrated preference immediately. If the cache is empty,
+    // leave the server-rendered class/default untouched until hydration.
     const stored = prefs.get('theme_accent', null)
-    const theme = stored || 'original'
-    this._applyTheme(theme)
-    this._currentTheme = theme
+    if (stored) {
+      const theme = this._canonicalTheme(stored)
+      this._applyTheme(theme)
+      this._currentTheme = theme
+    }
+
+    // prefs.init() hydrates the server cache asynchronously. Re-read after it
+    // completes so a full navigation does not reset a logged-in user's accent.
+    // A selection made while the GET was in flight remains authoritative in
+    // PreferencesStore and is therefore not overwritten here.
+    this._hydratePromise = prefs.init().then(() => {
+      if (!this._connected) return
+      const hydrated = this._canonicalTheme(prefs.get('theme_accent', null))
+      this._applyTheme(hydrated)
+      this._currentTheme = hydrated
+      this._highlightActiveTheme()
+    }).catch(() => {})
 
     // Close on escape
     this._onKeydown = (e) => {
@@ -35,6 +51,7 @@ export default class extends Controller {
   }
 
   disconnect() {
+    this._connected = false
     if (this._onKeydown) document.removeEventListener('keydown', this._onKeydown)
   }
 
@@ -57,7 +74,7 @@ export default class extends Controller {
   }
 
   select(event) {
-    const theme = event.params?.theme
+    const theme = this._canonicalTheme(event.params?.theme)
     if (!theme) return
     this._applyTheme(theme)
     this._currentTheme = theme
@@ -87,6 +104,12 @@ export default class extends Controller {
     document.body.style.display = 'none'
     void document.body.offsetHeight
     document.body.style.display = ''
+  }
+
+  _canonicalTheme(theme) {
+    const candidate = typeof theme === 'string' ? theme : ''
+    const allowed = this.buttonTargets.map(btn => btn.dataset.themeSelectorThemeParam)
+    return allowed.includes(candidate) ? candidate : 'original'
   }
 
   _highlightActiveTheme() {

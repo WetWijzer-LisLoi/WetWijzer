@@ -58,6 +58,30 @@
     color: inherit;
   }
 
+  /* Long prose fills the reading column; the last line stays natural. */
+  .legal-page p {
+    text-align: justify;
+    text-align-last: start;
+    hyphens: auto;
+    overflow-wrap: break-word;
+  }
+
+  /* Do not stretch captions, structured content or narrow card copy. */
+  .legal-page .last-updated,
+  .legal-page li p,
+  .legal-page th p,
+  .legal-page td p,
+  .legal-page pre p,
+  .legal-page .security-card p,
+  .legal-page .config-card p {
+    text-align: start;
+  }
+
+  .legal-page pre,
+  .legal-page code {
+    hyphens: none;
+  }
+
   .legal-page strong {
     color: inherit;
   }

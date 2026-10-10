@@ -1,6 +1,14 @@
 import { Controller } from "@hotwired/stimulus"
 import { showToast } from '../utils/toast'
 import { getLocale } from '../utils/locale'
+import { uiText } from '../utils/ui_translations'
+
+// WW-SEC-15 follow-up: an imported file is untrusted. Only identifiers the
+// server would accept (Api::BookmarksController::NUMAC_FORMAT) are kept, and
+// imported text reaches the page as text, never as markup.
+const NUMAC_FORMAT = /^[0-9A-Za-z_-]{1,50}$/
+const TITLE_MAX = 500
+const FOLDER_MAX = 100
 
 /**
  * Bookmarks Page Controller
@@ -112,10 +120,8 @@ export default class extends Controller {
     if (!this.hasFolderListTarget) return
     const folders = this.getFolders()
     const bookmarks = this.getBookmarks()
-    const locale = getLocale()
-
-    const allLabel = locale === 'fr' ? 'Tous' : locale === 'de' ? 'Alle' : 'Alle'
-    const unfiledLabel = locale === 'fr' ? 'Non classé' : locale === 'de' ? 'Unsortiert' : 'Ongesorteerd'
+    const allLabel = uiText('allFolders')
+    const unfiledLabel = uiText('unfiled')
     const allCount = bookmarks.length
     const unfiledCount = bookmarks.filter(b => !b.folder).length
 
@@ -169,7 +175,7 @@ export default class extends Controller {
         </span>
         <span class="flex items-center gap-1">
           <span class="text-xs text-gray-400">${count}</span>
-          ${deletable ? `<button type="button" data-delete-folder="${this._escapeHtml(folderValue)}" class="hidden group-hover/folder:inline p-0.5 text-gray-400 hover:text-red-500 transition-colors"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>` : ''}
+          ${deletable ? `<button type="button" aria-label="${uiText('deleteFolder')}" data-delete-folder="${this._escapeHtml(folderValue)}" class="hidden group-hover/folder:inline p-0.5 text-gray-400 hover:text-red-500 transition-colors"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>` : ''}
         </span>
       </a>
     </li>`
@@ -195,7 +201,7 @@ export default class extends Controller {
 
     const folders = this.getFolders()
     if (folders.some(f => f.name === name)) {
-      showToast(getLocale() === 'nl' ? 'Map bestaat al' : 'Le dossier existe déjà')
+      showToast(uiText('folderExists'))
       return
     }
 
@@ -203,12 +209,11 @@ export default class extends Controller {
     this.saveFolders(folders)
     this.hideCreateFolder()
     this.renderFolders()
-    showToast(getLocale() === 'nl' ? `Map "${name}" aangemaakt` : `Dossier "${name}" créé`)
+    showToast(uiText('folderCreated', { name }))
   }
 
   deleteFolder(name) {
-    const locale = getLocale()
-    const msg = locale === 'nl' ? `Map "${name}" verwijderen? Bladwijzers worden niet verwijderd.` : `Supprimer le dossier "${name}" ? Les signets ne seront pas supprimés.`
+    const msg = uiText('folderDeleteConfirm', { name })
     if (!confirm(msg)) return
 
     // Remove folder from folder list
@@ -238,10 +243,9 @@ export default class extends Controller {
     this.loadBookmarks()
     this.renderFolders()
 
-    const locale = getLocale()
     const msg = folder
-      ? (locale === 'nl' ? `Verplaatst naar "${folder}"` : `Déplacé vers "${folder}"`)
-      : (locale === 'nl' ? 'Bladwijzer ongesorteerd' : 'Signet non classé')
+      ? uiText('folderMoved', { name: folder })
+      : uiText('bookmarkUnfiled')
     showToast(msg)
   }
 
@@ -265,7 +269,7 @@ export default class extends Controller {
       this.cancelDelete()
       this.loadBookmarks()
       this.renderFolders()
-      showToast(getLocale() === 'nl' ? 'Bladwijzer verwijderd' : getLocale() === 'de' ? 'Lesezeichen gelöscht' : 'Signet supprimé')
+      showToast(uiText('bookmarkRemoved'))
     }
   }
 
@@ -323,13 +327,13 @@ export default class extends Controller {
       // Title and link
       const title = bookmark.title || bookmark.numac
       link.textContent = title
-      link.href = `/laws/${bookmark.numac}?language_id=${locale === 'nl' ? 1 : locale === 'de' ? 3 : 2}`
+      link.href = `/laws/${encodeURIComponent(bookmark.numac)}?language_id=${locale === 'nl' ? 1 : locale === 'de' ? 3 : 2}`
       numac.textContent = `NUMAC ${bookmark.numac}`
 
       // Date added
       if (bookmark.addedAt && dateEl) {
         const d = new Date(bookmark.addedAt)
-        dateEl.textContent = d.toLocaleDateString(locale === 'nl' ? 'nl-BE' : locale === 'de' ? 'de-DE' : 'fr-BE', {
+        dateEl.textContent = d.toLocaleDateString({ nl: 'nl-BE', fr: 'fr-BE', de: 'de-BE', en: 'en-GB' }[locale], {
           day: 'numeric', month: 'short', year: 'numeric'
         })
       }
@@ -343,23 +347,26 @@ export default class extends Controller {
       // Delete button → confirmation dialog
       removeBtn.addEventListener('click', () => this.requestDelete(bookmark.numac, title))
 
-      // Folder menu
+      // Folder menu, built from nodes: the identifier and folder names are
+      // data, so they never pass through innerHTML.
       if (folderMenu) {
-        let menuHtml = ''
-        const unfiledLabel = locale === 'fr' ? 'Non classé' : locale === 'de' ? 'Unsortiert' : 'Ongesorteerd'
+        const unfiledLabel = uiText('unfiled')
+        const menu = document.createElement('div')
+        menu.className = 'py-1'
+        const addOption = (label, folderName, current) => {
+          const option = document.createElement('button')
+          option.type = 'button'
+          option.className = `block w-full text-left px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 ${current ? 'font-bold' : ''}`
+          option.dataset.numac = bookmark.numac
+          option.dataset.folder = folderName
+          option.textContent = label
+          option.addEventListener('click', (e) => this.moveToFolder(e))
+          menu.appendChild(option)
+        }
 
-        // Unfiled option
-        menuHtml += `<button type="button" class="block w-full text-left px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 ${!bookmark.folder ? 'font-bold' : ''}" data-numac="${bookmark.numac}" data-folder="">${unfiledLabel}</button>`
-
-        folders.forEach(f => {
-          const active = bookmark.folder === f.name ? 'font-bold' : ''
-          menuHtml += `<button type="button" class="block w-full text-left px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 ${active}" data-numac="${bookmark.numac}" data-folder="${this._escapeHtml(f.name)}">${this._escapeHtml(f.name)}</button>`
-        })
-
-        folderMenu.innerHTML = `<div class="py-1">${menuHtml}</div>`
-        folderMenu.querySelectorAll('button').forEach(btn => {
-          btn.addEventListener('click', (e) => this.moveToFolder(e))
-        })
+        addOption(unfiledLabel, '', !bookmark.folder)
+        folders.forEach(f => addOption(f.name, f.name, bookmark.folder === f.name))
+        folderMenu.replaceChildren(menu)
       }
 
       this.listTarget.appendChild(item)
@@ -372,7 +379,7 @@ export default class extends Controller {
     const bookmarks = this.getBookmarks()
     const folders = this.getFolders()
     if (bookmarks.length === 0) {
-      showToast(getLocale() === 'nl' ? 'Geen bladwijzers om te exporteren' : 'Aucun signet à exporter')
+      showToast(uiText('bookmarksExportEmpty'))
       return
     }
 
@@ -386,7 +393,7 @@ export default class extends Controller {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    showToast(getLocale() === 'nl' ? 'Bladwijzers geëxporteerd' : 'Signets exportés')
+    showToast(uiText('bookmarksExported'))
   }
 
   importBookmarks(event) {
@@ -415,15 +422,17 @@ export default class extends Controller {
         const existingNumacs = new Set(existing.map(b => b.numac))
         let added = 0
         imported.forEach(bookmark => {
-          if (bookmark.numac && !existingNumacs.has(bookmark.numac)) {
-            existing.push({
-              numac: bookmark.numac,
-              title: bookmark.title || bookmark.numac,
-              addedAt: bookmark.addedAt || new Date().toISOString(),
-              folder: bookmark.folder
-            })
-            added++
-          }
+          const numac = typeof bookmark?.numac === 'string' ? bookmark.numac.trim() : ''
+          if (!NUMAC_FORMAT.test(numac) || existingNumacs.has(numac)) return
+
+          existingNumacs.add(numac)
+          existing.push({
+            numac,
+            title: String(bookmark.title || numac).slice(0, TITLE_MAX),
+            addedAt: typeof bookmark.addedAt === 'string' ? bookmark.addedAt : new Date().toISOString(),
+            folder: typeof bookmark.folder === 'string' && bookmark.folder ? bookmark.folder.slice(0, FOLDER_MAX) : undefined
+          })
+          added++
         })
         this.saveBookmarks(existing)
 
@@ -432,8 +441,10 @@ export default class extends Controller {
           const existingFolders = this.getFolders()
           const existingNames = new Set(existingFolders.map(f => f.name))
           importedFolders.forEach(f => {
-            if (f.name && !existingNames.has(f.name)) {
-              existingFolders.push(f)
+            const name = typeof f?.name === 'string' ? f.name.slice(0, FOLDER_MAX) : ''
+            if (name && !existingNames.has(name)) {
+              existingNames.add(name)
+              existingFolders.push({ name, createdAt: typeof f.createdAt === 'string' ? f.createdAt : new Date().toISOString() })
             }
           })
           this.saveFolders(existingFolders)
@@ -441,12 +452,9 @@ export default class extends Controller {
 
         this.loadBookmarks()
         this.renderFolders()
-        const locale = getLocale()
-        showToast(locale === 'nl'
-          ? `${added} bladwijzer(s) geïmporteerd`
-          : `${added} signet(s) importé(s)`)
+        showToast(uiText('bookmarksImported', { count: added }))
       } catch {
-        showToast(getLocale() === 'nl' ? 'Ongeldig bestand' : 'Fichier invalide')
+        showToast(uiText('invalidFile'))
       }
     }
     reader.readAsText(file)
@@ -454,7 +462,6 @@ export default class extends Controller {
   }
 
   clearAll() {
-    const locale = getLocale()
     const total = this.getBookmarks().length
     if (total === 0) return
 
@@ -463,18 +470,10 @@ export default class extends Controller {
     if (this.hasDeleteDialogTarget) {
       this.deleteDialogTarget.classList.remove('hidden')
       if (this.hasDeleteTitleTarget) {
-        this.deleteTitleTarget.textContent = locale === 'fr'
-          ? 'Supprimer tous les signets ?'
-          : locale === 'de'
-            ? 'Alle Lesezeichen löschen?'
-            : 'Alle bladwijzers verwijderen?'
+        this.deleteTitleTarget.textContent = uiText('bookmarksDeleteAll')
       }
       if (this.hasDeleteMessageTarget) {
-        this.deleteMessageTarget.textContent = locale === 'fr'
-          ? `${total} signet(s) seront supprimés`
-          : locale === 'de'
-            ? `${total} Lesezeichen werden gelöscht`
-            : `${total} bladwijzer(s) worden verwijderd`
+        this.deleteMessageTarget.textContent = uiText('bookmarksDeleteCount', { count: total })
       }
     }
 
@@ -487,7 +486,7 @@ export default class extends Controller {
         this.cancelDelete()
         this.loadBookmarks()
         this.renderFolders()
-        showToast(locale === 'nl' ? 'Bladwijzers verwijderd' : locale === 'de' ? 'Lesezeichen gelöscht' : 'Signets supprimés')
+        showToast(uiText('bookmarksRemoved'))
         this.confirmDelete = origConfirm
       } else {
         origConfirm()
@@ -522,8 +521,7 @@ export default class extends Controller {
 
   updateCount(count) {
     if (this.hasCountTarget) {
-      const locale = getLocale()
-      const label = locale === 'fr' ? 'signets' : locale === 'de' ? 'Lesezeichen' : 'bladwijzers'
+      const label = uiText('bookmarksLabel')
       this.countTarget.textContent = `${count} ${label}`
     }
   }
@@ -561,9 +559,14 @@ export default class extends Controller {
     }
   }
 
+  // Also for attribute values: a text node's serialization leaves quotes as
+  // they are, so a folder name could close its data attribute.
   _escapeHtml(str) {
-    const el = document.createElement('span')
-    el.textContent = str || ''
-    return el.innerHTML
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
   }
 }

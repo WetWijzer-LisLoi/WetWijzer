@@ -1,12 +1,21 @@
 <% if exdecs.present? %>
-  <div class="p-6" data-controller="collapse" data-collapse-expanded-value="true">
-    <button type="button" class="w-full flex items-center justify-between text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--accent-500) group transition-colors" data-action="click->collapse#toggle" data-collapse-target="button" aria-label="<%= t('aria.toggle_executive_decisions') %>" aria-expanded="true">
-      <h2 class="text-xl font-bold text-gray-800 dark:text-(--accent-500) group-hover:text-(--accent-600) transition-colors"><%= t(:exdecs_title) %> <span class="text-base font-normal text-gray-500 dark:text-gray-400">(<%= exdecs.count { |f| f.exdec_numac.present? } %>)</span></h2>
+  <% listed = exdecs.count { |f| f.exdec_numac.present? } %>
+  <%# WW-WER-01: a long list (the Wetboek van economisch recht has 446
+      implementing decisions) starts collapsed in the server's markup, so it
+      does not push the law text tens of thousands of pixels down; opened, it
+      scrolls inside a bounded region. The class, the controller value and
+      aria-expanded agree before Stimulus connects. Print shows every row.
+      On a phone every list scrolls in that region, whatever its length: a
+      few long titles in a narrow column can be as tall as a long list. %>
+  <% large = large_law_list?(listed) %>
+  <div class="p-6<%= ' is-collapsed' if large %>" data-controller="collapse" data-collapse-expanded-value="<%= !large %>">
+    <button type="button" class="w-full flex items-center justify-between text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--accent-500) group transition-colors" data-action="click->collapse#toggle" data-collapse-target="button" aria-label="<%= t('aria.toggle_executive_decisions') %>" aria-expanded="<%= !large %>" aria-controls="exdecs-list">
+      <h2 class="text-xl font-bold text-gray-800 dark:text-(--accent-500) group-hover:text-(--accent-600) transition-colors"><%= t(:exdecs_title) %> <span class="text-base font-normal text-gray-500 dark:text-gray-400">(<%= listed %>)</span></h2>
       <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor" data-collapse-target="icon">
         <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
       </svg>
     </button>
-    <div class="mt-4 overflow-x-auto md:overflow-visible" data-collapse-target="content">
+    <div id="exdecs-list" class="mt-4" data-collapse-target="content">
       <style nonce="<%= content_security_policy_nonce %>">
         /* Ensure tables blend with card in dark mode (no white rows/areas) */
         .dark #exdecs-card table,
@@ -22,6 +31,7 @@
         /* Ensure hover always shows above zebra */
         #exdecs-card tbody tr:hover { background-color: var(--table-row-hover-bg) !important; }
       </style>
+      <div class="overflow-x-auto max-h-[60vh] overflow-y-auto print:max-h-none print:overflow-visible<%= ' md:max-h-none md:overflow-visible' unless large %>" data-list-scroll>
       <table class="min-w-full bg-transparent dark:bg-transparent divide-y divide-gray-200 dark:divide-(--border-separator)">
         <thead class="bg-gray-50 dark:bg-transparent">
           <tr>
@@ -48,6 +58,7 @@
           <% end %>
         </tbody>
       </table>
+      </div>
       
     </div>
   </div>

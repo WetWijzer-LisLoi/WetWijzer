@@ -25,13 +25,28 @@ button[data-collapse-target="button"][aria-expanded="true"] svg[data-collapse-ta
   opacity: 1;
 }
 
-/* Collapsed state - generic for any collapse controller */
+/* Collapsed state - generic for any collapse controller. Hidden from the
+   keyboard and from assistive technology as well (WW-WER-01): the 446 links
+   of a collapsed list of implementing decisions were still in the tab order. */
 [data-controller~="collapse"].is-collapsed [data-collapse-target="content"] {
   max-height: 0 !important;
   opacity: 0;
   margin-top: 0 !important;
   margin-bottom: 0 !important;
   overflow: hidden !important;
+  visibility: hidden;
+}
+
+/* Print shows a collapsed section whole: the buttons that open one are not
+   printed (WW-WER-01). */
+@media print {
+  [data-controller~="collapse"].is-collapsed [data-collapse-target="content"] {
+    max-height: none !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    margin-top: 1rem !important;
+  }
 }
 
 /* Hide emoji icons in professional themes */

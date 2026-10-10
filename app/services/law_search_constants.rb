@@ -21,14 +21,15 @@ module LawSearchConstants
       misc: '11'         # Divers (miscellaneous)
     }.freeze,
     de: {
-      # Compatibility mapping while language_id=3 is reserved but dormant.
-      # German UI/search falls back to the canonical French source corpus.
-      constitution: '6',
-      law: '7',          # Gesetz
-      decree: '8',       # Dekret
-      ordinance: '9',    # Verordnung
-      decision: '10',    # Erlass
-      misc: '11'
+      # The German rows (language_id 3), searched on the German site only.
+      # Elsewhere a German filter still selects the French types
+      # (LawSearchService.type_ids_from_params).
+      constitution: '12', # Verfassung
+      law: '13',          # Gesetz
+      decree: '14',       # Dekret
+      ordinance: '15',    # Verordnung
+      decision: '16',     # Erlass
+      misc: '17'          # Sonstiges (misc_de)
     }.freeze
   }.freeze
 

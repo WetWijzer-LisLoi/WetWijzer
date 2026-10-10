@@ -1,0 +1,61 @@
+<%# What the German site says about the text of a law page, above the text
+    (docs/ops/german-corpus-plan-2026-09-27.md, phase B and section 5):
+    - a German text: its provenance label, the source named with its URL and
+      the fetch date, and the other language versions of the same NUMAC;
+    - a French text of a law that has a German one: a link to it;
+    - a French text of a law without one: that the French text is shown.
+    Locals: law, notice (GermanTextHelper#german_text_notice), versions (the
+    language ids the NUMAC is served in), classic (plain markup, no Tailwind). %>
+<% classic = local_assigns.fetch(:classic, false) %>
+<% versions = Array(local_assigns[:versions]) %>
+<% german_id = HasLanguage::GERMAN_LANGUAGE_ID %>
+<% state = if notice then :german
+           elsif law.language_id != german_id && versions.include?(german_id) then :german_available
+           elsif law.language_id == 2 then :french_fallback
+           end %>
+<% if state %>
+  <% link_class = classic ? nil : 'text-(--link-color) hover:text-(--link-hover-color) hover:underline' %>
+  <% if classic %>
+    <div id="german-text-notice" data-german-text="<%= state %>" style="border:1px solid #d1d5db;padding:10px 12px;margin-bottom:20px;font-size:14px;line-height:1.5">
+  <% else %>
+    <div id="german-text-notice" data-german-text="<%= state %>" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm scroll-mt-24" role="note">
+      <div class="p-4 md:p-6 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+  <% end %>
+  <% if state == :german %>
+    <% if classic %>
+      <p><strong><%= t('german_text.heading') %></strong></p>
+    <% else %>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500)"><%= t('german_text.heading') %></h2>
+    <% end %>
+    <p class="german-text-label"><%= notice[:label] %></p>
+    <p>
+      <%= t('german_text.source') %>:
+      <% if notice[:source_url] %>
+        <%= link_to notice[:source_name], notice[:source_url], class: link_class, target: '_blank', rel: 'nofollow noopener' %>
+      <% else %>
+        <%= notice[:source_name] %>
+      <% end %>
+      <% if notice[:fetched_on] %>(<%= t('german_text.fetched_on', date: notice[:fetched_on]) %>)<% end %>
+    </p>
+    <% other_versions = versions.reject { |id| id == german_id } %>
+    <% if other_versions.any? %>
+      <p>
+        <%= t('german_text.other_versions') %>:
+        <%= safe_join(other_versions.map { |id| link_to(law_language_label(id), law_path(law.numac, language_id: id), class: link_class) }, ' · ') %>
+      </p>
+    <% end %>
+  <% elsif state == :german_available %>
+    <p>
+      <%= t('german_text.german_available') %>
+      <%= link_to t('german_text.show_german'), law_path(law.numac, language_id: german_id), class: link_class %>
+    </p>
+  <% else %>
+    <p><%= t('german_text.french_fallback') %></p>
+  <% end %>
+  <% if classic %>
+    </div>
+  <% else %>
+      </div>
+    </div>
+  <% end %>
+<% end %>

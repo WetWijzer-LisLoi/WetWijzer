@@ -42,6 +42,29 @@ class Subscription < AccountRecord
   validates :tier, presence: true, inclusion: { in: TIERS }
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :payment_method, inclusion: { in: PAYMENT_METHODS }, allow_blank: true
+  validates :customer_type, inclusion: { in: %w[consumer business] }, allow_blank: true
+
+  BILLING_TEXT_FIELDS = %i[company_name vat_number enterprise_number billing_address_line1 billing_address_line2 billing_city billing_postal_code].freeze
+  BILLING_COUNTRIES = %w[BE NL LU FR DE].freeze
+  # New profile bounds must not prevent renewal/credit/webhook writes to an
+  # unchanged legacy billing profile. Only validate fields being edited.
+  BILLING_TEXT_FIELDS.each do |field|
+    validates field, length: { maximum: 255 },
+                     format: { without: /[\u0000-\u001F\u007F]/, message: :invalid },
+                     allow_blank: true, if: -> { will_save_change_to_attribute?(field) }
+  end
+  validates :billing_country, inclusion: { in: BILLING_COUNTRIES }, allow_blank: true,
+                              if: :will_save_change_to_billing_country?
+  before_validation :normalise_billing_profile
+
+  def normalise_billing_profile
+    BILLING_TEXT_FIELDS.each do |field|
+      self[field] = self[field].strip.presence if will_save_change_to_attribute?(field) && self[field].is_a?(String)
+    end
+    return unless will_save_change_to_billing_country? && billing_country.is_a?(String)
+
+    self.billing_country = billing_country.strip.upcase.presence
+  end
 
   # Non-renewing Pro subscriptions whose paid period has ended. A failed
   # renewal is entitled through the already-paid period just like a voluntary

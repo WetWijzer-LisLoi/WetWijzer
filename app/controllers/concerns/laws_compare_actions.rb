@@ -27,7 +27,7 @@ module LawsCompareActions
     @content_fr = Content.includes(:legislation).find_by(legislation_numac: params[:numac], language_id: 2)
 
     # Load articles for both languages
-    @articles_nl = Article.where(content_numac: params[:numac], language_id: 1).order(:id)
-    @articles_fr = Article.where(content_numac: params[:numac], language_id: 2).order(:id)
+    @articles_nl = Article.where(content_numac: params[:numac], language_id: 1).in_document_order
+    @articles_fr = Article.where(content_numac: params[:numac], language_id: 2).in_document_order
   end
 end

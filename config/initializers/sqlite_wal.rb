@@ -13,19 +13,17 @@
 require Rails.root.join('lib/sqlite_pragmas')
 
 ActiveSupport.on_load(:active_record) do
-  begin
-    Rails.logger.info(SqlitePragmas.summary) if SqlitePragmas.apply(ActiveRecord::Base.connection)
+  Rails.logger.info(SqlitePragmas.summary) if SqlitePragmas.apply(ActiveRecord::Base.connection)
 
-    # Apply PRAGMAs to every new connection checked out from the pool. The flag
-    # is set for non-SQLite adapters too, so a PostgreSQL connection asks the
-    # question once instead of on every checkout.
-    ActiveRecord::ConnectionAdapters::AbstractAdapter.set_callback :checkout, :after do
-      unless instance_variable_get(:@sqlite_pragmas_applied)
-        SqlitePragmas.apply(self)
-        instance_variable_set(:@sqlite_pragmas_applied, true)
-      end
+  # Apply PRAGMAs to every new connection checked out from the pool. The flag
+  # is set for non-SQLite adapters too, so a PostgreSQL connection asks the
+  # question once instead of on every checkout.
+  ActiveRecord::ConnectionAdapters::AbstractAdapter.set_callback :checkout, :after do
+    unless instance_variable_get(:@sqlite_pragmas_applied)
+      SqlitePragmas.apply(self)
+      instance_variable_set(:@sqlite_pragmas_applied, true)
     end
-  rescue StandardError => e
-    Rails.logger.warn("SQLite PRAGMA setup skipped: #{e.class}: #{e.message}")
   end
+rescue StandardError => e
+  Rails.logger.warn("SQLite PRAGMA setup skipped: #{e.class}: #{e.message}")
 end

@@ -50,6 +50,15 @@ class SessionsController < ApplicationController
         return
       end
 
+      # WW-ABUSE-01: the holder of a suspended account learns only that
+      # access is unavailable: no reactivation offer, no confirmation resend,
+      # no reason.
+      if user.abuse_suspended?
+        flash.now[:alert] = t('auth.access_unavailable')
+        render :new, status: :unprocessable_entity
+        return
+      end
+
       unless user.confirmed?
         @unconfirmed_email = user.email
         flash.now[:alert] = t('auth.not_confirmed')
@@ -63,7 +72,26 @@ class SessionsController < ApplicationController
         # Check if 2FA is enabled
         if user.otp_enabled?
           # Keep authentication state out of the CSRF-only Rails session.
-          cookies.signed[:pending_2fa_user_id] = { value: user.id, expires: 5.minutes.from_now, httponly: true, secure: Rails.env.production?, same_site: :lax }
+          # WW-SEC-12: a challenge bound to the account's current credentials,
+          # newest-only and single-use (PendingSecondFactor). One this browser
+          # held before ends first, or nothing new starts: a challenge that
+          # could not be cancelled keeps its cookie. No challenge at all when
+          # the credentials changed after the password above was checked:
+          # that password no longer proves anything.
+          unless cancel_pending_sign_in!
+            flash.now[:alert] = t('auth.pending_sign_in_not_replaced')
+            render :new, status: :service_unavailable
+            return
+          end
+          challenge = PendingSecondFactor.issue(user, purpose: :user)
+          unless challenge
+            flash.now[:alert] = t('auth.invalid_credentials')
+            render :new, status: :unprocessable_entity
+            return
+          end
+          cookies.encrypted[:pending_2fa_user_id] = { value: challenge,
+                                                      expires: PendingSecondFactor::LIFETIME.from_now, httponly: true,
+                                                      secure: Rails.env.production?, same_site: :lax }
           cookies.signed[:remember_me] = { value: params[:remember_me] == '1', expires: 5.minutes.from_now, httponly: true, secure: Rails.env.production?, same_site: :lax }
           redirect_to challenge_2fa_path, status: :see_other
           return
@@ -109,7 +137,11 @@ class SessionsController < ApplicationController
   def reactivate
     user = User.find_by(email: params[:email]&.downcase)
 
-    if user && !user.active?
+    # Only a confirmed account can be reactivated (WW-ABUSE-01, 2026-10-06):
+    # an unconfirmed one was never usable, and an admin-deactivated
+    # unconfirmed registration would otherwise mail itself a way back in.
+    # The response stays the same either way.
+    if user && !user.active? && user.confirmed? && user.activatable?
       # Generate a reactivation token (reuse confirmation_token column)
       token = user.generate_confirmation_token!
       UserMailer.reactivation_email(user, token).deliver_later
@@ -134,7 +166,10 @@ class SessionsController < ApplicationController
       return
     end
 
-    if user && !user.active?
+    # The registration, reactivation and deletion-warning tokens share one
+    # column, so a signup confirmation link would reactivate too: an
+    # unconfirmed account is refused with the generic answer (WW-ABUSE-01).
+    if user && !user.active? && user.confirmed? && user.activatable?
       user.update!(
         active: true,
         deletion_scheduled_for: nil,
@@ -152,15 +187,26 @@ class SessionsController < ApplicationController
 
   def destroy
     AccountActivity.log(current_user, 'logout', request) if current_user
-    sign_out
-    redirect_to root_path, notice: t('auth.signed_out'), status: :see_other
+    if sign_out
+      redirect_to root_path, notice: t('auth.signed_out'), status: :see_other
+    else
+      redirect_to root_path, alert: t('auth.pending_sign_in_not_cancelled'), status: :see_other
+    end
   end
 
   private
 
+  # Ends the session, then any pending second-factor challenge, separately:
+  # false when the challenge could not be cancelled on the server (the
+  # session is still ended, and the caller says so).
   def sign_out
     current_user&.clear_session_token!
     cookies.delete(:session_token)
+    # WW-SEC-12/13: no half-finished sign-in or 2FA enrolment outlives the
+    # session; the pending challenge ends on the server too.
+    cancelled = cancel_pending_sign_in!
+    %i[remember_me pending_otp_secret].each { |name| cookies.delete(name) }
+    cancelled
   end
 
   # Prevent open redirect attacks by only allowing relative paths
@@ -168,7 +214,7 @@ class SessionsController < ApplicationController
     return root_path if path.blank?
 
     # Same-origin paths only: must start with a single '/' followed by a char
-    # that is NOT '/' or '\'. Blocks '//evil.com' AND '/\evil.com' — browsers
+    # that is NOT '/' or '\'. Blocks '//evil.com' AND '/\evil.com': browsers
     # normalize the backslash to '/', turning the latter into a protocol-
     # relative open redirect that the old start_with?('//') check let through.
     path.match?(%r{\A/(?![/\\])}) ? path : root_path

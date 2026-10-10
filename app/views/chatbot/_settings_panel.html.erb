@@ -55,7 +55,7 @@
                   <div class="flex items-center gap-1 group" title="<%= case I18n.locale when :fr then 'Crédits' when :de then 'Credits' when :en then 'Credits' else 'Credits' end %>">
                     <svg class="w-3 h-3 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
                     <span class="text-sm font-bold <%= user_credits < 5 ? 'text-orange-500 dark:text-orange-400' : 'text-gray-900 dark:text-white' %>" id="credits-value"><%= user_credits %></span>
-                    <span class="text-[10px] text-gray-400 dark:text-gray-500"><%= case I18n.locale when :fr then 'crédits' when :de then 'Credits' when :en then 'credits' else 'credits' end %></span>
+                    <span class="text-[10px] text-gray-500"><%= case I18n.locale when :fr then 'crédits' when :de then 'Credits' when :en then 'credits' else 'credits' end %></span>
                   </div>
   
                 <%# Hidden total for JS animation anchoring %>
@@ -71,15 +71,19 @@
             <div class="flex items-center gap-1.5">
               <span class="text-sm font-bold" style="color: var(--accent-500);" id="intelligence-credit-badge"><%= default_credits %></span>
               <span class="text-xs text-gray-500 dark:text-gray-400">cr/<%= case I18n.locale when :fr then 'question' when :de then 'Frage' when :en then 'question' else 'vraag' end %></span>
-              <span class="text-[10px] text-gray-400 dark:text-gray-500" id="reasoning-credit-breakdown"><%= default_credits %> <%= case I18n.locale when :fr then 'base' when :de then 'Basis' when :en then 'base' else 'basis' end %> + 0 <%= case I18n.locale when :fr then 'raisonnement' when :de then 'Denken' when :en then 'reasoning' else 'redeneren' end %> = <%= default_credits %> cr/<%= case I18n.locale when :fr then 'question' when :de then 'Frage' when :en then 'question' else 'vraag' end %></span>
+              <span class="text-[10px] text-gray-500" id="reasoning-credit-breakdown"><%= default_credits %> <%= case I18n.locale when :fr then 'base' when :de then 'Basis' when :en then 'base' else 'basis' end %> + 0 <%= case I18n.locale when :fr then 'raisonnement' when :de then 'Denken' when :en then 'reasoning' else 'redeneren' end %> = <%= default_credits %> cr/<%= case I18n.locale when :fr then 'question' when :de then 'Frage' when :en then 'question' else 'vraag' end %></span>
             </div>
   
           </div>
 
           <div class="chat-topbar-actions">
           <div class="flex items-center gap-3">
+            <%# History, Copy and Export hover to the accent in dark mode. Their
+                rest colour is forced to --text-muted (gray-300) there, so the
+                former gray-200 hover was a change nobody could see, while
+                Save and Clear next to them visibly turn green and red. %>
             <button type="button"
-                    class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1"
+                    class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-[var(--accent-400)] flex items-center gap-1"
                     data-action="click->chatbot#toggleHistory"
                     title="<%= case I18n.locale when :fr then 'Conversations' when :de then 'Gespräche' when :en then 'Conversations' else 'Gesprekken' end %>">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,7 +100,7 @@
             </button>
             <%# Copy entire conversation %>
             <button type="button"
-                    class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1"
+                    class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-[var(--accent-400)] flex items-center gap-1"
                     data-action="click->chatbot#copyConversation"
                     title="<%= case I18n.locale when :fr then 'Copier le chat' when :de then 'Chat kopieren' when :en then 'Copy chat' else 'Chat kopiëren' end %>">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,22 +110,39 @@
             </button>
             <%# Export dropdown %>
             <div class="relative" id="export-dropdown-wrap">
+              <% export_label = case I18n.locale when :fr then 'Exporter' when :de then 'Exportieren' when :en then 'Export' else 'Exporteren' end %>
+              <%# title is a mouse tooltip only. Without a name and without
+                  aria-haspopup this icon-only button read as an unlabelled
+                  button, so the five conversation exports behind it existed
+                  for sighted users only. aria-expanded starts closed the way
+                  the settings toggle above does; toggleExportMenu has to keep
+                  it in step when it flips the menu's `hidden`. %>
               <button type="button"
-                      class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1"
+                      class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-[var(--accent-400)] flex items-center gap-1"
                       data-action="click->chatbot#toggleExportMenu"
-                      title="<%= case I18n.locale when :fr then 'Exporter' when :de then 'Exportieren' when :en then 'Export' else 'Exporteren' end %>">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                      aria-controls="export-dropdown-menu"
+                      aria-label="<%= export_label %>"
+                      title="<%= export_label %>">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                 </svg>
               </button>
-              <div id="export-dropdown-menu" class="hidden absolute right-0 bottom-full mb-1 w-40 bg-white dark:bg-[#0f172a] rounded-lg shadow-lg border border-gray-200 dark:border-[#1e293b] py-1 z-50">
+              <%# Opens DOWNWARDS. The button sits in the first row of the panel,
+                  and the panel root clips everything above its top edge
+                  (overflow-x-hidden makes overflow-y compute to auto), so a
+                  bottom-full menu showed only a 15px sliver and all five
+                  conversation exports were unreachable with the mouse. %>
+              <div id="export-dropdown-menu" class="hidden absolute right-0 top-full mt-1 w-40 bg-white dark:bg-[#0f172a] rounded-lg shadow-lg border border-gray-200 dark:border-[#1e293b] py-1 z-50">
                 <button type="button" data-action="click->chatbot#exportPDF"
                         class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
                   <span>📄</span> PDF
                 </button>
                 <button type="button" data-action="click->chatbot#exportWordConversation"
                         class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
-                  <span>📝</span> Word (.docx)
+                  <%# The download is an HTML-in-blob .doc, as the per-answer menu says. %>
+                  <span>📝</span> Word (.doc)
                 </button>
                 <button type="button" data-action="click->chatbot#exportTXT"
                         class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
@@ -147,7 +168,12 @@
               </svg>
             </button>
           </div>
+          </div>
         </div>
+        <%# The bar is closed ABOVE, before the settings body. It used to close
+            after it, which made the body a wrapped flex item of the bar: no
+            hairline under the bar, the tinted zone inset an extra 1rem, and
+            two stacked hairlines of different width beneath it. %>
         <div class="chatbot-settings-body" id="settings-collapse" data-chatbot-target="settingsBody">
 
         <%# ── Intelligence Slider ── %>
@@ -175,7 +201,7 @@
             </span>
             <span class="text-[11px] text-gray-500 dark:text-gray-400 ml-auto" id="intelligence-level-subtitle" aria-live="polite">
               <span data-active-label><%= intelligence_levels.dig(default_level, :labels, I18n.locale) || intelligence_levels.dig(default_level, :labels, :nl) %></span>
-              <span data-active-desc class="text-gray-400 dark:text-gray-500">| <%= intelligence_levels.dig(default_level, :descriptions, I18n.locale) || intelligence_levels.dig(default_level, :descriptions, :nl) %></span>
+              <span data-active-desc class="text-gray-500">| <%= intelligence_levels.dig(default_level, :descriptions, I18n.locale) || intelligence_levels.dig(default_level, :descriptions, :nl) %></span>
             </span>
           </div>
 
@@ -200,11 +226,15 @@
                 <% pro_only = config[:models].values.all? { |model_config| model_config[:tier] == :pro } %>
                 <% label = config[:labels][I18n.locale] || config[:labels][:nl] %>
                     <% roman = roman_numerals[idx] || (idx + 1).to_s %>
+                <%# Same words as the click tooltip (services/chatbot_locked_tier.js).
+                    The product is "WetWijzer Pro" on every domain: built from
+                    site_name, the hover said "LisLoi Pro" and the click on the
+                    same notch, the dialog and /pricing all said "WetWijzer Pro". %>
                 <% pro_hover_tip = case I18n.locale
-                                     when :fr then "Découvrez #{site_name} Pro →"
-                                     when :de then "Entdecken Sie #{site_name} Pro →"
-                                     when :en then "Check out #{site_name} Pro →"
-                                     else "Ontdek #{site_name} Pro →"
+                                     when :fr then 'Découvrir WetWijzer Pro →'
+                                     when :de then 'WetWijzer Pro ansehen →'
+                                     when :en then 'See WetWijzer Pro →'
+                                     else 'Bekijk WetWijzer Pro →'
                                      end %>
                 <% pct = total_stops > 0 ? (idx.to_f / total_stops * 100).round(2) : 0 %>
                 <button type="button"
@@ -278,14 +308,20 @@
             </span>
             <span class="relative group cursor-help">
               <span class="text-gray-400 hover:text-[var(--accent-500)] dark:text-gray-500 dark:hover:text-[var(--accent-400)] text-[11px] leading-none relative -top-0.5 transition-colors cursor-help" title="Info">ⓘ</span>
-              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-64 z-50 shadow-lg">
+              <%# This tooltip and the three below (Model, Category, Sources)
+                  start 40px left of their icon and are NOT centred on it. The
+                  icons sit 75-130px from the panel's left edge and the panel
+                  clips (overflow-x-hidden), so a centred 256px box lost the
+                  first 5-6 characters of every line next to "Model:". The
+                  max-w keeps the right side inside the panel from 320px. %>
+              <div class="absolute bottom-full -left-10 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-64 max-w-[calc(100vw-9rem)] z-50 shadow-lg">
                 <%= case I18n.locale
                     when :fr then "Réglez la profondeur de raisonnement. Plus haut = analyse plus rigoureuse, mais coûte des crédits supplémentaires."
                     when :de then 'Stellen Sie die Denktiefe ein. Höher = gründlichere Analyse, kostet aber zusätzliche Credits.'
                     when :en then 'Set reasoning depth. Higher = more rigorous analysis but costs extra credits.'
                     else 'Stel de redeneringsdiepte in. Hoger = grondiger analyse maar kost extra credits.'
                   end %>
-                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                <div class="absolute top-full left-[41px] border-4 border-transparent border-t-gray-900"></div>
               </div>
             </span>
             <% unless user_is_pro %>
@@ -350,14 +386,14 @@
             </span>
             <span class="relative group cursor-help">
               <span class="text-gray-400 hover:text-[var(--accent-500)] dark:text-gray-500 dark:hover:text-[var(--accent-400)] text-[11px] leading-none relative -top-0.5 transition-colors cursor-help" title="Info">ⓘ</span>
-              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-64 z-50 shadow-lg">
+              <div class="absolute bottom-full -left-10 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-64 max-w-[calc(100vw-9rem)] z-50 shadow-lg">
                 <%= case I18n.locale
                     when :fr then 'Le modèle AI utilisé pour répondre. Chaque niveau propose un modèle par défaut optimisé.'
                     when :de then 'Das AI-Modell für die Antwort. Jede Stufe hat ein optimiertes Standardmodell.'
                     when :en then 'The AI model used to answer. Each level has an optimized default model.'
                     else 'Het AI-model dat antwoordt. Elk niveau heeft een geoptimaliseerd standaardmodel.'
                   end %>
-                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                <div class="absolute top-full left-[41px] border-4 border-transparent border-t-gray-900"></div>
               </div>
             </span>
             <select id="model-select"
@@ -406,14 +442,14 @@
             </span>
             <span class="relative group cursor-help">
               <span class="text-gray-400 hover:text-[var(--accent-500)] dark:text-gray-500 dark:hover:text-[var(--accent-400)] text-[11px] leading-none relative -top-0.5 transition-colors cursor-help" title="Info">ⓘ</span>
-              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-64 z-50 shadow-lg">
+              <div class="absolute bottom-full -left-10 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-64 max-w-[calc(100vw-9rem)] z-50 shadow-lg">
                 <%= case I18n.locale
                     when :fr then "Choisissez un domaine juridique pour des réponses plus précises."
                     when :de then 'Wählen Sie ein Rechtsgebiet für genauere Antworten.'
                     when :en then 'Choose a legal domain for more targeted answers.'
                     else 'Kies een rechtsdomein voor gerichtere antwoorden.'
                   end %>
-                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                <div class="absolute top-full left-[41px] border-4 border-transparent border-t-gray-900"></div>
               </div>
             </span>
             <select id="profile-select"
@@ -439,14 +475,14 @@
             </span>
             <span class="relative group cursor-help">
               <span class="text-gray-400 hover:text-[var(--accent-500)] dark:text-gray-500 dark:hover:text-[var(--accent-400)] text-[11px] leading-none relative -top-0.5 transition-colors cursor-help" title="Info">ⓘ</span>
-              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-64 z-50 shadow-lg">
+              <div class="absolute bottom-full -left-10 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-64 max-w-[calc(100vw-9rem)] z-50 shadow-lg">
                 <%= case I18n.locale
                     when :fr then 'Sélectionnez les bases de données juridiques à consulter.'
                     when :de then 'Wählen Sie die juristischen Datenbanken.'
                     when :en then 'Select which legal databases to search.'
                     else 'Kies welke juridische databanken doorzocht worden.'
                   end %>
-                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                <div class="absolute top-full left-[41px] border-4 border-transparent border-t-gray-900"></div>
               </div>
             </span>
             <% pro_sources_locked = !current_user&.pro? %>
@@ -494,6 +530,5 @@
         </div>
         </div>
 
-      </div>
       </div>
     </div>

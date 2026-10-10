@@ -555,15 +555,61 @@
   color: #111827 !important;
 }
 
-/* PROFESSIONAL THEMES - Table cell links (no underline) */
-.theme-slate table td a,
-.theme-indigo table td a,
-.theme-sky table td a,
-.theme-teal table td a,
-.theme-cyan table td a,
-.theme-green table td a,
-.theme-purple table td a,
-.theme-red table td a {
+/* PROFESSIONAL THEMES - Table cell links
+   A link in a table cell takes the cell's colour (#111827 light, #f3f4f6
+   dark), so until 2026-09-26 these themes stripped its underline and the
+   link read as plain text in both modes (axe passes it: allowSameColor).
+   The underline is now the cue, in light and dark (owner decision). Only
+   the line is !important, so the colour and thickness stay free for the
+   hover rules below. Button-styled links (rounded, bordered or filled: the
+   numac buttons, icon buttons and download buttons in the law and invoice
+   tables) are controls, not text, and keep no underline. Links inside
+   .reference spans keep their own colour cue and hover underline, as they
+   have in running text, and links in article text with the references
+   hidden stay plain text (the ww-hide-references rule in _base.scss). */
+.theme-slate table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.theme-indigo table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.theme-sky table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.theme-teal table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.theme-cyan table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.theme-green table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.theme-purple table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.theme-red table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a) {
+  text-decoration-line: underline !important;
+  text-decoration-color: #6b7280;
+  text-underline-offset: 2px;
+}
+
+/* Hover and keyboard focus: the underline takes the link colour and
+   thickens. Outranks the card rule's `.bg-white a:hover` decoration colour. */
+.theme-slate table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-indigo table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-sky table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-teal table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-cyan table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-green table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-purple table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-red table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-slate table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.theme-indigo table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.theme-sky table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.theme-teal table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.theme-cyan table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.theme-green table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.theme-purple table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.theme-red table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible {
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 2px;
+}
+
+.theme-slate table td a[class*="rounded"],
+.theme-indigo table td a[class*="rounded"],
+.theme-sky table td a[class*="rounded"],
+.theme-teal table td a[class*="rounded"],
+.theme-cyan table td a[class*="rounded"],
+.theme-green table td a[class*="rounded"],
+.theme-purple table td a[class*="rounded"],
+.theme-red table td a[class*="rounded"] {
   text-decoration: none !important;
 }
 
@@ -602,7 +648,70 @@
 .dark .theme-green table td a,
 .dark .theme-purple table td a,
 .dark .theme-red table td a {
-  text-decoration: none !important;
+  /* The cell's own colour, as in light where both are #111827: at #e5e7eb
+     (the dark .bg-white anchor colour) against the cell's #f3f4f6 an anchor
+     beside text was barely distinguishable (1.12:1), and axe's
+     link-in-text-block failed on every such cell of the concordance tables
+     on /laws (measured 2026-09-25, green dark: 20 per table). The underline
+     from the light rule above is what marks it as a link. */
+  color: #f3f4f6 !important;
+}
+
+/* Gray-400 keeps the underline visible on the dark cell without competing
+   with the text. */
+.theme-slate.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.theme-indigo.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.theme-sky.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.theme-teal.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.theme-cyan.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.theme-green.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.theme-purple.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.theme-red.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.dark .theme-slate table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.dark .theme-indigo table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.dark .theme-sky table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.dark .theme-teal table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.dark .theme-cyan table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.dark .theme-green table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.dark .theme-purple table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a),
+.dark .theme-red table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a) {
+  text-decoration-color: #9ca3af;
+}
+
+.theme-slate.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-indigo.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-sky.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-teal.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-cyan.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-green.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-purple.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-red.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.dark .theme-slate table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.dark .theme-indigo table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.dark .theme-sky table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.dark .theme-teal table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.dark .theme-cyan table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.dark .theme-green table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.dark .theme-purple table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.dark .theme-red table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):hover,
+.theme-slate.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.theme-indigo.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.theme-sky.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.theme-teal.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.theme-cyan.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.theme-green.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.theme-purple.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.theme-red.dark table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.dark .theme-slate table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.dark .theme-indigo table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.dark .theme-sky table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.dark .theme-teal table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.dark .theme-cyan table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.dark .theme-green table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.dark .theme-purple table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible,
+.dark .theme-red table td a:not([class*="rounded"]):not(.reference-link):not(.reference a):not(.reference *):not(.ww-hide-references .article-content a):not(.ww-hide-references article a):focus-visible {
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 2px;
 }
 
 /* Professional themes use same table row styling as fun themes */
@@ -805,16 +914,15 @@
   margin-top: 0 !important;
 }
 
-/* PROFESSIONAL THEMES - Show page main content cards get box styling like Tekst */
+/* PROFESSIONAL THEMES - Show page main content cards get box styling like Tekst.
+   Their partials own the inner padding; adding it here shifted External Links
+   and doubled the inset of every law card. The space-y-6 column owns gaps. */
 :is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) :is(#document-info-card, #external-links-card, #title-card, #main-toc-card, #related-sources-card) {
   border: none !important;
-  padding: 1.5rem !important;
-  margin-bottom: 0 !important;
 }
 
 :is(.theme-slate.dark, .dark .theme-slate, .theme-indigo.dark, .dark .theme-indigo, .theme-sky.dark, .dark .theme-sky, .theme-teal.dark, .dark .theme-teal, .theme-cyan.dark, .dark .theme-cyan, .theme-green.dark, .dark .theme-green, .theme-purple.dark, .dark .theme-purple, .theme-red.dark, .dark .theme-red) :is(#document-info-card, #external-links-card, #title-card, #main-toc-card, #related-sources-card) {
   border: none !important;
-  margin-bottom: 0 !important;
 }
 
 /* PROFESSIONAL THEMES - Show page section headings with divider lines */
@@ -867,22 +975,25 @@
   border-top: none !important;
 }
 
-.theme-slate.dark .bg-white h2,
-.theme-slate.dark .bg-navy h2,
-.theme-indigo.dark .bg-white h2,
-.theme-indigo.dark .bg-navy h2,
-.theme-sky.dark .bg-white h2,
-.theme-sky.dark .bg-navy h2,
-.theme-teal.dark .bg-white h2,
-.theme-teal.dark .bg-navy h2,
-.theme-cyan.dark .bg-white h2,
-.theme-cyan.dark .bg-navy h2,
-.theme-green.dark .bg-white h2,
-.theme-green.dark .bg-navy h2,
-.theme-purple.dark .bg-white h2,
-.theme-purple.dark .bg-navy h2,
-.theme-red.dark .bg-white h2,
-.theme-red.dark .bg-navy h2,
+/* Keep the :not() below: it matches the light rule's specificity. Without it
+   the light rule's #000000 won in dark mode, where the theme and dark classes
+   sit on the same <html> element (F14, 1.43:1 on the dark card). */
+.theme-slate.dark .bg-white h2:not(.section-heading h2),
+.theme-slate.dark .bg-navy h2:not(.section-heading h2),
+.theme-indigo.dark .bg-white h2:not(.section-heading h2),
+.theme-indigo.dark .bg-navy h2:not(.section-heading h2),
+.theme-sky.dark .bg-white h2:not(.section-heading h2),
+.theme-sky.dark .bg-navy h2:not(.section-heading h2),
+.theme-teal.dark .bg-white h2:not(.section-heading h2),
+.theme-teal.dark .bg-navy h2:not(.section-heading h2),
+.theme-cyan.dark .bg-white h2:not(.section-heading h2),
+.theme-cyan.dark .bg-navy h2:not(.section-heading h2),
+.theme-green.dark .bg-white h2:not(.section-heading h2),
+.theme-green.dark .bg-navy h2:not(.section-heading h2),
+.theme-purple.dark .bg-white h2:not(.section-heading h2),
+.theme-purple.dark .bg-navy h2:not(.section-heading h2),
+.theme-red.dark .bg-white h2:not(.section-heading h2),
+.theme-red.dark .bg-navy h2:not(.section-heading h2),
 .dark .theme-slate .bg-white h2:not(.section-heading h2),
 .dark .theme-slate .bg-navy h2:not(.section-heading h2),
 .dark .theme-indigo .bg-white h2:not(.section-heading h2),
@@ -2190,6 +2301,33 @@
   text-decoration-color: #9ca3af;
 }
 
+/* Anchors in a table cell inside a card, dark: the cell's own colour
+   (#f3f4f6, the .dark table td rule), as the light rules give both
+   #111827. The rule above painted them #e5e7eb, and an anchor beside
+   text in a cell was barely distinguishable from it (1.12:1): axe's
+   link-in-text-block failed on every such cell of the concordance tables
+   on /laws, 20 per table, in all eight themes (measured 2026-09-25). The
+   table-cell link rules underline them instead. One class more than the
+   rule above, so it wins at equal importance. */
+.theme-slate.dark .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.dark .theme-slate .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.theme-indigo.dark .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.dark .theme-indigo .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.theme-sky.dark .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.dark .theme-sky .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.theme-teal.dark .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.dark .theme-teal .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.theme-cyan.dark .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.dark .theme-cyan .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.theme-green.dark .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.dark .theme-green .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.theme-purple.dark .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.dark .theme-purple .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.theme-red.dark .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *),
+.dark .theme-red .bg-white table td a:not(.reference-link):not(.reference a):not(.reference *) {
+  color: #f3f4f6 !important;
+}
+
 /* Dark mode: links inside reference spans inherit color */
 /* Higher specificity to override .bg-white a rules */
 .theme-slate.dark .bg-white .reference a,
@@ -2298,6 +2436,91 @@
 .dark .theme-red .bg-white .reference a:hover,
 .dark .theme-red .bg-navy .reference a:hover {
   text-decoration: underline;
+}
+
+/* -------------------------------------------------------------------------
+ * Professional promotions and pricing
+ * -------------------------------------------------------------------------
+ * The broad document-link rule above deliberately makes legal-text links
+ * sober. A call to action is not a document link, though: treating it as one
+ * turned the "Manage subscription" label black and underlined on a dark
+ * button. Keep the exception semantic and local to a CTA rather than adding
+ * more exclusions to the document-reader selector.
+ *
+ * The original and vibrant themes retain the illustrative price hierarchy.
+ * Professional themes use one accent plus neutral surfaces: access level is
+ * communicated by its label and grouping, not by four competing hues.
+ */
+/* Important declarations in this named layer outrank the legacy unlayered
+   document-link rules, including their specificity-heavy reference exclusions.
+   This keeps the override scoped to actual CTAs without an ID-specificity race. */
+@layer professional-promotion-cta {
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) :is(.ww-support-page, .ww-pricing-page) a:is(.ww-promotion-cta, .ww-pricing-cta) {
+  background-color: #374151 !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) :is(.ww-support-page, .ww-pricing-page) a:is(.ww-promotion-cta, .ww-pricing-cta):hover {
+  background-color: #1f2937 !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) .ww-promotion-cta svg {
+  color: #ffffff !important;
+}
+}
+
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) .ww-pricing-page .ww-pricing-starter {
+  background: var(--accent-active-bg) !important;
+  border-color: var(--surface-border, #d1d5db) !important;
+}
+
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) .ww-pricing-page .ww-pricing-starter :is(h2, p, svg),
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) .ww-pricing-page .ww-pricing-discount {
+  color: var(--accent-text) !important;
+}
+
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) .ww-pricing-page :is(.ww-pricing-card, .ww-pricing-pro-card, .ww-pricing-tier-card) {
+  background: var(--surface-header-bg) !important;
+  border-color: var(--surface-border, #d1d5db) !important;
+  box-shadow: none !important;
+}
+
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) .ww-pricing-page .ww-pricing-tier-header {
+  background: var(--accent-active-bg) !important;
+  border-color: var(--surface-border, #d1d5db) !important;
+}
+
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) .ww-pricing-page .ww-pricing-tier-header .text-right > div:first-child {
+  color: var(--accent-text) !important;
+}
+
+/* Provider initials, credit chips and Pro chips share one neutral treatment.
+   The actual availability warning below is intentionally not part of this
+   rule: warning colour remains reserved for a real warning. */
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) .ww-pricing-page [data-testid="pricing-model"] :is(.rounded-lg, .rounded-full),
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) .ww-pricing-page .ww-pricing-tier-header > div > div:last-child > span {
+  background: var(--badge-bg) !important;
+  border: 1px solid var(--badge-border) !important;
+  color: var(--badge-text) !important;
+  box-shadow: none !important;
+}
+
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) .ww-pricing-page [data-testid="pricing-model"] .w-3.h-2 {
+  background-color: var(--accent-text) !important;
+}
+
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) .ww-pricing-page .ww-pricing-benefit svg {
+  color: var(--accent-text) !important;
+}
+
+:is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) .ww-pricing-page .ww-pricing-secondary-cta {
+  background: var(--badge-bg) !important;
+  color: var(--badge-text) !important;
+  border: 1px solid var(--badge-border) !important;
+  text-decoration: none !important;
 }
 
 /* Professional themes - Page header gradient */

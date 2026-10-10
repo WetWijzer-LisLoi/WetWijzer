@@ -1,16 +1,20 @@
 <% cleaned_title = clean_parliamentary_title_display(@document[:title], @document[:dossier_number]) %>
-<% parl_label = { 'chamber' => 'Kamer', 'senate' => 'Senaat' }[@document[:parliament]] || @document[:parliament]&.capitalize %>
+<% parl_label = t("public_navigation.parliaments.#{@document[:parliament]}", default: @document[:parliament]&.capitalize) %>
 <% type_prefix = @document[:document_type].present? ? @document[:document_type].gsub('_', ' ').capitalize : nil %>
 <% full_title = type_prefix && !cleaned_title.downcase.start_with?(type_prefix.downcase) ? "#{type_prefix} #{cleaned_title}" : cleaned_title %>
 <% @title = "#{parl_label} - #{full_title}" %>
 <% dekamer_lang = I18n.locale == :nl ? 'nl' : 'fr' %>
 <% if @document[:parliament] == 'senate'
-     source_url = @document[:url].present? ? @document[:url] : "https://www.senate.be/www/?MIval=index_senate&MENUID=22101&LANG=#{dekamer_lang}"
+     source_url = OfficialSourceUrl.parliamentary(@document[:url]) || "https://www.senate.be/www/?MIval=index_senate&MENUID=22101&LANG=#{dekamer_lang}"
      source_label = 'senate.be'
    else
      source_url = @document[:legislature].present? ? "https://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=#{dekamer_lang}&cfm=/site/wwwcfm/flwb/flwbn.cfm?legislat=#{@document[:legislature]}&dossierID=#{@document[:dossier_number]}" : nil
      source_label = 'dekamer.be'
    end %>
+<%# WW-SEC-11: only official parliament links leave this page; an imported
+    URL of another scheme or host gives no link (OfficialSourceUrl). %>
+<% source_url = OfficialSourceUrl.parliamentary(source_url) %>
+<% pdf_url = OfficialSourceUrl.parliamentary(@document[:pdf_url]) %>
 
 <%# Chatbot context: enables the floating widget to offer document analysis %>
 <meta name="chatbot-context"
@@ -69,8 +73,8 @@
       </div>
       <div class="flex flex-wrap items-center gap-2 no-print">
         <%# PDF download link %>
-        <% if @document[:pdf_url].present? %>
-          <a href="<%= @document[:pdf_url] %>" target="_blank" rel="noopener"
+        <% if pdf_url.present? %>
+          <a href="<%= pdf_url %>" target="_blank" rel="noopener"
              class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
              title="<%= case I18n.locale when :fr then 'Télécharger le PDF officiel' when :de then 'Offizielle PDF herunterladen' when :en then 'Download official PDF' else 'Officiële PDF downloaden' end %>">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -317,6 +321,7 @@
                   </div>
                 </div>
               <% end %>
+              <%= render 'parliamentary/roll_call_votes_notice', extra_class: 'mt-2' %>
             </div>
           <% end %>
 
@@ -364,18 +369,50 @@
         </div>
       <% end %>
 
-      <%# Related legislation with title %>
-      <% if @related_law %>
-        <div class="border-l-4 border-(--accent-400) dark:border-(--accent-600) bg-(--accent-500)/5 dark:bg-gray-900 rounded-r-lg p-3">
+      <%# Related legislation with titles. A reviewed dossier can prepare
+          several distinct laws; they are deliberately separate links. %>
+      <% if @related_laws.present? %>
+        <div class="border-l-4 border-(--accent-400) dark:border-(--accent-600) bg-(--accent-500)/5 dark:bg-gray-900 rounded-r-lg p-3"
+             data-relation-status="<%= @related_laws.first[:status] %>">
           <h3 class="text-xs font-medium text-gray-500 dark:text-gray-300/70 mb-1">
             <% case I18n.locale when :fr %>Législation associée<% when :de %>Zugehörige Gesetzgebung<% when :en %>Related legislation<% else %>Gerelateerde wetgeving<% end %>
+            · <%= t(@related_laws.first[:status] == :verified ? 'related_sources.parliamentary.verified' : 'related_sources.parliamentary.unverified') %>
           </h3>
-          <a href="<%= show_law_path(@related_law[:numac]) %>"
-             class="text-sm font-medium text-(--accent-700) dark:text-(--accent-400) hover:underline leading-snug">
-            <svg class="w-3.5 h-3.5 inline-block mr-1 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg><%= @related_law[:title] %>
-          </a>
+          <div class="space-y-1">
+            <% @related_laws.each do |law| %>
+              <a href="<%= show_law_path(law[:numac], language_id: law[:language_id]) %>"
+                 class="block text-sm font-medium text-(--accent-700) dark:text-(--accent-400) hover:underline leading-snug">
+                <svg class="w-3.5 h-3.5 inline-block mr-1 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg><%= law[:title] %>
+              </a>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <%# The Council of State opinions this document prints or cites
+          (opinion_parliament_links.sqlite3, written weekly by
+          lib/tasks/opinion_parliament_links.py). The link carries this
+          document's language suffix; the opinion page redirects to the other
+          language when only that one is published. %>
+      <% if @council_opinions.present? %>
+        <div id="council-opinions" class="border-l-4 border-(--accent-400) dark:border-(--accent-600) bg-(--accent-500)/5 dark:bg-gray-900 rounded-r-lg p-3 mt-3">
+          <h3 class="text-xs font-medium text-gray-500 dark:text-gray-300/70 mb-1">
+            <% case I18n.locale when :fr %>Avis du Conseil d'État<% when :de %>Gutachten des Staatsrates<% when :en %>Opinions of the Council of State<% else %>Adviezen van de Raad van State<% end %>
+          </h3>
+          <ul class="flex flex-wrap gap-x-4 gap-y-1">
+            <% @council_opinions.each do |opinion| %>
+              <li>
+                <a href="<%= jurisprudence_path(opinion[:key]) %>"
+                   class="text-sm font-medium text-(--accent-700) dark:text-(--accent-400) hover:underline leading-snug">
+                  <svg class="w-3.5 h-3.5 inline-block mr-1 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l9-4 9 4v6c0 5.25-3.75 9.75-9 11-5.25-1.25-9-5.75-9-11V6z"/>
+                  </svg><% case I18n.locale when :fr %>Avis n° <%= opinion[:number] %><% when :de %>Gutachten Nr. <%= opinion[:number] %><% when :en %>Opinion no. <%= opinion[:number] %><% else %>Advies nr. <%= opinion[:number] %><% end %>
+                </a>
+              </li>
+            <% end %>
+          </ul>
         </div>
       <% end %>
     </div>
@@ -575,8 +612,8 @@
         <p class="text-sm text-gray-400 dark:text-gray-500 mb-4">
           <% case I18n.locale when :fr %>Le texte de ce document n'a pas encore été extrait. Consultez le document officiel via le lien ci-dessous.<% when :de %>Der Text dieses Dokuments wurde noch nicht extrahiert. Konsultieren Sie das offizielle Dokument über den untenstehenden Link.<% when :en %>The text of this document has not yet been extracted. Consult the official document via the link below.<% else %>De tekst van dit document is nog niet geëxtraheerd. Raadpleeg het officiële document via onderstaande link.<% end %>
         </p>
-        <% if @document[:pdf_url].present? %>
-          <a href="<%= @document[:pdf_url] %>" target="_blank" rel="noopener"
+        <% if pdf_url.present? %>
+          <a href="<%= pdf_url %>" target="_blank" rel="noopener"
              class="inline-flex items-center gap-2 px-5 py-2.5 bg-(--accent-600-solid) hover:bg-(--accent-700-solid) text-white font-medium rounded-xl text-sm transition-colors shadow-lg shadow-(--accent-600)/25">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <% case I18n.locale when :fr %>Télécharger le PDF officiel<% when :de %>Offizielle PDF herunterladen<% when :en %>Download official PDF<% else %>Officiële PDF downloaden<% end %>
@@ -646,6 +683,5 @@
 }.compact.to_json) %>
 </script>
 <% end %>
-
 
 

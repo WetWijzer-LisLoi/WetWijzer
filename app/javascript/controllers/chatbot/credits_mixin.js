@@ -184,9 +184,18 @@ export const creditsMethods = {
     }
 
     // Update the widget options panel credit badge ("250cr" in header)
+    //
+    // Grouped the way the server renders it (_widget.html.erb: a Dutch reader
+    // expects 1.051, not 1051). Without this the badge went from "1.051cr" to
+    // "1050cr" after the first answer and stayed ungrouped until a reload.
+    // ONLY this badge: #credits-value and #credits-remaining-value are read
+    // back with parseInt below, and parseInt('1.050') is 1, which would show
+    // a false "onvoldoende credits" on the next question.
     const widgetCreditsEl = document.getElementById('widget-credits-display')
     if (widgetCreditsEl && remaining !== undefined) {
-      widgetCreditsEl.textContent = `${remaining}cr`
+      const separator = (this.languageValue || 'nl') === 'en' ? ',' : '.'
+      const grouped = String(remaining).replace(/\B(?=(\d{3})+(?!\d))/g, separator)
+      widgetCreditsEl.textContent = `${grouped}cr`
     }
 
     // Update the source preview label
@@ -251,9 +260,9 @@ export const creditsMethods = {
     let html = ''
     if (creditsVal >= cost) {
       if (lang === 'fr') {
-        html = `<span class="font-semibold text-amber-600 dark:text-amber-400">−${cost} ${crWord}</span>`
+        html = `<span class="font-semibold text-amber-700 dark:text-amber-400">−${cost} ${crWord}</span>`
       } else {
-        html = `<span class="font-semibold text-amber-600 dark:text-amber-400">−${cost}</span> ${crWord}`
+        html = `<span class="font-semibold text-amber-700 dark:text-amber-400">−${cost}</span> ${crWord}`
       }
     } else {
       html = insufficientHtml

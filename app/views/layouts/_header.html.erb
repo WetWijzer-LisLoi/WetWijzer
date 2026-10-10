@@ -3,10 +3,13 @@
     <div class="flex justify-between items-center gap-y-1">
       <%# Left: always-visible items %>
       <div class="flex items-center gap-1 sm:gap-2 text-sm">
-        <%# Dark mode toggle - always visible %>
-        <button type="button"
+        <%# Dark mode toggle - shown once scripts run (js-only: without them it
+            could not work). A 32px target around the 20px icon (the negative
+            margin keeps the row's layout) and a visible keyboard focus ring
+            (WW-A11Y-02). %>
+        <button type="button" hidden data-controller="js-only"
                 data-action="click->dark-mode#toggle"
-                class="text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors duration-150 ease-out motion-reduce:transition-none focus:outline-hidden"
+                class="inline-flex items-center justify-center w-8 h-8 -m-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors duration-150 ease-out motion-reduce:transition-none focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--accent-500)"
                 aria-label="<%= t('theme.toggle_dark_mode', default: 'Toggle dark mode') %>">
           <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M12 6a6 6 0 100 12 6 6 0 000-12z"></path></svg>
           <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
@@ -98,13 +101,13 @@
           <% end %>
 
           <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to "https://wetwijzer.be", class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>NL<span class="hidden sm:inline"> (wetwijzer.be)</span><% end %>
+          <%= link_to language_switch_url(:nl), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>NL<span class="hidden sm:inline"> (wetwijzer.be)</span><% end %>
           <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to "https://lisloi.be", class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>FR<span class="hidden sm:inline"> (lisloi.be)</span><% end %>
+          <%= link_to language_switch_url(:fr), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>FR<span class="hidden sm:inline"> (lisloi.be)</span><% end %>
           <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to "https://gesetzguide.be", class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>DE<span class="hidden sm:inline"> (gesetzguide.be)</span><% end %>
+          <%= link_to language_switch_url(:de), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>DE<span class="hidden sm:inline"> (gesetzguide.be)</span><% end %>
           <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to "https://lexlibera.be", class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>EN/INT<span class="hidden sm:inline"> (lexlibera.be)</span><% end %>
+          <%= link_to language_switch_url(:en), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>EN/INT<span class="hidden sm:inline"> (lexlibera.be)</span><% end %>
         </div>
       </div>
 
@@ -159,7 +162,7 @@
                 <% end %>
                 <%= link_to subscription_path, class: "block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" do %>
                   <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                  <%= t('subscriptions.title', default: 'Subscription') %>
+                  <%= t('subscriptions.title') %>
                 <% end %>
                 <%= button_to logout_path, method: :delete, class: "w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700" do %>
                   <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
@@ -194,7 +197,7 @@
             <%= t('theme.choose_accent') %>
           </button>
           <div class="fixed inset-0 hidden" data-theme-selector-target="backdrop" data-action="click->theme-selector#close"></div>
-          <div class="mt-2 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-4 hidden" data-theme-selector-target="panel" role="menu">
+          <div class="relative z-30 mt-2 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-4 hidden" data-theme-selector-target="panel" role="menu">
             <div class="grid grid-cols-8 gap-4 mb-4 justify-items-center">
               <% themes_for_row(1).each do |theme_key, theme_data| %>
                 <button type="button"
@@ -239,13 +242,13 @@
 
         <%# Domain links %>
         <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-          <%= link_to "https://wetwijzer.be", class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>NL<% end %>
+          <%= link_to language_switch_url(:nl), class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>NL<% end %>
           <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to "https://lisloi.be", class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>FR<% end %>
+          <%= link_to language_switch_url(:fr), class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>FR<% end %>
           <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to "https://gesetzguide.be", class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>DE<% end %>
+          <%= link_to language_switch_url(:de), class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>DE<% end %>
           <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to "https://lexlibera.be", class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>EN/INT<% end %>
+          <%= link_to language_switch_url(:en), class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>EN/INT<% end %>
         </div>
 
         <%# Login/Signup (mobile) %>

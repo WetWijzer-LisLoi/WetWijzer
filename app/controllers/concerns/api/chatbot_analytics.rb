@@ -36,7 +36,7 @@ module Api
 
     # Persist per-query analytics to the database
     # GDPR by design: NO question text, NO answer text - metadata only
-    # token_info: pass explicitly when the LLM ran on another thread —
+    # token_info: pass explicitly when the LLM ran on another thread:
     # Thread.current only sees this thread's locals.
     def log_analytic(
       _question,
@@ -75,6 +75,10 @@ module Api
       # answers. Read from the result rather than plumbed through the
       # controller, because that is where they already are.
       counter = counter.merge(supported_analytics_attributes(citation_guard_attributes(result)))
+      # Whether the charge was waived on purpose (to-do 6.7), as opposed to
+      # refunded after a failure: credits_deducted is 0 in both cases and in
+      # every free or service row, so a zero alone says nothing.
+      counter = counter.merge(supported_analytics_attributes(charge_attributes(result)))
 
       ChatbotAnalytic.create(
         **generation_attributes(generation_trace, reasoning_effort_requested),
@@ -153,6 +157,24 @@ module Api
       {}
     end
 
+    # The reason a delivered answer was not charged. Allowlisted like the
+    # guard outcome: the column is read back as a category. Today the only
+    # reason is an incomplete search (Api::BrowserChatBilling sets it on the
+    # result once the reservation is released); a refund after a failure
+    # leaves the column null, since that row is not a delivered free answer.
+    CHARGE_WAIVED_REASONS = [Api::BrowserChatBilling::CHARGE_WAIVED_INCOMPLETE_SEARCH].freeze
+
+    def charge_attributes(result)
+      return {} unless result.is_a?(Hash)
+
+      reason = result[:charge_waived].to_s
+      return {} unless CHARGE_WAIVED_REASONS.include?(reason)
+
+      { charge_waived_reason: reason }
+    rescue StandardError
+      {}
+    end
+
     # The counter is bounded by construction - the orchestrator's retry loop
     # runs `while attempts < CITATION_GUARD_MAX_RETRIES` - so anything outside
     # 0..max did not come from that loop, and `to_i` was quietly making it look
@@ -167,7 +189,7 @@ module Api
     def valid_guard_retries?(value)
       return false unless value.is_a?(Integer)
 
-      value >= 0 && value <= LegalChatbot::Orchestrator::CITATION_GUARD_MAX_RETRIES
+      value.between?(0, LegalChatbot::Orchestrator::CITATION_GUARD_MAX_RETRIES)
     rescue StandardError
       # false, not {}. This is a predicate, and the caller stores the value
       # when it returns truthy - so the {} inherited from the surrounding

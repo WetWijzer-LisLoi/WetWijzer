@@ -158,6 +158,9 @@ class ChatbotAnalytic < AnalyticsRecord
     # that.
     table.string :citation_guard_outcome, limit: 32
     table.integer :citation_guard_retries
+    # Why a delivered answer was not charged (to-do 6.7: 'retrieval_incomplete').
+    # Null for a charged answer and for a refund after a failure.
+    table.string :charge_waived_reason, limit: 32
   end
   private_class_method :add_metadata_and_rating_columns
 
@@ -320,15 +323,25 @@ class ChatbotAnalytic < AnalyticsRecord
     find_by!(billing_reservation_token: token)
   end
 
+  # The rows of a named period, or of everything since a moment. `since`
+  # wins when both are given: the admin analytics pages pick their window
+  # (today, the last 7, 30 or 90 days, this month, all time) and hand the
+  # start here, so every aggregate on a page describes the same population.
+  def self.period_scope(period, since: nil)
+    return where('created_at >= ?', since) if since
+
+    case period
+    when :today then today
+    when :week then this_week
+    when :month then this_month
+    else all
+    end
+  end
+
   # Aggregate stats for dashboard
-  def self.stats(period: :all_time, request_source: nil)
+  def self.stats(period: :all_time, request_source: nil, since: nil)
     ensure_cost_columns!
-    scope = case period
-            when :today then today
-            when :week then this_week
-            when :month then this_month
-            else all
-            end
+    scope = period_scope(period, since: since)
     scope = scope.partner_queries if request_source == :partner
     scope = scope.web_queries if request_source == :web
 
@@ -407,17 +420,13 @@ class ChatbotAnalytic < AnalyticsRecord
     { purchased: { rate: 0, credits: 0, revenue_eur: 0 }, pro: { rate: (2.99 / Subscription::PRO_MONTHLY_CREDITS.to_f).round(4), count: 0, credits_per_month: 0 }, blended_rate: CREDIT_VALUE_EUR_FALLBACK }
   end
 
-  def self.cost_stats(period: :month, request_source: nil)
+  def self.cost_stats(period: :month, request_source: nil, since: nil)
     ensure_cost_columns!
 
-    scope = case period
-            when :today then today
-            when :week then this_week
-            when :month then this_month
-            else all
-            end
+    scope = period_scope(period, since: since)
     scope = scope.partner_queries if request_source == :partner
     scope = scope.web_queries if request_source == :web
+    period_from = since || period_start(period)
 
     total_cost = scope.where.not(estimated_cost_eur: nil).sum(:estimated_cost_eur)
     total_input = scope.sum(:input_tokens)
@@ -425,7 +434,8 @@ class ChatbotAnalytic < AnalyticsRecord
     total_credits_deducted = authoritative_credit_total(
       scope: scope,
       period: period,
-      request_source: request_source
+      request_source: request_source,
+      from: period_from
     )
     credit_rate = computed_credit_value_eur
     total_revenue = total_credits_deducted * credit_rate
@@ -435,7 +445,7 @@ class ChatbotAnalytic < AnalyticsRecord
       scope: scope,
       analytics_field: :model_used,
       ledger_field: :model,
-      from: period_start(period),
+      from: period_from,
       request_source: request_source
     )
     by_model = scope.group(:model_used).select(
@@ -562,10 +572,12 @@ class ChatbotAnalytic < AnalyticsRecord
     end
   end
 
-  # Daily profit trend for charts (last 30 days)
-  def self.daily_profit_trend(days: 30)
+  # Daily profit trend for charts: the last `days` days, or everything from
+  # `from` when given. Only days with a row or a settled credit appear; a
+  # caller that wants a continuous axis fills the gaps itself.
+  def self.daily_profit_trend(days: 30, from: nil)
     ensure_cost_columns!
-    cutoff = days.days.ago
+    cutoff = from || days.days.ago
     rows = where('created_at >= ?', cutoff)
            .group('date(created_at)')
            .select(

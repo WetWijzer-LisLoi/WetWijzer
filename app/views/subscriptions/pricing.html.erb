@@ -1,6 +1,6 @@
 <%= content_for :title, t('pricing.title') %>
 
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+<div class="ww-pricing-page min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
   <div class="max-w-5xl mx-auto">
     <% if flash[:alert] || flash[:error] %>
       <div class="mb-8 p-4 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 flex items-center gap-3">
@@ -29,7 +29,7 @@
     </div>
 
     <!-- Starter Credits Banner -->
-    <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-2xl p-6 mb-12 text-center">
+    <div class="ww-pricing-starter bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-2xl p-6 mb-12 text-center">
       <div class="flex items-center justify-center gap-3 mb-2">
         <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>
         <h2 class="text-2xl font-bold text-green-800 dark:text-green-200">
@@ -50,7 +50,7 @@
             end %>
       </p>
       <% unless logged_in? %>
-        <%= link_to signup_path, class: "inline-block mt-4 px-6 py-3 bg-green-700 text-white font-semibold rounded-lg hover:bg-green-800 transition" do %>
+        <%= link_to signup_path, class: "ww-pricing-cta inline-block mt-4 px-6 py-3 bg-green-700 text-white font-semibold rounded-lg hover:bg-green-800 transition" do %>
           <%= case I18n.locale
               when :fr then 'Inscription gratuite'
               when :de then 'Kostenlos registrieren'
@@ -85,14 +85,14 @@
         
         <div class="flex flex-col justify-between gap-4 flex-1">
           <% CreditPurchase::PACKAGES.each do |key, info| %>
-            <div data-testid="pricing-credit-package" class="bg-white dark:bg-gray-800 rounded-xl shadow p-5 border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-lg transition">
+            <div data-testid="pricing-credit-package" class="ww-pricing-card bg-white dark:bg-gray-800 rounded-xl shadow p-5 border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-lg transition">
               <div>
                 <h3 class="font-bold text-gray-900 dark:text-white">
                   <%= t("credits.packages.#{key}.name") %>
                 </h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                   <%= info[:credits] %> credits
-                  <span class="text-xs text-gray-400 dark:text-gray-500">
+                  <span class="text-xs text-gray-500">
                     (&euro;<%= format('%.2f', info[:price_cents].to_f / info[:credits] / 100) %>/cr)
                   </span>
                 </p>
@@ -102,7 +102,7 @@
                   &euro;<%= format('%.2f', info[:price_cents] / 100.0) %>
                 </div>
                 <% if info[:pro_price_cents] && info[:pro_price_cents] < info[:price_cents] %>
-                  <div class="text-xs text-green-600 dark:text-green-400 font-semibold">
+                  <div class="ww-pricing-discount text-xs text-green-700 dark:text-green-400 font-semibold">
                     Pro: &euro;<%= format('%.2f', info[:pro_price_cents] / 100.0) %>
                   </div>
                 <% end %>
@@ -118,7 +118,7 @@
                     <% end %>
                   </div>
                 <% else %>
-                  <%= link_to signup_path, class: "inline-flex w-full sm:w-auto items-center justify-center mt-2 px-4 py-2 text-sm rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition" do %>
+                  <%= link_to signup_path, class: "ww-pricing-secondary-cta inline-flex w-full sm:w-auto items-center justify-center mt-2 px-4 py-2 text-sm rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition" do %>
                     <%= case I18n.locale when :fr then "S'inscrire" when :de then 'Registrieren' when :en then 'Sign up' else 'Registreren' end %>
                   <% end %>
                 <% end %>
@@ -143,7 +143,7 @@
               end %>
         </p>
 
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 border-(--accent-500) flex-1 flex flex-col">
+        <div class="ww-pricing-pro-card bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 border-(--accent-500) flex-1 flex flex-col">
           <div class="mb-4">
             <!-- Pricing -->
             <div class="flex items-baseline gap-1">
@@ -153,27 +153,27 @@
           </div>
 
           <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-3 mb-6">
-            <li class="flex items-center gap-2">
+            <li class="ww-pricing-benefit flex items-center gap-2">
               <svg class="w-4 h-4 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
               <span><strong><%= case I18n.locale when :fr then "#{Subscription::PRO_MONTHLY_CREDITS} crédits gratuits/mois" when :de then "#{Subscription::PRO_MONTHLY_CREDITS} gratis Credits/Monat" when :en then "#{Subscription::PRO_MONTHLY_CREDITS} free credits/month" else "#{Subscription::PRO_MONTHLY_CREDITS} gratis credits/maand" end %></strong> <%= case I18n.locale when :fr then 'inclus' when :de then 'inklusive' when :en then 'included' else 'inbegrepen' end %></span>
             </li>
-            <li class="flex items-center gap-2">
+            <li class="ww-pricing-benefit flex items-center gap-2">
               <svg class="w-4 h-4 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
               <span><strong><%= case I18n.locale when :fr then 'Tous les modèles AI' when :de then 'Alle AI-Modelle' when :en then 'All AI models' else 'Alle AI-modellen' end %></strong> - <%= case I18n.locale when :fr then 'chaque niveau de raisonnement pris en charge' when :de then 'jede unterstützte Denkstufe' when :en then 'every supported reasoning level' else 'elk ondersteund redeneerniveau' end %></span>
             </li>
 
-            <li class="flex items-center gap-2">
+            <li class="ww-pricing-benefit flex items-center gap-2">
               <svg class="w-4 h-4 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
               <span><strong><%= case I18n.locale when :fr then 'Réduction 30%' when :de then '30% Rabatt' when :en then '30% discount' else '30% korting' end %></strong> - <%= case I18n.locale when :fr then 'sur les packs de crédits supplémentaires' when :de then 'auf zusätzliche Credit-Pakete' when :en then 'on extra credit packs' else 'op extra creditpakketten' end %></span>
             </li>
-            <li class="flex items-center gap-2">
+            <li class="ww-pricing-benefit flex items-center gap-2">
               <svg class="w-4 h-4 text-red-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/></svg>
               <span><strong><%= case I18n.locale when :fr then 'Soutenez WetWijzer' when :de then 'Unterstützen Sie WetWijzer' when :en then 'Support WetWijzer' else 'Steun WetWijzer' end %></strong> - <%= case I18n.locale when :fr then 'aidez-nous à rester indépendant et gratuit' when :de then 'helfen Sie uns unabhängig und kostenlos zu bleiben' when :en then 'help us stay independent and free' else 'help ons onafhankelijk en gratis te blijven' end %></span>
             </li>
           </ul>
 
           <!-- AI Availability Disclaimer -->
-          <div class="mt-auto mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <div class="ww-pricing-availability-notice mt-auto mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
             <div class="flex items-start gap-2">
               <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
               <p class="text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed">
@@ -190,12 +190,12 @@
           <div data-testid="pricing-pro-cta" class="pricing-pro-cta">
             <% if logged_in? %>
               <% if current_user.pro? %>
-                <%= link_to subscription_path, class: "inline-flex w-full items-center justify-center py-3 px-4 text-center rounded-lg bg-(--accent-600-solid) text-white font-semibold hover:bg-(--accent-700-solid) transition" do %>
+                <%= link_to subscription_path, class: "ww-pricing-cta inline-flex w-full items-center justify-center py-3 px-4 text-center rounded-lg bg-(--accent-600-solid) text-white font-semibold hover:bg-(--accent-700-solid) transition" do %>
                   <%= case I18n.locale when :fr then 'Gérer l’abonnement' when :de then 'Abonnement verwalten' when :en then 'Manage subscription' else 'Abonnement beheren' end %>
                 <% end %>
               <% else %>
                 <!-- Monthly checkout -->
-                <%= button_to checkout_path(tier: 'pro', interval: 'monthly'), method: :post, form: { class: "w-full", data: { turbo: false } }, class: "inline-flex w-full items-center justify-center py-3 px-4 text-center rounded-lg bg-(--accent-600-solid) text-white font-semibold hover:bg-(--accent-700-solid) transition" do %>
+                <%= button_to checkout_path(tier: 'pro', interval: 'monthly'), method: :post, form: { class: "w-full", data: { turbo: false } }, class: "ww-pricing-cta inline-flex w-full items-center justify-center py-3 px-4 text-center rounded-lg bg-(--accent-600-solid) text-white font-semibold hover:bg-(--accent-700-solid) transition" do %>
                   <%= case I18n.locale when :fr then "S'abonner" when :de then 'Abonnieren' when :en then 'Subscribe' else 'Abonneren' end %>
                 <% end %>
                 <% if ENV['COINGATE_API_TOKEN'].present? %>
@@ -205,7 +205,7 @@
                 <% end %>
               <% end %>
             <% else %>
-              <%= link_to signup_path, class: "inline-flex w-full items-center justify-center py-3 px-4 text-center rounded-lg bg-(--accent-600-solid) text-white font-semibold hover:bg-(--accent-700-solid) transition" do %>
+              <%= link_to signup_path, class: "ww-pricing-cta inline-flex w-full items-center justify-center py-3 px-4 text-center rounded-lg bg-(--accent-600-solid) text-white font-semibold hover:bg-(--accent-700-solid) transition" do %>
                 <%= case I18n.locale when :fr then 'Inscription gratuite' when :de then 'Kostenlos registrieren' when :en then 'Register free' else 'Gratis registreren' end %>
               <% end %>
             <% end %>
@@ -235,8 +235,8 @@
 
       <div class="grid md:grid-cols-2 gap-6">
         <%# ── LEVEL I ── %>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div class="px-6 py-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-b border-gray-200 dark:border-gray-700">
+        <div class="ww-pricing-tier-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div class="ww-pricing-tier-header px-6 py-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <span class="text-2xl"></span>
@@ -328,8 +328,8 @@
         </div>
 
         <%# ── LEVEL II ── %>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-(--accent-500) overflow-hidden relative">
-          <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-gray-200 dark:border-gray-700">
+        <div class="ww-pricing-tier-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-(--accent-500) overflow-hidden relative">
+          <div class="ww-pricing-tier-header px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <span class="text-2xl"></span>
@@ -344,6 +344,9 @@
               </div>
               <div class="text-right">
                 <div class="text-sm font-bold text-(--accent-600)"><%= chatbot_base_credit_range_for(:genius) %></div>
+                <% if LegalChatbotService::INTELLIGENCE_LEVELS.dig('genius', :tier) == :pro %>
+                  <span class="text-xs font-semibold text-blue-600 dark:text-blue-400">PRO</span>
+                <% end %>
               </div>
             </div>
           </div>
@@ -361,6 +364,9 @@
               </div>
               <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                 <%= chatbot_credit_range(LegalChatbotService.credits_for_model('genius', 'claude-4.5-haiku')) %>
+                <% if LegalChatbotService::AVAILABLE_MODELS.dig('claude-4.5-haiku', :tier) == :pro %>
+                  <span data-testid="pricing-pro-badge">· PRO</span>
+                <% end %>
               </span>
             </div>
             <%# GPT-5.6 Luna %>
@@ -368,7 +374,7 @@
               <div class="flex items-center gap-3">
                 <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/40 text-sm font-bold text-violet-700 dark:text-violet-300">L</span>
                 <div>
-                  <div class="font-semibold text-sm text-gray-900 dark:text-white">GPT-5.6 Luna <span class="text-[10px] text-gray-400 dark:text-gray-500">(Reasoning)</span></div>
+                  <div class="font-semibold text-sm text-gray-900 dark:text-white">GPT-5.6 Luna <span class="text-[10px] text-gray-500">(Reasoning)</span></div>
                   <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                     <span class="inline-block w-3 h-2 rounded-sm bg-blue-600"></span> <%= chatbot_provider_scope_badge(:openai) %>
                   </div>
@@ -376,14 +382,17 @@
               </div>
               <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                 <%= chatbot_credit_range(LegalChatbotService.credits_for_model('genius', 'gpt-5.6-luna')) %>
+                <% if LegalChatbotService::AVAILABLE_MODELS.dig('gpt-5.6-luna', :tier) == :pro %>
+                  <span data-testid="pricing-pro-badge">· PRO</span>
+                <% end %>
               </span>
             </div>
           </div>
         </div>
 
         <%# ── LEVEL III ── %>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden relative" style="border: 2px solid transparent; background-clip: padding-box; box-shadow: 0 0 0 2px var(--accent-600-solid, #9333ea), 0 10px 15px -3px rgba(0,0,0,0.1);">
-          <div class="px-6 py-4 bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-900/20 dark:to-fuchsia-900/20 border-b border-gray-200 dark:border-gray-700">
+        <div class="ww-pricing-tier-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden relative" style="border: 2px solid transparent; background-clip: padding-box; box-shadow: 0 0 0 2px var(--accent-600-solid, #9333ea), 0 10px 15px -3px rgba(0,0,0,0.1);">
+          <div class="ww-pricing-tier-header px-6 py-4 bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-900/20 dark:to-fuchsia-900/20 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <span class="text-2xl"></span>
@@ -460,8 +469,8 @@
         </div>
 
         <%# ── LEVEL IV ── %>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden relative" style="border: 2px solid transparent; background-clip: padding-box; box-shadow: 0 0 0 2px var(--accent-600-solid, #d97706), 0 10px 15px -3px rgba(0,0,0,0.1);">
-          <div class="px-6 py-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border-b border-gray-200 dark:border-gray-700">
+        <div class="ww-pricing-tier-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden relative" style="border: 2px solid transparent; background-clip: padding-box; box-shadow: 0 0 0 2px var(--accent-600-solid, #d97706), 0 10px 15px -3px rgba(0,0,0,0.1);">
+          <div class="ww-pricing-tier-header px-6 py-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <span class="text-2xl"></span>
@@ -547,7 +556,7 @@
       </div>
 
       <!-- Footnote -->
-      <p class="mt-4 text-center text-[11px] text-gray-400 dark:text-gray-500">
+      <p class="mt-4 text-center text-[11px] text-gray-500">
         <%= case I18n.locale
             when :fr then "* Les crédits de démarrage fonctionnent avec une sélection de modèles du niveau Malin (voir les badges ci-dessus) ; tous les autres modèles nécessitent Pro. Tous les crédits sont permanents et n’expirent jamais."
             when :de then "* Startcredits funktionieren mit ausgewählten Modellen der Stufe Schlau (siehe Kennzeichnung oben); alle anderen Modelle erfordern Pro. Alle Credits sind permanent und verfallen nie."
@@ -555,7 +564,7 @@
             else "* Startcredits werken met geselecteerde modellen van het Slim-niveau (zie de markeringen hierboven); alle andere modellen vereisen Pro. Alle credits zijn permanent en vervallen nooit."
             end %>
       </p>
-      <p class="mt-2 text-center text-[11px] text-gray-400 dark:text-gray-500">
+      <p class="mt-2 text-center text-[11px] text-gray-500">
         <%= case I18n.locale
             when :fr then '** Les modèles AI, fournisseurs et coûts en crédits indiqués sont indicatifs et peuvent être modifiés sans préavis. Voir nos conditions d\'utilisation (§8.1b) pour plus de détails.'
             when :de then '** Die angegebenen KI-Modelle, Anbieter und Creditkosten sind indikativ und können ohne vorherige Ankündigung geändert werden. Siehe unsere Nutzungsbedingungen (§8.1b) für Details.'

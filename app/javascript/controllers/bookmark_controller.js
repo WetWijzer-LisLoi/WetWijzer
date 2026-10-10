@@ -19,7 +19,7 @@
  */
 import { Controller } from "@hotwired/stimulus"
 import { showToast } from '../utils/toast'
-import { isDutch } from '../utils/locale'
+import { uiText } from '../utils/ui_translations'
 import { prefs } from '../services/preferences_store'
 
 export default class extends Controller {
@@ -54,7 +54,7 @@ export default class extends Controller {
     event?.stopPropagation?.()
     
     if (!prefs.isLoggedIn()) {
-      showToast(this.isDutch ? "Log in om bladwijzers te gebruiken" : "Connectez-vous pour utiliser les signets")
+      showToast(uiText('bookmarkLogin'))
       return
     }
     
@@ -76,7 +76,7 @@ export default class extends Controller {
         })
         if (response.ok) {
           this._bookmarked = false
-          showToast(this.isDutch ? "Bladwijzer verwijderd" : "Signet supprimé")
+          showToast(uiText('bookmarkRemoved'))
         }
       } else {
         // Add bookmark via API
@@ -96,12 +96,12 @@ export default class extends Controller {
         })
         if (response.ok) {
           this._bookmarked = true
-          showToast(this.isDutch ? "Bladwijzer toegevoegd" : "Signet ajouté")
+          showToast(uiText('bookmarkAdded'))
         }
       }
     } catch (e) {
       console.warn('Bookmark toggle failed:', e)
-      showToast(this.isDutch ? "Fout bij opslaan" : "Erreur lors de l'enregistrement")
+      showToast(uiText('bookmarkSaveFailed'))
     }
     
     this.updateUI()
@@ -165,7 +165,4 @@ export default class extends Controller {
     return div.innerHTML
   }
 
-  get isDutch() {
-    return isDutch()
-  }
 }

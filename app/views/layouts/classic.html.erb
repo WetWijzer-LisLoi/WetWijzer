@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="<%= I18n.locale %>">
+<html lang="<%= I18n.locale %>" data-classic-theme="<%= classic_theme %>">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><%= @title %></title>
+    <%# F2: 33 views name their page with content_for :title, which this line
+        ignored, so /login, /signup, /account and others had an empty title. %>
+    <title><%= @title.presence || content_for(:title).presence || site_name %></title>
     <meta name="description" content="<%= @meta_description || t(:meta_description) %>" />
     <meta name="robots" content="noindex, nofollow" />
     <style>
@@ -45,7 +47,7 @@
         flex-wrap: wrap;
       }
       .classic-lang-active { font-weight: 700; color: #1a1a1a !important; }
-      .classic-nav { display: flex; gap: 20px; font-size: 14px; align-items: center; }
+      .classic-nav { display: flex; flex-wrap: wrap; gap: 10px 16px; max-width: 100%; min-width: 0; font-size: 14px; align-items: center; }
       .classic-nav a { color: #6b7280; }
       .classic-nav a:hover { color: #1a56db; }
       .classic-lang-sep { color: #d1d5db; }
@@ -186,6 +188,13 @@
         vertical-align: top;
       }
       .classic-table tr:hover td { background: #f8fafc; }
+      .classic-table td.law-result-title {
+        text-align: justify;
+        text-align-last: start;
+        text-justify: inter-word;
+        hyphens: auto;
+        overflow-wrap: break-word;
+      }
       .classic-table .date-col { white-space: nowrap; width: 100px; color: #6b7280; font-size: 13px; }
       .classic-table .link-col { white-space: nowrap; width: 60px; text-align: center; }
       .classic-table .link-col a { font-size: 13px; color: #1a56db; }
@@ -221,7 +230,7 @@
         color: #374151;
         margin-bottom: 4px;
       }
-      .classic-article-content { color: #1a1a1a; line-height: 1.7; text-align: justify; }
+      .classic-article-content { color: #1a1a1a; line-height: 1.7; text-align: justify; overflow-wrap: break-word; }
       .classic-article-content p { margin-bottom: 12px; }
       .classic-article-content br + br { display: block; content: ""; margin-top: 12px; }
 
@@ -276,6 +285,57 @@
       .classic-footer a:hover { color: #1a56db; }
       .classic-footer-links { margin-top: 6px; }
 
+      /* ── Inbox 2026-10-08 10:49, work package B: a usable law page without JavaScript ── */
+      .classic-law-title { font-size: 22px; font-weight: 700; line-height: 1.4; margin-bottom: 12px; color: #111; overflow-wrap: anywhere; }
+      /* Nothing widens the page on a phone: a long URL wraps inside its cell, */
+      .classic-meta-table { max-width: 560px; table-layout: fixed; margin-bottom: 20px; }
+      .classic-meta-table td:first-child { width: 140px; }
+      .classic-table td { overflow-wrap: anywhere; }
+      /* and a wide legal-text or legal-page table scrolls in its own container. */
+      .classic-table-scroll { max-width: 100%; overflow-x: auto; margin: 8px 0; }
+      .classic-table-scroll:focus-visible { outline: 2px solid #1a56db; outline-offset: 2px; }
+      .classic-related { font-size: 13px; margin-bottom: 24px; }
+      /* Contents: open when small; a large one starts closed and scrolls within itself once opened. */
+      .classic-skip { font-size: 14px; margin-bottom: 8px; }
+      .classic-toc > summary, .classic-list > summary { cursor: pointer; font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+      .classic-toc-body { font-size: 14px; line-height: 1.7; padding-left: 8px; margin-bottom: 24px; overflow-wrap: anywhere; }
+      .classic-toc-body ul { list-style: none; }
+      .classic-toc-large .classic-toc-body { max-height: 65vh; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; }
+      .classic-toc-l1, .classic-toc-l2 { font-weight: 700; margin-top: 6px; }
+      .classic-toc-l3 { padding-left: 8px; font-weight: 600; }
+      .classic-toc-l4 { padding-left: 16px; font-weight: 600; }
+      .classic-toc-l5 { padding-left: 24px; }
+      .classic-toc-l6 { padding-left: 32px; }
+      .classic-toc-l7 { padding-left: 40px; }
+      .classic-toc-l99 { padding-left: 48px; }
+      .classic-scroll-y { max-height: 65vh; overflow-y: auto; }
+      .classic-law-text-heading { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+      /* Search validation and a page's outcome notice */
+      .classic-alert, .classic-flash { max-width: 680px; margin: 16px auto 0; padding: 10px 14px; border-radius: 6px; font-size: 14px; }
+      .classic-alert { border: 1px solid #fca5a5; background: #fef2f2; color: #991b1b; }
+      .classic-alert ul { margin: 6px 0 0 18px; }
+      .classic-flash { border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; }
+      .classic-reset { align-self: center; font-size: 14px; }
+      /* Legal pages, whose own styles the modern layout loads */
+      .classic-legal h1 { font-size: 24px; margin: 24px 0 12px; }
+      .classic-legal h2 { font-size: 19px; margin: 24px 0 8px; }
+      .classic-legal h3 { font-size: 16px; margin: 16px 0 6px; }
+      .classic-legal p, .classic-legal ul, .classic-legal ol { margin-bottom: 10px; }
+      /* Match public prose typography without loading modern styles or scripts. */
+      .classic-legal p { text-align: justify; text-align-last: start; hyphens: auto; overflow-wrap: break-word; }
+      .classic-legal .last-updated, .classic-legal li p, .classic-legal th p, .classic-legal td p,
+      .classic-legal pre p, .classic-legal .security-card p, .classic-legal .config-card p { text-align: start; }
+      .classic-legal pre, .classic-legal code { hyphens: none; }
+      .classic-legal ul, .classic-legal ol { padding-left: 22px; }
+      .classic-legal table { border-collapse: collapse; margin: 0; }
+      .classic-legal th, .classic-legal td { border: 1px solid #e5e7eb; padding: 6px 8px; vertical-align: top; text-align: left; }
+      @media print {
+        /* the whole contents prints, even closed (::details-content, Chrome 131+) */
+        .classic-toc::details-content { content-visibility: visible; }
+        .classic-toc-body, .classic-scroll-y, .classic-table-scroll { max-height: none !important; overflow: visible !important; border: 0 !important; }
+        .classic-skip { display: none; }
+      }
+
       /* ── Responsive ── */
       @media (max-width: 640px) {
         .classic-header-inner { flex-direction: column; align-items: flex-start; }
@@ -286,10 +346,11 @@
       }
 
       /* ═══════════════════════════════════════════════════════
-         Dark mode - pure CSS, follows the OS preference.
-         (No JS toggle: classic is fully JavaScript-free.)
+         Dark mode - pure CSS. The system setting is the default; readers can
+         explicitly choose light or dark with the server-rendered links below.
          ═══════════════════════════════════════════════════════ */
       @media (prefers-color-scheme: dark) {
+        html:not([data-classic-theme="light"]) {
         body { background: #111827; color: #e5e7eb; }
         a { color: #60a5fa; }
         .classic-header { background: #1f2937; border-color: #374151; }
@@ -323,27 +384,89 @@
         .classic-pagination .current { background: #2563eb; border-color: #2563eb; }
         .classic-pagination .disabled { background: #111827; border-color: #374151; color: #4b5563; opacity: 0.5; }
         .classic-footer { border-color: #374151; }
+        .classic-law-title { color: #f9fafb; }
+        .classic-toc-large .classic-toc-body { border-color: #374151; }
+        .classic-alert { background: #450a0a; border-color: #7f1d1d; color: #fecaca; }
+        .classic-flash { background: #172554; border-color: #1e3a8a; color: #dbeafe; }
+        .classic-legal th, .classic-legal td { border-color: #374151; }
+        }
       }
+
+      /* An explicit dark selection has the same palette even on a light OS.
+         Kept separate from the system query so it remains fully no-JS. */
+      html[data-classic-theme="dark"] body { background: #111827; color: #e5e7eb; }
+      html[data-classic-theme="dark"] a { color: #60a5fa; }
+      html[data-classic-theme="dark"] .classic-header { background: #1f2937; border-color: #374151; }
+      html[data-classic-theme="dark"] .classic-nav a { color: #9ca3af; }
+      html[data-classic-theme="dark"] .classic-lang-active { color: #f9fafb !important; }
+      html[data-classic-theme="dark"] .classic-hero h1 { color: #f9fafb; }
+      html[data-classic-theme="dark"] .classic-hero p { color: #9ca3af; }
+      html[data-classic-theme="dark"] .classic-search input { background: #1f2937; border-color: #4b5563; color: #e5e7eb; }
+      html[data-classic-theme="dark"] .classic-search input::placeholder { color: #6b7280; }
+      html[data-classic-theme="dark"] .classic-search input:focus { border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96,165,250,.15); }
+      html[data-classic-theme="dark"] .classic-search button { background: #2563eb; }
+      html[data-classic-theme="dark"] .classic-search button:hover { background: #3b82f6; }
+      html[data-classic-theme="dark"] .classic-filters label { color: #d1d5db; }
+      html[data-classic-theme="dark"] .classic-filters input[type="checkbox"] { accent-color: #60a5fa; }
+      html[data-classic-theme="dark"] .classic-meta { color: #9ca3af; }
+      html[data-classic-theme="dark"] .classic-table th { background: #1f2937; border-color: #374151; color: #9ca3af; }
+      html[data-classic-theme="dark"] .classic-table td { border-color: #1f2937; color: #d1d5db; }
+      html[data-classic-theme="dark"] .classic-table tr:hover td { background: #1e3a5f; }
+      html[data-classic-theme="dark"] .classic-table .link-col a { color: #60a5fa; }
+      html[data-classic-theme="dark"] .classic-table th a { color: #9ca3af; }
+      html[data-classic-theme="dark"] .classic-table th a:hover { color: #60a5fa; }
+      html[data-classic-theme="dark"] .classic-table mark { background: #1e3a5f; color: #fbbf24; }
+      html[data-classic-theme="dark"] .classic-card { background: #1f2937; border-color: #374151; }
+      html[data-classic-theme="dark"] .classic-card h2 { color: #f9fafb; }
+      html[data-classic-theme="dark"] .classic-article { border-color: #374151; }
+      html[data-classic-theme="dark"] .classic-article-number { color: #d1d5db; }
+      html[data-classic-theme="dark"] .classic-article-content { color: #e5e7eb; }
+      html[data-classic-theme="dark"] .classic-section-heading { border-color: #374151; color: #d1d5db; }
+      html[data-classic-theme="dark"] .classic-pagination a, html[data-classic-theme="dark"] .classic-pagination span { background: #1f2937; border-color: #4b5563; color: #d1d5db; }
+      html[data-classic-theme="dark"] .classic-pagination a:hover { background: #1e3a5f; }
+      html[data-classic-theme="dark"] .classic-pagination .current { background: #2563eb; border-color: #2563eb; }
+      html[data-classic-theme="dark"] .classic-pagination .disabled { background: #111827; border-color: #374151; color: #4b5563; opacity: 0.5; }
+      html[data-classic-theme="dark"] .classic-footer { border-color: #374151; }
+      html[data-classic-theme="dark"] .classic-law-title { color: #f9fafb; }
+      html[data-classic-theme="dark"] .classic-toc-large .classic-toc-body { border-color: #374151; }
+      html[data-classic-theme="dark"] .classic-alert { background: #450a0a; border-color: #7f1d1d; color: #fecaca; }
+      html[data-classic-theme="dark"] .classic-flash { background: #172554; border-color: #1e3a8a; color: #dbeafe; }
+      html[data-classic-theme="dark"] .classic-legal th, html[data-classic-theme="dark"] .classic-legal td { border-color: #374151; }
     </style>
   </head>
+  <%# No data-csp-nonce: it served the modern JavaScript, which Classic does
+      not run, and was the one per-request byte of a publicly cached page. %>
   <body>
     <%# Classic header - simple text links matching the original alpha layout %>
     <header class="classic-header">
       <div class="classic-container classic-header-inner">
+        <%# Global site navigation opens each brand's Classic homepage;
+            law-specific translation controls are separate. %>
         <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
-          <a href="https://classic.wetwijzer.be<%= request.path %>" class="<%= 'classic-lang-active' if I18n.locale == :nl %>">NL (wetwijzer.be)</a>
-          <a href="https://classic.lisloi.be<%= request.path %>" class="<%= 'classic-lang-active' if I18n.locale == :fr %>">FR (lisloi.be)</a>
-          <a href="https://classic.gesetzguide.be<%= request.path %>" class="<%= 'classic-lang-active' if I18n.locale == :de %>">DE (gesetzguide.be)</a>
-          <a href="https://classic.lexlibera.be<%= request.path %>" class="<%= 'classic-lang-active' if I18n.locale == :en %>">EN (lexlibera.be)</a>
+          <% classic_site_links.each do |site| %>
+            <a href="<%= site[:url] %>" class="<%= 'classic-lang-active' if site[:active] %>"<%= ' aria-current="true"'.html_safe if site[:active] %>><%= site[:label] %></a>
+          <% end %>
         </div>
-        <nav class="classic-nav">
-          <a href="<%= "https://#{request.host.sub('classic.', '')}" %>" title="<%= t('classic.switch_modern') %>">Modern ↗</a>
+        <nav class="classic-nav" aria-label="<%= t('classic.theme.label') %>">
+          <span><%= t('classic.theme.label') %>:</span>
+          <% %w[system light dark].each do |theme| %>
+            <a href="<%= classic_theme_url(theme) %>"<%= ' aria-current="true"'.html_safe if classic_theme_selected?(theme) %>><%= t("classic.theme.#{theme}") %></a>
+          <% end %>
+          <a href="<%= classic_modern_url %>"><%= t('classic.switch_modern') %> ↗</a>
         </nav>
       </div>
     </header>
 
-    <main class="classic-container">
-      <%= yield %>
+    <% legal_page = controller_name == 'legal_pages' %>
+    <main class="classic-container<%= ' classic-legal' if legal_page %>">
+      <%# A bridged notice makes the receiving law/home page private before
+          rendering; donation outcomes stay on the private support page. %>
+      <% if (classic_flash_received? || legal_page) && !response.cache_control[:public] %>
+        <% flash.each do |type, message| %>
+          <p class="<%= type.to_s == 'alert' ? 'classic-alert' : 'classic-flash' %>" role="<%= type.to_s == 'alert' ? 'alert' : 'status' %>"><%= message %></p>
+        <% end %>
+      <% end %>
+      <%= legal_page ? classic_contain_tables(yield) : yield %>
     </main>
 
     <footer class="classic-footer">
@@ -355,7 +478,7 @@
           <a href="<%= privacy_policy_path %>"><%= t('footer.privacy') %></a> ·
           <a href="<%= about_path %>"><%= t('footer.about') %></a> ·
           <a href="<%= accessibility_statement_path %>"><%= t('footer.accessibility') %></a> ·
-          <a href="<%= "https://#{request.host.sub('classic.', '')}" %>"><%= t('classic.switch_modern') %></a>
+          <a href="<%= classic_modern_url %>"><%= t('classic.switch_modern') %></a>
         </div>
       </div>
     </footer>

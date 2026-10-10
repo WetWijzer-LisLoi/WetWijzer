@@ -205,7 +205,10 @@ export default class extends Controller {
 
     // Backdrop click closes on mobile
     if (this.hasBackdropTarget) {
-      this.backdropTarget.addEventListener('click', () => this.hideMobilePanel());
+      this.backdropTarget.addEventListener('click', () => {
+        this.hideMobilePanel();
+        this.returnFocus();
+      });
     }
 
     // Click inside panel but outside the TOC card closes on mobile
@@ -285,6 +288,19 @@ export default class extends Controller {
         return;
       }
     } catch (_) {}
+    // WW-WER-01: remember the control that opens the panel, so focus can go
+    // into the panel now and back to that control when it is dismissed.
+    // The desktop panel takes its open class a frame later, so the intent,
+    // not the class, decides where focus goes.
+    const wasOpen = this.panelTarget.classList.contains('translate-x-0');
+    if (!wasOpen && e && e.currentTarget instanceof Element) this.lastTrigger = e.currentTarget;
+    try { this.toggleOpenState(isDesktop); } finally {
+      if (wasOpen) this.returnFocus();
+      else this.focusPanel();
+    }
+  }
+
+  toggleOpenState(isDesktop) {
     if (isDesktop) {
       // Desktop: slide in/out
       const expanded = this.panelTarget.classList.contains('translate-x-0');
@@ -895,8 +911,37 @@ onKeydown(e) {
   const isDesktop = this.desktopMedia && this.desktopMedia.matches;
   if (isDesktop) return;
   if (e.key === 'Escape') {
+    const wasOpen = this.hasPanelTarget && this.panelTarget.classList.contains('translate-x-0');
     this.hideMobilePanel();
+    if (wasOpen) this.returnFocus();
   }
+}
+
+// WW-WER-01: a reader who opens the table of contents lands in it. Focus goes
+// to the card itself, not to its search field, so a phone does not raise its
+// keyboard; Tab then reaches the search and the entries.
+focusPanel() {
+  if (!this.hasPanelTarget) return;
+  const card = this.panelTarget.querySelector('#toc-card-sidebar') || this.panelTarget;
+  if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '-1');
+  try {
+    requestAnimationFrame(() => {
+      try { card.focus({ preventScroll: true }); } catch (_) {}
+    });
+  } catch (_) {}
+}
+
+// Back to the control that opened the panel when the reader dismisses it,
+// if that control is still on the page and focus has not moved elsewhere.
+// Following an entry closes the panel without this, so the page stays where
+// the entry took it.
+returnFocus() {
+  const trigger = this.lastTrigger;
+  this.lastTrigger = null;
+  if (!this.hasPanelTarget || !trigger || !trigger.isConnected || this.panelTarget.contains(trigger)) return;
+  const active = document.activeElement;
+  if (active && active !== document.body && !this.panelTarget.contains(active)) return;
+  try { trigger.focus({ preventScroll: true }); } catch (_) {}
 }
 
 // Desktop slide helpers (no backdrop)
@@ -934,6 +979,9 @@ showDesktopPanel() {
     requestAnimationFrame(() => {
       panel.style.transform = 'translate3d(0, 0, 0)';
       panel.classList.add('translate-x-0');
+      // The open state exists only now: aria-expanded follows it (WW-WER-01;
+      // the call below ran before the class and left it "false").
+      this.sync();
     });
   });
   

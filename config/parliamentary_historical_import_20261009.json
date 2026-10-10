@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "mode": "historical_exact_documents",
+  "owner_approved_on": "2026-10-09",
+  "allowlist_sha256": "bd73da511246d9cf8bf2d67f4f9082df426c9ee0d6d094d29d8cce4da18a48b7",
+  "control": {
+    "reference": "56K0001001",
+    "url": "https://www.dekamer.be/FLWB/PDF/56/0001/56K0001001.pdf"
+  },
+  "dossiers": [
+    {
+      "numac": "2002010139", "legislature": 50, "number": 1911,
+      "documents": [1,2,3,4,5,6,7,8,9,10,11,12],
+      "evidence_urls": [
+        "https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-12-31&numac=2002010139",
+        "https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=1371"
+      ]
+    },
+    {
+      "numac": "2002015026", "legislature": 50, "number": 1356,
+      "documents": [1,2],
+      "evidence_urls": [
+        "https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-08-02&numac=2002015026",
+        "https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=782"
+      ]
+    },
+    {
+      "numac": "2002014078", "legislature": 50, "number": 1463,
+      "documents": [1,2,3,4,5],
+      "evidence_urls": [
+        "https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-03-26&numac=2002014078",
+        "https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=fr&caller=summary&pub_date=02-03-26&numac=2002014078",
+        "https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=933"
+      ]
+    },
+    {
+      "numac": "2002003137", "legislature": 50, "number": 1499,
+      "documents": [1,2,3,4,5],
+      "evidence_urls": [
+        "https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-03-19&numac=2002003137",
+        "https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=1031"
+      ]
+    },
+    {
+      "numac": "2002014075", "legislature": 50, "number": 1422,
+      "documents": [1,2,3,4,5,6,7,8,9,10],
+      "evidence_urls": [
+        "https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-03-26&numac=2002014075",
+        "https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=934"
+      ]
+    },
+    {
+      "numac": "2003000235", "legislature": 50, "number": 2044,
+      "documents": [1,2,3],
+      "evidence_urls": [
+        "https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=03-04-11&numac=2003000235",
+        "https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=03-05-22&numac=2003000463",
+        "https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=1367"
+      ]
+    },
+    {
+      "numac": "2002003299", "legislature": 50, "number": 1569,
+      "documents": [1,2,3],
+      "evidence_urls": [
+        "https://www.ejustice.just.fgov.be/eli/wet/2002/05/03/2002003299/justel",
+        "https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=1032"
+      ]
+    },
+    {
+      "numac": "2002000119", "legislature": 50, "number": 1050,
+      "documents": [1,2,3,4,5],
+      "evidence_urls": [
+        "https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-02-23&numac=2002000119",
+        "https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=679"
+      ]
+    },
+    {
+      "numac": "2002003331", "legislature": 50, "number": 1691,
+      "documents": [1,2],
+      "evidence_urls": [
+        "https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-07-05&numac=2002003331",
+        "https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=1137"
+      ]
+    },
+    {
+      "numac": "2002011274", "legislature": 50, "number": 1079,
+      "documents": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16],
+      "evidence_urls": [
+        "https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-08-30&numac=2002011274",
+        "https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=427"
+      ]
+    }
+  ]
+}

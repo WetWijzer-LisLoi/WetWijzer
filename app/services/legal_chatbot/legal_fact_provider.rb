@@ -1024,7 +1024,7 @@ module LegalChatbot
       # IMPORTANT: DB stores titles as "Art.3" (no space after dot) while
       # FACT_SOURCES patterns use "Art. 3" (with space).
       # Article numbers must match at a boundary: a bare prefix test made
-      # 'Art. 3' match Art.30-39, Art.3bis, Art.3.1 — all DIFFERENT articles
+      # 'Art. 3' match Art.30-39, Art.3bis, Art.3.1, all DIFFERENT articles
       # that then got injected as "verified" facts.
       matching = articles.select do |article|
         next false if article.article_title.blank?
@@ -1045,7 +1045,7 @@ module LegalChatbot
       end
 
       # The title matcher above deliberately allows a suffix after the number, so
-      # "Art.3 TOEKOMSTIG RECHT" matches a request for Art. 3 — a space follows the 3 and
+      # "Art.3 TOEKOMSTIG RECHT" matches a request for Art. 3: a space follows the 3 and
       # the boundary test passes. Injecting that as a verified fact would state a rule that
       # is not in force yet through the channel the prompt says overrides everything.
       matching = matching.reject do |article|

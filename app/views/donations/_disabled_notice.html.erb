@@ -1,0 +1,9 @@
+<%# Shown wherever the donation option used to be, while MollieConfiguration.donations_enabled? is false. %>
+<p class="donations-disabled-notice my-4 font-semibold" role="status">
+  <%= case I18n.locale
+      when :fr then 'Les dons sont actuellement désactivés en raison de problèmes techniques.'
+      when :en then 'Donations are currently disabled due to technical issues.'
+      when :de then 'Spenden sind derzeit aufgrund technischer Probleme deaktiviert.'
+      else 'Donaties zijn momenteel uitgeschakeld wegens technische problemen.'
+      end %>
+</p>

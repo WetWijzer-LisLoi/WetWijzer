@@ -1,0 +1,49 @@
+<% subscription ||= @subscription %>
+<%= form_with url: update_billing_info_path, method: :patch, class: 'space-y-6 min-w-0' do %>
+  <p class="text-sm text-gray-500 dark:text-gray-400"><%= t('billing_profile.future_invoices_only') %></p>
+  <fieldset class="space-y-2">
+    <legend class="text-sm font-medium text-gray-700 dark:text-gray-300"><%= t('account.customer_type') %></legend>
+    <div class="flex flex-wrap gap-4">
+      <label class="inline-flex items-center gap-2"><input type="radio" name="customer_type" value="consumer" <%= 'checked' if subscription.customer_type != 'business' %>><span><%= t('account.customer_consumer') %></span></label>
+      <label class="inline-flex items-center gap-2"><input type="radio" name="customer_type" value="business" <%= 'checked' if subscription.customer_type == 'business' %>><span><%= t('account.customer_business') %></span></label>
+    </div>
+  </fieldset>
+  <details id="billing-business-details" <%= 'open' if subscription.customer_type == 'business' %> class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+    <summary class="cursor-pointer font-medium text-gray-900 dark:text-white"><%= t('billing_profile.business_details') %></summary>
+    <div class="mt-4 space-y-4">
+      <% { company_name: t('account.company_name'), vat_number: t('account.vat_number') }.each do |field, label| %>
+        <div>
+          <label for="<%= field %>" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><%= label %></label>
+          <input type="text" maxlength="255" name="<%= field %>" id="<%= field %>" value="<%= subscription.public_send(field) %>"
+                 autocomplete="<%= field == :company_name ? 'billing organization' : 'off' %>"
+                 aria-describedby="<%= 'billing-vat-hint' if field == :vat_number %>"
+                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-(--accent-500)">
+          <% if field == :vat_number %>
+            <p id="billing-vat-hint" class="mt-1 text-xs text-gray-500 dark:text-gray-400"><%= t('billing_profile.vat_hint') %></p>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </details>
+  <fieldset class="space-y-4">
+    <legend class="font-medium text-gray-900 dark:text-white"><%= t('account.billing_address') %></legend>
+    <% { billing_address_line1: t('account.address_line1'), billing_address_line2: t('billing_profile.address_line2'), billing_postal_code: t('account.postal_code'), billing_city: t('account.city') }.each do |field, label| %>
+      <div>
+        <label for="<%= field %>" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><%= label %></label>
+        <input type="text" maxlength="255" name="<%= field %>" id="<%= field %>" value="<%= subscription.public_send(field) %>"
+               autocomplete="billing <%= { billing_address_line1: 'address-line1', billing_address_line2: 'address-line2', billing_postal_code: 'postal-code', billing_city: 'address-level2' }.fetch(field) %>"
+               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-(--accent-500)">
+      </div>
+    <% end %>
+    <div>
+      <label for="billing_country" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><%= t('account.country') %></label>
+      <select name="billing_country" id="billing_country" autocomplete="billing country"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white">
+        <% Subscription::BILLING_COUNTRIES.each do |country| %>
+          <option value="<%= country %>" <%= 'selected' if (subscription.billing_country.presence || 'BE') == country %>><%= country %></option>
+        <% end %>
+      </select>
+    </div>
+  </fieldset>
+  <button type="submit" class="w-full sm:w-auto px-5 py-2 bg-(--accent-600-solid) text-white rounded-lg hover:bg-(--accent-700-solid)"><%= t('common.save') %></button>
+<% end %>

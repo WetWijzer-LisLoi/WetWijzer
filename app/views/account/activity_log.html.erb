@@ -6,7 +6,7 @@
 
     <main class="flex-1 min-w-0">
     <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-      📋 <%= t('account.activity_log') %>
+      <%= account_icon(:clipboard) %> <%= t('account.activity_log') %>
     </h2>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
@@ -27,11 +27,11 @@
                     <% when 'logout' %>
                       <span class="text-gray-400">↩</span>
                     <% when 'password_changed', 'password_reset_completed' %>
-                      <span class="text-(--accent-500)">🔑</span>
+                      <span class="text-(--accent-500)"><%= account_icon(:key) %></span>
                     <% when 'account_locked' %>
-                      <span class="text-red-500">🔒</span>
+                      <span class="text-red-500"><%= account_icon(:lock) %></span>
                     <% when 'otp_enabled', 'otp_disabled' %>
-                      <span class="text-purple-500">🛡️</span>
+                      <span class="text-purple-500"><%= account_icon(:shield) %></span>
                     <% else %>
                       <span class="text-gray-400">•</span>
                     <% end %>

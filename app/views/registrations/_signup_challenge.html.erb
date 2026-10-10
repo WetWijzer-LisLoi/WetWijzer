@@ -1,0 +1,46 @@
+<%# WW-ABUSE-01 (ABUSE-05): the registration proof of work. The self-hosted
+    ALTCHA widget solves a one-time challenge bound to this submission's
+    network and email (SignupProofOfWork); signup-challenge holds the submit
+    button until it is solved and reports progress in a polite live region.
+    No outside service is called. %>
+<% widget_strings = {
+     error: t('auth.signup_challenge.failed'),
+     expired: t('auth.signup_challenge.expired'),
+     label: t('auth.signup_challenge.label'),
+     loading: t('auth.signup_challenge.loading'),
+     reload: t('auth.signup_challenge.reload'),
+     verify: t('auth.signup_challenge.verify'),
+     verificationRequired: t('auth.signup_challenge.wait'),
+     verified: t('auth.signup_challenge.verified'),
+     verifying: t('auth.signup_challenge.verifying'),
+     waitAlert: t('auth.signup_challenge.wait')
+   } %>
+<section id="signup-challenge" aria-labelledby="signup-challenge-title"
+         class="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4 space-y-3">
+  <h2 id="signup-challenge-title" class="text-sm font-semibold text-gray-900 dark:text-white">
+    <%= t('auth.signup_challenge.title') %>
+  </h2>
+  <p class="text-sm text-gray-700 dark:text-gray-300"><%= t('auth.signup_challenge.explanation') %></p>
+  <p class="text-sm font-medium text-gray-900 dark:text-white"><%= t('auth.signup_challenge.password_again') %></p>
+  <altcha-widget name="signup_proof"
+                 challengejson="<%= challenge.to_json %>"
+                 strings="<%= widget_strings.to_json %>"
+                 auto="onload"
+                 hidefooter
+                 hidelogo
+                 data-signup-challenge-target="widget"
+                 style="--altcha-max-width: 100%; --altcha-color-base: transparent; --altcha-color-text: currentColor; --altcha-color-border: rgba(127, 127, 127, 0.45);">
+  </altcha-widget>
+  <p class="text-sm text-gray-700 dark:text-gray-300 min-h-5" role="status" aria-live="polite"
+     data-signup-challenge-target="status"></p>
+  <%# 10:49 no-JS plan, C.1: the proof needs scripts and is never skipped;
+      a reader without them is told so and given a person to reach. %>
+  <noscript>
+    <p id="signup-challenge-noscript" class="text-sm text-red-700 dark:text-red-300">
+      <%= t('auth.signup_challenge.noscript') %>
+      <%= t('auth.signup_challenge.noscript_help_html',
+            contact: link_to(t('auth.signup_challenge.noscript_contact'), contact_path, class: 'underline font-medium')) %>
+    </p>
+  </noscript>
+</section>
+<script src="/altcha.min.js" type="module" defer nonce="<%= content_security_policy_nonce %>"></script>

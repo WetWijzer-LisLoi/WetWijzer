@@ -41,8 +41,15 @@
              end) %>
       </p>
       <p data-translate="internationalBanner">
-        <%# Hardcoded to English on purpose - aimed at international crowd %>
-          <%= raw('🌍 <strong>International?</strong> Choose <strong>EN/INT</strong> at the top. The chatbot responds in your input language.') %>
+        <%# Hardcoded to English on purpose - aimed at international crowd.
+            On the English site "EN/INT" is the header link to this very site,
+            so that reader gets the sentence written for them instead of being
+            told to switch to where they already are. %>
+          <%= raw(if I18n.locale == :en
+                    "🌍 <strong>International?</strong> You're in the right place. The chatbot responds in your input language."
+                  else
+                    '🌍 <strong>International?</strong> Choose <strong>EN/INT</strong> at the top. The chatbot responds in your input language.'
+                  end) %>
       </p>
       </div>
     </details>

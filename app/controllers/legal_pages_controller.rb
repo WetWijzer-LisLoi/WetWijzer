@@ -77,12 +77,15 @@ class LegalPagesController < ApplicationController
       view_name = "#{page_type}_nl"
     end
 
-    if public_cache
-      # Legal pages without forms are static content.
+    if public_cache && classic_host?
+      # The classic layout carries no account, no CSRF token and nothing else
+      # per visitor, so a legal page without forms is the same for everyone.
       expires_in 1.hour, public: true
     else
-      # The support page contains CSRF-protected donation forms. A shared cache
-      # must never retain or serve another browser's authenticity token.
+      # WW-PRIV-07: the modern layout renders the signed-in reader's email,
+      # credit balance and account state, and every visitor's CSRF token,
+      # whatever the page body holds; a shared cache must never keep that.
+      # The support page's own donation forms make it private on any layout.
       response.headers['Cache-Control'] = 'private, no-store'
     end
 

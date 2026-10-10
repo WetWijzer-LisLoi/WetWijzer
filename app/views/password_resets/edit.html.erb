@@ -18,7 +18,10 @@
     <% end %>
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
-      <%= form_with url: password_reset_path(token: params[:token]), method: :patch, class: "space-y-6" do %>
+      <%# The update route shares the edit path; password_reset_path is the
+          request form's POST /forgot-password, and PATCH there matched no route,
+          so every reset ended on a 404 page (10:49 no-JS review, C.1). %>
+      <%= form_with url: edit_password_reset_path(token: params[:token]), method: :patch, class: "space-y-6" do %>
         <div data-controller="password-visibility">
           <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             <%= t('account.new_password') %>

@@ -1,0 +1,56 @@
+en:
+  invoice_delivery:
+    readable_copy: "A PDF is a readable copy. For covered Belgian B2B transactions, a PDF or XML download alone does not replace structured e-invoice transmission. The Peppol status is shown separately."
+    peppol:
+      column: "Peppol"
+      not_applicable: "Peppol: not applicable"
+      not_determined: "Peppol: status not determined"
+      not_submitted: "Peppol: not submitted"
+      pending: "Peppol: pending"
+      sending: "Peppol: submission in progress"
+      submitted: "Peppol: submitted; delivery pending"
+      delivered: "Peppol: delivered"
+      failed: "Peppol: failed"
+    ubl_copy: "UBL/XML copy attached (this does not confirm Peppol delivery)."
+nl:
+  invoice_delivery:
+    readable_copy: "Een PDF is een leesbare kopie. Voor Belgische B2B-transacties die onder de verplichting vallen, vervangt alleen een PDF- of XML-download de verzending van een gestructureerde e-factuur niet. De Peppol-status staat afzonderlijk vermeld."
+    peppol:
+      column: "Peppol"
+      not_applicable: "Peppol: niet van toepassing"
+      not_determined: "Peppol: status niet vastgesteld"
+      not_submitted: "Peppol: niet ingediend"
+      pending: "Peppol: in afwachting"
+      sending: "Peppol: indiening bezig"
+      submitted: "Peppol: ingediend; levering in afwachting"
+      delivered: "Peppol: afgeleverd"
+      failed: "Peppol: mislukt"
+    ubl_copy: "UBL/XML-kopie bijgevoegd (dit bevestigt geen Peppol-levering)."
+fr:
+  invoice_delivery:
+    readable_copy: "Le PDF est une copie lisible. Pour les transactions B2B belges soumises à l’obligation, un téléchargement PDF ou XML seul ne remplace pas la transmission d’une facture électronique structurée. Le statut Peppol est indiqué séparément."
+    peppol:
+      column: "Peppol"
+      not_applicable: "Peppol : non applicable"
+      not_determined: "Peppol : statut non déterminé"
+      not_submitted: "Peppol : non envoyée"
+      pending: "Peppol : en attente"
+      sending: "Peppol : en cours d'envoi"
+      submitted: "Peppol : envoyée ; livraison en attente"
+      delivered: "Peppol : livrée"
+      failed: "Peppol : échec"
+    ubl_copy: "Copie UBL/XML jointe (cela ne confirme pas la livraison Peppol)."
+de:
+  invoice_delivery:
+    readable_copy: "Eine PDF ist eine lesbare Kopie. Bei verpflichtend erfassten belgischen B2B-Umsätzen ersetzt ein PDF- oder XML-Download allein nicht die Übermittlung einer strukturierten E-Rechnung. Der Peppol-Status wird gesondert angezeigt."
+    peppol:
+      column: "Peppol"
+      not_applicable: "Peppol: nicht zutreffend"
+      not_determined: "Peppol: Status nicht festgestellt"
+      not_submitted: "Peppol: nicht übermittelt"
+      pending: "Peppol: ausstehend"
+      sending: "Peppol: Übermittlung läuft"
+      submitted: "Peppol: übermittelt; Zustellung ausstehend"
+      delivered: "Peppol: zugestellt"
+      failed: "Peppol: fehlgeschlagen"
+    ubl_copy: "UBL/XML-Kopie beigefügt (dies bestätigt keine Peppol-Zustellung)."

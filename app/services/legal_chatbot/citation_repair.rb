@@ -78,7 +78,7 @@ module LegalChatbot
     # three of the eight answers still withheld after the 2026-07-31
     # measurement. A pair that looks like years is refused instead.
     ARTICLE_RANGE_MAX_SPAN = 40
-    ARTICLE_RANGE_YEAR_LIKE = (1800..2100).freeze
+    ARTICLE_RANGE_YEAR_LIKE = (1800..2100)
 
     def expand_article_range(number)
       match = number.to_s.strip.match(/\A(\d{1,4})\s*[-–]\s*(\d{1,4})\z/)
@@ -87,9 +87,7 @@ module LegalChatbot
       from = match[1].to_i
       to = match[2].to_i
       return [number] unless to > from && (to - from) <= ARTICLE_RANGE_MAX_SPAN
-      if ARTICLE_RANGE_YEAR_LIKE.cover?(from) && ARTICLE_RANGE_YEAR_LIKE.cover?(to) && (to - from) >= 5
-        return [number]
-      end
+      return [number] if ARTICLE_RANGE_YEAR_LIKE.cover?(from) && ARTICLE_RANGE_YEAR_LIKE.cover?(to) && (to - from) >= 5
 
       # Endpoints first, then inward. The repair budget is small, so the two
       # articles a span is named for must be tried before its middle.

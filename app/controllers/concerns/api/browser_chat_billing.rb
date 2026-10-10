@@ -59,9 +59,7 @@ module Api
 
     def browser_chat_billing_app
       request_id = request.request_id.to_s
-      unless request_id.match?(BROWSER_BILLING_REQUEST_ID_PATTERN)
-        raise ArgumentError, 'invalid request id for browser billing correlation'
-      end
+      raise ArgumentError, 'invalid request id for browser billing correlation' unless request_id.match?(BROWSER_BILLING_REQUEST_ID_PATTERN)
 
       "#{BROWSER_BILLING_APP_PREFIX}#{request_id}"
     end
@@ -75,6 +73,50 @@ module Api
       refunded = reservation.refund!(reason: reason)
       mark_analytic_refunded!(analytic) if reservation.refunded?
       refunded
+    end
+
+    # Owner default 2026-09-27 (to-do 6.7): an answer that tells the user its
+    # search was incomplete costs no credit. The orchestrator marks such a
+    # result with :retrieval_degraded (apply_retrieval_notice!), whatever the
+    # reason: a source that ran into the shared deadline, a semantic leg that
+    # gave up, a raising search or a full worker pool all deliver an answer
+    # with the notice, and the user cannot tell them apart. A hard failure
+    # (result[:error]: a timeout of the whole ask, a blocked response, a
+    # provider exception) is a different thing and keeps its own refund path.
+    CHARGE_WAIVED_INCOMPLETE_SEARCH = 'retrieval_incomplete'
+
+    def incomplete_search_answer?(result)
+      result.is_a?(Hash) && result[:error].blank? && result[:retrieval_degraded].present?
+    end
+
+    # Ask path: releases the durable reservation while it is still `reserved`
+    # and no delivery has begun (refund! would SETTLE a pending delivery, see
+    # BillingReservation#refund!), then marks the result. Returns true when the
+    # charge fell away, false when there was nothing to waive or the release
+    # did not happen, in which case the charge stands as before. Idempotent
+    # through refund!, so a retry cannot credit the user twice.
+    def waive_browser_chat_charge_for_incomplete_search!(reservation, result, user:, language:)
+      return false unless reservation&.credit? && incomplete_search_answer?(result)
+
+      reservation.refund!(reason: CHARGE_WAIVED_INCOMPLETE_SEARCH)
+      unless reservation.refunded?
+        Rails.logger.warn('Browser chatbot charge for an incomplete search could not be released; the charge stands')
+        return false
+      end
+
+      mark_charge_waived_for_incomplete_search!(result, user: user, language: language)
+      true
+    end
+
+    # What both paths (ask and deep analysis) tell the client once the credit
+    # is back: the marker the analytics row records (log_analytic reads it off
+    # the result), the note inside the notice paragraph, and a credits_info
+    # that deducts nothing and says why.
+    def mark_charge_waived_for_incomplete_search!(result, user:, language:)
+      result[:charge_waived] = CHARGE_WAIVED_INCOMPLETE_SEARCH
+      result[:answer] = LegalChatbot::Orchestrator.with_free_answer_note(result[:answer], language)
+      result[:credits_info] = credit_balance_info(user, deducted: 0, charge_waived: CHARGE_WAIVED_INCOMPLETE_SEARCH)
+      result
     end
 
     # Durable standard history is itself delivery because another request can

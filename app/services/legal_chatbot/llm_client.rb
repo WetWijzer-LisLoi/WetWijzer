@@ -50,6 +50,13 @@ module LegalChatbot
       end
     end
 
+    # Whether the last provider call came back empty or cut off at its output
+    # ceiling. #query raises on it; GermanAnswerTranslation calls call_llm
+    # directly and reads it here.
+    def last_response_incomplete?
+      @provider_response_incomplete == true
+    end
+
     def initialize(model_override: nil, language: 'nl', concise: false,
                    case_context: nil, reasoning_effort: nil, profile: 'general',
                    embedding_service: nil, mistral_api_key_env: 'MISTRAL_API_KEY')
@@ -692,7 +699,7 @@ module LegalChatbot
       else
         # No third "legal basis/sources" header: the UI source cards carry the
         # citations (commits 95a3c34e/c0151db4), and sanitize_answer strips the
-        # section server-side as a safety net — asking for it only wasted
+        # section server-side as a safety net, so asking for it only wasted
         # tokens on content that was deleted before display.
         case prompt_lang
         when :de then 'KRITISCH: Antworten Sie VOLLSTÄNDIG auf DEUTSCH. Verwenden Sie: HAUPTREGEL, AUSNAHMEN.'

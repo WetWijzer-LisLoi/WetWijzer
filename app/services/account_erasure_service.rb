@@ -293,7 +293,7 @@ class AccountErasureService
   # That would leave a fenced, key-destroyed shell that can never be deleted
   # and whose data is already gone (found by the 2026-08-19 deletion audit;
   # email_outbox_entries arms as soon as DURABLE_TRANSACTIONAL_EMAIL is on).
-  ACCOUNTS_CHILD_TABLES = %w[email_outbox_entries admin_sessions].freeze
+  ACCOUNTS_CHILD_TABLES = %w[email_outbox_entries admin_sessions pending_second_factors].freeze
 
   def erase_accounts_child_rows!
     connection = AccountRecord.connection

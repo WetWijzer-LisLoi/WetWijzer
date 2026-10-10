@@ -35,13 +35,18 @@ class Language < ReadonlyRecord
   # Class Methods
   # ----------------------------------------------------------------------------
 
-  # Returns a hash of language codes to display names for official Belgian languages
+  # Returns a hash of language codes to display names for the languages the
+  # corpus holds legislation in
   # @return [Hash] Language codes mapped to their display names
-  # @note Only Dutch ("nl") and French ("fr") are official languages for legal texts in Belgium
+  # @note Dutch and French are the authentic texts of federal legislation; the
+  #   German texts (language_id 3) are translations, coordinations or
+  #   consolidations unless labelled original, and the German site says which
+  #   (GermanTextProvenance)
   def self.available_languages
     {
       'nl' => 'Nederlands',
-      'fr' => 'Français'
+      'fr' => 'Français',
+      'de' => 'Deutsch'
     }
   end
 

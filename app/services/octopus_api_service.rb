@@ -40,6 +40,23 @@ class OctopusApiService
   class DossierError < OctopusError; end
   class InvoiceError < OctopusError; end
 
+  # A request whose result cannot safely be inferred must never be retried as a
+  # new Octopus invoice.  In particular, a read timeout can happen after
+  # Octopus has accepted the create request.  There is no idempotency key in
+  # the documented create endpoint, so a human must reconcile that case in
+  # Octopus before trying again.
+  class ManualReconciliationRequired < OctopusError; end
+
+  # The send endpoint may return HTTP 200 while selecting e-mail (or no
+  # transport) for a document.  That is a completed API call, not proof of a
+  # Peppol submission.  Do not retry it automatically.
+  class PeppolActionRequired < OctopusError; end
+  class SyncInProgress < OctopusError; end
+
+  MANUAL_RECONCILIATION_CODE = 'OCTOPUS_MANUAL_RECONCILIATION_REQUIRED'
+  PEPPOL_ACTION_REQUIRED_CODE = 'OCTOPUS_PEPPOL_ACTION_REQUIRED'
+  CREATE_PREPARING_CODE = 'OCTOPUS_CREATE_PREPARING'
+
   def initialize
     @software_house_id = ENV.fetch('OCTOPUS_SOFTWARE_HOUSE_ID', nil)
     @username = ENV.fetch('OCTOPUS_USERNAME', nil)
@@ -126,11 +143,34 @@ class OctopusApiService
       vat_code: vat_code,
       relation: relation
     )
+    # Validate the locally-derived key before the irreversible provider call.
+    # Otherwise a successfully created remote invoice could be impossible to
+    # persist, select for sending, or reconcile later.
+    document_key = document_key_for_payload(invoice_data)
 
-    response = post("/dossiers/#{@dossier_id}/invoices", invoice_data)
+    # Fence the irreversible call durably, not after its response. A crash,
+    # malformed success response or failed local save after acceptance must
+    # never let a restarted worker create the same invoice again.
+    claimed = PlatformInvoice.where(id: platform_invoice.id, octopus_invoice_key: [nil, ''])
+                             .update_all(
+                               octopus_invoice_key: self.class.serialize_document_key(document_key),
+                               octopus_status: 'failed',
+                               octopus_error: "#{MANUAL_RECONCILIATION_CODE}: provider create outcome requires confirmation"
+                             )
+    platform_invoice.reload
+    raise ManualReconciliationRequired, 'Another worker already claimed this document' unless claimed == 1
+
+    # Octopus documents this endpoint as a 201 response with no body.  Keep the
+    # exact key from our accepted request instead of guessing from an absent
+    # response.
+    post("/dossiers/#{@dossier_id}/invoices", invoice_data)
 
     Rails.logger.info("[Octopus] Invoice created for #{platform_invoice.invoice_number}")
-    response
+    document_key
+  rescue Timeout::Error
+    # We cannot know whether the remote side created the document.  Retrying a
+    # create would risk a duplicate accounting document.
+    raise ManualReconciliationRequired, 'Invoice creation outcome is unknown; reconcile in Octopus before retrying'
   end
 
   # Create a buy/sell booking (simpler, no Invoice Module needed)
@@ -169,25 +209,30 @@ class OctopusApiService
     response
   end
 
-  # Send invoice via PEPPOL (requires Invoice Module)
-  def send_invoice_peppol(invoice_keys)
+  # Ask Octopus to send exactly one created document.  The documented endpoint
+  # takes a DocumentSelectionData object, not an `invoiceKeys` array.  A 200
+  # only acknowledges processing; callers must inspect the matching status and
+  # then poll the asynchronous delivery report.
+  def send_invoice_peppol(document_key)
     ensure_connected!
 
-    response = post("/dossiers/#{@dossier_id}/invoices/send", {
-                      'invoiceKeys' => Array(invoice_keys)
-                    })
+    key = self.class.document_key_from_storage(document_key)
+    raise InvoiceError, 'Octopus document key is invalid' unless key
 
-    Rails.logger.info("[Octopus] PEPPOL send initiated for #{invoice_keys}")
+    response = post("/dossiers/#{@dossier_id}/invoices/send", send_request_for(key))
+
+    Rails.logger.info('[Octopus] PEPPOL send request accepted for a document')
     response
   end
 
   # Check PEPPOL delivery status
-  def get_delivery_status(invoice_keys)
+  def get_delivery_status(document_key)
     ensure_connected!
 
-    post("/dossiers/#{@dossier_id}/invoices/send/report/deliverystate", {
-           'invoiceKeys' => Array(invoice_keys)
-         })
+    key = self.class.document_key_from_storage(document_key)
+    raise InvoiceError, 'Octopus document key is invalid' unless key
+
+    post("/dossiers/#{@dossier_id}/invoices/send/report/deliverystate", document_selection_for(key))
   end
 
   # --- Relation Management ---
@@ -246,54 +291,291 @@ class OctopusApiService
 
   # --- Sync Orchestration ---
 
-  # Main entry point: sync a PlatformInvoice to Octopus
-  # Tries invoice creation first, falls back to booking if Invoice Module unavailable
+  # Main entry point: sync a PlatformInvoice to Octopus.
+  #
+  # A VAT-bearing invoice must not silently fall back to a bookkeeping-only
+  # record: that would make it look accounted for while its structured B2B
+  # delivery still needs action.  Once an Octopus document key is durable, all
+  # retries reuse it and never create a second invoice.
   def sync_invoice(platform_invoice)
-    platform_invoice.update_columns(octopus_status: 'pending', octopus_error: nil)
+    platform_invoice.reload
+    raise_manual_reconciliation!(platform_invoice) if manual_reconciliation_required?(platform_invoice)
+    raise PeppolActionRequired, 'This document requires manual transport reconciliation' if peppol_action_required?(platform_invoice)
+    raise SyncInProgress, 'Another worker is preparing this document; reconcile a stranded preparation before retrying' if platform_invoice.octopus_error == CREATE_PREPARING_CODE
+
+    if (existing_key = self.class.document_key_from_storage(platform_invoice.octopus_invoice_key))
+      return resume_existing_invoice!(platform_invoice, existing_key)
+    end
+
+    # A non-empty legacy or malformed key is evidence of an earlier provider
+    # interaction.  It cannot be matched to the documented delivery report, so
+    # creating another invoice would be unsafe.
+    if platform_invoice.octopus_invoice_key.present?
+      mark_manual_reconciliation!(platform_invoice)
+      raise_manual_reconciliation!(platform_invoice)
+    end
+
+    # A compare-and-set is committed before any provider work. Do not put
+    # network calls in a transaction: rollback would erase the create fence.
+    claimed = PlatformInvoice.where(id: platform_invoice.id, octopus_invoice_key: [nil, ''],
+                                    octopus_status: platform_invoice.octopus_status,
+                                    octopus_error: platform_invoice.octopus_error)
+                             .update_all(octopus_status: 'pending', octopus_error: CREATE_PREPARING_CODE)
+    raise SyncInProgress, 'Another worker claimed this document' unless claimed == 1
+
+    platform_invoice.reload
 
     begin
       ensure_connected!
 
-      # Try creating as invoice (enables PEPPOL)
-      response = create_invoice(platform_invoice)
-      invoice_key = extract_invoice_key(response)
+      # The documented create endpoint returns 201 with no response body.  The
+      # request itself contains the DocumentKey needed for sending and polling.
+      invoice_key = create_invoice(platform_invoice)
 
       platform_invoice.update!(
         octopus_status: 'synced',
-        octopus_invoice_key: invoice_key,
+        octopus_invoice_key: self.class.serialize_document_key(invoice_key),
         octopus_synced_at: Time.current,
         octopus_error: nil
       )
 
-      # Optionally send via PEPPOL if B2B with VAT
-      if platform_invoice.customer_vat.present? && invoice_key
-        begin
-          send_invoice_peppol(invoice_key)
-          platform_invoice.update!(octopus_status: 'peppol_sent')
-        rescue OctopusError => e
-          # PEPPOL send failed, but invoice is synced - not critical
-          Rails.logger.warn("[Octopus] PEPPOL send failed for #{platform_invoice.invoice_number}: #{e.message}")
-          platform_invoice.update!(octopus_error: "Synced but PEPPOL failed: #{e.message}")
-        end
-      end
+      request_peppol_delivery!(platform_invoice, invoice_key) if peppol_required?(platform_invoice)
 
       platform_invoice
+    rescue ManualReconciliationRequired
+      mark_manual_reconciliation!(platform_invoice) unless manual_reconciliation_required?(platform_invoice)
+      raise
+    rescue PeppolActionRequired
+      mark_peppol_action_required!(platform_invoice) unless platform_invoice.octopus_error.to_s.start_with?(PEPPOL_ACTION_REQUIRED_CODE)
+      raise
     rescue OctopusError => e
+      raise_manual_reconciliation!(platform_invoice) if manual_reconciliation_required?(platform_invoice)
+
+      if %w[peppol_sending peppol_sent].include?(platform_invoice.octopus_status)
+        platform_invoice.update!(octopus_error: 'OCTOPUS_STATUS_UNAVAILABLE')
+        raise
+      end
       if e.message.include?('module') || e.http_code == 403
-        # Invoice Module not active - fall back to booking
+        if peppol_required?(platform_invoice)
+          mark_peppol_action_required!(platform_invoice)
+          raise PeppolActionRequired, 'Invoice module unavailable; structured delivery requires action'
+        end
+
         Rails.logger.info('[Octopus] Invoice Module not available, falling back to booking')
         fallback_to_booking(platform_invoice)
       else
-        platform_invoice.update!(
-          octopus_status: 'failed',
-          octopus_error: "#{e.octopus_code}: #{e.message}"
-        )
+        mark_failed!(platform_invoice, 'OCTOPUS_SYNC_FAILED')
         raise
       end
     end
   end
 
+  # Return the matching documented delivery-state row for a stored document
+  # key.  Never use the first row: report responses may include several
+  # documents and assigning another invoice's result is materially wrong.
+  def self.delivery_entry_for(response, document_key)
+    key = document_key_from_storage(document_key)
+    return nil unless key
+
+    Array(response).find do |entry|
+      entry.is_a?(Hash) && document_keys_match?(entry['documentKey'], key)
+    end
+  end
+
+  # Return the matching immediate send result.  This is only an initiation
+  # result; PEPPOL_SEND_OK in the delivery report is the later transport proof.
+  def self.send_entry_for(response, document_key)
+    key = document_key_from_storage(document_key)
+    return nil unless key && response.is_a?(Hash)
+
+    Array(response['sendInvoiceStatusList']).find do |entry|
+      entry.is_a?(Hash) && document_keys_match?(entry['documentKey'], key)
+    end
+  end
+
+  def self.document_key_from_storage(value)
+    candidate = case value
+                when String
+                  JSON.parse(value)
+                when Hash
+                  value
+                else
+                  nil
+                end
+    normalize_document_key(candidate)
+  rescue JSON::ParserError
+    nil
+  end
+
+  def self.serialize_document_key(value)
+    key = document_key_from_storage(value)
+    raise ArgumentError, 'invalid Octopus document key' unless key
+
+    JSON.generate(key)
+  end
+
+  def self.document_keys_match?(left, right)
+    normalize_document_key(left) == normalize_document_key(right)
+  end
+
+  def self.normalize_document_key(value)
+    return nil unless value.is_a?(Hash)
+
+    hash = value.deep_stringify_keys
+    bookyear_key = hash['bookyearKey']
+    journal = hash['journal'].to_s.strip
+    bookyear_id = if bookyear_key.is_a?(Hash)
+                    positive_integer(bookyear_key.deep_stringify_keys['id'])
+                  end
+    sequence = positive_integer(hash['documentSequenceNr'])
+    return nil unless bookyear_key.is_a?(Hash) && bookyear_id && journal.present? && sequence
+    return nil if journal.length > 64 || journal.match?(/[[:cntrl:]]/)
+
+    { 'bookyearKey' => { 'id' => bookyear_id }, 'journal' => journal, 'documentSequenceNr' => sequence }
+  end
+
+  def self.positive_integer(value)
+    case value
+    when Integer then value.positive? ? value : nil
+    when String
+      value.match?(/\A[1-9]\d*\z/) ? value.to_i : nil
+    end
+  end
+
   private
+
+  def peppol_required?(platform_invoice)
+    platform_invoice.customer_vat.present?
+  end
+
+  def manual_reconciliation_required?(platform_invoice)
+    platform_invoice.octopus_error.to_s.start_with?(MANUAL_RECONCILIATION_CODE)
+  end
+
+  def peppol_action_required?(platform_invoice)
+    platform_invoice.octopus_error.to_s.start_with?(PEPPOL_ACTION_REQUIRED_CODE)
+  end
+
+  def mark_manual_reconciliation!(platform_invoice)
+    platform_invoice.update!(
+      octopus_status: 'failed',
+      octopus_error: "#{MANUAL_RECONCILIATION_CODE}: reconcile the provider document before retrying"
+    )
+  end
+
+  def raise_manual_reconciliation!(platform_invoice)
+    mark_manual_reconciliation!(platform_invoice) unless manual_reconciliation_required?(platform_invoice)
+    raise ManualReconciliationRequired, 'Provider reconciliation is required before retrying this invoice'
+  end
+
+  def mark_peppol_action_required!(platform_invoice)
+    platform_invoice.update!(
+      octopus_status: 'failed',
+      octopus_error: "#{PEPPOL_ACTION_REQUIRED_CODE}: structured delivery was not confirmed"
+    )
+  end
+
+  def mark_failed!(platform_invoice, code)
+    platform_invoice.update!(octopus_status: 'failed', octopus_error: code)
+  end
+
+  def resume_existing_invoice!(platform_invoice, document_key)
+    return platform_invoice if platform_invoice.octopus_status == 'peppol_delivered'
+    return platform_invoice unless peppol_required?(platform_invoice)
+
+    # A send timeout is deliberately treated as an asynchronous/pending state.
+    # Polling is safe; re-sending the document is not.
+    if %w[peppol_sending peppol_sent].include?(platform_invoice.octopus_status)
+      refresh_peppol_delivery!(platform_invoice, document_key)
+      return platform_invoice
+    end
+
+    request_peppol_delivery!(platform_invoice, document_key)
+    platform_invoice
+  end
+
+  def request_peppol_delivery!(platform_invoice, document_key)
+    # Fence dispatch before sending: a restart or indeterminate response can
+    # only poll this document, not issue another transmission.
+    claimed = PlatformInvoice.where(id: platform_invoice.id,
+                                    octopus_invoice_key: platform_invoice.octopus_invoice_key,
+                                    octopus_status: platform_invoice.octopus_status,
+                                    octopus_error: platform_invoice.octopus_error)
+                             .where.not(octopus_status: %w[peppol_sending peppol_sent peppol_delivered])
+                             .update_all(octopus_status: 'peppol_sending', octopus_error: nil)
+    platform_invoice.reload
+    unless claimed == 1
+      refresh_peppol_delivery!(platform_invoice, document_key)
+      return
+    end
+    response = send_invoice_peppol(document_key)
+    entry = self.class.send_entry_for(response, document_key)
+
+    unless entry && entry['success'] == true && entry['sendMethod'].to_s.upcase == 'PEPPOL'
+      mark_peppol_action_required!(platform_invoice)
+      raise PeppolActionRequired, 'Structured delivery was not accepted by Octopus'
+    end
+
+    platform_invoice.update!(octopus_status: 'peppol_sending', octopus_error: nil)
+  rescue Timeout::Error
+    # Do not send the same document again after an indeterminate request.  Its
+    # eventual status can be observed through the report endpoint.
+    platform_invoice.update!(octopus_status: 'peppol_sending', octopus_error: nil)
+    raise
+  rescue PeppolActionRequired
+    mark_peppol_action_required!(platform_invoice)
+    raise
+  end
+
+  def refresh_peppol_delivery!(platform_invoice, document_key = nil)
+    key = document_key || self.class.document_key_from_storage(platform_invoice.octopus_invoice_key)
+    unless key
+      mark_manual_reconciliation!(platform_invoice)
+      raise ManualReconciliationRequired, 'Stored Octopus key cannot be matched to a delivery report'
+    end
+
+    response = get_delivery_status(key)
+    entry = self.class.delivery_entry_for(response, key)
+    return nil unless entry
+
+    case entry['deliveryState'].to_s.upcase
+    when 'PEPPOL_SEND_OK'
+      platform_invoice.update!(octopus_status: 'peppol_delivered', octopus_error: nil)
+    when 'PEPPOL_SENDING_IN_PROGRESS', 'NONE'
+      platform_invoice.update!(octopus_status: 'peppol_sending')
+    when 'PEPPOL_SEND_FAILED', 'ERROR', 'EMAILED', 'PRINTED', 'PRINTED_AND_EMAILED', 'EXPORTED', 'PUBLISHED'
+      # E-mail/print/export are valid Octopus delivery states, but none proves
+      # the required structured transport for this VAT-bearing invoice.
+      mark_peppol_action_required!(platform_invoice)
+    end
+
+    entry
+  end
+
+  def document_key_for_payload(invoice_data)
+    key = {
+      'bookyearKey' => invoice_data['bookyearKey'],
+      'journal' => invoice_data['journalKey'],
+      'documentSequenceNr' => invoice_data['documentSequenceNr']
+    }
+    self.class.document_key_from_storage(key) || raise(InvoiceError, 'Created invoice did not have a valid document key')
+  end
+
+  def document_selection_for(document_key)
+    key = self.class.document_key_from_storage(document_key)
+    raise InvoiceError, 'Octopus document key is invalid' unless key
+
+    key.merge('toDocumentSequenceNr' => key['documentSequenceNr'])
+  end
+
+  def send_request_for(document_key)
+    sender = ENV['OCTOPUS_FROM_EMAIL'].to_s.strip
+    unless sender.match?(URI::MailTo::EMAIL_REGEXP)
+      raise PeppolActionRequired, 'OCTOPUS_FROM_EMAIL must be configured for structured delivery'
+    end
+
+    document_selection_for(document_key).merge('fromMailAddress' => sender)
+  end
 
   # --- Token Management ---
 
@@ -717,4 +999,7 @@ class OctopusApiService
   def self.map_delivery_state(octopus_state)
     DELIVERY_STATE_MAP[octopus_state.to_s.upcase] || octopus_state
   end
+
+  # Used by the scheduled poller and the explicitly requested admin check.
+  public :refresh_peppol_delivery!
 end

@@ -143,9 +143,7 @@ module ChatbotSourceCategories
     return nil if value.to_s.strip.empty?
 
     normalized = normalize(value)
-    if normalized.present? && (ALL.include?(normalized) || LEGACY_EXTRAS.map(&:to_s).include?(normalized))
-      return normalized
-    end
+    return normalized if normalized.present? && (ALL.include?(normalized) || LEGACY_EXTRAS.map(&:to_s).include?(normalized))
 
     UNKNOWN_LABEL
   end

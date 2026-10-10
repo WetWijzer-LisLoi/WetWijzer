@@ -26,19 +26,14 @@ class ApplicationController < ActionController::Base
   include HostDetection
   include GeoChallenge
   include CookieFlash
+  include ClassicRouting
 
   # Dynamic layout: classic.* subdomain gets the no-JS minimal layout
   layout :choose_layout
 
-  # Controllers whose pages are actually ported to the classic (no-JS) layout.
-  # Any other page on a classic.* host is a modern-only view: its
-  # Tailwind/Stimulus body renders as unstyled soup inside the classic layout,
-  # so hand those requests to the modern site instead.
-  CLASSIC_PORTED_CONTROLLERS = %w[laws legal_pages donations favicons robots sitemaps].freeze
-  # Never host-redirect machine endpoints (payment providers deliver with
-  # Accept: */* which Rails treats as HTML).
-  CLASSIC_EXEMPT_PREFIXES = %w[webhooks/ api/ admin/ rails/].freeze
-
+  # Any page classic does not serve (ClassicRouting) is a modern-only view on
+  # a classic.* host: its Tailwind/Stimulus body renders as unstyled soup
+  # inside the classic layout, so hand those requests to the modern site.
   before_action :redirect_unported_classic_pages, if: :classic_host?
 
   # Global exception handlers - show proper error pages instead of crashing
@@ -75,15 +70,20 @@ class ApplicationController < ActionController::Base
   helper_method :http_accept_language
   helper_method :current_language_id
   helper_method :content_lang
+  helper_method :german_site?
   helper_method :current_user
   helper_method :logged_in?
   helper_method :staging_host?
   helper_method :classic_host?
 
-  # Default URL options for URL generation
-  # @return [Hash] Default URL options (empty - dark mode is client-side only)
+  # Keep an explicitly selected Classic appearance on ordinary server-rendered
+  # links. It is a URL preference, not a cookie: Classic pages are publicly
+  # cacheable and must not leak one reader's appearance to another.
   def default_url_options
-    {}
+    return {} unless classic_host?
+
+    theme = params[:classic_theme].to_s
+    ClassicHelper::CLASSIC_THEMES.include?(theme) && theme != 'system' ? { classic_theme: theme } : {}
   end
 
   # Switches the locale for the current request
@@ -110,15 +110,15 @@ class ApplicationController < ActionController::Base
     classic_host? ? 'classic' : 'application'
   end
 
-  # See CLASSIC_PORTED_CONTROLLERS. 302 (not 301) so pages ported to classic
+  # See ClassicRouting. One redirect to the same path and query on the modern
+  # host, which never sends it back. 302 (not 301) so pages ported to classic
   # later aren't stuck behind cached permanent redirects; 303 for non-GET so
   # a stray form submit lands on the modern page instead of re-POSTing.
   def redirect_unported_classic_pages
-    return if CLASSIC_PORTED_CONTROLLERS.include?(controller_name)
-    return if CLASSIC_EXEMPT_PREFIXES.any? { |prefix| controller_path.start_with?(prefix) }
+    return if classic_serves_request?
 
-    modern_url = "https://#{effective_host.to_s.sub('classic.', '')}#{request.fullpath}"
-    redirect_to modern_url, allow_other_host: true, status: request.get? ? :found : :see_other
+    modern_url = classic_peer_url(effective_host.to_s.delete_prefix('classic.'), request.fullpath)
+    redirect_to modern_url, allow_other_host: true, status: request.get? || request.head? ? :found : :see_other
   end
 
   # Extracts the locale from the domain name based on subdomain
@@ -173,10 +173,14 @@ class ApplicationController < ActionController::Base
     return false if classic_host?                   # skip on classic subdomains
     return false if request.format.json? || request.xhr?
 
+    # Local preview language links use ?locale= on loopback hosts. Never send
+    # those browser checks to a live product just to change interface language.
+    host = effective_host.to_s.downcase
+    return false if %w[localhost 127.0.0.1 ::1].include?(host) || host.end_with?('.localhost')
+
     correct_domain = LOCALE_DOMAINS[I18n.locale.to_s]
     return false unless correct_domain
 
-    host = effective_host.to_s.downcase
     return false if host.include?(correct_domain.split('.').first)
 
     # Build redirect URL: same path, same query params minus locale
@@ -216,11 +220,18 @@ class ApplicationController < ActionController::Base
   end
 
   # Maps a locale to the corresponding numeric language_id used in the database.
+  # The German site shows a law in German when the NUMAC has a German text it
+  # serves (phase B of docs/ops/german-corpus-plan-2026-09-27.md) and in French
+  # otherwise, so its answer depends on the law: without a numac it is the
+  # French fallback, as before.
   # @param locale [String, Symbol] the locale code (defaults to I18n.locale)
-  # @return [Integer] 1 for Dutch, 2 for French and German UI fallback. Defaults to 1.
-  def current_language_id(locale = I18n.locale)
+  # @param numac [String, nil] the law the language is chosen for
+  # @return [Integer] 1 for Dutch, 2 for French, 3 for a German text on the
+  #   German site. Defaults to 1.
+  def current_language_id(locale = I18n.locale, numac: nil)
     case locale.to_s
-    when 'fr', 'de' then 2
+    when 'fr' then 2
+    when 'de' then german_text_for?(numac) ? HasLanguage::GERMAN_LANGUAGE_ID : 2
     when 'en'
       # LexLibera: read from param first, then cookie fallback
       cl = params[:content_lang].presence || cookies[:content_lang]
@@ -232,14 +243,34 @@ class ApplicationController < ActionController::Base
   # Returns the content language code for the current request.
   # For LexLibera (EN locale), this is determined by the content_lang param or cookie.
   # For other locales, it matches the UI locale.
-  # @return [String] 'nl' or 'fr'
+  # @return [String] 'nl', 'fr' or 'de'
   def content_lang
-    if I18n.locale == :en
+    case I18n.locale
+    when :en
       cl = params[:content_lang].presence || cookies[:content_lang]
       cl == 'fr' ? 'fr' : 'nl'
-    else
-      I18n.locale == :fr ? 'fr' : 'nl'
+    when :fr then 'fr'
+    when :de then 'de'
+    else 'nl'
     end
+  end
+
+  # The German site (gesetzguide.be and its classic and staging hosts). Since
+  # phase B of the German plan it serves the German texts (language_id 3)
+  # beside the French and Dutch ones; the Dutch and French sites never do.
+  def german_site?
+    I18n.locale == :de
+  end
+
+  # The legislation rows this site serves: languages 1 and 2 everywhere, and
+  # on the German site also the German rows with a known provenance.
+  def served_legislation
+    german_site? ? Legislation.served_on_german_site : Legislation.in_site_languages
+  end
+
+  # Whether the German site has a German text for this NUMAC.
+  def german_text_for?(numac)
+    numac.present? && Legislation.german_with_provenance.exists?(numac: numac.to_s)
   end
 
   # Handles routing errors with a custom 404 page
@@ -330,15 +361,11 @@ class ApplicationController < ActionController::Base
     current_user.present?
   end
 
+  # WW-PRIV-03: no return_to cookie. It kept the full path, query string
+  # included, in a merely signed cookie, and nothing ever read it back.
   def require_authentication
     return if logged_in?
 
-    store_location
     redirect_to login_path, alert: t('auth.login_required')
-  end
-
-  def store_location
-    # Keep application state out of the CSRF-only Rails session.
-    cookies.signed[:return_to] = { value: request.fullpath, expires: 5.minutes.from_now, httponly: true } if request.get?
   end
 end

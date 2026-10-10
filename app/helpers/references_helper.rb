@@ -145,6 +145,36 @@ module ReferencesHelper
     end
   end
 
+  # The text a section heading's anchor derives from, for the renderers below
+  # and the Classic law page alike (inbox 2026-10-08 10:49, B.1): the heading
+  # without its reference lines, and for a repealed heading its label and
+  # repeal marker joined by one space, the form its contents line carries.
+  def section_heading_anchor_source(content, type = :section_heading)
+    main_content, = split_content_and_references(content.to_s)
+    return main_content unless type == :abolished_section
+
+    label_raw, abolished_raw, abolished_parentheses = abolished_heading_parts(main_content.to_s)
+    extra_for_slug = abolished_raw.presence || abolished_parentheses.to_s
+    [label_raw.to_s, extra_for_slug.presence].compact.join(' ').strip
+  end
+
+  # A repealed heading's [label, inner text of its <Opgeheven ...> marker,
+  # "(opgeheven)" marker]; the label loses its trailing spaces (including
+  # NBSP/NNBSP) so the spacing before the marker node is set explicitly.
+  def abolished_heading_parts(raw_text)
+    # Prefer an explicit <Opgeheven/Abrogé …> marker (encoded or literal). Avoid matching other <...> tags like <DVR>.
+    angle_match = raw_text.match(/((?:&lt;|<)\s*((?:Opgeheven|Abrogé)[^<>]*?)\s*(?:&gt;|>))/i)
+    return [trim_heading_label(raw_text[0...angle_match.begin(0)]), angle_match[2].to_s.strip, nil] if angle_match
+
+    # Fallback to the parenthetical form (opgeheven)/(abrogé) when no <Opgeheven/Abrogé> tag is present
+    parentheses_match = raw_text.match(/\(\s*(?:opgeheven|abrogé)\s*\)/i)
+    return [trim_heading_label(raw_text[0...parentheses_match.begin(0)]), nil, parentheses_match[0]] if parentheses_match
+
+    [trim_heading_label(raw_text), nil, nil]
+  end
+
+  def trim_heading_label(label) = label.to_s.sub(/[[:space:]\u00A0\u202F]+$/u, '')
+
   # Renders a section heading with proper formatting and reference processing
   def render_section_heading_with_references(content, _references = {})
     return ''.html_safe if content.blank?
@@ -152,7 +182,7 @@ module ReferencesHelper
     raw_text = content.to_s
     main_content, references_text = split_content_and_references(raw_text)
     processed_content = process_heading_content(main_content)
-    heading_id = unique_section_heading_id(main_content)
+    heading_id = unique_section_heading_id(section_heading_anchor_source(raw_text))
 
     build_section_heading_html(processed_content, heading_id, references_text)
   end
@@ -216,31 +246,7 @@ module ReferencesHelper
     raw_all = content.to_s
     main_content, references_text = split_content_and_references(raw_all)
 
-    raw_text = main_content.to_s
-    # Prefer an explicit <Opgeheven/Abrogé …> marker (encoded or literal). Avoid matching other <...> tags like <DVR>.
-    angle_match = raw_text.match(/((?:&lt;|<)\s*((?:Opgeheven|Abrogé)[^<>]*?)\s*(?:&gt;|>))/i)
-    abolished_parentheses = nil
-    abolished_raw = nil
-
-    if angle_match
-      # Capture text before the abolished marker
-      label_raw = raw_text[0...angle_match.begin(0)]
-      # Remove any trailing spaces (including NBSP/NNBSP) before the abolished marker so we can
-      # control spacing explicitly between the label and the marker node.
-      label_raw = label_raw.to_s.sub(/[[:space:]\u00A0\u202F]+$/u, '')
-      abolished_raw = angle_match[2].to_s.strip # inner content without brackets
-    else
-      # Fallback to the parenthetical form (opgeheven)/(abrogé) when no <Opgeheven/Abrogé> tag is present
-      parentheses_match = raw_text.match(/\(\s*(?:opgeheven|abrogé)\s*\)/i)
-      if parentheses_match
-        label_raw = raw_text[0...parentheses_match.begin(0)]
-        label_raw = label_raw.to_s.sub(/[[:space:]\u00A0\u202F]+$/u, '')
-        abolished_parentheses = parentheses_match[0]
-      else
-        label_raw = raw_text
-        label_raw = label_raw.to_s.sub(/[[:space:]\u00A0\u202F]+$/u, '')
-      end
-    end
+    label_raw, abolished_raw, abolished_parentheses = abolished_heading_parts(main_content.to_s)
 
     label_processed = process_reference_markers(process_article_patterns(label_raw), {})
     if abolished_raw.present?
@@ -251,25 +257,18 @@ module ReferencesHelper
       abolished_processed = process_reference_markers(safe_inner, {})
     end
 
-    extra_for_slug = if abolished_raw.present?
-                       abolished_raw
-                     else
-                       abolished_parentheses.to_s
-                     end
-    # Ensure a single space between label and abolished marker for consistent slugs with TOC
-    heading_source = [label_raw.to_s, extra_for_slug.presence].compact.join(' ').strip
-    heading_id = unique_section_heading_id(heading_source)
+    # A single space between label and abolished marker keeps the slug equal to the contents line's
+    heading_id = unique_section_heading_id(section_heading_anchor_source(raw_all, :abolished_section))
 
     abolished_link = nil
     if abolished_raw.present?
       refs = lookup_document_references(abolished_raw)
-      if refs.present?
+      if refs.present? && build_law_url(refs[refs.keys.first], nil)
         first_doc = refs.keys.first
         lookup = refs[first_doc]
         art_match = abolished_raw.match(/(?:art\.|artikel|article)\s*(\d+[a-z]*)/i)
         article_fragment = art_match && art_match[1] ? "#art-#{art_match[1]}" : nil
-        url = "/laws/#{lookup[:numac]}?language_id=#{lookup[:language_id]}"
-        url += article_fragment if article_fragment
+        url = build_law_url(lookup, article_fragment)
         # Include visible angle brackets around the abolished marker in the link label
         label_with_brackets = safe_join(['&lt;'.html_safe, abolished_processed, '&gt;'.html_safe])
         link_classes = [
@@ -418,13 +417,16 @@ module ReferencesHelper
     nil
   end
 
+  # WW-SEC-15 refinement: built with link_to from the encoded law URL. It used
+  # to interpolate the imported NUMAC into a raw href, so a poisoned lookup
+  # emitted a real script element on the public TOC and article pages.
   def build_abolished_title_link(prefix, art_num, lookup, cls)
     title = lookup[:title]
     label = art_num ? "#{prefix} art. #{art_num} van #{title}".strip : "#{prefix} #{title}".strip
-    url = "/laws/#{lookup[:numac]}?language_id=#{lookup[:language_id]}"
-    url += "#art-#{art_num}" if art_num
+    url = build_law_url(lookup, art_num ? "#art-#{art_num}" : nil)
+    return build_abolished_fallback(label, cls) unless url
 
-    %(<a href="#{url}" class="#{cls} hover:underline" target="_blank" rel="noopener noreferrer" title="#{ERB::Util.h(title)}">#{ERB::Util.h(label)}</a>)
+    link_to(label, url, class: "#{cls} hover:underline", target: '_blank', rel: 'noopener noreferrer', title: title)
   end
 
   def build_abolished_fallback(inner, cls)
@@ -670,15 +672,18 @@ module ReferencesHelper
     # <span> tags that build_row_with_marker's non-link path will then
     # HTML-escape via escape_preserving_lt_gt, leaking data-action
     # attributes as visible text.
-    processed_line = build_linked_reference_line(cleaned_line, ref_color, doc_number_positions) || cleaned_line
+    linked_line = build_linked_reference_line(cleaned_line, ref_color, doc_number_positions)
+    processed_line = linked_line || cleaned_line
 
-    build_reference_row_html(ref_num, ref_color, processed_line, is_continuation)
+    build_reference_row_html(ref_num, ref_color, processed_line, is_continuation, linked: !linked_line.nil?)
   end
 
   def build_references_container(references_html, anchor_id)
     content_tag(:div, class: 'references references-section mt-3 not-prose', id: anchor_id) do
       safe_join([
-                  content_tag(:h4, t('articles.changes'), class: 'font-semibold font-mono text-xs text-gray-800 dark:text-sky mb-2 border-0'),
+                  # A UI label inside the legal text: the page language, not the text's
+                  content_tag(:h4, t('articles.changes'), lang: I18n.locale,
+                                                          class: 'font-semibold font-mono text-xs text-gray-800 dark:text-sky mb-2 border-0'),
                   content_tag(:div, safe_join(references_html), class: 'space-y-1')
                 ])
     end
@@ -830,15 +835,21 @@ module ReferencesHelper
     build_law_url(lookup_hash, fragment)
   end
 
-  # Builds the HTML for a single reference row
+  # Builds the HTML for a single reference row.
+  #
+  # WW-SEC-01: `linked` is the only trust signal. A line passes as HTML only
+  # when build_linked_reference_line built it: the label escaped, the URL made
+  # from a verified document lookup. Imported reference text is escaped
+  # whatever it contains; the old test for `<a ` let a stored `javascript:`
+  # link or a `<script src>` through on the public law pages and exports.
   # rubocop:disable Style/OptionalBooleanParameter
-  def build_reference_row_html(ref_num, ref_color, processed_line, is_continuation = false)
+  def build_reference_row_html(ref_num, ref_color, processed_line, is_continuation = false, linked: false)
     if is_continuation && ref_num
-      build_row_continuation(processed_line, ref_num, ref_color)
+      build_row_continuation(processed_line, ref_num, ref_color, linked: linked)
     elsif ref_num
-      build_row_with_marker(ref_num, ref_color, processed_line)
+      build_row_with_marker(ref_num, ref_color, processed_line, linked: linked)
     else
-      build_row_without_marker(processed_line)
+      build_row_without_marker(processed_line, linked: linked)
     end
   end
   # rubocop:enable Style/OptionalBooleanParameter
@@ -862,12 +873,12 @@ module ReferencesHelper
       .gsub(/\A(?:[[:space:]\u00A0\u202F]|&nbsp;)+/, '')
   end
 
-  def build_row_with_marker(ref_num, ref_color, processed_line)
+  def build_row_with_marker(ref_num, ref_color, processed_line, linked: false)
     # Build marker HTML manually to preserve unescaped -> in data-action
     reference_marker = %(<span class="#{ref_color}" data-ref-target="#{ref_num}">[#{ref_num}]</span>).html_safe
 
     cleaned = processed_line.to_s.gsub(/\[\d+\]/, '').gsub(/\]\d+/, '')
-    if cleaned.include?('<a ')
+    if linked
       inner_node = %(<span class="reference #{ref_color}">#{cleaned}</span>).html_safe
       return %(<div class="font-mono text-xs mb-1" data-controller="reference-highlight" data-ref-number="#{ref_num}" data-action="mouseenter->reference-highlight#highlightInline mouseleave->reference-highlight#unhighlightInline">#{reference_marker}#{inner_node}</div>).html_safe
     end
@@ -879,7 +890,7 @@ module ReferencesHelper
     %(<div class="font-mono text-xs mb-1" data-controller="reference-highlight" data-ref-number="#{ref_num}" data-action="mouseenter->reference-highlight#highlightInline mouseleave->reference-highlight#unhighlightInline">#{reference_marker}#{reference_text}</div>).html_safe
   end
 
-  def build_row_continuation(processed_line, parent_ref_num, parent_ref_color)
+  def build_row_continuation(processed_line, parent_ref_num, parent_ref_color, linked: false)
     # Calculate indentation: [N] marker width + small gap
     # Use ch units since we use monospace font
     indent_ch = parent_ref_num.to_s.length + 3
@@ -887,7 +898,7 @@ module ReferencesHelper
     cleaned = unwrap_meta_and_reference_spans(processed_line.to_s)
     cleaned = clean_and_strip_markers(cleaned)
 
-    if cleaned.include?('<a ')
+    if linked
       inner_node = %(<span class="reference #{parent_ref_color}">#{cleaned}</span>).html_safe
       return %(<div class="font-mono text-xs mb-1" style="margin-left: #{indent_ch}ch;" data-controller="reference-highlight" data-ref-number="#{parent_ref_num}" data-action="mouseenter->reference-highlight#highlightInline mouseleave->reference-highlight#unhighlightInline">#{inner_node}</div>).html_safe
     end
@@ -897,10 +908,10 @@ module ReferencesHelper
     %(<div class="font-mono text-xs mb-1" style="margin-left: #{indent_ch}ch;" data-controller="reference-highlight" data-ref-number="#{parent_ref_num}" data-action="mouseenter->reference-highlight#highlightInline mouseleave->reference-highlight#unhighlightInline">#{reference_text}</div>).html_safe
   end
 
-  def build_row_without_marker(processed_line)
+  def build_row_without_marker(processed_line, linked: false)
     raw = unwrap_meta_and_reference_spans(processed_line.to_s)
     raw = clean_and_strip_markers(raw)
-    if raw.include?('<a ')
+    if linked
       content_tag(:div, class: 'font-mono text-xs mb-1 text-gray-600 dark:text-gray-400') { raw.html_safe }
     else
       escaped = escape_preserving_lt_gt(raw)
@@ -1086,10 +1097,7 @@ module ReferencesHelper
 
     first_doc = refs.keys.first
     lookup = refs[first_doc]
-    fragment = compute_article_fragment(abolished_inner, fallback_art_num)
-    url = "/laws/#{lookup[:numac]}?language_id=#{lookup[:language_id]}"
-    url += fragment if fragment
-    url
+    build_law_url(lookup, compute_article_fragment(abolished_inner, fallback_art_num))
   end
 
   # Tries to find document references using European date format (DD-MM-YYYY)
@@ -1781,12 +1789,6 @@ module ReferencesHelper
     norm.present? ? "#art-#{norm}" : nil
   end
 
-  def build_law_url(lookup, fragment)
-    url = "/laws/#{lookup[:numac]}?language_id=#{lookup[:language_id]}"
-    url += fragment if fragment
-    url
-  end
-
   # Returns true if the index is currently within an HTML tag like <span ...> or </span>
   def inside_html_tag?(html, idx)
     left_lt  = html.rindex('<', idx)
@@ -1909,7 +1911,9 @@ module ReferencesHelper
 
     # Build the badge label based on locale
     badge_label = case I18n.locale when :fr then 'Droit futur' when :de then 'Zukünftiges Recht' when :en then 'Future law' else 'Toekomstig recht' end
+    # A UI label beside the legal text: the page language, not the text's
     badge = content_tag(:span, badge_label,
+                        lang: I18n.locale,
                         class: 'inline-flex items-center ml-2 px-2 py-0.5 text-xs font-semibold rounded-full ' \
                                'bg-(--accent-100) text-(--accent-700) dark:bg-(--accent-900)/40 dark:text-(--accent-400) ' \
                                'border border-(--accent-300) dark:border-(--accent-600) whitespace-nowrap')

@@ -101,6 +101,7 @@
       .btn-secondary:hover { background: rgba(148, 163, 184, 0.22); color: #e2e8f0; }
 
       .footer { margin-top: 1.5rem; font-size: 0.7rem; color: #475569; }
+      .actions a { flex-wrap: wrap; max-width: 100%; justify-content: center; text-align: center; }
     </style>
   </head>
   <body>
@@ -112,25 +113,25 @@
       <div class="card">
         <div class="status">422</div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="nl">
           <span class="lang-label">NL</span>
           <h2>Verzoek geweigerd</h2>
           <p>De wijziging kon niet worden verwerkt. Dit kan gebeuren als uw sessie is verlopen.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="fr">
           <span class="lang-label">FR</span>
           <h2>Demande rejetée</h2>
           <p>La modification n'a pas pu être traitée. Cela peut arriver si votre session a expiré.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="de">
           <span class="lang-label">DE</span>
           <h2>Anfrage abgelehnt</h2>
           <p>Die Änderung konnte nicht verarbeitet werden. Dies kann passieren, wenn Ihre Sitzung abgelaufen ist.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="en">
           <span class="lang-label">EN</span>
           <h2>Request rejected</h2>
           <p>The change could not be processed. This can happen if your session has expired.</p>
@@ -141,8 +142,8 @@
         </div>
 
         <div class="actions">
-          <a href="javascript:location.reload()" class="btn-primary">&#8635; Reload</a>
-          <a href="/" class="btn-secondary">&larr; Home</a>
+          <a href="" class="btn-primary">&#8635; <span lang="nl">Herladen</span> / <span lang="fr">Recharger</span> / <span lang="de">Neu laden</span> / <span lang="en">Reload</span></a>
+          <a href="/" class="btn-secondary">&larr; <span lang="nl">Startpagina</span> / <span lang="fr">Accueil</span> / <span lang="de">Startseite</span> / <span lang="en">Home</span></a>
         </div>
       </div>
 

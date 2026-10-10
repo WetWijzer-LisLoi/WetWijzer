@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'net/smtp'
+
 # Accounts-database outbox for transactional email (FBL-032).
 #
 # A row is created in the SAME accounts transaction that commits the token
@@ -11,6 +13,28 @@
 class EmailOutboxEntry < AccountRecord
   MAIL_KINDS = %w[confirmation password_reset].freeze
   MAX_ATTEMPTS = 5
+
+  # A PERMANENT rejection must not be retried at all.
+  #
+  # Migadu counts every rejected attempt as a session error and escalates to
+  # "421 too many errors". In July that took ALL mail down for three days -
+  # invoices, confirmations, and the ops alerts too, because this host has no
+  # MTA and Rails SMTP is the only path to a human. Retrying a 550 five times
+  # per message is how one bad sender address silences everything else.
+  #
+  # 5xx is final by definition (RFC 5321). Authentication failures are final
+  # in the same practical sense: a wrong password does not become right on the
+  # fourth attempt, and per-brand SMTP credentials make a single mistyped
+  # brand password a realistic way to produce exactly that.
+  PERMANENT_ERRORS = [
+    Net::SMTPFatalError,
+    Net::SMTPSyntaxError,
+    Net::SMTPAuthenticationError
+  ].freeze
+
+  def self.permanent_failure?(error)
+    PERMANENT_ERRORS.any? { |klass| error.is_a?(klass) }
+  end
 
   belongs_to :user
 
@@ -60,12 +84,14 @@ class EmailOutboxEntry < AccountRecord
 
   def record_failure!(error)
     backoff = [30 * (2**attempts), 3600].min
-    if attempts + 1 >= MAX_ATTEMPTS
+    permanent = self.class.permanent_failure?(error)
+    if permanent || attempts + 1 >= MAX_ATTEMPTS
       update!(attempts: attempts + 1, last_error_class: error.class.name,
               failed_at: Time.current)
       Rails.logger.error(
         "[EmailOutbox] permanent failure kind=#{mail_kind} user_id=#{user_id} " \
-        "attempts=#{attempts + 1} error=#{error.class}"
+        "attempts=#{attempts + 1} error=#{error.class} " \
+        "reason=#{permanent ? 'rejected' : 'attempts_exhausted'}"
       )
     else
       update!(attempts: attempts + 1, last_error_class: error.class.name,

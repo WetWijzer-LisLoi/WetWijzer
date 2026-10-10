@@ -57,22 +57,54 @@ module Api
     PER_IP_PREMIUM_HOURLY_LIMIT = 120 # 120/hour per IP (Level III/IV models only)
     SERVICE_DAILY_LIMIT = ENV.fetch('CHATBOT_SERVICE_DAILY_LIMIT', 1000).to_i # app-level service access
 
-    # FileStore#increment rewrites an entry without retaining the expiry that
-    # was set by a preceding write. A plain "write with TTL, then increment"
-    # therefore turns a one-minute counter into a permanent production
-    # counter. Fixed-window keys remain correct even if a cache backend loses
-    # the cleanup TTL, because the next window necessarily uses a new key.
-    def self.windowed_rate_limit_key(key, expires_in:, now: Time.current)
-      window_seconds = expires_in.to_i
-      raise ArgumentError, 'expires_in must be positive' unless window_seconds.positive?
+    # German answers v2 (GermanAnswerTranslation). The translation call ends
+    # this long before the streaming supervisor would, so a slow translation
+    # falls back to the French answer instead of turning into a timeout.
+    GERMAN_ANSWER_SUPERVISOR_MARGIN_SECONDS = 5
+    # The JSON form has no supervisor: its whole request stays under the
+    # 150 s nginx read timeout, as deep analysis does (140 s).
+    GERMAN_ANSWER_JSON_DEADLINE_SECONDS = 140
 
-      "#{key}:window:#{now.to_i.div(window_seconds)}"
+    # WW-SEC-14: every counter lives in a stable, calendar-aligned window: a
+    # burst minute, a clock hour, a UTC day, a UTC month. The window is part
+    # of the key, so a counter is right even if a store loses its cleanup
+    # expiry (FileStore#increment drops one set by an earlier write). The day
+    # used to divide the epoch by the seconds left until midnight, a shrinking
+    # number, so the "daily" key changed almost every second and the daily
+    # caps never held; a 32-day window also restarted the monthly cap
+    # mid-month.
+    COUNTER_WINDOWS = {
+      minute: [60, ->(now) { "m#{now.to_i.div(60)}" }],
+      hour: [3600, ->(now) { "h#{now.to_i.div(3600)}" }],
+      day: [86_400, ->(now) { "d#{now.utc.strftime('%Y%m%d')}" }],
+      month: [32 * 86_400, ->(now) { "M#{now.utc.strftime('%Y%m')}" }]
+    }.freeze
+
+    def self.counter_window_key(key, window, now: Time.current)
+      _seconds, identity = COUNTER_WINDOWS.fetch(window)
+      "#{key}:#{identity.call(now)}"
+    end
+
+    # WW-SEC-14 refinement: the global counters have undated base keys, so
+    # counter_window_key alone owns their period identity (UTC). The monthly
+    # base used to carry a Brussels-local month as well, which reset the
+    # counter an hour before the UTC month ended; the dashboard read unsuffixed
+    # keys nobody wrote. Writes and reads share this builder.
+    GLOBAL_COUNTERS = {
+      monthly: ['chatbot_monthly_global', :month],
+      hourly: ['chatbot_hourly_global', :hour],
+      daily: ['chatbot_daily_global', :day]
+    }.freeze
+
+    def self.global_counter_key(name, now: Time.current)
+      base, window = GLOBAL_COUNTERS.fetch(name)
+      counter_window_key(base, window, now: now)
     end
 
     # Rate limiting: 30 requests/hour per IP, 5 requests/minute burst protection
     # IMPORTANT: Only rate-limit the expensive LLM-calling actions.
     # Lightweight CRUD endpoints (conversations, consent, save, feedback, zk_key_material)
-    # must NOT count toward the burst limit — the frontend fires 3-4 of these on page load,
+    # must NOT count toward the burst limit: the frontend fires 3-4 of these on page load,
     # which would exhaust the 5/min burst budget before the user even asks a question.
     # Only provider-calling actions sit behind the credit/subscription gate.
     # History, consent, feedback, and encrypted-payload endpoints must remain
@@ -80,6 +112,8 @@ module Api
     # zero-knowledge answer can reach the browser but cannot be persisted.
     before_action :check_access, only: :ask
     before_action :rate_limit_check, only: :ask
+    # WW-SEC-07: a report body is bounded before anything parses it.
+    prepend_before_action :bound_report_body, only: :report
 
     # POST /api/chatbot/ask (or GET for SSE streaming)
     # Params: { question: "...", language: "nl", source: "legislation|jurisprudence|all", stream: true/false, conversation_id: "..." }
@@ -175,6 +209,12 @@ module Api
         return render json: {
           error: "Question too long (#{question.length} chars, max #{max_question_length})"
         }, status: :bad_request
+      end
+
+      # WW-SEC-09: the follow-up context is bounded before retrieval, credits
+      # or any provider call.
+      if context_messages_out_of_bounds?
+        return render json: { error: 'context_messages_invalid' }, status: :unprocessable_entity
       end
 
       # Browser requests remain bound to their domain. A signed service request
@@ -362,12 +402,9 @@ module Api
         begin
           start_time = Time.current
           # ZK mode: client provides conversation context (server cannot read stored messages)
-          context_override = nil
-          if params[:context_messages].is_a?(Array) && params[:context_messages].any?
-            context_override = params[:context_messages].map { |m| h = m.permit(:role, :content).to_h; h['role'] = 'user' unless %w[user assistant].include?(h['role']); h }.last(6)
-          end
+          context_override = client_context_messages
           quality_provenance_before = quality_capture_provenance
-          chatbot = LegalChatbotService.new(language: language, conversation: conversation, model: model, domain: request.host, reasoning_effort: reasoning_effort, profile: requested_profile, context_messages_override: context_override, law_numac: params[:law_numac].to_s.presence, include_quality_evidence: quality_evidence_requested?, **mistral_credential_options)
+          chatbot = LegalChatbotService.new(language: language, conversation: conversation, model: model, domain: request.host, reasoning_effort: reasoning_effort, profile: requested_profile, context_messages_override: context_override, law_numac: params[:law_numac].to_s.presence, include_quality_evidence: quality_evidence_requested?, german_lane: german_lane_request?, **mistral_credential_options)
 
           # Send immediate progress event so client knows connection is alive
           response.stream.write("data: #{JSON.generate({ type: 'progress', step: 'searching' })}\n\n")
@@ -382,18 +419,42 @@ module Api
           # be the wrong thread).
           parent_request_id = Thread.current[:request_id]
           benchmark_cap_bypass_enabled = benchmark_cap_bypass?
+          # German answers v2: the finished French answer is translated inside
+          # the query thread, under the same supervisor, and the German text is
+          # what the result event delivers. french_result keeps the French
+          # answer for the timeout salvage below.
+          german_translation = LegalChatbot::GermanAnswerTranslation.new if german_answer_request?
+          # German answers v3: the German question is translated into French
+          # first, inside the same thread and supervisor, and the whole
+          # answer path runs on the French question (GermanQuestionTranslation).
+          question_translation = LegalChatbot::GermanQuestionTranslation.new if german_question_request?
+          french_result = nil
+          query_started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
           query_thread = Thread.new do
             Thread.current[:request_id] = parent_request_id
+            translated_question = question_translation&.apply(question)
+            asked = translated_question ? translated_question.question : question
             with_benchmark_cap_bypass(benchmark_cap_bypass_enabled) do
               result = if source == :custom
-                         chatbot.ask_with_sources(question, sources: @selected_sources)
+                         chatbot.ask_with_sources(asked, sources: @selected_sources)
                        else
-                         chatbot.ask(question, source: source)
+                         chatbot.ask(asked, source: source)
                        end
             end
-            # Token usage is thread-local to the LLM call — capture it here;
+            # Token usage is thread-local to the LLM call, so capture it here;
             # the request thread never sees this thread's locals.
             query_tokens = Thread.current[:last_chat_tokens]
+            result = question_translation.annotate(result, translated_question, question: question) if translated_question
+            if german_translation
+              french_result = result
+              chatbot.publish_phase(LegalChatbot::GermanAnswerTranslation::PROGRESS_PHASE) if chatbot.respond_to?(:publish_phase)
+              answer_seconds = Process.clock_gettime(Process::CLOCK_MONOTONIC) - query_started_at
+              result = german_translation.apply(
+                french_result,
+                question: question,
+                time_budget: streaming_timeout_seconds - answer_seconds - GERMAN_ANSWER_SUPERVISOR_MARGIN_SECONDS
+              )
+            end
           rescue StandardError => e
             query_error = e
           end
@@ -412,14 +473,18 @@ module Api
           query_completed = wait_for_streaming_query(query_thread, timeout_seconds: streaming_timeout_seconds) do |elapsed|
             phase = chatbot.respond_to?(:current_phase) ? chatbot.current_phase : nil
             attempt = chatbot.respond_to?(:current_phase_attempt) ? chatbot.current_phase_attempt : nil
+            # The translation phase carries its own German label and is sent on
+            # every tick, so a heartbeat never replaces it with "KI denkt nach".
+            translating = phase == LegalChatbot::GermanAnswerTranslation::PROGRESS_PHASE
 
-            if phase && [phase, attempt] != last_phase
+            if phase && ([phase, attempt] != last_phase || translating)
               last_phase = [phase, attempt]
               event = { type: 'progress', step: phase.to_s }
               if attempt
                 event[:attempt] = attempt
                 event[:max_attempts] = LegalChatbot::Orchestrator::CITATION_GUARD_MAX_RETRIES
               end
+              event.merge!(LegalChatbot::GermanAnswerTranslation::PROGRESS_FIELDS) if translating
               response.stream.write("data: #{JSON.generate(event)}\n\n")
             else
               response.stream.write("data: #{JSON.generate({ type: 'heartbeat', elapsed: elapsed })}\n\n")
@@ -432,19 +497,33 @@ module Api
               "(model=#{model}, user=#{streaming_user&.id || 'service'})"
             )
             terminate_chatbot_query_thread(query_thread)
-            result = {
-              answer: chatbot.timeout_answer,
-              sources: [],
-              response_time: (Time.current - start_time).round(2),
-              error: 'timeout'
-            }
+            if german_translation && french_result
+              # The French answer was complete; only its translation ran out of
+              # time. Deliver it, with the German note, rather than a timeout.
+              result = german_translation.fallback(french_result, reason: 'supervisor_timeout', question: question)
+            else
+              result = {
+                answer: chatbot.timeout_answer,
+                sources: [],
+                response_time: (Time.current - start_time).round(2),
+                error: 'timeout'
+              }
+              # Its German twin, without a call (time_budget 0).
+              result = german_translation.apply(result, question: question, time_budget: 0) if german_translation
+              query_tokens = {}
+            end
             query_error = nil
-            query_tokens = {}
           end
 
-          # On a query exception, just re-raise — the method-level rescue is the
+          # On a query exception, just re-raise: the method-level rescue is the
           # single idempotent refund point for the reserved credits.
           raise query_error if query_error
+
+          # German answers v4: a headline figure that contradicts the verified
+          # source appended under it is flagged (figure_check_language).
+          if (figure_language = figure_check_language(result, language))
+            result = LegalChatbot::GermanFigureCheck.new.apply(result, question: question, language: figure_language)
+          end
 
           # Account erasure fences active=false while provider work is in
           # flight. Re-check immediately on return, while the durable row is
@@ -487,7 +566,18 @@ module Api
             return
           end
 
-          if reservation && !result[:error]
+          # Owner default 2026-09-27 (to-do 6.7): an answer that says its
+          # search was incomplete costs no credit. Released here, while the
+          # row is still reserved and before any delivery intent, so nothing
+          # below can settle it; log_analytic records the waiver off the
+          # result. From here on a waived answer is delivered like one that
+          # was never charged, and the outer rescue's refund is a no-op.
+          charge_waived = waive_browser_chat_charge_for_incomplete_search!(
+            reservation, result, user: streaming_user, language: delivered_answer_language(result, language)
+          )
+          charge_stands = reservation && !result[:error] && !charge_waived
+
+          if charge_stands
             billing_delivery_token = begin_browser_chat_delivery!(reservation)
             # No result event has been attempted yet. Failures before that
             # boundary may abort only after exact history rollback below.
@@ -503,7 +593,7 @@ module Api
               conversation_persistence_outcome = e.outcome
               raise
             end
-            conversation_delivery_receipt = saved_delivery_receipt if reservation && !result[:error]
+            conversation_delivery_receipt = saved_delivery_receipt if charge_stands
             # Standard history is immediately retrievable by another request;
             # that durable value is itself delivery. It may no longer be rolled
             # back/refunded merely because the later transport write fails.
@@ -536,17 +626,16 @@ module Api
           # reservation object in scope after refund so a later operation raising
           # can safely retry refund! without applying a second credit mutation.
           # A successful result stays reserved until the result event is written.
-          if reservation
-            if result[:error]
-              refund_browser_chat_reservation!(reservation, analytic: analytic, reason: 'provider_result_error')
-              result[:credits_info] = credit_balance_info(streaming_user, deducted: 0)
-            else
-              result[:credits_info] = credit_balance_info(
-                streaming_user,
-                deducted: credits_to_deduct,
-                intelligence: intelligence
-              )
-            end
+          # A waived answer already carries its zero-deduction credits_info.
+          if reservation && result[:error]
+            refund_browser_chat_reservation!(reservation, analytic: analytic, reason: 'provider_result_error')
+            result[:credits_info] = credit_balance_info(streaming_user, deducted: 0)
+          elsif charge_stands
+            result[:credits_info] = credit_balance_info(
+              streaming_user,
+              deducted: credits_to_deduct,
+              intelligence: intelligence
+            )
           end
 
           # Attach token usage for client-side transparency
@@ -564,10 +653,10 @@ module Api
           result_event_payload = "data: #{JSON.generate({ type: 'result', data: result })}\n\n"
           billing_delivery_abort_allowed = false unless result[:error]
           response.stream.write(result_event_payload)
-          answer_delivery_accepted = true unless result[:error]
-          settle_browser_chat_reservation!(reservation, delivery_token: billing_delivery_token) unless result[:error]
+          answer_delivery_accepted = true if charge_stands
+          settle_browser_chat_reservation!(reservation, delivery_token: billing_delivery_token) if charge_stands
           conversation_delivery_receipt = nil unless result[:error]
-          project_browser_chat_analytic!(reservation, analytic) if reservation && !result[:error]
+          project_browser_chat_analytic!(reservation, analytic) if charge_stands
           zk_claim = nil # the client now owns the claimed revision
           keep_new_conversation = true unless result[:error]
           response.stream.close
@@ -654,19 +743,39 @@ module Api
         end
 
         # ZK mode: client provides conversation context (server cannot read stored messages)
-        context_override = nil
-        if params[:context_messages].is_a?(Array) && params[:context_messages].any?
-          context_override = params[:context_messages].map { |m| h = m.permit(:role, :content).to_h; h['role'] = 'user' unless %w[user assistant].include?(h['role']); h }.last(6)
-        end
+        context_override = client_context_messages
         quality_provenance_before = quality_capture_provenance
-        chatbot = LegalChatbotService.new(language: language, conversation: conversation, model: model, domain: request.host, reasoning_effort: reasoning_effort, profile: requested_profile, context_messages_override: context_override, law_numac: params[:law_numac].to_s.presence, include_quality_evidence: quality_evidence_requested?, **mistral_credential_options)
+        chatbot = LegalChatbotService.new(language: language, conversation: conversation, model: model, domain: request.host, reasoning_effort: reasoning_effort, profile: requested_profile, context_messages_override: context_override, law_numac: params[:law_numac].to_s.presence, include_quality_evidence: quality_evidence_requested?, german_lane: german_lane_request?, **mistral_credential_options)
 
+        json_started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        # German answers v3, as in the streaming branch: the answer path runs
+        # on the French question. The translation client restores this
+        # thread's token usage, which the answer then sets.
+        question_translation = LegalChatbot::GermanQuestionTranslation.new if german_question_request?
+        translated_question = question_translation&.apply(question)
+        asked = translated_question ? translated_question.question : question
         result = with_benchmark_cap_bypass(benchmark_cap_bypass?) do
           if source == :custom
-            chatbot.ask_with_sources(question, sources: @selected_sources)
+            chatbot.ask_with_sources(asked, sources: @selected_sources)
           else
-            chatbot.ask(question, source: source)
+            chatbot.ask(asked, source: source)
           end
+        end
+        result = question_translation.annotate(result, translated_question, question: question) if translated_question
+        # German answers v2, as in the streaming branch. The translation client
+        # restores this thread's token usage, so token_info below still
+        # describes the answer.
+        if german_answer_request?
+          answer_seconds = Process.clock_gettime(Process::CLOCK_MONOTONIC) - json_started_at
+          result = LegalChatbot::GermanAnswerTranslation.new.apply(
+            result,
+            question: question,
+            time_budget: GERMAN_ANSWER_JSON_DEADLINE_SECONDS - answer_seconds
+          )
+        end
+        # German answers v4, as in the streaming branch.
+        if (figure_language = figure_check_language(result, language))
+          result = LegalChatbot::GermanFigureCheck.new.apply(result, question: question, language: figure_language)
         end
 
         # Keep the reservation open and verify the erasure fence immediately
@@ -704,7 +813,14 @@ module Api
           return render_zero_knowledge_state_conflict(credits_info: credits_info)
         end
 
-        if reservation && !result[:error]
+        # To-do 6.7: an incomplete search is not charged; see the streaming
+        # branch for the reasoning. Released before the delivery intent.
+        charge_waived = waive_browser_chat_charge_for_incomplete_search!(
+          reservation, result, user: current_user, language: delivered_answer_language(result, language)
+        )
+        charge_stands = reservation && !result[:error] && !charge_waived
+
+        if charge_stands
           billing_delivery_token = begin_browser_chat_delivery!(reservation)
           billing_delivery_abort_allowed = true
         end
@@ -721,7 +837,7 @@ module Api
             conversation_persistence_outcome = e.outcome
             raise
           end
-          conversation_delivery_receipt = saved_delivery_receipt if reservation && !result[:error]
+          conversation_delivery_receipt = saved_delivery_receipt if charge_stands
           billing_delivery_abort_allowed = false if conversation_delivery_receipt
           zk_claim = nil
         end
@@ -747,17 +863,16 @@ module Api
         # Error/timeout/safety results are refunded before rendering. Successful
         # results remain reserved through render. Durable standard history is
         # already accepted value; ZK/no-history may still abort on proven failure.
-        if reservation
-          if result[:error]
-            refund_browser_chat_reservation!(reservation, analytic: analytic, reason: 'provider_result_error')
-            result[:credits_info] = credit_balance_info(current_user, deducted: 0)
-          else
-            result[:credits_info] = credit_balance_info(
-              current_user,
-              deducted: credits_to_deduct,
-              intelligence: intelligence
-            )
-          end
+        # A waived answer already carries its zero-deduction credits_info.
+        if reservation && result[:error]
+          refund_browser_chat_reservation!(reservation, analytic: analytic, reason: 'provider_result_error')
+          result[:credits_info] = credit_balance_info(current_user, deducted: 0)
+        elsif charge_stands
+          result[:credits_info] = credit_balance_info(
+            current_user,
+            deducted: credits_to_deduct,
+            intelligence: intelligence
+          )
         end
 
         if token_info[:input].to_i.positive? || token_info[:output].to_i.positive?
@@ -769,11 +884,11 @@ module Api
         end
 
         render json: result
-        answer_delivery_accepted = true unless result[:error]
+        answer_delivery_accepted = true if charge_stands
         billing_delivery_abort_allowed = false unless result[:error]
-        settle_browser_chat_reservation!(reservation, delivery_token: billing_delivery_token) unless result[:error]
+        settle_browser_chat_reservation!(reservation, delivery_token: billing_delivery_token) if charge_stands
         conversation_delivery_receipt = nil unless result[:error]
-        project_browser_chat_analytic!(reservation, analytic) if reservation && !result[:error]
+        project_browser_chat_analytic!(reservation, analytic) if charge_stands
         zk_claim = nil # render accepted the answer; the client owns this revision
         keep_new_conversation = true unless result[:error]
       end
@@ -891,43 +1006,62 @@ module Api
     end
 
     # POST /api/chatbot/feedback
-    # Store user feedback on chatbot answers (GDPR: no question/answer text stored)
+    # Store user feedback on chatbot answers (GDPR: no question/answer text stored).
+    # No page of ours calls it since RAT-005; it stays routed for cached bundles.
+    # WW-SEC-07: metadata from the shared vocabulary, a dedicated atomic budget
+    # per account or address, and one feedback per answer.
+    FEEDBACK_HOURLY_LIMIT = 30
+    FEEDBACK_ONCE_PER_ANSWER = 30.days
+
     def feedback
       ChatbotFeedback.ensure_table_exists
 
-      feedback = ChatbotFeedback.new(
-        feedback_type: params[:feedback_type],
-        language: params[:language],
-        source: params[:source],
-        user: current_user,
-        ip_hash: Digest::SHA256.hexdigest("#{request.remote_ip}#{Rails.application.secret_key_base}")
-      )
-
-      if feedback.save
-        # Also update the linked ChatbotAnalytic record if analytic_id provided.
-        # Ownership check: analytic ids are sequential, so without it anyone
-        # could flip the satisfaction rating on other users' query records.
-        if params[:analytic_id].present?
-          ChatbotAnalytic.ensure_table_exists
-          analytic = ChatbotAnalytic.find_by(id: params[:analytic_id])
-          owner_ok = analytic && if analytic.user_id.present?
-                                   analytic.user_id == current_user&.id
-                                 else
-                                   analytic.ip_hash == Digest::SHA256.hexdigest("#{request.remote_ip}#{Rails.application.secret_key_base}")
-                                 end
-          analytic.update(feedback_type: params[:feedback_type]) if owner_ok
-        end
-        render json: { success: true }
-      else
-        render json: { error: feedback.errors.full_messages.join(', ') }, status: :unprocessable_entity
+      feedback_type = ChatbotMetadataVocabulary.feedback_type(params[:feedback_type])
+      language = ChatbotMetadataVocabulary.language(params[:language])
+      source = ChatbotMetadataVocabulary.source(params[:source])
+      if feedback_type.nil? || [feedback_type, language, source].any? { |value| ChatbotMetadataVocabulary.invalid?(value) }
+        return render json: { error: 'Invalid feedback' }, status: :unprocessable_entity
       end
+
+      ip_hash = Digest::SHA256.hexdigest("#{request.remote_ip}#{Rails.application.secret_key_base}")
+      actor = current_user ? "user:#{current_user.id}" : "ip:#{ip_hash}"
+      analytic_id = Integer(params[:analytic_id].to_s, exception: false)
+      return render json: { error: 'Too many feedback submissions' }, status: :too_many_requests unless feedback_admitted?(actor)
+      # A repeat for the same answer is acknowledged and not stored again.
+      return render json: { success: true } unless first_feedback_for_answer?(actor, analytic_id)
+
+      feedback = ChatbotFeedback.new(feedback_type: feedback_type, language: language, source: source,
+                                     user: current_user, ip_hash: ip_hash)
+      return render json: { error: 'Invalid feedback' }, status: :unprocessable_entity unless feedback.save
+
+      # Also update the linked ChatbotAnalytic record if analytic_id provided.
+      # Ownership check: analytic ids are sequential, so without it anyone
+      # could flip the satisfaction rating on other users' query records.
+      if analytic_id
+        ChatbotAnalytic.ensure_table_exists
+        analytic = ChatbotAnalytic.find_by(id: analytic_id)
+        owner_ok = analytic && if analytic.user_id.present?
+                                 analytic.user_id == current_user&.id
+                               else
+                                 analytic.ip_hash == ip_hash
+                               end
+        analytic.update(feedback_type: feedback_type) if owner_ok
+      end
+      render json: { success: true }
+    rescue AtomicCacheCounter::Unavailable
+      render json: { error: 'Feedback is temporarily unavailable' }, status: :service_unavailable
     end
 
     # POST /api/chatbot/report
     # User-initiated report of a failed/bad chatbot answer.
     # GDPR: This endpoint intentionally stores question+answer text.
     # The user must explicitly consent via a confirm dialog in the frontend.
-    # Rate-limited to 10 reports per user per day.
+    # WW-SEC-07: a bounded body and bounded fields, metadata from the shared
+    # vocabulary, an analytic link only to the reporter's own answer, and 10
+    # reports per user per day reserved atomically.
+    REPORT_DAILY_LIMIT = 10
+    REPORT_MAX_BODY_BYTES = 256 * 1024
+
     def report
       # Must be logged in
       unless current_user
@@ -939,32 +1073,21 @@ module Api
 
       ChatbotReport.ensure_table_exists
 
-      # Rate limit: max 10 reports per user per day
-      today_count = ChatbotReport.where(user_id: current_user.id)
-                                 .where('created_at >= ?', Time.current.beginning_of_day)
-                                 .count
-      return render json: { error: 'Daily report limit reached (max 10)' }, status: :too_many_requests if today_count >= 10
+      attributes = report_attributes
+      return render json: { error: 'Invalid report' }, status: :unprocessable_entity unless attributes
+      unless report_slot_reserved?
+        return render json: { error: "Daily report limit reached (max #{REPORT_DAILY_LIMIT})" }, status: :too_many_requests
+      end
 
-      question = params[:question].to_s.strip
-      return render json: { error: 'Question text is required' }, status: :unprocessable_entity if question.blank?
-
-      report = ChatbotReport.new(
-        question: question,
-        answer: params[:answer].to_s.strip.presence,
-        language: params[:language],
-        source: params[:source],
-        intelligence: params[:intelligence],
-        user: current_user,
-        analytic_id: params[:analytic_id],
-        status: 'pending'
-      )
-
+      report = ChatbotReport.new(attributes.merge(user: current_user, status: 'pending'))
       if report.save
         Rails.logger.info("[REPORT] Chatbot report ##{report.id} by user #{current_user.id}")
         render json: { success: true, report_id: report.id }
       else
-        render json: { error: report.errors.full_messages.join(', ') }, status: :unprocessable_entity
+        render json: { error: 'Invalid report' }, status: :unprocessable_entity
       end
+    rescue AtomicCacheCounter::Unavailable
+      render json: { error: 'Reporting is temporarily unavailable' }, status: :service_unavailable
     end
 
     # GET /api/chatbot/cost_dashboard
@@ -976,6 +1099,7 @@ module Api
       ChatbotAnalytic.ensure_cost_columns!
 
       period = (params[:period] || 'month').to_sym
+      counted_at = Time.current
 
       render json: {
         cost_stats: ChatbotAnalytic.cost_stats(period: period),
@@ -986,13 +1110,10 @@ module Api
           monthly_global: MONTHLY_GLOBAL_LIMIT
         },
         model_daily_caps: LegalChatbotService::MODEL_DAILY_CAPS,
-        current_counters: {
-          # Keys must match what rate_limit_check increments — the old
-          # "chatbot_global:*" names never existed, so the dashboard showed 0
-          daily: Rails.cache.read('chatbot_daily_global') || 0,
-          hourly: Rails.cache.read("chatbot_hourly_global:#{Time.current.strftime('%Y-%m-%d-%H')}") || 0,
-          monthly: Rails.cache.read("chatbot_monthly_global:#{Time.current.strftime('%Y-%m')}") || 0
-        }
+        # The keys rate_limit_check writes, from the same builder.
+        current_counters: self.class::GLOBAL_COUNTERS.keys.index_with do |name|
+          Rails.cache.read(self.class.global_counter_key(name, now: counted_at)) || 0
+        end
       }
     end
 
@@ -1164,7 +1285,7 @@ module Api
       end
 
       # Reserve credits up-front (atomic guarded UPDATE), after all caps/credit
-      # checks and before the LLM call — closes the concurrent free-answer TOCTOU.
+      # checks and before the LLM call, which closes the concurrent free-answer TOCTOU.
       # Refunded on error/exception below.
       unless @service_bypass
         reservation = current_user.deduct_credits_with_priority!(credit_cost, intelligence: 'genius')
@@ -1194,6 +1315,7 @@ module Api
         language: language,
         model: deep_model,
         domain: request.host,
+        german_lane: german_lane_request?,
         **mistral_credential_options
       )
 
@@ -1215,6 +1337,16 @@ module Api
         reservation = nil
         zk_claim = nil
         return render_zero_knowledge_state_conflict(credits_info: credits_info)
+      end
+
+      # To-do 6.7: an answer that says its search was incomplete costs no
+      # credit on this path either. Released before the history save, so the
+      # stored answer carries the note; clearing `reservation` makes the
+      # method-level rescue's refund exact-once, as for an error result.
+      if reservation && incomplete_search_answer?(result)
+        current_user.add_credits!(credit_cost)
+        mark_charge_waived_for_incomplete_search!(result, user: current_user, language: language)
+        reservation = nil
       end
 
       # Standard history consumes the lease in one optimistic-lock append. ZK
@@ -1240,7 +1372,7 @@ module Api
         if result[:error]
           current_user.add_credits!(credit_cost)
           result[:credits_info] = credit_balance_info(current_user, deducted: 0)
-          reservation = nil # settled (refunded) — the method-level rescue won't refund again
+          reservation = nil # settled (refunded); the method-level rescue won't refund again
         else
           charged = true
           result[:credits_info] = credit_balance_info(
@@ -1273,7 +1405,7 @@ module Api
       render_chatbot_budget_limit(e, credits_info: refunded_credits_info)
     rescue StandardError => e
       rollback_zero_knowledge_chat_revision!(conversation, zk_claim) if zk_claim
-      # Refund any reserved credits — the analysis failed before delivery.
+      # Refund any reserved credits: the analysis failed before delivery.
       if reservation && !@service_bypass
         current_user.add_credits!(credit_cost)
         refunded_credits_info = credit_balance_info(current_user, deducted: 0)
@@ -1290,25 +1422,69 @@ module Api
       end
     end
 
-    # Receives client-side timing reports when a query exceeds the estimated time.
-    # Fire-and-forget - always returns 200 OK.
-    def log_slow_query
-      data = params.permit(:model, :intelligence, :reasoning, :sources,
-                           :elapsed_seconds, :estimated_seconds, :overage_seconds, :language)
+    private
 
-      user_info = current_user ? "user=#{current_user.id}" : 'service'
-      Rails.logger.warn(
-        "[SLOW QUERY] #{user_info} | " \
-        "model=#{data[:model]} intelligence=#{data[:intelligence]} reasoning=#{data[:reasoning]} | " \
-        "sources=#{data[:sources]} lang=#{data[:language]} | " \
-        "elapsed=#{data[:elapsed_seconds]}s estimated=#{data[:estimated_seconds]}s " \
-        "overage=+#{data[:overage_seconds]}s"
-      )
+    # WW-SEC-07 -----------------------------------------------------------
 
-      head :ok
+    def bound_report_body
+      return if request.content_length.to_i <= REPORT_MAX_BODY_BYTES
+
+      render json: { error: 'Invalid report' }, status: 413
     end
 
-    private
+    # The report's columns, or nil when any field is the wrong type, out of
+    # bounds or outside the vocabulary.
+    def report_attributes
+      question = params[:question]
+      answer = params[:answer]
+      return nil unless question.is_a?(String) && (answer.nil? || answer.is_a?(String))
+
+      question = question.strip
+      answer = answer&.strip.presence
+      return nil if question.empty? || question.length > ChatbotReport::QUESTION_MAX_LENGTH
+      return nil if answer && answer.length > ChatbotReport::ANSWER_MAX_LENGTH
+
+      metadata = { language: ChatbotMetadataVocabulary.language(params[:language]),
+                   source: ChatbotMetadataVocabulary.source(params[:source]),
+                   intelligence: ChatbotMetadataVocabulary.intelligence(params[:intelligence]) }
+      return nil if metadata.values.any? { |value| ChatbotMetadataVocabulary.invalid?(value) }
+
+      metadata.merge(question: question, answer: answer, analytic_id: owned_analytic_id(params[:analytic_id]))
+    end
+
+    # Only an answer this account asked for: analytic ids are sequential.
+    def owned_analytic_id(value)
+      id = Integer(value.to_s, exception: false)
+      return nil unless id&.positive?
+
+      ChatbotAnalytic.ensure_table_exists
+      ChatbotAnalytic.where(id: id, user_id: current_user.id).pick(:id)
+    end
+
+    # The stored count survives a cleared cache; the reservation closes the
+    # race between counting and inserting.
+    def report_slot_reserved?
+      today = Time.current.beginning_of_day
+      return false if ChatbotReport.where(user_id: current_user.id, created_at: today..).count >= REPORT_DAILY_LIMIT
+      return true if Rails.cache.is_a?(ActiveSupport::Cache::NullStore)
+
+      key = "chatbot:report:#{current_user.id}:#{today.to_date.iso8601}"
+      !AtomicCacheCounter.try_reserve!(key, limit: REPORT_DAILY_LIMIT, expires_in: 2.days.to_i).nil?
+    end
+
+    def feedback_admitted?(actor)
+      return true if Rails.cache.is_a?(ActiveSupport::Cache::NullStore)
+
+      key = "chatbot:feedback:#{Digest::SHA256.hexdigest(actor)[0, 32]}:#{Time.current.to_i / 3600}"
+      !AtomicCacheCounter.try_reserve!(key, limit: FEEDBACK_HOURLY_LIMIT, expires_in: 2.hours.to_i).nil?
+    end
+
+    def first_feedback_for_answer?(actor, analytic_id)
+      return true if analytic_id.nil? || Rails.cache.is_a?(ActiveSupport::Cache::NullStore)
+
+      key = "chatbot:feedback-once:#{Digest::SHA256.hexdigest("#{actor}:#{analytic_id}")[0, 32]}"
+      !AtomicCacheCounter.try_reserve!(key, limit: 1, expires_in: FEEDBACK_ONCE_PER_ANSWER.to_i).nil?
+    end
 
     # Source entitlement (owner decision 2026-09-04): via the chatbot,
     # legislation is open to every account with credits, while case law and
@@ -1427,10 +1603,129 @@ module Api
 
       normalized_host = host.to_s.downcase
       return 'fr' if normalized_host.include?('lisloi')
-      return 'fr' if normalized_host.include?('gesetzguide') # DE UI, FR legal corpus
+      # DE UI, FR legal corpus. gesetzguide REASONS in French, exactly as
+      # lisloi: answering in German from the French evidence answered the law
+      # wrongly (rolled back in b3d911413). German answers are the French
+      # answer translated afterwards (german_answer_request?).
+      return 'fr' if normalized_host.include?('gesetzguide')
       return supported.include?(requested) ? requested : 'nl' if normalized_host.include?('lexlibera')
 
       'nl'
+    end
+
+    # The German pointer lane (D6 of docs/ops/german-corpus-plan-2026-09-27.md)
+    # runs for browser requests on the German product host only. Decided from
+    # request.host through the exact SiteBrand registry (apex, www., classic.
+    # and staging. of gesetzguide.be), never from a parameter or a language,
+    # and never for signed service traffic, which benchmarks the NL and FR
+    # corpora on one host. The answer language is not touched here: gesetzguide
+    # keeps effective_request_language's 'fr'.
+    def german_lane_request?
+      !@service_bypass && SiteBrand.resolve_request(request) == 'gesetzguide'
+    end
+
+    # German answers v2 (owner decision 2026-09-28): browser requests on
+    # gesetzguide with WW_GERMAN_ANSWERS on. Decided like the lane, from
+    # request.host through SiteBrand and never for signed service traffic.
+    # The reasoning language stays effective_request_language's 'fr'; only
+    # the finished answer is translated (LegalChatbot::GermanAnswerTranslation).
+    def german_answer_request?
+      LegalChatbot::GermanAnswerTranslation.applies_to?(
+        brand: SiteBrand.resolve_request(request),
+        service_bypass: @service_bypass
+      )
+    end
+
+    # German answers v3 (to-do 7.5): browser requests on gesetzguide with
+    # WW_GERMAN_QUESTION_TRANSLATION on, decided like the lane and the answer
+    # switch and independently of the latter. The question is translated into
+    # French before the answer path runs (LegalChatbot::GermanQuestionTranslation).
+    def german_question_request?
+      LegalChatbot::GermanQuestionTranslation.applies_to?(
+        brand: SiteBrand.resolve_request(request),
+        service_bypass: @service_bypass
+      )
+    end
+
+    # German answers v4: the figure check (LegalChatbot::GermanFigureCheck)
+    # runs on gesetzguide whenever either German switch applies, with a
+    # German note.
+    def german_figure_check_request?
+      german_question_request? || german_answer_request?
+    end
+
+    # The language of the figure check's note, nil when the check does not
+    # run: on gesetzguide with a German switch on, the language of the answer
+    # shown (German when it was translated or swapped, French when the
+    # translation fell back: the v4 and v5 graders found German notes above
+    # French answers); since the v4 report, French on every French answer
+    # (lisloi, the path the German answers are made from), whatever the host
+    # and the switches. Dutch and English answers carry no verified line the
+    # check reads.
+    def figure_check_language(result, language)
+      return delivered_answer_language(result, 'fr') if german_figure_check_request?
+
+      'fr' if language.to_s == 'fr'
+    end
+
+    # The language the delivered answer is written in, for the free-answer
+    # note that joins the notice paragraph: German when the answer was
+    # translated or swapped for its German twin, else the request language
+    # (a French answer shown with the German note keeps French notes).
+    def delivered_answer_language(result, language)
+      status = result.is_a?(Hash) ? result.dig(:german_answer, :status) : nil
+      german = [
+        LegalChatbot::GermanAnswerTranslation::STATUS_TRANSLATED,
+        LegalChatbot::GermanAnswerTranslation::STATUS_MAPPED
+      ].include?(status)
+      german ? 'de' : language
+    end
+
+    # The follow-up context the browser sends (context_messages), last six
+    # turns: role and content, and on an assistant turn the French answer a
+    # German answer was made from (GermanAnswerTranslation::CONTEXT_KEY),
+    # which history replay gives the model in place of the German text. An
+    # unknown role is read as a user turn. A user turn carries its French
+    # text (the question a German question was translated into, which the
+    # browser kept from the result's GermanQuestionTranslation::CONTEXT_KEY)
+    # only while the question translation applies to this request; otherwise
+    # it never does, as before. nil when the browser sends no context.
+    def client_context_messages
+      list = params[:context_messages]
+      return nil unless list.is_a?(Array) && list.any?
+
+      context_key = LegalChatbot::GermanAnswerTranslation::CONTEXT_KEY.to_s
+      user_context = german_question_request?
+      list.last(6).map do |m|
+        h = m.permit(:role, :content, context_key).to_h
+        h['role'] = 'user' unless %w[user assistant].include?(h['role'])
+        h.delete(context_key) unless h['role'] == 'assistant' || user_context
+        h
+      end
+    end
+
+    # WW-SEC-09: the browser sends at most the last six turns; an answer stays
+    # far below the per-field bound (the longest output budget, 6,144 tokens,
+    # is about 25,000 characters). Out of bounds is refused, not trimmed.
+    CONTEXT_MAX_TURNS = 20
+    CONTEXT_FIELD_MAX_CHARS = 50_000
+    CONTEXT_MAX_BYTES = 256 * 1024
+
+    def context_messages_out_of_bounds?
+      list = params[:context_messages]
+      return false if list.nil?
+      return true unless list.is_a?(Array) && list.size <= CONTEXT_MAX_TURNS
+
+      context_key = LegalChatbot::GermanAnswerTranslation::CONTEXT_KEY.to_s
+      total = 0
+      list.any? do |turn|
+        next true unless turn.is_a?(ActionController::Parameters)
+
+        fields = [turn[:role], turn[:content], turn[context_key]].compact
+        next true unless fields.all? { |field| field.is_a?(String) && field.length <= CONTEXT_FIELD_MAX_CHARS }
+
+        (total += fields.sum(&:bytesize)) > CONTEXT_MAX_BYTES
+      end
     end
 
     def attach_execution_metadata(result, model:, intelligence:, language:, reasoning_effort_used:)
@@ -1501,10 +1796,13 @@ module Api
     end
 
     def rate_limit_check
+      # WW-SEC-14 refinement: one captured time for every counter of this
+      # decision, so no two windows disagree about the instant.
+      now = Time.current
       # Service-authenticated requests (HMAC) - separate daily limit
       if @service_bypass
         service_daily_key = "chatbot_daily_service:#{@service_app}"
-        count = atomic_increment(service_daily_key, expires_in: seconds_until_midnight_utc.seconds)
+        count = atomic_increment(service_daily_key, window: :day, now: now)
         if count > SERVICE_DAILY_LIMIT
           render json: {
             error: "Service daily limit reached (#{SERVICE_DAILY_LIMIT}/day). Resets at midnight UTC.",
@@ -1520,7 +1818,7 @@ module Api
       # ── Per-IP rate limits FIRST (tier-aware) ──────────────────────
       # These run BEFORE the global cost caps below: a request rejected by a
       # per-IP limit never reaches the LLM, so it must NOT consume the shared
-      # global budget — otherwise one IP could exhaust the global caps with
+      # global budget; otherwise one IP could exhaust the global caps with
       # cheap, rejected requests and 429 every other user.
       # Expensive models (Level III/IV) get stricter per-IP limits to prevent
       # cost abuse, while cheap models (Level I/II) stay generous.
@@ -1531,7 +1829,7 @@ module Api
         # Premium models: stricter limits (GPT-5, Sonnet 4, GPT-5.6 Terra,
         # Opus 4, GPT-5.6 Sol)
         premium_burst_key = "chatbot_burst_premium:#{ip}"
-        premium_burst = atomic_increment(premium_burst_key, expires_in: 1.minute)
+        premium_burst = atomic_increment(premium_burst_key, window: :minute, now: now)
         if premium_burst > PER_IP_PREMIUM_BURST_LIMIT
           render json: {
             error: 'Premium model rate limit. Please wait a minute or use a faster model.',
@@ -1541,7 +1839,7 @@ module Api
         end
 
         premium_hourly_key = "chatbot_hourly_premium:#{ip}"
-        premium_hourly = atomic_increment(premium_hourly_key, expires_in: 1.hour)
+        premium_hourly = atomic_increment(premium_hourly_key, window: :hour, now: now)
         if premium_hourly > PER_IP_PREMIUM_HOURLY_LIMIT
           render json: {
             error: "Premium model hourly limit reached (#{PER_IP_PREMIUM_HOURLY_LIMIT}/hr). Use Slim or Geniaal for more questions.",
@@ -1553,7 +1851,7 @@ module Api
 
       # All models: general per-IP burst and hourly
       burst_key = "chatbot_burst:#{ip}"
-      burst_count = atomic_increment(burst_key, expires_in: 1.minute)
+      burst_count = atomic_increment(burst_key, window: :minute, now: now)
       if burst_count > PER_IP_BURST_LIMIT
         render json: {
           error: 'Too many requests. Please wait a minute.',
@@ -1563,7 +1861,7 @@ module Api
       end
 
       hourly_key = "chatbot_hourly:#{ip}"
-      hourly_count = atomic_increment(hourly_key, expires_in: 1.hour)
+      hourly_count = atomic_increment(hourly_key, window: :hour, now: now)
       if hourly_count > PER_IP_HOURLY_LIMIT
         render json: {
           error: "Rate limit exceeded. Maximum #{PER_IP_HOURLY_LIMIT} requests per hour.",
@@ -1577,8 +1875,7 @@ module Api
       # actually hit the LLM. Incrementing these here (not up-front) keeps a
       # per-IP-throttled flood from burning the shared budget.
       # MONTHLY BUDGET CAP - hard limit on total API calls
-      monthly_key = "chatbot_monthly_global:#{Time.current.strftime('%Y-%m')}"
-      monthly_count = atomic_increment(monthly_key, expires_in: 32.days)
+      monthly_count = atomic_increment(GLOBAL_COUNTERS[:monthly].first, window: :month, now: now)
       if monthly_count > MONTHLY_GLOBAL_LIMIT
         Rails.logger.error({ event: 'monthly_limit_reached', count: monthly_count }.to_json)
         render json: {
@@ -1589,8 +1886,7 @@ module Api
       end
 
       # HOURLY SPIKE PROTECTION - prevents sudden attack costs
-      hourly_global_key = "chatbot_hourly_global:#{Time.current.strftime('%Y-%m-%d-%H')}"
-      hourly_global_count = atomic_increment(hourly_global_key, expires_in: 1.hour)
+      hourly_global_count = atomic_increment(GLOBAL_COUNTERS[:hourly].first, window: :hour, now: now)
       if hourly_global_count > HOURLY_GLOBAL_LIMIT
         render json: {
           error: 'Hourly API limit reached. Please try again in an hour.',
@@ -1600,8 +1896,7 @@ module Api
       end
 
       # Global daily limit
-      daily_key = 'chatbot_daily_global'
-      daily_count = atomic_increment(daily_key, expires_in: seconds_until_midnight_utc.seconds)
+      daily_count = atomic_increment(GLOBAL_COUNTERS[:daily].first, window: :day, now: now)
       if daily_count > DAILY_GLOBAL_LIMIT
         render json: {
           error: 'Daily API limit reached. Service will reset at midnight UTC.',
@@ -1611,14 +1906,19 @@ module Api
       end
 
       # Check and send alerts (async, non-blocking)
-      check_and_send_usage_alerts(monthly_count, hourly_global_count)
+      check_and_send_usage_alerts(monthly_count, hourly_global_count, now: now)
 
       true
+    rescue AtomicCacheCounter::Unavailable
+      # A store that cannot count admits nothing (WW-SEC-14).
+      render json: { error: 'The service is temporarily unavailable. Please try again in a few minutes.' },
+             status: :service_unavailable
+      false
     end
 
     # Detect if the current request targets a premium (expensive) model.
-    # Level III (mastermind): GPT-5, Sonnet 4, GPT-5.6 Terra — €0.05-0.09/query
-    # Level IV (omniscient): Opus 4, GPT-5.6 Sol — €0.13-0.17/query
+    # Level III (mastermind): GPT-5, Sonnet 4, GPT-5.6 Terra, €0.05-0.09/query
+    # Level IV (omniscient): Opus 4, GPT-5.6 Sol, €0.13-0.17/query
     # deep_analysis: always premium (uses reasoning models)
     PREMIUM_INTELLIGENCE_LEVELS = %w[mastermind omniscient].freeze
     PREMIUM_MODELS = %w[gpt-5 gpt-5.6-terra gpt-5.6-sol claude-sonnet-4-6 claude-opus-4-6].freeze
@@ -1638,25 +1938,25 @@ module Api
     # Atomic increment - avoids TOCTOU race conditions in rate limiting.
     # Fixed-window keys are required for FileStore: its increment operation
     # does not preserve a TTL previously assigned with write.
-    def atomic_increment(key, expires_in:)
-      window_seconds = expires_in.to_i
-      windowed_key = self.class.windowed_rate_limit_key(key, expires_in: window_seconds)
-      cleanup_ttl = (window_seconds * 2).seconds
+    # Through AtomicCacheCounter, whose file-store path is locked; the plain
+    # increment's missing-file path was not, so two first requests both read
+    # 1. Expiry is cleanup only. A null store counts nothing (the test and
+    # development setting); a real store that fails raises Unavailable and
+    # rate_limit_check answers 503.
+    def atomic_increment(key, window:, now: Time.current)
+      return 0 if Rails.cache.is_a?(ActiveSupport::Cache::NullStore)
 
-      Rails.cache.increment(windowed_key, 1, expires_in: cleanup_ttl) ||
-        begin
-          written = Rails.cache.write(windowed_key, 1, expires_in: cleanup_ttl, unless_exist: true)
-          written ? 1 : Rails.cache.increment(windowed_key, 1, expires_in: cleanup_ttl)
-        end
+      seconds, = COUNTER_WINDOWS.fetch(window)
+      AtomicCacheCounter.increment!(self.class.counter_window_key(key, window, now: now), expires_in: seconds * 2)
     end
 
     # Send alerts when approaching limits
-    def check_and_send_usage_alerts(monthly_count, hourly_count)
+    def check_and_send_usage_alerts(monthly_count, hourly_count, now: Time.current)
       return if Rails.env.test? || Rails.env.development?
 
-      # Monthly alerts: 75%, 90%, and 100%
+      # Monthly alerts: 75%, 90%, and 100%, once per counter month (UTC).
       monthly_pct = (monthly_count.to_f / MONTHLY_GLOBAL_LIMIT * 100).round
-      alert_key = "chatbot_monthly_alert:#{Time.current.strftime('%Y-%m')}"
+      alert_key = self.class.counter_window_key('chatbot_monthly_alert', :month, now: now)
       last_alert_pct = Rails.cache.read(alert_key) || 0
 
       if monthly_count >= MONTHLY_GLOBAL_LIMIT && last_alert_pct < 100
@@ -1671,7 +1971,7 @@ module Api
       end
 
       # Hourly spike alert: at 80% of hourly limit
-      hourly_alert_key = "chatbot_hourly_alert:#{Time.current.strftime('%Y-%m-%d-%H')}"
+      hourly_alert_key = self.class.counter_window_key('chatbot_hourly_alert', :hour, now: now)
       if hourly_count >= (HOURLY_GLOBAL_LIMIT * 0.8).to_i && !Rails.cache.read(hourly_alert_key)
         Rails.cache.write(hourly_alert_key, true, expires_in: 1.hour)
         AdminAlertMailer.hourly_spike_alert(hourly_count, HOURLY_GLOBAL_LIMIT).deliver_later

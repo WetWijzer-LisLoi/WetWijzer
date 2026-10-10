@@ -1,0 +1,386 @@
+# App-owned UI copy added by the four-language localization release.
+# Source documents, product names and stable API codes are not translated here.
+nl:
+  legal_pages:
+    contact:
+      title: "Contact"
+      description: "Contactgegevens en mogelijkheden om contact met ons op te nemen."
+    about:
+      title: "Over"
+      description: "Over het platform, het project en de oprichter."
+    faq:
+      title: "Veelgestelde vragen"
+      description: "Antwoorden op veelgestelde vragen over het platform."
+    terms:
+      title: "Gebruiksvoorwaarden"
+      description: "Gebruiksvoorwaarden en voorwaarden voor het gebruik van het platform."
+    privacy:
+      title: "Privacybeleid"
+      description: "Ons privacybeleid en informatie over de bescherming van uw persoonsgegevens."
+    ai_security:
+      title: "AI-beveiliging & privacy"
+      description: "Hoe uw chatbotvragen worden verwerkt en hoe opgeslagen gesprekken worden beschermd."
+    imprint:
+      title: "Colofon"
+      description: "Juridische informatie over de beheerder en contactgegevens."
+    accessibility:
+      title: "Toegankelijkheidsverklaring"
+      description: "Informatie over de toegankelijkheid van het platform."
+    support:
+      title: "Steun het project"
+      description: "Steun het project met een abonnement, een donatie of door het bekend te maken."
+    legal_changes:
+      title: "Wijzigingsgeschiedenis juridische documenten"
+      description: "Overzicht van wijzigingen aan onze juridische documenten."
+  account:
+    upgrade_pro: "Upgrade naar %{site} Pro"
+    default_portal: "Standaardportaal"
+    default_portal_auto: "Automatisch"
+    default_portal_note: "Bepaalt welke site u e-mails stuurt en waar de links in die e-mails naartoe leiden. Standaard is dit de site waarop u zich registreerde."
+    copied: "Gekopieerd!"
+    deletion_billing_cancellation_failed: "Uw account is niet gepland voor verwijdering omdat de terugkerende facturatie niet veilig kon worden stopgezet. Probeer opnieuw of neem contact op met de ondersteuning."
+    deletion_payment_pending: "Uw account is niet gepland voor verwijdering omdat er nog een betaling wordt verwerkt. Probeer opnieuw zodra die is afgerond of neem contact op met de ondersteuning."
+  auth:
+    password_too_short: "Het wachtwoord moet minstens 8 tekens bevatten."
+    registration_disabled_environment: "Registreren is niet beschikbaar in deze omgeving."
+  credits:
+    agree_first: "Vink eerst het vakje hieronder aan"
+    processing: "Uw betaling wordt verwerkt. De credits worden binnenkort toegevoegd."
+    payment_unavailable: "Betalingen zijn nog niet geconfigureerd. Probeer het later opnieuw."
+  subscriptions:
+    legacy_billing_active: "Uw bestaande facturatiecontract moet worden stopgezet voordat u een nieuwe betaling kunt starten. Neem contact op met de ondersteuning."
+    crypto_description: "Pro-abonnement (1 maand)"
+  errors:
+    session_expired: "Uw sessie is verlopen. Probeer opnieuw."
+    internal_server_error:
+      title: "Onverwachte fout"
+      heading: "Er ging iets mis"
+      message: "Er is een onverwachte fout opgetreden. Probeer het later opnieuw."
+    unprocessable_entity:
+      title: "Verzoek kon niet worden verwerkt"
+      heading: "Verzoek kon niet worden verwerkt"
+      message: "De gegevens konden niet worden verwerkt. Controleer uw invoer en probeer opnieuw."
+  mailer:
+    password_reset:
+      title: "Wachtwoord herstellen"
+      link_fallback: "Als de knop niet werkt, kopieer deze link:"
+    usage_warning:
+      upgrade_prompt: "Upgrade naar Pro voor meer credits."
+      upgrade_button: "Upgraden"
+      upgrade: "Upgrade naar Pro of koop extra credits:"
+    deletion_scheduled:
+      link_text: "Of kopieer deze link naar uw browser:"
+      cancel_prompt: "Klik op de onderstaande link om de verwijdering te annuleren:"
+      reactivation_link: "Of heractiveer uw account zonder in te loggen:"
+    deletion_final_warning:
+      link_text: "Of kopieer deze link naar uw browser:"
+      cancel_prompt: "Klik op de onderstaande link om de verwijdering te annuleren:"
+      reactivation_link: "Of heractiveer uw account zonder in te loggen:"
+    reactivation:
+      title: "Heractiveer uw account"
+    unverified_warning:
+      title: "Bevestig uw e-mailadres"
+  articles:
+    loading_exdecs: "Artikelverwijzingen laden..."
+    copy_options: "Kopieeropties"
+    export_options: "Exporteeropties"
+  search_results: "Zoekresultaten"
+  pagination:
+    previous: "Vorige"
+    next: "Volgende"
+  compare: "Vergelijken"
+  no_articles_available: "Geen artikelen beschikbaar."
+  unknown_language: "Onbekend"
+  unknown_type: "Onbekend"
+  laws:
+    no_articles_to_export: "Deze wet heeft geen artikelen om te exporteren."
+  jurisprudence:
+    no_text_to_export: "Geen tekst beschikbaar om te exporteren."
+fr:
+  legal_pages:
+    contact:
+      title: "Contact"
+      description: "Coordonnées et moyens de nous contacter."
+    about:
+      title: "À propos"
+      description: "À propos de la plateforme, du projet et de son fondateur."
+    faq:
+      title: "Questions fréquentes"
+      description: "Réponses aux questions fréquentes sur la plateforme."
+    terms:
+      title: "Conditions d'utilisation"
+      description: "Conditions générales et modalités d'utilisation de la plateforme."
+    privacy:
+      title: "Politique de confidentialité"
+      description: "Notre politique de confidentialité et la protection de vos données personnelles."
+    ai_security:
+      title: "Sécurité et confidentialité de l'IA"
+      description: "Comment vos questions au chatbot sont traitées et vos conversations enregistrées sont protégées."
+    imprint:
+      title: "Mentions légales"
+      description: "Informations légales sur l'exploitant et coordonnées."
+    accessibility:
+      title: "Déclaration d'accessibilité"
+      description: "Informations sur l'accessibilité de la plateforme."
+    support:
+      title: "Soutenir le projet"
+      description: "Soutenez le projet par un abonnement, un don ou en le faisant connaître."
+    legal_changes:
+      title: "Historique des documents juridiques"
+      description: "Historique des modifications de nos documents juridiques."
+  account:
+    upgrade_pro: "Passez à %{site} Pro"
+    default_portal: "Portail par défaut"
+    default_portal_auto: "Automatique"
+    default_portal_note: "Détermine le site qui vous envoie des e-mails et la destination des liens qu'ils contiennent. Par défaut, il s'agit du site sur lequel vous vous êtes inscrit."
+    copied: "Copié !"
+    deletion_billing_cancellation_failed: "La suppression de votre compte n'a pas été programmée, car la facturation récurrente n'a pas pu être arrêtée de manière sûre. Réessayez ou contactez l'assistance."
+    deletion_payment_pending: "La suppression de votre compte n'a pas été programmée, car un paiement est encore en cours de traitement. Réessayez une fois le traitement terminé ou contactez l'assistance."
+  auth:
+    password_too_short: "Le mot de passe doit contenir au moins 8 caractères."
+    registration_disabled_environment: "L'inscription n'est pas disponible dans cet environnement."
+  credits:
+    agree_first: "Cochez d'abord la case ci-dessous"
+    processing: "Votre paiement est en cours de traitement. Les crédits seront ajoutés prochainement."
+    payment_unavailable: "Les paiements ne sont pas encore configurés. Veuillez réessayer plus tard."
+  subscriptions:
+    legacy_billing_active: "Votre contrat de facturation existant doit être arrêté avant de pouvoir lancer un nouveau paiement. Contactez l'assistance."
+    crypto_description: "Abonnement Pro (1 mois)"
+  errors:
+    session_expired: "Votre session a expiré. Veuillez réessayer."
+    internal_server_error:
+      title: "Erreur inattendue"
+      heading: "Une erreur est survenue"
+      message: "Une erreur inattendue est survenue. Veuillez réessayer plus tard."
+    unprocessable_entity:
+      title: "La demande n'a pas pu être traitée"
+      heading: "La demande n'a pas pu être traitée"
+      message: "Les données n'ont pas pu être traitées. Vérifiez votre saisie et réessayez."
+  mailer:
+    password_reset:
+      title: "Réinitialiser le mot de passe"
+      link_fallback: "Si le bouton ne fonctionne pas, copiez ce lien :"
+    usage_warning:
+      upgrade_prompt: "Passez à Pro pour obtenir davantage de crédits."
+      upgrade_button: "Passer à Pro"
+      upgrade: "Passez à Pro ou achetez des crédits supplémentaires :"
+    deletion_scheduled:
+      link_text: "Ou copiez ce lien dans votre navigateur :"
+      cancel_prompt: "Pour annuler la suppression, cliquez sur le lien ci-dessous :"
+      reactivation_link: "Ou réactivez votre compte sans vous connecter :"
+    deletion_final_warning:
+      link_text: "Ou copiez ce lien dans votre navigateur :"
+      cancel_prompt: "Pour annuler la suppression, cliquez sur le lien ci-dessous :"
+      reactivation_link: "Ou réactivez votre compte sans vous connecter :"
+    reactivation:
+      title: "Réactivez votre compte"
+    unverified_warning:
+      title: "Confirmez votre adresse e-mail"
+  articles:
+    loading_exdecs: "Chargement des références aux articles..."
+    copy_options: "Options de copie"
+    export_options: "Options d'exportation"
+  search_results: "Résultats de recherche"
+  pagination:
+    previous: "Précédent"
+    next: "Suivant"
+  compare: "Comparer"
+  no_articles_available: "Aucun article disponible."
+  unknown_language: "Inconnue"
+  unknown_type: "Inconnu"
+  laws:
+    no_articles_to_export: "Cette loi ne contient aucun article à exporter."
+  jurisprudence:
+    no_text_to_export: "Aucun texte disponible à exporter."
+de:
+  legal_pages:
+    contact:
+      title: "Kontakt"
+      description: "Kontaktdaten und Möglichkeiten, mit uns in Verbindung zu treten."
+    about:
+      title: "Über uns"
+      description: "Über die Plattform, das Projekt und seinen Gründer."
+    faq:
+      title: "Häufig gestellte Fragen"
+      description: "Antworten auf häufig gestellte Fragen zur Plattform."
+    terms:
+      title: "Nutzungsbedingungen"
+      description: "Allgemeine Bedingungen für die Nutzung der Plattform."
+    privacy:
+      title: "Datenschutzerklärung"
+      description: "Unsere Datenschutzerklärung und Informationen zum Schutz Ihrer personenbezogenen Daten."
+    ai_security:
+      title: "KI-Sicherheit & Datenschutz"
+      description: "Wie Ihre Chatbot-Fragen verarbeitet und gespeicherte Gespräche geschützt werden."
+    imprint:
+      title: "Impressum"
+      description: "Rechtliche Angaben zum Betreiber und Kontaktdaten."
+    accessibility:
+      title: "Erklärung zur Barrierefreiheit"
+      description: "Informationen zur Barrierefreiheit der Plattform."
+    support:
+      title: "Das Projekt unterstützen"
+      description: "Unterstützen Sie das Projekt durch ein Abonnement, eine Spende oder indem Sie es bekannt machen."
+    legal_changes:
+      title: "Änderungsverlauf der Rechtsdokumente"
+      description: "Übersicht der Änderungen an unseren Rechtsdokumenten."
+  account:
+    upgrade_pro: "Zu %{site} Pro wechseln"
+    default_portal: "Standardportal"
+    default_portal_auto: "Automatisch"
+    default_portal_note: "Legt fest, welche Website Ihnen E-Mails sendet und wohin deren Links führen. Standardmäßig ist dies die Website, auf der Sie sich registriert haben."
+    copied: "Kopiert!"
+    deletion_billing_cancellation_failed: "Die Löschung Ihres Kontos wurde nicht geplant, weil die wiederkehrende Abrechnung nicht sicher beendet werden konnte. Versuchen Sie es erneut oder wenden Sie sich an den Support."
+    deletion_payment_pending: "Die Löschung Ihres Kontos wurde nicht geplant, weil noch eine Zahlung verarbeitet wird. Versuchen Sie es nach deren Abschluss erneut oder wenden Sie sich an den Support."
+  auth:
+    password_too_short: "Das Passwort muss mindestens 8 Zeichen enthalten."
+    registration_disabled_environment: "Die Registrierung ist in dieser Umgebung nicht verfügbar."
+  credits:
+    agree_first: "Aktivieren Sie zuerst das Kontrollkästchen unten"
+    processing: "Ihre Zahlung wird verarbeitet. Die Credits werden in Kürze hinzugefügt."
+    payment_unavailable: "Zahlungen sind noch nicht konfiguriert. Bitte versuchen Sie es später erneut."
+  subscriptions:
+    legacy_billing_active: "Ihr bestehender Abrechnungsvertrag muss beendet werden, bevor Sie eine neue Zahlung starten können. Wenden Sie sich an den Support."
+    crypto_description: "Pro-Abonnement (1 Monat)"
+  errors:
+    session_expired: "Ihre Sitzung ist abgelaufen. Bitte versuchen Sie es erneut."
+    internal_server_error:
+      title: "Unerwarteter Fehler"
+      heading: "Ein Fehler ist aufgetreten"
+      message: "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut."
+    unprocessable_entity:
+      title: "Anfrage konnte nicht verarbeitet werden"
+      heading: "Anfrage konnte nicht verarbeitet werden"
+      message: "Die Daten konnten nicht verarbeitet werden. Überprüfen Sie Ihre Eingabe und versuchen Sie es erneut."
+  mailer:
+    password_reset:
+      title: "Passwort zurücksetzen"
+      link_fallback: "Falls die Schaltfläche nicht funktioniert, kopieren Sie diesen Link:"
+    usage_warning:
+      upgrade_prompt: "Wechseln Sie zu Pro, um mehr Credits zu erhalten."
+      upgrade_button: "Zu Pro wechseln"
+      upgrade: "Wechseln Sie zu Pro oder kaufen Sie zusätzliche Credits:"
+    deletion_scheduled:
+      link_text: "Oder kopieren Sie diesen Link in Ihren Browser:"
+      cancel_prompt: "Klicken Sie auf den folgenden Link, um die Löschung abzubrechen:"
+      reactivation_link: "Oder reaktivieren Sie Ihr Konto ohne Anmeldung:"
+    deletion_final_warning:
+      link_text: "Oder kopieren Sie diesen Link in Ihren Browser:"
+      cancel_prompt: "Klicken Sie auf den folgenden Link, um die Löschung abzubrechen:"
+      reactivation_link: "Oder reaktivieren Sie Ihr Konto ohne Anmeldung:"
+    reactivation:
+      title: "Reaktivieren Sie Ihr Konto"
+    unverified_warning:
+      title: "Bestätigen Sie Ihre E-Mail-Adresse"
+  articles:
+    loading_exdecs: "Artikelverweise werden geladen..."
+    copy_options: "Kopieroptionen"
+    export_options: "Exportoptionen"
+  search_results: "Suchergebnisse"
+  pagination:
+    previous: "Zurück"
+    next: "Weiter"
+  compare: "Vergleichen"
+  no_articles_available: "Keine Artikel verfügbar."
+  unknown_language: "Unbekannt"
+  unknown_type: "Unbekannt"
+  laws:
+    no_articles_to_export: "Dieses Gesetz enthält keine Artikel zum Exportieren."
+  jurisprudence:
+    no_text_to_export: "Kein Text zum Exportieren verfügbar."
+en:
+  legal_pages:
+    contact:
+      title: "Contact"
+      description: "Contact details and ways to get in touch."
+    about:
+      title: "About"
+      description: "About the platform, the project and its founder."
+    faq:
+      title: "Frequently asked questions"
+      description: "Answers to frequently asked questions about the platform."
+    terms:
+      title: "Terms of service"
+      description: "Terms and conditions for using the platform."
+    privacy:
+      title: "Privacy policy"
+      description: "Our privacy policy and information about protecting your personal data."
+    ai_security:
+      title: "AI security & privacy"
+      description: "How your chatbot questions are processed and saved conversations are protected."
+    imprint:
+      title: "Legal notice"
+      description: "Legal information about the operator and contact details."
+    accessibility:
+      title: "Accessibility statement"
+      description: "Information about the accessibility of the platform."
+    support:
+      title: "Support the project"
+      description: "Support the project through a subscription, a donation or by spreading the word."
+    legal_changes:
+      title: "Legal document change history"
+      description: "History of changes to our legal documents."
+  account:
+    upgrade_pro: "Upgrade to %{site} Pro"
+    default_portal: "Default portal"
+    default_portal_auto: "Automatic"
+    default_portal_note: "Determines which site sends you emails and where the links in those emails lead. By default, this is the site where you registered."
+    copied: "Copied!"
+    deletion_billing_cancellation_failed: "Your account was not scheduled for deletion because recurring billing could not be stopped safely. Please try again or contact support."
+    deletion_payment_pending: "Your account was not scheduled for deletion because a payment is still being processed. Please try again after it finishes or contact support."
+  auth:
+    password_too_short: "Password must be at least 8 characters."
+    registration_disabled_environment: "Registration is not available in this environment."
+  credits:
+    agree_first: "Tick the box below first"
+    processing: "Your payment is being processed. Credits will be added shortly."
+    payment_unavailable: "Payments are not yet configured. Please try again later."
+  subscriptions:
+    legacy_billing_active: "Your existing billing contract must be stopped before a new checkout can start. Please contact support."
+    crypto_description: "Pro subscription (1 month)"
+  errors:
+    session_expired: "Your session has expired. Please try again."
+    internal_server_error:
+      title: "Unexpected error"
+      heading: "Something went wrong"
+      message: "An unexpected error occurred. Please try again later."
+    unprocessable_entity:
+      title: "Request could not be processed"
+      heading: "Request could not be processed"
+      message: "The data could not be processed. Check your input and try again."
+  mailer:
+    password_reset:
+      title: "Reset your password"
+      link_fallback: "If the button does not work, copy this link:"
+    usage_warning:
+      upgrade_prompt: "Upgrade to Pro for more credits."
+      upgrade_button: "Upgrade"
+      upgrade: "Upgrade to Pro or buy more credits:"
+    deletion_scheduled:
+      link_text: "Or copy this link to your browser:"
+      cancel_prompt: "To cancel the deletion, click the link below:"
+      reactivation_link: "Or reactivate your account without logging in:"
+    deletion_final_warning:
+      link_text: "Or copy this link to your browser:"
+      cancel_prompt: "To cancel the deletion, click the link below:"
+      reactivation_link: "Or reactivate your account without logging in:"
+    reactivation:
+      title: "Reactivate your account"
+    unverified_warning:
+      title: "Verify your email address"
+  articles:
+    loading_exdecs: "Loading article references..."
+    copy_options: "Copy options"
+    export_options: "Export options"
+  search_results: "Search results"
+  pagination:
+    previous: "Previous"
+    next: "Next"
+  compare: "Compare"
+  no_articles_available: "No articles available."
+  unknown_language: "Unknown"
+  unknown_type: "Unknown"
+  laws:
+    no_articles_to_export: "This law has no articles to export."
+  jurisprudence:
+    no_text_to_export: "No text available to export."

@@ -49,6 +49,7 @@ class MollieCheckoutService
   end
 
   def create_donation(amount_cents:)
+    ensure_donations_enabled!
     ensure_checkout_enabled!
     amount_cents = normalize_donation_amount!(amount_cents)
     intent = MolliePayment.create!(
@@ -123,6 +124,12 @@ class MollieCheckoutService
     return if MollieConfiguration.checkout_enabled?
 
     raise MollieConfiguration::ConfigurationError, 'Mollie checkout is disabled'
+  end
+
+  def ensure_donations_enabled!
+    return if MollieConfiguration.donations_enabled?
+
+    raise MollieConfiguration::ConfigurationError, 'donations are disabled'
   end
 
   def find_or_create_credit_purchase_intent!(purchase)

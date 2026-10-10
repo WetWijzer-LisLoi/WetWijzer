@@ -24,7 +24,9 @@
       <dt class="font-medium text-gray-500 dark:text-gray-400 capitalize tracking-wide">
         <%= case I18n.locale when :fr then 'Source' when :de then 'Quelle' when :en then 'Source' else 'Bron' end %>
       </dt>
-      <dd class="mt-1 text-gray-900 dark:text-gray-300">Justel</dd>
+      <%# A German text names its publisher (GermanTextProvenance) %>
+      <% german_source = law.respond_to?(:source_method) && law.language_id == HasLanguage::GERMAN_LANGUAGE_ID && GermanTextProvenance.source(law.source_method) %>
+      <dd class="mt-1 text-gray-900 dark:text-gray-300"><%= german_source ? t("german_text.sources.#{german_source}", locale: :de) : 'Justel' %></dd>
     </div>
 
     <!-- Status -->
@@ -62,7 +64,7 @@
           <span class="badge-type">
             <% law_type = Type.find_by(id: law.law_type_id) %>
             <% raw_name = law_type&.law_type.to_s.strip %>
-            <% label = if law.law_type_id.to_s == '11' || raw_name.match?(/\A(?:misc|divers)\z/i)
+            <% label = if law.law_type_id.to_s.in?(%w[11 17]) || raw_name.match?(/\A(?:misc|divers|misc_de)\z/i)
                  t(:misc)
                else
                  (raw_name.present? ? raw_name.capitalize : t(:unknown_type, default: 'Unknown'))
@@ -117,28 +119,23 @@
     <% end %>
 
     <!-- Parliamentary preparations (Senate / Chamber) -->
-    <%# Only show if we have actual links to display (label + valid URL) %>
-    <% 
-      senate_url = content&.senate_dossier_label.present? ? content.senate_dossier_url(I18n.locale) : nil
-      chamber_url = content&.chamber_dossier_label.present? ? content.chamber_dossier_url(I18n.locale) : nil
-      has_parliamentary_links = senate_url.present? || chamber_url.present?
-    %>
-    <% if has_parliamentary_links %>
+    <%# WW-LINK-01: a law with a reviewed relation shows its reviewed dossiers
+        (config/parliamentary_relations.yml); any other law shows what its
+        contents row names, as before. Only links with a label and a URL. %>
+    <% dossier_links = ParliamentaryRelations.metadata_dossiers(law.numac, content) %>
+    <% if dossier_links.any? %>
       <div class="flex flex-col">
         <dt class="font-medium text-gray-500 dark:text-gray-400 capitalize tracking-wide">
           <%= t(:parliamentary_preparations, default: 'Parlementaire werkzaamheden') %>
         </dt>
         <dd class="mt-1 text-gray-900 dark:text-gray-300 space-y-1">
-          <% if senate_url.present? %>
+          <% dossier_links.each do |link| %>
             <div>
-              <span><%= t(:senate_label, default: 'Senaat') %>:</span>
-              <%= link_to(content.senate_dossier_label, senate_url, target: "_blank", rel: "noopener noreferrer", class: "text-(--link-color) hover:text-(--link-hover-color) hover:underline") %>
-            </div>
-          <% end %>
-          <% if chamber_url.present? %>
-            <div>
-              <span><%= t(:chamber_label, default: 'Kamer') %>:</span>
-              <%= link_to(content.chamber_dossier_label, chamber_url, target: "_blank", rel: "noopener noreferrer", class: "text-(--link-color) hover:text-(--link-hover-color) hover:underline") %>
+              <span><%= link[:parliament] == 'senate' ? t(:senate_label, default: 'Senaat') : t(:chamber_label, default: 'Kamer') %>:</span>
+              <%= link_to(link[:label], link[:url], target: "_blank", rel: "noopener noreferrer", class: "text-(--link-color) hover:text-(--link-hover-color) hover:underline") %>
+              <% if link[:verified] %>
+                <span class="text-xs text-gray-500 dark:text-gray-400">(<%= t('related_sources.parliamentary.verified').downcase %>)</span>
+              <% end %>
             </div>
           <% end %>
         </dd>

@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="<%= I18n.locale %>"<%= ' class="dark"' if current_user&.ui_prefs&.dig('theme') == 'dark' %>>
+<html lang="<%= I18n.locale %>" class="<%= document_theme_classes %>">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><%= @title %></title>
+    <%# F2: 33 views name their page with content_for :title, which this line
+        ignored, so /login, /signup, /account and others had an empty title. %>
+    <title><%= @title.presence || content_for(:title).presence || site_name %></title>
     <meta name="description" content="<%= @meta_description || t(:meta_description) %>" />
     <link rel="canonical" href="<%= @canonical_url || request.original_url.split('?').first %>" />
 
@@ -15,12 +17,17 @@
     <%# Auth state meta tag for JS (PreferencesStore login detection) %>
     <% if current_user %>
       <meta name="user-logged-in" content="true" />
+      <meta name="theme-preferences" content="<%= document_theme_preferences.to_json %>" />
     <% end %>
 
-    <%# Redirect to classic when JavaScript is disabled - classic works without JS %>
-    <noscript>
-      <meta http-equiv="refresh" content="0;url=<%= request.url.sub("://#{request.host}", "://classic.#{request.host}") %>" />
-    </noscript>
+    <%# Without JavaScript, a page the classic site renders sends the reader there
+        (ClassicRouting#classic_fallback_url): a law's text is a lazy frame here.
+        Every other page stays, since classic would send it straight back. %>
+    <% if (classic_url = classic_fallback_url) %>
+      <noscript>
+        <meta http-equiv="refresh" content="0;url=<%= classic_url %>" />
+      </noscript>
+    <% end %>
 
     <%# Controller-driven noindex (e.g. jurisprudence pages - GDPR protection) %>
     <% if @noindex %>
@@ -28,7 +35,11 @@
     <% end %>
 
     <%# Hreflang tags for multi-language cross-domain discovery (NL/FR/DE/EN) - production only %>
-    <% unless staging_host? %>
+    <% if staging_host? %>
+    <% elsif @german_only_page %>
+    <%# a law the German site holds in German only has no page on the other sites %>
+    <link rel="alternate" hreflang="de" href="https://gesetzguide.be<%= request.path %>" />
+    <% else %>
     <% hreflang_path = request.path %>
     <link rel="alternate" hreflang="nl" href="https://wetwijzer.be<%= hreflang_path %>" />
     <link rel="alternate" hreflang="fr" href="https://lisloi.be<%= hreflang_path %>" />
@@ -179,11 +190,11 @@
     <%= vite_javascript_tag 'application', 'data-turbo-track': 'reload', nonce: true %>
     <script nonce="<%= content_security_policy_nonce %>">
       // FOUC prevention: apply dark mode from OS preference immediately.
-      // For logged-in users with a saved theme, the server already rendered
-      // class="dark" on <html>, so we skip the OS-preference fallback.
+      // Explicit light/dark choices are already painted by the server. Only
+      // system mode follows the OS, including before the app bundle loads.
       // Theme selection itself uses no browser persistence. The separate PWA
       // module has its documented offline-cache/install-prompt storage.
-      <% if current_user&.ui_prefs&.dig('theme').blank? %>
+      <% if document_theme_preferences[:theme] == 'system' %>
       if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
         document.documentElement.classList.add('dark')
       }
@@ -513,7 +524,7 @@
 
     <%= yield :head %>
   </head>
-  <body class="overflow-x-hidden" data-controller="keyboard-shortcuts">
+  <body class="overflow-x-hidden" data-controller="keyboard-shortcuts" data-csp-nonce="<%= content_security_policy_nonce %>">
     <%# Skip link for keyboard accessibility - WCAG 2.1 AA compliance %>
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-9999 focus:px-4 focus:py-2 focus:bg-white focus:text-gray-900 focus:rounded-md focus:shadow-lg focus:ring-2 focus:ring-(--accent-500) dark:focus:bg-gray-800 dark:focus:text-white">
       <%= t('accessibility.skip_to_main', default: 'Skip to main content') %>
@@ -537,6 +548,7 @@
       <%= render "layouts/header" %>
       <%= render "layouts/email_verification_banner" %>
       <main id="main-content" class="container mx-auto p-4 flex-1" tabindex="-1">
+        <%= render 'layouts/no_js_notice' if javascript_required_page? %>
         <%= yield %>
       </main>
       <%= render "layouts/footer" %>

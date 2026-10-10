@@ -33,15 +33,18 @@ module GeoChallenge
     return if logged_in?
     return if known_crawler?
 
-    # Store the original URL so we can redirect back after solving
+    # Store the original page so we can redirect back after solving. WW-PRIV-03:
+    # its path only; a query string can carry search terms, and a signed
+    # cookie is readable by whoever holds it.
     cookies.signed[:geo_return_to] = {
-      value: request.fullpath,
+      value: request.path,
       expires: 10.minutes.from_now,
       httponly: true,
-      secure: Rails.env.production?
+      secure: Rails.env.production?,
+      same_site: :lax
     }
 
-    Rails.logger.info("GeoChallenge: blocking non-EU visitor #{request.remote_ip} (#{request.headers['X-Geo-Country']}) UA=#{request.user_agent.to_s.truncate(80)} path=#{request.fullpath}")
+    SecurityLog.info('geo_challenge', request: request, country: request.headers['X-Geo-Country'])
     redirect_to geo_challenge_path, status: :see_other
   end
 
@@ -62,7 +65,7 @@ module GeoChallenge
 
     # Social media preview bots - UA-only check (low risk: they fetch single URLs for link cards)
     if ua.match?(/LinkedInBot|facebookexternalhit|Twitterbot|WhatsApp|Slackbot|Discordbot|Telegrambot/i)
-      Rails.logger.debug("GeoChallenge: social preview bot bypass for #{request.remote_ip} UA=#{ua.truncate(60)}")
+      Rails.logger.debug { SecurityLog.line('geo_preview_bot', request: request) }
       return true
     end
 
@@ -71,9 +74,9 @@ module GeoChallenge
 
     verified = verified_crawler_ip?(request.remote_ip)
     if verified
-      Rails.logger.debug("GeoChallenge: DNS-verified crawler #{request.remote_ip} UA=#{ua.truncate(60)}")
+      Rails.logger.debug { SecurityLog.line('geo_verified_crawler', request: request) }
     else
-      Rails.logger.warn("GeoChallenge: SPOOFED crawler detected! IP=#{request.remote_ip} UA=#{request.user_agent.to_s.truncate(80)} - DNS verification failed")
+      SecurityLog.warn('geo_spoofed_crawler', request: request)
     end
     verified
   end

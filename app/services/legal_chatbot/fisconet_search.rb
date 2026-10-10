@@ -13,7 +13,7 @@ module LegalChatbot
   # Retrieval: keyword search over tax_articles (primary). The FAISS vector
   # path (port 8768) is DISABLED by default: its index (Jan 2026) is keyed to
   # tax_articles AUTOINCREMENT ids from an old scrape, and the nightly scraper
-  # renumbers ids on every merge — ~78% of index ids dangle and the rest
+  # renumbers ids on every merge: ~78% of index ids dangle and the rest
   # resolve to the WRONG articles (verified 2026-07-13: a VAT question
   # returned registration-duties articles). Re-enable via
   # FISCONET_FAISS_ENABLED=true only after the index is rebuilt keyed on a
@@ -227,7 +227,7 @@ module LegalChatbot
       results = pins + keyword_search(db, question_text, limit: [limit * 2, 8].max)
       results = results.uniq { |result| dedup_key(result) }
 
-      # Optional FAISS supplement — only when explicitly re-enabled after the
+      # Optional FAISS supplement, only when explicitly re-enabled after the
       # index is rebuilt (see class comment).
       if FAISS_ENABLED && question_embedding.present? && results.size < limit
         extra = faiss_search(db, question_embedding, limit: limit - results.size)
@@ -242,7 +242,7 @@ module LegalChatbot
     end
 
     # Working laws-page URL for a tax article. The fisconet pages are served
-    # at /laws/FISCONET_<legislation_id> (uppercase prefix, LEGISLATION id —
+    # at /laws/FISCONET_<legislation_id> (uppercase prefix, LEGISLATION id,
     # NOT article id) and use canonical art_<article-number> anchors
     # (see _fisconet_show.html.erb). The old /laws/fisconet_<article_id>
     # format 404'd on every citation.
@@ -373,6 +373,7 @@ module LegalChatbot
          FROM tax_articles a
          JOIN tax_legislation l ON a.legislation_id = l.id
          WHERE (#{target_clauses.join(' OR ')})
+           AND #{current_edition_sql(db)}
            AND TRIM(COALESCE(NULLIF(#{preferred_text}, ''), #{fallback_text}, '')) <> ''
          ORDER BY #{legislation_current_sql(db)} DESC,
                   #{ARTICLE_CURRENT_SQL} DESC,
@@ -425,7 +426,7 @@ module LegalChatbot
       bare != text && bare.match?(/\A\d{4,}\z/) ? [text, bare] : [text]
     end
 
-    # Keyword retrieval over tax_articles. 3,602 rows — a filtered LIKE scan
+    # Keyword retrieval over tax_articles. 3,602 rows: a filtered LIKE scan
     # is fast and needs no index that the nightly scrape could invalidate.
     def keyword_search(db, question, limit: 5)
       q_down = question.downcase
@@ -471,6 +472,7 @@ module LegalChatbot
       end
       where << "(#{retrieval_clauses.join(' OR ')})"
       where << real_law_only_sql(db)
+      where << current_edition_sql(db)
 
       rows = db.execute(
         "SELECT a.id, a.legislation_id, a.article_number, a.text_nl, a.text_fr, #{section_path_sql(db)},
@@ -793,6 +795,20 @@ module LegalChatbot
       legislation_column?(db, 'fisconet_id') ? 'l.fisconet_id' : 'NULL AS fisconet_id'
     end
 
+    # Only the CURRENT edition of an annual code answers. Since 2026-09-26 the corpus keeps
+    # each edition of WIB 92 and KB/WIB 92 as its own tax_legislation row: the one for the
+    # current income year is 'WIB 92', the other is 'WIB 92 (inkomsten 2027)', labelled for
+    # the site. The CODE_HINTS pattern '%wib%' matches both names, so without this a
+    # personal-income-tax question could quote next year's text (in force 2027-01-01) as
+    # today's rule - the very mix the separate rows exist to end. Probed like every other
+    # walk-era column; in a corpus without it every row is current. Always returns a
+    # predicate, so callers can AND it in unconditionally.
+    def current_edition_sql(db)
+      return '1 = 1' unless legislation_column?(db, 'edition_role')
+
+      "COALESCE(l.edition_role, 'current') = 'current'"
+    end
+
     # Trailing comma included so the caller can drop the whole tier cleanly.
     def legislation_updated_order_sql(db)
       legislation_column?(db, 'updated_at') ? "COALESCE(l.updated_at, '') DESC, " : ''
@@ -894,7 +910,7 @@ module LegalChatbot
       art
     end
 
-    # Legacy FAISS path — see class comment for why this is off by default.
+    # Legacy FAISS path; see class comment for why this is off by default.
     def faiss_search(db, question_embedding, limit: 5)
       require 'net/http'
       require 'json'
@@ -925,7 +941,7 @@ module LegalChatbot
                 #{region_select(db)}
          FROM tax_articles a
          JOIN tax_legislation l ON a.legislation_id = l.id
-         WHERE a.id IN (#{placeholders})", article_ids
+         WHERE a.id IN (#{placeholders}) AND #{current_edition_sql(db)}", article_ids
       )
 
       is_french = @language == 'fr'

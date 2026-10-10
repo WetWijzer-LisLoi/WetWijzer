@@ -18,6 +18,7 @@
  */
 import { Controller } from "@hotwired/stimulus"
 import { trapFocus, releaseFocus } from '../utils/focus_trap'
+import { uiText } from '../utils/ui_translations'
 
 export default class extends Controller {
   static targets = ["helpModal"]
@@ -250,33 +251,32 @@ export default class extends Controller {
   }
 
   createHelpModal() {
-    const isDutch = document.documentElement.lang === 'nl'
-    
     const shortcuts = [
-      { key: '/', desc: isDutch ? 'Zoeken' : 'Rechercher' },
-      { key: 'Ctrl+K', desc: isDutch ? 'Zoeken (in veld)' : 'Rechercher (dans champ)' },
-      { key: 'j / k', desc: isDutch ? 'Navigeer resultaten' : 'Naviguer résultats' },
-      { key: 'Enter', desc: isDutch ? 'Open selectie' : 'Ouvrir sélection' },
-      { key: 'b', desc: isDutch ? 'Bladwijzer aan/uit' : 'Ajouter/supprimer signet' },
-      { key: 'Esc', desc: isDutch ? 'Sluiten / Annuleren' : 'Fermer / Annuler' },
-      { key: 'g h', desc: isDutch ? 'Ga naar home' : 'Aller à l\'accueil' },
-      { key: 'g b', desc: isDutch ? 'Ga naar bladwijzers' : 'Aller aux signets' },
-      { key: '?', desc: isDutch ? 'Toon hulp' : 'Afficher aide' },
+      { key: '/', desc: uiText('shortcutSearch') },
+      { key: 'Ctrl+K', desc: uiText('shortcutSearchField') },
+      { key: 'j / k', desc: uiText('shortcutNavigate') },
+      { key: 'Enter', desc: uiText('shortcutOpen') },
+      { key: 'b', desc: uiText('shortcutBookmark') },
+      { key: 'Esc', desc: uiText('shortcutClose') },
+      { key: 'g h', desc: uiText('shortcutHome') },
+      { key: 'g b', desc: uiText('shortcutBookmarks') },
+      { key: '?', desc: uiText('shortcutHelp') },
     ]
     
     const modal = document.createElement('div')
     modal.id = 'keyboard-shortcuts-modal'
+    modal.dataset.keyboardShortcutsTarget = 'helpModal'
     modal.className = 'fixed inset-0 z-9999 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm'
     modal.innerHTML = `
       <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-auto border border-gray-200 dark:border-gray-700">
         <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-            ${isDutch ? 'Sneltoetsen' : 'Raccourcis clavier'}
+            ${uiText('shortcutsTitle')}
           </h2>
           <button type="button"
                   class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-(--accent-400) transition-colors"
                   data-dismiss
-                  onclick="document.getElementById('keyboard-shortcuts-modal').classList.add('hidden')">
+                  aria-label="${uiText('close')}">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
             </svg>
@@ -293,16 +293,17 @@ export default class extends Controller {
         <div class="p-4 border-t border-gray-200 dark:border-gray-700 text-center">
           <button type="button"
                   class="px-4 py-2 text-sm font-medium text-white bg-(--accent-600-solid) hover:bg-(--accent-700-solid) rounded-lg transition-colors"
-                  onclick="document.getElementById('keyboard-shortcuts-modal').classList.add('hidden')">
-            ${isDutch ? 'Sluiten' : 'Fermer'}
+                  data-dismiss>
+            ${uiText('close')}
           </button>
         </div>
       </div>
     `
     
+    modal.querySelectorAll('[data-dismiss]').forEach(button => button.addEventListener('click', () => this.hideHelp()))
     // Close on backdrop click
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.classList.add('hidden')
+      if (e.target === modal) this.hideHelp()
     })
     
     return modal

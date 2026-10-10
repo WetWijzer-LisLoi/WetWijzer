@@ -12,7 +12,9 @@ class PasswordResetsController < ApplicationController
   def create
     user = User.find_by(email: params[:email]&.downcase)
 
-    if user
+    # WW-ABUSE-01: no reset token or mail for a suspended account; the answer
+    # below stays the same.
+    if user && !user.abuse_suspended?
       if EmailOutboxEntry.active_for_delivery?
         # FBL-032: token and outbox row commit atomically on the accounts
         # database; the drain job owns delivery with bounded retry.
@@ -41,7 +43,7 @@ class PasswordResetsController < ApplicationController
   def edit
     @user = User.find_by(reset_password_token: params[:token])
 
-    return unless @user.nil? || reset_token_expired?(@user)
+    return unless @user.nil? || @user.abuse_suspended? || reset_token_expired?(@user)
 
     redirect_to new_password_reset_path, alert: t('auth.reset_token_invalid')
   end
@@ -49,7 +51,7 @@ class PasswordResetsController < ApplicationController
   def update
     @user = User.find_by(reset_password_token: params[:token])
 
-    if @user.nil? || reset_token_expired?(@user)
+    if @user.nil? || @user.abuse_suspended? || reset_token_expired?(@user)
       redirect_to new_password_reset_path, alert: t('auth.reset_token_invalid')
       return
     end

@@ -22,7 +22,7 @@
 <%= form_with url: laws_path, method: :get, class: "space-y-0", data: { turbo_frame: "_top", controller: 'search-validation filters-toggle source-filters' }, html: { 'data-action': 'submit->search-validation#validate', autocomplete: 'off' } do |form| %>
 
 <%# ── Hero with personal intro + chatbot input ── %>
-<div class="bg-linear-to-br from-(--accent-50) to-(--accent-100) dark:from-sky/10 dark:to-sky/20 rounded-xl py-6 sm:py-8 md:py-10">
+<div class="homepage-hero rounded-xl py-6 sm:py-8 md:py-10">
   <div class="px-4">
     <%# Title %>
     <div class="text-center mb-5 sm:mb-6">
@@ -37,23 +37,19 @@
     <%# ── Inline Chatbot Input (POST form - zero client storage) ── %>
     <%# The chatbot's input, settings, sample pills and disclaimer all live in
         this one element. It used to carry no surface of its own, so those four
-        parts read as loose pieces scattered on the hero gradient next to the
-        search box. Recessing them into a single well groups them as one thing
-        and sets them apart from "of zoek direct" below, which stays flat on
-        the gradient - the contrast is what separates the two.
+        parts read as loose pieces scattered next to the search box. A neutral
+        well groups them as one thing and sets them apart from "of zoek direct"
+        below, without stacking different large washes of the accent colour.
         The base padding is deliberately smaller than the sm: one: at 320px the
         input row already nests inside px-4 of its own, and every pixel the well
         takes comes straight out of the textarea (px-3 cost it 24px, a third of
         what it had). 8px still shows the well's ground either side of the pill. %>
-    <div class="group/chat max-w-3xl mx-auto mt-5 rounded-2xl px-2 py-4 sm:px-4 sm:py-5
-                bg-black/[0.035] dark:bg-black/20
+    <div class="homepage-chat-well group/chat max-w-3xl mx-auto mt-5 rounded-2xl px-2 py-4 sm:px-4 sm:py-5
                 ring-1 ring-black/5 dark:ring-white/10
                 shadow-[inset_0_1px_3px_rgb(0_0_0/0.07)] dark:shadow-[inset_0_1px_3px_rgb(0_0_0/0.35)]
                 transition-[background-color,box-shadow,--tw-ring-color] duration-300 ease-out
-                hover:bg-(--accent-500)/[0.12] dark:hover:bg-(--accent-400)/[0.18]
                 hover:ring-(--accent-500)/60 dark:hover:ring-(--accent-400)/55
                 hover:shadow-[0_10px_30px_-14px_rgb(0_0_0/0.35)] dark:hover:shadow-[0_10px_30px_-12px_rgb(0_0_0/0.7)]
-                focus-within:bg-(--accent-500)/[0.12] dark:focus-within:bg-(--accent-400)/[0.18]
                 focus-within:ring-(--accent-500)/60 dark:focus-within:ring-(--accent-400)/55
                 focus-within:shadow-[0_10px_30px_-14px_rgb(0_0_0/0.35)] dark:focus-within:shadow-[0_10px_30px_-12px_rgb(0_0_0/0.7)]
                 motion-reduce:transition-none" id="hero-chat-input"
@@ -89,7 +85,7 @@
             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
             <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse ring-2 ring-white/30"></span>
           </button>
-          <a href="<%= chatbot_path %>" class="text-[8px] leading-tight font-medium text-gray-400 dark:text-gray-500 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors whitespace-nowrap no-underline"><%= case I18n.locale when :fr then 'Version complète' when :de then 'Vollversion' when :en then 'Full version' else 'Volledige versie' end %></a>
+          <a href="<%= chatbot_path %>" class="inline-block pb-[14px] -mb-[14px] text-[8px] leading-tight font-medium text-gray-600 dark:text-gray-400 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors whitespace-nowrap no-underline"><%= case I18n.locale when :fr then 'Version complète' when :de then 'Vollversion' when :en then 'Full version' else 'Volledige versie' end %></a>
         </div>
         <textarea data-hero-chatbot-target="input"
                   data-action="keydown->hero-chatbot#handleKeydown"
@@ -109,30 +105,33 @@
         </button>
       </div>
 
-      <%# Options indicator row - matches widget footer %>
+      <%# Options indicator row - matches widget footer. The toggle's padding,
+          cancelled by a negative margin, gives a 24px touch target without
+          moving the row; so does the full-version link's bottom padding
+          above (WW-A11Y-02). %>
       <div class="flex items-center justify-between mt-1.5 px-1">
         <button type="button" id="hero-settings-toggle"
                 data-action="click->hero-chatbot#toggleSettings"
                 aria-expanded="false"
                 aria-controls="hero-settings-panel"
-                class="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors group cursor-pointer"
+                class="flex items-center gap-1 py-[5px] -my-[5px] rounded text-[10px] text-gray-600 dark:text-gray-400 hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors group cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-(--accent-500)"
                 title="<%= case I18n.locale when :fr then 'Options' when :de then 'Optionen' when :en then 'Options' else 'Opties' end %>">
           <svg class="w-3 h-3 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z"/>
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
           </svg>
-          <span id="hero-level-indicator"><%= case I18n.locale when :fr then 'Intelligence IA' when :de then 'KI-Intelligenz' when :en then 'AI Intelligence' else 'AI-Intelligentie' end %>: <span data-hero-active-label><%= LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :labels, I18n.locale) || LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :labels, :nl) %></span> <span data-hero-active-desc class="text-gray-300 dark:text-gray-600">| <%= LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :descriptions, I18n.locale) || LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :descriptions, :nl) %></span></span>
+          <span id="hero-level-indicator"><%= case I18n.locale when :fr then 'Intelligence IA' when :de then 'KI-Intelligenz' when :en then 'AI Intelligence' else 'AI-Intelligentie' end %>: <span data-hero-active-label><%= LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :labels, I18n.locale) || LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :labels, :nl) %></span> <span data-hero-active-desc class="text-gray-600 dark:text-gray-300">| <%= LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :descriptions, I18n.locale) || LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :descriptions, :nl) %></span></span>
         </button>
         <% if current_user %>
           <%
             perm = current_user.credits.to_i
             cr_label = case I18n.locale when :fr then 'crédits' when :de then 'Credits' when :en then 'credits' else 'credits' end
                       %>
-          <span class="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums" id="hero-credit-breakdown">
+          <span class="text-[10px] text-gray-600 dark:text-gray-400 tabular-nums" id="hero-credit-breakdown">
             <span id="credits-value"><%= perm %></span> <%= cr_label %>
           </span>
         <% else %>
-          <a href="<%= login_path %>" class="text-[10px] text-gray-400 hover:text-(--accent-600) dark:hover:text-(--accent-400) hover:underline no-underline transition-colors"><%= case I18n.locale when :fr then 'Connexion' when :de then 'Anmelden' when :en then 'Login' else 'Inloggen' end %></a>
+          <a href="<%= login_path %>" class="text-[10px] text-gray-600 dark:text-gray-400 hover:text-(--accent-600) dark:hover:text-(--accent-400) hover:underline no-underline transition-colors"><%= case I18n.locale when :fr then 'Connexion' when :de then 'Anmelden' when :en then 'Login' else 'Inloggen' end %></a>
         <% end %>
       </div>
 
@@ -237,12 +236,12 @@
 
       <%# Sample question pills - dynamically loaded from chatbot_questions.json, rotates every 30s %>
       <div class="mt-2.5 flex flex-wrap justify-center items-center gap-2" id="hero-sample-questions">
-        <span class="text-xs text-gray-400 dark:text-gray-400 self-center mr-0.5"><%= case I18n.locale when :fr then 'Essayez:' when :de then 'Probieren Sie:' when :en then 'Try:' else 'Probeer:' end %></span>
+        <span class="text-xs text-gray-600 dark:text-gray-400 self-center mr-0.5"><%= case I18n.locale when :fr then 'Essayez:' when :de then 'Probieren Sie:' when :en then 'Try:' else 'Probeer:' end %></span>
         <span id="hero-sample-pills" class="contents"></span>
       </div>
 
       <%# Legal disclaimer + consent notice (matches chatbot widget) %>
-      <p class="mt-1.5 text-center text-[10px] text-gray-400 dark:text-gray-500 leading-snug">
+      <p class="mt-1.5 text-center text-[10px] text-gray-600 dark:text-gray-400 leading-snug">
         <%= case I18n.locale
             when :fr then 'Ceci n\'est pas un avis juridique officiel. Les modèles IA peuvent halluciner*.'
             when :de then 'Dies ist keine offizielle Rechtsberatung. KI-Modelle können halluzinieren*.'
@@ -267,7 +266,7 @@
     <%# ── "Or search directly" divider ── %>
     <div class="max-w-3xl mx-auto mt-6 sm:mt-8 flex items-center gap-3">
       <div class="flex-1 border-t border-gray-300/50 dark:border-gray-600/30"></div>
-      <span class="text-xs text-gray-400 dark:text-gray-400 font-medium whitespace-nowrap uppercase tracking-widest">
+      <span class="text-xs text-gray-600 dark:text-gray-400 font-medium whitespace-nowrap uppercase tracking-widest">
         <%= case I18n.locale when :fr then 'ou' when :de then 'oder' when :en then 'or' else 'of' end %>
       </span>
       <div class="flex-1 border-t border-gray-300/50 dark:border-gray-600/30"></div>
@@ -347,6 +346,8 @@
     </div>
   </div>
 </div>
+
+<%= render 'shared/site_tour' %>
 
 <%# Source pill styles (CSS-only, position doesn't matter) %>
 <style nonce="<%= content_security_policy_nonce %>">
@@ -431,7 +432,7 @@
        end %>
 
     <%# ── Wetgeving Results ── %>
-    <% if frame_src.present? %>
+    <% if frame_src.present? && params[:source_legislation] != '0' %>
       <details open class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden group">
         <summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
           <h2 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 m-0">
@@ -441,7 +442,7 @@
             <%= case I18n.locale when :fr then 'Législation' when :de then 'Gesetzgebung' when :en then 'Legislation' else 'Wetgeving' end %>
             <span id="wetgeving-count" class="font-normal text-gray-500 dark:text-gray-400"></span>
           </h2>
-          <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          <svg class="w-4 h-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </summary>
         <%= turbo_frame_tag 'laws_list', src: frame_src,
               data: { controller: 'frame-status', frame_status_loading_value: t('loading_status.loading'), frame_status_completed_value: t('loading_status.completed'), frame_status_duration_value: 4000, frame_status_mount_selector_value: '#search-status-mount' } do %>
@@ -589,11 +590,8 @@
   <%# ── Parlementaire Stukken Results ── %>
   <% if @parliamentary_results.present? %>
     <%
-      useless_titles = [
-        'Opzoeken in documenten en databanken',
-        'Recherche dans les documents et bases de données',
-        'Suche in Dokumenten und Datenbanken'
-      ]
+      # Generic page titles (the site's search page, its refusal page) come
+      # from ParliamentaryHelper::GENERIC_PARL_TITLES, the one list.
       parliament_labels = {
         'kamer' => 'Kamer', 'chamber' => 'Kamer',
         'senaat' => 'Senaat', 'senate' => 'Senaat',
@@ -675,7 +673,7 @@
                 has_useful_title = raw_title.present? &&
                                    raw_title != result[:document_number] &&
                                    raw_title != result[:dossier_number] &&
-                                   !useless_titles.include?(raw_title)
+                                   !ParliamentaryHelper.generic_parl_title?(raw_title)
               %>
               <tr class="<%= idx.odd? ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900' %> hover:bg-(--accent-active-bg) transition-colors duration-200">
                 <td class="w-28 px-2 py-3 align-top text-sm leading-5 font-medium text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">

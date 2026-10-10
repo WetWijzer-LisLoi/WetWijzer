@@ -179,6 +179,11 @@ Rails.application.routes.draw do
           post :send_password_reset
           post :cancel_deletion
           post :toggle_active
+          # WW-ABUSE-01: the dedicated abuse suspension, its reason change and
+          # its lift (which leaves the account inactive).
+          post :suspend_for_abuse
+          post :change_abuse_suspension_reason
+          post :lift_abuse_suspension
           post :update_tier
           post :set_credits
           post :resend_verification
@@ -190,6 +195,11 @@ Rails.application.routes.draw do
         end
       end
       get 'chatbot_analytics', to: 'chatbot_analytics#index', as: 'chatbot_analytics'
+      get 'chatbot_analytics/usage', to: 'chatbot_analytics#usage', as: 'chatbot_analytics_usage'
+      get 'chatbot_analytics/quality', to: 'chatbot_analytics#quality', as: 'chatbot_analytics_quality'
+      get 'chatbot_analytics/finance', to: 'chatbot_analytics#finance', as: 'chatbot_analytics_finance'
+      get 'chatbot_analytics/partner', to: 'chatbot_analytics#partner', as: 'chatbot_analytics_partner'
+      get 'chatbot_analytics/export', to: 'chatbot_analytics#export', as: 'chatbot_analytics_export', defaults: { format: :csv }
       resources :chatbot_reports, only: %i[index show update destroy], path: 'reports'
 
       resources :invoices, only: %i[index show new create destroy] do
@@ -239,7 +249,7 @@ Rails.application.routes.draw do
 
     # AI chatbot API
     # POST only: the JS streams SSE over fetch POST (no EventSource/GET use).
-    # The former GET route was a CSRF hole — the endpoint deducts credits
+    # The former GET route was a CSRF hole: the endpoint deducts credits
     # with CSRF protection skipped, so a cross-site top-level GET (with
     # SameSite=Lax cookies attached) could drain a logged-in user's credits.
     # It also put the question (legal PII) in URLs and access logs.
@@ -252,7 +262,6 @@ Rails.application.routes.draw do
     delete 'chatbot/saved/:id', to: 'chatbot_saved_answers#destroy_saved'
     get 'chatbot/cost_dashboard', to: 'chatbot#cost_dashboard'
     post 'chatbot/deep_analysis', to: 'chatbot#deep_analysis'
-    post 'chatbot/log_slow_query', to: 'chatbot#log_slow_query'
     # One singleton rating resource per answer, identified by its signed
     # token: every request replaces the complete score/reasons state, which is
     # why PUT. PATCH is accepted alongside it because every other update
@@ -270,6 +279,7 @@ Rails.application.routes.draw do
     # token='consent' and consent revocation always answered 404.
     post 'chatbot/conversations/consent', to: 'chatbot_conversations#grant_consent'
     delete 'chatbot/conversations/consent', to: 'chatbot_conversations#revoke_consent'
+    delete 'chatbot/conversations/history_cleanup', to: 'chatbot_conversations#finish_history_cleanup'
     post 'chatbot/conversations/import', to: 'chatbot_conversations#import_conversations'
     get 'chatbot/conversations/:token', to: 'chatbot_conversations#show_conversation'
     delete 'chatbot/conversations/:token', to: 'chatbot_conversations#destroy_conversation'

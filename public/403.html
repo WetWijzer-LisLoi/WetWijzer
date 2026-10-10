@@ -134,6 +134,7 @@
         font-size: 0.7rem;
         color: #475569;
       }
+      .actions a { flex-wrap: wrap; max-width: 100%; justify-content: center; text-align: center; }
     </style>
   </head>
   <body>
@@ -147,33 +148,33 @@
           <div class="status">403</div>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="nl">
           <span class="lang-label">NL</span>
           <h2>Toegang geweigerd</h2>
           <p>Je hebt geen toestemming om deze pagina te bekijken. Als je denkt dat dit een fout is, neem dan contact met ons op.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="fr">
           <span class="lang-label">FR</span>
           <h2>Accès refusé</h2>
           <p>Vous n'avez pas la permission d'accéder à cette page. Si vous pensez qu'il s'agit d'une erreur, veuillez nous contacter.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="de">
           <span class="lang-label">DE</span>
           <h2>Zugriff verweigert</h2>
           <p>Sie haben keine Berechtigung, diese Seite anzuzeigen. Wenn Sie glauben, dass dies ein Fehler ist, kontaktieren Sie uns bitte.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="en">
           <span class="lang-label">EN</span>
           <h2>Access denied</h2>
           <p>You do not have permission to view this page. If you believe this is an error, please contact us.</p>
         </div>
 
         <div class="actions">
-          <a href="/" class="btn-primary">&larr; Home</a>
-          <a href="mailto:info@wetwijzer.be" class="btn-secondary">Contact</a>
+          <a href="/" class="btn-primary">&larr; <span lang="nl">Startpagina</span> / <span lang="fr">Accueil</span> / <span lang="de">Startseite</span> / <span lang="en">Home</span></a>
+          <a href="mailto:info@wetwijzer.be" class="btn-secondary"><span lang="nl">Contact</span> / <span lang="fr">Contact</span> / <span lang="de">Kontakt</span> / <span lang="en">Contact</span></a>
         </div>
       </div>
 

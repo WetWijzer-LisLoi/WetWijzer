@@ -1,0 +1,36 @@
+en:
+  billing_profile:
+    invalid_profile: "Please check your profile details."
+    vat_saved: "VAT details saved"
+    invalid_details: "Please check the billing details."
+    future_invoices_only: "These details apply to future invoices only. Previously issued invoices are unchanged. Available on the free plan too."
+    business_details: "Business details"
+    vat_hint: "VAT number used for future invoice customer details (for Belgium, e.g. BE0123.456.789). Entering it does not verify VAT registration or PEPPOL capability."
+    address_line2: "Address line 2"
+nl:
+  billing_profile:
+    invalid_profile: "Controleer uw profielgegevens."
+    vat_saved: "Btw-gegevens opgeslagen"
+    invalid_details: "Controleer de facturatiegegevens."
+    future_invoices_only: "Deze gegevens gelden alleen voor toekomstige facturen. Reeds uitgereikte facturen veranderen niet. Ook beschikbaar met het gratis abonnement."
+    business_details: "Bedrijfsgegevens"
+    vat_hint: "Btw-nummer voor toekomstige factuurgegevens (voor België bv. BE0123.456.789). Invoer verifieert geen btw-registratie of PEPPOL-mogelijkheid."
+    address_line2: "Adresregel 2"
+fr:
+  billing_profile:
+    invalid_profile: "Veuillez vérifier vos informations de profil."
+    vat_saved: "Coordonnées TVA enregistrées"
+    invalid_details: "Veuillez vérifier les informations de facturation."
+    future_invoices_only: "Ces données ne s’appliquent qu’aux factures futures. Les factures déjà émises restent inchangées. Disponible aussi avec l’offre gratuite."
+    business_details: "Informations professionnelles"
+    vat_hint: "Numéro de TVA utilisé pour les futures coordonnées de facturation (en Belgique, p. ex. BE0123.456.789). Sa saisie ne vérifie ni l’immatriculation TVA ni la capacité PEPPOL."
+    address_line2: "Complément d’adresse"
+de:
+  billing_profile:
+    invalid_profile: "Bitte prüfen Sie Ihre Profilangaben."
+    vat_saved: "USt-Angaben gespeichert"
+    invalid_details: "Bitte prüfen Sie die Rechnungsangaben."
+    future_invoices_only: "Diese Angaben gelten nur für künftige Rechnungen. Bereits ausgestellte Rechnungen bleiben unverändert. Auch im kostenlosen Tarif verfügbar."
+    business_details: "Unternehmensangaben"
+    vat_hint: "Umsatzsteuer-ID für künftige Rechnungsdaten (für Belgien z. B. BE0123.456.789). Die Eingabe bestätigt weder die USt-Registrierung noch die PEPPOL-Fähigkeit."
+    address_line2: "Adresszeile 2"

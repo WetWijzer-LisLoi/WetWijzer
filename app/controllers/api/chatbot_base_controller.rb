@@ -28,6 +28,25 @@ module Api
 
     private
 
+    # WW-PRIV-10: chatbot history goes through ConversationStorageBoundary by
+    # way of these three methods, so the white-box suites can stand in for the
+    # account lock as they do for current_user. The admitted generation is
+    # captured once, from the account as loaded for the request; call it
+    # before anything reloads current_user.
+    def conversation_storage_admitted
+      return @conversation_storage_admitted if defined?(@conversation_storage_admitted)
+
+      @conversation_storage_admitted = ConversationStorageBoundary.generation(current_user)
+    end
+
+    def write_under_storage_boundary(&)
+      ConversationStorageBoundary.write(current_user, admitted: conversation_storage_admitted, &)
+    end
+
+    def change_under_storage_boundary(&)
+      ConversationStorageBoundary.change(current_user, &)
+    end
+
     def set_request_id_in_thread
       Thread.current[:request_id] = request.request_id
       # Puma reuses threads: clear the previous request's token usage so a
@@ -146,10 +165,10 @@ module Api
       result[:revision] = conversation&.lock_version&.to_i
       result[:encrypted_revision] = conversation&.lock_version&.to_i
       result[:key_generation] = conversation&.zk_key_generation if conversation&.zero_knowledge?
-      if zk_claim
-        result[:claim_token] = zk_claim[:claim_token]
-        result[:claim_expires_at] = zk_claim.fetch(:claim_expires_at).iso8601(3)
-      end
+      return unless zk_claim
+
+      result[:claim_token] = zk_claim[:claim_token]
+      result[:claim_expires_at] = zk_claim.fetch(:claim_expires_at).iso8601(3)
     end
 
     def conversation_summary(conv)

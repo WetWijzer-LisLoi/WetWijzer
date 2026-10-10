@@ -17,12 +17,40 @@ class LawsController < ApplicationController
   include LawsExportActions
   include LawsCompareActions
 
+  # A search slower than this many seconds is logged (WW-PRIV-02: without its
+  # terms).
+  class_attribute :slow_search_seconds, default: 15
+
   helper RssHelper
+
+  # The related-sources panel is the one cached output built from
+  # legislation.jurisprudence_refs. The weekly linkage job that rewrites that
+  # column invalidates it by this prefix (Linkage::JurisprudenceCacheInvalidation)
+  # instead of clearing the whole store, so the prefix is part of that contract.
+  # v2 (WW-LINK-03) keys the site language too: the panel's words follow the
+  # domain, not the legal text's language_id. The weekly job still removes what
+  # is left under the old prefix (RELATED_SOURCES_LEGACY_PREFIXES).
+  # v3 adds law-scoped case-law navigation. Old v2 fragments still linked to
+  # the generic search and cannot be reused after this change.
+  RELATED_SOURCES_CACHE_PREFIX = 'related-sources-v3'
+  RELATED_SOURCES_LEGACY_PREFIXES = %w[related-sources-v2 related-sources-v1].freeze
+
+  RELATED_JURISPRUDENCE_PREVIEW_SIZE = 10
+  RELATED_JURISPRUDENCE_PAGE_SIZES = [10, 25, 50].freeze
+  RELATED_JURISPRUDENCE_DEFAULT_PAGE_SIZE = 25
 
   # Persistent class-level SQLite connections for related sources.
   # Opening multi-GB databases on every request has ~500ms overhead.
   # These persist across requests within the same Puma worker process.
   class << self
+    # The one definition of the related-sources cache key; see the prefix above.
+    def related_sources_cache_key(numac, type, language_id, locale, route_numac: numac)
+      key = "#{RELATED_SOURCES_CACHE_PREFIX}/#{numac}/#{type}/#{language_id}/#{locale}"
+      # A Fisconet page can look up the same Justel relation while its links
+      # still need to return to the Fisconet law, not the other cached page.
+      route_numac == numac ? key : "#{key}/#{route_numac}"
+    end
+
     # The one definition of the exdec-mapping cache key. lib/tasks/exdec_cache.rake
     # warms and clears through this too; a second copy of the shape is how a key
     # drifts (the rake task carried the old count-keyed shape for a while and
@@ -33,19 +61,6 @@ class LawsController < ApplicationController
       exdec_sig = CacheVersionHelper.text_cache_version(*exdecs.map { |e| "#{e.id}:#{e.exdec_numac}" })
       ['article_exdec_mapping', CacheVersionHelper.render_code_version, numac, language_id,
        exdec_sig, CacheVersionHelper.laws_db_version].join('/')
-    end
-
-    def parliamentary_db(path)
-      @_parliamentary_db = nil unless @_parliamentary_db_path == path
-      @_parliamentary_db_path = path
-      @_parliamentary_db ||= begin
-        db = SQLite3::Database.new(path)
-        db.busy_timeout = 5000
-        db
-      end
-    rescue SQLite3::Exception => e
-      @_parliamentary_db = nil
-      raise e
     end
 
     def jurisprudence_db(path)
@@ -116,9 +131,11 @@ class LawsController < ApplicationController
           params[:lang_fr] = '1'
           params[:lang_de] = '0'
         when :de
+          # the German texts and, beside them, the French ones the German
+          # site falls back to
           params[:lang_nl] = '0'
           params[:lang_fr] = '1'
-          params[:lang_de] = '0'
+          params[:lang_de] = '1'
         else
           params[:lang_nl] = '1'
           params[:lang_fr] = '0'
@@ -129,6 +146,11 @@ class LawsController < ApplicationController
       params[:search_in_title] = '1' unless params[:search_in_title].present?
       params[:search_in_tags] = '1' unless params[:search_in_tags].present?
     end
+
+    # Classic (inbox 2026-10-08 10:49, B.4): a request that names no language
+    # searches the site's default languages, the boxes its form shows
+    # checked; it used to search every language under the default boxes.
+    apply_classic_language_defaults if classic_host?
 
     # Validate and search
     @validation_failed = false
@@ -141,8 +163,12 @@ class LawsController < ApplicationController
     run_search_if_needed
     search_duration = Process.clock_gettime(Process::CLOCK_MONOTONIC) - search_start
 
-    if search_duration > 15
-      Rails.logger.warn("[SLOW PAGINATION] #{search_duration.round(2)}s - page=#{params[:page]} query=#{params[:title].inspect} per_page=#{@per_page} host=#{request.host}")
+    # WW-PRIV-02: the event, its timing and a bounded page, never the search
+    # terms (legal searches are personal data; filter_parameters cannot reach a
+    # hand-built line). Production tags every line with the request id.
+    if search_duration > slow_search_seconds
+      Rails.logger.warn("[SLOW PAGINATION] #{search_duration.round(2)}s - page=#{params[:page].to_s.to_i.clamp(0, 1_000_000)} " \
+                        "per_page=#{@per_page} host=#{request.host}")
     end
 
     respond_to_request
@@ -181,7 +207,10 @@ class LawsController < ApplicationController
 
     # Load related data in a single query where possible
     # Skip for FisconetPlus articles - they use an OpenStruct, not ActiveRecord
-    load_related_data unless @is_fisconet
+    return if @is_fisconet
+
+    load_related_data
+    load_language_versions if german_site?
   end
 
   # GET /laws/:numac/articles
@@ -222,41 +251,54 @@ class LawsController < ApplicationController
     # For Fisconet laws, use numac_real to look up Justel-linked sources
     lookup_numac = @is_fisconet && @law.numac_real.present? ? @law.numac_real : params[:numac]
 
-    # Bound params[:type] to the known set BEFORE it enters the cache key —
+    # Bound params[:type] to the known set BEFORE it enters the cache key;
     # otherwise ?type=<random> is an always-miss key that runs the expensive
     # else-branch every time and grows the file_store cache unbounded (cache-bust DoS).
     type = %w[parliamentary jurisprudence].include?(params[:type]) ? params[:type] : 'all'
 
-    # Cache related sources HTML for 1 hour – the underlying jurisprudence LIKE query
-    # on the 6.2GB database takes ~1.3s per call in the Ruby SQLite3 gem.
-    cache_key = "related-sources-v1/#{lookup_numac}/#{type}/#{@language_id}"
-
-    cached = Rails.cache.read(cache_key)
-    if cached
-      render html: cached.html_safe, layout: false
-      return
+    # Cache related sources HTML for 1 hour. The weekly linkage job removes
+    # these entries by prefix after it has rewritten jurisprudence_refs.
+    # Full pages are deliberately not cached per arbitrary page parameters.
+    # They slice one precomputed law payload, never scan the case corpus, and
+    # bypassing the preview cache also prevents a cached first ten from being
+    # mistaken for the full result. The preview ignores paging parameters.
+    if params[:view] == 'page'
+      html = render_related_sources(type, lookup_numac, nil, paginated: true)
+      return render_related_sources_page(type, html)
     end
 
-    empty_result = { items: [], total_count: 0 }
-    parl_result =
-      type == 'jurisprudence' ? empty_result : load_related_parliamentary(lookup_numac)
-    juris_result =
-      type == 'parliamentary' ? empty_result : load_related_jurisprudence(lookup_numac)
+    cache_key = self.class.related_sources_cache_key(lookup_numac, type, @language_id, I18n.locale,
+                                                     route_numac: @law.numac)
+
+    html = Rails.cache.read(cache_key) || render_related_sources(type, lookup_numac, cache_key)
+    render html: html.html_safe, layout: false
+  end
+
+  def render_related_sources(type, lookup_numac, cache_key, paginated: false)
+    # WW-LINK-01: one relation decides what is presented as preparatory works
+    # (ParliamentaryRelations); a store that could not be read is reported as
+    # unavailable, never as an empty list.
+    parliamentary = ParliamentaryRelations::Resolver.new(lookup_numac).call unless type == 'jurisprudence'
+    jurisprudence = load_related_jurisprudence(lookup_numac, paginated: paginated) unless type == 'parliamentary'
 
     html = render_to_string partial: 'related_sources_content',
-                            locals: {
-                              law: @law,
-                              type: type,
-                              lookup_numac: lookup_numac,
-                              related_parliamentary: parl_result[:items],
-                              parliamentary_total: parl_result[:total_count],
-                              related_jurisprudence: juris_result[:items],
-                              jurisprudence_total: juris_result[:total_count]
-                            },
+                            locals: { law: @law, type: type, lookup_numac: lookup_numac,
+                                      parliamentary: parliamentary, jurisprudence: jurisprudence },
                             layout: false
 
-    Rails.cache.write(cache_key, html, expires_in: 1.hour)
-    render html: html.html_safe, layout: false
+    # The next visitor retries a store that could not be read; an hour of
+    # cached "unavailable" would outlive the failure.
+    if cache_key && !parliamentary&.unavailable? && jurisprudence&.dig(:status) != :unavailable
+      Rails.cache.write(cache_key, html, expires_in: 1.hour)
+    end
+    html
+  end
+
+  def render_related_sources_page(type, panel_html)
+    @noindex = true
+    @related_sources_heading = type == 'all' ? t('related_sources.heading') : t("related_sources.#{type}.heading")
+    @title = "#{@related_sources_heading}: #{@law.title.to_s.truncate(80)}"
+    render :related_sources_page, locals: { panel_html: panel_html }
   end
 
   # GET /laws/:numac/article_exdecs
@@ -300,7 +342,7 @@ class LawsController < ApplicationController
         exdec_html: exdec_html
       }
     rescue StandardError => e
-      Rails.logger.error("Failed to build article-exdec mapping for #{params[:numac]}: #{e.message}")
+      Rails.logger.error("Failed to build article-exdec mapping for #{SecurityLog.clean(params[:numac])}: #{e.message}")
       Rails.logger.error(e.backtrace.first(10).join("\n"))
       render json: { success: false, error: 'Internal server error' }, status: :internal_server_error
     end
@@ -312,7 +354,7 @@ class LawsController < ApplicationController
     @content = Content.includes(:legislation).find_by(language_id: @language_id, legislation_numac: params[:numac])
     # Materialize with .to_a to prevent re-querying on each iteration in the view
     # (the view iterates articles 3+ times: references check, doc number prefetch, main render loop)
-    @articles = Article.where(language_id: @language_id, content_numac: params[:numac]).order(:id).to_a
+    @articles = Article.where(language_id: @language_id, content_numac: params[:numac]).in_document_order.to_a
     # Content signal for the fragment cache and the ETag, computed once here
     # because the rows are in memory anyway (see CacheVersionHelper).
     @articles_digest = CacheVersionHelper.rows_cache_version(@articles)
@@ -326,13 +368,13 @@ class LawsController < ApplicationController
       # (Kept for backwards compatibility, but AJAX endpoint is preferred)
       @exdecs = load_exdecs_for_articles
       begin
-        Rails.logger.debug { "Force-loading article-exdec mapping for #{params[:numac]} via Turbo Frame" }
+        Rails.logger.debug { "Force-loading article-exdec mapping for #{SecurityLog.clean(params[:numac])} via Turbo Frame" }
         @article_exdec_mapping = build_cached_article_exdec_mapping(params[:numac], @exdecs, @language_id)
 
         Rails.logger.debug { "Article-exdec mapping loaded with #{@article_exdec_mapping.size} referenced articles" } if @article_exdec_mapping.present?
       rescue StandardError => e
         # Log error but don't break the page
-        Rails.logger.error("Failed to build article-exdec mapping for #{params[:numac]}: #{e.message}")
+        Rails.logger.error("Failed to build article-exdec mapping for #{SecurityLog.clean(params[:numac])}: #{e.message}")
         Rails.logger.error(e.backtrace.first(5).join("\n"))
         @article_exdec_mapping = {}
         @article_exdecs_disabled = true
@@ -346,7 +388,7 @@ class LawsController < ApplicationController
       @article_exdec_mapping = {}
       @article_exdecs_disabled = true
       @executive_legislations_cache = {}
-      Rails.logger.debug { "Article-exdec mapping disabled by default for #{params[:numac]} (#{@exdec_count} exdecs, skipped loading)" }
+      Rails.logger.debug { "Article-exdec mapping disabled by default for #{SecurityLog.clean(params[:numac])} (#{@exdec_count} exdecs, skipped loading)" }
     end
   end
 
@@ -411,26 +453,47 @@ class LawsController < ApplicationController
 
   # Ensures the URL includes a language_id. If missing, 301-redirect to the same
   # route with the default language for the current host/locale (nl for WetWijzer,
-  # fr for Lisloi). This provides canonical URLs like /laws/:numac?language_id=1|2.
+  # fr for Lisloi, and on GesetzGuide de when the law has a German text, else
+  # fr). This provides canonical URLs like /laws/:numac?language_id=1|2|3.
   # Uses 301 (permanent) so Google drops the bare URL from its index.
   # For Turbo Frame requests (like articles endpoint), sets default instead of redirecting.
   def ensure_language_param
-    # language_id=3 is reserved for a future provenance-checked German corpus.
-    # Retire old links to the invalid French-as-German import by canonicalizing
-    # them to the French source text used by the German UI.
-    if params[:language_id].to_s == '3'
-      if turbo_frame_request? || action_name.in?(%w[articles related_sources])
-        params[:language_id] = 2
-      else
-        redirect_to_canonical_with_language(2)
-      end
+    # language_id=3 names the German text. Every spelling the record lookup
+    # would read as 3 ("03", "3abc", "3.0") counts: ActiveRecord casts the
+    # parameter to an integer, so only an exact '3' check would let such a
+    # link reach the German row uncanonicalized.
+    if ActiveModel::Type::Integer.new.cast(params[:language_id]) == HasLanguage::GERMAN_LANGUAGE_ID
+      canonicalize_german_language_param
       return
     end
 
-    return if params[:language_id].present?
+    # A repeated or nested parameter (language_id[]=3, language_id[x]=3) is
+    # no language id: the cast above gives nil for it, and the record lookup
+    # reads an array as an IN list, which matched the German row. It is
+    # treated as a missing parameter. set_law also looks the law up among the
+    # languages this site serves only, so no other spelling can reach
+    # language 3 on the Dutch and French sites either.
+    return if params[:language_id].is_a?(String) && params[:language_id].present?
 
-    lang_id = current_language_id
+    use_language(current_language_id(numac: params[:numac]))
+  end
 
+  # The German site serves the German text of a law that has one (phase B of
+  # docs/ops/german-corpus-plan-2026-09-27.md), under the exact spelling '3'.
+  # Everything else asking for language 3 goes to the French text, as it did
+  # before phase B: every request on the Dutch and French sites (their pages
+  # stay as they were), and on the German site a law without a German text,
+  # which is shown in French and labelled as French.
+  def canonicalize_german_language_param
+    german = german_site? && german_text_for?(params[:numac])
+    return if german && params[:language_id] == HasLanguage::GERMAN_LANGUAGE_ID.to_s
+
+    use_language(german ? HasLanguage::GERMAN_LANGUAGE_ID : 2)
+  end
+
+  # A frame or a lazily loaded part takes the language in place; a page is
+  # redirected to its canonical URL.
+  def use_language(lang_id)
     if turbo_frame_request? || action_name.in?(%w[articles related_sources])
       params[:language_id] = lang_id
     else
@@ -440,6 +503,7 @@ class LawsController < ApplicationController
 
   # See the after_action declaration for the safety argument.
   def set_classic_cache_headers
+    return if classic_flash_private_response?
     return unless request.get? && response.successful?
     return unless classic_host? || request.format.text?
 
@@ -473,8 +537,9 @@ class LawsController < ApplicationController
     if FisconetSearchService.fisconet_numac?(numac)
       set_fisconet_law(numac)
     else
-      # language_id is guaranteed by ensure_language_param
-      @law = Legislation.find_by!(numac: numac, language_id: params[:language_id])
+      # language_id is guaranteed by ensure_language_param; the German rows
+      # (language 3) are served on the German site only
+      @law = served_legislation.find_by!(numac: numac, language_id: params[:language_id])
     end
   rescue ActiveRecord::RecordNotFound
     # Handle case when law is not found - return 404 instead of redirect
@@ -551,13 +616,28 @@ class LawsController < ApplicationController
   end
 
   # Sets the @law instance variable for compare action (doesn't require language_id)
-  # Finds any version of the law by numac
+  # Finds the Dutch or French version of the law by numac (never a German row:
+  # the compare pages set NL against FR)
   # @return [void]
   def set_law_for_compare
-    @law = Legislation.find_by(numac: params[:numac])
+    @law = Legislation.in_site_languages.find_by(numac: params[:numac])
     return if @law
 
     render file: Rails.root.join('public', '404.html'), status: :not_found, layout: false
+  end
+
+  # The German site's version list of a law page, like the case-law page's:
+  # every language the NUMAC is served in there, German first. With it, the
+  # provenance notice of a German text (docs/ops/german-corpus-plan-2026-09-27.md
+  # section 5), which is also the page's meta description. The Dutch and
+  # French sites keep their single NL/FR switch.
+  def load_language_versions
+    order = [HasLanguage::GERMAN_LANGUAGE_ID, 2, 1]
+    @language_versions = served_legislation.where(numac: @law.numac).distinct.pluck(:language_id)
+                                           .sort_by { |id| order.index(id) || order.size }
+    @german_notice = helpers.german_text_notice(@law, @content)
+    @meta_description = @german_notice[:label] if @german_notice
+    @german_only_page = !@language_versions.intersect?(HasLanguage::SITE_LANGUAGE_IDS)
   end
 
   # Sets the @language_id instance variable based on the resolved law
@@ -622,7 +702,7 @@ class LawsController < ApplicationController
   def load_articles
     Article
       .where(language_id: @language_id, content_numac: params[:numac])
-      .order(:id)
+      .in_document_order
       .to_a
   end
 
@@ -638,187 +718,84 @@ class LawsController < ApplicationController
     estimated < 2 ? nil : [estimated, 120].min
   end
 
-  # Loads related parliamentary documents for the current law
-  # @return [Array] Collection of parliamentary documents
-  def load_related_parliamentary(numac = nil)
-    numac ||= params[:numac]
-    return { items: [], total_count: 0 } unless defined?(SQLite3)
-
-    items = []
-    total = 0
-
-    # 1. Federal parliament (chamber.sqlite3)
-    db_path = ENV.fetch('CHAMBER_DB') { Rails.root.join('storage', 'chamber.sqlite3').to_s }
-    if File.exist?(db_path)
-      begin
-        db = self.class.parliamentary_db(db_path)
-
-        # Strategy: use pre-computed parliamentary_refs column → numac match → dossier summary
-        # Phase A: direct numac match (fastest path, covers 66.5% of docs)
-        total += db.execute('SELECT COUNT(*) FROM documents WHERE legislation_numac = ?', [numac]).first&.first || 0
-        rows = db.execute(
-          'SELECT id, parliament, dossier_number, document_number, title, document_type FROM documents WHERE legislation_numac = ? LIMIT 10',
-          [numac]
-        )
-        items += rows.map { |r| { id: r[0], parliament: r[1], dossier_number: r[2], document_number: r[3], title: r[4], document_type: r[5] } }
-
-        # Phase B: use pre-computed parliamentary_refs from legislation table (covers remaining docs)
-        if items.empty?
-          leg = Legislation.find_by(numac: numac)
-          parl_refs = begin
-            JSON.parse(leg&.parliamentary_refs || '[]')
-          rescue JSON::ParserError
-            []
-          end
-
-          # Extract Kamer (K:) refs – format "K:55-3213"
-          kamer_refs = parl_refs.select { |r| r.start_with?('K:') }.map { |r| r.sub('K:', '') }
-          kamer_refs.each do |ref|
-            match = ref.match(/^(\d+)-(.+)$/)
-            next unless match
-
-            legislature = match[1]
-            dossier_id = match[2]
-            padded = dossier_id.to_s.rjust(4, '0')
-            dossier_variants = [dossier_id.to_s, padded].uniq
-            placeholders = dossier_variants.map { '?' }.join(', ')
-
-            dossier_total = db.execute(
-              "SELECT COUNT(*) FROM documents WHERE dossier_number IN (#{placeholders}) AND legislature = ?",
-              dossier_variants + [legislature]
-            ).first&.first || 0
-            total += dossier_total
-
-            if dossier_total.positive?
-              dossier_rows = db.execute(
-                "SELECT id, parliament, dossier_number, document_number, title, document_type FROM documents WHERE dossier_number IN (#{placeholders}) AND legislature = ? LIMIT 10",
-                dossier_variants + [legislature]
-              )
-              items += dossier_rows.map { |r| { id: r[0], parliament: r[1] || 'KAMER', dossier_number: r[2], document_number: r[3], title: r[4], document_type: r[5] } }
-            else
-              # No documents scraped yet – show dossier summary from dossiers table
-              dossier_row = db.execute(
-                'SELECT id, titel, type, status, dossier_url FROM dossiers WHERE nummer = ? AND legislature = ? LIMIT 1',
-                [dossier_id, legislature]
-              ).first
-              if dossier_row
-                items << {
-                  id: dossier_row[0], parliament: 'KAMER', dossier_number: "#{legislature}-#{dossier_id}",
-                  document_number: "#{legislature}-#{dossier_id}", title: dossier_row[1],
-                  document_type: dossier_row[2], dossier_url: dossier_row[4], source: :dossier_summary
-                }
-                total += 1
-              end
-            end
-          end
-        end
-      rescue StandardError => e
-        Rails.logger.warn "Failed to load federal parliamentary docs: #{e.message}"
-      end
-    end
-
-    # 2. Vlaamse Parlement (vlaamse_codex.sqlite3) – decreten, besluiten, verslagen
-    vlpar_path = Rails.root.join('storage', 'vlaamse_codex.sqlite3').to_s
-    if File.exist?(vlpar_path)
-      begin
-        vlpar_db = SQLite3::Database.new(vlpar_path)
-        vlpar_db.busy_timeout = 5000
-        vlpar_total = vlpar_db.execute('SELECT COUNT(*) FROM documents WHERE numac = ?', [numac]).first&.first || 0
-        total += vlpar_total
-        vlpar_rows = vlpar_db.execute(
-          'SELECT id, titel, document_type, nummer, zittingsjaar, pdf_url FROM documents WHERE numac = ? LIMIT 10',
-          [numac]
-        )
-        items += vlpar_rows.map do |r|
-          {
-            id: r[0],
-            parliament: 'VLPAR',
-            dossier_number: "#{r[4]} nr. #{r[3]}",
-            document_number: r[3].to_s,
-            title: r[1],
-            document_type: r[2],
-            pdf_url: r[5],
-            source: :vlaamse_codex
-          }
-        end
-        vlpar_db.close
-      rescue StandardError => e
-        Rails.logger.warn "Failed to load Vlaamse parliamentary docs: #{e.message}"
-      end
-    end
-
-    # Senate documents come from chamber.sqlite3, read by source 1 above:
-    # scrape_senate.py writes there (`--db storage/chamber.sqlite3`), and that
-    # store holds 25,799 senate documents of which 14,377 carry a numac.
-    #
-    # There used to be a third source here reading storage/senate.sqlite3. That
-    # file is a legacy copy frozen at 2026-05-21: 1,938 documents, every one of
-    # them a subset of chamber.sqlite3, and NONE with a legislation_numac - so
-    # the `WHERE legislation_numac = ?` lookup it performed could never match.
-    # Every law page paid for opening a dead SQLite file and querying it twice
-    # to get nothing, and had anyone ever backfilled numacs into it the page
-    # would have started showing duplicate, months-stale entries. Removed
-    # 2026-09-06.
-
-    { items: items, total_count: total }
-  end
-
   # Loads related jurisprudence for the current law (cases that reference this law)
   # Uses pre-computed jurisprudence_refs JSON. Request-time scans of the
   # multi-gigabyte jurisprudence database are intentionally forbidden.
-  # @return [Hash] { items: [...], total_count: N }
-  def load_related_jurisprudence(numac = nil)
+  #
+  # WW-LINK-02: the weekly rebuild (Linkage::JurisprudenceRefsRebuild) writes
+  # {total, cases} for every law the reverse index cites and NULL for the rest,
+  # so an absent value means "not in the current index", not "no case exists".
+  # @return [Hash] { status:, items:, total_count: } where status is
+  #   :linked       cases from the current reverse index
+  #   :empty        an explicit empty payload, the one state that may say zero
+  #   :not_indexed  no payload for this law
+  #   :unavailable  a payload or lookup that could not be read (no count)
+  def load_related_jurisprudence(numac = nil, paginated: false)
     numac = numac.presence || params[:numac].to_s
-    return { items: [], total_count: 0 } if numac.blank?
+    not_indexed = { status: :not_indexed, items: [], total_count: nil }
+    return not_indexed if numac.blank?
 
-    # 1) Try pre-computed refs from legislation table (instant, no external DB)
-    begin
-      law = Legislation.find_by(numac: numac)
-      if law.respond_to?(:jurisprudence_refs) && law.jurisprudence_refs.present?
-        parsed = begin
-          JSON.parse(law.jurisprudence_refs)
-        rescue StandardError => e
-          Rails.logger.warn("[Laws] JSON parse failed: #{e.message}")
-          nil
-        end
-
-        if parsed
-          # Support both formats: {total, cases} (new) and flat array (legacy)
-          if parsed.is_a?(Hash) && parsed['cases']
-            cases_list = parsed['cases']
-            total = parsed['total'] || cases_list.size
-          elsif parsed.is_a?(Array)
-            cases_list = parsed
-            total = cases_list.size
-          end
-
-          if cases_list&.any?
-            items = cases_list.first(10).map do |r|
-              {
-                id: nil,
-                case_number: r['ecli'],
-                court: r['court'],
-                decision_date: r['date'],
-                subject_matter: nil
-              }
-            end
-            return { items: items, total_count: total }
-          end
-        end
-      end
-    rescue StandardError => e
-      Rails.logger.debug "jurisprudence_refs lookup failed: #{e.message}"
-    end
+    law = Legislation.find_by(numac: numac)
+    return not_indexed unless law
+    return unavailable_jurisprudence(numac, 'no jurisprudence_refs column') unless law.has_attribute?(:jurisprudence_refs)
 
     # Never fall back to `LIKE '%NUMAC%'` on the multi-gigabyte jurisprudence
     # database in a web request. That unindexed native SQLite scan repeatedly
     # occupied a Puma worker past its 120-second watchdog. The linkage job owns
-    # population of `jurisprudence_refs`; an absent precomputed value means no
-    # related cases are shown until that job has produced safe indexed evidence.
-    Rails.logger.debug(
-      "No precomputed jurisprudence_refs for legislation #{numac}"
-    )
-    { items: [], total_count: 0 }
+    # population of `jurisprudence_refs`.
+    if law.jurisprudence_refs.blank?
+      Rails.logger.debug("No precomputed jurisprudence_refs for legislation #{numac}")
+      return not_indexed
+    end
+
+    parsed = JSON.parse(law.jurisprudence_refs)
+    # {total, cases} (current) or a flat array (legacy)
+    cases_list, total = parsed.is_a?(Hash) ? parsed.values_at('cases', 'total') : [parsed, nil]
+    total ||= cases_list.size if cases_list.is_a?(Array)
+    unless cases_list.is_a?(Array) && total.is_a?(Integer) && total >= cases_list.size
+      return unavailable_jurisprudence(numac, 'malformed jurisprudence_refs')
+    end
+    return { status: :empty, items: [], total_count: 0 } if cases_list.empty? && total.zero?
+
+    # A law's compact reverse-index metadata is the only data materialized.
+    # Stable date/ECLI ordering makes successive pages deterministic even for
+    # an old payload whose stored order differs. No full case text is loaded.
+    available = cases_list.filter_map do |r|
+      next unless r.is_a?(Hash) && r['ecli'].is_a?(String) && r['ecli'].present?
+
+      { id: nil, case_number: r['ecli'], court: r['court'], decision_date: r['date'], subject_matter: nil }
+    end.sort_by { |item| [item[:decision_date].to_s, item[:case_number]] }.reverse
+    return unavailable_jurisprudence(numac, 'jurisprudence_refs without cases') if available.empty?
+
+    per_page = paginated ? related_jurisprudence_page_size : RELATED_JURISPRUDENCE_PREVIEW_SIZE
+    pages = (available.size.to_f / per_page).ceil
+    page = paginated ? [related_jurisprudence_page_number, pages].min : 1
+    items = available.slice((page - 1) * per_page, per_page)
+
+    { status: :linked, items: items, total_count: total, available_count: available.size,
+      incomplete: available.size < total, paginated: paginated, page: page, per_page: per_page, pages: pages }
+  rescue JSON::ParserError, ActiveRecord::ActiveRecordError => e
+    unavailable_jurisprudence(numac, e.message)
+  end
+
+  def unavailable_jurisprudence(numac, reason)
+    Rails.logger.warn("[Laws] related jurisprudence of #{numac} unavailable: #{reason}")
+    { status: :unavailable, items: [], total_count: nil }
+  end
+
+  def related_jurisprudence_page_size
+    raw = params[:per_page]
+    return RELATED_JURISPRUDENCE_DEFAULT_PAGE_SIZE unless raw.is_a?(String) && raw.match?(/\A\d{1,2}\z/)
+
+    size = raw.to_i
+    RELATED_JURISPRUDENCE_PAGE_SIZES.include?(size) ? size : RELATED_JURISPRUDENCE_DEFAULT_PAGE_SIZE
+  end
+
+  def related_jurisprudence_page_number
+    raw = params[:page]
+    return 1 unless raw.is_a?(String) && raw.match?(/\A\d{1,10}\z/)
+
+    [raw.to_i, 1].max
   end
 
   # Loads recent jurisprudence for the RSS feed

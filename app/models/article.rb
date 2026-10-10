@@ -69,6 +69,27 @@ class Article < ReadonlyRecord
   # @return [ActiveRecord::Relation]
   scope :ordered, ->(direction = :asc) { order(id: direction) }
 
+  # Orders articles as the law itself does. The merge (merge_laws.sh v3.3)
+  # records each row's rank in the source's document order in `position`; ids
+  # cannot carry that order, because the merge keeps the id of every surviving
+  # article (FAISS stores them) and gives a newly inserted article a new, higher
+  # id. Rows no merge has positioned yet (NULL) follow by id, which is document
+  # order for them. Until the column exists this is plain id order.
+  # See docs/ops/article-order-fix-2026-09-25.md.
+  # @return [ActiveRecord::Relation]
+  scope :in_document_order, lambda {
+    if position_column?
+      order(Arel.sql("#{quoted_table_name}.position IS NULL"), :position, :id)
+    else
+      order(:id)
+    end
+  }
+
+  # @return [Boolean] whether the laws database has articles.position yet
+  def self.position_column?
+    column_names.include?('position')
+  end
+
   # Articles for a specific content by numac
   # @param numac [String] The content numac
   # @return [ActiveRecord::Relation]
@@ -94,7 +115,7 @@ class Article < ReadonlyRecord
   # @param content_numac [String] The content numac
   # @return [ActiveRecord::Relation]
   def self.for_language_and_content(language_id, content_numac)
-    where(language_id: language_id, content_numac: content_numac).ordered
+    where(language_id: language_id, content_numac: content_numac).in_document_order
   end
 
   # Instance Methods

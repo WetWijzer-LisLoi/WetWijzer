@@ -199,9 +199,11 @@ faiss_service/*.db
 db/.backup*/
 db/*Copy*
 
-# Legal pages containing personal company data (KBO address, VAT, etc.)
-app/views/legal_pages/privacy_*.html.erb
-app/views/legal_pages/terms_*.html.erb
+# The privacy and terms pages carry the operator's registered details and
+# ARE tracked (since 2026-07-23): every deploy must carry them, because an
+# untracked copy on the server is lost to a checkout that once tracked it
+# (the July outage). scripts/ops/sync_public_repo.py keeps them, and any
+# imprint page, out of the public snapshot.
 app/views/legal_pages/imprint_*.html.erb
 
 # Security scan artifacts (contain staging URLs, vulnerability data)

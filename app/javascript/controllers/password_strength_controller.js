@@ -6,15 +6,17 @@ import { Controller } from "@hotwired/stimulus"
  */
 export default class extends Controller {
   static targets = ["input", "meter", "text", "requirements"]
+  static values = { labels: Array, requirements: Object, empty: String }
 
   connect() {
     this.requirements = {
-      length: { regex: /.{8,}/, text: "8+ characters" },
-      uppercase: { regex: /[A-Z]/, text: "Uppercase letter" },
-      lowercase: { regex: /[a-z]/, text: "Lowercase letter" },
-      number: { regex: /[0-9]/, text: "Number" },
-      special: { regex: /[^A-Za-z0-9]/, text: "Special character" }
+      length: { test: password => password.length >= 8 },
+      uppercase: { test: password => /[A-Z]/.test(password) },
+      lowercase: { test: password => /[a-z]/.test(password) },
+      number: { test: password => /[0-9]/.test(password) },
+      special: { test: password => /[^A-Za-z0-9]/.test(password) }
     }
+    this.check()
   }
 
   check() {
@@ -48,8 +50,9 @@ export default class extends Controller {
     if (!this.hasMeterTarget) return
     
     const colors = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-lime-500", "bg-green-500"]
-    const labels = ["Very weak", "Weak", "Fair", "Good", "Strong"]
+    const textColors = ["text-red-700 dark:text-red-400", "text-orange-700 dark:text-orange-400", "text-yellow-800 dark:text-yellow-300", "text-lime-800 dark:text-lime-300", "text-green-700 dark:text-green-400"]
     const widths = ["20%", "40%", "60%", "80%", "100%"]
+    const label = this.inputTarget.value ? this.labelsValue[strength] : this.emptyValue
     
     // Remove all color classes
     this.meterTarget.className = "h-2 rounded-full transition-all duration-300"
@@ -60,23 +63,30 @@ export default class extends Controller {
     } else {
       this.meterTarget.style.width = "0%"
     }
+    this.meterTarget.setAttribute("aria-valuenow", this.inputTarget.value ? strength : 0)
+    this.meterTarget.setAttribute("aria-valuetext", label || "")
     
     if (this.hasTextTarget) {
-      this.textTarget.textContent = this.inputTarget.value ? labels[strength] : ""
-      this.textTarget.className = `text-xs mt-1 ${colors[strength].replace('bg-', 'text-')}`
+      this.textTarget.textContent = this.inputTarget.value ? label : ""
+      this.textTarget.className = `text-xs mt-1 ${textColors[strength]}`
     }
   }
 
   updateRequirements(password) {
     if (!this.hasRequirementsTarget) return
     
-    let html = ""
+    // Translate on the server and create text nodes, never translated HTML.
+    this.requirementsTarget.textContent = ""
     for (const [key, req] of Object.entries(this.requirements)) {
-      const met = req.regex.test(password)
+      const text = this.requirementsValue[key]
+      if (typeof text !== "string") continue
+      const met = req.test(password)
       const icon = met ? "✓" : "○"
-      const color = met ? "text-green-600" : "text-gray-400"
-      html += `<span class="${color} text-xs mr-3">${icon} ${req.text}</span>`
+      const color = met ? "text-green-700 dark:text-green-400" : "text-gray-600 dark:text-gray-400"
+      const item = this.requirementsTarget.ownerDocument.createElement("span")
+      item.className = `${color} text-xs mr-3`
+      item.textContent = `${icon} ${text}`
+      this.requirementsTarget.appendChild(item)
     }
-    this.requirementsTarget.innerHTML = html
   }
 }

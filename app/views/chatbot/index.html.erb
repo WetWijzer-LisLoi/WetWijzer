@@ -1,4 +1,8 @@
-<% @title = "#{t('chatbot.title', default: 'Legal Chatbot')} - #{site_name}" %>
+<%# chatbot.title opens with the brand in all four locales, so nothing is
+    appended: with site_name added the tab and the og:title once read
+    "WetWijzer Juridische Chatbot - WetWijzer". The brand is the domain's
+    (site_name), never the language's: lisloi.be is LisLoi in every language. %>
+<% @title = t('chatbot.title', brand: site_name, default: "#{site_name} Legal Chatbot") %>
 
 <%# Auth state for JS - enables server-side conversation/bookmark persistence %>
 <div id="chatbot-auth-state" class="hidden"

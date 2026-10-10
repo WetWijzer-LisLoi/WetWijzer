@@ -4,6 +4,7 @@
 // shares the login/conflict copy with the SSE path) and the localized
 // transport copy. The controller keeps fetch, abort wiring and all DOM.
 // Pinned by test/javascript/chatbot_send_request_test.mjs.
+import { isProviderReasoningPayload } from './chatbot_message_safety.js'
 
 // Assemble the POST /api/chatbot/ask body. The conditional keys are the
 // contract: key_generation only when the ZK key is unlocked, and
@@ -30,6 +31,55 @@ export function buildAskPayload({
     context_messages: contextMessages,
     stream: true
   }
+}
+
+// A German answer on gesetzguide arrives with context_content: the French
+// answer it was translated from (or shown under a note). The server reasons
+// in French, so the next question's context must give it that French text,
+// not the translation the reader saw; the server's history replay puts it
+// in place of the German turn. Answers everywhere else carry no such field.
+function contextContentOf(message) {
+  const text = message?.context_content
+  if (typeof text !== 'string' || text.trim() === '') return null
+  // The same boundary as a shown answer: provider reasoning is never kept.
+  return isProviderReasoningPayload(text) ? null : text
+}
+
+// The assistant turn the browser keeps in conversationHistory (and in the
+// encrypted snapshot): the answer shown, its analytic id, and the French
+// answer it was made from when there is one.
+export function assistantHistoryEntry(data, analyticId) {
+  const entry = { role: 'assistant', content: data.answer, analytic_id: analyticId }
+  const context = contextContentOf(data)
+  if (context) entry.context_content = context
+  return entry
+}
+
+// German answers v3: on gesetzguide a German question is translated into
+// French before the server answers it, and the result carries that French
+// question as question_context_content. It goes on the reader's own user
+// turn (the last entry, still the question as typed) as context_content, so
+// the next ask gives the server a French history, as lisloi's is. Nothing
+// is shown: the turn's content stays the question the reader typed. Any
+// other result carries no such field and leaves the history as it is.
+export function attachQuestionContext(history, question, data) {
+  const context = contextContentOf({ context_content: data?.question_context_content })
+  if (!context || !Array.isArray(history) || history.length === 0) return
+  const turn = history[history.length - 1]
+  if (turn?.role !== 'user' || turn.content !== question) return
+  turn.context_content = context
+}
+
+// context_messages for the next ask: the last six turns, role and content,
+// plus a turn's context_content (the French answer of a German answer, or
+// the French question of a German question).
+export function contextMessagesFrom(history) {
+  return (Array.isArray(history) ? history : []).slice(-6).map(message => {
+    const turn = { role: message.role, content: message.content }
+    const context = contextContentOf(message)
+    if (context) turn.context_content = context
+    return turn
+  })
 }
 
 // One re-armable deadline per request: armed pre-header from the browser

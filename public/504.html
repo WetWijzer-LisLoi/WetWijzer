@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="nl">
   <head>
-    <title>Gateway Timeout — WetWijzer</title>
+    <title>Time-out — WetWijzer</title>
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1, width=device-width">
     <meta name="robots" content="noindex, nofollow">
@@ -181,6 +181,7 @@
         font-size: 0.7rem;
         color: #475569;
       }
+      .actions a { flex-wrap: wrap; max-width: 100%; justify-content: center; text-align: center; }
     </style>
   </head>
   <body>
@@ -194,33 +195,33 @@
           <div class="status">504</div>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="nl">
           <span class="lang-label">NL</span>
           <h2>Gateway time-out</h2>
           <p>De server heeft niet op tijd geantwoord. Probeer het over enkele ogenblikken opnieuw.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="fr">
           <span class="lang-label">FR</span>
           <h2>Délai de la passerelle dépassé</h2>
           <p>Le serveur n'a pas répondu à temps. Veuillez réessayer dans quelques instants.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="de">
           <span class="lang-label">DE</span>
           <h2>Gateway-Zeitüberschreitung</h2>
           <p>Der Server hat nicht rechtzeitig geantwortet. Bitte versuchen Sie es in wenigen Augenblicken erneut.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="en">
           <span class="lang-label">EN</span>
           <h2>Gateway timeout</h2>
           <p>The server did not respond in time. Please try again in a few moments.</p>
         </div>
 
         <div class="actions">
-          <button onclick="location.reload()" class="btn-primary" id="retryBtn">&#8635; Retry</button>
-          <a href="/" class="btn-secondary">&larr; Home</a>
+          <a href="" class="btn-primary" id="retryBtn">&#8635; <span lang="nl">Opnieuw</span> / <span lang="fr">Réessayer</span> / <span lang="de">Erneut versuchen</span> / <span lang="en">Retry</span></a>
+          <a href="/" class="btn-secondary">&larr; <span lang="nl">Startpagina</span> / <span lang="fr">Accueil</span> / <span lang="de">Startseite</span> / <span lang="en">Home</span></a>
         </div>
         <div class="countdown" id="countdown"></div>
       </div>
@@ -241,8 +242,7 @@
             location.reload();
             return;
           }
-          el.textContent = 'Auto-retry in ' + seconds + 's';
-          btn.textContent = '\u21BB Retry (' + seconds + ')';
+          el.innerHTML = '<span lang="nl">Opnieuw over ' + seconds + 's</span> / <span lang="fr">Nouvel essai dans ' + seconds + 's</span> / <span lang="de">Neuer Versuch in ' + seconds + 's</span> / <span lang="en">Retry in ' + seconds + 's</span>';
           seconds--;
         }
 

@@ -155,9 +155,13 @@ module LegalChatbot
       (?=.*\b(?:arbeidsvoorwaarden|voorwaarden|conditions?|wijzig\w*|modifier|change)\b)
       .*\z
     /ix
+    # v5 grader 1: lisloi's question said "durée du préavis", which the
+    # pattern did not know, so the verified line was never appended and the
+    # figure note had nothing to compare on two wrong answers.
     NOTICE_PERIOD_FIVE_YEARS_TOPIC_PATTERN = /
       \A
-      (?=.*\b(?:opzegtermijn|opzeggingstermijn|d[eé]lai\s+de\s+pr[eé]avis|notice\s+period)\b)
+      (?=.*\b(?:opzegtermijn|opzeggingstermijn|d[eé]lai\s+de\s+pr[eé]avis|dur[eé]e\s+d[eu]\s+(?:mon\s+|son\s+|votre\s+)?pr[eé]avis|
+             pr[eé]avis\s+l[eé]gal|notice\s+period|K[uü]ndigungsfrist)\b)
       (?=.*\b(?:5|vijf|cinq|five)\s+(?:jaar|jaren|ans|years?)\b)
       (?=.*\b(?:anci[eë]nniteit|anciennet[eé]|seniority)\b)
       .*\z
@@ -167,6 +171,15 @@ module LegalChatbot
     /ix
     MATERNITY_LEAVE_TOPIC_PATTERN = /
       \b(?:moederschapsverlof|maternity\s+leave|cong[eé]\s+de\s+maternit[eé]|mutterschaftsurlaub)\b
+    /ix
+    # Birth leave (Art. 30 § 2 of the Employment Contracts Act): 20 days for
+    # births from 1 January 2023, 15 before. German answers v4, q0046: the
+    # question retrieved the annual-holidays decrees and the answer's
+    # "Art. 30, § 2 de la loi du 3 juillet 1978" was linked to the decree's
+    # Art. 30. The same pattern pins the article (LegislationSearch).
+    BIRTH_LEAVE_TOPIC_PATTERN = /
+      \b(?:geboorteverlof|vaderschapsverlof|cong[eé]s?\s+de\s+(?:naissance|paternit[eé])|birth\s+leave|
+          paternity\s+leave|geburtsurlaub|vaterschaftsurlaub)\b
     /ix
     ANNUAL_VACATION_DURATION_TOPIC_PATTERN = /
       \A
@@ -215,6 +228,44 @@ module LegalChatbot
       \b(?:minimumloon|ggmmi|rmmmg|minimum\s+wage|salaire\s+minimum|mindestlohn)\b
     /ix
 
+    # German answers v5, grader 1 (docs/ops/german-answers-v5-graders-2026-10-04/
+    # grader1_correctness.md, "the dangerous class"): the figures the answers
+    # got wrong on both paths, each read on the production corpus on
+    # 2026-10-04.
+    # Art. 70 of the Employment Contracts Act: an employee hired for an
+    # indefinite period or for at least three months keeps the normal pay for
+    # the first 30 days of incapacity (q07 answered "7 jours", the Art. 72
+    # case, and "pas de salaire garanti légal"); Art. 52 gives the worker
+    # another scale, so the status word is required.
+    GUARANTEED_PAY_EMPLOYEE_TOPIC_PATTERN = /
+      \A
+      (?=.*\b(?:salaire\s+garanti|r[eé]mun[eé]ration\s+garantie|gewaarborgd\s+loon|garantiert\w*\s+(?:Lohn|Gehalt|Entlohnung)|
+             guaranteed\s+(?:pay|salary|wages?)|maladie|malade|incapacit[eé]\s+de\s+travail|ziek\w*|arbeidsongeschikt\w*|
+             krank\w*|arbeitsunf[aä]hig\w*|sick\w*|illness|arr[eê]ts?\s+de\s+travail|certificat\s+m[eé]dical|cong[eé]\s+de\s+maladie|incapacit[eé]|ziektebriefje|ziekteverlof|Krankschreibung|Krankmeldung)\b)
+      (?=.*\b(?:employ[eé]e?s?|bediendes?|bedienden|Angestellte[rnms]?|white[-\s]collar)\b)
+      .*\z
+    /ix
+    # Art. 4 of the Royal Decree of 23 December 1996 (1997022010): the early
+    # pension at 63 with 42 career years for pensions starting from 2019
+    # (§ 1, 6° and § 2, 5°), at 61 with 43 years and at 60 with 44 (§ 3, 5°);
+    # q11 answered 63, 65 and 60 for a 43-year career.
+    EARLY_RETIREMENT_TOPIC_PATTERN = /
+      \b(?:pension\s+(?:de\s+retraite\s+)?anticip[eé]e|retraite\s+anticip[eé]e|vervroegde?\s+(?:rust)?pensioen|
+         vervroegde\s+pensionering|vorgezogene[nrs]?\s+(?:Pension|Rente|Ruhestand)|
+         vorzeitige[nrs]?\s+(?:Pension|Pensionierung|Rente|Ruhestand)|Fr[uü]hpension|Fr[uü]hrente|early\s+(?:retirement|pension))\b
+    /ix
+    # Art. 2 of the same decree: 66 for pensions starting from 1 February 2025
+    # to 1 January 2030, 67 from 1 February 2030, 65 before; q10 answered 65
+    # and 67 for a reader born in 1962. An early-pension question is the
+    # topic above.
+    PENSION_AGE_TOPIC_PATTERN = /
+      \A(?!.*\b(?:anticip[eé]e?|vervroegd\w*|vorgezogen\w*|vorzeitig\w*|Fr[uü]hpension|Fr[uü]hrente|early)\b)
+      (?=.*(?:\b[aâ]ge\s+(?:l[eé]gal\s+)?de\s+(?:la\s+)?(?:pension|retraite)\b|\b(?:wettelijke\s+)?pensioenleeftijd\b|
+             \bpensioengerechtigde\s+leeftijd\b|\b(?:gesetzliche[sn]?\s+)?(?:Pensions|Renten)alter\b|
+             \b(?:legal\s+|statutory\s+)?(?:pension|retirement)\s+age\b|
+             \b(?:quel|welke?|welchem|what|which)\s+(?:[aâ]ge|leeftijd|Alter|age)\b.{0,60}\b(?:pension|retraite|pensioen|Pension|Rente|retire\w*)\b))
+      .*\z
+    /ix
 
     # ── Declarative topic registry (FBL-061) ────────────────────────────────
     # One entry per topic, replacing the fifteen hand-written appenders and
@@ -296,6 +347,13 @@ module LegalChatbot
         appender: true, fallback: true
       },
       {
+        topic: :birth_leave, pattern: BIRTH_LEAVE_TOPIC_PATTERN,
+        match: { numac: '1978070303', article: '30' },
+        label: 'Art. 30 — Arbeidsovereenkomstenwet',
+        answer: true, probe: /\b(?:20|twintig|vingt|zwanzig|twenty)\s+(?:dagen|jours|Tage|days)\b/i,
+        appender: true, fallback: true
+      },
+      {
         topic: :annual_vacation_duration, pattern: ANNUAL_VACATION_DURATION_TOPIC_PATTERN,
         match: { numac: '1971062850', article: '3' },
         label: 'Art. 3 — Jaarlijkse vakantiewet',
@@ -346,6 +404,28 @@ module LegalChatbot
         match: { numac: '1978070303', article: '2' },
         label: 'Art. 2 — Arbeidsovereenkomstenwet',
         answer: false, probe: nil, appender: false, fallback: true
+      },
+      # German answers v5, grader 1: the recurring wrong figures (the patterns above).
+      {
+        topic: :guaranteed_pay_employee, pattern: GUARANTEED_PAY_EMPLOYEE_TOPIC_PATTERN,
+        match: { numac: '1978070303', article: '70' },
+        label: 'Art. 70 — Arbeidsovereenkomstenwet',
+        answer: true, probe: /\b(?:30|trente|dertig|drei(?:ß|ss)ig|thirty)\s+(?:jours|dagen|Tage|days)\b/i,
+        appender: true, fallback: true
+      },
+      {
+        topic: :early_retirement, pattern: EARLY_RETIREMENT_TOPIC_PATTERN,
+        match: { numac: '1997022010', article: '4' },
+        label: 'Art. 4 — KB 23 december 1996 (rustpensioen)',
+        answer: true, probe: /\b(?:63|soixante-trois|drie[eë]nzestig|dreiundsechzig|sixty-three)\s+(?:ans|jaar|Jahren?|years)\b/i,
+        appender: true, fallback: true
+      },
+      {
+        topic: :pension_age, pattern: PENSION_AGE_TOPIC_PATTERN,
+        match: { numac: '1997022010', article: '2' },
+        label: 'Art. 2 — KB 23 december 1996 (rustpensioen)',
+        answer: true, probe: /\b(?:66|soixante-six|zesenzestig|sechsundsechzig|sixty-six)\s+(?:ans|jaar|Jahren?|years)\b/i,
+        appender: true, fallback: true
       }
     ].map(&:freeze).freeze
 
@@ -356,9 +436,10 @@ module LegalChatbot
     TOPIC_FALLBACK_ORDER = %i[
       minimum_wage vat_food invoice_prescription alcohol_driving
       online_purchase unilateral_employment_change notice_period_five_years
-      summary_proceedings maternity_leave secondhand_car_warranty
+      summary_proceedings maternity_leave birth_leave secondhand_car_warranty
       probation_period unemployment_benefits annual_vacation_duration
       theft_distinction employment_vs_contractor
+      guaranteed_pay_employee early_retirement pension_age
     ].freeze
 
     def ensure_high_confidence_topic_citations(text, question, sources)
@@ -398,6 +479,12 @@ module LegalChatbot
               when Array then rule[:probe].any? { |pattern| !text.to_s.match?(pattern) }
               else !text.to_s.match?(rule[:probe])
               end
+      # A topic with a verified answer line gets it whatever the probe says:
+      # the v5 graders found a stray "18 semaines" in a six-years example
+      # satisfying the probe while the headline said 15, so the line was not
+      # appended and the figure note had nothing to compare (incident t1,
+      # q0015 t1). The line is the one statement the figure note reads.
+      force = true if rule[:answer] && rule[:probe] && rule[:probe] != :current_ggmmi
       note = localized_citation_note(rule[:topic])
       note = "#{note} #{localized_promille_equivalence}" if rule[:promille_note] && force
       note = "#{note} #{localized_high_confidence_topic_answer(rule[:topic])}" if rule[:answer]
@@ -597,6 +684,24 @@ module LegalChatbot
         'de' => 'Zur Nichtigkeit einseitiger Änderungsklauseln im Arbeitsvertrag siehe',
         'en' => 'For the nullity of unilateral employment-contract change clauses, see'
       }.freeze,
+      guaranteed_pay_employee: {
+        'nl' => 'Voor het gewaarborgd loon van een bediende bij ziekte, zie',
+        'fr' => 'Pour le salaire garanti d\'un employé en cas de maladie, voyez',
+        'de' => 'Zum garantierten Lohn eines Angestellten bei Krankheit siehe',
+        'en' => 'For the guaranteed pay of a white-collar employee during illness, see'
+      }.freeze,
+      early_retirement: {
+        'nl' => 'Voor de leeftijds- en loopbaanvoorwaarden van het vervroegd pensioen, zie',
+        'fr' => 'Pour les conditions d\'âge et de carrière de la pension anticipée, voyez',
+        'de' => 'Zu den Alters- und Laufbahnbedingungen der vorzeitigen Pension siehe',
+        'en' => 'For the age and career conditions of early retirement, see'
+      }.freeze,
+      pension_age: {
+        'nl' => 'Voor de wettelijke pensioenleeftijd, zie',
+        'fr' => 'Pour l\'âge légal de la pension, voyez',
+        'de' => 'Zum gesetzlichen Pensionsalter siehe',
+        'en' => 'For the statutory pension age, see'
+      }.freeze,
       notice_period_five_years: {
         'nl' => 'Voor de opzegtermijn na vijf jaar anciënniteit, zie',
         'fr' => 'Pour le délai de préavis après cinq ans d\'ancienneté, voyez',
@@ -614,6 +719,12 @@ module LegalChatbot
         'fr' => 'Pour la durée standard du congé de maternité, voyez',
         'de' => 'Zur Standarddauer des Mutterschaftsurlaubs siehe',
         'en' => 'For the standard maternity-leave duration, see'
+      }.freeze,
+      birth_leave: {
+        'nl' => 'Voor de duur van het geboorteverlof, zie',
+        'fr' => 'Pour la durée du congé de naissance, voyez',
+        'de' => 'Zur Dauer des Geburtsurlaubs siehe',
+        'en' => 'For the birth-leave duration, see'
       }.freeze,
       annual_vacation_duration: {
         'nl' => 'Voor de wettelijke duur van de jaarlijkse vakantie, zie',
@@ -710,6 +821,12 @@ module LegalChatbot
         'de' => 'Der Standard-Mutterschaftsurlaub beträgt bei einer Einlingsgeburt grundsätzlich 15 Wochen.',
         'en' => 'The standard maternity leave period is in principle 15 weeks for a single birth.'
       }.freeze,
+      birth_leave: {
+        'nl' => 'Het geboorteverlof bedraagt 20 dagen voor geboorten vanaf 1 januari 2023 (voordien 15 dagen), op te nemen binnen vier maanden na de bevalling.',
+        'fr' => 'Le congé de naissance est de 20 jours pour les naissances à partir du 1er janvier 2023 (15 jours auparavant), à prendre dans les quatre mois à dater de l\'accouchement.',
+        'de' => 'Der Geburtsurlaub beträgt 20 Tage für Geburten ab dem 1. Januar 2023 (zuvor 15 Tage), zu nehmen innerhalb von vier Monaten ab dem Tag der Entbindung.',
+        'en' => 'Birth leave is 20 days for births from 1 January 2023 (15 days before), to be taken within four months of the birth.'
+      }.freeze,
       mutual_consent_divorce: {
         'nl' => 'Bij een echtscheiding door onderlinge toestemming moeten de echtgenoten de door het Gerechtelijk Wetboek vereiste overeenkomsten voorbereiden, waaronder de regelingen in de twee hieronder gelinkte bronnen.',
         'fr' => 'Pour un divorce par consentement mutuel, les époux doivent préparer les conventions requises par le Code judiciaire, notamment les arrangements visés dans les deux sources liées ci-dessous.',
@@ -721,6 +838,24 @@ module LegalChatbot
         'fr' => 'Une clause de non-concurrence n\'est valable que sous des conditions strictes : activités similaires, portée géographique limitée, durée maximale de douze mois, écrit et indemnité compensatoire légale. La seconde source ci-dessous applique ce régime aux employés, sous réserve des dérogations légales.',
         'de' => 'Ein Wettbewerbsverbot ist nur unter strengen Voraussetzungen gültig: ähnliche Tätigkeiten, begrenzter räumlicher Geltungsbereich, höchstens zwölf Monate, Schriftform und gesetzliche Ausgleichszahlung. Die zweite unten stehende Quelle wendet diese Regelung vorbehaltlich gesetzlicher Abweichungen auf Angestellte an.',
         'en' => 'A non-compete clause is valid only under strict conditions: similar activities, limited geographic scope, a maximum of twelve months, a written clause and the statutory compensatory payment. The second source below applies this regime to white-collar employees, subject to statutory deviations.'
+      }.freeze,
+      guaranteed_pay_employee: {
+        'nl' => 'Een bediende die voor onbepaalde duur of voor ten minste drie maanden is aangeworven, behoudt bij arbeidsongeschiktheid wegens ziekte of ongeval zijn normale loon ten laste van de werkgever gedurende 30 dagen (de eerste dertig dagen: het gewaarborgd loon).',
+        'fr' => 'Un employé engagé pour une durée indéterminée ou pour trois mois au moins conserve, en cas d\'incapacité de travail pour maladie ou accident, sa rémunération normale à charge de l\'employeur pendant 30 jours (les trente premiers jours : le salaire garanti).',
+        'de' => 'Ein Angestellter, der unbefristet oder für mindestens drei Monate eingestellt ist, behält bei Arbeitsunfähigkeit wegen Krankheit oder Unfall seine normale Entlohnung zu Lasten des Arbeitgebers während 30 Tagen (die ersten dreißig Tage: der garantierte Lohn).',
+        'en' => 'A white-collar employee hired for an indefinite period or for at least three months keeps, during incapacity for work due to illness or accident, normal pay from the employer for 30 days (the first thirty days: the guaranteed pay).'
+      }.freeze,
+      early_retirement: {
+        'nl' => 'Het vervroegd rustpensioen kan ingaan vanaf 63 jaar met een loopbaan van ten minste 42 kalenderjaren; met een loopbaan van 43 jaar vanaf 61 jaar en met een loopbaan van 44 jaar vanaf 60 jaar (pensioenen die ingaan sinds 1 januari 2019).',
+        'fr' => 'La pension de retraite anticipée peut prendre cours à partir de 63 ans avec une carrière d\'au moins 42 années civiles; avec une carrière de 43 ans à partir de 61 ans et avec une carrière de 44 ans à partir de 60 ans (pensions prenant cours depuis le 1er janvier 2019).',
+        'de' => 'Die vorzeitige Ruhestandspension kann ab 63 Jahren mit einer Laufbahn von mindestens 42 Kalenderjahren beginnen; mit einer Laufbahn von 43 Jahren ab 61 Jahren und mit einer Laufbahn von 44 Jahren ab 60 Jahren (Pensionen, die seit dem 1. Januar 2019 beginnen).',
+        'en' => 'The early retirement pension can start from age 63 with a career of at least 42 calendar years; with a 43-year career from 61 and with a 44-year career from 60 (pensions starting since 1 January 2019).'
+      }.freeze,
+      pension_age: {
+        'nl' => 'De wettelijke pensioenleeftijd bedraagt 66 jaar voor pensioenen die ingaan tussen 1 februari 2025 en 1 januari 2030, en 67 jaar vanaf 1 februari 2030 (65 jaar tot en met 1 januari 2025).',
+        'fr' => 'L\'âge légal de la pension est de 66 ans pour les pensions qui prennent cours entre le 1er février 2025 et le 1er janvier 2030, et de 67 ans à partir du 1er février 2030 (65 ans jusqu\'au 1er janvier 2025).',
+        'de' => 'Das gesetzliche Pensionsalter beträgt 66 Jahre für Pensionen, die zwischen dem 1. Februar 2025 und dem 1. Januar 2030 beginnen, und 67 Jahre ab dem 1. Februar 2030 (65 Jahre bis zum 1. Januar 2025).',
+        'en' => 'The statutory pension age is 66 for pensions starting between 1 February 2025 and 1 January 2030, and 67 from 1 February 2030 (65 until 1 January 2025).'
       }.freeze,
       notice_period_five_years: {
         'nl' => 'Bij opzegging door de werkgever na vijf jaar anciënniteit bedraagt de wettelijke opzegtermijn 18 weken.',
@@ -938,7 +1073,6 @@ module LegalChatbot
       else '**Aanvullende geverifieerde bron:**'
       end
     end
-
 
     def localized_promille_equivalence
       case @language

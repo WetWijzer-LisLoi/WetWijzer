@@ -26,8 +26,13 @@ class LegalChatbotService
   # never writes question text, hashes, or vectors to a shared cache.
   ARTICLE_EMBEDDING_CACHE_TTL = 1.hour
 
-  def initialize(language: 'nl', conversation: nil, model: nil, domain: nil, concise: false, case_context: nil, reasoning_effort: nil, profile: 'general', context_messages_override: nil, law_numac: nil, include_quality_evidence: false, mistral_api_key_env: 'MISTRAL_API_KEY')
+  def initialize(language: 'nl', conversation: nil, model: nil, domain: nil, concise: false, case_context: nil, reasoning_effort: nil, profile: 'general', context_messages_override: nil, law_numac: nil, include_quality_evidence: false, mistral_api_key_env: 'MISTRAL_API_KEY', german_lane: false)
     @language = language
+    # The German pointer lane (D6 of docs/ops/german-corpus-plan-2026-09-27.md).
+    # Only Api::ChatbotController sets it, from request.host through SiteBrand
+    # and never for signed service traffic; every other constructor keeps the
+    # default. It is still inert unless GERMAN_LANE_MODE is set (german_lane?).
+    @german_lane = german_lane == true
     @domain = domain # Store domain for default language fallback (wetwijzer→nl, lisloi→fr, gesetzguide→de)
     @language_id = %w[fr de].include?(language) ? 2 : 1 # Search is bilingual; this only affects context enrichment
     @conversation = conversation
@@ -55,9 +60,9 @@ class LegalChatbotService
   def conversation_messages
     # ZK mode: client provided the context directly
     if @context_messages_override.present?
-      return @context_messages_override.last(6).map do |m|
-        { role: m['role'] || m[:role], content: m['content'] || m[:content] }
-      end
+      return strip_retrieval_notice_from_history(
+        @context_messages_override.last(6).map { |m| history_message(m) }
+      )
     end
 
     return [] unless @conversation
@@ -66,8 +71,56 @@ class LegalChatbotService
     return [] if msgs.empty?
 
     # Take last 6 messages (3 exchanges) for context
-    msgs.last(6).map do |m|
-      { role: m['role'], content: m['content'] }
+    strip_retrieval_notice_from_history(
+      msgs.last(6).map { |m| history_message(m) }
+    )
+  end
+
+  # One history entry as the model is shown it. An assistant turn that
+  # carries context_content (GermanAnswerTranslation::CONTEXT_KEY: the French
+  # answer a German answer on gesetzguide was made from) is replayed as that
+  # French text, so a follow-up reasons on the same assistant turns as on
+  # lisloi and never on a translation. A user turn that carries it (the
+  # French question a German question was translated into, German answers
+  # v3) is replayed as that French question, so the whole history is the one
+  # lisloi would have. Both routes carry it: the browser sends it back in
+  # context_messages (the controller keeps it on a user turn only while the
+  # question translation applies), a stored conversation keeps it in the
+  # message. Any other turn is replayed as typed.
+  def history_message(message)
+    role = message['role'] || message[:role]
+    content = message['content'] || message[:content]
+    key = LegalChatbot::GermanAnswerTranslation::CONTEXT_KEY
+    replayed = message[key.to_s] || message[key]
+    content = replayed if replayed.is_a?(String) && replayed.strip != ''
+    { role: role, content: content }
+  end
+
+  # The retrieval notice never goes back to the model. It is stored verbatim
+  # with the answer (api/conversation_persistence.rb:121 writes result[:answer])
+  # and both history routes replay that text: stored messages above, and
+  # params[:context_messages] for ZK and non-consented sessions. Replaying it
+  # teaches the model to open the NEXT answer with "de zoekopdracht was
+  # onvolledig" on a pass where nothing was degraded - a warning that fires on
+  # healthy behaviour, invisible to the only measurement channel there is,
+  # since [RetrievalDegraded] is logged from the fan-out and the echoed copy
+  # sets no :retrieval_degraded key. Orchestrator#apply_retrieval_notice! also
+  # strips an echo out of the outgoing answer; this stops it one step earlier.
+  # Assistant turns only: a user who types the sentence keeps it.
+  #
+  # The German site's "shown in French" note (GermanAnswerTranslation) is
+  # stripped for the same reason: echoed into the next French answer, it
+  # would be translated and served as if it described that answer. No other
+  # site's answers ever carry it, so for them this is a no-op. The same holds
+  # for the figure note of German answers v4 (GermanFigureCheck), which the
+  # answer turn replays without in any case (its context_content).
+  def strip_retrieval_notice_from_history(messages)
+    messages.map do |message|
+      next message unless message[:role].to_s == 'assistant'
+
+      content = without_retrieval_notice(message[:content])
+      content = LegalChatbot::GermanAnswerTranslation.without_french_note(content)
+      message.merge(content: LegalChatbot::GermanFigureCheck.without_note(content))
     end
   end
 
@@ -88,7 +141,7 @@ class LegalChatbotService
     timeout = if max_length > MAX_QUESTION_LENGTH
                 # deep_analysis (buffered, no SSE heartbeats). MUST stay under the
                 # nginx proxy_read_timeout (150s) so nginx never 504s a request
-                # the server would still answer — otherwise the client sees an
+                # the server would still answer; otherwise the client sees an
                 # error while the server completes and charges for a lost answer.
                 140
               elsif reasoning_model
@@ -211,7 +264,8 @@ class LegalChatbotService
     tax_articles = [],
     regional_docs = [],
     max_article_chars: 4000,
-    authoritative_docs: []
+    authoritative_docs: [],
+    question: nil
   )
     parts = []
     law_label = @language == 'fr' ? 'LOI' : 'WET'
@@ -226,9 +280,20 @@ class LegalChatbotService
                      else 'OFFICIËLE EU-WETGEVING'
                      end
 
+    # A German row reaches the model only as a binding German original
+    # (german_original_source?). Any other language 3 row, whatever path
+    # brought it, is dropped here, so it can never be read as evidence, nor
+    # labelled 'FR' by the binary label below.
+    articles = Array(articles).reject { |article| german_row_source?(article) && !german_original_source?(article) }
+
     articles.each_with_index do |article, index|
+      if german_row_source?(article)
+        parts << german_original_block(article, index + 1, max_article_chars)
+        next
+      end
+
       lang_label = article[:language_id] == 1 ? 'NL' : 'FR'
-      text = ensure_utf8(article[:article_text])[0..max_article_chars]
+      text = article_context_text(ensure_utf8(article[:article_text]), question, article_budget(index, max_article_chars))
       numac = article[:numac]
       law_title = ensure_utf8(article[:law_title])
       article_title = ensure_utf8(article[:article_title])
@@ -239,7 +304,10 @@ class LegalChatbotService
       # block. Say so on the header line, which no truncation can reach, so the model can
       # tell the user a change is coming instead of silently omitting it.
       pending = future_amendment_note(article)
-      parts << "[Bron #{index + 1} - #{law_label} (#{lang_label})]\nNUMAC: #{numac}\nWet: #{law_title}\n#{article_title}#{pending}\nLINK: #{link}\n#{text}"
+      # The German lane's wording (wording mode only) rides INSIDE the French
+      # source's block, after the binding text: never its own Bron, NUMAC or
+      # LINK, so the citation, the link guard and the source card stay French.
+      parts << "[Bron #{index + 1} - #{law_label} (#{lang_label})]\nNUMAC: #{numac}\nWet: #{law_title}\n#{article_title}#{pending}\nLINK: #{link}\n#{text}#{german_wording_block(article)}"
     end
 
     cases.each_with_index do |c, index|
@@ -263,7 +331,7 @@ class LegalChatbotService
 
     tax_articles.each_with_index do |art, index|
       section = art[:section_path].present? ? " (#{art[:section_path]})" : ''
-      text = art[:text].to_s[0..max_article_chars]
+      text = article_context_text(art[:text].to_s, question, max_article_chars)
       # LINK is mandatory here: the prompt demands every citation be a
       # markdown link, so a link-less tax block pushed the model to fabricate
       # slugs like /laws/btw-wetboek. FisconetSearch provides the working
@@ -313,6 +381,137 @@ class LegalChatbotService
     parts << competence if competence
 
     parts.join("\n\n---\n\n")
+  end
+
+  # The instruction over the German wording. French, because gesetzguide's
+  # answers are French (effective_request_language) and the model obeys the
+  # prompt language; it says the wording is for terminology only and that
+  # only the French text above is binding and quotable.
+  GERMAN_WORDING_INSTRUCTION = 'TRADUCTION ALLEMANDE DE CET ARTICLE (non contraignante; uniquement pour la ' \
+                               'terminologie allemande; ne pas la citer en bloc; seul le texte français ' \
+                               'ci-dessus fait foi et est cité)'
+
+  # The German lane's sub-block for one French source: the instruction, the
+  # German site's own provenance label (de.yml german_text.labels, verbatim,
+  # with the Staatsblatt date) and at most WORDING_MAX_CHARS of the wording.
+  # Empty unless this service runs the lane in wording mode AND the search
+  # attached a verified wording (currency 'current', live French hash equal
+  # to the build-time hash). The wording is never under article_text, so
+  # QuoteGuard cannot certify a German blockquote against it.
+  def german_wording_block(article)
+    return '' unless @german_lane && LegalChatbot::GermanArticleSearch.wording?
+
+    evidence = article[:german_evidence]
+    return '' unless evidence.is_a?(Hash)
+
+    wording = ensure_utf8(evidence[:wording].to_s).strip
+    return '' if wording.empty?
+
+    label = german_wording_label(evidence)
+    excerpt = wording[0, LegalChatbot::GermanArticleSearch::WORDING_MAX_CHARS]
+    ["\n\n#{GERMAN_WORDING_INSTRUCTION}", label, excerpt].compact.join("\n")
+  end
+
+  # "Offizielle deutsche Übersetzung, veröffentlicht im Belgischen Staatsblatt
+  # vom 27. April 2012. ..." from the sidecar's source_method and
+  # publication_date, exactly as the German law page labels the same text
+  # (GermanTextHelper#german_text_notice). nil for an unknown source_method.
+  def german_wording_label(evidence)
+    key = GermanTextProvenance.label_key(evidence[:source_method])
+    return nil unless key
+
+    date = begin
+      Date.iso8601(evidence[:publication_date].to_s)
+    rescue ArgumentError, TypeError
+      nil
+    end
+    published = date ? " vom #{I18n.l(date, format: GermanTextHelper::GERMAN_DATE_FORMAT, locale: :de)}" : ''
+    I18n.t("german_text.labels.#{key}", locale: :de, published: published, state: '')
+  end
+
+  # A binding German original (owner decision 2026-09-28): the German text
+  # is the law, so its block is German whatever the answer language. It
+  # keeps "Bron" and "LINK:", which every other block uses for the source
+  # numbering and the HYPERLINK RULE, and adds the STAND line: the German
+  # site's own provenance label with the Staatsblatt date, the version (as
+  # published) and the later amending acts the build found. The STAND line
+  # is never part of article_text, so QuoteGuard cannot certify it.
+  GERMAN_ORIGINAL_HEADERS = { 'dekret' => 'DEKRET', 'erlass' => 'ERLASS' }.freeze
+  GERMAN_ORIGINAL_INSTRUCTION = 'VERBINDLICHER DEUTSCHER ORIGINALTEXT: wörtlich auf Deutsch zitierbar; nennen Sie ' \
+                                'die Fassung (STAND) und jede dort genannte spätere Änderung.'
+  GERMAN_ORIGINAL_VERSION = 'Fassung: wie ursprünglich veröffentlicht; spätere Änderungen sind in diesem Text ' \
+                            'nicht eingearbeitet.'
+  GERMAN_ORIGINAL_NOT_AMENDED = 'Spätere Änderungen sind in den konsultierten Quellen nicht verzeichnet, aber nicht ' \
+                                'ausgeschlossen.'
+  GERMAN_AMENDER_KINDS = { 'dekret' => 'Dekret', 'erlass' => 'Erlass der Regierung' }.freeze
+
+  # A statute's text within the context budget. With the question known, the
+  # cut keeps the provisions the question is about (LegalChatbot::ArticleExcerpt);
+  # without it, the head of the article, as before. Statutes only: a judgment
+  # or a parliamentary document has its summary, and its head is its summary.
+  def article_context_text(text, question, max_article_chars)
+    return text[0..max_article_chars] if question.blank?
+
+    LegalChatbot::ArticleExcerpt.excerpt(text, question, max_chars: max_article_chars + 1)
+  end
+
+  # The best-ranked statute gets half as much room again. It is the article
+  # the question is most likely about, and on the Smart tier's 2,500
+  # characters the provisions of Art. 47bis on minors fitted only with their
+  # introduction left out (2026-10-04). Half a thousand more tokens on one
+  # article costs a fraction of a cent on every model.
+  FIRST_ARTICLE_BUDGET_FACTOR = 1.5
+
+  def article_budget(index, max_article_chars)
+    index.zero? ? (max_article_chars * FIRST_ARTICLE_BUDGET_FACTOR).to_i : max_article_chars
+  end
+
+  def german_original_block(article, number, max_article_chars)
+    original = article[:german_original]
+    numac = article[:numac]
+    article_title = ensure_utf8(article[:article_title])
+    link = "/laws/#{numac}?language_id=#{LegalChatbot::GermanArticleSearch::GERMAN_LANGUAGE_ID}" \
+           "#{extract_article_anchor(article_title)}"
+    text = ensure_utf8(article[:article_text])[0..max_article_chars]
+    header = GERMAN_ORIGINAL_HEADERS.fetch(original[:kind].to_s, 'RECHTSAKT')
+    "[Bron #{number} - #{header} (DE)]\nNUMAC: #{numac}\nWet: #{ensure_utf8(article[:law_title])}\n" \
+      "#{article_title}\nSTAND: #{german_original_stand(original)}\n#{GERMAN_ORIGINAL_INSTRUCTION}\n" \
+      "LINK: #{link}\n#{text}"
+  end
+
+  def german_original_stand(original)
+    key = GermanTextProvenance.label_key(original[:source_method])
+    date = german_long_date(original[:publication_date])
+    label = I18n.t("german_text.labels.#{key}", locale: :de, published: date ? " vom #{date}" : '', state: '')
+    [label, GERMAN_ORIGINAL_VERSION, german_original_amendments(original)].join(' ')
+  end
+
+  # "Seither geändert durch: Erlass der Regierung vom 10. Dezember 2015
+  # (NUMAC 2016200141); ... und 6 weitere." for 'amended' (the search keeps
+  # the first AMENDED_BY_SHOWN and the total), else the as-published caveat.
+  # The amending acts get no LINK: they were not retrieved, so LinkGuard
+  # would strip a link to them.
+  def german_original_amendments(original)
+    return GERMAN_ORIGINAL_NOT_AMENDED unless original[:currency] == LegalChatbot::GermanArticleSearch::AMENDED
+
+    listed = Array(original[:amended_by]).first(LegalChatbot::GermanArticleSearch::AMENDED_BY_SHOWN)
+    more = original[:amended_by_total].to_i - listed.size
+    "Seither geändert durch: #{listed.map { |entry| german_amender(entry) }.join('; ')}" \
+      "#{" und #{more} weitere" if more.positive?}."
+  end
+
+  def german_amender(entry)
+    date = german_long_date(entry[:date])
+    act = "#{GERMAN_AMENDER_KINDS.fetch(entry[:kind].to_s, 'Rechtsakt')}#{" vom #{date}" if date} (NUMAC #{entry[:numac]})"
+    entry[:verb].to_s == 'aufhebung' ? "aufgehoben durch #{act}" : act
+  end
+
+  # "12. Februar 2016" from an ISO date, nil for anything else.
+  def german_long_date(value)
+    date = Date.iso8601(value.to_s[/\A\d{4}-\d{2}-\d{2}/].to_s)
+    I18n.l(date, format: GermanTextHelper::GERMAN_DATE_FORMAT, locale: :de)
+  rescue ArgumentError, TypeError
+    nil
   end
 
   # Fires only when the special financing act is actually among the retrieved sources, so it

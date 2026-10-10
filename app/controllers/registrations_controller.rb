@@ -1,25 +1,27 @@
 # frozen_string_literal: true
 
 class RegistrationsController < ApplicationController
-  include AuthRateLimiting
-
   # One-time credits granted to new accounts for alpha testing
   # Allows users to try higher-tier AI models (Level II/Level III/Level IV)
   STARTER_CREDITS = 5
 
   # CSRF protection is enabled (removed skip_before_action for security)
   before_action :require_production_environment, only: %i[new create]
-  before_action :rate_limit_registration!, only: [:create]
 
   def new
+    return unless registration_country_allowed!
+
     redirect_to root_path if current_user
     @user = User.new
   end
 
   def create
+    return unless registration_country_allowed!
+    return unless admit_registration!
+
     # Honeypot bot protection: reject if hidden field is filled
     if params[:website].present?
-      Rails.logger.warn("[REGISTRATION] Bot detected (honeypot filled) from #{request.remote_ip}")
+      SecurityLog.warn('registration_honeypot', request: request)
       redirect_to root_path and return
     end
 
@@ -33,7 +35,7 @@ class RegistrationsController < ApplicationController
     # probing cannot mail-bomb the victim.
     existing_user = User.find_by(email: email)
     if existing_user
-      Rails.logger.info("[REGISTRATION] Duplicate registration attempt from #{request.remote_ip}")
+      SecurityLog.info('registration_duplicate', request: request)
       alert_gate_key = "registration_alert:#{existing_user.id}"
       unless Rails.cache.exist?(alert_gate_key)
         Rails.cache.write(alert_gate_key, true, expires_in: 24.hours)
@@ -47,7 +49,7 @@ class RegistrationsController < ApplicationController
       # Rough timing equalization: the fresh path pays one bcrypt hash.
       BCrypt::Password.create(SecureRandom.hex(12), cost: BCrypt::Engine.cost)
 
-      cookies.signed[:registered_email] = {
+      cookies.encrypted[:registered_email] = {
         value: email,
         expires: 5.minutes.from_now,
         httponly: true,
@@ -107,10 +109,10 @@ class RegistrationsController < ApplicationController
         @user.generate_confirmation_token!
         send_confirmation_email(@user)
       end
-      Rails.logger.info("[REGISTRATION] New user registered: id=#{@user.id} from #{request.remote_ip}")
+      SecurityLog.info('registration', request: request, user: @user)
 
       # Keep registration state out of the CSRF-only Rails session.
-      cookies.signed[:registered_email] = {
+      cookies.encrypted[:registered_email] = {
         value: @user.email,
         expires: 5.minutes.from_now,
         httponly: true,
@@ -120,8 +122,10 @@ class RegistrationsController < ApplicationController
 
       # If user selected Pro during registration, store intent for post-confirmation redirect
       if params[:plan] == 'pro'
+        # WW-PRIV-03: a flag, not the email; every reader only asks whether
+        # it is present.
         cookies.signed[:pending_pro] = {
-          value: @user.email,
+          value: true,
           expires: 7.days.from_now,
           httponly: true,
           secure: Rails.env.production?,
@@ -141,13 +145,18 @@ class RegistrationsController < ApplicationController
 
       redirect_to registered_path
     else
-      Rails.logger.info("[REGISTRATION] Failed registration attempt from #{request.remote_ip}: #{@user.errors.full_messages.join(', ')}")
+      # The attributes only: a message can repeat what was typed.
+      SecurityLog.info('registration_failed', request: request, errors: @user.errors.attribute_names.join(','))
+      # The network is still gated: the corrected form needs a new proof.
+      @signup_challenge = @admission_policy.challenge if @admission.gated
       render :new, status: :unprocessable_entity
     end
   end
 
+  # WW-PRIV-03: registered_email is an encrypted cookie; a signed one is
+  # readable by whoever holds it.
   def registered
-    @registered_email = cookies.signed[:registered_email]
+    @registered_email = cookies.encrypted[:registered_email]
     cookies.delete(:registered_email) if @registered_email
     # If someone navigates here directly without registering, redirect to signup
     redirect_to signup_path unless @registered_email.present?
@@ -158,6 +167,10 @@ class RegistrationsController < ApplicationController
 
     if user.nil?
       Rails.logger.warn("[CONFIRM] Token not found: #{params[:token]&.first(8)}...")
+      redirect_to root_path, alert: t('auth.invalid_token')
+    elsif user.abuse_suspended?
+      # WW-ABUSE-01: the same answer as an unknown token.
+      Rails.logger.warn("[CONFIRM] Refused user_id=#{user.id}")
       redirect_to root_path, alert: t('auth.invalid_token')
     elsif user.confirmed?
       Rails.logger.info("[CONFIRM] Already-confirmed user_id=#{user.id}, redirecting to login")
@@ -177,7 +190,9 @@ class RegistrationsController < ApplicationController
     # Support both logged-in users and unauthenticated users (from login page)
     user = current_user || User.find_by(email: params[:email]&.downcase)
 
-    if user && !user.confirmed?
+    # WW-ABUSE-01: nothing is minted or mailed for a suspended account; the
+    # answer below stays the same.
+    if user && !user.confirmed? && !user.abuse_suspended?
       # Rate limit: max 1 resend per 5 minutes per user
       if user.confirmation_sent_at && user.confirmation_sent_at > 5.minutes.ago
         redirect_to login_path, alert: t('auth.resend_too_soon')
@@ -204,6 +219,25 @@ class RegistrationsController < ApplicationController
 
   private
 
+  # Run inside both actions so callback reordering cannot put account creation
+  # ahead of this rule. Refuse before email lookup, counters, proofs or writes;
+  # an existing login or a solved browsing challenge grants no exception.
+  def registration_country_allowed!
+    return true if RegistrationCountryPolicy.new(request: request).allowed?
+
+    Rails.logger.info('[SIGNUP-COUNTRY] registration refused')
+    response.headers['Cache-Control'] = 'private, no-store'
+    respond_to do |format|
+      format.html { render :country_restricted, status: :forbidden }
+      format.json do
+        render json: { error: 'registration_country_restricted',
+                       message: t('auth.registration_country_restricted.message') }, status: :forbidden
+      end
+      format.any { head :forbidden }
+    end
+    false
+  end
+
   # deliver_now (not deliver_later: the :async adapter loses queued jobs on a
   # worker restart) with ONE bounded retry on TRANSIENT SMTP failures. A normal
   # send is ~3s; a Net::ReadTimeout is a transient Migadu blip that otherwise
@@ -223,10 +257,47 @@ class RegistrationsController < ApplicationController
     end
   end
 
+  # WW-ABUSE-01 (ABUSE-05): RegistrationAdmissionPolicy decides every
+  # submission first, before the honeypot, as the limiter it replaced did. It
+  # is called from create rather than declared as a callback, so tests that
+  # re-add the production guard cannot reorder it. True when admitted;
+  # otherwise the form is shown again with the non-secret fields only, and no
+  # answer depends on whether the email has an account.
+  def admit_registration!
+    @admission_policy = RegistrationAdmissionPolicy.new(remote_ip: request.remote_ip,
+                                                        email: submitted_registration_email)
+    @admission = @admission_policy.evaluate(params[:signup_proof])
+    return true if @admission.admitted?
+
+    @user = User.new(retained_registration_params)
+    case @admission.outcome
+    when :challenge
+      @signup_challenge = @admission_policy.challenge
+      render :new, status: :unprocessable_entity
+    when :unavailable
+      flash.now[:alert] = t('auth.registration_unavailable')
+      render :new, status: :service_unavailable
+    else
+      flash.now[:alert] = t('auth.too_many_attempts')
+      render :new, status: :too_many_requests
+    end
+    false
+  end
+
+  def submitted_registration_email
+    user = params[:user]
+    user.is_a?(ActionController::Parameters) ? user[:email].to_s : ''
+  end
+
+  def retained_registration_params
+    user = params[:user]
+    user.is_a?(ActionController::Parameters) ? user.permit(:email, :name, :terms_accepted) : {}
+  end
+
   def require_production_environment
     return if Rails.env.production?
 
-    redirect_to root_path, alert: 'Registration is disabled on this environment.'
+    redirect_to root_path, alert: t('auth.registration_disabled_environment')
   end
 
   def user_params

@@ -1,0 +1,223 @@
+# Reviewed relations between a law and the parliamentary dossiers that
+# prepared it (WW-LINK-01). Read by ParliamentaryRelations::Manifest.
+#
+# A law listed here shows exactly these dossiers as its preparatory works, on
+# the law page's panel, its "view all" list, its metadata and the dossier's
+# document pages. The corpus's automatic links for it (documents carrying the
+# law's NUMAC, legislation.parliamentary_refs) are not shown. Every other law
+# keeps its automatic links, labelled as automatically linked.
+#
+# An entry needs primary-source evidence that names the exact dossier: the
+# official dossier page of the Chamber or the Senate. Never add one from title
+# similarity or a NUMAC found in the corpus; propose it in the audit report
+# (lib/tasks/parliamentary_relations.rake) and have it reviewed. Quote every
+# NUMAC: an all-digit one would load as a number.
+version: 3
+relations:
+  - numac: '2013A11134'
+    law: Wetboek van economisch recht (28 February 2013), as consolidated by Justel
+    dossiers:
+      - parliament: chamber
+        legislature: 53
+        number: 2543
+        evidence_url: https://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=nl&cfm=/site/wwwcfm/flwb/flwbn.cfm?lang=N&legislat=53&dossierID=2543
+    evidence: >-
+      Official Chamber dossier 53K2543, "Wetsontwerp tot invoering van het
+      Wetboek van economisch recht": Datum wet 28/02/2013, Staatsblad
+      29/03/2013 nr. 097; 53K2543001 the bill (06/12/2012), 53K2543004 the
+      commission report (17/01/2013), adopted 24/01/2013, not evoked by the
+      Senate (53S1943). The law the dossier enacted is in the corpus as
+      2013011134 ("Wet tot invoering van het Wetboek van economisch recht"),
+      a separate row from the code itself (2013A11134); the two are not
+      aliases of each other.
+    replaces: >-
+      891 documents in 162 dossiers carrying documents.legislation_numac =
+      2013A11134 (2026-10-08), most of them later bills that amend the code,
+      and legislation.parliamentary_refs K:52-0008, a 2008 dossier of annexes.
+    reviewed_by: Codex inbox entry 2026-10-08 10:22 CEST; re-checked against the official dossier page by Opus 2026-10-08
+    reviewed_on: 2026-10-08
+  - numac: '2013011134'
+    law: Wet tot invoering van het Wetboek van economisch recht (28 February 2013)
+    dossiers:
+      - parliament: chamber
+        legislature: 53
+        number: 2543
+        evidence_url: https://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=nl&cfm=/site/wwwcfm/flwb/flwbn.cfm?lang=N&legislat=53&dossierID=2543
+    evidence: >-
+      Official Gazette of 29 March 2013, NUMAC 2013011134, law of 28 February
+      2013: article 2 forms the Economic Code; its preparatory-work note
+      explicitly names Chamber 53-2543, documents 001-006. Independently
+      confirmed by the government WALLEX record and the Chamber dossier.
+      The official bilingual bill 53K2543001 is dated 6 December 2012 and
+      government amendment 53K2543003 is dated 8 January 2013. This enacting
+      act and consolidated code 2013A11134 are distinct laws sharing reviewed
+      preparation, not NUMAC aliases. Senate 5-1943 is named in the act's
+      note; this entry verifies only the Chamber document selection.
+    reviewed_by: Codex primary-source review 2026-10-08 (official Gazette, Chamber PDFs and government WALLEX)
+    reviewed_on: 2026-10-08
+
+  - numac: '2002010139'
+    law: Magistrates' pay amendment (27 December 2002)
+    dossiers:
+      - parliament: chamber
+        legislature: 50
+        number: 1911
+        evidence_url: https://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=nl&cfm=/site/wwwcfm/flwb/flwbn.cfm?lang=N&legislat=50&dossierID=1911
+    evidence: >-
+      Official Gazette, NUMAC 2002010139, 31 December 2002:
+      https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-12-31&numac=2002010139 .
+      Official Senate dossier 2-1371 independently identifies Chamber 50-1911:
+      https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=1371 .
+    reviewed_by: Codex primary-source review 2026-10-09; production 63-reference / 126-row text, FTS and protected-row gate passed 2026-10-09
+    reviewed_on: 2026-10-09
+
+  - numac: '2002015026'
+    law: WHO liaison agreement assent (24 January 2002)
+    dossiers:
+      - parliament: chamber
+        legislature: 50
+        number: 1356
+        evidence_url: https://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=nl&cfm=/site/wwwcfm/flwb/flwbn.cfm?lang=N&legislat=50&dossierID=1356
+    evidence: >-
+      Official Gazette, NUMAC 2002015026, 2 August 2002:
+      https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-08-02&numac=2002015026 .
+      Official Senate dossier 2-782 identifies Chamber 50-1356:
+      https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=782 .
+    reviewed_by: Codex primary-source review 2026-10-09; production 63-reference / 126-row text, FTS and protected-row gate passed 2026-10-09
+    reviewed_on: 2026-10-09
+
+  - numac: '2002014078'
+    law: NMBS investment agreement assent (22 March 2002)
+    dossiers:
+      - parliament: chamber
+        legislature: 50
+        number: 1463
+        evidence_url: https://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=nl&cfm=/site/wwwcfm/flwb/flwbn.cfm?lang=N&legislat=50&dossierID=1463
+    evidence: >-
+      Official Gazette, NUMAC 2002014078, 26 March 2002:
+      https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-03-26&numac=2002014078 .
+      Its Dutch footnote incorrectly says Chamber 50-1423; the French footnote
+      and official Senate dossier 2-933 identify the reviewed Chamber 50-1463:
+      https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=fr&caller=summary&pub_date=02-03-26&numac=2002014078 ;
+      https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=933 .
+    reviewed_by: Codex primary-source review 2026-10-09; production 63-reference / 126-row text, FTS and protected-row gate passed 2026-10-09
+    reviewed_on: 2026-10-09
+
+  - numac: '2002003137'
+    law: Provincial-office tax amendment (7 March 2002)
+    dossiers:
+      - parliament: chamber
+        legislature: 50
+        number: 1499
+        evidence_url: https://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=nl&cfm=/site/wwwcfm/flwb/flwbn.cfm?lang=N&legislat=50&dossierID=1499
+    evidence: >-
+      Official Gazette, NUMAC 2002003137, 19 March 2002:
+      https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-03-19&numac=2002003137 .
+      Official Senate dossier 2-1031 identifies Chamber 50-1499:
+      https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=1031 .
+    reviewed_by: Codex primary-source review 2026-10-09; production 63-reference / 126-row text, FTS and protected-row gate passed 2026-10-09
+    reviewed_on: 2026-10-09
+
+  - numac: '2002014075'
+    law: Public-enterprise law amendment (22 March 2002)
+    dossiers:
+      - parliament: chamber
+        legislature: 50
+        number: 1422
+        evidence_url: https://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=nl&cfm=/site/wwwcfm/flwb/flwbn.cfm?lang=N&legislat=50&dossierID=1422
+    evidence: >-
+      Official Gazette, NUMAC 2002014075, 26 March 2002:
+      https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-03-26&numac=2002014075 .
+      Both Gazette-language footnotes incorrectly say Chamber 50-422; official
+      Senate dossier 2-934 identifies the reviewed Chamber 50-1422:
+      https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=fr&caller=summary&pub_date=02-03-26&numac=2002014075 ;
+      https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=934 .
+    reviewed_by: Codex primary-source review 2026-10-09; production 63-reference / 126-row text, FTS and protected-row gate passed 2026-10-09
+    reviewed_on: 2026-10-09
+
+  - numac: '2003000235'
+    law: Immigration amendment (18 February 2003)
+    dossiers:
+      - parliament: chamber
+        legislature: 50
+        number: 2044
+        evidence_url: https://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=nl&cfm=/site/wwwcfm/flwb/flwbn.cfm?lang=N&legislat=50&dossierID=2044
+    evidence: >-
+      Official Gazette, NUMAC 2003000235, 11 April 2003:
+      https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=03-04-11&numac=2003000235 .
+      Official Senate dossier 2-1367 identifies Chamber 50-2044:
+      https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=1367 .
+      The official 22 May 2003 erratum (NUMAC 2003000463) corrects the printed
+      18 March promulgation date to 18 February 2003; retain the stale Senate
+      date as provenance and do not rewrite it:
+      https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=03-05-22&numac=2003000463 .
+    reviewed_by: Codex primary-source review 2026-10-09; production 63-reference / 126-row text, FTS and protected-row gate passed 2026-10-09
+    reviewed_on: 2026-10-09
+
+  - numac: '2002003299'
+    law: Anti-money-laundering amendment (3 May 2002)
+    dossiers:
+      - parliament: chamber
+        legislature: 50
+        number: 1569
+        evidence_url: https://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=nl&cfm=/site/wwwcfm/flwb/flwbn.cfm?lang=N&legislat=50&dossierID=1569
+    evidence: >-
+      Official Justel act, NUMAC 2002003299:
+      https://www.ejustice.just.fgov.be/eli/wet/2002/05/03/2002003299/justel .
+      Official Senate dossier 2-1032 matches the full title, 3 May sanction
+      and 29 June 2002 publication and identifies Chamber 50-1569:
+      https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=1032 .
+    reviewed_by: Codex primary-source review 2026-10-09; production 63-reference / 126-row text, FTS and protected-row gate passed 2026-10-09
+    reviewed_on: 2026-10-09
+
+  - numac: '2002000119'
+    law: Special institutional-law amendment (13 February 2002)
+    dossiers:
+      - parliament: chamber
+        legislature: 50
+        number: 1050
+        evidence_url: https://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=nl&cfm=/site/wwwcfm/flwb/flwbn.cfm?lang=N&legislat=50&dossierID=1050
+    evidence: >-
+      Official Gazette, NUMAC 2002000119, 23 February 2002:
+      https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-02-23&numac=2002000119 .
+      The official note supplies the dossier numbers and 2000-2001 session;
+      official Senate dossier 2-679 binds the bodies and legislatures to
+      Chamber 50-1050:
+      https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=679 .
+    reviewed_by: Codex primary-source review 2026-10-09; production 63-reference / 126-row text, FTS and protected-row gate passed 2026-10-09
+    reviewed_on: 2026-10-09
+
+  - numac: '2002003331'
+    law: Wet tot wijziging van de wet van 3 april 1997 betreffende het fiscaal stelsel van gefabriceerde tabak (26 June 2002)
+    dossiers:
+      - parliament: chamber
+        legislature: 50
+        number: 1691
+        evidence_url: https://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=nl&cfm=/site/wwwcfm/flwb/flwbn.cfm?lang=N&legislat=50&dossierID=1691
+    evidence: >-
+      Official Gazette, NUMAC 2002003331, publication 5 July 2002, records
+      the law of 26 June 2002 amending the 3 April 1997 law on the fiscal
+      regime for manufactured tobacco:
+      https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-07-05&numac=2002003331 .
+      Official Senate dossier 2-1137 identifies Chamber 50-1691.  The raw
+      K001-2002/S50-1691 representation is not a valid dossier identity:
+      https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=1137 .
+    reviewed_by: Codex primary-source review 2026-10-09; production 63-reference / 126-row text, FTS and protected-row gate passed 2026-10-09
+    reviewed_on: 2026-10-09
+
+  - numac: '2002011274'
+    law: Motor-insurance amendment (2 August 2002)
+    dossiers:
+      - parliament: chamber
+        legislature: 50
+        number: 1079
+        evidence_url: https://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=nl&cfm=/site/wwwcfm/flwb/flwbn.cfm?lang=N&legislat=50&dossierID=1079
+    evidence: >-
+      Official Gazette, NUMAC 2002011274, 30 August 2002:
+      https://www.ejustice.just.fgov.be/cgi/article_body.pl?language=nl&caller=summary&pub_date=02-08-30&numac=2002011274 .
+      The Gazette describes the process but omits the dossier numbers; official
+      Senate dossier 2-427 supplies the exact bill title, 2 August sanction,
+      30 August publication and Chamber 50-1079:
+      https://www.senate.be/www/?LANG=fr&LEG=2&MIval=/dossier&NR=427 .
+    reviewed_by: Codex primary-source review 2026-10-09; production 63-reference / 126-row text, FTS and protected-row gate passed 2026-10-09
+    reviewed_on: 2026-10-09

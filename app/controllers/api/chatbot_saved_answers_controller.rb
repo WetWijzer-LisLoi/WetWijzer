@@ -12,7 +12,7 @@ module Api
       saved = current_user.saved_answers.create(
         question: params[:question],
         answer: params[:answer],
-        sources: params[:sources],
+        sources: plain_sources(params[:sources]),
         language: params[:language] || 'nl',
         title: params[:title],
         category: params[:category]
@@ -66,6 +66,18 @@ module Api
         render json: { success: true }
       else
         render json: { error: 'Answer not found' }, status: :not_found
+      end
+    end
+
+    private
+
+    # Request parameters as plain JSON values, so SavedAnswer validates
+    # exactly what would be stored (WW-SEC-16).
+    def plain_sources(value)
+      case value
+      when ActionController::Parameters then value.to_unsafe_h
+      when Array then value.map { |entry| entry.is_a?(ActionController::Parameters) ? entry.to_unsafe_h : entry }
+      else value
       end
     end
   end

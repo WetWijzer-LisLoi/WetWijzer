@@ -518,6 +518,7 @@
         <summary>Puis-je soutenir financi&egrave;rement LisLoi ?</summary>
         <div>
             <p>Oui. En plus d'acheter des cr&eacute;dits ou un abonnement Pro, vous pouvez faire un don volontaire via notre <%= link_to 'page de don', support_page_path(anchor: 'donate') %>. Les dons ne sont pas remboursables, ne donnent droit &agrave; aucune contrepartie et ne sont pas d&eacute;ductibles fiscalement. Chaque contribution aide &agrave; maintenir l'acc&egrave;s gratuit &agrave; la base de donn&eacute;es l&eacute;gislative.</p>
+            <%= render 'donations/disabled_notice' unless MollieConfiguration.donations_enabled? %>
         </div>
     </details>
 

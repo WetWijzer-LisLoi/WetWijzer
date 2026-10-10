@@ -2,11 +2,15 @@
 
 class UserMailer < ApplicationMailer
   def confirmation_email(user)
+    return if suppressed_for_abuse?(user)
+
     @confirmation_url = confirm_email_url(token: user.confirmation_token)
     localized_mail(user, 'mailer.confirmation.subject')
   end
 
   def password_reset(user, token)
+    return if suppressed_for_abuse?(user)
+
     @reset_url = edit_password_reset_url(token: token)
     localized_mail(user, 'mailer.password_reset.subject')
   end
@@ -18,6 +22,8 @@ class UserMailer < ApplicationMailer
   end
 
   def security_alert(user, event_type, request_info = {})
+    return if suppressed_for_abuse?(user)
+
     @event_type = event_type
     @ip_address = request_info[:ip]
     @user_agent = request_info[:user_agent]
@@ -25,6 +31,8 @@ class UserMailer < ApplicationMailer
   end
 
   def unverified_warning(user, warning_type = :first)
+    return if suppressed_for_abuse?(user)
+
     @warning_type = warning_type
     # Regenerate token so the confirmation link still works
     user.generate_confirmation_token!
@@ -34,6 +42,8 @@ class UserMailer < ApplicationMailer
   end
 
   def deletion_scheduled(user)
+    return if suppressed_for_abuse?(user)
+
     @deletion_date = user.deletion_scheduled_for
     @cancel_url = cancel_deletion_account_url
     # Generate reactivation token so user can cancel without logging in
@@ -43,11 +53,15 @@ class UserMailer < ApplicationMailer
   end
 
   def reactivation_email(user, token)
+    return if suppressed_for_abuse?(user)
+
     @reactivation_url = confirm_reactivation_url(token: token)
     localized_mail(user, 'mailer.reactivation.subject')
   end
 
   def deletion_final_warning(user)
+    return if suppressed_for_abuse?(user)
+
     @deletion_date = user.deletion_scheduled_for
     @cancel_url = cancel_deletion_account_url
     # Generate fresh reactivation token for last-chance cancellation
@@ -80,5 +94,14 @@ class UserMailer < ApplicationMailer
     @update_payment_url = subscription_url
     @pricing_url = pricing_url
     localized_mail(user, 'mailer.payment_failed.subject')
+  end
+
+  private
+
+  # WW-ABUSE-01: no access, confirmation, reset, reactivation or security mail
+  # reaches an abuse-suspended account, and returning before mail() also mints
+  # no token for it. Billing and legal notices are not affected.
+  def suppressed_for_abuse?(user)
+    user.respond_to?(:abuse_suspended?) && user.abuse_suspended?
   end
 end

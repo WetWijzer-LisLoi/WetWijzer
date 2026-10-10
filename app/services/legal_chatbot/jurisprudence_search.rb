@@ -47,12 +47,24 @@ module LegalChatbot
       @jurisprudence_source_db = nil
     end
 
+    # nil after a search the FAISS service answered, 'semantic_unavailable'
+    # when it did not. Read by the fan-out right after #search returns.
+    attr_reader :retrieval_degradation
+
     # Find similar jurisprudence cases using FAISS vector search
     def search(question_embedding, limit: 5)
+      # Reset first: one service instance can serve more than one ask.
+      @retrieval_degradation = nil
       source_db = jurisprudence_source_db
 
       # FAISS service (fast path) - request more to filter by threshold
       top_cases = search_faiss(question_embedding, limit * 2)
+      # nil is "the service did not answer", which the [] below would make
+      # indistinguishable from "no case is close enough". The 30 s read equals
+      # the fan-out deadline, so a cold index surfaces there as a timeout; this
+      # catches the fast failures (connection refused during a unit restart or
+      # its warm-up scan, HTTP 5xx).
+      @retrieval_degradation = 'semantic_unavailable' if top_cases.nil?
       top_cases ||= [] # FAISS unavailable - return empty rather than degraded random results
 
       # Filter by similarity threshold and limit
@@ -86,19 +98,29 @@ module LegalChatbot
     def build_context(cases)
       cases.map.with_index do |c, index|
         lang_label = c[:language_id] == 1 ? 'NL' : 'FR'
-        source_label = @language == 'fr' ? 'JURISPRUDENCE' : 'RECHTSPRAAK'
-
         # Use summary if available, otherwise truncate full_text
         text = c[:summary].present? ? c[:summary] : c[:full_text].to_s[0, 2000]
 
-        <<~CONTEXT
-          [Bron #{index + 1} - #{source_label} (#{lang_label})]
-          ECLI: #{c[:case_number]}
-          Hof: #{c[:court]}
-          Datum: #{c[:decision_date]}
+        if AdvisoryOpinions.advisory?(c[:case_number])
+          header = AdvisoryOpinions.context_header(c[:case_number], c[:court], @language)
+          <<~CONTEXT
+            [Bron #{index + 1} - #{AdvisoryOpinions.source_label(@language)} (#{lang_label})]
+            #{header.join("\n")}
+            Datum: #{c[:decision_date]}
 
-          #{text}
-        CONTEXT
+            #{text}
+          CONTEXT
+        else
+          source_label = @language == 'fr' ? 'JURISPRUDENCE' : 'RECHTSPRAAK'
+          <<~CONTEXT
+            [Bron #{index + 1} - #{source_label} (#{lang_label})]
+            ECLI: #{c[:case_number]}
+            Hof: #{c[:court]}
+            Datum: #{c[:decision_date]}
+
+            #{text}
+          CONTEXT
+        end
       end.join("\n---\n")
     end
 
@@ -122,7 +144,7 @@ module LegalChatbot
         end
 
         {
-          type: 'RECHTSPRAAK',
+          type: AdvisoryOpinions.advisory?(c[:case_number]) ? 'ADVIES' : 'RECHTSPRAAK',
           ecli: c[:case_number],
           court: court_name,
           date: c[:decision_date],
@@ -163,7 +185,9 @@ module LegalChatbot
       end
     rescue StandardError => e
       # Class only: a JSON::ParserError message can echo response-body text.
-      Rails.logger.debug("FAISS service unavailable: #{e.class}")
+      # A warning, like its parliamentary and regional siblings: at debug a
+      # failed semantic search is invisible in production.
+      Rails.logger.warn("[Jurisprudence FAISS] unavailable: #{e.class}")
       nil
     end
 

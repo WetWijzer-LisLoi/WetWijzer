@@ -6,6 +6,13 @@
 // escape path is the XSS boundary and is pinned by
 // test/javascript/chatbot_markdown_test.mjs.
 
+// A fence delimiter: a run of three or more backticks, on its own or followed
+// by an info string ("```markdown"). Three OR MORE, because a letter the model
+// closes with ```` left the fence open and swallowed the rest of the answer.
+// "```tekst```" fails the pattern on purpose: that line is inline code, and
+// read as an opening fence it would lose its own text.
+const FENCE_LINE = /^\s*`{3,}[^`]*$/
+
 // Format message (enhanced markdown support for legal chatbot output)
 export function formatMessage(content) {
   if (!content) return ""
@@ -16,13 +23,53 @@ export function formatMessage(content) {
   let inList = false
   let listType = null // 'ul' or 'ol'
   let tableRows = [] // accumulate table rows
+  let fenceLines = null // lines of an open ``` fence, null outside one
 
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i]
 
-    // Escape HTML (quotes too — _inlineFormat interpolates into href="...")
+    // Escape HTML (quotes too: _inlineFormat interpolates into href="...")
     line = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;")
+
+    // ── Fenced block (``` ... ```) ──
+    // The model wraps a template letter or clause in a fence. The fence line
+    // used to reach inlineFormat, whose code pattern turned two of its three
+    // backticks into an empty grey chip and printed the third, and the body
+    // lost its line structure to the list and table rules below.
+    if (FENCE_LINE.test(line)) {
+      if (fenceLines) {
+        html += renderFence(fenceLines)
+        fenceLines = null
+        continue
+      }
+
+      // Open a fence only when one closes further on. An answer the token cap
+      // cut off mid-letter, or a stray delimiter in prose, otherwise set every
+      // remaining line as preformatted text: the citation links the server
+      // inserted printed as raw markdown and the headings and lists after the
+      // delimiter disappeared, for good, not only while the answer streamed.
+      let closesLater = false
+      for (let j = i + 1; j < lines.length; j++) {
+        if (FENCE_LINE.test(lines[j])) { closesLater = true; break }
+      }
+      if (closesLater) {
+        if (inList) { html += `</${listType}>`; inList = false }
+        if (tableRows.length > 0) { html += renderTable(tableRows); tableRows = [] }
+        fenceLines = []
+        continue
+      }
+
+      // Nothing closes it: drop the delimiter run and read what is left as
+      // prose, so "``` gebruik drie backticks" keeps its words.
+      line = line.replace(/^\s*`{3,}\s*/, '')
+      if (line === '') continue
+    }
+
+    if (fenceLines) {
+      fenceLines.push(line)
+      continue
+    }
 
     // ── Table rows (| col | col |) ──
     if (/^\s*\|/.test(line) && line.trim().endsWith('|')) {
@@ -44,17 +91,17 @@ export function formatMessage(content) {
       continue
     }
 
-    // Headers (### H3, ## H2, # H1)
-    const h3 = line.match(/^###\s+(.+)$/)
-    const h2 = line.match(/^##\s+(.+)$/)
-    const h1 = line.match(/^#\s+(.+)$/)
+    // Headers (# H1 to ###### H6). One pattern for every depth: with a fixed
+    // pattern per depth, a fourth-level heading matched none of them and was
+    // printed raw, as the text "#### Conclusie".
+    const heading = line.match(/^(#{1,6})\s+(.+)$/)
     // UPPERCASE headers (HOOFDREGEL, UITZONDERINGEN, JURIDISCHE BASIS, etc.)
     const upperHeader = line.match(/^([A-Z\u00C0-\u00DC\s]{4,}):?\s*$/)
 
-    if (h3 || h2 || h1 || upperHeader) {
+    if (heading || upperHeader) {
       if (inList) { html += `</${listType}>`; inList = false }
-      const text = h3 ? h3[1] : h2 ? h2[1] : h1 ? h1[1] : upperHeader[1].trim()
-      const tag = h3 ? 'h4' : h2 ? 'h3' : h1 ? 'h3' : 'h4'
+      const text = heading ? heading[2] : upperHeader[1].trim()
+      const tag = heading && heading[1].length <= 2 ? 'h3' : 'h4'
       const cls = 'font-semibold text-gray-900 dark:text-white mt-3 mb-1'
       html += `<${tag} class="${cls}">${inlineFormat(text)}</${tag}>`
       continue
@@ -129,6 +176,9 @@ export function formatMessage(content) {
     html += renderTable(tableRows)
   }
 
+  // No flush for fenceLines: a fence only opens when its closing delimiter is
+  // already in the text, so it cannot still be open here.
+
   // Close any remaining open list
   if (inList) html += `</${listType}>`
 
@@ -139,6 +189,18 @@ export function formatMessage(content) {
   html = html.replace(/(<hr[^>]*>)(\s*<br>\s*)*(<hr[^>]*>)/g, '$1')
 
   return html
+}
+
+// Render the (already escaped) lines of a ``` fence as one preformatted block.
+// pre-wrap, not the <pre> default: a long line must wrap inside the bubble,
+// or the panel's overflow-x-hidden clips it and the text reads as truncated.
+// break-word next to it, because pre-wrap alone never breaks INSIDE a word and
+// a letter quotes unbroken reference codes.
+// Wrapping and font are inline styles, not utility classes, because the
+// per-answer Word and print exports copy this markup into a document that has
+// no stylesheet of ours: there a class-only block ran off the page in Courier.
+export function renderFence(fenceLines) {
+  return `<pre style="white-space: pre-wrap; overflow-wrap: break-word; font-family: inherit" class="my-2 p-2 rounded bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300">${fenceLines.join("\n")}</pre>`
 }
 
 // Render accumulated markdown table rows into an HTML table
@@ -230,7 +292,11 @@ export function messageClasses(role) {
   }
 }
 
-// Simple language detection based on script/characters
+// Simple language detection based on script/characters.
+// The word lists misread everyday Dutch ("die", "werden", "coördinator" come
+// back as de, "been" as en, "dans" as fr), which is why nothing the reader
+// sees is labelled from this guess any more: the sources block under an
+// answer follows the interface language (settings_mixin.js).
 export function detectQuestionLanguage(text, fallbackLanguage) {
   if (!text) return "nl"
 

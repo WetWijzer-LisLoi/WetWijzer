@@ -140,15 +140,22 @@
     </div>
   <% end %>
 
-  <%# Voting Behavior Section %>
-  <% if @vote_history.present? %>
+  <%# Voting Behavior Section. For a legislature that began after the
+      roll-call vote source stopped, it holds the notice alone, so the page
+      says why there are no votes instead of leaving the section out. %>
+  <% votes_ended_notice_only = @vote_history.blank? && ParliamentaryHelper.roll_call_votes_ended_for?(@legislature) %>
+  <% if @vote_history.present? || votes_ended_notice_only %>
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-8">
       <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
         <span class="text-xl">🗳️</span>
         <% case I18n.locale when :fr %>Comportement de vote<% when :de %>Abstimmungsverhalten<% when :en %>Voting behaviour<% else %>Stemgedrag<% end %>
+        <% if @vote_history.present? %>
         <span class="text-sm font-normal text-gray-500 dark:text-gray-400">(<%= @vote_stats[:total] %> <% case I18n.locale when :fr %>votes<% when :de %>Stimmen<% when :en %>votes<% else %>stemmen<% end %>)</span>
+        <% end %>
       </h2>
+      <%= render 'parliamentary/roll_call_votes_notice', extra_class: (votes_ended_notice_only ? '-mt-2' : '-mt-2 mb-4') %>
 
+      <% if @vote_history.present? %>
       <%# Summary stats %>
       <div class="flex flex-wrap items-center gap-4 mb-5 p-3 rounded-xl bg-gray-50 dark:bg-sky/5">
         <div class="flex items-center gap-2">
@@ -234,6 +241,7 @@
             <% case I18n.locale when :fr %>Afficher tout (<%= @vote_history.size %>)<% when :de %>Alle anzeigen (<%= @vote_history.size %>)<% when :en %>Show all (<%= @vote_history.size %>)<% else %>Toon alles (<%= @vote_history.size %>)<% end %>
           </button>
         </div>
+      <% end %>
       <% end %>
     </div>
   <% end %>

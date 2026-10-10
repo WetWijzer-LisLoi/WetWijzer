@@ -98,18 +98,22 @@ function liftChatbotFab(banner) {
   if (banner) {
     const h = Math.round(banner.getBoundingClientRect().height);
     if (h > 0) {
-      // Use transform, not `bottom`: the widget is draggable and its position is
-      // over-constrained (top+bottom) so `bottom` has no effect, whereas transform
-      // reliably shifts it visually above the banner.
+      // Not `bottom`: the widget is draggable and its position is
+      // over-constrained (top+bottom), so `bottom` has no effect. Not
+      // `transform` either - the FAB renders with .chatbot-fab-pulse, whose
+      // forwards-filled fabEntrance keyframe outranks any inline transform in
+      // the cascade, and #chatbot-fab:hover sets `transform: scale(1.2)
+      // !important`. The lift was therefore invisible until the first open,
+      // and after that the button dropped back under the banner the moment
+      // the pointer reached it and oscillated there. The independent
+      // `translate` property composes with both instead of losing to them.
       targets.forEach(function (el) {
-        el.style.transition = 'transform .2s ease';
-        el.style.transform = 'translateY(-' + (h + 12) + 'px)';
+        el.style.translate = '0 -' + (h + 12) + 'px';
       });
     }
   } else {
     targets.forEach(function (el) {
-      el.style.transform = '';
-      el.style.transition = '';
+      el.style.translate = '';
     });
   }
 }

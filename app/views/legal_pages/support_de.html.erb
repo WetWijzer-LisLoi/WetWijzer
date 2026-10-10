@@ -1,5 +1,5 @@
 <%= render 'legal_pages/legal_page_styles' %>
-<div class="legal-page">
+<div class="legal-page ww-support-page">
 <h1>Unterst&uuml;tzen Sie GesetzGuide</h1>
 
     <div class="highlight">
@@ -17,7 +17,7 @@
         <li>&#x1F4DC; Suche in <strong>parlamentarischen Dokumenten</strong> &uuml;ber den Chatbot</li>
         <li>&#x1F916; Zugang zu <strong>allen KI-Modellen</strong> (<%= chatbot_all_model_names %>)</li>
     </ul>
-    <p><%= link_to pricing_path, class: "inline-flex items-center px-4 py-2 text-white rounded-lg font-semibold transition hover:opacity-90", style: "background: var(--accent-600-solid);" do %>
+    <p><%= link_to pricing_path, class: "ww-promotion-cta inline-flex items-center px-4 py-2 text-white rounded-lg font-semibold transition hover:opacity-90", style: "background: var(--accent-600-solid);" do %>
         <svg class="w-4 h-4 mr-2 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1z"/></svg>
         GesetzGuide Pro entdecken
     <% end %></p>

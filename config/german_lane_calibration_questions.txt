@@ -1,0 +1,68 @@
+# The 60 fixed German calibration questions of the German embedding lane.
+# build_german_faiss.py --calibration-questions embeds them once, inside the
+# paid sample step, and writes embeddings/german/calibration_vectors.json.
+# The later replay (scripts/ops/german_lane_replay.rb) and every step after it
+# are free. One question per line; blank lines and lines starting with # are
+# ignored. Do not reorder or reword: a change re-embeds the changed lines.
+# The last 10 ask about the German-speaking Community's own competences, where
+# the binding text is a German original; they are embedded in the originals run.
+Welche Widerrufsfrist hat der Verbraucher bei einem Teilzeitnutzungsvertrag?
+Wie lang ist die Kündigungsfrist bei einem Arbeitsvertrag für Angestellte?
+Welche Glücksspiele dürfen ohne Lizenz angeboten werden?
+Wann verjährt eine Forderung aus einem Kaufvertrag?
+Wer haftet bei einem Arbeitsunfall auf dem Weg zur Arbeit?
+Welche Kündigungsfrist gilt für einen Mietvertrag über die Hauptwohnung?
+Darf ein Rechtsanwalt ein Erfolgshonorar vereinbaren?
+Welche Angaben muss ein schriftlicher Arbeitsvertrag enthalten?
+Wie hoch ist die Entschädigung bei einer verspäteten Zahlung im Geschäftsverkehr?
+Welche Bedingungen gelten für eine Probezeit im Arbeitsvertrag?
+Wann darf ein Arbeitgeber einen Arbeitnehmer fristlos entlassen?
+Wie wird der Jahresurlaub eines Arbeitnehmers berechnet?
+Welche Pflichten hat der Vermieter bei der Übergabe einer Wohnung?
+Wie hoch darf die Mietkaution höchstens sein?
+Welche Regeln gelten für die Indexierung der Miete?
+Wann kann ein Verbraucher einen Fernabsatzvertrag widerrufen?
+Welche Informationen muss ein Unternehmen vor Vertragsschluss geben?
+Was gilt bei missbräuchlichen Klauseln in Verbraucherverträgen?
+Welche Garantie hat der Käufer einer gebrauchten Sache?
+Wie lange gilt die gesetzliche Gewährleistung bei Verbrauchsgütern?
+Welche Voraussetzungen hat die Scheidung wegen unheilbarer Zerrüttung?
+Wie wird der Unterhalt für Kinder nach der Scheidung festgelegt?
+Wer erbt, wenn kein Testament vorliegt?
+Welchen Pflichtteil haben die Kinder eines Erblassers?
+Wie wird ein eigenhändiges Testament wirksam errichtet?
+Welche Formvorschriften gelten für eine Schenkung?
+Wann haftet der Halter eines Kraftfahrzeugs für einen Unfall?
+Welche Entschädigung erhalten schwache Verkehrsteilnehmer nach einem Unfall?
+Welche Pflichten hat der Versicherer bei einem Schadensfall?
+Wann darf eine Versicherung wegen Nichtzahlung der Prämie gekündigt werden?
+Wie wird eine Gesellschaft mit beschränkter Haftung gegründet?
+Welche Haftung trifft die Verwalter einer Gesellschaft?
+Wann muss ein Unternehmen Konkurs anmelden?
+Welche Rechte hat ein Gläubiger im Insolvenzverfahren?
+Wie lange darf die Untersuchungshaft dauern?
+Welche Strafe droht bei Trunkenheit am Steuer?
+Wann verjährt eine Straftat?
+Welche Rechte hat ein Beschuldigter bei der ersten Vernehmung?
+Wie kann man Einspruch gegen einen Steuerbescheid einlegen?
+Welche Frist gilt für die Einreichung der Einkommensteuererklärung?
+Welche Regeln gelten für die Verarbeitung personenbezogener Daten durch Unternehmen?
+Wann hat ein Arbeitnehmer Anspruch auf Elternurlaub?
+Wie viele Stunden darf ein Arbeitnehmer pro Woche höchstens arbeiten?
+Welche Voraussetzungen gelten für Nachtarbeit?
+Wie wird das Arbeitslosengeld berechnet?
+Wann kann eine Wohnung wegen Eigenbedarfs gekündigt werden?
+Welche Pflichten hat der Mieter bei kleinen Reparaturen?
+Wie wird ein Nachbarschaftsstreit über Bäume an der Grundstücksgrenze geregelt?
+Welche Rechte hat der Verbraucher bei einem Pauschalreisevertrag?
+Welche Regeln gelten für Online-Glücksspiele und Wetten?
+Welche Dienste der Kinderbetreuung sind in der Deutschsprachigen Gemeinschaft anerkannt?
+Welche Voraussetzungen muss eine selbstständige Tagesmutter für ihre Zulassung erfüllen?
+Wie viele Kinder darf eine Tagesmutter gleichzeitig betreuen?
+Welche Regeln gelten für den Hausunterricht in der Deutschsprachigen Gemeinschaft?
+Wie wird die Schulpflicht in den Schulen der Deutschsprachigen Gemeinschaft kontrolliert?
+Wer kann einen AktiF-Zuschuss zur Beschäftigungsförderung erhalten?
+Wie wird ein Gebäude in der Deutschsprachigen Gemeinschaft unter Denkmalschutz gestellt?
+Welche Zuschüsse erhalten anerkannte Jugendorganisationen für die Jugendarbeit?
+Wer hat in der Deutschsprachigen Gemeinschaft Anspruch auf Familienleistungen?
+Wie hoch ist das Kindergeld für ein Kind in der Deutschsprachigen Gemeinschaft?

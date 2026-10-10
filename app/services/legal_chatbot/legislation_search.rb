@@ -136,6 +136,12 @@ module LegalChatbot
       @profile = profile
     end
 
+    # nil after a search whose semantic leg answered (or was disabled by env),
+    # 'semantic_unavailable' when the FAISS service did not answer and the
+    # lexical routes carried the search alone. The fan-out reads it in the
+    # worker thread right after #search returns.
+    attr_reader :retrieval_degradation
+
     # ------------------------------------------------------------------
     # PUBLIC API
     # ------------------------------------------------------------------
@@ -144,13 +150,32 @@ module LegalChatbot
     # and core-law boosting. Keeping the hybrid retrieval here (rather than in
     # an orchestrator-only post-step) means FTS can rescue a FAISS zero-hit.
     # Returns array of article hashes with metadata.
-    def search(question_embedding, limit: 12, question: nil)
+    #
+    # german_pointers: the rows the German lane resolved from German hits
+    # (GermanArticleSearch#search, gesetzguide only, pointers and wording
+    # modes): French rows, plus binding German originals with
+    # GERMAN_ORIGINALS_MODE=on. nil or [] leaves this method exactly as it was.
+    def search(question_embedding, limit: 12, question: nil, german_pointers: nil)
+      # Reset first: one service instance can serve more than one ask.
+      @retrieval_degradation = nil
+
       # The legacy main index predates source-identity manifests and can map an
       # old vector to a different article that later reused the same integer
       # ID. Keep it fail-closed until a manifest-bound generation is activated.
       # FTS, article pins and core-law mappings remain available while disabled.
       top_articles = if legislation_faiss_enabled?
-                       search_faiss(question_embedding, limit * 3) || []
+                       # nil means the service did not answer, [] means it
+                       # answered with nothing; only the first is degraded.
+                       # On 2026-09-20 the 10 s read ran out on a cold mmap,
+                       # the keyword search below filled in (15 FTS hits on
+                       # the word "kleding", three of which reached the
+                       # model) and the search still read as 'completed' to
+                       # everything downstream. Disabled by env is a
+                       # configuration, not a failure, so that branch never
+                       # sets it.
+                       semantic = search_faiss(question_embedding, limit * 3)
+                       @retrieval_degradation = 'semantic_unavailable' if semantic.nil?
+                       semantic || []
                      else
                        Rails.logger.info(
                          "[Search] Main legislation FAISS disabled by #{FAISS_ENABLED_ENV}; " \
@@ -171,9 +196,15 @@ module LegalChatbot
         if keyword_articles.any?
           top_articles = merge_search_results(top_articles, keyword_articles, limit: limit * 3)
         end
-
-        top_articles = apply_core_law_boosting(top_articles, question, profile: @profile)
       end
+
+      # German pointers (and binding German originals) join here, after the
+      # lexical merge and BEFORE the core-law boosting, so they take the same
+      # scoping, penalties (is_modification x0.5, abolished x0.3), pins,
+      # future-law cut and final quota as every other row.
+      top_articles = merge_german_pointers(top_articles, german_pointers) if german_pointers.present?
+
+      top_articles = apply_core_law_boosting(top_articles, question, profile: @profile) if question.present?
 
       # Article-level pins: for well-known concepts whose governing article the
       # semantic search misses on VOCABULARY MISMATCH (user says "belaging",
@@ -328,8 +359,8 @@ module LegalChatbot
     /ix
     ALCOHOL_DRIVING_LIMIT_PATTERN = /
       \A
-      (?=.*\b(?:alcohol(?:limiet|grens)?|alcohollimiet|promille|ademanalyse|bloedanalyse|alcool|taux\s+d['’]?alcool)\b)
-      (?=.*\b(?:bestuurders?|rijden|verkeer|wegverkeer|bloed|voertuig|conducteurs?|conduire|circulation)\b)
+      (?=.*\b(?:alcohol(?:limiet|grens)?|alcohollimiet|promille|ademanalyse|bloedanalyse|alcool|alcool[eé]mie|taux\s+d['’]?alcool)\b)
+      (?=.*\b(?:bestuurders?|rijden|verkeer|wegverkeer|bloed|voertuig|conducteurs?|conduire|circulation|volant|v[eé]hicules?|route|routi[eè]re?)\b)
       .*\z
     /ix
 
@@ -356,7 +387,7 @@ module LegalChatbot
       [/(?=.*\b(?:rechtspersoon|rechtspersonen|personne\s+morale|legal\s+person)\b)(?=.*\b(?:strafrechtelijk|pénal\w*|criminal\w*|aansprakelijk\w*|responsab\w*|liab\w*)\b)/i, '1867060850', '5'],
       [/\bdwangsom\b/i,                                                '1967101055', '1385bis'],  # Ger.W. Part IV
 
-      # Constitution — narrow rights/concept phrases only.
+      # Constitution: narrow rights/concept phrases only.
       [/\b(?:betog(?:en|ing)|vrijheid\s+van\s+vergadering|manifest(?:er|ation)|liberté\s+de\s+réunion)\b/i, '1994021048', '26'],
       [/(?=.*\b(?:godsdienst(?:vrijheid)?|eredienst|religion|culte)\b)(?=.*\b(?:grondwet(?:telijk)?|vrijheid|recht|constitution(?:nel)?|liberté|droit)\b)/i, '1994021048', '19'],
       [/(?=.*\b(?:godsdienst(?:vrijheid)?|eredienst|religion|culte)\b)(?=.*\b(?:grondwet(?:telijk)?|vrijheid|recht|constitution(?:nel)?|liberté|droit)\b)/i, '1994021048', '20'],
@@ -397,7 +428,7 @@ module LegalChatbot
       [/\b(?:verhoogde\s+tegemoetkoming|bim-statuut|omnio)\b/i, '1994071451', '37'],
       [/\b(?:voorschrijven\s+op\s+stofnaam|voorschrift\s+op\s+stofnaam|international\s+nonproprietary\s+name)\b/i, '1994071451', '73'],
 
-      # Arbeidsovereenkomstenwet (AOW) — high-confidence diagnosis cluster.
+      # Arbeidsovereenkomstenwet (AOW): high-confidence diagnosis cluster.
       [/\b(?:minimumloon|ggmmi|gewaarborgd\s+gemiddeld\s+minimum(?:maand)?inkomen|salaire\s+minimum|rmmmg|revenu\s+minimum\s+mensuel\s+moyen)\b/i, '1988050250', '3'],
       [/\b(?:minimumloon|ggmmi|gewaarborgd\s+gemiddeld\s+minimum(?:maand)?inkomen|salaire\s+minimum|rmmmg|revenu\s+minimum\s+mensuel\s+moyen)\b/i, '1988050250', '5'],
       [/\b(?:ius\s+variandi|eenzijdige?\s+(?:wijziging|wijzigen)\s+(?:van\s+)?(?:arbeidsvoorwaarden|arbeidsovereenkomst|loon|functie)|(?:loon|salaris)\s+eenzijdige?\s+(?:verlagen|verminderen|wijzigen)|eenzijdige?\s+(?:loon|salaris)\s+(?:verlagen|verminderen|wijzigen))\b/i, '1978070303', '25'],
@@ -451,11 +482,33 @@ module LegalChatbot
       [/\b(?:uitzondering(?:en)?|toegelaten|toestaan)\b.*\bnacht(?:arbeid|werk|prestaties|shift|dienst)\b|\bnacht(?:arbeid|werk|prestaties|shift|dienst)\b.*\b(?:uitzondering(?:en)?|toegelaten|toestaan)\b/i, '1971031602', '37'],
       [/\b(?:invoeren|instellen)\b.*\bnacht(?:regeling|prestaties|arbeid)\b|\bnacht(?:regeling|prestaties|arbeid)\b.*\b(?:invoeren|instellen)\b/i, '1971031602', '38'],
       [/\b(?:pauze|rustpauze)\b.*\b(?:werk|arbeid|(?:meer\s+dan\s+)?6\s*uur)\b|\b(?:werk|arbeid|(?:meer\s+dan\s+)?6\s*uur)\b.*\b(?:pauze|rustpauze)\b/i, '1971031602', '38quater'],
-      [/\b(?:prenataal|postnataal|nabevallings(?:rust|verlof)?|moederschaps(?:rust|verlof)|bevallingsverlof|zwangerschapsverlof)\b/i, '1971031602', '39'],
+      # v5 grader 1: the French maternity questions retrieved the holiday
+      # decree's Art. 39 (1967033001) instead of the Labour Act's on q0041, so
+      # the pin knows the French, German and English terms too.
+      [/\b(?:prenataal|postnataal|nabevallings(?:rust|verlof)?|moederschaps(?:rust|verlof)|bevallingsverlof|zwangerschapsverlof|
+           cong[eé]s?\s+de\s+maternit[eé]|repos\s+de\s+maternit[eé]|Mutterschaftsurlaub|Mutterschutz|maternity\s+leave)\b/ix, '1971031602', '39'],
+      # Birth leave, Art. 30 § 2 of the Employment Contracts Act (German
+      # answers v4, q0046: the question pulled the annual-holidays decrees).
+      [/\b(?:geboorteverlof|vaderschapsverlof|cong[eé]s?\s+de\s+(?:naissance|paternit[eé])|birth\s+leave|paternity\s+leave|geburtsurlaub|vaterschaftsurlaub)\b/i, '1978070303', '30'],
       [/(?:zwanger(?:schap|e)?|grossesse).{0,40}(?:ontslag|licenciement)|(?:ontslag|licenciement).{0,40}(?:zwanger(?:schap|e)?|grossesse)/i, '1971031602', '40'],
       [/\bprofylactisch\s+verlof\b|\bpreventieve\s+werkverwijdering\b|\bwerkverwijdering\b.*\b(?:zwangere?|zwangerschap|werkneemster)\b|\b(?:zwangere?|zwangerschap|werkneemster)\b.*\bwerkverwijdering\b/i, '1971031602', '42'],
       [/\b(?:zwangere?|zwangerschap|werkneemster)\b.*\bnacht(?:arbeid|werk|prestaties)\b|\bnacht(?:arbeid|werk|prestaties)\b.*\b(?:zwangere?|zwangerschap|werkneemster)\b/i, '1971031602', '43'],
       [/(?=.*\b(?:jaarlijkse\s+vakantie|vakantiedagen|betaald\s+verlof|wettelijke\s+vakantie|congés?\s+payés?)\b)(?=.*\b(?:hoeveel|aantal|dagen|duur|per\s+jaar|combien|nombre|jours|durée)\b)/i, '1971062850', '3'],
+
+      # German answers v5, grader 1: the guaranteed-pay question reasoned on
+      # Art. 72 (the employee hired for under three months) and the pension
+      # questions on Art. 4 without its § 3; the same patterns as the
+      # TopicCitations topics, kept inline because the two classes load each
+      # other's constants.
+      [/\A(?=.*\b(?:salaire\s+garanti|r[eé]mun[eé]ration\s+garantie|gewaarborgd\s+loon|garantiert\w*\s+(?:Lohn|Gehalt|Entlohnung)|guaranteed\s+(?:pay|salary|wages?)|maladie|malade|incapacit[eé]\s+de\s+travail|ziek\w*|arbeidsongeschikt\w*|krank\w*|arbeitsunf[aä]hig\w*|sick\w*|illness|arr[eê]ts?\s+de\s+travail|certificat\s+m[eé]dical|cong[eé]\s+de\s+maladie|incapacit[eé]|ziektebriefje|ziekteverlof|Krankschreibung|Krankmeldung)\b)(?=.*\b(?:employ[eé]e?s?|bediendes?|bedienden|Angestellte[rnms]?|white[-\s]collar)\b).*\z/im, '1978070303', '70'],
+      # German answers v6, grader 1: the items whose answers reasoned on another article in both runs.
+      [/(?:prescri\w*|verjar\w*|verj[aä]hr\w*|limitation\s+period).{0,80}(?:dommage|pr[eé]judice|responsabilit|faute|voisin|schade|aansprakelijk|Schaden|Haftung|Nachbar|damage|liab)|(?:dommage|pr[eé]judice|responsabilit|faute|voisin|schade|aansprakelijk|Schaden|Haftung|Nachbar|damage|liab).{0,80}(?:prescri\w*|verjar\w*|verj[aä]hr\w*|limitation\s+period)/i, '1804032155', '2262bis'], # tort claims: 5 years from knowledge, 20 at most
+      [/\b(?:r[eé]serve\s+h[eé]r[eé]ditaire|quotit[eé]\s+disponible|erfrechtelijke\s+reserve|beschikbaar\s+(?:ge)?deel|Pflichtteil|frei\s+verf[uü]gbare[rn]?\s+Teil|forced\s+share|disposable\s+(?:share|portion))\b|(?:testament|erf\w*|succession|h[eé]riti\w*|Erb\w*|inherit\w*).{0,60}(?:enfants|kinderen|Kinder|children).{0,80}(?:disposer|librement|beschikken|verf[uü]gen|dispose)/i, '2022B30600', '4.145'], # the reserve: half of the estate
+      [/\b(?:r[eé]serve\s+h[eé]r[eé]ditaire|quotit[eé]\s+disponible|erfrechtelijke\s+reserve|beschikbaar\s+(?:ge)?deel|Pflichtteil|frei\s+verf[uü]gbare[rn]?\s+Teil|forced\s+share|disposable\s+(?:share|portion))\b|(?:testament|erf\w*|succession|h[eé]riti\w*|Erb\w*|inherit\w*).{0,60}(?:enfants|kinderen|Kinder|children).{0,80}(?:disposer|librement|beschikken|verf[uü]gen|dispose)/i, '2022B30600', '4.147'], # the spouse's reserve
+      [/\b(?:double\s+p[eé]cule|dubbel\s+vakantiegeld|doppelte[sn]?\s+Urlaubsgeld|double\s+holiday\s+pay)\b/i, '1967033001', '38'], # 92 percent of the month's gross
+      [/\b(?:opposition|verzet|Einspruch)\b.{0,60}\b(?:jugement\s+(?:rendu\s+)?par\s+d[eé]faut|verstekvonnis|Vers[aä]umnisurteil|default\s+judgment)|\b(?:jugement\s+(?:rendu\s+)?par\s+d[eé]faut|verstekvonnis|Vers[aä]umnisurteil|default\s+judgment)\b.{0,60}\b(?:opposition|verzet|Einspruch)\b/i, '1967101055', '1048'], # one month from the service
+      [/\b(?:pension\s+(?:de\s+retraite\s+)?anticip[eé]e|retraite\s+anticip[eé]e|vervroegde?\s+(?:rust)?pensioen|vervroegde\s+pensionering|vorgezogene[nrs]?\s+(?:Pension|Rente|Ruhestand)|vorzeitige[nrs]?\s+(?:Pension|Pensionierung|Rente|Ruhestand)|Fr[uü]hpension|Fr[uü]hrente|early\s+(?:retirement|pension))\b/i, '1997022010', '4'],
+      [/\A(?!.*\b(?:anticip[eé]e?|vervroegd\w*|vorgezogen\w*|vorzeitig\w*|Fr[uü]hpension|Fr[uü]hrente|early)\b)(?=.*(?:\b[aâ]ge\s+(?:l[eé]gal\s+)?de\s+(?:la\s+)?(?:pension|retraite)\b|\b(?:wettelijke\s+)?pensioenleeftijd\b|\bpensioengerechtigde\s+leeftijd\b|\b(?:gesetzliche[sn]?\s+)?(?:Pensions|Renten)alter\b|\b(?:legal\s+|statutory\s+)?(?:pension|retirement)\s+age\b|\b(?:quel|welke?|welchem|what|which)\s+(?:[aâ]ge|leeftijd|Alter|age)\b.{0,60}\b(?:pension|retraite|pensioen|Pension|Rente|retire\w*)\b)).*\z/im, '1997022010', '2'],
 
       # High-value single-article diagnosis targets.
       # Drug offences: penalties sit in the 1921 Drugs Law, while the current
@@ -564,7 +617,7 @@ module LegalChatbot
       [/\bkennelijk\s+onredelijk\s+ontslag\b.*\b(?:vergoeding|schade|weken)\b|\b(?:vergoeding|schade|weken)\b.*\bkennelijk\s+onredelijk\s+ontslag\b/i, '2014A01545', '9'],
       [/\bkennelijk\s+onredelijk\s+ontslag\b|\blicenciement\s+manifestement\s+déraisonnable\b/i, '2014A01545', '8'],
 
-      # Werkloosheidsbesluit — high-confidence diagnosis cluster.
+      # Werkloosheidsbesluit: high-confidence diagnosis cluster.
       [UNEMPLOYMENT_CONDITIONS_PATTERN, '1991013192', '30'],
       [UNEMPLOYMENT_CONDITIONS_PATTERN, '1991013192', '44'],
       [UNEMPLOYMENT_CONDITIONS_PATTERN, '1991013192', '56'],
@@ -578,7 +631,7 @@ module LegalChatbot
       [UNEMPLOYMENT_FAULT_DISMISSAL_PATTERN, '1991013192', '52'],
       [UNEMPLOYMENT_FAULT_DISMISSAL_PATTERN, '1991013192', '53'],
 
-      # Federal VAT Code — small-enterprise exemption/franchise.
+      # Federal VAT Code: small-enterprise exemption/franchise.
       [VAT_SMALL_ENTERPRISE_EXEMPTION_PATTERN, '1969070305', '56bis'],
 
       # Consumer debt settlement is judicial procedure, not enterprise bankruptcy.
@@ -587,7 +640,7 @@ module LegalChatbot
 
       # Regional tax competence. Succession and registration duties are REGIONAL taxes, and
       # for them the region sets the rate, the base and the exemptions while the federal
-      # text is residual — so an answer that gives a figure without naming a gewest is
+      # text is residual, so an answer that gives a figure without naming a gewest is
       # quoting a rate that may apply nowhere.
       #
       # These are pinned rather than left to retrieval because the citation has to survive
@@ -745,6 +798,74 @@ module LegalChatbot
       (semantic_keep + lexical_keep).sort_by { |result| -result[:similarity] }
     end
 
+    # The German lane's rows (GermanArticleSearch#search): pointers (French
+    # rows plus :german_evidence) and, with GERMAN_ORIGINALS_MODE=on, binding
+    # German originals (language 3 rows plus :german_original). Each kind
+    # merges by its own rule and under its own cap.
+    def merge_german_pointers(articles, rows)
+      rows = Array(rows).select { |row| row.is_a?(Hash) && row[:id] }
+      return articles if rows.empty?
+
+      originals, pointers = rows.partition { |row| row[:german_original].is_a?(Hash) }
+      articles = merge_pointer_rows(articles, pointers) if pointers.any?
+      articles = merge_german_originals(articles, originals) if originals.any?
+      articles
+    end
+
+    # A pointer to a row the pool already holds adds its evidence and lifts
+    # the similarity to the higher of the two, taking no slot; otherwise at
+    # most MAX_POINTERS new rows enter, best first. The pool is re-ranked by
+    # similarity, as merge_search_results ranks it.
+    def merge_pointer_rows(articles, pointers)
+      pointer_by_id = pointers.index_by { |pointer| pointer[:id] }
+      existing = 0
+      merged = articles.map do |article|
+        pointer = pointer_by_id[article[:id]]
+        next article unless pointer
+
+        existing += 1
+        article.merge(
+          similarity: [article[:similarity].to_f, pointer[:similarity].to_f].max,
+          german_evidence: pointer[:german_evidence]
+        )
+      end
+      existing_ids = articles.to_set { |article| article[:id] }
+      entering = pointers.reject { |pointer| existing_ids.include?(pointer[:id]) }
+                         .take(LegalChatbot::GermanArticleSearch::MAX_POINTERS)
+      Rails.logger.info("[GermanLane] merged: existing=#{existing} entered=#{entering.size} of #{pointers.size}")
+
+      (merged + entering).sort_by { |result| -result[:similarity].to_f }
+    end
+
+    # Binding German originals enter as rows of their own, at most
+    # MAX_ORIGINALS, best first. The binding text wins: every NL or FR row of
+    # the pool with the same numac and article number as an entering original
+    # is its translation and leaves the pool, so the model reads the article
+    # once, in the language that is law. Other articles of the same act stay.
+    def merge_german_originals(articles, originals)
+      existing_ids = articles.to_set { |article| article[:id] }
+      entering = originals.reject { |original| existing_ids.include?(original[:id]) }
+                          .sort_by { |original| -original[:similarity].to_f }
+                          .take(LegalChatbot::GermanArticleSearch::MAX_ORIGINALS)
+      keys = entering.filter_map { |original| german_original_key(original) }.to_set
+      kept = articles.reject do |article|
+        [1, 2].include?(article[:language_id]) && keys.include?(german_original_key(article))
+      end
+      Rails.logger.info(
+        "[GermanLane] originals merged: entered=#{entering.size} of #{originals.size} " \
+        "replaced_translations=#{articles.size - kept.size}"
+      )
+
+      (kept + entering).sort_by { |result| -result[:similarity].to_f }
+    end
+
+    # [numac, "#art-N"], nil without an article number (such a row is never
+    # taken for a translation).
+    def german_original_key(row)
+      anchor = extract_article_anchor(row[:article_title].to_s)
+      anchor && [row[:numac].to_s, anchor]
+    end
+
     # Future law (TOEKOMSTIG RECHT / DROIT FUTUR) is enacted but NOT YET IN FORCE. Drop a
     # row that IS future law; cut the trailing future block off a row that merely carries
     # one, keeping its in-force half.
@@ -791,7 +912,7 @@ module LegalChatbot
       question_lower = question.downcase
       # scan (not split) strips punctuation so 'verkoop?' matches title word
       # 'verkoop'; keep important short legal tokens ('btw', 'cao', ...) that
-      # the length cut used to discard — dropping 'btw' filtered every real
+      # the length cut used to discard; dropping 'btw' filtered every real
       # VAT hit out of context.
       important_short = %w[btw rsz cao ziv igo bob rva wet kb mb bw wib tva]
       question_words = question_lower.scan(/[[:alnum:]]+/)
@@ -846,7 +967,7 @@ module LegalChatbot
         warnings << '[OPGEHEVEN/ABROGÉ]' if article[:is_abolished]
 
         # Check article_modifications for specific article abolition.
-        # The column stores title strings ("Art. 37/2"), so pass the real title —
+        # The column stores title strings ("Art. 37/2"), so pass the real title;
         # the old digits-only key ("372") never matched and conflated Art. 37/2
         # with Art. 372.
         #
@@ -907,13 +1028,16 @@ module LegalChatbot
       sources = articles.map do |article|
         numac = article[:numac]
         article_anchor = article[:article_title].to_s.parameterize.presence
+        # A binding German original (language 3) opens the German text.
+        german = article[:language_id] == LegalChatbot::GermanArticleSearch::GERMAN_LANGUAGE_ID
+        path = german ? "/laws/#{numac}?language_id=#{article[:language_id]}" : "/laws/#{numac}"
 
         source = {
           numac: numac,
           law_title: ensure_utf8(article[:law_title]),
           article_title: ensure_utf8(article[:article_title]),
-          url: article_anchor ? "/laws/#{numac}##{article_anchor}" : "/laws/#{numac}",
-          language: article[:language_id] == 1 ? 'NL' : 'FR',
+          url: article_anchor ? "#{path}##{article_anchor}" : path,
+          language: LegalChatbot::SourceFormatter::SOURCE_LANGUAGE_LABELS.fetch(article[:language_id], 'FR'),
           relevance: [article[:similarity].round(3), 1.0].min
         }
         source[:abolished] = true if article[:is_abolished]
@@ -1230,7 +1354,13 @@ module LegalChatbot
         nil
       end
     rescue StandardError => e
-      Rails.logger.debug("FAISS article service unavailable: #{e.class}")
+      # A warning, not debug: production logs at info, so at debug a question
+      # answered from keyword hits alone left no trace. On 2026-09-20 the first
+      # question after a restart waited out the 10 s read on a cold mmap (the
+      # service wrote its answer 80 s later, to a closed socket) and the model
+      # was handed three articles that merely contain the word "kleding".
+      # Class only: a message can echo response-body text.
+      Rails.logger.warn("[Legislation FAISS] unavailable, keyword search only: #{e.class}")
       nil
     end
 

@@ -1,5 +1,7 @@
 @use 'sass:map';
 @use 'sass:color';
+@use 'sass:list';
+@use 'sass:math';
 
 // Accent Theme Variables - Generated from SCSS Maps
 // ===================================================
@@ -9,6 +11,48 @@
 //
 // To add a new theme: add an entry to $vibrant-themes or $professional-themes.
 // To change a color: edit the map value - all reference/badge/border variables update automatically.
+
+// ============================================================================
+// WCAG CONTRAST IN SASS
+// ============================================================================
+// So a theme can pick its own AA-safe text shade from its map at compile time
+// instead of carrying a hand-checked value that drifts when a colour changes.
+// Relative luminance and contrast ratio as WCAG 2.1 defines them.
+@function _linear($channel) {
+  $s: math.div($channel, 255);
+  @if $s <= 0.03928 { @return math.div($s, 12.92); }
+  @return math.pow(math.div($s + 0.055, 1.055), 2.4);
+}
+
+@function luminance($color) {
+  @return 0.2126 * _linear(color.channel($color, "red", $space: rgb))
+        + 0.7152 * _linear(color.channel($color, "green", $space: rgb))
+        + 0.0722 * _linear(color.channel($color, "blue", $space: rgb));
+}
+
+@function contrast($a, $b) {
+  $la: luminance($a);
+  $lb: luminance($b);
+  @if $la < $lb { $t: $la; $la: $lb; $lb: $t; }
+  @return math.div($la + 0.05, $lb + 0.05);
+}
+
+// The first candidate that reaches $min against every background, else the
+// last one (the darkest), so a theme never silently gets a lighter shade.
+@function aa-text($candidates, $backgrounds, $min: 4.5) {
+  @each $c in $candidates {
+    $ok: true;
+    @each $bg in $backgrounds {
+      @if contrast($c, $bg) < $min { $ok: false; }
+    }
+    @if $ok { @return $c; }
+  }
+  @return list.nth($candidates, -1);
+}
+
+// Tailwind gray-50 (oklch(98.5% .002 247.839)) in sRGB: the laws source-tab
+// strip and other neutral surfaces accent text sits on in light mode.
+$gray-50: #f9fafb;
 
 // ============================================================================
 // ROOT DEFAULTS (blue)
@@ -31,7 +75,11 @@
   --accent-700: #1d4ed8;
   --accent-800: #1e40af;
   --accent-900: #1e3a8a;
-  --page-bg: #ffffff;
+  // The accent as text on light surfaces: see --accent-text in the theme loops.
+  --accent-text: #2563eb;
+  --page-bg: #f8fafc;
+  --surface-well-bg: #f8fafc;
+  --surface-border: #e5e7eb;
   --accent-active-bg: #eff6ff;
   --surface-header-bg: #ffffff;
   --table-th-bg: var(--accent-active-bg);
@@ -54,9 +102,12 @@
   --accent-500: #38bdf8;
   --accent-600: #7dd3fc;
   --accent-700: #bae6fd;
+  --accent-text: var(--accent-400);
   --accent-800: #0c1e3a;
   --accent-900: #0c1e3a;
   --page-bg: #080d19; /* darker than midnight for card separation */
+  --surface-well-bg: #0b1220;
+  --surface-border: #26334a;
   --accent-active-bg: rgba(56, 189, 248, 0.20);
   --surface-header-bg: #0f172a; /* midnight for header surfaces */
   --table-th-bg: var(--accent-active-bg);
@@ -84,7 +135,8 @@
   --accent-500: #3b82f6;
   --accent-600: #2563eb;
   --accent-700: #1d4ed8;
-  --page-bg: #ffffff;
+  --accent-text: #2563eb;
+  --page-bg: #f8fafc;
   --accent-active-bg: #eff6ff;
   --surface-header-bg: #ffffff;
   --table-th-bg: var(--accent-active-bg);
@@ -97,6 +149,7 @@
   --accent-500: #38bdf8;
   --accent-600: #7dd3fc;
   --accent-700: #bae6fd;
+  --accent-text: var(--accent-400);
   --page-bg: #080d19;
   --accent-active-bg: rgba(56, 189, 248, 0.10);
   --surface-header-bg: #0f172a;
@@ -192,9 +245,16 @@ $vibrant-themes: (
     --accent-500: #{map.get($light, 500)};
     --accent-600: #{map.get($light, 600)};
     --accent-700: #{map.get($light, 700)};
-    --page-bg: #{map.get($light, bg)};
+    // The accent as text on this theme's light surfaces: 600 where it reads
+    // at AA (4.5:1) on gray-50 and on the theme's own accent-50 hover wash,
+    // else 700. Ten of the sixteen themes need the darker step; green-600 is
+    // 3.15:1 on its wash, green-700 4.79:1. The laws source tabs read it, and
+    // test/system/axe_accent_themes_test.rb measures it in the browser.
+    --accent-text: #{aa-text((map.get($light, 600), map.get($light, 700)), ($gray-50, map.get($light, bg)))};
+    // Theme colours belong to accents, not the whole reading canvas.
+    --page-bg: #f8fafc;
     --accent-active-bg: #{map.get($light, bg)};
-    --surface-header-bg: var(--page-bg);
+    --surface-header-bg: #ffffff;
     --table-th-bg: var(--accent-active-bg);
     --table-row-hover-bg: var(--accent-active-bg);
     --swatch-color: var(--accent-500);
@@ -208,6 +268,7 @@ $vibrant-themes: (
     --accent-500: #{map.get($dark, 500)};
     --accent-600: #{map.get($dark, 600)};
     --accent-700: #{map.get($dark, 700)};
+    --accent-text: var(--accent-400);
     --accent-50: #{map.get($dark, bg)};
     --accent-100: #{map.get($dark, bg)};
     --accent-200: rgba(#{map.get($dark, active-rgb)}, 0.30);
@@ -308,14 +369,20 @@ $professional-themes: (
     --accent-500: #{map.get($light, 500)};
     --accent-600: #{map.get($light, 600)};
     --accent-700: #{map.get($light, 700)};
-    --page-bg: #{map.get($light, bg)};
+    // The accent as text on this theme's light surfaces: 600 where it reads
+    // at AA (4.5:1) on gray-50 and on the theme's own accent-50 hover wash,
+    // else 700. Ten of the sixteen themes need the darker step; green-600 is
+    // 3.15:1 on its wash, green-700 4.79:1. The laws source tabs read it, and
+    // test/system/axe_accent_themes_test.rb measures it in the browser.
+    --accent-text: #{aa-text((map.get($light, 600), map.get($light, 700)), ($gray-50, map.get($light, bg)))};
+    --page-bg: #f8fafc;
     $active-val: map.get($light, active);
     @if $active-val {
       --accent-active-bg: #{$active-val};
     } @else {
       --accent-active-bg: #{map.get($light, bg)};
     }
-    --surface-header-bg: var(--page-bg);
+    --surface-header-bg: #ffffff;
     --table-th-bg: var(--accent-active-bg);
     --table-row-hover-bg: var(--accent-active-bg);
     @if $swatch-light {
@@ -353,6 +420,7 @@ $professional-themes: (
     @if $dark-500 { --accent-500: #{$dark-500}; }
     @if $dark-600 { --accent-600: #{$dark-600}; }
     @if $dark-700 { --accent-700: #{$dark-700}; }
+    --accent-text: var(--accent-400);
     @if $dark-500 { --link-color: #{$dark-500}; }
     @if $dark-400 { --link-hover-color: #{$dark-400}; }
     // Neutral dark badges

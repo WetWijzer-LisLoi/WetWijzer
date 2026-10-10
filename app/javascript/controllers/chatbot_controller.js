@@ -42,6 +42,9 @@ import {
 } from "../services/chatbot_stream_events"
 import {
   buildAskPayload,
+  assistantHistoryEntry,
+  attachQuestionContext,
+  contextMessagesFrom,
   createRequestDeadline,
   jsonErrorDescriptor,
   sendMessage,
@@ -161,8 +164,8 @@ class ChatbotController extends Controller {
 
     // Show the welcome message immediately, then (for consented users) replace
     // it in place with the active conversation loaded from the server. The
-    // active conversation is tracked entirely server-side — nothing is stored
-    // in the browser — so the widget and the full /chatbot page show the same
+    // active conversation is tracked entirely server-side (nothing is stored
+    // in the browser), so the widget and the full /chatbot page show the same
     // log across tabs and reloads.
     if (this.hasMessagesTarget) {
       if (this.messagesTarget.children.length === 0) {
@@ -209,25 +212,15 @@ class ChatbotController extends Controller {
       .then(() => this._retryEncryptedOutbox?.())
       .catch(error => console.warn('[ZK] Encrypted outbox recovery failed:', error))
 
-    // Auto-send only the hero-form handoff hash (#q=...). The fragment is
-    // cleared immediately and is never copied into browser storage. In
+    // Auto-send only the hero-form handoff hash (#q=...). Ask AI references
+    // carry draft=1: those only fill the input and require an explicit Send.
+    // The fragment is cleared immediately and never copied into browser storage. In
     // particular, a rejected unauthenticated question is not persisted as
     // plaintext for post-login recovery.
     try { sessionStorage.removeItem('chatbot_pending_question') } catch { /* private browsing */ }
     const pendingQ = this._consumeHashQuestion()
     if (pendingQ) {
-      setTimeout(() => {
-        if (this.hasInputTarget) {
-          this.inputTarget.value = pendingQ
-          this._autoResize()
-          this.send()
-          // On mobile, scroll the PAGE to the chat area so users see
-          // the "Aan het nadenken" indicator instead of the page top
-          if (this.hasMessagesTarget) {
-            this.messagesTarget.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          }
-        }
-      }, 300)
+      this._applyHashQuestion(pendingQ)
     }
     // Listen for external toggle requests (e.g. mobile bottom bar Chat button)
     this._boundExternalToggle = () => this.toggle()
@@ -241,6 +234,47 @@ class ChatbotController extends Controller {
       }
     }
     document.addEventListener('click', this._boundToggleClick)
+
+    // Turbo snapshots this DOM on the way out and replays it on Back, but the
+    // controller reconnects with empty state. The replayed transcript was
+    // therefore dead: the next question carried no context, the suggestion
+    // and source buttons were bound with addEventListener (a cloned snapshot
+    // drops those), and the id counter restarted so a new answer's export
+    // menu and sources toggle addressed the OLD answer's elements. Hand Turbo
+    // a clean welcome state instead; a consented user's real transcript comes
+    // back from the server in connect().
+    this._boundBeforeCache = () => {
+      if (!this.hasMessagesTarget) return
+      const indicator = this.hasTypingIndicatorTarget ? this.typingIndicatorTarget : this._typingIndicatorEl
+      this.messagesTarget.innerHTML = ''
+      // updateLoadingState MOVES the typing indicator into the transcript and
+      // never moves it back, so the wipe above just detached it (an earlier
+      // Clear may have detached it already). Detached means absent from the
+      // snapshot, and a restoration visit builds a fresh controller over that
+      // snapshot: no target, no held reference, and "Aan het nadenken..."
+      // never appears again on that page. Hidden here rather than left to
+      // turbo_cache_controller's own before-cache listener, because this
+      // handler re-attaches the element and which listener runs last is
+      // registration order, not intent.
+      if (indicator && !indicator.isConnected) {
+        indicator.classList.add('hidden')
+        this.messagesTarget.appendChild(indicator)
+      }
+      this.messagesTarget.classList.add('chatbot-messages--empty')
+      this._clearSavedConversation()
+      this._privacyFooterShown = false
+      // addWelcomeMessage ends in scrollToBottom, and Turbo dispatches this
+      // event synchronously while the outgoing page is still on screen: the
+      // smooth window scroll would glide the page the user is leaving and feed
+      // Turbo's scroll observer a moving position for the snapshot.
+      this._buildingCacheSnapshot = true
+      try {
+        this.addWelcomeMessage()
+      } finally {
+        this._buildingCacheSnapshot = false
+      }
+    }
+    document.addEventListener('turbo:before-cache', this._boundBeforeCache)
   }
 
   disconnect() {
@@ -265,7 +299,10 @@ class ChatbotController extends Controller {
     if (this._boundToggleClick) {
       document.removeEventListener('click', this._boundToggleClick)
     }
-    // Escape-key listener is bound while the widget is open — without this it
+    if (this._boundBeforeCache) {
+      document.removeEventListener('turbo:before-cache', this._boundBeforeCache)
+    }
+    // Escape-key listener is bound while the widget is open; without this it
     // leaks (and holds the whole controller alive) across Turbo navigations
     this._unbindEscapeKey()
     // Mid-drag Turbo navigation would leak the FAB drag listeners
@@ -286,6 +323,9 @@ class ChatbotController extends Controller {
       if (this.openValue) {
         this.widgetTarget.classList.remove("hidden", "chatbot-widget-exit")
         this.widgetTarget.classList.add("chatbot-widget-enter")
+        // A display:none scrollbox has no layout, so a conversation restored
+        // while the panel was closed opened scrolled to its first message.
+        this.scrollToBottom()
       } else {
         this.widgetTarget.classList.remove("chatbot-widget-enter")
         this.widgetTarget.classList.add("chatbot-widget-exit")
@@ -332,7 +372,11 @@ class ChatbotController extends Controller {
     }
     this.openValue = false
     if (this.hasWidgetTarget) {
-      this.widgetTarget.classList.remove("chatbot-widget-enter", "widget-expanded")
+      // widget-expanded stays: it is a persisted layout preference (restored
+      // by _restoreWidgetLayout), and the maximise button's icon and tooltip
+      // are swapped by resetWidgetLayout, not here. Dropping the class on
+      // Escape left a small panel under a "Verkleinen" restore icon.
+      this.widgetTarget.classList.remove("chatbot-widget-enter")
       this.widgetTarget.classList.add("chatbot-widget-exit")
       setTimeout(() => {
         if (!this.openValue) this.widgetTarget.classList.add("hidden")
@@ -366,11 +410,18 @@ class ChatbotController extends Controller {
 
   // Escape key handler - closes widget dialog
   _handleEscapeKey(event) {
-    if (event.key === 'Escape' && this.openValue) {
-      event.preventDefault()
-      event.stopPropagation()
-      this.close()
+    if (event.key !== 'Escape' || !this.openValue) return
+    event.preventDefault()
+    event.stopPropagation()
+    // The history drawer covers the chat. Escape used to close the whole
+    // widget and leave the drawer open, so the next open showed the list
+    // again instead of the conversation.
+    const sidebar = this.element.querySelector('.chat-history-sidebar')
+    if (sidebar && !sidebar.classList.contains('hidden')) {
+      this.toggleHistory()
+      return
     }
+    this.close()
   }
 
   _bindEscapeKey() {
@@ -455,7 +506,7 @@ class ChatbotController extends Controller {
     }
 
     // Also filter widget model dropdown
-    this._filterWidgetModelDropdown(level)
+    this._filterWidgetModelDropdown(level, this.modelOverrideValue)
   }
 
   // Load sample questions from JSON - Turbo-safe (fires on every connect, not just DOMContentLoaded)
@@ -482,10 +533,17 @@ class ChatbotController extends Controller {
   }
 
   _fetchSampleQuestions(questionsList) {
+    // The inline loader writes localized copy into this same list, so a Dutch
+    // literal here replaced "Chargement des questions..." with Dutch on the
+    // French, German and English sites.
+    const t = (window.chatbotTranslations && (
+      window.chatbotTranslations[this.languageValue] || window.chatbotTranslations.nl
+    )) || {}
+
     // Timeout fallback: if loading takes > 8s, show empty state
     const loadingTimeout = setTimeout(() => {
       if (!questionsList.querySelector('.sample-question')) {
-        questionsList.innerHTML = '<div class="p-4 text-center text-gray-400 text-sm">Geen vragen beschikbaar</div>'
+        questionsList.innerHTML = `<div class="p-4 text-center text-gray-400 text-sm">${t.noQuestionsFound || 'Geen vragen beschikbaar'}</div>`
       }
     }, 8000)
 
@@ -511,7 +569,7 @@ class ChatbotController extends Controller {
       .catch(err => {
         clearTimeout(loadingTimeout)
         console.error('Failed to load sample questions:', err)
-        questionsList.innerHTML = '<div class="p-4 text-center text-red-500">Fout bij laden vragen</div>'
+        questionsList.innerHTML = `<div class="p-4 text-center text-red-500">${t.errorLoading || 'Fout bij laden vragen'}</div>`
       })
   }
 
@@ -619,7 +677,10 @@ class ChatbotController extends Controller {
     // unlocked in this tab. Sending would incur model cost for an answer that
     // cannot be encrypted or saved, so fail closed before touching credits.
     if (this._zkKeyGeneration && !this._isZkReady()) {
-      this._showZkUnlockPrompt?.()
+      // _showZkUnlockPrompt only fills the history drawer's list, which does
+      // not exist until the drawer has been opened once: the user was left
+      // with a two-second toast and no password field anywhere on screen.
+      this._revealZkUnlockPrompt?.()
       this._showToast(sendMessage('zk_unlock_first', this.languageValue), 'error')
       return
     }
@@ -647,10 +708,7 @@ class ChatbotController extends Controller {
       language: this.languageValue
     })
 
-    const contextMessages = this.conversationHistory.slice(-6).map(message => ({
-      role: message.role,
-      content: message.content
-    }))
+    const contextMessages = contextMessagesFrom(this.conversationHistory)
     const requestReasoningEffort = this._effectiveReasoningForRequest(contextMessages)
     if (requestReasoningEffort !== this.reasoningLevelValue) {
       this.reasoningLevelValue = requestReasoningEffort
@@ -705,7 +763,7 @@ class ChatbotController extends Controller {
     // NOTE: the pending-question store is written ONLY when the server
     // rejects with login_required (see below). Storing on every send meant a
     // reload/navigation during an in-flight query left the question behind,
-    // and the next page's widget consumed it and silently re-asked it —
+    // and the next page's widget consumed it and silently re-asked it,
     // deducting credits twice.
 
     this._sendInProgress = true
@@ -807,6 +865,9 @@ class ChatbotController extends Controller {
           // Track analytic_id for feedback linking
           this.lastAnalyticId = data.analytic_id || null
 
+          // Before the encrypted snapshot below, which keeps the user turn too.
+          attachQuestionContext(this.conversationHistory, question, data)
+
           this.lastQuestionLang = this.detectQuestionLanguage(question)
 
           // Stage the encrypted save before the typewriter animation. Credits
@@ -817,7 +878,7 @@ class ChatbotController extends Controller {
               this._isZkReady()) {
             const stagedMessages = [
               ...this.conversationHistory,
-              { role: 'assistant', content: data.answer, analytic_id: this.lastAnalyticId }
+              assistantHistoryEntry(data, this.lastAnalyticId)
             ].slice(-50)
             const stagedPersistence = this._pushEncryptedConversation({
               conversationId: this.conversationId,
@@ -835,7 +896,7 @@ class ChatbotController extends Controller {
           if (!rendered) return
           responseDelivered = true
           // Add to conversation history (cap at 50 messages to prevent memory leaks)
-          this.conversationHistory.push({ role: "assistant", content: data.answer, analytic_id: this.lastAnalyticId })
+          this.conversationHistory.push(assistantHistoryEntry(data, this.lastAnalyticId))
           if (this.conversationHistory.length > 50) {
             this.conversationHistory = this.conversationHistory.slice(-50)
           }
@@ -895,7 +956,7 @@ class ChatbotController extends Controller {
 
       // Distinguish timeout/abort from other errors
       if (requestState.timedOut || error.name === "AbortError") {
-        // User-initiated abort (clearChat) — not a timeout; stay silent.
+        // User-initiated abort (clearChat), not a timeout; stay silent.
         if (this._userAborted) { this._userAborted = false; return }
         this.addMessage("error", sendMessage('request_timed_out', this.languageValue))
       } else {
@@ -963,6 +1024,13 @@ class ChatbotController extends Controller {
     // cleared at this point, and an interleaved send would corrupt the
     // question/answer pairing in conversationHistory.
     this._animatingMessage = true
+    // The transcript is role="log" aria-live="polite". The typewriter replaces
+    // the whole bubble every ~20 characters, and each replacement is a fresh
+    // set of added nodes: a screen reader restarted the answer from its
+    // beginning about a hundred times per answer, half-parsed markdown and
+    // all. Mark the log busy for the animation and clear it just before the
+    // final render, so the finished answer is announced once.
+    let log = null
     try {
       const isCurrentConversation = () => !requestState ||
         requestState.conversationContextEpoch === (this._conversationContextEpoch || 0)
@@ -976,7 +1044,9 @@ class ChatbotController extends Controller {
       contentDiv.className = "message-content"
       messageDiv.appendChild(contentDiv)
 
-      this.messagesTarget.appendChild(messageDiv)
+      log = this.messagesTarget
+      log.setAttribute("aria-busy", "true")
+      log.appendChild(messageDiv)
 
       // Stream in chunks: append several characters at once, only reformat periodically
       const chunkSize = 3
@@ -1005,7 +1075,10 @@ class ChatbotController extends Controller {
         }
       }
 
-      // Final render to ensure complete formatting
+      // Final render to ensure complete formatting. Clear aria-busy FIRST, so
+      // the complete answer, its sources and its meta row land as one
+      // announced addition rather than after the region went quiet again.
+      log.removeAttribute("aria-busy")
       contentDiv.innerHTML = this.formatMessage(displayed)
 
       // Add sources after streaming (only for NL/FR - others get inline sources from LLM)
@@ -1024,6 +1097,10 @@ class ChatbotController extends Controller {
       return true
     } finally {
       this._animatingMessage = false
+      // Covers the abandoned-conversation return inside the loop. Use the
+      // captured node: a missing Stimulus target throws, and a throw here
+      // would swallow the return value.
+      log?.removeAttribute("aria-busy")
     }
   }
 
@@ -1044,17 +1121,16 @@ class ChatbotController extends Controller {
       console.debug(`Token usage: ${tokenUsage.total.toLocaleString()}`)
     }
     const _t = (map) => map[this.languageValue] || map.nl
+    // The tooltip names the action, like its neighbours. The privacy warning
+    // that used to appear here is not lost: reportFailed opens a consent dialog
+    // that spells it out before anything is sent.
     const reportText = _t({ nl: "Melden", fr: "Signaler", de: "Melden", en: "Report" })
-    const reportWarning = _t({
-      nl: "Uw vraag en antwoord worden zichtbaar voor de beheerder",
-      fr: "Votre question et réponse seront visibles par l'administrateur",
-      de: "Ihre Frage und Antwort werden für den Administrator sichtbar",
-      en: "Your question and answer will be visible to the administrator"
-    })
     const copyText = _t({ nl: "Kopiëren", fr: "Copier", de: "Kopieren", en: "Copy" })
     const saveText = _t({ nl: "Opslaan", fr: "Sauvegarder", de: "Speichern", en: "Save" })
 
-    const exportText = _t({ nl: "Export", fr: "Export", de: "Export", en: "Export" })
+    // Same wording as the top bar's export button (_settings_panel), which
+    // opens the same two formats for the whole conversation.
+    const exportText = _t({ nl: "Exporteren", fr: "Exporter", de: "Exportieren", en: "Export" })
 
     div.innerHTML = `
       <span>${timeText}</span>
@@ -1110,31 +1186,36 @@ class ChatbotController extends Controller {
           </svg>
         </button>
         ` : ''}
-        ${this.ratingControlMarkup(ratingToken)}
         <span class="text-gray-300 dark:text-gray-600">|</span>
         <button type="button"
                 class="report-btn hover:text-amber-500 transition-colors p-1 rounded flex items-center gap-0.5"
                 data-action="click->chatbot#reportFailed"
-                title="${reportWarning}">
+                title="${reportText}"
+                aria-label="${reportText}">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
           </svg>
         </button>
       </div>
+      ${this.ratingControlMarkup(ratingToken)}
     `
 
     return div
   }
 
-  _addFullPageWelcomeCard() {
-    // Mirror BrandingHelper#site_name so the rebuilt card carries the same
-    // per-site brand as the server-rendered welcome (LisLoi/GesetzGuide/…).
-    const siteName = {
+  // Mirror BrandingHelper#site_name so JS-rendered copy carries the same
+  // per-site brand as the server-rendered pages (LisLoi/GesetzGuide/…).
+  _siteBrandName() {
+    return {
       'lisloi.be': 'LisLoi',
       'gesetzguide.be': 'GesetzGuide',
       'lexlibera.be': 'LexLibera'
     }[location.hostname.replace(/^www\./, '')] || 'WetWijzer'
+  }
+
+  _addFullPageWelcomeCard() {
+    const siteName = this._siteBrandName()
     const copy = {
       nl: {
         eyebrow: `${siteName} · juridische chatbot`,
@@ -1523,36 +1604,74 @@ class ChatbotController extends Controller {
 
   // Update loading state
   updateLoadingState() {
+    // Disabling the focused control drops focus to <body> in Chromium and
+    // WebKit, and re-enabling never gives it back, so the caret was gone after
+    // every answer. Note who owned it on the way in and hand it back below.
+    if (this.loadingValue && (
+      (this.hasInputTarget && document.activeElement === this.inputTarget) ||
+      (this.hasSendButtonTarget && document.activeElement === this.sendButtonTarget)
+    )) {
+      this._refocusInputAfterLoading = true
+    }
+
     if (this.hasSendButtonTarget) {
       this.sendButtonTarget.disabled = this.loadingValue
     }
     if (this.hasLoadingTarget) {
       this.loadingTarget.classList.toggle("hidden", !this.loadingValue)
     }
-    if (this.hasTypingIndicatorTarget) {
+    // Hold the element, not the Stimulus target lookup: the indicator is MOVED
+    // into the transcript, and every reset (Clear, Nieuw, a history load, a
+    // deleted conversation) does messagesTarget.innerHTML = '', which detached
+    // it for good. A held reference survives the wipe and is re-appended on
+    // the next question instead of the bubble never coming back.
+    const indicator = (this.hasTypingIndicatorTarget ? this.typingIndicatorTarget : this._typingIndicatorEl) || null
+    if (indicator) {
+      this._typingIndicatorEl = indicator
       if (this.loadingValue) {
         // Move typing indicator into messages area so it appears as an inline chat bubble
         if (this.hasMessagesTarget) {
-          this.messagesTarget.appendChild(this.typingIndicatorTarget)
+          this.messagesTarget.appendChild(indicator)
         }
-        this.typingIndicatorTarget.classList.remove("hidden")
+        indicator.classList.remove("hidden")
         this.scrollToBottom()
       } else {
-        this.typingIndicatorTarget.classList.add("hidden")
+        indicator.classList.add("hidden")
       }
     }
     if (this.hasInputTarget) {
       this.inputTarget.disabled = this.loadingValue
+      if (!this.loadingValue && this._refocusInputAfterLoading) {
+        this._refocusInputAfterLoading = false
+        // Only when nothing else took focus meanwhile (a modal, the settings
+        // panel, a rating popover), and only on pointer devices, so a phone
+        // does not raise its keyboard over the answer it just rendered.
+        const focusIsIdle = !document.activeElement || document.activeElement === document.body
+        if (focusIsIdle && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+          this.inputTarget.focus({ preventScroll: true })
+        }
+      }
     }
   }
 
-  // Scroll to the newest content. The transcript is part of the page scroll
-  // (no internal scrollbox), so follow the conversation by scrolling the
-  // window; the element assignment stays as a no-op fallback for any embed
-  // that does constrain the container.
+  // Scroll to the newest content. On the full page the transcript is part of
+  // the page scroll (no internal scrollbox), so follow the conversation by
+  // scrolling the window.
+  //
+  // In the widget the element assignment IS the scroll: the transcript is an
+  // overflow-y box inside a position:fixed panel, so its rect.bottom is
+  // viewport-relative and adding scrollY made every call target roughly 100px
+  // ABOVE the current position. The law page behind the panel crept upward for
+  // the whole type-out (one call per 30 streamed characters), and with the
+  // panel still hidden the rect is all zeros, so the restore fetch jumped the
+  // page up by almost a full screen without the user touching the chat.
   scrollToBottom() {
     if (!this.hasMessagesTarget) return
     this.messagesTarget.scrollTop = this.messagesTarget.scrollHeight
+    if (this.element.closest('#chatbot-widget-container')) return
+    // Rebuilding the welcome state for Turbo's snapshot must not move the page
+    // the user is still looking at; see the turbo:before-cache handler.
+    if (this._buildingCacheSnapshot) return
     const bottom = this.messagesTarget.getBoundingClientRect().bottom + window.scrollY
     window.scrollTo({ top: bottom - window.innerHeight + 120, behavior: "smooth" })
   }
@@ -1650,8 +1769,13 @@ class ChatbotController extends Controller {
       } else {
         timerStr = ""
       }
+      // aria-hidden on the timer: _startStopwatch rewrites this span ten times
+      // a second, and progressText is role="status" (implicitly atomic), so
+      // every tick re-announced the whole progress line and buried the stage
+      // changes the region exists for. Mutations inside an aria-hidden subtree
+      // raise no live-region event; the .font-mono hook stays as it was.
       this.progressTextTarget.innerHTML = timerStr
-        ? `${label} <span class="font-mono tabular-nums text-xs opacity-70 ml-1">${timerStr}</span>`
+        ? `${label} <span aria-hidden="true" class="font-mono tabular-nums text-xs opacity-70 ml-1">${timerStr}</span>`
         : label
     }
   }
@@ -1801,6 +1925,9 @@ class ChatbotController extends Controller {
               // Track analytic_id for feedback linking
               this.lastAnalyticId = data.analytic_id || null
 
+              // Before the encrypted snapshot below, which keeps the user turn too.
+              attachQuestionContext(this.conversationHistory, question, data)
+
               this.lastQuestionLang = this.detectQuestionLanguage(question)
 
               // Start encryption/persistence before the typewriter animation.
@@ -1810,7 +1937,7 @@ class ChatbotController extends Controller {
                   this._isZkReady()) {
                 const stagedMessages = [
                   ...this.conversationHistory,
-                  { role: 'assistant', content: data.answer, analytic_id: this.lastAnalyticId }
+                  assistantHistoryEntry(data, this.lastAnalyticId)
                 ].slice(-50)
                 const stagedPersistence = this._pushEncryptedConversation({
                   conversationId: this.conversationId,
@@ -1835,7 +1962,7 @@ class ChatbotController extends Controller {
               )
               if (!rendered) return false
 
-              this.conversationHistory.push({ role: "assistant", content: data.answer, analytic_id: this.lastAnalyticId })
+              this.conversationHistory.push(assistantHistoryEntry(data, this.lastAnalyticId))
               if (this.conversationHistory.length > 50) {
                 this.conversationHistory = this.conversationHistory.slice(-50)
               }
@@ -1847,6 +1974,15 @@ class ChatbotController extends Controller {
 
                 if (data.suggestions && data.suggestions.length > 0) {
                   this.showSuggestions(data.suggestions)
+                }
+
+                // Privacy footer - once per conversation, after the first
+                // answer. Every request has been stream:true since SSE became
+                // universal, so the copy of this block in send()'s JSON branch
+                // stopped being reached and the footer never rendered again.
+                if (!this._privacyFooterShown) {
+                  this._privacyFooterShown = true
+                  this._showPrivacyFooter()
                 }
               } catch (uiError) {
                 console.warn('Post-result UI update failed (SSE, answer was delivered):', uiError.message)
@@ -1894,8 +2030,7 @@ class ChatbotController extends Controller {
   _animateCreditDeduction(creditsInfo) {
     if (!creditsInfo?.credits_deducted || creditsInfo.credits_deducted <= 0) return
 
-    const lang = this.languageValue || 'nl'
-    const creditsL = lang === 'fr' ? 'crédits' : lang === 'en' ? 'credits' : 'credits'
+    const creditsL = this._creditWord(creditsInfo.credits_deducted)
     const pools = [{ amount: creditsInfo.credits_deducted, label: creditsL, anchor: 'credits-value', color: '#f59e0b' }]
 
 
@@ -1942,21 +2077,40 @@ class ChatbotController extends Controller {
     })
   }
 
+  // The word for a credit amount. The badge and the receipt used to hardcode
+  // the plural, so every 1-credit answer (the default tier, the only one free
+  // users have) read "−1 credits" right under a composer preview that said
+  // "−1 credit"; German also needs the capital it uses everywhere else.
+  // Same rule as _updateDeductionPreview in the credits mixin.
+  _creditWord(count) {
+    const lang = this.languageValue || 'nl'
+    const plural = count > 1 ? 's' : ''
+    if (lang === 'fr') return `crédit${plural}`
+    if (lang === 'de') return `Credit${plural}`
+    return `credit${plural}`
+  }
+
   // Privacy footer - once per conversation, after first answer
   _showPrivacyFooter() {
     const lang = this.languageValue || 'nl'
     const loggedIn = this._isLoggedIn()
+    // The brand was hardcoded while this footer was unreachable; it is
+    // rendered again now, and on lisloi.be/gesetzguide.be/lexlibera.be it
+    // must not name a site the visitor is not on. Optional call: the copy is
+    // pinned by chatbot_privacy_footer_test.mjs, which carves this method out
+    // and renders it with no browser `location` to read.
+    const brand = this._siteBrandName?.() || 'WetWijzer'
 
     const msgs = loggedIn ? {
-      nl: '🔒 Standaard bewaren wij geen chatgeschiedenis. Met Geschiedenis wordt zij serverversleuteld opgeslagen en kan WetWijzer ze technisch lezen; met een opslagwachtwoord wordt zij eerst in uw browser versleuteld en kunnen wij ze niet ontsleutelen. Uw actuele vraag en relevante context worden tijdelijk verwerkt door WetWijzer en de gekozen AI-provider. Credits betalen het gegenereerde antwoord; het bewaren van geschiedenis is een afzonderlijke stap.',
-      fr: '🔒 Par défaut, nous ne conservons pas l\'historique. Avec Historique, il est chiffré sur le serveur mais reste techniquement lisible par WetWijzer ; avec un mot de passe de stockage, il est d\'abord chiffré dans votre navigateur et nous ne pouvons pas le déchiffrer. Votre question actuelle et le contexte pertinent sont traités temporairement par WetWijzer et le fournisseur d\'IA choisi. Les crédits paient la réponse générée ; l\'enregistrement de l\'historique est une étape distincte.',
-      de: '🔒 Standardmäßig speichern wir keinen Chatverlauf. Mit Verlauf wird er serverseitig verschlüsselt, bleibt für WetWijzer aber technisch lesbar; mit Speicherpasswort wird er zuerst im Browser verschlüsselt und kann von uns nicht entschlüsselt werden. Ihre aktuelle Frage und der relevante Kontext werden vorübergehend von WetWijzer und dem gewählten KI-Anbieter verarbeitet. Credits bezahlen die erzeugte Antwort; das Speichern des Verlaufs ist ein separater Schritt.',
-      en: '🔒 By default, we do not save chat history. With History, it is encrypted on the server but remains technically readable by WetWijzer; with a storage password, it is first encrypted in your browser and we cannot decrypt it. Your current question and relevant context are temporarily processed by WetWijzer and the selected AI provider. Credits pay for the generated answer; saving history is a separate step.'
+      nl: `🔒 Standaard bewaren wij geen chatgeschiedenis. Met Geschiedenis wordt zij serverversleuteld opgeslagen en kan ${brand} ze technisch lezen; met een opslagwachtwoord wordt zij eerst in uw browser versleuteld en kunnen wij ze niet ontsleutelen. Uw actuele vraag en relevante context worden tijdelijk verwerkt door ${brand} en de gekozen AI-provider. Credits betalen het gegenereerde antwoord; het bewaren van geschiedenis is een afzonderlijke stap.`,
+      fr: `🔒 Par défaut, nous ne conservons pas l'historique. Avec Historique, il est chiffré sur le serveur mais reste techniquement lisible par ${brand} ; avec un mot de passe de stockage, il est d'abord chiffré dans votre navigateur et nous ne pouvons pas le déchiffrer. Votre question actuelle et le contexte pertinent sont traités temporairement par ${brand} et le fournisseur d'IA choisi. Les crédits paient la réponse générée ; l'enregistrement de l'historique est une étape distincte.`,
+      de: `🔒 Standardmäßig speichern wir keinen Chatverlauf. Mit Verlauf wird er serverseitig verschlüsselt, bleibt für ${brand} aber technisch lesbar; mit Speicherpasswort wird er zuerst im Browser verschlüsselt und kann von uns nicht entschlüsselt werden. Ihre aktuelle Frage und der relevante Kontext werden vorübergehend von ${brand} und dem gewählten KI-Anbieter verarbeitet. Credits bezahlen die erzeugte Antwort; das Speichern des Verlaufs ist ein separater Schritt.`,
+      en: `🔒 By default, we do not save chat history. With History, it is encrypted on the server but remains technically readable by ${brand}; with a storage password, it is first encrypted in your browser and we cannot decrypt it. Your current question and relevant context are temporarily processed by ${brand} and the selected AI provider. Credits pay for the generated answer; saving history is a separate step.`
     } : {
-      nl: '🔒 Er wordt geen chatgeschiedenis bewaard. Uw actuele vraag en relevante context worden tijdelijk verwerkt door WetWijzer en de gekozen AI-provider om het antwoord te maken; beperkte technische metadata kan worden gelogd.',
-      fr: '🔒 Aucun historique de conversation n\'est conservé. Votre question actuelle et le contexte pertinent sont traités temporairement par WetWijzer et le fournisseur d\'IA choisi pour produire la réponse ; des métadonnées techniques limitées peuvent être journalisées.',
-      de: '🔒 Es wird kein Chatverlauf gespeichert. Ihre aktuelle Frage und der relevante Kontext werden zur Erstellung der Antwort vorübergehend von WetWijzer und dem gewählten KI-Anbieter verarbeitet; begrenzte technische Metadaten können protokolliert werden.',
-      en: '🔒 No chat history is saved. Your current question and relevant context are temporarily processed by WetWijzer and the selected AI provider to produce the answer; limited technical metadata may be logged.'
+      nl: `🔒 Er wordt geen chatgeschiedenis bewaard. Uw actuele vraag en relevante context worden tijdelijk verwerkt door ${brand} en de gekozen AI-provider om het antwoord te maken; beperkte technische metadata kan worden gelogd.`,
+      fr: `🔒 Aucun historique de conversation n'est conservé. Votre question actuelle et le contexte pertinent sont traités temporairement par ${brand} et le fournisseur d'IA choisi pour produire la réponse ; des métadonnées techniques limitées peuvent être journalisées.`,
+      de: `🔒 Es wird kein Chatverlauf gespeichert. Ihre aktuelle Frage und der relevante Kontext werden zur Erstellung der Antwort vorübergehend von ${brand} und dem gewählten KI-Anbieter verarbeitet; begrenzte technische Metadaten können protokolliert werden.`,
+      en: `🔒 No chat history is saved. Your current question and relevant context are temporarily processed by ${brand} and the selected AI provider to produce the answer; limited technical metadata may be logged.`
     }
 
     const footer = document.createElement('div')
@@ -1972,8 +2126,7 @@ class ChatbotController extends Controller {
     if (!creditsInfo?.credits_deducted) return
 
     const lang2 = this.languageValue || 'nl'
-    const creditsL2 = lang2 === 'fr' ? 'crédits' : lang2 === 'en' ? 'credits' : 'credits'
-    const deductionText = `${creditsInfo.credits_deducted} ${creditsL2}`
+    const deductionText = `${creditsInfo.credits_deducted} ${this._creditWord(creditsInfo.credits_deducted)}`
     const remaining = creditsInfo.credits_remaining || 0
     const remainText = lang2 === 'fr' ? `restant: ${remaining}`
       : lang2 === 'en' ? `remaining: ${remaining}`
@@ -2026,7 +2179,12 @@ class ChatbotController extends Controller {
       de: 'Verlauf deaktivieren und alles löschen',
       en: 'Disable history and delete all'
     })
-    const storageActionsVisibility = this._shouldPersist() ? '' : 'hidden'
+    // Icon-only button: without a name a screen reader announces "button".
+    const closeLabel = _t({ nl: 'Sluiten', fr: 'Fermer', de: 'Schließen', en: 'Close' })
+    // WW-PRIV-10: the retry of an unfinished deletion shows without consent.
+    const storageActionsVisibility = (this._shouldPersist() || this._historyCleanupPending) ? '' : 'hidden'
+    const disableVisibility = this._shouldPersist() ? '' : 'hidden'
+    const cleanupVisibility = this._historyCleanupPending ? '' : 'hidden'
 
     sidebar.innerHTML = `
       <div class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
@@ -2037,8 +2195,9 @@ class ChatbotController extends Controller {
             + ${newBtnLabel}
           </button>
           <button type="button" data-action="click->chatbot#toggleHistory"
+                  title="${closeLabel}" aria-label="${closeLabel}"
                   class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-(--accent-400)">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
           </button>
@@ -2046,10 +2205,19 @@ class ChatbotController extends Controller {
       </div>
       <div class="chat-history-list flex-1 overflow-y-auto p-2 space-y-1"></div>
       <div data-history-storage-actions class="${storageActionsVisibility} shrink-0 border-t border-gray-200 dark:border-gray-700 p-2">
+        <div data-history-cleanup class="${cleanupVisibility} space-y-1">
+          <p class="px-2 text-[11px] text-gray-600 dark:text-gray-300">${this._historyCleanupMessage('status')}</p>
+          <button type="button"
+                  data-action="click->chatbot#retryHistoryCleanup"
+                  data-history-cleanup-retry
+                  class="w-full px-2 py-2 text-[11px] font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors">
+            ${this._historyCleanupMessage('retry')}
+          </button>
+        </div>
         <button type="button"
                 data-action="click->chatbot#disableAndDeleteHistory"
                 data-history-disable-control
-                class="w-full px-2 py-2 text-[11px] font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors">
+                class="${disableVisibility} w-full px-2 py-2 text-[11px] font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors">
           ${disableHistoryLabel}
         </button>
       </div>
@@ -2097,15 +2265,34 @@ class ChatbotController extends Controller {
     tooltip.innerHTML = `
       <p class="mb-2">${msg.text}</p>
       <a href="/pricing" class="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2">${msg.link}</a>
-      <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+      <div data-tooltip-arrow class="absolute top-full left-0 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
     `
 
     // Position above anchor using fixed coordinates (no layout shift)
     document.body.appendChild(tooltip)
     const rect = anchor.getBoundingClientRect()
     const tooltipRect = tooltip.getBoundingClientRect()
-    tooltip.style.left = `${rect.left + rect.width / 2 - tooltipRect.width / 2}px`
-    tooltip.style.top = `${rect.top - tooltipRect.height - 8}px`
+    // Pin the measured width before moving the box: near an edge a fixed,
+    // auto-width box re-wraps to the space that is left, which would also
+    // invalidate the height `top` is computed from.
+    tooltip.style.width = `${tooltipRect.width}px`
+    // Clamp into the viewport. On a phone the widget's second intelligence
+    // pill sits about 70px from the left edge, so a centred 220px tooltip
+    // started at -40px and the first letters of both lines were off-screen.
+    const anchorCentre = rect.left + rect.width / 2
+    const left = Math.max(8, Math.min(anchorCentre - tooltipRect.width / 2, window.innerWidth - tooltipRect.width - 8))
+    const flipBelow = rect.top - tooltipRect.height - 8 < 8
+    tooltip.style.left = `${left}px`
+    tooltip.style.top = `${flipBelow ? rect.bottom + 8 : rect.top - tooltipRect.height - 8}px`
+    // The arrow follows the anchor instead of the box, and turns over when the
+    // box does, so it never points away from the control that was clicked.
+    const arrow = tooltip.querySelector('[data-tooltip-arrow]')
+    if (arrow) {
+      arrow.style.left = `${Math.max(12, Math.min(anchorCentre - left, tooltipRect.width - 12))}px`
+      if (flipBelow) {
+        arrow.className = 'absolute bottom-full left-0 -translate-x-1/2 border-4 border-transparent border-b-gray-900'
+      }
+    }
 
     // Auto-dismiss after 5s or on click-outside
     const dismiss = (e) => {
@@ -2386,11 +2573,11 @@ class ChatbotController extends Controller {
 
       // Skip intelligence if hero just applied an override (prevents async race)
       if (chatPrefs.intelligence && !this._heroOverrideActive) this.intelligenceValue = chatPrefs.intelligence
-      if (chatPrefs.model) this.modelOverrideValue = chatPrefs.model
-      // Profile/category intentionally NOT restored — always starts at "general"
+      if (chatPrefs.model && !this._heroOverrideActive) this.modelOverrideValue = chatPrefs.model
+      // Profile/category intentionally NOT restored: always starts at "general"
       // and auto-sets when user clicks a sample question.
-      if (chatPrefs.source) this.sourceValue = chatPrefs.source
-      if (chatPrefs.reasoningLevel) this.reasoningLevelValue = chatPrefs.reasoningLevel
+      if (chatPrefs.source && !this._heroOverrideActive) this.sourceValue = chatPrefs.source
+      if (chatPrefs.reasoningLevel && !this._heroOverrideActive) this.reasoningLevelValue = chatPrefs.reasoningLevel
     } catch (e) {
       // Corrupted prefs - ignore
     }
@@ -2401,7 +2588,7 @@ class ChatbotController extends Controller {
       prefsStore.set('chatbot', {
         intelligence: this.intelligenceValue,
         model: this.modelOverrideValue,
-        // Profile/category intentionally NOT saved — resets to "general" each session.
+        // Profile/category intentionally NOT saved: resets to "general" each session.
         source: this.sourceValue,
         reasoningLevel: this.reasoningLevelValue
       })
@@ -2488,7 +2675,7 @@ class ChatbotController extends Controller {
     const params = {}
     hash.slice(1).split('&').forEach(part => {
       const [key, ...rest] = part.split('=')
-      // A malformed %-sequence throws URIError — this runs inside connect(),
+      // A malformed %-sequence throws URIError; this runs inside connect(),
       // so an uncaught throw would abort the whole controller setup
       if (key) {
         try {
@@ -2501,6 +2688,25 @@ class ChatbotController extends Controller {
 
     const q = (params.q || '').trim()
     if (!q) return null
+
+    // The fallback homepage POST carries the same explicit settings as the
+    // inline handoff. Validate against server-rendered choices, then protect
+    // them from late preference hydration before the delayed send starts.
+    if (params.intelligence && this._intelligenceChoices().some(choice => choice.id === params.intelligence)) {
+      this._heroOverrideActive = true
+      this.intelligenceValue = params.intelligence
+      const options = [
+        ...(this._allModelOptions || []), ...(this._allWidgetModelOptions || []),
+        ...Array.from(document.querySelectorAll('#model-select option, #widget-model-select option'))
+      ]
+      const model = options.find(option => option.value === params.model && option.dataset.intelligence === params.intelligence)
+      if (model) this.modelOverrideValue = model.value
+      const sources = (params.sources || '').split(',').filter(source => ['legislation', 'jurisprudence', 'parliamentary'].includes(source))
+      if (sources.length) this.sourceValue = Array.from(new Set(sources)).join(',')
+      this._syncSlidersFromPreferences()
+      this._syncWidgetPills()
+      this._syncSourceCheckboxes()
+    }
 
     // Pre-select profile if provided
     const profile = (params.profile || '').trim()
@@ -2519,11 +2725,33 @@ class ChatbotController extends Controller {
 
     // Clear the hash fragment from the URL bar without triggering navigation
     history.replaceState(null, '', window.location.pathname + window.location.search)
-    return q
+    return { question: q.slice(0, 2000), draft: params.draft === '1' }
+  }
+
+  _applyHashQuestion({ question, draft }) {
+    if (draft) {
+      if (this.hasInputTarget) {
+        this.inputTarget.value = question
+        this._autoResize()
+        this._updateLengthHint()
+        this.inputTarget.focus()
+      }
+      return
+    }
+
+    setTimeout(() => {
+      if (!this.hasInputTarget || !this.element.isConnected) return
+      this.inputTarget.value = question
+      this._autoResize()
+      this.send()
+      if (this.hasMessagesTarget) {
+        this.messagesTarget.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 300)
   }
 
   // Reset the active conversation in memory. Nothing is stored client-side,
-  // so there is no browser storage to clear here — the server-side "archive"
+  // so there is no browser storage to clear here: the server-side "archive"
   // (see clearChat) is what makes a cleared conversation stop auto-restoring.
   _clearSavedConversation() {
     this.conversationHistory = []
@@ -2583,7 +2811,7 @@ class ChatbotController extends Controller {
         this.scrollToBottom()
       }
     } catch (e) {
-      // Network error — keep the welcome screen, no user-facing failure.
+      // Network error: keep the welcome screen, no user-facing failure.
     }
   }
 
@@ -2664,7 +2892,7 @@ class ChatbotController extends Controller {
     this._reattachSuggestionHandlers()
 
     // NOTE: feedback buttons use Stimulus data-action attributes, which
-    // rebind automatically on restored HTML — no manual rebinding needed.
+    // rebind automatically on restored HTML; no manual rebinding needed.
 
     // Re-attach deep analysis button handlers
     this.messagesTarget.querySelectorAll('[data-deep-analysis-btn]').forEach(btn => {
@@ -2676,59 +2904,100 @@ class ChatbotController extends Controller {
   _renderMessagesFromData(messages) {
     if (!this.hasMessagesTarget) return
     this.messagesTarget.innerHTML = ''
+    this.messagesTarget.classList.remove('chatbot-messages--empty')
 
-    for (const msg of sanitizeRestoredMessages(messages, this.languageValue)) {
-      if (msg.role === 'user') {
-        this._addMessageToUI('user', msg.content)
-      } else if (msg.role === 'assistant') {
-        this._addMessageToUI('assistant', msg.content)
+    // sanitizeRestoredMessages is a 1:1 map, so the position here is also the
+    // turn's position in conversationHistory - which is what the per-answer
+    // actions need to resolve the answer they were clicked on.
+    sanitizeRestoredMessages(messages, this.languageValue).forEach((msg, index) => {
+      if (msg.role === 'user' || msg.role === 'assistant') {
+        this._addMessageToUI(msg.role, msg.content, index)
       }
-    }
+    })
   }
 
   _sanitizeRestoredMessages(messages) {
     return sanitizeRestoredMessages(messages, this.languageValue)
   }
 
-  // Helper: add a rendered message bubble to the UI
-  _addMessageToUI(role, content) {
+  // Helper: add a rendered message bubble to the UI.
+  //
+  // This is the restore path (page load, Back, a conversation opened from
+  // Gesprekken). It used to build its OWN markup - a blue-600 question bubble
+  // whatever the accent theme, a grey rounded-2xl answer with no `.message`
+  // class for the page's bubble CSS to reach, and no meta row at all, so
+  // every earlier answer lost copy, export, save and report after a reload.
+  // It now builds exactly what addMessage() builds. `index` is the turn's
+  // position in conversationHistory: createMetaElement stamps that array's
+  // LENGTH, which is only correct while a live answer is being appended.
+  _addMessageToUI(role, content, index = null) {
     if (!this.hasMessagesTarget) return
 
-    const wrapper = document.createElement('div')
-    wrapper.className = role === 'user'
-      ? 'flex justify-end mb-4'
-      : 'flex justify-start mb-4'
+    const messageDiv = document.createElement('div')
+    messageDiv.className = this.getMessageClasses(role)
+    messageDiv.dataset.messageId = ++this.messageCount
 
-    const bubble = document.createElement('div')
-    if (role === 'user') {
-      bubble.className = 'max-w-[85%] sm:max-w-[75%] px-4 py-3 rounded-2xl rounded-br-md bg-blue-600 text-white text-sm leading-relaxed'
-      bubble.textContent = content
-    } else {
-      bubble.className = 'max-w-[85%] sm:max-w-[75%] px-4 py-3 rounded-2xl rounded-bl-md bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm leading-relaxed prose dark:prose-invert prose-sm max-w-none'
-      // Stored assistant content is raw markdown — render through the same
-      // escaping formatter as the live path (never raw innerHTML)
-      bubble.innerHTML = this.formatMessage(content)
+    const contentDiv = document.createElement('div')
+    contentDiv.className = 'message-content'
+    // Both roles through the same escaping formatter as the live path (never
+    // raw innerHTML). The question too: the composer offers Shift+Enter for a
+    // new line and formatMessage is what turns those newlines into <br>, so
+    // textContent here showed a multi-line question as one run-on line after
+    // a reload while the live bubble had kept its lines.
+    contentDiv.innerHTML = this.formatMessage(content)
+    messageDiv.appendChild(contentDiv)
+
+    if (role === 'assistant') {
+      // No response time, no token usage and no rating token: those belong to
+      // the live answer. ratingControlMarkup(null) renders nothing.
+      const metaDiv = this.createMetaElement(null, this.messageCount, null, null)
+      if (index !== null) {
+        const buttons = metaDiv.querySelector('.feedback-buttons')
+        if (buttons) buttons.dataset.turnIndex = index
+      }
+      messageDiv.appendChild(metaDiv)
     }
 
-    wrapper.appendChild(bubble)
-    this.messagesTarget.appendChild(wrapper)
+    this.messagesTarget.appendChild(messageDiv)
   }
 
   // Transient status toast
   _showToast(message, type = 'info') {
+    // One at a time, the rule utils/toast.js already follows: every toast is
+    // drawn at the same fixed spot, so a second one (press Enter again while
+    // a refusal is up, copy then export) landed exactly on top of the first
+    // and was announced over it. With a sentence now staying up to 10s that
+    // overlap is the normal case, not a near-miss.
+    document.querySelector('.chatbot-toast')?.remove()
+
     const toast = document.createElement('div')
     const colors = {
       success: 'bg-green-600',
       error: 'bg-red-600',
       info: 'bg-gray-700'
     }
-    toast.className = `fixed bottom-20 left-1/2 -translate-x-1/2 ${colors[type] || colors.info} text-white text-sm px-4 py-2 rounded-lg shadow-lg z-[9999] transition-opacity duration-300`
+    // w-max + a viewport cap: with only left:50% the shrink-to-fit width was
+    // capped at half the viewport, so a refused send wrapped into a 160px
+    // column of six lines on a phone.
+    toast.className = `chatbot-toast fixed bottom-20 left-1/2 -translate-x-1/2 w-max max-w-[calc(100vw-2rem)] text-center ${colors[type] || colors.info} text-white text-sm px-4 py-2 rounded-lg shadow-lg z-[9999] transition-opacity duration-300`
+    // For a refused send this toast is the ONLY explanation, and a bare div
+    // is invisible to assistive tech. Mirrors utils/toast.js.
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status')
+    toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite')
     toast.textContent = message
     document.body.appendChild(toast)
+    // The messages are whole sentences (the German encrypted-save failure is
+    // ~95 characters); a flat 2s was not enough to read them.
     setTimeout(() => {
       toast.style.opacity = '0'
       setTimeout(() => toast.remove(), 300)
-    }, 2000)
+    }, this._toastDurationMs(message))
+  }
+
+  // Reading time for a toast: 2.5s for a short confirmation, up to 10s for a
+  // sentence. Kept separate from _showToast so it can be pinned without a DOM.
+  _toastDurationMs(message) {
+    return Math.min(10000, Math.max(2500, String(message ?? '').length * 60))
   }
 
   // HTML escape helper
@@ -2736,7 +3005,7 @@ class ChatbotController extends Controller {
 
 // Apply mixins to the controller prototype.
 // Methods use `this` and behave identically to class methods.
-// NOTE: must copy property descriptors, not values — Object.assign would
+// NOTE: must copy property descriptors, not values: Object.assign would
 // invoke accessor properties (get _intelligenceLevels() etc.) once at module
 // evaluation time and freeze their snapshot onto the prototype.
 for (const mixin of [settingsMethods, creditsMethods, historyMethods, exportMethods, layoutMethods, encryptedPersistenceMethods, ratingMethods]) {

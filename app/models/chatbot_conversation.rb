@@ -13,6 +13,21 @@ class ChatbotConversation < ChatbotRecord
   EXPIRY_DURATION = 24.hours
   MAX_MESSAGES = 20
   MAX_TITLE_LENGTH = 100
+  # WW-SEC-09: per-row bounds for every writer. Generous: a zero-knowledge
+  # snapshot is the whole history as one Base64 AES-GCM blob, and an answer
+  # stays far below 50,000 characters (the longest output budget, 6,144
+  # tokens, is about 25,000), so 2 MiB holds a long conversation many times.
+  MESSAGES_MAX_BYTES = 2 * 1024 * 1024
+  TITLE_MAX_BYTES = 4 * 1024
+  MESSAGE_COUNT_MAX = 1_000
+  CONTEXT_NUMACS_MAX = 10
+  # An assistant message may carry the French answer a German answer on
+  # gesetzguide was made from, under this key (the same key as
+  # LegalChatbot::GermanAnswerTranslation::CONTEXT_KEY), and a user message
+  # the French question a German question was translated into (German
+  # answers v3). History replay gives the model that text in place of the
+  # German one; the reader sees content.
+  CONTEXT_CONTENT_KEY = 'context_content'
   SCHEMA_MIGRATION_MUTEX = Mutex.new
   REQUIRED_COLUMN_CONTRACT = {
     'id' => { type: :integer, null: false }.freeze,
@@ -223,6 +238,7 @@ class ChatbotConversation < ChatbotRecord
 
   validates :token, presence: true, uniqueness: true
   validates :language, presence: true # Allow any language - LLM responds in user's language
+  validate :payload_within_bounds
 
   # ═══════════════════════════════════════════════════════════════════
   # ZERO-KNOWLEDGE ENCRYPTION
@@ -273,11 +289,17 @@ class ChatbotConversation < ChatbotRecord
 
       role = message['role'] || message[:role]
       content = message['content'] || message[:content]
-      next message unless role.to_s == 'assistant' && legacy_reasoning_payload?(content)
+      context = message[CONTEXT_CONTENT_KEY] || message[CONTEXT_CONTENT_KEY.to_sym]
+      next message unless role.to_s == 'assistant' &&
+                          (legacy_reasoning_payload?(content) || (context && legacy_reasoning_payload?(context)))
 
       sanitized = message.deep_dup
       content_key = sanitized.key?('content') ? 'content' : :content
       sanitized[content_key] = legacy_reasoning_hidden_message(language)
+      # The replayed French text goes with the hidden answer: neither is
+      # shown nor handed back to the model.
+      sanitized.delete(CONTEXT_CONTENT_KEY)
+      sanitized.delete(CONTEXT_CONTENT_KEY.to_sym)
       sanitized['legacy_reasoning_hidden'] = true
       sanitized
     end
@@ -298,7 +320,11 @@ class ChatbotConversation < ChatbotRecord
 
       role = message['role'] || message[:role]
       content = message['content'] || message[:content]
-      ChatbotAnswerSafety.validate_visible_answer!(content) if role.to_s == 'assistant'
+      next unless role.to_s == 'assistant'
+
+      ChatbotAnswerSafety.validate_visible_answer!(content)
+      context = message[CONTEXT_CONTENT_KEY] || message[CONTEXT_CONTENT_KEY.to_sym]
+      ChatbotAnswerSafety.validate_visible_answer!(context) unless context.nil?
     end
     self.messages = array.to_json
   end
@@ -412,7 +438,7 @@ class ChatbotConversation < ChatbotRecord
         self.context_numacs_array = (numacs + existing).uniq.first(10)
       end
 
-      save! # guarded by lock_version — raises StaleObjectError on a concurrent write
+      save! # guarded by lock_version; raises StaleObjectError on a concurrent write
     rescue ActiveRecord::StaleObjectError
       # A concurrent add_message committed after our reload. Re-read and re-append.
       attempts += 1
@@ -446,7 +472,13 @@ class ChatbotConversation < ChatbotRecord
   # Persist a complete standard Q&A exchange while consuming the provider
   # lease in one optimistic-lock write. A concurrent clear/revoke that fences
   # or deletes the row wins cleanly; no retry may resurrect archived history.
-  def add_exchange_under_claim!(question:, answer:, numacs:, claim:)
+  #
+  # context_content: the French answer a German answer was made from, kept
+  # on the assistant entry for history replay (nil everywhere else).
+  # question_context_content: the French question a German question was
+  # translated into (German answers v3), kept on the user entry the same way.
+  def add_exchange_under_claim!(question:, answer:, numacs:, claim:, context_content: nil,
+                                question_context_content: nil)
     raise ActiveRecord::StaleObjectError.new(self, 'save claimed exchange') if zero_knowledge?
 
     rollback_receipt = nil
@@ -469,6 +501,15 @@ class ChatbotConversation < ChatbotRecord
       answer_entry = if answer.present?
                        { role: 'assistant', content: answer, timestamp: exchange_timestamp }
                      end
+      # Beside content, never in the rollback receipt's delivery_entry, which
+      # normalized_message_entry reduces to role, content and timestamp.
+      if answer_entry && context_content.is_a?(String) && context_content.present? && context_content != answer
+        answer_entry[CONTEXT_CONTENT_KEY.to_sym] = context_content
+      end
+      if question_context_content.is_a?(String) && question_context_content.present? &&
+         question_context_content != question
+        question_entry[CONTEXT_CONTENT_KEY.to_sym] = question_context_content
+      end
 
       msgs = messages_array
       msgs << question_entry
@@ -661,7 +702,7 @@ class ChatbotConversation < ChatbotRecord
 
   # The single conversation that should auto-restore on page load: the most
   # recently updated one the user hasn't cleared (archived) or let expire.
-  # Lets the active conversation be tracked SERVER-SIDE — no browser storage.
+  # Lets the active conversation be tracked SERVER-SIDE, with no browser storage.
   def self.active_for(user_id)
     for_user(user_id)
       .where('archived IS NULL OR archived = ?', false)
@@ -688,6 +729,14 @@ class ChatbotConversation < ChatbotRecord
   end
 
   private
+
+  # Measured only when written: an unchanged column is never decrypted here.
+  def payload_within_bounds
+    errors.add(:messages, :too_long) if will_save_change_to_messages? && messages.to_s.bytesize > MESSAGES_MAX_BYTES
+    errors.add(:title, :too_long) if will_save_change_to_title? && title.to_s.bytesize > TITLE_MAX_BYTES
+    errors.add(:language, :too_long) if language.to_s.bytesize > 16
+    errors.add(:message_count, :invalid) unless message_count.nil? || message_count.to_i.between?(0, MESSAGE_COUNT_MAX)
+  end
 
   def generate_token
     self.token ||= SecureRandom.urlsafe_base64(32)

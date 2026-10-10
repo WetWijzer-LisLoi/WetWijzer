@@ -69,7 +69,9 @@ module Retention
     end
 
     def send_first_warnings(result)
-      scope = User.where(confirmed_at: nil)
+      # WW-ABUSE-01: a suspended account is mailed no warning (each carries a
+      # fresh confirmation link) but is still scheduled and erased below.
+      scope = User.where(confirmed_at: nil, abuse_suspended_at: nil)
                   .where(created_at: ...24.hours.before(@now))
                   .where(unverified_warning_sent_at: nil)
       each_bounded(scope) do |user|
@@ -82,7 +84,7 @@ module Retention
     end
 
     def send_final_warnings(result)
-      scope = User.where(confirmed_at: nil)
+      scope = User.where(confirmed_at: nil, abuse_suspended_at: nil)
                   .where(created_at: ...6.days.before(@now))
                   .where.not(unverified_warning_sent_at: nil)
                   .where(unverified_final_warning_sent_at: nil)
@@ -112,7 +114,7 @@ module Retention
     end
 
     def send_deletion_warnings(result)
-      scope = User.where(deletion_reason: 'user_requested')
+      scope = User.where(deletion_reason: 'user_requested', abuse_suspended_at: nil)
                   .where.not(deletion_scheduled_for: nil)
                   .where(deletion_final_warning_sent_at: nil)
                   .where(deletion_scheduled_for: @now..1.day.after(@now))

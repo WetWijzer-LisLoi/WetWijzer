@@ -19,11 +19,22 @@
 # - Legally retained financial records (issued invoices, provider payment
 #   ledgers) are included read-only with a documented retention note; they
 #   survive account erasure unlinked under statutory retention.
-# - Memory is bounded with find_each batches; callers must log only THAT an
-#   export occurred, never its contents.
+# - The production download consumes each_json into an anonymous buffer,
+#   then sends fixed-size chunks. Reads are uncached and batched in eight
+#   records, including heavy conversation rows. No section is capped or
+#   truncated. The compatibility .call interface still collects a Hash; it
+#   is not used for the production download.
+# - An abuse suspension (WW-ABUSE-01) is the account holder's data: the
+#   profile carries its time and allowlisted reason, null when there is
+#   none. The signup counters and proofs are not account records (keyed,
+#   expiring cache entries) and are never exported.
+# - An activity an administrator performed records the administrator's
+#   address and browser, not the account holder's: its row keeps the action
+#   and the time, and exports both of those fields as null (GDPR Art. 15(4)).
+# - Callers must log only THAT an export occurred, never its contents.
 class AccountExportService
   SCHEMA_VERSION = 2
-  BATCH_SIZE = 500
+  BATCH_SIZE = 8
 
   RETAINED_FINANCIAL_NOTE =
     'Issued invoices and provider payment records are retained for the ' \
@@ -44,6 +55,41 @@ class AccountExportService
   end
 
   def call
+    envelope.transform_values { |value| value.is_a?(Enumerator) ? value.to_a : value }
+  end
+
+  # Scalars and each collection row use the same ActiveSupport JSON encoding
+  # as the compatibility Hash. Never serialize an entire collection/envelope.
+  def each_json
+    return enum_for(:each_json) unless block_given?
+
+    yield '{'
+    first_field = true
+    envelope.each do |key, value|
+      yield ',' unless first_field
+      first_field = false
+      yield "#{key.to_json}:"
+      if value.is_a?(Enumerator) || value.is_a?(Array)
+        yield '['
+        first_row = true
+        value.each do |row|
+          yield ',' unless first_row
+          first_row = false
+          yield row.to_json
+        end
+        yield ']'
+      else
+        yield value.to_json
+      end
+    end
+    yield '}'
+  end
+
+  private
+
+  attr_reader :user
+
+  def envelope
     {
       schema_version: SCHEMA_VERSION,
       exported_at: Time.current.iso8601,
@@ -59,13 +105,11 @@ class AccountExportService
       usage: usage,
       usage_logs: usage_logs,
       chatbot_reports: chatbot_reports,
+      chatbot_feedback: chatbot_feedback,
+      admin_sessions: admin_sessions,
       conversations: conversations
     }
   end
-
-  private
-
-  attr_reader :user
 
   def profile
     {
@@ -87,7 +131,9 @@ class AccountExportService
       conversation_storage_consented_at: user.try(:conversation_storage_consented_at),
       two_factor_enabled: user.try(:otp_enabled),
       deletion_requested_at: user.try(:deletion_requested_at),
-      deletion_scheduled_for: user.try(:deletion_scheduled_for)
+      deletion_scheduled_for: user.try(:deletion_scheduled_for),
+      abuse_suspended_at: user.try(:abuse_suspended_at),
+      abuse_suspension_reason: user.try(:abuse_suspension_reason)
     }
   end
 
@@ -127,10 +173,9 @@ class AccountExportService
 
   def bookmarks
     return [] unless user.respond_to?(:bookmarks)
+    return [] unless user.bookmarks.klass.table_exists?
 
     collect(user.bookmarks) { |bookmark| safe_slice(bookmark, %i[created_at]).merge(reference: bookmark.try(:numac) || bookmark.try(:reference)) }
-  rescue ActiveRecord::StatementInvalid
-    []
   end
 
   def activity_log
@@ -138,7 +183,8 @@ class AccountExportService
       # site_brand: ABA-007. An explicit slice field beside the existing ones,
       # never the metadata hash. A scrubbed or pre-rollout event simply
       # carries null - additive under the schema-version-2 contract.
-      safe_slice(activity, %i[action ip_address user_agent created_at site_brand])
+      row = safe_slice(activity, %i[action ip_address user_agent created_at site_brand])
+      activity.metadata.key?('admin') ? row.merge(ip_address: nil, user_agent: nil) : row
     end
   end
 
@@ -162,6 +208,7 @@ class AccountExportService
     profile_used concise_mode temperature_used output_token_limit follow_up
     prompt_version retrieval_version generation_trace_version generation_config_fingerprint
     provider_calls citation_guard_outcome citation_guard_retries sources_count
+    charge_waived_reason
   ].freeze
 
   # Analytics columns that are NOT in the list above, each for a stated reason.
@@ -232,6 +279,28 @@ class AccountExportService
     end
   end
 
+  # WW-PRIV-09: every thumbs up or down the account submitted, linked to an
+  # answer or not; account erasure already deletes them. The usage rows only
+  # carried the latest verdict per answer, so standalone submissions and their
+  # times were missing. ip_hash is never exported.
+  def chatbot_feedback
+    return [] unless analytics_table?(ChatbotFeedback)
+
+    collect(ChatbotFeedback.where(user_id: user.id)) do |feedback|
+      safe_slice(feedback, %i[feedback_type language source created_at])
+    end
+  end
+
+  # WW-PRIV-05: an admin account's own sign-in sessions, without the token
+  # digest or the keyed address hash (internal, as everywhere in the export).
+  def admin_sessions
+    return [] unless AdminSession.table_exists?
+
+    collect(AdminSession.where(user_id: user.id)) do |session|
+      safe_slice(session, %i[created_at last_seen_at absolute_expires_at revoked_at user_agent])
+    end
+  end
+
   def conversations
     return [] unless ChatbotConversation.table_exists?
 
@@ -265,14 +334,19 @@ class AccountExportService
         )
       end
     end
-  rescue ActiveRecord::StatementInvalid
-    []
   end
 
   def collect(scope, &)
-    rows = []
-    scope.find_each(batch_size: BATCH_SIZE) { |record| rows << yield(record) }
-    rows
+    Enumerator.new do |rows|
+      scope.klass.connection_pool.with_connection do
+        # Without uncached, Rails' query cache retains every batch even though
+        # the serializer itself is incremental. Leave an existing request's
+        # connection lease to its owner; return any connection we acquired.
+        scope.klass.uncached do
+          scope.find_each(batch_size: BATCH_SIZE) { |record| rows << yield(record) }
+        end
+      end
+    end
   end
 
   # slice raises on a column the local database predates; the export contract
@@ -285,7 +359,5 @@ class AccountExportService
 
   def analytics_table?(model)
     model.table_exists?
-  rescue StandardError
-    false
   end
 end

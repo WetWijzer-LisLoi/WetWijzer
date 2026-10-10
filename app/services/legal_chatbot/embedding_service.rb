@@ -76,7 +76,7 @@ module LegalChatbot
         end
         break
       rescue StandardError => e
-        # Retry on TRANSIENT failures — not just 429. A single slow Azure
+        # Retry on TRANSIENT failures, not just 429. A single slow Azure
         # response (Timeout) or a network blip used to break the entire chatbot
         # request because only rate-limit errors were retried; a normal
         # embedding is ~0.3s, so a >20s call is an anomaly that a retry recovers.

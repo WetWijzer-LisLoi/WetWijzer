@@ -28,7 +28,11 @@ class ParliamentaryController < ApplicationController
     end
 
     filters = { parliament: @parliament, year: @year, legislature: @legislature, numac: @numac }
-    lang = I18n.locale == :nl ? 'nl' : 'fr'
+    lang = ParliamentaryRelations.document_language
+    # WW-LINK-01: "view all" from a law page lists exactly what the panel
+    # counted, through the same relation (reviewed dossiers, else the
+    # corpus's automatic links), and says which one it is.
+    load_relation(@numac, lang, filters) if @numac
 
     if @query.present? || filters.values.any?(&:present?)
       @documents = search_documents(@query, filters.merge(lang: lang), per_page, offset)
@@ -127,16 +131,37 @@ class ParliamentaryController < ApplicationController
         end
       end
 
-      # Look up the related legislation title from the main laws DB
-      if @document[:legislation_numac].present?
-        lang_id = @document[:language] == 'fr' ? 2 : 1
-        law = Legislation.find_by(numac: @document[:legislation_numac], language_id: lang_id)
-        law ||= Legislation.find_by(numac: @document[:legislation_numac]) # fallback to any language
-        @related_law = { numac: law.numac, title: law.title } if law
+      # The laws this document belongs to, from the relation the law page's
+      # panel uses (WW-LINK-01). A reviewed dossier can prepare several
+      # different laws, all verified; it never turns them into aliases. The
+      # corpus's own NUMAC is shown only when no reviewed relation applies.
+      relations = ParliamentaryRelations.laws_for_document(
+        parliament: @document[:parliament], legislature: @document[:legislature],
+        dossier_number: @document[:dossier_number], legislation_numac: @document[:legislation_numac]
+      )
+      language_id = { 'nl' => 1, 'fr' => 2 }[@document[:language]]
+      if language_id
+        @related_laws = relations.filter_map do |relation|
+          law = Legislation.find_by(numac: relation[:numac], language_id: language_id)
+          # A document can only link to an available Dutch/French site row;
+          # never fall through to a German corpus-only row.
+          law ||= Legislation.in_site_languages.find_by(numac: relation[:numac])
+          { numac: law.numac, title: law.title, status: relation[:status], language_id: law.language_id } if law
+        end
       end
+      @related_laws ||= []
+      # Kept during the transition for callers and focused tests that assert
+      # the original single-link contract.
+      @related_law = @related_laws.first
 
       # Load roll-call vote details (naamstemmingen) for this dossier
       load_vote_details(db_handle: chamber_db)
+
+      # The Council of State opinions this document prints or cites, as the
+      # weekly link job found them (OpinionParliamentLinks). Each links to
+      # the opinion under this document's language suffix; the opinion page
+      # redirects when only the other language is published.
+      @council_opinions = OpinionParliamentLinks.opinions_for(@document[:id], language: @document[:language])
     else
       render plain: 'Document not found', status: :not_found
     end
@@ -333,6 +358,26 @@ class ParliamentaryController < ApplicationController
 
   private
 
+  # The relation behind a law's "view all" list: @relation_status
+  # (:verified, :unverified or :empty), the law's title and the dossiers to
+  # link, and the filter that selects its documents.
+  def load_relation(numac, lang, filters)
+    filters[:relation] = ParliamentaryRelations::Filter.for(numac, chamber_db, language: lang)
+    @relation_status = if filters[:relation].nil? then :empty
+                       elsif filters[:relation].verified? then :verified
+                       else :unverified
+                       end
+    @relation_dossiers = filters[:relation]&.dossiers.to_a
+    law = Legislation.find_by(numac: numac, language_id: I18n.locale == :fr ? 2 : 1)
+    law ||= Legislation.in_site_languages.find_by(numac: numac)
+    @relation_law_title = law&.title
+  end
+
+  # [sql, binds] for the law filter; a law without any relation lists nothing
+  def relation_where(filters)
+    filters[:relation] ? filters[:relation].where : ['0 = 1', []]
+  end
+
   def chamber_db
     db_path = ENV.fetch('CHAMBER_DB') do
       Rails.root.join('storage', 'chamber.sqlite3').to_s
@@ -380,10 +425,10 @@ class ParliamentaryController < ApplicationController
     params = []
 
     if query.present?
-      # Use FTS5 for fast full-text search
-      fts_query = query.gsub(/[^\p{L}\p{N}\s]/, ' ').squish
+      # Use FTS5 for fast full-text search; an opinion number is a phrase
+      # (ParliamentaryFtsQuery).
       conditions << 'documents.id IN (SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?)'
-      params << fts_query
+      params << ParliamentaryFtsQuery.build(query)
     end
 
     if filters[:parliament].present?
@@ -407,13 +452,17 @@ class ParliamentaryController < ApplicationController
     end
 
     if filters[:numac].present?
-      conditions << 'legislation_numac = ?'
-      params << filters[:numac]
+      relation_sql, relation_binds = relation_where(filters)
+      conditions << relation_sql
+      params.concat(relation_binds)
     end
 
     where_clause = conditions.any? ? "WHERE #{conditions.join(' AND ')}" : ''
 
-    sql = "SELECT id, parliament, dossier_number, document_number, title, url, document_date, document_type, substr(content, 1, 800), legislature FROM documents #{where_clause} ORDER BY id DESC LIMIT ? OFFSET ?"
+    # a law's documents in parliamentary order, so its first page starts with
+    # the rows the law page's panel previews
+    order = filters[:numac].present? && query.blank? ? ParliamentaryRelations::Filter::ORDER : 'id DESC'
+    sql = "SELECT id, parliament, dossier_number, document_number, title, url, document_date, document_type, substr(content, 1, 800), legislature FROM documents #{where_clause} ORDER BY #{order} LIMIT ? OFFSET ?"
     params += [limit, offset]
 
     chamber_db.execute(sql, params).map do |row|
@@ -427,9 +476,8 @@ class ParliamentaryController < ApplicationController
     params = []
 
     if query.present?
-      fts_query = query.gsub(/[^\p{L}\p{N}\s]/, ' ').squish
       conditions << 'documents.id IN (SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?)'
-      params << fts_query
+      params << ParliamentaryFtsQuery.build(query)
     end
 
     if filters[:parliament].present?
@@ -448,8 +496,9 @@ class ParliamentaryController < ApplicationController
     end
 
     if filters[:numac].present?
-      conditions << 'legislation_numac = ?'
-      params << filters[:numac]
+      relation_sql, relation_binds = relation_where(filters)
+      conditions << relation_sql
+      params.concat(relation_binds)
     end
 
     where_clause = conditions.any? ? "WHERE #{conditions.join(' AND ')}" : ''

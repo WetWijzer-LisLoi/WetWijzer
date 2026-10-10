@@ -43,7 +43,8 @@ module Search
           id: law.numac,
           title: truncate(law.title, 100),
           subtitle: format_date(law.date),
-          url: "/laws/#{law.numac}?language_id=#{law.language_id}",
+          # WW-SEC-15: the NUMAC is encoded as a path segment, as the case number is.
+          url: Rails.application.routes.url_helpers.show_law_path(law.numac.to_s, language_id: law.language_id),
           source: source_name,
           score: 1.0
         }

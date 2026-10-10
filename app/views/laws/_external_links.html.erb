@@ -29,10 +29,25 @@
         <% end %>
       </li>
     <% end %>
-    <% if law.justel != "N/A" %>
+    <%# A German text (German site only): its source, and the publication ELI
+        in place of a Justel link, which a German row never has (the Justel
+        consolidated database holds no German text, plan section 1.1) %>
+    <% german_row = law.respond_to?(:language_id) && law.language_id == HasLanguage::GERMAN_LANGUAGE_ID %>
+    <% german_source_url = german_row && law.mon.to_s.match?(%r{\Ahttps?://}i) ? law.mon : nil %>
+    <% if german_source_url %>
+      <li>
+        <%= link_to german_source_url, class: "text-(--link-color) hover:text-(--link-hover-color) hover:underline", target: "_blank", rel: "nofollow" do %>
+          <%= t('german_text.source_link') %>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline-block ml-1">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-4.5 0V6.75A.75.75 0 0114.25 6h1.5a.75.75 0 01.75.75v1.5m-4.5 0h4.5m-4.5 0l6-6" />
+          </svg>
+        <% end %>
+      </li>
+    <% end %>
+    <% if law.justel != "N/A" && !(german_row && law.justel.blank?) %>
       <li>
         <%= link_to law.justel, class: "text-(--link-color) hover:text-(--link-hover-color) hover:underline", target: "_blank", rel: "nofollow" do %>
-          <%= t(:justel).capitalize() %>
+          <%= german_row ? t('german_text.eli_link') : t(:justel).capitalize() %>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline-block ml-1">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-4.5 0V6.75A.75.75 0 0114.25 6h1.5a.75.75 0 01.75.75v1.5m-4.5 0h4.5m-4.5 0l6-6" />
           </svg>

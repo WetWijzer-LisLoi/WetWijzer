@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
 class ChatbotController < ApplicationController
-  before_action :check_access, only: [:ask]
-  before_action :check_usage_limit, only: [:ask]
-
   def index
     @language = params[:language] || I18n.locale.to_s
     @source = params[:source] || 'legislation'
@@ -11,8 +8,28 @@ class ChatbotController < ApplicationController
     unless current_user
       # Account required for chatbot access
       # Preserve return path so user comes back to chatbot after login
-      redirect_to login_path(redirect_to: request.fullpath), alert: t('auth.login_required')
+      # Public source references survive sign-in, but a legacy ?q= link must
+      # not embed a legal question inside an unfiltered redirect_to parameter.
+      return_path = chatbot_path(draft_reference_params)
+      redirect_to login_path(redirect_to: return_path), alert: t('auth.login_required')
       return
+    end
+
+    # Ask AI is an editable draft, not consent to make a billable request. Only
+    # a public corpus reference crosses the login flow; resolve its title now
+    # and transport the draft in a fragment, filtered from redirect logs.
+    if params[:draft_source].present?
+      title = draft_document_title
+      return redirect_to chatbot_path unless title.present?
+
+      prefix = case I18n.locale when :fr then 'Expliquez :' when :de then 'Erklären Sie:' when :en then 'Explain:' else 'Leg uit:' end
+      return redirect_to "#{chatbot_path}#q=#{ERB::Util.url_encode("#{prefix} #{title}".truncate(2000))}&draft=1", allow_other_host: false
+    end
+
+    # Old links with a direct question still work for an authenticated reader,
+    # but become drafts too. They are never copied into cookies or persistence.
+    if params[:q].is_a?(String) && params[:q].strip.present?
+      return redirect_to "#{chatbot_path}#q=#{ERB::Util.url_encode(params[:q].strip.truncate(2000))}&draft=1", allow_other_host: false
     end
 
     # Hero form handoff: the question is not persisted. After this request it is
@@ -35,145 +52,90 @@ class ChatbotController < ApplicationController
       fragment = "q=#{ERB::Util.url_encode(q)}"
       profile = params[:profile].to_s.strip
       fragment += "&profile=#{ERB::Util.url_encode(profile)}" if profile.present? && LegalChatbotService.profile_exists?(profile)
+      hero_handoff_settings.each do |key, value|
+        fragment += "&#{key}=#{ERB::Util.url_encode(value)}"
+      end
       redirect_to "#{base}##{fragment}", allow_other_host: false
     else
       redirect_to base
     end
   end
 
+  # POST /chatbot/ask - retired (WW-SEC-17). It checked the balance, generated
+  # an answer and only then debited, ignoring a debit that failed, so two
+  # requests on a last credit got two paid answers for one credit. No page
+  # has called it since the chatbot moved to /api/chatbot/ask, which reserves
+  # credits before any provider work. It answers 410 and reaches neither a
+  # provider nor the credit ledger.
   def ask
-    question = params[:question]&.strip
-    @language = params[:language].presence || I18n.locale.to_s
-    @source = params[:source].presence || 'legislation'
-    @model = params[:model].presence || 'gpt-5-mini'
-
-    if question.blank?
-      @error = @language == 'fr' ? 'La question est obligatoire' : 'Vraag is verplicht'
-      render :index and return
-    end
-
-    @language = 'nl' unless %w[nl fr de en].include?(@language)
-
-    # Validate model access for authenticated users
-    if current_user && !LegalChatbotService.model_allowed?(@model, current_user.current_tier)
-      @error = t('chatbot.model_not_available', model: @model)
-      render :index and return
-    end
-
-    source_sym = @source.to_sym
-    # Only allow known sources (chatbot is behind auth, so jurisprudence is GDPR-safe)
-    source_sym = :legislation unless %i[legislation parliamentary jurisprudence].include?(source_sym)
-
-    # Cost caps — same enforcement as the API path (this path previously
-    # bypassed the per-model daily and provider estimated-spend circuit breakers)
-    if LegalChatbotService.model_at_daily_cap?(@model) || LegalChatbotService.provider_at_monthly_cap?(@model)
-      @error = t('chatbot.capacity_limit', default: 'Dagelijkse limiet bereikt. Probeer het later opnieuw.')
-      render :index and return
-    end
-
-    # The third-party dossier lookup was removed on 2026-08-08 with the rest of that
-    # integration. It was already inert: its credentials had left the server environment
-    # the same day.
-    case_context = nil
-    service = LegalChatbotService.new(language: @language, model: @model, case_context: case_context)
-
-    @result = service.ask(question, source: source_sym)
-
-    # Track usage — only when an answer was produced. The service returns
-    # { error: 'timeout' } instead of raising, and users were being charged
-    # for an apology message.
-    track_usage! unless @result[:error]
-
-    @queries_remaining = queries_remaining
-    render :index
-  rescue StandardError => e
-    Rails.logger.error("Chatbot error: #{e.message}\n#{e.backtrace.first(5).join("\n")}")
-    @error = case @language
-             when 'fr' then "Une erreur s'est produite. Veuillez réessayer."
-             when 'de' then 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.'
-             when 'en' then 'An error occurred. Please try again.'
-             else 'Er is een fout opgetreden. Probeer het opnieuw.'
-             end
-    render :index
+    head :gone
   end
 
   private
 
-  def check_access
-    # Require authentication - no anonymous access
-    unless current_user
-      if request.format.html?
-        redirect_to login_path, alert: t('auth.login_required')
+  # Only public configuration codes cross the fragment handoff. This does not
+  # grant access: the normal send-time/API entitlement checks still apply.
+  def hero_handoff_settings
+    intelligence = params[:intelligence]
+    model = params[:model]
+    levels = LegalChatbotService::INTELLIGENCE_LEVELS
+    settings = {}
+    if intelligence.is_a?(String) && levels.key?(intelligence)
+      settings['intelligence'] = intelligence
+      settings['model'] = model if model.is_a?(String) && levels[intelligence][:models].key?(model)
+    end
+    if params[:sources].is_a?(String) && params[:sources].bytesize <= 256
+      sources = params[:sources].split(',').select { |source| ChatbotSourceCategories::ALL.include?(source) }.uniq
+      settings['sources'] = sources.join(',') if sources.any?
+    end
+    settings
+  end
+
+  def draft_reference_params
+    source = params[:draft_source]
+    identifier = params[:draft_id]
+    language = params[:draft_language]
+    return {} unless source.is_a?(String) && identifier.is_a?(String) && language.is_a?(String)
+    return {} if source.bytesize > 20 || identifier.bytesize > 32 || language.bytesize > 1
+
+    valid = case source
+            when 'legislation'
+              %w[1 2 3].include?(language) && identifier.match?(/\A(?:[0-9A-Z]{10}|FISCONET_[0-9]{1,6})\z/)
+            when 'jurisprudence', 'parliamentary'
+              %w[1 2].include?(language) && identifier.match?(/\A[1-9][0-9]{0,17}\z/)
+            end
+    valid ? { draft_source: source, draft_id: identifier, draft_language: language } : {}
+  end
+
+  def draft_document_title
+    reference = draft_reference_params
+    return if reference.empty?
+
+    source, identifier, language = reference.values_at(:draft_source, :draft_id, :draft_language)
+    language_id = language.to_i
+    case source
+    when 'legislation'
+      served_legislation.where(numac: identifier, language_id: language_id).pick(:title)
+    when 'jurisprudence', 'parliamentary'
+      path = source == 'jurisprudence' ? ENV.fetch('JURISPRUDENCE_SOURCE_DB', Rails.root.join('storage', 'jurisprudence.db').to_s) : ENV.fetch('CHAMBER_DB', Rails.root.join('storage', 'chamber.sqlite3').to_s)
+      return unless File.file?(path)
+
+      db = SQLite3::Database.new(path, readonly: true)
+      db.busy_timeout = 3000
+      if source == 'jurisprudence'
+        row = db.get_first_row('SELECT case_number, language_id FROM cases WHERE id = ? LIMIT 1', [identifier.to_i])
+        row[0] if row && row[1].to_i == language_id
       else
-        render json: { error: t('auth.login_required') }, status: :unauthorized
+        row = db.get_first_row('SELECT title, language FROM documents WHERE id = ? LIMIT 1', [identifier.to_i])
+        row_language = row && row[1].to_s.upcase.start_with?('F') ? 2 : 1
+        row[0] if row && row_language == language_id
       end
-      return
     end
-
-    # Check if user can use chatbot (active account + within limits)
-    return if current_user.can_use_chatbot?
-
-    if request.format.html?
-      redirect_to pricing_path, alert: t('chatbot.limit_exceeded')
-    else
-      render json: { error: t('chatbot.limit_exceeded') }, status: :payment_required
-    end
-  end
-
-  def check_usage_limit
-    return unless current_user
-
-    source = (params[:source].presence || 'legislation').to_sym
-    credit_cost = total_credit_cost(source)
-
-    # Check if user can access the requested source
-    unless current_user.can_access_source?(source)
-      # :all and :custom are denied only for want of Pro (every multi-source
-      # set contains a Pro source), so they must not claim a credit shortage.
-      @error = case source
-               when :parliamentary
-                 t('chatbot.parliamentary_paid_only')
-               when :jurisprudence, :all, :custom
-                 t('chatbot.jurisprudence_paid_only')
-               else
-                 t('chatbot.insufficient_credits', cost: credit_cost)
-               end
-      @credits_remaining = current_user.total_available_credits
-      @credit_cost = credit_cost
-      render :index and return
-    end
-
-    # Check if user has enough credits
-    return if current_user.has_credits?(credit_cost)
-
-    @error = t('chatbot.insufficient_credits', cost: credit_cost, balance: current_user.credits)
-    @credits_remaining = current_user.total_available_credits
-    @credit_cost = credit_cost
-    render :index and return
-  end
-
-  def track_usage!
-    return unless current_user
-
-    source = (params[:source].presence || 'legislation').to_sym
-    # Charge base source cost PLUS the premium-model surcharge — this path
-    # previously charged 1 credit flat even for premium models (12-13cr via
-    # the API for the same query)
-    current_user.deduct_credits_with_priority!(total_credit_cost(source), intelligence: 'smart')
-  end
-
-  # Source surcharge + the model's canonical absolute price (matches the API
-  # path). The source cost already contains the one-credit base, so remove it
-  # before adding the absolute model price.
-  def total_credit_cost(source)
-    model = params[:model].presence || 'gpt-5-mini'
-    source_cost = current_user.credit_cost_for(source)
-    model_cost = if LegalChatbotService::AVAILABLE_MODELS.key?(model)
-                   LegalChatbotService.canonical_credits_for_model(model)
-                 else
-                   1
-                 end
-    source_cost + model_cost - 1
+  rescue ActiveRecord::ActiveRecordError, SQLite3::Exception => e
+    Rails.logger.warn("Chatbot public draft lookup unavailable: #{e.class}")
+    nil
+  ensure
+    db&.close
   end
 
   def queries_remaining

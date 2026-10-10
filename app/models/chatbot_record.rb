@@ -18,9 +18,7 @@ class ChatbotRecord < ActiveRecord::Base
   # on every boot - noise that made the deploy log harder to read at exactly
   # the moment a deploy log matters.
   begin
-    if connection.adapter_name.to_s.match?(/sqlite/i)
-      connection.execute('PRAGMA journal_mode=WAL')
-    end
+    connection.execute('PRAGMA journal_mode=WAL') if connection.adapter_name.to_s.match?(/sqlite/i)
   rescue StandardError => e
     Rails.logger.warn("[ChatbotRecord] WAL setup skipped: #{e.class}") if defined?(Rails)
   end

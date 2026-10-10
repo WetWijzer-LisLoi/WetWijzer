@@ -12,9 +12,9 @@
           </span>
         </div>
       <% end %>
-      <h2 class="mt-2 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+      <h1 class="mt-2 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
         <%= admin_login ? 'Admin Login' : t('auth.login') %>
-      </h2>
+      </h1>
       <% unless admin_login %>
         <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
           <%= t('auth.no_account') %>

@@ -9,6 +9,13 @@
 <div data-controller="bookmarks-page">
 <% end %>
 
+  <%# 10:49 no-JS plan, C.4: the bookmarks are loaded and kept through scripts. %>
+  <noscript>
+    <p id="bookmarks-noscript" class="mt-8 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4 text-sm text-amber-900 dark:text-amber-200">
+      <%= t('bookmarks.noscript') %>
+    </p>
+  </noscript>
+
   <div class="mt-8 flex gap-6">
     <%# Folder Sidebar %>
     <aside class="w-56 shrink-0 hidden md:block" data-bookmarks-page-target="sidebar">
@@ -24,9 +31,14 @@
 
         <%# Folder creation input %>
         <div class="hidden mb-3" data-bookmarks-page-target="createFolderForm">
+          <% folder_name_label = case I18n.locale when :fr then 'Nom du dossier' when :de then 'Ordnername' when :en then 'Folder name' else 'Mapnaam' end %>
+          <% create_folder_label = case I18n.locale when :fr then 'Créer le dossier' when :de then 'Ordner erstellen' when :en then 'Create folder' else 'Map aanmaken' end %>
+          <%# This is a folder name, not a username: give browsers explicit
+              semantics and opt this non-credential field out of autocomplete. %>
+          <label for="bookmark-folder-name" class="sr-only"><%= folder_name_label %></label>
           <div class="flex gap-1">
-            <input type="text" class="flex-1 text-sm px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-(--accent-500) focus:outline-hidden" data-bookmarks-page-target="newFolderInput" data-action="keydown.enter->bookmarks-page#createFolder keydown.escape->bookmarks-page#hideCreateFolder" placeholder="<%= case I18n.locale when :fr then 'Nom du dossier' when :de then 'Ordnername' when :en then 'Folder name' else 'Mapnaam' end %>">
-            <button type="button" class="px-2 py-1 text-sm bg-(--accent-600-solid) text-white rounded hover:bg-(--accent-700-solid) transition-colors" data-action="click->bookmarks-page#createFolder">
+            <input type="text" id="bookmark-folder-name" name="bookmark_folder_name" autocomplete="off" maxlength="100" class="flex-1 min-w-0 text-sm px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-(--accent-500) focus:outline-hidden" data-bookmarks-page-target="newFolderInput" data-action="keydown.enter->bookmarks-page#createFolder keydown.esc->bookmarks-page#hideCreateFolder" placeholder="<%= folder_name_label %>">
+            <button type="button" class="shrink-0 px-2 py-1 text-sm bg-(--accent-600-solid) text-white rounded hover:bg-(--accent-700-solid) transition-colors" data-action="click->bookmarks-page#createFolder" aria-label="<%= create_folder_label %>" title="<%= create_folder_label %>">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             </button>
           </div>

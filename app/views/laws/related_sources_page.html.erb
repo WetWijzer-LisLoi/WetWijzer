@@ -1,0 +1,17 @@
+<%# The related sources of one law as a page of their own: where the law
+    page's buttons lead when scripts are off (the no-JavaScript plan of
+    2026-10-08, C.3). Case law is paginated here; the in-place panel remains
+    a lightweight preview with a link to this law-scoped full listing. %>
+<div class="max-w-4xl mx-auto px-4 py-6">
+  <p class="mb-4 text-sm">
+    <%= link_to law_path(@law.numac, language_id: @language_id),
+                class: 'text-(--link-color) hover:text-(--link-hover-color) hover:underline' do %>
+      <span aria-hidden="true">&larr;</span> <%= @law.title.to_s.truncate(160) %>
+    <% end %>
+  </p>
+  <h1 class="mb-1 text-2xl font-semibold text-gray-900 dark:text-white"><%= @related_sources_heading %></h1>
+  <p class="mb-4 text-gray-600 dark:text-gray-300 [overflow-wrap:anywhere]"><%= @law.title %></p>
+  <div class="rounded-xl bg-white shadow-sm dark:bg-gray-800">
+    <%= panel_html.html_safe %>
+  </div>
+</div>

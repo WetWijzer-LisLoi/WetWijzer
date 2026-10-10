@@ -1,0 +1,17 @@
+<%= content_for :title, t('auth.registration_country_restricted.title') %>
+
+<div class="min-h-screen flex items-start justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <section class="max-w-lg w-full bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm"
+           aria-labelledby="registration-country-title">
+    <h1 id="registration-country-title" class="text-2xl font-bold text-gray-900 dark:text-white">
+      <%= t('auth.registration_country_restricted.title') %>
+    </h1>
+    <p class="mt-4 text-gray-700 dark:text-gray-300">
+      <%= t('auth.registration_country_restricted.message') %>
+    </p>
+    <div class="mt-6 flex flex-wrap gap-4">
+      <%= link_to t('auth.login'), login_path, class: 'font-medium text-(--accent-600) hover:underline' %>
+      <%= link_to t('auth.registration_country_restricted.browse'), root_path, class: 'font-medium text-(--accent-600) hover:underline' %>
+    </div>
+  </section>
+</div>

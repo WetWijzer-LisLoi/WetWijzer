@@ -33,14 +33,43 @@ const SCORE_MAX = 10
 // The CSS already clamps the panel WIDTH to the viewport, which is precisely
 // why this went unseen: nothing overflowed the document, there was no
 // horizontal scrollbar, just stars nobody could reach.
+//
+// The viewport-bounded case of panelShiftWithin below, which is what the
+// control now uses: the viewport is rarely the box that clips this panel.
 export function panelShiftIntoView(rect, viewportWidth, margin = 8) {
   if (!rect || !viewportWidth) return 0
 
-  // Wider than the screen allows: pin to the left margin, since the low scores
-  // are the ones the anchor pushes off.
-  if (rect.width > viewportWidth - (margin * 2)) return Math.round(margin - rect.left)
-  if (rect.left < margin) return Math.ceil(margin - rect.left)
-  if (rect.right > viewportWidth - margin) return -Math.ceil(rect.right - (viewportWidth - margin))
+  return panelShiftWithin(rect, { left: margin, right: viewportWidth - margin })
+}
+
+// The same sum against the box that actually clips the panel.
+//
+// Knowing only the viewport is why this stayed broken in the floating widget:
+// there the panel is clipped by the scrolling message list inside a 400px
+// panel, hundreds of pixels in from the viewport edge. Nothing overflowed the
+// document, so `rect.left < 8` was never true, the shift stayed 0, and the
+// score-1 star sat under the widget's left edge - unclickable, with the
+// legend and the first reason chip cut off beside it. It is at its worst
+// AFTER a score is picked: the trigger label shrinks to "7/10", the
+// right-anchored panel jumps about 40px further left, and _ratingRenderReasons
+// re-runs this on a box that no longer fits.
+export function panelShiftWithin(rect, bounds) {
+  if (!rect || !bounds) return 0
+
+  const { left, right } = bounds
+  if (!(right > left)) return 0
+
+  // Wider than the box allows: something has to be cut, so pin the panel's
+  // LEADING edge inside the box. Read left to right it is legend, score 1
+  // upwards, then the reason chips; right-anchored it loses exactly those and
+  // reads as a stray strip of stars. This also fires inside the widget now
+  // that the bounds are the message list rather than the viewport: the star
+  // grid is one row of ten from a 400px VIEWPORT up, so a widget the user has
+  // dragged below about 380px is narrower than its own rating panel, and the
+  // high scores are then the ones that overflow.
+  if (rect.width > right - left) return Math.round(left - rect.left)
+  if (rect.left < left) return Math.ceil(left - rect.left)
+  if (rect.right > right) return -Math.ceil(rect.right - right)
   return 0
 }
 
@@ -51,19 +80,24 @@ export const ratingMethods = {
   ratingControlMarkup(ratingToken) {
     if (!ratingToken) return ""
 
-    const label = ratingText("rate", this.languageValue)
+    // This used to be a bare star and the word "Beoordeel", inline in the
+    // metadata row after a pipe, between Copy and Report. It read as a footer
+    // link, and the numbers agreed: 18 answers offered it and 2 were rated.
+    // It is now a short, kind request on its own line, which says why the
+    // rating is wanted. Same button, same panel, same token - only the
+    // framing changed.
+    const language = this.languageValue
     return `
-      <span class="text-gray-300 dark:text-gray-600">|</span>
-      <span class="ww-rating" data-rating-token="${this._ratingEscape(ratingToken)}">
+      <div class="ww-rating ww-rating-invite" data-rating-token="${this._ratingEscape(ratingToken)}">
+        <p class="ww-rating-invite-text">${ratingText("invite", language)}</p>
         <button type="button"
                 class="ww-rating-trigger"
                 data-action="click->chatbot#toggleRating"
-                aria-expanded="false"
-                title="${label}">
+                aria-expanded="false">
           <span aria-hidden="true">&#9734;</span>
-          <span class="ww-rating-trigger-label">${label}</span>
+          <span class="ww-rating-trigger-label">${ratingText("inviteAction", language)}</span>
         </button>
-      </span>
+      </div>
     `
   },
 
@@ -324,8 +358,18 @@ export const ratingMethods = {
     if (!score) return
 
     const label = trigger.querySelector(".ww-rating-trigger-label")
-    if (label) label.textContent = `${score}/${SCORE_MAX} · ${ratingText("thanks", this.languageValue)}`
+    if (label) label.textContent = `${score}/${SCORE_MAX}`
     trigger.classList.add("ww-rating-trigger-rated")
+
+    // The ask has been answered, so stop asking. The SCSS already drops the
+    // invite's tint on .ww-rating-trigger-rated, but the sentence beside it
+    // kept reading "Wilt u ons helpen door de kwaliteit van dit antwoord te
+    // beoordelen?" next to a button showing the score the user had just
+    // given. inviteThanks was written for this state and had no call site.
+    // It carries the thanks now, which is why the label above is the bare
+    // score rather than "8/10 · Bedankt".
+    const invite = host.querySelector(".ww-rating-invite-text")
+    if (invite) invite.textContent = ratingText("inviteThanks", this.languageValue)
   },
 
   _ratingRenderReasons(host) {
@@ -366,8 +410,25 @@ export const ratingMethods = {
     if (!panel?.getBoundingClientRect) return
 
     panel.style.transform = ''
-    const shift = panelShiftIntoView(panel.getBoundingClientRect(), window.innerWidth)
+    const shift = panelShiftWithin(panel.getBoundingClientRect(), this._ratingClipBounds(panel))
     if (shift) panel.style.transform = `translateX(${shift}px)`
+  },
+
+  // Walk out from the panel, tightening the viewport bounds with every
+  // ancestor that clips. Same walk as the per-answer export menu, which sits
+  // in the same metadata row and was cut off by the same two boxes.
+  _ratingClipBounds(panel, margin = 8) {
+    const bounds = { left: margin, right: document.documentElement.clientWidth - margin }
+
+    for (let el = panel.parentElement; el && el !== document.body; el = el.parentElement) {
+      const style = getComputedStyle(el)
+      if (style.overflowX === 'visible' && style.overflowY === 'visible') continue
+
+      const box = el.getBoundingClientRect()
+      bounds.left = Math.max(bounds.left, box.left + margin)
+      bounds.right = Math.min(bounds.right, box.right - margin)
+    }
+    return bounds
   },
 
   _ratingRenderStatus(host, ok) {

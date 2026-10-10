@@ -16,7 +16,7 @@ class InvoicesController < ApplicationController
                 type: 'application/pdf',
                 disposition: 'attachment'
     else
-      redirect_to invoices_path, alert: 'Factuur PDF niet gevonden.'
+      redirect_to invoices_path, alert: t('invoices.pdf_not_found')
     end
   end
 
@@ -29,7 +29,7 @@ class InvoicesController < ApplicationController
                 type: 'application/xml',
                 disposition: 'attachment'
     else
-      redirect_to invoices_path, alert: 'UBL XML niet gevonden.'
+      redirect_to invoices_path, alert: t('invoices.xml_not_found')
     end
   end
 end

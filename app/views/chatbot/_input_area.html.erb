@@ -8,6 +8,12 @@
     <%# Composer row of the single chat surface: hairline on top, no own
         background so it reads as part of the panel, not another box. %>
     <div class="p-4 border-t border-gray-200 dark:border-[#1e293b]">
+        <%# 10:49 no-JS plan, C.4: the answers stream through scripts. %>
+        <noscript>
+          <p id="chatbot-noscript" class="mb-3 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-3 text-sm text-amber-900 dark:text-amber-200">
+            <%= t('chatbot.noscript') %>
+          </p>
+        </noscript>
         <%# ── Chat input (authenticated users only - chatbot requires login) ── %>
         <div class="flex gap-3">
           <textarea 
@@ -71,9 +77,9 @@
             <% cr_word = case I18n.locale when :fr then "crédit#{cr_s}" when :de then "Credit#{cr_s}" else "credit#{cr_s}" end %>
             <% if credits_count >= default_credits %>
               <% if I18n.locale == :fr %>
-                <span class="font-semibold text-amber-600 dark:text-amber-400">−<%= default_credits %> <%= cr_word %></span>
+                <span class="font-semibold text-amber-700 dark:text-amber-400">−<%= default_credits %> <%= cr_word %></span>
               <% else %>
-                <span class="font-semibold text-amber-600 dark:text-amber-400">−<%= default_credits %></span> <%= cr_word %>
+                <span class="font-semibold text-amber-700 dark:text-amber-400">−<%= default_credits %></span> <%= cr_word %>
               <% end %>
             <% else %>
               <a href="<%= credits_path %>" class="font-semibold text-red-500 hover:text-red-600 dark:hover:text-red-400 hover:underline">⚠️ <%= case I18n.locale when :fr then 'crédits insuffisants' when :de then 'unzureichende Credits' when :en then 'insufficient credits' else 'onvoldoende credits' end %></a>
@@ -375,9 +381,12 @@
       </p>
       <p class="text-[10px] text-gray-500 dark:text-gray-400 italic mt-0.5" data-translate="footnote">
         <%= case I18n.locale when :fr then '*Halluciner: inventer des informations qui semblent correctes mais qui sont fausses ou inexistantes.' when :de then '*Halluzinieren: Erfinden von Informationen, die korrekt erscheinen, aber faktisch falsch oder nicht existent sind.' when :en then '*Hallucinate: inventing information that appears correct but is factually wrong or non-existent.' else '*Hallucineren: het verzinnen van informatie die correct lijkt maar feitelijk onjuist of onbestaand is.' end %>
-        (<a href="https://www.ibm.com/think/topics/ai-hallucinations" target="_blank" class="underline hover:text-gray-600">IBM</a>)
+        <%# dark:hover as in the widget's copy of this link: without it the
+            gray-600 hover dimmed the link to 2.4:1 on the dark panel, so it
+            nearly vanished exactly when pointed at. %>
+        (<a href="https://www.ibm.com/think/topics/ai-hallucinations" target="_blank" class="underline hover:text-gray-600 dark:hover:text-(--accent-400)">IBM</a>)
       </p>
-      <p class="mt-1.5 text-[10px] text-gray-400 dark:text-gray-500" data-translate="legalConsent">
+      <p class="mt-1.5 text-[10px] text-gray-500" data-translate="legalConsent">
         <%= case I18n.locale
             when :fr
               raw("En utilisant ce chatbot, vous acceptez nos <a href=\"#{terms_of_service_path}\" target=\"_blank\" class=\"underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors\">conditions d'utilisation</a> et notre <a href=\"#{privacy_policy_path}\" target=\"_blank\" class=\"underline hover:text-blue-500 dark:hover:text-blue-400 transition-colors\">politique de confidentialité</a>.")

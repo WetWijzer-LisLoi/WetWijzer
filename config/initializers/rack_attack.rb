@@ -22,15 +22,19 @@ module Rack
       req.get? && req.path == '/up'
     end
 
-    # Allow most auth routes (but NOT signup or password reset - those need throttling)
+    # The auth pages stay reachable (RackAttackKeys::ALWAYS_REACHABLE_PAGES).
+    # WW-SEC-02: the old prefix match exempted every method on every path that
+    # starts with /login, /logout, /confirm, /account or /pricing from every
+    # throttle and the ban, so POST /login never reached login/ip or
+    # login/email, POST /account/2fa/verify had no Rack budget at all, and
+    # lookalikes such as /login-anything escaped even req/ip.
     Rack::Attack.safelist('allow-auth-routes') do |req|
-      %w[/login /logout /confirm /account /pricing].any? { |path| req.path.start_with?(path) } &&
-        !req.path.start_with?('/forgot-password', '/reset-password')
+      (req.get? || req.head?) && RackAttackKeys::ALWAYS_REACHABLE_PAGES.include?(req.path)
     end
 
     # Allow genuine STATIC .json files (e.g. /chatbot_questions.json) but NOT
     # dynamic controller routes that also render .json (/laws.json search &
-    # pagination, /search, /api, jurisprudence, parliamentary) — those must stay
+    # pagination, /search, /api, jurisprudence, parliamentary); those must stay
     # under the throttles + auto-ban, or a .json suffix bypasses all app-level
     # rate limiting.
     DYNAMIC_JSON_ROOTS = %w[/laws /search /api /jurisprudence /parliamentary].freeze
@@ -42,84 +46,91 @@ module Rack
     # Throttle general requests by IP (1000 requests per 5 minutes = ~200/min)
     # Allows normal browsing including lazy-loaded Turbo Frames
     throttle('req/ip', limit: 1000, period: 5.minutes) do |req|
-      req.ip unless req.path.start_with?('/assets', '/vite', '/favicon.ico')
+      RackAttackKeys.ip_discriminator(req) unless req.path.start_with?('/assets', '/vite', '/favicon.ico')
     end
 
     # Anonymous sample-question click beacons: atomic limiter in the shared
     # Rack::Attack store (FBL-043), replacing the controller-side
     # fetch-then-increment cache counter.
     throttle('sample-clicks/ip', limit: 30, period: 1.minute) do |req|
-      req.ip if req.post? && req.path == '/api/sample_question_clicks'
+      RackAttackKeys.ip_discriminator(req) if req.post? && req.path == '/api/sample_question_clicks'
     end
 
     # Throttle search requests (200 requests per minute)
     # Search is computationally cheap with indexed queries
     throttle('search/ip', limit: 200, period: 1.minute) do |req|
-      req.ip if %w[/laws /laws.json].include?(req.path) && req.get? && req.params['title'].present?
+      RackAttackKeys.ip_discriminator(req) if %w[/laws /laws.json].include?(req.path) && req.get? && req.params['title'].present?
     end
 
     # Throttle the unified /search endpoint (unindexed LIKE + COUNT, expensive).
     throttle('unified_search/ip', limit: 30, period: 1.minute) do |req|
-      req.ip if req.path == '/search' && req.get? && req.params['q'].present?
+      RackAttackKeys.ip_discriminator(req) if req.path == '/search' && req.get? && req.params['q'].present?
     end
 
     # Throttle rapid pagination crawling (30 page requests per minute per IP)
     # Generous for humans (who browse ~2-3 pages/min) but catches bots
     # crawling all 4800 pages sequentially
     throttle('pagination/ip', limit: 30, period: 1.minute) do |req|
-      req.ip if %w[/laws /laws.json].include?(req.path) && req.get? && req.params['page'].present?
+      RackAttackKeys.ip_discriminator(req) if %w[/laws /laws.json].include?(req.path) && req.get? && req.params['page'].present?
     end
 
     # Throttle Word document exports (10 requests per minute per IP)
     # Document generation is CPU-intensive, limit to prevent abuse
     throttle('export/ip', limit: 10, period: 1.minute) do |req|
-      req.ip if req.path.include?('/export_word')
+      RackAttackKeys.ip_discriminator(req) if req.path.include?('/export_word')
     end
 
     # Throttle password reset requests (5 per hour per IP)
     # Prevents brute force and email bombing
     throttle('password_reset/ip', limit: 5, period: 1.hour) do |req|
-      req.ip if req.path == '/forgot-password' && req.post?
+      RackAttackKeys.ip_discriminator(req) if req.path == '/forgot-password' && req.post?
     end
 
     # Throttle password reset by email (3 per hour per email)
     # Prevents targeted email bombing
     throttle('password_reset/email', limit: 3, period: 1.hour) do |req|
-      req.params['email']&.downcase&.strip if req.path == '/forgot-password' && req.post?
+      RackAttackKeys.email_discriminator(req.params['email']) if req.path == '/forgot-password' && req.post?
     end
 
     # Throttle login attempts (10 per minute per IP)
     throttle('login/ip', limit: 10, period: 1.minute) do |req|
-      req.ip if req.path == '/login' && req.post?
+      RackAttackKeys.ip_discriminator(req) if req.path == '/login' && req.post?
     end
 
     # Throttle login by email (5 per minute per email)
     # Prevents brute force on specific accounts
     throttle('login/email', limit: 5, period: 1.minute) do |req|
-      req.params['email']&.downcase&.strip if req.path == '/login' && req.post?
+      RackAttackKeys.email_discriminator(req.params['email']) if req.path == '/login' && req.post?
     end
 
-    # Throttle signup (10 per hour per IP)
+    # CSP violation reports: a public, CSRF-exempt endpoint (WW-SEC-08).
+    throttle('csp_reports/ip', limit: 60, period: 1.minute) { |req| RackAttackKeys.ip_discriminator(req) if req.path == '/csp-report' && req.post? }
+
+    # 2FA codes: a Rack budget in front of the controller's per-address and
+    # per-account limits (WW-SEC-02).
+    throttle('two_factor/ip', limit: 20, period: 5.minutes) { |req| RackAttackKeys.ip_discriminator(req) if req.path == '/account/2fa/verify' && req.post? }
+
+    # Signup: the coarse outer shield only. RegistrationAdmissionPolicy owns
+    # the real registration limits (5 per address and 3 per email per hour,
+    # the network gate and ceiling), atomically and keyed by digests. This
+    # throttle sits at twice the address limit, so it never answers first
+    # for a submission the policy counts; it catches floods that never reach
+    # the controller. The per-email throttle that stood here duplicated the
+    # policy's limit and wrote raw addresses into cache keys (WW-ABUSE-01).
     throttle('signup/ip', limit: 10, period: 1.hour) do |req|
-      req.ip if req.path == '/signup' && req.post?
-    end
-
-    # Throttle signup by email (3 per hour per email)
-    # Prevents targeted email bombing via registration
-    throttle('signup/email', limit: 3, period: 1.hour) do |req|
-      req.params.dig('user', 'email')&.downcase&.strip if req.path == '/signup' && req.post?
+      RackAttackKeys.ip_discriminator(req) if req.path == '/signup' && req.post?
     end
 
     # Throttle confirmation email resends (3 per hour per IP)
     # Prevents email bombing via the resend confirmation button
     throttle('resend_confirmation/ip', limit: 3, period: 1.hour) do |req|
-      req.ip if req.path == '/resend-confirmation' && req.post?
+      RackAttackKeys.ip_discriminator(req) if req.path == '/resend-confirmation' && req.post?
     end
 
     # Anonymous donation checkout creates a provider-side payment resource.
     # Keep ordinary retries possible while preventing API/storage abuse.
     throttle('donations/ip', limit: 20, period: 1.hour) do |req|
-      req.ip if req.path == '/donations' && req.post?
+      RackAttackKeys.ip_discriminator(req) if req.path == '/donations' && req.post?
     end
 
     # Throttle the chatbot LLM/cost endpoints (ask, deep_analysis, report) - the
@@ -129,51 +140,49 @@ module Rack
     # unthrottled sibling endpoint to trip the global cap (see rate_limit_check).
     CHATBOT_COST_PATHS = %w[/api/chatbot/ask /api/chatbot/deep_analysis /api/chatbot/report].freeze
     throttle('chatbot/ip', limit: 20, period: 1.minute) do |req|
-      req.ip if CHATBOT_COST_PATHS.include?(req.path) && req.post?
+      RackAttackKeys.ip_discriminator(req) if CHATBOT_COST_PATHS.include?(req.path) && req.post?
     end
 
     # Stricter chatbot limit per hour (200 requests per hour per IP)
     # Prevents sustained abuse - generous enough for power users
     throttle('chatbot/ip/hour', limit: 200, period: 1.hour) do |req|
-      req.ip if CHATBOT_COST_PATHS.include?(req.path) && req.post?
+      RackAttackKeys.ip_discriminator(req) if CHATBOT_COST_PATHS.include?(req.path) && req.post?
     end
 
     # Rating updates are cheap and deliberately NOT part of CHATBOT_COST_PATHS:
     # sharing the paid counter would let a user who rates several answers lose
     # their remaining question budget. A rating costs no provider call.
     #
-    # The discriminator is the raw IP, matching every other throttle in this
-    # file. The plan suggested a one-way discriminator; that would make this
-    # the only hashed throttle here and buys nothing, because a Rack::Attack
-    # key already expires with its period and contains only the throttle name
-    # plus this value - never the token, the score, the reasons or content,
-    # which is the constraint that actually matters.
+    # The discriminator is the keyed address digest every address throttle in
+    # this file uses (RackAttackKeys.ip_discriminator): the key contains the
+    # throttle name and that digest only - never the token, the score, the
+    # reasons or content.
     throttle('chatbot_rating/ip', limit: 60, period: 1.minute) do |req|
-      req.ip if req.path == '/api/chatbot/rating' && (req.put? || req.patch?)
+      RackAttackKeys.ip_discriminator(req) if req.path == '/api/chatbot/rating' && (req.put? || req.patch?)
     end
 
     # Throttle ALTCHA challenge generation (10 per minute per IP)
     # Prevents abuse of the proof-of-work challenge endpoint
     throttle('geo_challenge/ip', limit: 10, period: 1.minute) do |req|
-      req.ip if req.path == '/altcha-challenge.json' && req.get?
+      RackAttackKeys.ip_discriminator(req) if req.path == '/altcha-challenge.json' && req.get?
     end
 
     # Throttle geo-challenge verification (5 per minute per IP)
     # Prevents brute-force attempts on the challenge solution
     throttle('geo_verify/ip', limit: 5, period: 1.minute) do |req|
-      req.ip if req.path == '/geo-challenge' && req.post?
+      RackAttackKeys.ip_discriminator(req) if req.path == '/geo-challenge' && req.post?
     end
 
     # Throttle admin login (3 attempts per 15 minutes per IP)
     # Most sensitive endpoint - strictest limits
     throttle('admin_login/ip', limit: 3, period: 15.minutes) do |req|
-      req.ip if req.path == '/admin/login' && req.post?
+      RackAttackKeys.ip_discriminator(req) if req.path == '/admin/login' && req.post?
     end
 
     # Throttle admin actions (60 per minute per IP)
     # Prevents rapid-fire admin operations (mass delete, etc.)
     throttle('admin_actions/ip', limit: 60, period: 1.minute) do |req|
-      req.ip if req.path.start_with?('/admin') && !req.get?
+      RackAttackKeys.ip_discriminator(req) if req.path.start_with?('/admin') && !req.get?
     end
 
     # Search-engine crawlers legitimately request far faster than a human, so
@@ -200,9 +209,10 @@ module Rack
       else
         # Block if more than 50 throttled requests in 5 minutes (ban for 1 hour)
         # This catches bots/scrapers but allows normal human browsing patterns
-        Rack::Attack::Allow2Ban.filter(req.ip, maxretry: 50, findtime: 5.minutes, bantime: 1.hour) do
+        address = RackAttackKeys.ip_discriminator(req)
+        Rack::Attack::Allow2Ban.filter(address, maxretry: 50, findtime: 5.minutes, bantime: 1.hour) do
           # Return true if request should increment the counter
-          Rack::Attack.cache.count("#{req.ip}:throttled", 5.minutes) > 50
+          Rack::Attack.cache.count("#{address}:throttled", 5.minutes) > 50
         end
       end
     end
@@ -262,15 +272,13 @@ module Rack
       ]]
     end
 
-    # Log blocked and throttled requests
-    ActiveSupport::Notifications.subscribe('rack.attack') do |_name, _start, _finish, _request_id, payload|
-      req = payload[:request]
-      case req.env['rack.attack.match_type']
-      when :throttle
-        Rails.logger.warn("Throttled request from #{req.ip} to #{req.path}")
-      when :blocklist
-        Rails.logger.error("Blocked request from #{req.ip} to #{req.path}")
-      end
+    # Blocked and throttled requests, as SecurityLog lines: the network and a
+    # keyed pseudonym, never the address (D12 follow-up). The current event
+    # names; rack-attack still emits the deprecated 'rack.attack' as well.
+    ActiveSupport::Notifications.subscribe(/\A(?:throttle|blocklist)\.rack_attack\z/) do |name, _start, _finish, _id, payload|
+      env = payload[:request].env
+      event = name.start_with?('throttle') ? 'request_throttled' : 'request_blocked'
+      SecurityLog.warn(event, request: ActionDispatch::Request.new(env), rule: env['rack.attack.matched'])
     end
   end
 end

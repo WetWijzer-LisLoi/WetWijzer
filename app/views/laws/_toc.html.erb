@@ -118,7 +118,7 @@
       </div>
     <% end %>
 
-    <nav class="toc-navigation <%= 'max-h-[calc(100vh-200px)] overflow-y-auto overflow-x-hidden' if scrollable %> pr-2 <%= 'mt-4' if variant == :main && !hide_header %>" style="scrollbar-width: thin; scrollbar-color: rgb(156 163 175) transparent; scrollbar-gutter: stable both-edges; margin-right: -2px; border-radius: 0.75rem;" <%= raw 'data-controller="toc-tracker"' if track %> <%= raw 'data-collapse-target="content"' if (variant == :main && !hide_header) %> data-toc-search-target="list">
+    <nav class="toc-navigation <%= 'max-h-[calc(100vh-200px)] overflow-y-auto overflow-x-hidden' if scrollable %> <%= 'max-h-[min(70vh,48rem)] overflow-y-auto overflow-x-hidden print:max-h-none print:overflow-visible' if variant == :main && !scrollable %> pr-2 <%= 'mt-4' if variant == :main && !hide_header %>" style="scrollbar-width: thin; scrollbar-color: rgb(156 163 175) transparent; scrollbar-gutter: stable both-edges; margin-right: -2px; border-radius: 0.75rem;" <%= raw 'data-controller="toc-tracker"' if track %> <%= raw 'data-collapse-target="content"' if (variant == :main && !hide_header) %> data-toc-search-target="list">
       <style nonce="<%= content_security_policy_nonce %>">
         .toc-navigation {
           /* Reserve space for scrollbar so it doesn't overlap text on overlay-scrollbar platforms */
@@ -194,7 +194,9 @@
           before render on every request, so the digest is free. laws_links_version
           covers the abolished-marker links, which resolve through a table the
           request does not load. %>
-      <% cache ["toc_nav/v7", content.legislation_numac, content.language_id,
+      <%# v8 (WW-WER-01): entries come from LawTocEntries, no longer one per stored line.
+          v9 (WW-UI-02): the list carries the toc-targets controller. %>
+      <% cache ["toc_nav/v9", content.legislation_numac, content.language_id,
                 text_cache_version(content.toc), variant, track, laws_links_version, render_code_version],
                expires_in: 7.days do %>
       <%# Reset unique section heading counters for deterministic TOC ids %>
@@ -204,15 +206,15 @@
       <% ordinal_pfx = '(?:(?:eerste|tweede|derde|vierde|vijfde|zesde|zevende|achtste|negende|tiende|premier|premi[èe]re|deuxi[èe]me|troisi[èe]me|quatri[èe]me|cinqui[èe]me|sixi[èe]me|septi[èe]me|huiti[èe]me|neuvi[èe]me|dixi[èe]me|first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|[ivxlc]+)\s+)?' %>
 
       <% size_class = (variant == :main ? 'text-sm' : 'text-xs') %>
-      <ul class="space-y-0.5 <%= size_class %> pr-3">
-        <% content.toc.each_line do |line| %>
-          <% cleaned_line = line.chomp.strip %>
-          <% next if cleaned_line.blank? %>
-          
-          
-          <% # Use the raw line text as-is for display - do not strip markers %>
+      <%# WW-UI-02: the stored contents and the article rows differ in text
+          (repeal notes, split headings, slash-numbered articles shown as
+          headings), so a computed anchor can miss; toc-targets points each
+          link at its body element once the frame has loaded. %>
+      <ul class="space-y-0.5 <%= size_class %> pr-3" data-controller="toc-targets">
+        <%# WW-WER-01: the logical entries, a fragmented stored row joined back. %>
+        <% law_toc_entries(content).each do |cleaned_line| %>
+          <% # Use the entry text as-is for display - do not strip markers %>
           <% display_line = cleaned_line %>
-          <% next if display_line.blank? %>
           
           <% # Determine link target: use canonical article id like "art-1" for articles; slug for others %>
           <% article_id = article_id_from_toc_line(cleaned_line) %>

@@ -11,8 +11,18 @@
 class ChatbotReport < AnalyticsRecord
   belongs_to :user, optional: true
 
+  # WW-SEC-07: bounds on what a user can store. The ask path refuses
+  # questions over 2,000 characters; saved answers stop at 50,000.
+  QUESTION_MAX_LENGTH = 4_000
+  ANSWER_MAX_LENGTH = 50_000
+
   validates :question, presence: true
   validates :status, inclusion: { in: %w[pending reviewed resolved] }
+  validates :question, length: { maximum: QUESTION_MAX_LENGTH }, on: :create
+  validates :answer, length: { maximum: ANSWER_MAX_LENGTH }, on: :create
+  # On create only: a row stored before the vocabulary existed must stay
+  # editable by the admin.
+  validate :metadata_in_vocabulary, on: :create
 
   # Encrypt sensitive fields at rest (GDPR - user legal queries are PII)
   encrypts :question
@@ -22,6 +32,8 @@ class ChatbotReport < AnalyticsRecord
   RETENTION_PERIOD = 90.days
 
   scope :pending, -> { where(status: 'pending') }
+  scope :reviewed, -> { where(status: 'reviewed') }
+  scope :resolved, -> { where(status: 'resolved') }
   scope :recent, -> { order(created_at: :desc) }
   scope :stale, -> { where(created_at: ...RETENTION_PERIOD.ago) }
 
@@ -50,5 +62,16 @@ class ChatbotReport < AnalyticsRecord
   # Auto-purge reports older than 90 days (GDPR data minimization)
   def self.purge_stale!
     stale.delete_all
+  end
+
+  private
+
+  def metadata_in_vocabulary
+    { language: :language, source: :source, intelligence: :intelligence }.each do |attribute, reader|
+      value = self[attribute]
+      next if value.nil?
+
+      errors.add(attribute, :inclusion) unless ChatbotMetadataVocabulary.public_send(reader, value) == value
+    end
   end
 end

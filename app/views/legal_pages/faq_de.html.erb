@@ -46,7 +46,7 @@
 
     <details>
         <summary>In welchen Sprachen ist GesetzGuide verf&uuml;gbar?</summary>
-        <div><p>Die Oberfl&auml;che ist auf Niederl&auml;ndisch, Franz&ouml;sisch, Deutsch und Englisch verf&uuml;gbar. Der KI-Chatbot antwortet in der von Ihnen gew&auml;hlten Sprache. Die Gesetzesdatenbank enth&auml;lt Texte in ihrer urspr&uuml;nglichen Publikationssprache.</p></div>
+        <div><p>Die Oberfl&auml;che ist auf Niederl&auml;ndisch, Franz&ouml;sisch, Deutsch und Englisch verf&uuml;gbar. Der KI-Chatbot antwortet in der von Ihnen gew&auml;hlten Sprache. Die Gesetzesdatenbank enth&auml;lt die Texte in ihrer urspr&uuml;nglichen Publikationssprache und, wo vorhanden, deutsche Texte. Diese sind &Uuml;bersetzungen, Koordinierungen oder konsolidierte Fassungen, sofern sie nicht als Originaltext gekennzeichnet sind; jede deutsche Seite gibt an, um welche Art von Text es sich handelt und woher er stammt. Gibt es keinen deutschen Text, wird der franz&ouml;sische Text angezeigt.</p></div>
     </details>
 
     <h2 id="section-2">2. Konto und Registrierung</h2>
@@ -427,7 +427,7 @@
 
     <details>
         <summary>Kann ich GesetzGuide finanziell unterst&uuml;tzen?</summary>
-        <div><p>Ja. Neben dem Kauf von Credits oder einem Pro-Abonnement k&ouml;nnen Sie eine freiwillige Spende &uuml;ber unsere <%= link_to 'Spendenseite', support_page_path(anchor: 'donate') %> leisten. Spenden sind nicht erstattungsf&auml;hig, gew&auml;hren keine Gegenleistung und sind nicht steuerlich absetzbar. Jeder Beitrag hilft, die Gesetzesdatenbank kostenlos zug&auml;nglich zu halten.</p></div>
+        <div><p>Ja. Neben dem Kauf von Credits oder einem Pro-Abonnement k&ouml;nnen Sie eine freiwillige Spende &uuml;ber unsere <%= link_to 'Spendenseite', support_page_path(anchor: 'donate') %> leisten. Spenden sind nicht erstattungsf&auml;hig, gew&auml;hren keine Gegenleistung und sind nicht steuerlich absetzbar. Jeder Beitrag hilft, die Gesetzesdatenbank kostenlos zug&auml;nglich zu halten.</p><%= render 'donations/disabled_notice' unless MollieConfiguration.donations_enabled? %></div>
     </details>
 
     <details>

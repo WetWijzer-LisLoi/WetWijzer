@@ -6,6 +6,7 @@
 //   data-frame-status-duration-value: duration in ms before auto-hide (default 1200). If <= 0, stays visible.
 
 import { Controller } from "@hotwired/stimulus";
+import { uiText } from '../utils/ui_translations';
 
 export default class extends Controller {
   static values = {
@@ -111,13 +112,13 @@ export default class extends Controller {
 
     const text = document.createElement("span");
     text.className = "flex-1";
-    let msg = document.documentElement.lang === 'fr' ? 'Échec du chargement' : 'Laden mislukt';
+    let msg = uiText('loadFailed');
     if (elapsedSec) msg += ` (${elapsedSec}s)`;
     text.textContent = msg;
 
     const closeBtn = document.createElement("button");
     closeBtn.setAttribute("type", "button");
-    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.setAttribute("aria-label", uiText('close'));
     closeBtn.className = "ml-auto p-1 rounded transition-colors text-red-500 hover:text-red-700";
     closeBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
     closeBtn.addEventListener("click", () => wrap.remove());
@@ -227,7 +228,7 @@ export default class extends Controller {
     // Loading text
     const text = document.createElement("span");
     text.className = "flex-1";
-    const loadingText = this.hasLoadingValue ? this.loadingValue : (this.hasCompletedValue ? this.completedValue : "Loading...");
+    const loadingText = this.hasLoadingValue ? this.loadingValue : uiText('loading');
     text.textContent = loadingText;
 
     // Live stopwatch counter
@@ -284,7 +285,7 @@ export default class extends Controller {
     // Close button
     const closeBtn = document.createElement("button");
     closeBtn.setAttribute("type", "button");
-    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.setAttribute("aria-label", uiText('close'));
     closeBtn.className = "ml-auto p-1 rounded transition-colors";
     closeBtn.style.color = "var(--accent-600)";
     closeBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';

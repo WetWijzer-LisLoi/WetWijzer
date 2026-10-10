@@ -5,6 +5,23 @@ module Api
   # monolithic chatbot controller (FBL-060 step 7). Paths are unchanged;
   # only the routing target moved. Every action body is verbatim.
   class ChatbotConversationsController < ChatbotBaseController
+    # WW-SEC-09: request caps before anything parses a body, and field checks
+    # before anything is stored (the per-row bounds live in ChatbotConversation;
+    # nginx accepts 25 MB, which is no row limit). The browser never sends
+    # numacs on the encrypted path.
+    ENCRYPTED_BODY_MAX_BYTES = 3 * 1024 * 1024
+    IMPORT_BODY_MAX_BYTES = 8 * 1024 * 1024
+    IMPORT_MESSAGE_MAX_CHARS = 50_000
+    IMPORT_CONVERSATION_MAX_BYTES = 1024 * 1024
+    IMPORT_MESSAGE_KEYS = ['role', 'content', 'analytic_id', ChatbotConversation::CONTEXT_CONTENT_KEY].freeze
+    CANONICAL_BASE64 = %r{\A(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\z}
+    CONTEXT_NUMAC = /\A(?:\d{10}|fisconet_\d{1,12})\z/i
+
+    # WW-PRIV-10: a grant waits until history pending deletion is gone.
+    class HistoryCleanupPending < StandardError; end
+
+    prepend_before_action :bound_payload_body, only: %i[update_encrypted_payload import_conversations]
+
     # ============================================
     # CONVERSATION MANAGEMENT (server-side history)
     # ============================================
@@ -13,6 +30,13 @@ module Api
     # List user's conversations (metadata only - no message content)
     def conversations
       return render json: { error: 'Login required' }, status: :unauthorized unless current_user_present?
+
+      # WW-PRIV-10: history awaiting deletion after a revocation is no longer
+      # history; the page offers the retry instead of listing it.
+      if ConversationHistoryCleanup.pending?(current_user)
+        return render json: { conversations: [], consent: current_user.conversation_storage_consented?,
+                              history_cleanup_pending: true }
+      end
 
       ChatbotConversation.ensure_table_and_columns_exist
       convos = ChatbotConversation.for_user(current_user.id).limit(50)
@@ -27,7 +51,8 @@ module Api
 
       render json: {
         conversations: convos.map { |c| conversation_summary(c) },
-        consent: current_user.conversation_storage_consented?
+        consent: current_user.conversation_storage_consented?,
+        history_cleanup_pending: false
       }
     end
 
@@ -42,6 +67,7 @@ module Api
       conv = ChatbotConversation.find_by(token: params[:token])
 
       return render json: { error: 'Conversation not found' }, status: :not_found unless conv && conv.user_id.to_s == current_user.id.to_s
+
       begin
         bind_legacy_zero_knowledge_generation!(conv)
         ensure_zero_knowledge_conversation_readable!(conv)
@@ -86,6 +112,7 @@ module Api
       ChatbotConversation.ensure_table_and_columns_exist
       conv = ChatbotConversation.active_for(current_user.id)
       return render json: { active: false } unless conv
+
       begin
         bind_legacy_zero_knowledge_generation!(conv)
         ensure_zero_knowledge_conversation_readable!(conv)
@@ -133,6 +160,8 @@ module Api
     # Rename or pin a conversation
     def update_conversation
       return render json: { error: 'Login required' }, status: :unauthorized unless current_user_present?
+
+      conversation_storage_admitted
 
       ChatbotConversation.ensure_table_and_columns_exist
       conv = ChatbotConversation.find_by(token: params[:token])
@@ -187,7 +216,10 @@ module Api
         # Archiving = the user cleared this conversation: it stays in history but
         # is no longer the active one that auto-restores on page load.
         conv.archived = params[:archived] if params.key?(:archived)
-        conv.save!
+        # WW-PRIV-10: written under the storage boundary.
+        write_under_storage_boundary { conv.save! }
+      rescue ConversationStorageBoundary::Fenced
+        return render json: { error: 'conversation_storage_unavailable' }, status: :conflict
       rescue ActiveRecord::StaleObjectError
         attempts += 1
         if attempts < 5
@@ -222,9 +254,20 @@ module Api
       end
 
       # A single guarded UPDATE atomically claims an empty key slot or accepts
-      # an idempotent retry of the exact same wrapped-key pair.
+      # an idempotent retry of the exact same wrapped-key pair; WW-PRIV-10: under
+      # the storage boundary, so no writer interleaves with the change.
       begin
-        key_generation = persist_conversation_storage_consent!(zk_attrs)
+        key_generation = change_under_storage_boundary do |account|
+          # WW-PRIV-10: history still pending deletion from an earlier
+          # revocation goes first, under the same lock; a grant never adopts it.
+          raise HistoryCleanupPending unless ConversationHistoryCleanup.finish!(account)
+
+          persist_conversation_storage_consent!(zk_attrs)
+        end
+      rescue HistoryCleanupPending
+        schedule_history_cleanup_retry
+        return render json: { error: 'history_cleanup_pending', consent: false, history_cleanup_pending: true },
+                      status: :service_unavailable
       rescue ZeroKnowledgeStateConflict
         current_user.reload
         return render_zero_knowledge_state_conflict
@@ -252,23 +295,45 @@ module Api
     def revoke_consent
       return render json: { error: 'Login required' }, status: :unauthorized unless current_user_present?
 
-      # Disable storage and destroy key material in the accounts database
-      # first. Any in-flight provider request revalidates this flag before its
-      # claimed conversation write, so it cannot recreate content after the
-      # chatbot rows below have been erased. The update is idempotent, making a
-      # retry safe if the cross-database deletion is temporarily unavailable.
-      current_user.revoke_conversation_storage_consent!
-
-      # Delete all user's conversations after the account fence is visible.
-      ChatbotConversation.ensure_table_and_columns_exist
-      ChatbotConversation.where(user_id: current_user.id).delete_all
+      # WW-PRIV-10: under the storage boundary, disable storage, destroy key
+      # material and mark the history for deletion in the accounts database,
+      # then delete the history (ConversationHistoryCleanup). Every writer
+      # takes the same lock and re-checks consent and its admitted generation,
+      # so none can recreate content after this. A failed deletion leaves the
+      # denial and the mark committed and says so; the retry job and the daily
+      # scrub try again, and this request is idempotent, so the page can retry
+      # it too, with consent already withdrawn.
+      deleted = change_under_storage_boundary { |account| ConversationHistoryCleanup.revoke!(account) }
+      unless deleted
+        schedule_history_cleanup_retry
+        return render json: { error: 'history_deletion_failed', consent: false, history_cleanup_pending: true },
+                      status: :service_unavailable
+      end
 
       render json: {
         success: true,
         consent: false,
         zero_knowledge: false,
-        key_generation: nil
+        key_generation: nil,
+        history_cleanup_pending: false
       }
+    end
+
+    # DELETE /api/chatbot/conversations/history_cleanup
+    # WW-PRIV-10: finishes a deletion a revocation could not complete, with
+    # or without consent. Idempotent, and it never withdraws consent itself,
+    # so a page left open cannot touch history stored under a newer grant.
+    def finish_history_cleanup
+      return render json: { error: 'Login required' }, status: :unauthorized unless current_user_present?
+
+      finished = change_under_storage_boundary { |account| ConversationHistoryCleanup.finish!(account) }
+      unless finished
+        schedule_history_cleanup_retry
+        return render json: { error: 'history_deletion_failed', history_cleanup_pending: true },
+                      status: :service_unavailable
+      end
+
+      render json: { success: true, history_cleanup_pending: false }
     end
 
     # PATCH /api/chatbot/conversations/:token/encrypted
@@ -282,6 +347,7 @@ module Api
 
       return render json: { error: 'Conversation not found' }, status: :not_found unless conv && conv.user_id.to_s == current_user.id.to_s
 
+      conversation_storage_admitted
       current_user.reload
       expected_revision = nonnegative_integer_param(params[:expected_revision])
       supplied_generation = params[:key_generation].to_s
@@ -305,21 +371,25 @@ module Api
 
       return render json: { error: 'encrypted_messages required' }, status: :bad_request unless params[:encrypted_messages].present?
 
+      payload = encrypted_payload_fields
+      return render json: { error: 'encrypted_payload_invalid' }, status: :unprocessable_entity unless payload
+
       begin
-        conv.update_encrypted_payload!(
-          encrypted_messages: params[:encrypted_messages],
-          encrypted_title: params[:encrypted_title],
-          message_count: params[:message_count].to_i,
-          numacs: Array(params[:numacs]),
-          expected_revision: expected_revision,
-          key_generation: current_generation,
-          claim_token: supplied_claim_token
-        )
-      rescue ActiveRecord::StaleObjectError, ActiveRecord::RecordNotFound
+        write_under_storage_boundary do
+          conv.update_encrypted_payload!(
+            **payload,
+            expected_revision: expected_revision,
+            key_generation: current_generation,
+            claim_token: supplied_claim_token
+          )
+        end
+      rescue ConversationStorageBoundary::Fenced, ActiveRecord::StaleObjectError, ActiveRecord::RecordNotFound
         return render_zero_knowledge_state_conflict
+      rescue ActiveRecord::RecordInvalid
+        return render json: { error: 'encrypted_payload_invalid' }, status: :unprocessable_entity
       rescue StandardError => e
         Rails.logger.error(
-          "Encrypted conversation persistence failed " \
+          'Encrypted conversation persistence failed ' \
           "(token=#{conv.token.to_s.first(8)}..., user=#{current_user.id}): #{e.class}"
         )
         return render json: { error: 'Encrypted conversation could not be saved' },
@@ -371,29 +441,107 @@ module Api
       return render json: { error: 'No conversations provided' }, status: :bad_request unless items.is_a?(Array)
 
       ChatbotConversation.ensure_table_and_columns_exist
+      # WW-PRIV-10: the generation this import was admitted under; every row is
+      # written under the storage boundary against it.
+      conversation_storage_admitted
       imported = 0
+      skipped = 0
 
       items.first(20).each do |item|
-        next unless item[:messages].is_a?(Array) && item[:messages].length >= 2
+        messages = importable_messages(item)
+        unless messages
+          skipped += 1
+          next
+        end
 
+        language = item[:language]
         conv = ChatbotConversation.new(
           user_id: current_user.id,
-          language: item[:language] || 'nl'
+          language: language.is_a?(String) && language.bytesize.between?(1, 16) ? language : 'nl'
         )
         # Set title from first user message
-        first_q = item[:messages].find { |m| m[:role] == 'user' || m['role'] == 'user' }
-        conv.title = (first_q&.dig(:content) || first_q&.dig('content') || 'Conversation').truncate(100)
-        conv.messages_array = item[:messages].last(20)
+        first_q = messages.find { |m| m['role'] == 'user' }
+        conv.title = (first_q&.dig('content') || 'Conversation').truncate(100)
+        conv.messages_array = messages
         conv.message_count = conv.messages_array.length
         conv.expires_at = nil # Consented - no expiry
-        conv.save!
+        write_under_storage_boundary { conv.save! }
         imported += 1
+      rescue ConversationStorageBoundary::Fenced
+        return render json: { error: 'conversation_storage_unavailable', imported: imported }, status: :conflict
       rescue StandardError => e
         Rails.logger.warn("[ConversationImport] Skipped: #{e.class}")
+        skipped += 1
         next
       end
 
-      render json: { success: true, imported: imported }
+      render json: { success: true, imported: imported, skipped: skipped }
+    end
+
+    private
+
+    # WW-PRIV-10: false when the history could not be deleted; the denial is
+    # committed either way.
+    # A failed deletion is retried by ConversationHistoryCleanupJob, and by the
+    # daily scrub when the job cannot even be queued.
+    def schedule_history_cleanup_retry
+      ConversationHistoryCleanupJob.set(wait: 1.minute).perform_later(current_user.id)
+    rescue StandardError => e
+      Rails.logger.error("[ConsentRevoke] history cleanup retry not queued: #{e.class}")
+    end
+
+    # WW-SEC-09 -----------------------------------------------------------
+
+    def bound_payload_body
+      limit = action_name == 'import_conversations' ? IMPORT_BODY_MAX_BYTES : ENCRYPTED_BODY_MAX_BYTES
+      return if request.content_length.to_i <= limit
+
+      render json: { error: 'payload_too_large' }, status: 413
+    end
+
+    # The snapshot's fields, or nil when any is the wrong type, malformed or
+    # out of bounds. A real snapshot is canonical Base64 of IV, ciphertext and
+    # tag, so even an empty history is at least 40 characters.
+    def encrypted_payload_fields
+      messages = params[:encrypted_messages]
+      title = params[:encrypted_title]
+      count = nonnegative_integer_param(params[:message_count])
+      numacs = params[:numacs].nil? ? [] : params[:numacs]
+      return nil unless ciphertext?(messages, ChatbotConversation::MESSAGES_MAX_BYTES)
+      return nil unless title.blank? || ciphertext?(title, ChatbotConversation::TITLE_MAX_BYTES)
+      return nil unless count&.between?(1, ChatbotConversation::MESSAGE_COUNT_MAX)
+      return nil unless numacs.is_a?(Array) && numacs.size <= ChatbotConversation::CONTEXT_NUMACS_MAX &&
+                        numacs.all? { |numac| numac.is_a?(String) && numac.match?(CONTEXT_NUMAC) }
+
+      { encrypted_messages: messages, encrypted_title: title.presence, message_count: count, numacs: numacs }
+    end
+
+    def ciphertext?(value, max_bytes)
+      value.is_a?(String) && value.bytesize.between?(40, max_bytes) && value.match?(CANONICAL_BASE64)
+    end
+
+    # An imported conversation's last messages as plain hashes with the keys
+    # the history uses, or nil when the item is malformed or any message is out
+    # of bounds. Nothing is cut to fit: an oversized conversation is skipped
+    # and counted.
+    def importable_messages(item)
+      return nil unless item.is_a?(ActionController::Parameters) && item[:messages].is_a?(Array)
+
+      messages = item[:messages].last(ChatbotConversation::MAX_MESSAGES)
+      return nil unless messages.length >= 2 && messages.all?(ActionController::Parameters)
+
+      plain = messages.map { |message| message.permit(*IMPORT_MESSAGE_KEYS).to_h }
+      return nil unless plain.all? { |message| importable_message?(message) }
+      return nil if plain.to_json.bytesize > IMPORT_CONVERSATION_MAX_BYTES
+
+      plain
+    end
+
+    def importable_message?(message)
+      texts = [message['content'], message[ChatbotConversation::CONTEXT_CONTENT_KEY]]
+      %w[user assistant].include?(message['role']) && message['content'].is_a?(String) &&
+        texts.compact.all? { |text| text.is_a?(String) && text.length <= IMPORT_MESSAGE_MAX_CHARS } &&
+        (message['analytic_id'].nil? || message['analytic_id'].is_a?(Integer))
     end
   end
 end

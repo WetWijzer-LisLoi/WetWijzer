@@ -18,16 +18,12 @@ class CreditsController < ApplicationController
 
     unless package_info
       flash[:error] = t('credits.invalid_package')
-      return redirect_to credits_path
+      return redirect_to credits_path, flash: flash.to_hash
     end
 
     unless MollieConfiguration.checkout_enabled?
-      flash[:error] = t('credits.payment_unavailable', default: if I18n.locale == :fr
-                                                                  'Les paiements ne sont pas encore configurés. Veuillez réessayer plus tard.'
-                                                                else
-                                                                  'Betalingen zijn nog niet geconfigureerd. Probeer het later opnieuw.'
-                                                                end)
-      return redirect_to credits_path
+      flash[:error] = t('credits.payment_unavailable')
+      return redirect_to credits_path, flash: flash.to_hash
     end
 
     # Pro subscribers get discounted pack prices
@@ -60,7 +56,7 @@ class CreditsController < ApplicationController
     purchase&.fail! if purchase&.pending?
     Rails.logger.error("[Credits] Mollie checkout failed: #{e.class}")
     flash[:error] = t('credits.payment_error')
-    redirect_to credits_path
+    redirect_to credits_path, flash: flash.to_hash
   end
 
   def success
@@ -80,12 +76,13 @@ class CreditsController < ApplicationController
       flash[:error] = t('credits.purchase_not_found')
     end
 
-    redirect_to credits_path
+    # CookieFlash persists redirect options, not an earlier proxy assignment.
+    redirect_to credits_path, flash: flash.to_hash
   end
 
   def cancel
     flash[:notice] = t('credits.purchase_cancelled')
-    redirect_to credits_path
+    redirect_to credits_path, flash: flash.to_hash
   end
 
   # Crypto credit purchase via CoinGate
@@ -95,7 +92,7 @@ class CreditsController < ApplicationController
 
     unless package_info
       flash[:error] = t('credits.invalid_package')
-      return redirect_to credits_path
+      return redirect_to credits_path, flash: flash.to_hash
     end
 
     service = CoinGateService.new
@@ -107,7 +104,7 @@ class CreditsController < ApplicationController
                                  when :en then 'Crypto payments are not yet configured.'
                                  else 'Crypto-betalingen zijn nog niet geconfigureerd.'
                                  end)
-      return redirect_to credits_path
+      return redirect_to credits_path, flash: flash.to_hash
     end
 
     # Pro subscribers get discounted pack prices
@@ -158,7 +155,7 @@ class CreditsController < ApplicationController
   rescue CoinGateService::Error => e
     Rails.logger.error("CoinGate credit purchase error: #{e.message}")
     flash[:error] = t('credits.payment_error')
-    redirect_to credits_path
+    redirect_to credits_path, flash: flash.to_hash
   end
 
   def crypto_success
@@ -169,7 +166,7 @@ class CreditsController < ApplicationController
                                 when :en then 'Your crypto payment is being processed. Credits will be added shortly.'
                                 else 'Je crypto-betaling wordt verwerkt. Credits worden binnenkort toegevoegd.'
                                 end)
-    redirect_to credits_path
+    redirect_to credits_path, flash: flash.to_hash
   end
 
   private
@@ -178,7 +175,7 @@ class CreditsController < ApplicationController
     return if current_user
 
     flash[:error] = t('auth.login_required')
-    redirect_to login_path
+    redirect_to login_path, flash: flash.to_hash
   end
 
   def set_packages

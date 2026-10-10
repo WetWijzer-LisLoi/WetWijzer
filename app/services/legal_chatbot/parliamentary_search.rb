@@ -27,8 +27,14 @@ module LegalChatbot
       @chamber_db = nil
     end
 
+    # nil after a search the FAISS service answered, 'semantic_unavailable'
+    # when it did not. Read by the fan-out right after #search returns.
+    attr_reader :retrieval_degradation
+
     # Find similar parliamentary documents using FAISS vector search
     def search(question_embedding, limit: 5)
+      # Reset first: one service instance can serve more than one ask.
+      @retrieval_degradation = nil
       search_faiss(question_embedding, limit: limit)
     end
 
@@ -78,6 +84,16 @@ module LegalChatbot
       end
     end
 
+    # The stored title, unless it is a site page title (the search page's
+    # heading, the firewall's "Request Rejected") or empty: then the dossier
+    # reference, so neither the prompt nor the source card carries a page
+    # title as the document's. Same list as the parliamentary pages.
+    def display_title(title, dossier, document_number)
+      return title unless ParliamentaryHelper.generic_parl_title?(title)
+
+      ['Dossier', [dossier, document_number].compact_blank.join('/')].compact_blank.join(' ')
+    end
+
     private
 
     # Lazy-initialize connection to parliamentary SQLite DB
@@ -115,8 +131,12 @@ module LegalChatbot
         http.request(request)
       end
 
+      # Both failure branches return the same [] as "nothing above the
+      # threshold" a few lines down, so they say so here; the empty-result
+      # return deliberately does not.
       unless response.is_a?(Net::HTTPSuccess)
         Rails.logger.warn("[Parliamentary FAISS] HTTP error: #{response.code}")
+        @retrieval_degradation = 'semantic_unavailable'
         return []
       end
 
@@ -146,7 +166,7 @@ module LegalChatbot
           parliament: row[0],
           dossier: row[1],
           document_number: row[2],
-          title: row[3],
+          title: display_title(row[3], row[1], row[2]),
           content: row[4],
           url: row[5],
           similarity: similarity
@@ -157,6 +177,7 @@ module LegalChatbot
       docs
     rescue StandardError => e
       Rails.logger.warn("[Parliamentary FAISS] Error: #{e.class}")
+      @retrieval_degradation = 'semantic_unavailable'
       []
     end
   end

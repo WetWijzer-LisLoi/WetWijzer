@@ -79,7 +79,7 @@
                   <div class="mt-2 space-y-1.5">
                     <%# Article reference - the key piece users want %>
                     <% if repeal.article.present? %>
-                      <p class="text-sm font-medium text-red-800 dark:text-red-200">
+                      <p lang="<%= legal_text_lang(@language_id) %>" class="text-sm font-medium text-red-800 dark:text-red-200">
                         <%= repeal.abbreviation %> <%= repeal.doc_num %>, <span class="font-bold"><%= repeal.article %></span>
                       </p>
                     <% end %>
@@ -93,15 +93,19 @@
 
                     <%# Link to the repealing document - prefer WetWijzer page, fallback to Justel %>
                     <% repeal_lookup = repeal.doc_num.present? ? doc_lookups[repeal.doc_num] : nil %>
-                    <% if repeal_lookup %>
-                      <% repeal_url = "/laws/#{repeal_lookup[:numac]}?language_id=#{repeal_lookup[:language_id]}" %>
+                    <%# WW-SEC-15 refinement: both links come from imported data: the
+                        law link through the encoded builder, the Justel link only
+                        to an official ejustice address. %>
+                    <% repeal_url = repeal_lookup && build_law_url(repeal_lookup, nil) %>
+                    <% justel_url = OfficialSourceUrl.justel(repeal&.doc_href) %>
+                    <% if repeal_url %>
                       <a href="<%= repeal_url %>"
                          class="inline-flex items-center gap-1 text-xs text-red-700 dark:text-red-300 underline hover:text-red-900 dark:hover:text-red-100 mt-0.5"
                          title="<%= repeal_lookup[:title] %>">
                         <%= case I18n.locale when :fr then 'Voir la loi' when :de then 'Gesetz anzeigen' when :en then 'View law' else 'Bekijk wet' end %> <%= repeal.doc_num %>
                       </a>
-                    <% elsif repeal.doc_href.present? %>
-                      <a href="<%= repeal.doc_href %>" target="_blank" rel="noopener noreferrer"
+                    <% elsif justel_url %>
+                      <a href="<%= justel_url %>" target="_blank" rel="noopener noreferrer"
                          class="inline-flex items-center gap-1 text-xs text-red-700 dark:text-red-300 underline hover:text-red-900 dark:hover:text-red-100 mt-0.5">
                         <%= case I18n.locale when :fr then 'Voir le document' when :de then 'Dokument anzeigen' when :en then 'View document' else 'Bekijk document' end %> <%= repeal.doc_num %>
                         <svg class="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,13 +124,13 @@
                   <% entry_lookup ||= entry_law_cache[abolished_entry.object_id] %>
                   <p class="text-sm text-red-700 dark:text-red-400 <%= repeal ? 'mt-2 pt-2 border-t border-red-200 dark:border-red-800/50' : 'mt-1' %>">
                     <% if entry_lookup %>
-                      <a href="/laws/<%= entry_lookup[:numac] %>?language_id=<%= entry_lookup[:language_id] %>"
+                      <a lang="<%= legal_text_lang(@language_id) %>" href="/laws/<%= entry_lookup[:numac] %>?language_id=<%= entry_lookup[:language_id] %>"
                          class="text-red-700 dark:text-red-300 underline hover:text-red-900 dark:hover:text-red-100"
                          title="<%= entry_lookup[:title] %>">
                         <%= abolished_entry.text %>
                       </a>
                     <% else %>
-                      <a href="<%= abolished_entry.href %>" target="_blank" rel="noopener noreferrer"
+                      <a lang="<%= legal_text_lang(@language_id) %>" href="<%= abolished_entry.href %>" target="_blank" rel="noopener noreferrer"
                          class="text-red-700 dark:text-red-300 underline hover:text-red-900 dark:hover:text-red-100">
                         <%= abolished_entry.text %>
                         <svg class="inline-block w-3 h-3 ml-0.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,7 +140,7 @@
                     <% end %>
                   </p>
                 <% elsif history[:abolished_by].present? && repeal.nil? %>
-                  <p class="text-sm text-red-700 dark:text-red-400 mt-1">
+                  <p lang="<%= legal_text_lang(@language_id) %>" class="text-sm text-red-700 dark:text-red-400 mt-1">
                     <%= history[:abolished_by] %>
                   </p>
                 <% end %>
@@ -202,13 +206,13 @@
                     <% timeline_lookup = timeline_doc_num ? doc_lookups[timeline_doc_num] : nil %>
                     <% timeline_lookup ||= entry_law_cache[entry.object_id] %>
                     <% if timeline_lookup %>
-                      <a href="/laws/<%= timeline_lookup[:numac] %>?language_id=<%= timeline_lookup[:language_id] %>"
+                      <a lang="<%= legal_text_lang(@language_id) %>" href="/laws/<%= timeline_lookup[:numac] %>?language_id=<%= timeline_lookup[:language_id] %>"
                          class="block mt-1 text-gray-800 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-400) hover:underline"
                          title="<%= timeline_lookup[:title] %>">
                         <%= entry.text %>
                       </a>
                     <% else %>
-                      <a href="<%= entry.href %>" target="_blank" rel="noopener noreferrer"
+                      <a lang="<%= legal_text_lang(@language_id) %>" href="<%= entry.href %>" target="_blank" rel="noopener noreferrer"
                          class="block mt-1 text-gray-800 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-400) hover:underline">
                         <%= entry.text %>
                         <svg class="inline-block w-3 h-3 ml-0.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">

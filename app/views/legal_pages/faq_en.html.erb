@@ -432,7 +432,7 @@
 
     <details>
         <summary>Can I financially support WetWijzer?</summary>
-        <div><p>Yes. In addition to buying credits or a Pro subscription, you can make a voluntary donation through our <%= link_to 'donation page', support_page_path(anchor: 'donate') %>. Donations are non-refundable, grant no consideration, and are not tax-deductible. Every contribution helps keep the legislation database freely accessible.</p></div>
+        <div><p>Yes. In addition to buying credits or a Pro subscription, you can make a voluntary donation through our <%= link_to 'donation page', support_page_path(anchor: 'donate') %>. Donations are non-refundable, grant no consideration, and are not tax-deductible. Every contribution helps keep the legislation database freely accessible.</p><%= render 'donations/disabled_notice' unless MollieConfiguration.donations_enabled? %></div>
     </details>
 
     <details>

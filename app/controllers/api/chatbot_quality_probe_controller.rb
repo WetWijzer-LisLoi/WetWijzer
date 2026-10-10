@@ -193,10 +193,7 @@ module Api
     end
 
     def general_burst_key(ip)
-      ::Api::ChatbotController.windowed_rate_limit_key(
-        "chatbot_burst:#{ip}",
-        expires_in: 1.minute
-      )
+      ::Api::ChatbotController.counter_window_key("chatbot_burst:#{ip}", :minute)
     end
 
     def rate_limit_arm_key(token_digest)

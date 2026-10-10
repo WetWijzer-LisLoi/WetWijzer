@@ -7,6 +7,10 @@ module LegalChatbot
   class SourceFormatter
     include TextProcessing
 
+    # language_id => the card's language badge; 3 is a binding German
+    # original, which only the German site's chatbot retrieves.
+    SOURCE_LANGUAGE_LABELS = { 1 => 'NL', 2 => 'FR', 3 => 'DE' }.freeze
+
     def initialize(language: 'nl')
       @language = language
     end
@@ -29,6 +33,7 @@ module LegalChatbot
 
         # Fallback to NUMAC as title when law_title is nil
         law_title = "Wetgeving #{numac}" if law_title.blank? && numac.present?
+        language_id = article.respond_to?(:language_id) ? article.language_id : article[:language_id]
 
         {
           type: 'WETGEVING',
@@ -41,13 +46,11 @@ module LegalChatbot
           title: law_title,
           article: article_title,
           # A site-relative path keeps links on the active brand/environment
-          # (including staging) and deep-links to the retrieved article.
-          url: numac.present? ? "/laws/#{numac}#{extract_article_anchor(article_title)}" : nil,
-          language: if (article.respond_to?(:language_id) ? article.language_id : article[:language_id]) == 1
-                      'NL'
-                    else
-                      'FR'
-                    end
+          # (including staging) and deep-links to the retrieved article. A
+          # binding German original (language 3, gesetzguide only) opens the
+          # German text of the page.
+          url: numac.present? ? "/laws/#{numac}#{german_language_query(language_id)}#{extract_article_anchor(article_title)}" : nil,
+          language: SOURCE_LANGUAGE_LABELS.fetch(language_id, 'FR')
         }
       end
     end
@@ -71,7 +74,7 @@ module LegalChatbot
         internal_url = ecli.present? ? "/jurisprudence/#{ecli}" : nil
 
         {
-          type: 'RECHTSPRAAK',
+          type: AdvisoryOpinions.advisory?(ecli) ? 'ADVIES' : 'RECHTSPRAAK',
           ecli: ecli,
           court: court_name,
           date: c[:decision_date],
@@ -118,7 +121,7 @@ module LegalChatbot
     end
 
     # Combine multiple source types into a single list.
-    # Fisconet and regional results use their own services' format_sources —
+    # Fisconet and regional results use their own services' format_sources:
     # their result shapes have no numac/law_title, so format_legislation
     # would silently drop them.
     def format_all(legislation: [], jurisprudence: [], parliamentary: [])
@@ -127,6 +130,14 @@ module LegalChatbot
       sources.concat(format_jurisprudence(jurisprudence)) if jurisprudence.any?
       sources.concat(format_parliamentary(parliamentary)) if parliamentary.any?
       sources
+    end
+
+    private
+
+    # "?language_id=3" for a binding German original, whose card opens the
+    # German text of the law page on gesetzguide; '' for NL and FR.
+    def german_language_query(language_id)
+      language_id == GermanArticleSearch::GERMAN_LANGUAGE_ID ? "?language_id=#{language_id}" : ''
     end
   end
 end

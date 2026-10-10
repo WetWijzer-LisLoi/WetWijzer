@@ -1,16 +1,16 @@
 <% collapsed = local_assigns.fetch(:collapsed, false) %>
 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden" data-controller="collapse tabs" data-collapse-expanded-value="<%= !collapsed %>">
   <!-- Header with Sources title -->
-  <div class="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+  <div class="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 px-4 py-4">
     <div class="flex items-center justify-between">
-      <button type="button" class="flex-1 flex items-center justify-between text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--accent-500) group transition-colors" data-action="click->collapse#toggle" data-collapse-target="button" aria-label="Toggle sources" aria-expanded="<%= !collapsed %>">
+      <button type="button" class="flex-1 flex items-center justify-between text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--accent-500) group transition-colors" data-action="click->collapse#toggle" data-collapse-target="button" aria-label="<%= t('popular_laws.source_toggle') %>" aria-expanded="<%= !collapsed %>">
         <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 group-hover:text-(--accent-600) transition-colors">
           <svg class="w-5 h-5 text-(--accent-600)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
           </svg>
           <%= case I18n.locale when :fr then 'Sources' when :de then 'Quellen' when :en then 'Sources' else 'Bronnen' end %>
         </h2>
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform duration-200 ease-in-out motion-reduce:transition-none text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor" data-collapse-target="icon">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor" data-collapse-target="icon">
           <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
         </svg>
       </button>
@@ -46,11 +46,11 @@
     cost the very queries the cache exists to skip; the stamps are the honest
     cheap signal. 1-day TTL stays as the backstop.
 
-    popular_laws_code_version is a content digest of popular_laws_helper.rb,
-    which renders every cell here. Rails folds the TEMPLATE digest into the key
+    popular_laws_code_version is a content digest of popular_laws_helper.rb
+    and its evidence-backed abbreviation YAML. Rails folds the TEMPLATE digest into the key
     but knows nothing about helpers, and the file store outlives a deploy - so a
     helper-only fix shipped green and reached nobody until this was added. %>
-<% cache ["popular_laws", "v14", I18n.locale, content_lang, collapsed,
+<% cache ["popular_laws", "v15", I18n.locale, content_lang, collapsed,
           laws_db_version, popular_laws_code_version,
           files_version(FisconetSearchService::FISCONET_DB_PATH,
                         ENV.fetch('JURISPRUDENCE_SOURCE_DB') { Rails.root.join('storage/jurisprudence.db') },
@@ -82,7 +82,7 @@
   fisconet_numacs = FisconetSearchService.numacs_by_document_type
 
   # Base CSS for all popular law links
-  base_class = "text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors"
+  base_class = "text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-text) dark:hover:text-(--accent-400) transition-colors"
   # Helper to get the right classes for a given numac
   popular_law_class = ->(numac, extra: "") {
     if abolished_lookup[numac]
@@ -116,49 +116,69 @@
   <div data-collapse-target="content">
     <!-- Tabs -->
     <div class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30">
-      <nav class="flex -mb-px px-4 overflow-x-auto scrollbar-thin" aria-label="Source tabs">
-        <button type="button" data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="0"
-                class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-500)/10 dark:hover:bg-(--accent-400)/10 border-(--accent-500) text-(--accent-600) dark:text-(--accent-400)">
+      <%# A tab strip, not site navigation: role="tablist" on a div rather than
+          a <nav> landmark. The tabs controller sets aria-selected on every tab,
+          and aria-selected is only allowed on an element whose role supports
+          it; on a bare <button> axe reports aria-allowed-attr (critical) and a
+          screen reader hears a plain button with no selected state. Each tab
+          names the panel it controls and each panel is labelled by its tab.
+          The server renders the same first-tab state the controller sets on
+          connect, so the semantics are right before the JS runs.
+          The light hover wash is --accent-50 (#eff6ff), not accent-500 at 10%:
+          that mixed to #e6eefa, where the tab text (#2563eb) was 4.42:1, under
+          AA's 4.5:1. On --accent-50 it is 4.75:1; dark keeps its own wash.
+          The label colour is --accent-text, not --accent-600: ten of the
+          sixteen accent themes have a 600 under 4.5:1 on that wash (green
+          3.14:1, teal 3.59:1, rose 4.27:1), so each theme picks 600 or 700
+          in _accent.scss. Dark keeps --accent-400, which passes everywhere. %>
+      <div role="tablist" class="flex -mb-px px-4 overflow-x-auto scrollbar-thin" aria-label="<%= t('popular_laws.source_tabs') %>">
+        <button type="button" role="tab" id="popular-laws-tab-0" aria-controls="popular-laws-panel-0" aria-selected="true"
+                data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="0"
+                class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-50) dark:hover:bg-(--accent-400)/10 border-(--accent-500) text-(--accent-text) dark:text-(--accent-400)">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
           <%= t('popular_laws.title') %>
         </button>
-        <button type="button" data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="1"
-                class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-500)/10 dark:hover:bg-(--accent-400)/10 border-transparent text-gray-500 hover:text-(--accent-600) hover:border-(--accent-400)/60 dark:text-gray-400 dark:hover:text-(--accent-400) dark:hover:border-(--accent-400)/60">
+        <button type="button" role="tab" id="popular-laws-tab-1" aria-controls="popular-laws-panel-1" aria-selected="false"
+                data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="1"
+                class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-50) dark:hover:bg-(--accent-400)/10 border-transparent text-gray-500 hover:text-(--accent-text) hover:border-(--accent-400)/60 dark:text-gray-400 dark:hover:text-(--accent-400) dark:hover:border-(--accent-400)/60">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
           <%= case I18n.locale when :fr then 'Législation récente' when :de then 'Neue Gesetzgebung' when :en then 'Recent legislation' else 'Recente wetgeving' end %>
         </button>
         <%# Jurisprudence tab (public since June 2026) %>
-        <button type="button" data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="2"
-                class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-500)/10 dark:hover:bg-(--accent-400)/10 border-transparent text-gray-500 hover:text-(--accent-600) hover:border-(--accent-400)/60 dark:text-gray-400 dark:hover:text-(--accent-400) dark:hover:border-(--accent-400)/60">
+        <button type="button" role="tab" id="popular-laws-tab-2" aria-controls="popular-laws-panel-2" aria-selected="false"
+                data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="2"
+                class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-50) dark:hover:bg-(--accent-400)/10 border-transparent text-gray-500 hover:text-(--accent-text) hover:border-(--accent-400)/60 dark:text-gray-400 dark:hover:text-(--accent-400) dark:hover:border-(--accent-400)/60">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
           </svg>
           <%= case I18n.locale when :fr then 'Jurisprudence récente' when :de then 'Aktuelle Rechtsprechung' when :en then 'Recent case law' else 'Recente rechtspraak' end %>
         </button>
-        <button type="button" data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="3"
-                class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-500)/10 dark:hover:bg-(--accent-400)/10 border-transparent text-gray-500 hover:text-(--accent-600) hover:border-(--accent-400)/60 dark:text-gray-400 dark:hover:text-(--accent-400) dark:hover:border-(--accent-400)/60">
+        <button type="button" role="tab" id="popular-laws-tab-3" aria-controls="popular-laws-panel-3" aria-selected="false"
+                data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="3"
+                class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-50) dark:hover:bg-(--accent-400)/10 border-transparent text-gray-500 hover:text-(--accent-text) hover:border-(--accent-400)/60 dark:text-gray-400 dark:hover:text-(--accent-400) dark:hover:border-(--accent-400)/60">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
           </svg>
           <%= case I18n.locale when :fr then 'Travaux parlementaires récents' when :de then 'Aktuelle parlamentarische Dokumente' when :en then 'Recent parliamentary work' else 'Recente parlementaire stukken' end %>
         </button>
-        <button type="button" data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="4"
-                class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-500)/10 dark:hover:bg-(--accent-400)/10 border-transparent text-gray-500 hover:text-(--accent-600) hover:border-(--accent-400)/60 dark:text-gray-400 dark:hover:text-(--accent-400) dark:hover:border-(--accent-400)/60">
+        <button type="button" role="tab" id="popular-laws-tab-4" aria-controls="popular-laws-panel-4" aria-selected="false"
+                data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="4"
+                class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-50) dark:hover:bg-(--accent-400)/10 border-transparent text-gray-500 hover:text-(--accent-text) hover:border-(--accent-400)/60 dark:text-gray-400 dark:hover:text-(--accent-400) dark:hover:border-(--accent-400)/60">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
           </svg>
           <%= case I18n.locale when :fr then 'Tables de concordance' when :de then 'Konkordanztabellen' when :en then 'Concordance tables' else 'Concordantietabellen' end %>
         </button>
-      </nav>
+      </div>
     </div>
     
     <!-- Tab Panels -->
     <!-- Panel 1: Popular Legislation -->
-    <div data-tabs-target="panel" class="px-6 py-5">
+    <div data-tabs-target="panel" role="tabpanel" id="popular-laws-panel-0" aria-labelledby="popular-laws-tab-0" class="px-6 py-5">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-8">
     <!-- Civil Law / Droit civil -->
     <div>
@@ -173,9 +193,9 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1804032150'),
                     class: popular_law_class.('1804032150', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? '(oud) Burgerlijk Wetboek - Boek I: Personen' : '(ancien) Code civil - Livre I: Personnes' %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= I18n.locale == :nl ? '(art. 1-515)' : '(art. 1-515)' %></span>
-          <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? '(Oud) BW' : '(anc.) C.Civ.' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1804032150', dutch: '(oud) Burgerlijk Wetboek - Boek I: Personen', french: '(ancien) Code civil - Livre I: Personnes') %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 1-515)</span>
+          <%= popular_law_abbreviation_badge('1804032150') %>
         <% end %>
         
         <%= link_to law_path('1804032151', language_id: current_language_id), 
@@ -183,8 +203,8 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1804032151'),
                     class: popular_law_class.('1804032151', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? '(oud) Burgerlijk Wetboek - Boek II: Goederen en beperkingen van eigendom' : '(ancien) Code civil - Livre II: Biens et restrictions à la propriété' %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= I18n.locale == :nl ? '(art. 516-710bis)' : '(art. 516-710bis)' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1804032151', dutch: '(oud) Burgerlijk Wetboek - Boek II: Goederen en beperkingen van eigendom', french: '(ancien) Code civil - Livre II: Biens et restrictions à la propriété') %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 516-710bis)</span>
         <% end %>
         
         <%= link_to law_path('1804032152', language_id: current_language_id), 
@@ -192,8 +212,8 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1804032152'),
                     class: popular_law_class.('1804032152', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? '(oud) Burgerlijk Wetboek - Boek III: Wijze van eigendomsverkrijging - Titel I-II' : '(ancien) Code civil - Livre III: Mode d\'acquisition de la propriété - Titre I-II' %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= I18n.locale == :nl ? '(art. 711-1100)' : '(art. 711-1100)' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1804032152', dutch: '(oud) Burgerlijk Wetboek - Boek III: Wijze van eigendomsverkrijging - Titel I-II', french: '(ancien) Code civil - Livre III: Mode d\'acquisition de la propriété - Titre I-II') %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 711-1100)</span>
         <% end %>
         
         <%= link_to law_path('1804032153', language_id: current_language_id), 
@@ -201,8 +221,8 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1804032153'),
                     class: popular_law_class.('1804032153', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? '(oud) Burgerlijk Wetboek - Boek III: Wijze van eigendomsverkrijging - Titel III-V' : '(ancien) Code civil - Livre III: Mode d\'acquisition de la propriété - Titre III-V' %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= I18n.locale == :nl ? '(art. 1101-1581)' : '(art. 1101-1581)' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1804032153', dutch: '(oud) Burgerlijk Wetboek - Boek III: Wijze van eigendomsverkrijging - Titel III-V', french: '(ancien) Code civil - Livre III: Mode d\'acquisition de la propriété - Titre III-V') %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 1101-1581)</span>
         <% end %>
         
         <%= link_to law_path('1804032154', language_id: current_language_id), 
@@ -210,8 +230,8 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1804032154'),
                     class: popular_law_class.('1804032154', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? '(oud) Burgerlijk Wetboek - Boek III: Wijze van eigendomsverkrijging - Titel VI-XIII' : '(ancien) Code civil - Livre III: Mode d\'acquisition de la propriété - Titre VI-XIII' %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= I18n.locale == :nl ? '(art. 1582-2010)' : '(art. 1582-2010)' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1804032154', dutch: '(oud) Burgerlijk Wetboek - Boek III: Wijze van eigendomsverkrijging - Titel VI-XIII', french: '(ancien) Code civil - Livre III: Mode d\'acquisition de la propriété - Titre VI-XIII') %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 1582-2010)</span>
         <% end %>
         
         <%= link_to law_path('1804032155', language_id: current_language_id), 
@@ -219,8 +239,8 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1804032155'),
                     class: popular_law_class.('1804032155', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? '(oud) Burgerlijk Wetboek - Boek III: Wijze van eigendomsverkrijging - Titel XIV-XX' : '(ancien) Code civil - Livre III: Mode d\'acquisition de la propriété - Titre XIV-XX' %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= I18n.locale == :nl ? '(art. 2011-2281)' : '(art. 2011-2281)' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1804032155', dutch: '(oud) Burgerlijk Wetboek - Boek III: Wijze van eigendomsverkrijging - Titel XIV-XX', french: '(ancien) Code civil - Livre III: Mode d\'acquisition de la propriété - Titre XIV-XX') %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 2011-2281)</span>
         <% end %>
         
         <%= link_to law_path('1804032156', language_id: current_language_id), 
@@ -228,8 +248,8 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1804032156'),
                     class: popular_law_class.('1804032156', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? '(oud) Burgerlijk Wetboek - Boek III, Titel V: Stelsel van gemeenschap van goederen' : '(ancien) Code civil - Livre III, Titre V: Régime de communauté de biens' %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= I18n.locale == :nl ? '(art. 1399-1581)' : '(art. 1399-1581)' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1804032156', dutch: '(oud) Burgerlijk Wetboek - Boek III, Titel V: Stelsel van gemeenschap van goederen', french: '(ancien) Code civil - Livre III, Titre V: Régime de communauté de biens') %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 1399-1581)</span>
         <% end %>
       </div>
       
@@ -240,9 +260,9 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('2022A32057'),
                     class: popular_law_class.('2022A32057', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Burgerlijk Wetboek - Boek 1 "Algemene bepalingen"' : 'Code civil - Livre 1 "Dispositions générales"' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('2022A32057', dutch: 'Burgerlijk Wetboek - Boek 1 "Algemene bepalingen"', french: 'Code civil - Livre 1 "Dispositions générales"') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 1.1-1.13)</span>
-          <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">NBW</span>
+          <%= popular_law_abbreviation_badge('2022A32057') %>
         <% end %>
         
         <%= link_to law_path('2022A30600', language_id: current_language_id), 
@@ -250,7 +270,7 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('2022A30600'),
                     class: popular_law_class.('2022A30600', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Burgerlijk Wetboek - Boek 2 "Relatievermogensrecht"' : 'Code civil - Livre 2 "Régimes patrimoniaux"' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('2022A30600', dutch: 'Burgerlijk Wetboek - Boek 2 "Relatievermogensrecht"', french: 'Code civil - Livre 2 "Régimes patrimoniaux"') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 2.1-2.47)</span>
         <% end %>
         
@@ -259,7 +279,7 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('2020A20347'),
                     class: popular_law_class.('2020A20347', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Burgerlijk Wetboek - Boek 3 "Goederen"' : 'Code civil - Livre 3 "Biens"' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('2020A20347', dutch: 'Burgerlijk Wetboek - Boek 3 "Goederen"', french: 'Code civil - Livre 3 "Biens"') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 3.1-3.228)</span>
         <% end %>
         
@@ -268,7 +288,7 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('2022B30600'),
                     class: popular_law_class.('2022B30600', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Burgerlijk Wetboek - Boek 4 "Nalatenschappen, schenkingen en testamenten"' : 'Code civil - Livre 4 "Successions, donations et testaments"' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('2022B30600', dutch: 'Burgerlijk Wetboek - Boek 4 "Nalatenschappen, schenkingen en testamenten"', french: 'Code civil - Livre 4 "Successions, donations et testaments"') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 4.1-4.265)</span>
         <% end %>
         
@@ -277,7 +297,7 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('2022A32058'),
                     class: popular_law_class.('2022A32058', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Burgerlijk Wetboek - Boek 5 "Verbintenissen"' : 'Code civil - Livre 5 "Obligations"' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('2022A32058', dutch: 'Burgerlijk Wetboek - Boek 5 "Verbintenissen"', french: 'Code civil - Livre 5 "Obligations"') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 5.1-5.326)</span>
         <% end %>
         
@@ -286,8 +306,18 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('2024A01600'),
                     class: popular_law_class.('2024A01600', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Burgerlijk Wetboek - Boek 6 "Buitencontractuele aansprakelijkheid"' : 'Code civil - Livre 6 "Responsabilité extracontractuelle"' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('2024A01600', dutch: 'Burgerlijk Wetboek - Boek 6 "Buitencontractuele aansprakelijkheid"', french: 'Code civil - Livre 6 "Responsabilité extracontractuelle"') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 6.1-6.58)</span>
+        <% end %>
+
+        <%= link_to law_path('2026A05775', language_id: current_language_id),
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    title: popular_law_title.('2026A05775'),
+                    class: popular_law_class.('2026A05775', extra: 'group') do %>
+          <span class="group-hover:underline"><%= t('popular_laws.catalogue.civil_book_seven') %></span>
+          <span class="font-mono text-xs text-gray-500 dark:text-gray-400"><%= t('popular_laws.catalogue.future_from_september_2027') %></span>
+          <%= popular_law_abbreviation_badge('2026A05775') %>
         <% end %>
         
         <%= link_to law_path('2019A12168', language_id: current_language_id), 
@@ -295,7 +325,7 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('2019A12168'),
                     class: popular_law_class.('2019A12168', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Burgerlijk Wetboek - Boek 8 "Bewijs"' : 'Code civil - Livre 8 "Preuve"' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('2019A12168', dutch: 'Burgerlijk Wetboek - Boek 8 "Bewijs"', french: 'Code civil - Livre 8 "Preuve"') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 8.1-8.35)</span>
         <% end %>
         
@@ -304,7 +334,7 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('2025A05089'),
                     class: popular_law_class.('2025A05089', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Burgerlijk Wetboek - Boek 9 "Zekerheden"' : 'Code civil - Livre 9 "Sûretés"' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('2025A05089', dutch: 'Burgerlijk Wetboek - Boek 9 "Zekerheden"', french: 'Code civil - Livre 9 "Sûretés"') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 9.1-9.75)</span>
         <% end %>
       </div>
@@ -316,9 +346,9 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1967101052'),
                     class: popular_law_class.('1967101052', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Eerste deel: Algemene beginselen' : 'Code judiciaire - Partie I: Principes généraux' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1967101052', dutch: 'Gerechtelijk Wetboek - Eerste deel: Algemene beginselen', french: 'Code judiciaire - Partie I: Principes généraux') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 1-57)</span>
-          <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">Ger.W.</span>
+          <%= popular_law_abbreviation_badge('1967101052') %>
         <% end %>
         
         <%= link_to law_path('1967101053', language_id: current_language_id), 
@@ -326,7 +356,7 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1967101053'),
                     class: popular_law_class.('1967101053', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Deel II: Rechterlijke organisatie' : 'Code judiciaire - Partie II: Organisation judiciaire' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1967101053', dutch: 'Gerechtelijk Wetboek - Deel II: Rechterlijke organisatie', french: 'Code judiciaire - Partie II: Organisation judiciaire') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 58-555quinquies)</span>
         <% end %>
         
@@ -335,7 +365,7 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1967101054'),
                     class: popular_law_class.('1967101054', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Deel III: Bevoegdheid' : 'Code judiciaire - Partie III: Compétence' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1967101054', dutch: 'Gerechtelijk Wetboek - Deel III: Bevoegdheid', french: 'Code judiciaire - Partie III: Compétence') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 556-663)</span>
         <% end %>
         
@@ -344,7 +374,7 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1967101055'),
                     class: popular_law_class.('1967101055', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Deel IV: Burgerlijke rechtspleging' : 'Code judiciaire - Partie IV: Procédure civile' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1967101055', dutch: 'Gerechtelijk Wetboek - Deel IV: Burgerlijke rechtspleging', french: 'Code judiciaire - Partie IV: Procédure civile') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 664-1385undecies)</span>
         <% end %>
         
@@ -353,7 +383,7 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1967101056'),
                     class: popular_law_class.('1967101056', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Deel V: Bewarend beslag, middelen tot tenuitvoerlegging en collectieve schuldenregeling' : 'Code judiciaire - Partie V: Saisies conservatoires, voies d\'exécution et règlement collectif de dettes' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1967101056', dutch: 'Gerechtelijk Wetboek - Deel V: Bewarend beslag, middelen tot tenuitvoerlegging en collectieve schuldenregeling', french: 'Code judiciaire - Partie V: Saisies conservatoires, voies d\'exécution et règlement collectif de dettes') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 1386-1675/27)</span>
         <% end %>
         
@@ -362,7 +392,7 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1967101057'),
                     class: popular_law_class.('1967101057', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Deel VI: Arbitrage' : 'Code judiciaire - Partie VI: Arbitrage' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1967101057', dutch: 'Gerechtelijk Wetboek - Deel VI: Arbitrage', french: 'Code judiciaire - Partie VI: Arbitrage') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 1676-1723)</span>
         <% end %>
         
@@ -371,7 +401,7 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1967101063'),
                     class: popular_law_class.('1967101063', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Zevende deel: Bemiddeling' : 'Code judiciaire - Partie VII: Médiation' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1967101063', dutch: 'Gerechtelijk Wetboek - Zevende deel: Bemiddeling', french: 'Code judiciaire - Partie VII: Médiation') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 1724-1737)</span>
         <% end %>
         
@@ -380,7 +410,7 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1967101064'),
                     class: popular_law_class.('1967101064', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Achtste deel: Collaboratieve onderhandeling' : 'Code judiciaire - Partie VIII: Droit collaboratif' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1967101064', dutch: 'Gerechtelijk Wetboek - Achtste deel: Collaboratieve onderhandeling', french: 'Code judiciaire - Partie VIII: Droit collaboratif') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 1738-1747)</span>
         <% end %>
         
@@ -389,7 +419,7 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1967101058'),
                     class: popular_law_class.('1967101058', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Gerechtelijk Wetboek - Bijvoegsel: Gebiedsomschrijving' : 'Code judiciaire - Annexe: Limites territoriales' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1967101058', dutch: 'Gerechtelijk Wetboek - Bijvoegsel: Gebiedsomschrijving', french: 'Code judiciaire - Annexe: Limites territoriales') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 1)</span>
         <% end %>
       </div>
@@ -401,8 +431,8 @@
                     rel: "noopener noreferrer",
                     title: popular_law_title.('1976071406'),
                     class: popular_law_class.('1976071406', extra: 'group') do %>
-          <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wet huwelijksvermogensstelsels' : 'Loi régimes matrimoniaux' %></span>
-          <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'HVW' : 'L.R.M.' %></span>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1976071406', dutch: 'Wet huwelijksvermogensstelsels (14 juli 1976)', french: 'Loi régimes matrimoniaux (14 juillet 1976)') %></span>
+          <%= popular_law_abbreviation_badge('1976071406') %>
         <% end %>
       </div>
     </div>
@@ -414,13 +444,35 @@
       </h3>
       <ul class="space-y-1">
         <li>
+          <%= link_to law_path('1867060850', language_id: current_language_id),
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      title: popular_law_title.('1867060850'),
+                      class: popular_law_class.('1867060850', extra: 'flex flex-wrap items-baseline gap-2 group') do %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1867060850', dutch: t('popular_laws.catalogue.criminal_code_1867', locale: :nl), french: t('popular_laws.catalogue.criminal_code_1867', locale: :fr)) %></span>
+            <%# This is deliberately not derived from is_abolished: the official
+                record remains unflagged although this catalogue entry is historical. %>
+            <%= popular_law_abbreviation_badge('1867060850') %>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to law_path('2024002052', language_id: current_language_id),
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      title: popular_law_title.('2024002052'),
+                      class: popular_law_class.('2024002052', extra: 'flex flex-wrap items-baseline gap-2 group') do %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2024002052', dutch: t('popular_laws.catalogue.new_criminal_code_book_one', locale: :nl), french: t('popular_laws.catalogue.new_criminal_code_book_one', locale: :fr)) %></span>
+            <%= popular_law_abbreviation_badge('2024002052') %>
+          <% end %>
+        </li>
+        <li>
           <%= link_to law_path('2024002088', language_id: current_language_id),
                       target: "_blank",
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2024002088'),
-                      class: popular_law_class.('2024002088', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Strafwetboek Boek II' : 'Code pénal Livre II' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Sw. II' : 'C.P. II' %></span>
+                      class: popular_law_class.('2024002088', extra: 'flex flex-wrap items-baseline gap-2 group') do %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2024002088', dutch: t('popular_laws.catalogue.new_criminal_code_book_two', locale: :nl), french: t('popular_laws.catalogue.new_criminal_code_book_two', locale: :fr)) %></span>
+            <%= popular_law_abbreviation_badge('2024002088') %>
           <% end %>
         </li>
         <!-- Wetboek van Strafvordering / Code d'instruction criminelle (8 parts) -->
@@ -430,25 +482,25 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1878041750'),
                       class: popular_law_class.('1878041750', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek van Strafvordering - Voorafgaande titel' : 'Code d\'instruction criminelle - Titre préliminaire' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1878041750', dutch: 'Wetboek van Strafvordering - Voorafgaande titel', french: 'Code d\'instruction criminelle - Titre préliminaire') %></span>
             <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 1-32)</span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'V.T.Sv.' : 'T.P.C.I.C.' %></span>
+            <%= popular_law_abbreviation_badge('1878041750') %>
           <% end %>
           <%= link_to law_path('1808111701', language_id: current_language_id), 
                       target: "_blank",
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1808111701'),
                       class: popular_law_class.('1808111701', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek van Strafvordering - Eerste Boek' : 'Code d\'instruction criminelle - Livre I' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1808111701', dutch: 'Wetboek van Strafvordering - Eerste Boek', french: 'Code d\'instruction criminelle - Livre I') %></span>
             <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 8-136ter)</span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Sv.' : 'C.I.C.' %></span>
+            <%= popular_law_abbreviation_badge('1808111701') %>
           <% end %>
           <%= link_to law_path('1808111901', language_id: current_language_id), 
                       target: "_blank",
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1808111901'),
                       class: popular_law_class.('1808111901', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek van Strafvordering - Boek II, Titel I' : 'Code d\'instruction criminelle - Livre II, Titre I' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1808111901', dutch: 'Wetboek van Strafvordering - Boek II, Titel I', french: 'Code d\'instruction criminelle - Livre II, Titre I') %></span>
             <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 137-216septies)</span>
           <% end %>
           <%= link_to law_path('1808120950', language_id: current_language_id), 
@@ -456,7 +508,7 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1808120950'),
                       class: popular_law_class.('1808120950', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek van Strafvordering - Boek II, Titel II' : 'Code d\'instruction criminelle - Livre II, Titre II' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1808120950', dutch: 'Wetboek van Strafvordering - Boek II, Titel II', french: 'Code d\'instruction criminelle - Livre II, Titre II') %></span>
             <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 217-406)</span>
           <% end %>
           <%= link_to law_path('1808121050', language_id: current_language_id), 
@@ -464,7 +516,7 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1808121050'),
                       class: popular_law_class.('1808121050', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek van Strafvordering - Boek II, Titel III' : 'Code d\'instruction criminelle - Livre II, Titre III' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1808121050', dutch: 'Wetboek van Strafvordering - Boek II, Titel III', french: 'Code d\'instruction criminelle - Livre II, Titre III') %></span>
             <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 407-447bis)</span>
           <% end %>
           <%= link_to law_path('1808121250', language_id: current_language_id), 
@@ -472,7 +524,7 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1808121250'),
                       class: popular_law_class.('1808121250', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek van Strafvordering - Boek II, Titel IV' : 'Code d\'instruction criminelle - Livre II, Titre IV' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1808121250', dutch: 'Wetboek van Strafvordering - Boek II, Titel IV', french: 'Code d\'instruction criminelle - Livre II, Titre IV') %></span>
             <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 448-524septies)</span>
           <% end %>
           <%= link_to law_path('1808121450', language_id: current_language_id), 
@@ -480,7 +532,7 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1808121450'),
                       class: popular_law_class.('1808121450', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek van Strafvordering - Boek II, Titels V-VI' : 'Code d\'instruction criminelle - Livre II, Titres V-VI' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1808121450', dutch: 'Wetboek van Strafvordering - Boek II, Titels V-VI', french: 'Code d\'instruction criminelle - Livre II, Titres V-VI') %></span>
             <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 525-588)</span>
           <% end %>
           <%= link_to law_path('1808121650', language_id: current_language_id), 
@@ -488,7 +540,7 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1808121650'),
                       class: popular_law_class.('1808121650', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek van Strafvordering - Boek II, Titel VII' : 'Code d\'instruction criminelle - Livre II, Titre VII' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1808121650', dutch: 'Wetboek van Strafvordering - Boek II, Titel VII', french: 'Code d\'instruction criminelle - Livre II, Titre VII') %></span>
             <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 589-648)</span>
           <% end %>
         </li>
@@ -498,8 +550,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2010A09589'),
                       class: popular_law_class.('2010A09589', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Sociaal Strafwetboek' : 'Code pénal social' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Soc.Sw.' : 'C.P.S.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2010A09589', dutch: 'Sociaal Strafwetboek', french: 'Code pénal social') %></span>
+            <%= popular_law_abbreviation_badge('2010A09589') %>
           <% end %>
         </li>
         <li>
@@ -508,8 +560,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2024003317'),
                       class: popular_law_class.('2024003317', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wet Strafprocesrecht I' : 'Loi Procédure pénale I' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Strafproc.I' : 'Proc.Pén.I' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2024003317', dutch: 'Wet Strafprocesrecht I', french: 'Loi Procédure pénale I') %></span>
+            <%= popular_law_abbreviation_badge('2024003317') %>
           <% end %>
         </li>
         <li>
@@ -518,8 +570,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1992000606'),
                       class: popular_law_class.('1992000606', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wet op het politieambt (5 augustus 1992)' : 'Loi sur la fonction de police (5 août 1992)' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'WPA' : 'LFP' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1992000606', dutch: 'Wet op het politieambt (5 augustus 1992)', french: 'Loi sur la fonction de police (5 août 1992)') %></span>
+            <%= popular_law_abbreviation_badge('1992000606') %>
           <% end %>
         </li>
         <li>
@@ -528,8 +580,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1921022450'),
                       class: popular_law_class.('1921022450', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Drugswet' : 'Loi drogues' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">L.Stup.</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1921022450', dutch: 'Drugswet', french: 'Loi drogues') %></span>
+            <%= popular_law_abbreviation_badge('1921022450') %>
           <% end %>
         </li>
         <li>
@@ -538,8 +590,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2007000528'),
                       class: popular_law_class.('2007000528', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Camerawet' : 'Loi caméras' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">L.Cam.</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2007000528', dutch: 'Camerawet', french: 'Loi caméras') %></span>
+            <%= popular_law_abbreviation_badge('2007000528') %>
           <% end %>
         </li>
       </ul>
@@ -557,8 +609,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1994021048'),
                       class: popular_law_class.('1994021048', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Grondwet' : 'Constitution' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'GW' : 'Const.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1994021048', dutch: 'Grondwet', french: 'Constitution') %></span>
+            <%= popular_law_abbreviation_badge('1994021048') %>
           <% end %>
         </li>
         <li>
@@ -567,8 +619,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1894041255'),
                       class: popular_law_class.('1894041255', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Kieswetboek' : 'Code électoral' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Kiesw.' : 'C.Élect.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1894041255', dutch: 'Kieswetboek', french: 'Code électoral') %></span>
+            <%= popular_law_abbreviation_badge('1894041255') %>
           <% end %>
         </li>
         <li>
@@ -577,8 +629,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1984900065'),
                       class: popular_law_class.('1984900065', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Nationaliteitswetboek' : 'Code nationalité' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'WBN' : 'C.Nat.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1984900065', dutch: 'Nationaliteitswetboek', french: 'Code nationalité') %></span>
+            <%= popular_law_abbreviation_badge('1984900065') %>
           <% end %>
         </li>
       </ul>
@@ -596,8 +648,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2019A40586'),
                       class: popular_law_class.('2019A40586', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek vennootschappen & verenigingen' : 'Code sociétés & associations' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'WVV' : 'CSA' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2019A40586', dutch: 'Wetboek vennootschappen & verenigingen', french: 'Code sociétés & associations') %></span>
+            <%= popular_law_abbreviation_badge('2019A40586') %>
           <% end %>
         </li>
         <li>
@@ -606,8 +658,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2013A11134'),
                       class: popular_law_class.('2013A11134', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek van economisch recht' : 'Code de droit économique' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'WER' : 'CDE' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2013A11134', dutch: 'Wetboek van economisch recht', french: 'Code de droit économique') %></span>
+            <%= popular_law_abbreviation_badge('2013A11134') %>
           <% end %>
         </li>
         <li>
@@ -616,8 +668,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1973100550'),
                       class: popular_law_class.('1973100550', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Europees Octrooiverdrag' : 'Convention sur le brevet européen' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'EOV' : 'CBE' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1973100550', dutch: 'Europees Octrooiverdrag', french: 'Convention sur le brevet européen') %></span>
+            <%= popular_law_abbreviation_badge('1973100550') %>
           <% end %>
         </li>
       </ul>
@@ -635,8 +687,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1978070303'),
                       class: popular_law_class.('1978070303', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Arbeidsovereenkomstenwet' : 'Loi contrats de travail' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'AOW' : 'L.C.T.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1978070303', dutch: 'Arbeidsovereenkomstenwet', french: 'Loi contrats de travail') %></span>
+            <%= popular_law_abbreviation_badge('1978070303') %>
           <% end %>
         </li>
         <li>
@@ -645,8 +697,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1996012650'),
                       class: popular_law_class.('1996012650', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Welzijnswet' : 'Loi bien-être' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">L.B.E.</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1996012650', dutch: 'Welzijnswet', french: 'Loi bien-être') %></span>
+            <%= popular_law_abbreviation_badge('1996012650') %>
           <% end %>
         </li>
         <li>
@@ -655,8 +707,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1968120503'),
                       class: popular_law_class.('1968120503', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'CAO-wet' : 'Loi CCT et commissions paritaires' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">L.CCT</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1968120503', dutch: 'CAO-wet', french: 'Loi CCT et commissions paritaires') %></span>
+            <%= popular_law_abbreviation_badge('1968120503') %>
           <% end %>
         </li>
         <li>
@@ -665,8 +717,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1971062850'),
                       class: popular_law_class.('1971062850', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Jaarlijkse Vakantiewet' : 'Lois vacances annuelles' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Vakantiewet' : 'L.V.A.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1971062850', dutch: 'Jaarlijkse-vakantiewetten', french: 'Lois coordonnées sur les vacances annuelles') %></span>
+            <%= popular_law_abbreviation_badge('1971062850') %>
           <% end %>
         </li>
         <li>
@@ -675,8 +727,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1967033001'),
                       class: popular_law_class.('1967033001', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'KB Uitvoeringsbesluit Vakantiegeld' : 'AR exécution pécule de vacances' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'KB Vak.' : 'AR Vac.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1967033001', dutch: 'KB Uitvoeringsbesluit Vakantiegeld', french: 'AR exécution pécule de vacances') %></span>
+            <%= popular_law_abbreviation_badge('1967033001') %>
           <% end %>
         </li>
         <li>
@@ -685,8 +737,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2016021053'),
                       class: popular_law_class.('2016021053', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wet Overheidsopdrachten' : 'Loi Marchés publics' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Overheidsopdrachten' : 'L.M.P.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2016021053', dutch: 'Wet Overheidsopdrachten', french: 'Loi Marchés publics') %></span>
+            <%= popular_law_abbreviation_badge('2016021053') %>
           <% end %>
         </li>
         <li>
@@ -695,8 +747,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1971031602'),
                       class: popular_law_class.('1971031602', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Arbeidswet' : 'Loi sur le travail' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">L.Trav.</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1971031602', dutch: 'Arbeidswet', french: 'Loi sur le travail') %></span>
+            <%= popular_law_abbreviation_badge('1971031602') %>
           <% end %>
         </li>
         <li>
@@ -705,8 +757,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1963082803'),
                       class: popular_law_class.('1963082803', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'KB Klein verlet' : 'AR Petit chômage' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'KB KV' : 'AR PC' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1963082803', dutch: 'KB Klein verlet', french: 'AR Petit chômage') %></span>
+            <%= popular_law_abbreviation_badge('1963082803') %>
           <% end %>
         </li>
         <li>
@@ -715,8 +767,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1965041207'),
                       class: popular_law_class.('1965041207', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Loonbeschermingswet' : 'Loi protection de la rémunération' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Loonbescherming' : 'L.P.R.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1965041207', dutch: 'Loonbeschermingswet', french: 'Loi protection de la rémunération') %></span>
+            <%= popular_law_abbreviation_badge('1965041207') %>
           <% end %>
         </li>
         <li>
@@ -725,8 +777,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1974010407'),
                       class: popular_law_class.('1974010407', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Feestdagenwet' : 'Loi jours fériés' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">L.J.F.</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1974010407', dutch: 'Feestdagenwet', french: 'Loi jours fériés') %></span>
+            <%= popular_law_abbreviation_badge('1974010407') %>
           <% end %>
         </li>
         <li>
@@ -735,18 +787,18 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1987012597'),
                       class: popular_law_class.('1987012597', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Uitzendarbeidswet' : 'Loi travail intérimaire' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Uitzendarbeid' : 'L.T.I.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1987012597', dutch: 'Uitzendarbeidswet', french: 'Loi travail intérimaire') %></span>
+            <%= popular_law_abbreviation_badge('1987012597') %>
           <% end %>
         </li>
         <li>
-          <%= link_to law_path('2001012470', language_id: current_language_id), 
+          <%= link_to law_path('1978070303', language_id: current_language_id, anchor: 'art-30'),
                       target: "_blank",
                       rel: "noopener noreferrer",
-                      title: popular_law_title.('2001012470'),
-                      class: popular_law_class.('2001012470', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wet geboorteverlof' : 'Loi congé de naissance' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Geboorteverlof' : 'L.C.N.' %></span>
+                      title: popular_law_title.('1978070303'),
+                      class: popular_law_class.('1978070303', extra: 'flex items-baseline gap-2 group') do %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('birth_leave', dutch: 'Geboorteverlof (Arbeidsovereenkomstenwet, art. 30)', french: 'Congé de naissance (loi relative aux contrats de travail, art. 30)') %></span>
+            <%= popular_law_abbreviation_badge('birth_leave') %>
           <% end %>
         </li>
         <li>
@@ -755,8 +807,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2001013224'),
                       class: popular_law_class.('2001013224', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'KB Tijdskrediet' : 'AR Crédit-temps' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'KB TK' : 'AR CT' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2001013224', dutch: 'KB Tijdskrediet', french: 'AR Crédit-temps') %></span>
+            <%= popular_law_abbreviation_badge('2001013224') %>
           <% end %>
         </li>
         <li>
@@ -765,18 +817,18 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1948092002'),
                       class: popular_law_class.('1948092002', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wet ondernemingsraden' : 'Loi conseils d\'entreprise' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Wet OR' : 'L.C.E.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1948092002', dutch: 'Wet organisatie bedrijfsleven (ondernemingsraden)', french: 'Loi organisation de l\'économie (conseils d\'entreprise)') %></span>
+            <%= popular_law_abbreviation_badge('1948092002') %>
           <% end %>
         </li>
         <li>
-          <%= link_to law_path('2010201753', language_id: current_language_id), 
+          <%= link_to law_path('2007201609', language_id: current_language_id),
                       target: "_blank",
                       rel: "noopener noreferrer",
-                      title: popular_law_title.('2010201753'),
-                      class: popular_law_class.('2010201753', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'KB SWT (brugpensioen)' : 'AR RCC (prépension)' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">SWT/RCC</span>
+                      title: popular_law_title.('2007201609'),
+                      class: popular_law_class.('2007201609', extra: 'flex items-baseline gap-2 group') do %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2007201609', dutch: 'KB stelsel werkloosheid met bedrijfstoeslag (3 mei 2007)', french: 'AR régime de chômage avec complément d\'entreprise (3 mai 2007)') %></span>
+            <%= popular_law_abbreviation_badge('2007201609') %>
           <% end %>
         </li>
         <li>
@@ -785,8 +837,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1971041001'),
                       class: popular_law_class.('1971041001', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Arbeidsongevallenwet' : 'Loi accidents du travail' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">L.A.T.</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1971041001', dutch: 'Arbeidsongevallenwet', french: 'Loi accidents du travail') %></span>
+            <%= popular_law_abbreviation_badge('1971041001') %>
           <% end %>
         </li>
         <li>
@@ -795,8 +847,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1998012088'),
                       class: popular_law_class.('1998012088', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wet Renault (collectief ontslag)' : 'Loi Renault (licenciement collectif)' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Wet Renault' : 'L.Ren.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1998012088', dutch: 'Wet Renault (collectief ontslag)', french: 'Loi Renault (licenciement collectif)') %></span>
+            <%= popular_law_abbreviation_badge('1998012088') %>
           <% end %>
         </li>
         <li>
@@ -805,8 +857,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2007002098'),
                       class: popular_law_class.('2007002098', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Genderwet' : 'Loi genre' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">L.Gen.</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2007002098', dutch: 'Genderwet', french: 'Loi genre') %></span>
+            <%= popular_law_abbreviation_badge('2007002098') %>
           <% end %>
         </li>
         <li>
@@ -815,8 +867,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2007002099'),
                       class: popular_law_class.('2007002099', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Antidiscriminatiewet' : 'Loi anti-discrimination' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Antidiscr.' : 'L.A.D.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2007002099', dutch: 'Antidiscriminatiewet', french: 'Loi anti-discrimination') %></span>
+            <%= popular_law_abbreviation_badge('2007002099') %>
           <% end %>
         </li>
         <li>
@@ -825,8 +877,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1967072702'),
                       class: popular_law_class.('1967072702', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'KB nr. 38 sociaal statuut zelfstandigen' : 'AR n° 38 statut social indépendants' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">KB 38</span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1967072702', dutch: 'Koninklijk besluit sociaal statuut zelfstandigen', french: 'Arrêté royal statut social des indépendants') %></span>
+            <%= popular_law_abbreviation_badge('1967072702') %>
           <% end %>
         </li>
       </ul>
@@ -843,16 +895,16 @@
           <%= link_to law_path(fisconet_numac, language_id: current_language_id),
                       target: "_blank",
                       rel: "noopener noreferrer",
-                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors flex items-baseline gap-2 group" do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek van de Inkomstenbelastingen 1992' : 'Code des impôts sur les revenus 1992' %></span>
-            <span class="font-mono text-xs text-gray-500 dark:text-gray-400 font-semibold"><%= I18n.locale == :nl ? 'WIB 92' : 'CIR 92' %></span>
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-text) dark:hover:text-(--accent-400) transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('tax_wib92', dutch: 'Wetboek van de Inkomstenbelastingen 1992', french: 'Code des impôts sur les revenus 1992') %></span>
+            <%= popular_law_abbreviation_badge('tax_wib92') %>
 
           <% end %>
           <% else %>
             <%# corpus unavailable: the label, no link to nowhere %>
             <span class="text-sm text-gray-500 dark:text-gray-400 flex items-baseline gap-2">
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek van de Inkomstenbelastingen 1992' : 'Code des impôts sur les revenus 1992' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'WIB 92' : 'CIR 92' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('tax_wib92', dutch: 'Wetboek van de Inkomstenbelastingen 1992', french: 'Code des impôts sur les revenus 1992') %></span>
+            <%= popular_law_abbreviation_badge('tax_wib92', unavailable: true) %>
             </span>
           <% end %>
         </li>
@@ -861,16 +913,16 @@
           <%= link_to law_path(fisconet_numac, language_id: current_language_id),
                       target: "_blank",
                       rel: "noopener noreferrer",
-                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors flex items-baseline gap-2 group" do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'KB tot uitvoering van het WIB 92' : 'AR d\'exécution du CIR 92' %></span>
-            <span class="font-mono text-xs text-gray-500 dark:text-gray-400 font-semibold"><%= I18n.locale == :nl ? 'KB/WIB 92' : 'AR/CIR 92' %></span>
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-text) dark:hover:text-(--accent-400) transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('tax_kb_wib92', dutch: 'KB tot uitvoering van het WIB 92', french: 'AR d\'exécution du CIR 92') %></span>
+            <%= popular_law_abbreviation_badge('tax_kb_wib92') %>
 
           <% end %>
           <% else %>
             <%# corpus unavailable: the label, no link to nowhere %>
             <span class="text-sm text-gray-500 dark:text-gray-400 flex items-baseline gap-2">
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'KB tot uitvoering van het WIB 92' : 'AR d\'exécution du CIR 92' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'KB/WIB 92' : 'AR/CIR 92' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('tax_kb_wib92', dutch: 'KB tot uitvoering van het WIB 92', french: 'AR d\'exécution du CIR 92') %></span>
+            <%= popular_law_abbreviation_badge('tax_kb_wib92', unavailable: true) %>
             </span>
           <% end %>
         </li>
@@ -879,15 +931,15 @@
           <%= link_to law_path(fisconet_numac, language_id: current_language_id),
                       target: "_blank",
                       rel: "noopener noreferrer",
-                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors flex items-baseline gap-2 group" do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'BTW-Wetboek' : 'Code de la TVA' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'W.BTW' : 'C.TVA' %></span>
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-text) dark:hover:text-(--accent-400) transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('tax_vat', dutch: 'BTW-Wetboek', french: 'Code de la TVA') %></span>
+            <%= popular_law_abbreviation_badge('tax_vat') %>
           <% end %>
           <% else %>
             <%# corpus unavailable: the label, no link to nowhere %>
             <span class="text-sm text-gray-500 dark:text-gray-400 flex items-baseline gap-2">
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'BTW-Wetboek' : 'Code de la TVA' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'W.BTW' : 'C.TVA' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('tax_vat', dutch: 'BTW-Wetboek', french: 'Code de la TVA') %></span>
+            <%= popular_law_abbreviation_badge('tax_vat', unavailable: true) %>
             </span>
           <% end %>
         </li>
@@ -896,15 +948,15 @@
           <%= link_to law_path(fisconet_numac, language_id: current_language_id),
                       target: "_blank",
                       rel: "noopener noreferrer",
-                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors flex items-baseline gap-2 group" do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek der Registratie-, Hypotheek- en Griffierechten' : 'Code des droits d\'enregistrement, d\'hypothèque et de greffe' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'W.Reg.' : 'C.Enreg.' %></span>
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-text) dark:hover:text-(--accent-400) transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('tax_registration', dutch: 'Wetboek der Registratie-, Hypotheek- en Griffierechten', french: 'Code des droits d\'enregistrement, d\'hypothèque et de greffe') %></span>
+            <%= popular_law_abbreviation_badge('tax_registration') %>
           <% end %>
           <% else %>
             <%# corpus unavailable: the label, no link to nowhere %>
             <span class="text-sm text-gray-500 dark:text-gray-400 flex items-baseline gap-2">
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek der Registratie-, Hypotheek- en Griffierechten' : 'Code des droits d\'enregistrement, d\'hypothèque et de greffe' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'W.Reg.' : 'C.Enreg.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('tax_registration', dutch: 'Wetboek der Registratie-, Hypotheek- en Griffierechten', french: 'Code des droits d\'enregistrement, d\'hypothèque et de greffe') %></span>
+            <%= popular_law_abbreviation_badge('tax_registration', unavailable: true) %>
             </span>
           <% end %>
         </li>
@@ -913,15 +965,15 @@
           <%= link_to law_path(fisconet_numac, language_id: current_language_id),
                       target: "_blank",
                       rel: "noopener noreferrer",
-                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors flex items-baseline gap-2 group" do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek der Successierechten' : 'Code des droits de succession' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'W.Succ.' : 'C.Succ.' %></span>
+                      class: "text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-text) dark:hover:text-(--accent-400) transition-colors flex items-baseline gap-2 group" do %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('tax_succession', dutch: 'Wetboek der Successierechten', french: 'Code des droits de succession') %></span>
+            <%= popular_law_abbreviation_badge('tax_succession') %>
           <% end %>
           <% else %>
             <%# corpus unavailable: the label, no link to nowhere %>
             <span class="text-sm text-gray-500 dark:text-gray-400 flex items-baseline gap-2">
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wetboek der Successierechten' : 'Code des droits de succession' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'W.Succ.' : 'C.Succ.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('tax_succession', dutch: 'Wetboek der Successierechten', french: 'Code des droits de succession') %></span>
+            <%= popular_law_abbreviation_badge('tax_succession', unavailable: true) %>
             </span>
           <% end %>
         </li>
@@ -931,8 +983,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2013036154'),
                       class: popular_law_class.('2013036154', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Vlaamse Codex Fiscaliteit' : 'Code flamand de la Fiscalité' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">VCF</span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2013036154', dutch: 'Vlaamse Codex Fiscaliteit', french: 'Code flamand de la Fiscalité') %></span>
+            <%= popular_law_abbreviation_badge('2013036154') %>
           <% end %>
         </li>
       </ul>
@@ -950,8 +1002,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1991013192'),
                       class: popular_law_class.('1991013192', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Werkloosheidsbesluit' : 'Arrêté chômage' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">AR Chôm.</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1991013192', dutch: 'Werkloosheidsbesluit', french: 'Arrêté chômage') %></span>
+            <%= popular_law_abbreviation_badge('1991013192') %>
           <% end %>
         </li>
         <li>
@@ -960,8 +1012,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1994071451'),
                       class: popular_law_class.('1994071451', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wet ziekteverzekering (ZIV)' : 'Loi AMI (assurance maladie)' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'ZIV' : 'AMI' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1994071451', dutch: 'Wet verplichte verzekering geneeskundige verzorging en uitkeringen', french: 'Loi assurance obligatoire soins de santé et indemnités') %></span>
+            <%= popular_law_abbreviation_badge('1994071451') %>
           <% end %>
         </li>
         <li>
@@ -970,8 +1022,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2002022559'),
                       class: popular_law_class.('2002022559', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Leefloonwet' : 'Loi revenu d\'intégration' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">L.R.I.S.</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2002022559', dutch: 'Leefloonwet', french: 'Loi revenu d\'intégration') %></span>
+            <%= popular_law_abbreviation_badge('2002022559') %>
           <% end %>
         </li>
         <li>
@@ -980,18 +1032,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1967102410'),
                       class: popular_law_class.('1967102410', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'KB nr. 50 werknemerspensioen' : 'AR n° 50 pension des travailleurs salariés' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'KB nr. 50' : 'AR n° 50' %></span>
-          <% end %>
-        </li>
-        <li>
-          <%= link_to law_path('1967061510', language_id: current_language_id), 
-                      target: "_blank",
-                      rel: "noopener noreferrer",
-                      title: popular_law_title.('1967061510'),
-                      class: popular_law_class.('1967061510', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'KB uitkeringen werknemers' : 'AR indemnités travailleurs' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'KB Uitkeringen' : 'AR Ind.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1967102410', dutch: 'Koninklijk besluit werknemerspensioen', french: 'Arrêté royal pension des travailleurs salariés') %></span>
+            <%= popular_law_abbreviation_badge('1967102410') %>
           <% end %>
         </li>
         <li>
@@ -1000,8 +1042,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2001022201'),
                       class: popular_law_class.('2001022201', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wet IGO (inkomensgarantie ouderen)' : 'Loi GRAPA (garantie de revenus aux personnes âgées)' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'IGO' : 'GRAPA' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2001022201', dutch: 'Wet inkomensgarantie voor ouderen', french: 'Loi garantie de revenus aux personnes âgées') %></span>
+            <%= popular_law_abbreviation_badge('2001022201') %>
           <% end %>
         </li>
         <li>
@@ -1010,8 +1052,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2024202431'),
                       class: popular_law_class.('2024202431', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Pensioenhervorming 2024' : 'Réforme des pensions 2024' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Pensioenhervorming' : 'Réf.P.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2024202431', dutch: 'Pensioenhervorming 2024', french: 'Réforme des pensions 2024') %></span>
+            <%= popular_law_abbreviation_badge('2024202431') %>
           <% end %>
         </li>
       </ul>
@@ -1030,8 +1072,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2020A43545'),
                       class: popular_law_class.('2020A43545', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Vlaamse Codex Wonen' : 'Code flamand du Logement' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'VCW' : 'C.Fl.L.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2020A43545', dutch: 'Vlaamse Codex Wonen', french: 'Code flamand du Logement') %></span>
+            <%= popular_law_abbreviation_badge('2020A43545') %>
           <% end %>
         </li>
         <li>
@@ -1040,8 +1082,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2009A35738'),
                       class: popular_law_class.('2009A35738', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Vlaamse Codex Ruimtelijke Ordening' : 'Code flamand de l\'Aménagement du Territoire' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">VCRO</span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2009A35738', dutch: 'Vlaamse Codex Ruimtelijke Ordening', french: 'Code flamand de l\'Aménagement du Territoire') %></span>
+            <%= popular_law_abbreviation_badge('2009A35738') %>
           <% end %>
         </li>
         <li>
@@ -1050,8 +1092,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2018015087'),
                       class: popular_law_class.('2018015087', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Vlaams Woninghuurdecreet' : 'Décret flamand bail d\'habitation' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Vl. Huurdecreet' : 'Fl.D.B.H.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2018015087', dutch: 'Vlaams Woninghuurdecreet', french: 'Décret flamand bail d\'habitation') %></span>
+            <%= popular_law_abbreviation_badge('2018015087') %>
           <% end %>
         </li>
         <li>
@@ -1060,8 +1102,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2017040697'),
                       class: popular_law_class.('2017040697', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Brussels Woninghuurordonnantie' : 'Ordonnance bruxelloise bail d\'habitation' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Br. Huurordonnantie' : 'Br.O.B.H.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2017040697', dutch: 'Brussels Woninghuurordonnantie', french: 'Ordonnance bruxelloise bail d\'habitation') %></span>
+            <%= popular_law_abbreviation_badge('2017040697') %>
           <% end %>
         </li>
         <li>
@@ -1070,8 +1112,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2018201408'),
                       class: popular_law_class.('2018201408', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Waals Woninghuurdecreet' : 'Décret wallon bail d\'habitation' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Wa. Huurdecreet' : 'Wa.D.B.H.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2018201408', dutch: 'Waals Woninghuurdecreet', french: 'Décret wallon bail d\'habitation') %></span>
+            <%= popular_law_abbreviation_badge('2018201408') %>
           <% end %>
         </li>
         <li>
@@ -1080,8 +1122,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1968031601'),
                       class: popular_law_class.('1968031601', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wegverkeerswet' : 'Loi circulation routière' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'WVW' : 'L.C.R.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1968031601', dutch: 'Wegverkeerswet', french: 'Loi circulation routière') %></span>
+            <%= popular_law_abbreviation_badge('1968031601') %>
           <% end %>
         </li>
         <li>
@@ -1090,8 +1132,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1989011371'),
                       class: popular_law_class.('1989011371', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'WAM-wet (motorrijtuigenverzekering)' : 'Loi RC automobile (assurance obligatoire)' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">WAM</span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1989011371', dutch: 'Wet verplichte motorrijtuigenverzekering', french: 'Loi RC automobile (assurance obligatoire)') %></span>
+            <%= popular_law_abbreviation_badge('1989011371') %>
           <% end %>
         </li>
         <li>
@@ -1100,8 +1142,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2023044829'),
                       class: popular_law_class.('2023044829', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Kaderdecreet Handhaving Vlaamse Regelgeving' : 'Décret-cadre maintien réglementation flamande' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'KDH' : 'D.C.M.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2023044829', dutch: 'Kaderdecreet Handhaving Vlaamse Regelgeving', french: 'Décret-cadre maintien réglementation flamande') %></span>
+            <%= popular_law_abbreviation_badge('2023044829') %>
           <% end %>
         </li>
         <li>
@@ -1110,8 +1152,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2013A31614'),
                       class: popular_law_class.('2013A31614', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Brusselse Huisvestingscode' : 'Code bruxellois du Logement' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Br. Huisvestingscode' : 'C.Br.L.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2013A31614', dutch: 'Brusselse Huisvestingscode', french: 'Code bruxellois du Logement') %></span>
+            <%= popular_law_abbreviation_badge('2013A31614') %>
           <% end %>
         </li>
         <li>
@@ -1120,8 +1162,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1951043003'),
                       class: popular_law_class.('1951043003', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Handelshuurwet' : 'Loi bail commercial' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Handelshuur' : 'L.B.C.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1951043003', dutch: 'Handelshuurwet', french: 'Loi bail commercial') %></span>
+            <%= popular_law_abbreviation_badge('1951043003') %>
           <% end %>
         </li>
         <li>
@@ -1130,8 +1172,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1969110450'),
                       class: popular_law_class.('1969110450', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Pachtwet' : 'Loi sur le bail à ferme' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">L.B.F.</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1969110450', dutch: 'Pachtwet', french: 'Loi sur le bail à ferme') %></span>
+            <%= popular_law_abbreviation_badge('1969110450') %>
           <% end %>
         </li>
         <li>
@@ -1140,8 +1182,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1971070904'),
                       class: popular_law_class.('1971070904', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wet Breyne (woningbouw)' : 'Loi Breyne (construction)' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Wet Breyne' : 'L.Br.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1971070904', dutch: 'Wet Breyne (woningbouw)', french: 'Loi Breyne (construction)') %></span>
+            <%= popular_law_abbreviation_badge('1971070904') %>
           <% end %>
         </li>
         <li>
@@ -1150,8 +1192,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2014036510'),
                       class: popular_law_class.('2014036510', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Omgevingsvergunningsdecreet' : 'Décret permis d\'environnement' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">D.P.E.</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2014036510', dutch: 'Omgevingsvergunningsdecreet', french: 'Décret flamand relatif au permis d\'environnement intégré') %></span>
+            <%= popular_law_abbreviation_badge('2014036510') %>
           <% end %>
         </li>
         <li>
@@ -1160,8 +1202,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2010035645'),
                       class: popular_law_class.('2010035645', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Vrijstellingenbesluit (omgevingsvergunning)' : 'Arrêté d''exemption (permis d''environnement)' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'VrB' : 'A.Ex.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2010035645', dutch: 'Vrijstellingenbesluit (omgevingsvergunning)', french: 'Arrêté flamand de dispense de permis d\'environnement intégré') %></span>
+            <%= popular_law_abbreviation_badge('2010035645') %>
           <% end %>
         </li>
       </ul>
@@ -1179,8 +1221,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('1980121550'),
                       class: popular_law_class.('1980121550', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Vreemdelingenwet' : 'Loi étrangers' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">L.Étr.</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('1980121550', dutch: 'Vreemdelingenwet', french: 'Loi étrangers') %></span>
+            <%= popular_law_abbreviation_badge('1980121550') %>
           <% end %>
         </li>
       </ul>
@@ -1198,8 +1240,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2002022737'),
                       class: popular_law_class.('2002022737', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Wet Patiëntenrechten' : 'Loi droits patient' %></span>
-            <span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold"><%= I18n.locale == :nl ? 'Patiëntenrechten' : 'L.D.P.' %></span>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2002022737', dutch: 'Wet Patiëntenrechten', french: 'Loi droits patient') %></span>
+            <%= popular_law_abbreviation_badge('2002022737') %>
           <% end %>
         </li>
         <li>
@@ -1208,8 +1250,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2019A12565'),
                       class: popular_law_class.('2019A12565', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Scheepvaartwetboek' : 'Code navigation maritime' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">C.N.M.</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2019A12565', dutch: 'Scheepvaartwetboek', french: 'Code belge de la navigation') %></span>
+            <%= popular_law_abbreviation_badge('2019A12565') %>
           <% end %>
         </li>
         <li>
@@ -1218,8 +1260,8 @@
                       rel: "noopener noreferrer",
                       title: popular_law_title.('2014A15009'),
                       class: popular_law_class.('2014A15009', extra: 'flex items-baseline gap-2 group') do %>
-            <span class="group-hover:underline"><%= I18n.locale == :nl ? 'Consulair Wetboek' : 'Code consulaire' %></span>
-            <% if I18n.locale == :fr %><span class="font-mono text-xs text-(--accent-600) dark:text-(--accent-400) font-semibold">C.Cons.</span><% end %>
+            <span class="group-hover:underline"><%= popular_law_catalogue_title('2014A15009', dutch: 'Consulair Wetboek', french: 'Code consulaire') %></span>
+            <%= popular_law_abbreviation_badge('2014A15009') %>
           <% end %>
         </li>
       </ul>
@@ -1228,12 +1270,12 @@
     </div>
     
     <!-- Panel 2: Recent Laws -->
-    <div data-tabs-target="panel" class="px-6 py-5 hidden">
+    <div data-tabs-target="panel" role="tabpanel" id="popular-laws-panel-1" aria-labelledby="popular-laws-tab-1" class="px-6 py-5 hidden">
       <div class="flex items-center justify-between mb-4">
         <p class="text-sm text-gray-600 dark:text-gray-400">
           <%= case I18n.locale when :fr then 'Dernières publications au Moniteur belge' when :de then 'Neueste Veröffentlichungen im Belgischen Staatsblatt' when :en then 'Latest publications in the Belgian Official Gazette' else 'Laatste publicaties in het Belgisch Staatsblad' end %>
         </p>
-        <a href="<%= laws_path(source_legislation: 1, sort: 'date_desc') %>" class="text-sm text-(--accent-600) hover:underline">
+        <a href="<%= laws_path(source_legislation: 1, sort: 'date_desc') %>" class="text-sm text-(--accent-text) hover:underline">
           <%= case I18n.locale when :fr then 'Voir tout →' when :de then 'Alle anzeigen →' when :en then 'View all →' else 'Bekijk alle →' end %>
         </a>
       </div>
@@ -1259,7 +1301,7 @@
                class="block p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:border-(--accent-400) dark:hover:border-(--accent-500) hover:shadow-md transition-all duration-200 group">
               <div class="flex items-start justify-between gap-3">
                 <div class="flex-1 min-w-0">
-                  <h4 class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-(--accent-600) dark:group-hover:text-(--accent-400) transition-colors line-clamp-2">
+                  <h4 class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-(--accent-text) dark:group-hover:text-(--accent-400) transition-colors line-clamp-2">
                     <%= truncate(law.title, length: 150) %>
                   </h4>
                   <div class="flex items-center gap-2 mt-2">
@@ -1287,12 +1329,12 @@
     </div>
 
     <%# Panel 3: Recent Jurisprudence (public since June 2026) %>
-    <div data-tabs-target="panel" class="px-6 py-5 hidden">
+    <div data-tabs-target="panel" role="tabpanel" id="popular-laws-panel-2" aria-labelledby="popular-laws-tab-2" class="px-6 py-5 hidden">
       <div class="flex items-center justify-between mb-4">
         <p class="text-sm text-gray-600 dark:text-gray-400">
           <%= case I18n.locale when :fr then 'Décisions de justice récentes' when :de then 'Aktuelle Rechtsprechung' when :en then 'Recent court decisions' else 'Recente rechterlijke uitspraken' end %>
         </p>
-        <a href="<%= jurisprudence_index_path %>" class="text-sm text-(--accent-600) hover:underline">
+        <a href="<%= jurisprudence_index_path %>" class="text-sm text-(--accent-text) hover:underline">
           <%= case I18n.locale when :fr then 'Voir tout →' when :de then 'Alle anzeigen →' when :en then 'View all →' else 'Bekijk alle →' end %>
         </a>
       </div>
@@ -1324,7 +1366,7 @@
                class="block p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-md transition-all duration-200 group">
               <div class="flex items-start justify-between gap-3">
                 <div class="flex-1 min-w-0">
-                  <h4 class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-2">
+                  <h4 class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors line-clamp-2">
                     <%= c['case_number'] %>
                   </h4>
                   <div class="flex items-center gap-2 mt-2">
@@ -1347,12 +1389,12 @@
 
     
     <!-- Panel 4: Parliamentary Documents -->
-    <div data-tabs-target="panel" class="px-6 py-5 hidden">
+    <div data-tabs-target="panel" role="tabpanel" id="popular-laws-panel-3" aria-labelledby="popular-laws-tab-3" class="px-6 py-5 hidden">
       <div class="flex items-center justify-between mb-4">
         <p class="text-sm text-gray-600 dark:text-gray-400">
           <%= case I18n.locale when :fr then 'Documents parlementaires récents' when :de then 'Aktuelle parlamentarische Dokumente' when :en then 'Recent parliamentary documents' else 'Recente parlementaire documenten' end %>
         </p>
-        <a href="<%= parliamentary_work_path %>" class="text-sm text-(--accent-600) hover:underline">
+        <a href="<%= parliamentary_work_path %>" class="text-sm text-(--accent-text) hover:underline">
           <%= case I18n.locale when :fr then 'Voir tout →' when :de then 'Alle anzeigen →' when :en then 'View all →' else 'Bekijk alle →' end %>
         </a>
       </div>
@@ -1380,7 +1422,7 @@
     </div>
     
     <!-- Panel 5: Concordantietabellen -->
-    <div data-tabs-target="panel" class="px-6 py-5 hidden">
+    <div data-tabs-target="panel" role="tabpanel" id="popular-laws-panel-4" aria-labelledby="popular-laws-tab-4" class="px-6 py-5 hidden">
       <%# WetWijzer original concordance tool - compiled from official Belgisch Staatsblad / Moniteur belge sources.
           Article-to-article mappings are legislative facts (not copyrightable).
           All descriptions, practical notes, and editorial commentary are original WetWijzer content. %>
@@ -1431,11 +1473,11 @@
                 <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg <%= style[:cls] %> text-sm font-bold shrink-0"><%= style[:badge] %></span>
                 <div class="min-w-0">
                   <div class="font-semibold text-gray-900 dark:text-white text-sm truncate"><%= label %></div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 truncate"><%= source %></div>
+                  <div class="text-xs text-gray-600 dark:text-gray-300 truncate"><%= source %></div>
                 </div>
               </div>
               <div class="flex items-center gap-2 shrink-0">
-                <span class="text-[10px] text-gray-400 dark:text-gray-500 font-mono"><%= total %> art.</span>
+                <span class="text-[10px] text-gray-600 dark:text-gray-300 font-mono"><%= total %> art.</span>
                 <svg class="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
               </div>
             </summary>
@@ -1464,7 +1506,7 @@
                       <% section['entries'].each do |entry| %>
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                           <td class="py-1.5 pr-3 font-mono text-xs text-gray-600 dark:text-gray-400"><%= linkify_concordance_article_bw_old(entry[0]) %></td>
-                          <td class="py-1.5 font-mono text-xs font-semibold text-(--accent-600) dark:text-(--accent-400)"><%= linkify_concordance_article(entry[1], bw_new_numac, old_article: entry[0], book_by_number: bw_book_by_number) %></td>
+                          <td class="py-1.5 font-mono text-xs font-semibold text-(--accent-text) dark:text-(--accent-400)"><%= linkify_concordance_article(entry[1], bw_new_numac, old_article: entry[0], book_by_number: bw_book_by_number) %></td>
                         </tr>
                       <% end %>
                     </tbody>
@@ -1500,11 +1542,11 @@
               <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 text-sm font-bold shrink-0">Sw</span>
               <div class="min-w-0">
                 <div class="font-semibold text-gray-900 dark:text-white text-sm truncate"><%= sw_label %></div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 truncate"><%= sw_source %></div>
+                <div class="text-xs text-gray-600 dark:text-gray-300 truncate"><%= sw_source %></div>
               </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-              <span class="text-[10px] text-gray-400 dark:text-gray-500 font-mono"><%= sw_total %> art.</span>
+              <span class="text-[10px] text-gray-600 dark:text-gray-300 font-mono"><%= sw_total %> art.</span>
               <svg class="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             </div>
           </summary>
@@ -1522,10 +1564,17 @@
                 </thead>
                 <tbody class="divide-y divide-red-100 dark:divide-red-900/30">
                   <% sw_niveaus['levels'].each do |niv| %>
-                    <% is_criminal = niv['level'] >= 7 %>
-                    <tr class="<%= is_criminal ? 'bg-red-50/50 dark:bg-red-900/10' : '' %>">
+                    <%# Shade only the top of the scale, and shade it for what the text says.
+                        Until 2026-09-08 this was `is_criminal = niv['level'] >= 7`,
+                        painting 7 and 8 as "criminele straffen" - a category the new
+                        code does not have. Art. 41, par. 2 gives ONE custodial penalty
+                        across all eight levels. Niveau 8 is the only level carrying
+                        levenslange gevangenisstraf (art. 36), which is a fact of the
+                        text rather than a borrowed category. %>
+                    <% is_max = niv['level'] == 8 %>
+                    <tr class="<%= is_max ? 'bg-red-50/50 dark:bg-red-900/10' : '' %>">
                       <td class="py-1.5 pr-2">
-                        <span class="inline-block px-1.5 py-0.5 rounded font-mono font-bold text-[10px] <%= is_criminal ? 'bg-red-200 dark:bg-red-800/50 text-red-800 dark:text-red-200' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' %>">N<%= niv['level'] %></span>
+                        <span class="inline-block px-1.5 py-0.5 rounded font-mono font-bold text-[10px] <%= is_max ? 'bg-red-200 dark:bg-red-800/50 text-red-800 dark:text-red-200' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' %>">N<%= niv['level'] %></span>
                       </td>
                       <td class="py-1.5 pr-3 font-mono text-gray-700 dark:text-gray-300 whitespace-nowrap"><%= I18n.locale == :fr ? niv['gevangenisstraf_fr'] : niv['gevangenisstraf_nl'] %></td>
                       <td class="py-1.5 text-gray-600 dark:text-gray-400"><%= I18n.locale == :fr ? niv['beschrijving_fr'] : niv['beschrijving_nl'] %></td>
@@ -1545,9 +1594,9 @@
                 the old article simply has no successor. Reported 2026-09-05. %>
             <p class="mb-4 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
               <% if I18n.locale == :fr %>
-                <strong>Guide de lecture:</strong> les nouveaux articles renvoient au <a href="/laws/<%= sw_new_numac %>" class="underline hover:text-(--accent-600)">Livre II</a> du nouveau Code pénal (les infractions); <a href="/laws/<%= sw_book1_numac %>" class="underline hover:text-(--accent-600)">Livre I</a> contient les dispositions générales (peines, tentative, participation). (N1–N8) = niveau de peine, voir le tableau ci-dessus. <em>abrogé</em> = l'ancien article n'a pas de successeur dans le nouveau code.
+                <strong>Guide de lecture:</strong> les nouveaux articles renvoient au <a href="/laws/<%= sw_new_numac %>" class="underline hover:text-(--accent-text)">Livre II</a> du nouveau Code pénal (les infractions); <a href="/laws/<%= sw_book1_numac %>" class="underline hover:text-(--accent-text)">Livre I</a> contient les dispositions générales (peines, tentative, participation). (N1–N8) = niveau de peine, voir le tableau ci-dessus. <em>abrogé</em> = l'ancien article n'a pas de successeur dans le nouveau code.
               <% else %>
-                <strong>Leeswijzer:</strong> nieuwe artikelen verwijzen naar <a href="/laws/<%= sw_new_numac %>" class="underline hover:text-(--accent-600)">Boek II</a> van het nieuwe Strafwetboek (de misdrijven); <a href="/laws/<%= sw_book1_numac %>" class="underline hover:text-(--accent-600)">Boek I</a> bevat de algemene bepalingen (straffen, poging, deelneming). (N1–N8) = strafniveau, zie de tabel hierboven. <em>opgeheven</em> = het oude artikel heeft geen opvolger in het nieuwe wetboek.
+                <strong>Leeswijzer:</strong> nieuwe artikelen verwijzen naar <a href="/laws/<%= sw_new_numac %>" class="underline hover:text-(--accent-text)">Boek II</a> van het nieuwe Strafwetboek (de misdrijven); <a href="/laws/<%= sw_book1_numac %>" class="underline hover:text-(--accent-text)">Boek I</a> bevat de algemene bepalingen (straffen, poging, deelneming). (N1–N8) = strafniveau, zie de tabel hierboven. <em>opgeheven</em> = het oude artikel heeft geen opvolger in het nieuwe wetboek.
               <% end %>
             </p>
 
@@ -1577,7 +1626,7 @@
                     <% section['entries'].each do |entry| %>
                       <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <td class="py-1.5 pr-3 font-mono text-xs text-gray-600 dark:text-gray-400"><%= linkify_concordance_article(entry[0], sw_old_numac) %></td>
-                        <td class="py-1.5 font-mono text-xs font-semibold text-(--accent-600) dark:text-(--accent-400)"><%= linkify_concordance_article(entry[1], (section['new_numac'] || sw_new_numac), book_numacs: sw_book_numacs, old_article: entry[0]) %></td>
+                        <td class="py-1.5 font-mono text-xs font-semibold text-(--accent-text) dark:text-(--accent-400)"><%= linkify_concordance_article(entry[1], (section['new_numac'] || sw_new_numac), book_numacs: sw_book_numacs, old_article: entry[0]) %></td>
                       </tr>
                     <% end %>
                   </tbody>
@@ -1610,11 +1659,11 @@
               <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-bold shrink-0">WVV</span>
               <div class="min-w-0">
                 <div class="font-semibold text-gray-900 dark:text-white text-sm truncate"><%= wvv_label %></div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 truncate"><%= wvv_source %></div>
+                <div class="text-xs text-gray-600 dark:text-gray-300 truncate"><%= wvv_source %></div>
               </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-              <span class="text-[10px] text-gray-400 dark:text-gray-500 font-mono"><%= wvv_total %> art.</span>
+              <span class="text-[10px] text-gray-600 dark:text-gray-300 font-mono"><%= wvv_total %> art.</span>
               <svg class="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             </div>
           </summary>
@@ -1641,7 +1690,7 @@
                     <% section['entries'].each do |entry| %>
                       <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <td class="py-1.5 pr-3 font-mono text-xs text-gray-600 dark:text-gray-400"><%= linkify_concordance_article(entry[0], wvv_old_numac) %></td>
-                        <td class="py-1.5 font-mono text-xs font-semibold text-(--accent-600) dark:text-(--accent-400)"><%= linkify_concordance_article(entry[1], wvv_new_numac, old_article: entry[0]) %></td>
+                        <td class="py-1.5 font-mono text-xs font-semibold text-(--accent-text) dark:text-(--accent-400)"><%= linkify_concordance_article(entry[1], wvv_new_numac, old_article: entry[0]) %></td>
                       </tr>
                     <% end %>
                   </tbody>

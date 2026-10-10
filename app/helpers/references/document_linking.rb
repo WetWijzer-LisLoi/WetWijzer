@@ -290,10 +290,16 @@ module References
       norm.present? ? "#art-#{norm}" : nil
     end
 
+    # WW-SEC-15 refinement: the one builder for a law link made from imported
+    # lookup data, each part encoded at its own boundary: the NUMAC as a path
+    # segment and the language as a query value (through the route helper),
+    # the article fragment only as #[A-Za-z0-9-]. nil without a NUMAC.
     def build_law_url(lookup, fragment)
-      url = "/laws/#{lookup[:numac]}?language_id=#{lookup[:language_id]}"
-      url += fragment if fragment
-      url
+      numac = lookup[:numac].to_s
+      return nil if numac.empty?
+
+      url = Rails.application.routes.url_helpers.show_law_path(numac, language_id: lookup[:language_id].presence)
+      fragment.to_s.match?(/\A#[A-Za-z0-9-]+\z/) ? url + fragment : url
     end
 
     # Returns true if the index is currently within an HTML tag like <span ...> or </span>

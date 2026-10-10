@@ -1,0 +1,12 @@
+<%# WW-COPY-01: the clipboard controller's words, once per page; a value on
+    each button would repeat them for every article of a tax code. Read by
+    utils/article_copy.js. %>
+<% content_for :head do %>
+  <meta name="clipboard-messages"
+        data-copied="<%= t('clipboard.copied') %>"
+        data-copy-failed="<%= t('clipboard.copy_failed') %>"
+        data-nothing-to-copy="<%= t('clipboard.nothing_to_copy') %>"
+        data-consulted-on="<%= t('clipboard.consulted_on') %>"
+        data-contents="<%= t('clipboard.contents') %>"
+        data-citation="<%= t('clipboard.citation') %>">
+<% end %>

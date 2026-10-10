@@ -20,12 +20,12 @@ module LawsExportActions
     load_articles_data
 
     unless @articles.present?
-      Rails.logger.warn("[SECURITY] Export attempt for law with no articles: #{params[:numac]}")
+      SecurityLog.warn('law_export_empty', request: request, format: 'word', numac: params[:numac])
       redirect_to root_path, alert: t('laws.no_articles_to_export', default: 'Deze wet heeft geen artikelen om te exporteren.')
       return
     end
 
-    Rails.logger.info("[EXPORT] Word export requested: #{params[:numac]} (#{@articles.size} articles) by #{request.remote_ip}")
+    SecurityLog.info('law_export', request: request, format: 'word', numac: params[:numac], articles: @articles.size)
 
     law_title = @law.present? ? helpers.strip_tags(@law.title) : params[:numac]
     citation_mode = params[:citation] == 'true'
@@ -56,15 +56,15 @@ module LawsExportActions
   def export_word_compare
     law_nl = Legislation.find_by(numac: params[:numac], language_id: 1)
     law_fr = Legislation.find_by(numac: params[:numac], language_id: 2)
-    articles_nl = Article.where(content_numac: params[:numac], language_id: 1).order(:id).to_a
-    articles_fr = Article.where(content_numac: params[:numac], language_id: 2).order(:id).to_a
+    articles_nl = Article.where(content_numac: params[:numac], language_id: 1).in_document_order.to_a
+    articles_fr = Article.where(content_numac: params[:numac], language_id: 2).in_document_order.to_a
 
     unless articles_nl.present? || articles_fr.present?
       redirect_to root_path, alert: t('laws.no_articles_to_export', default: 'Deze wet heeft geen artikelen om te exporteren.')
       return
     end
 
-    Rails.logger.info("[EXPORT] Word compare export: #{params[:numac]} (NL: #{articles_nl.size}, FR: #{articles_fr.size}) by #{request.remote_ip}")
+    SecurityLog.info('law_export', request: request, format: 'word_compare', numac: params[:numac], nl: articles_nl.size, fr: articles_fr.size)
 
     is_dutch_site = I18n.locale == :nl
     left_lang = is_dutch_site ? 'NL' : 'FR'
@@ -108,12 +108,12 @@ module LawsExportActions
     load_articles_data
 
     unless @articles.present?
-      Rails.logger.warn("[SECURITY] Typst export attempt for law with no articles: #{params[:numac]}")
+      SecurityLog.warn('law_export_empty', request: request, format: 'typst', numac: params[:numac])
       redirect_to root_path, alert: t('laws.no_articles_to_export', default: 'Deze wet heeft geen artikelen om te exporteren.')
       return
     end
 
-    Rails.logger.info("[EXPORT] Typst export requested: #{params[:numac]} (#{@articles.size} articles) by #{request.remote_ip}")
+    SecurityLog.info('law_export', request: request, format: 'typst', numac: params[:numac], articles: @articles.size)
 
     law_title = @law.present? ? helpers.strip_tags(@law.title) : params[:numac]
     citation_mode = params[:citation] == 'true'
@@ -140,15 +140,15 @@ module LawsExportActions
   def export_typst_compare
     law_nl = Legislation.find_by(numac: params[:numac], language_id: 1)
     law_fr = Legislation.find_by(numac: params[:numac], language_id: 2)
-    articles_nl = Article.where(content_numac: params[:numac], language_id: 1).order(:id).to_a
-    articles_fr = Article.where(content_numac: params[:numac], language_id: 2).order(:id).to_a
+    articles_nl = Article.where(content_numac: params[:numac], language_id: 1).in_document_order.to_a
+    articles_fr = Article.where(content_numac: params[:numac], language_id: 2).in_document_order.to_a
 
     unless articles_nl.present? || articles_fr.present?
       redirect_to root_path, alert: t('laws.no_articles_to_export', default: 'Deze wet heeft geen artikelen om te exporteren.')
       return
     end
 
-    Rails.logger.info("[EXPORT] Typst compare export: #{params[:numac]} (NL: #{articles_nl.size}, FR: #{articles_fr.size}) by #{request.remote_ip}")
+    SecurityLog.info('law_export', request: request, format: 'typst_compare', numac: params[:numac], nl: articles_nl.size, fr: articles_fr.size)
 
     is_dutch_site = I18n.locale == :nl
     left_lang = is_dutch_site ? 'NL' : 'FR'
@@ -192,12 +192,12 @@ module LawsExportActions
     load_articles_data
 
     unless @articles.present?
-      Rails.logger.warn("[SECURITY] ODT export attempt for law with no articles: #{params[:numac]}")
+      SecurityLog.warn('law_export_empty', request: request, format: 'odt', numac: params[:numac])
       redirect_to root_path, alert: t('laws.no_articles_to_export', default: 'Deze wet heeft geen artikelen om te exporteren.')
       return
     end
 
-    Rails.logger.info("[EXPORT] ODT export requested: #{params[:numac]} (#{@articles.size} articles) by #{request.remote_ip}")
+    SecurityLog.info('law_export', request: request, format: 'odt', numac: params[:numac], articles: @articles.size)
 
     law_title = @law.present? ? helpers.strip_tags(@law.title) : params[:numac]
     citation_mode = params[:citation] == 'true'
@@ -224,15 +224,15 @@ module LawsExportActions
   def export_odt_compare
     law_nl = Legislation.find_by(numac: params[:numac], language_id: 1)
     law_fr = Legislation.find_by(numac: params[:numac], language_id: 2)
-    articles_nl = Article.where(content_numac: params[:numac], language_id: 1).order(:id).to_a
-    articles_fr = Article.where(content_numac: params[:numac], language_id: 2).order(:id).to_a
+    articles_nl = Article.where(content_numac: params[:numac], language_id: 1).in_document_order.to_a
+    articles_fr = Article.where(content_numac: params[:numac], language_id: 2).in_document_order.to_a
 
     unless articles_nl.present? || articles_fr.present?
       redirect_to root_path, alert: t('laws.no_articles_to_export', default: 'Deze wet heeft geen artikelen om te exporteren.')
       return
     end
 
-    Rails.logger.info("[EXPORT] ODT compare export: #{params[:numac]} (NL: #{articles_nl.size}, FR: #{articles_fr.size}) by #{request.remote_ip}")
+    SecurityLog.info('law_export', request: request, format: 'odt_compare', numac: params[:numac], nl: articles_nl.size, fr: articles_fr.size)
 
     is_dutch_site = I18n.locale == :nl
     left_lang = is_dutch_site ? 'NL' : 'FR'
@@ -272,12 +272,12 @@ module LawsExportActions
   # Fisconet Word export - generates Word doc from @fisconet_articles
   def export_word_fisconet
     unless @fisconet_articles.present?
-      Rails.logger.warn("[SECURITY] Export attempt for Fisconet law with no articles: #{params[:numac]}")
+      SecurityLog.warn('law_export_empty', request: request, format: 'fisconet_word', numac: params[:numac])
       redirect_to root_path, alert: t('laws.no_articles_to_export', default: 'Deze wet heeft geen artikelen om te exporteren.')
       return
     end
 
-    Rails.logger.info("[EXPORT] Fisconet Word export: #{params[:numac]} (#{@fisconet_articles.size} articles) by #{request.remote_ip}")
+    SecurityLog.info('law_export', request: request, format: 'fisconet_word', numac: params[:numac], articles: @fisconet_articles.size)
 
     law_title = @law.present? ? helpers.strip_tags(@law.title.to_s) : params[:numac]
     citation_mode = params[:citation] == 'true'
@@ -322,12 +322,12 @@ module LawsExportActions
   # Fisconet Typst export - generates Typst doc from @fisconet_articles
   def export_typst_fisconet
     unless @fisconet_articles.present?
-      Rails.logger.warn("[SECURITY] Typst export attempt for Fisconet law with no articles: #{params[:numac]}")
+      SecurityLog.warn('law_export_empty', request: request, format: 'fisconet_typst', numac: params[:numac])
       redirect_to root_path, alert: t('laws.no_articles_to_export', default: 'Deze wet heeft geen artikelen om te exporteren.')
       return
     end
 
-    Rails.logger.info("[EXPORT] Fisconet Typst export: #{params[:numac]} (#{@fisconet_articles.size} articles) by #{request.remote_ip}")
+    SecurityLog.info('law_export', request: request, format: 'fisconet_typst', numac: params[:numac], articles: @fisconet_articles.size)
 
     law_title = @law.present? ? helpers.strip_tags(@law.title.to_s) : params[:numac]
     citation_mode = params[:citation] == 'true'
@@ -351,12 +351,12 @@ module LawsExportActions
   # Fisconet ODT export - generates ODT doc from @fisconet_articles
   def export_odt_fisconet
     unless @fisconet_articles.present?
-      Rails.logger.warn("[SECURITY] ODT export attempt for Fisconet law with no articles: #{params[:numac]}")
+      SecurityLog.warn('law_export_empty', request: request, format: 'fisconet_odt', numac: params[:numac])
       redirect_to root_path, alert: t('laws.no_articles_to_export', default: 'Deze wet heeft geen artikelen om te exporteren.')
       return
     end
 
-    Rails.logger.info("[EXPORT] Fisconet ODT export: #{params[:numac]} (#{@fisconet_articles.size} articles) by #{request.remote_ip}")
+    SecurityLog.info('law_export', request: request, format: 'fisconet_odt', numac: params[:numac], articles: @fisconet_articles.size)
 
     law_title = @law.present? ? helpers.strip_tags(@law.title.to_s) : params[:numac]
     citation_mode = params[:citation] == 'true'

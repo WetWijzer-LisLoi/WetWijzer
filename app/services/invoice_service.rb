@@ -53,7 +53,7 @@ class InvoiceService
     provider_payment_id ||= payment.try(:mollie_payment_id)
 
     lines = [{
-      description: 'WetWijzer Pro - Maandabonnement',
+      description: subscription_invoice_description(invoice_locale(user)),
       quantity: 1,
       unit: 'maand',
       unit_price: (payment.amount_cents.to_f / 100).round(2)
@@ -92,7 +92,7 @@ class InvoiceService
     charged_amount_cents = payment&.amount_cents || purchase.amount_cents
 
     lines = [{
-      description: "WetWijzer AI Credits - #{pkg[:label]}",
+      description: credit_purchase_invoice_description(pkg.fetch(:label), invoice_locale(user)),
       quantity: 1,
       unit: 'pakket',
       unit_price: (charged_amount_cents.to_f / 100).round(2)
@@ -203,7 +203,7 @@ class InvoiceService
       '--settled',
       '--json'
     ]
-    append_document_payload_args!(args, document_payload)
+    append_generator_payload_args!(args, document_payload)
 
     stdout, stderr, status = Open3.capture3(*args)
 
@@ -349,7 +349,7 @@ class InvoiceService
       '--settled',
       '--json'
     ]
-    append_document_payload_args!(args, document_payload)
+    append_generator_payload_args!(args, document_payload)
 
     stdout, stderr, status = Open3.capture3(*args)
     unless status.success?
@@ -449,7 +449,7 @@ class InvoiceService
       '--settled',
       '--json'
     ]
-    append_document_payload_args!(args, document_payload)
+    append_generator_payload_args!(args, document_payload)
 
     # Execute Python generator
     Rails.logger.info("Generating invoice #{invoice_number} for user #{user.id}")
@@ -680,6 +680,10 @@ class InvoiceService
 
     {
       'version' => 1,
+      # The seller is part of the accounting document, not a presentation
+      # setting. Capture it while reserving a new number so retries and admin
+      # regeneration cannot silently render a later legal entity/profile.
+      'seller' => invoice_seller_snapshot,
       'lines' => normalized_lines,
       'period_start' => period_start&.iso8601,
       'period_end' => period_end&.iso8601,
@@ -691,6 +695,48 @@ class InvoiceService
     }
   end
   private_class_method :build_document_payload
+
+  SELLER_SNAPSHOT_KEYS = %w[
+    name tagline address phone email vat_number kbo_number iban bic country
+  ].freeze
+  SELLER_SNAPSHOT_MAX_LENGTHS = {
+    'name' => 200,
+    'tagline' => 300,
+    'address' => 500,
+    'phone' => 100,
+    'email' => 254,
+    'vat_number' => 64,
+    'kbo_number' => 64,
+    'iban' => 64,
+    'bic' => 32,
+    'country' => 2
+  }.freeze
+
+  # Keep these defaults aligned with lib/invoicing/config.py. The required
+  # legal identity fields intentionally have no fallback: Python refuses a
+  # real rendering when they are absent, while test-only stubbed renderers can
+  # still exercise reservation/retry behavior without fake legal data.
+  def self.invoice_seller_snapshot
+    {
+      'name' => invoice_seller_env('INVOICE_SELLER_NAME', 'WetWijzer'),
+      'tagline' => invoice_seller_env('INVOICE_SELLER_TAGLINE', 'Juridisch AI-platform'),
+      'address' => invoice_seller_env('INVOICE_SELLER_ADDRESS'),
+      'phone' => invoice_seller_env('INVOICE_SELLER_PHONE'),
+      'email' => invoice_seller_env('INVOICE_SELLER_EMAIL', 'billing@wetwijzer.be'),
+      'vat_number' => invoice_seller_env('INVOICE_SELLER_VAT'),
+      'kbo_number' => invoice_seller_env('INVOICE_SELLER_KBO'),
+      'iban' => invoice_seller_env('INVOICE_SELLER_IBAN'),
+      'bic' => invoice_seller_env('INVOICE_SELLER_BIC'),
+      'country' => 'BE'
+    }
+  end
+  private_class_method :invoice_seller_snapshot
+
+  def self.invoice_seller_env(key, default = '')
+    value = ENV.fetch(key, '')
+    value.strip.empty? ? default : value
+  end
+  private_class_method :invoice_seller_env
 
   def self.normalize_document_line(line)
     attributes = line.to_h.stringify_keys
@@ -744,13 +790,39 @@ class InvoiceService
     %w[period_start period_end].each do |key|
       Date.iso8601(payload[key]) if payload[key].present?
     end
+    validate_seller_snapshot!(payload['seller']) if payload.key?('seller')
     true
   rescue ArgumentError, TypeError
     raise InvoiceError, 'invoice payload is invalid'
   end
   private_class_method :validate_document_payload!
 
+  # Seller-less version-1 payloads predate immutable seller snapshots. Keep
+  # their historic behavior (current generator configuration) rather than
+  # changing an already-issued document during regeneration.
+  def self.validate_seller_snapshot!(seller)
+    raise InvoiceError, 'invoice seller snapshot is invalid' unless seller.is_a?(Hash)
+
+    seller = seller.deep_stringify_keys
+    unless seller.keys.sort == SELLER_SNAPSHOT_KEYS.sort
+      raise InvoiceError, 'invoice seller snapshot has unsupported fields'
+    end
+
+    seller.each do |key, value|
+      unless value.is_a?(String) && value.length <= SELLER_SNAPSHOT_MAX_LENGTHS.fetch(key) &&
+             !value.match?(/\p{Cc}/)
+        raise InvoiceError, 'invoice seller snapshot is invalid'
+      end
+    end
+    unless seller.fetch('country').match?(/\A[A-Z]{2}\z/)
+      raise InvoiceError, 'invoice seller snapshot country is invalid'
+    end
+    true
+  end
+  private_class_method :validate_seller_snapshot!
+
   def self.append_document_payload_args!(args, payload)
+    args.push('--seller-json', JSON.generate(payload.fetch('seller'))) if payload.key?('seller')
     args << '--prices-include-vat' if payload.fetch('prices_include_vat')
     payload.fetch('lines').each do |line|
       normalized = normalize_document_line(line)
@@ -776,6 +848,36 @@ class InvoiceService
     sub&.company_name.presence || user.name.presence || user.email
   end
   private_class_method :customer_name
+
+  # These descriptions are only used when reserving a new invoice. Retries and
+  # regeneration always consume document_payload['lines'], so old accounting
+  # documents retain their original wording.
+  def self.subscription_invoice_description(locale)
+    {
+      'nl' => 'WetWijzer Pro - Maandabonnement',
+      'fr' => 'WetWijzer Pro - abonnement mensuel',
+      'de' => 'WetWijzer Pro - Monatsabonnement',
+      'en' => 'WetWijzer Pro - monthly subscription'
+    }.fetch(normalized_invoice_locale(locale), 'WetWijzer Pro - Maandabonnement')
+  end
+  private_class_method :subscription_invoice_description
+
+  def self.credit_purchase_invoice_description(package_label, locale)
+    label = package_label.to_s
+    prefix = {
+      'nl' => 'WetWijzer AI Credits - creditpakket',
+      'fr' => 'Crédits IA WetWijzer - pack de crédits',
+      'de' => 'WetWijzer KI-Guthaben - Guthabenpaket',
+      'en' => 'WetWijzer AI Credits - credit pack'
+    }.fetch(normalized_invoice_locale(locale), 'WetWijzer AI Credits - creditpakket')
+    "#{prefix} #{label}"
+  end
+  private_class_method :credit_purchase_invoice_description
+
+  def self.normalized_invoice_locale(locale)
+    locale.to_s if VALID_INVOICE_LOCALES.include?(locale.to_s)
+  end
+  private_class_method :normalized_invoice_locale
 
   def self.customer_address(sub)
     return '' unless sub

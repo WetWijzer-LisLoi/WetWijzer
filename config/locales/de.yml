@@ -115,7 +115,7 @@ de:
   law: "Gesetz"
   decree: "Dekret"
   ordinance: "Verordnung"
-  decision: "Beschluss"
+  decision: "Erlass"
   misc: "Sonstiges"
   date_label: "Datum"
   title: "Titel"
@@ -153,6 +153,7 @@ de:
     show_exdecs_tooltip: "Durchführungsvorschriften unter den Artikeln anzeigen"
     loading_message: "Bitte warten, Artikel werden geladen…"
     loading_articles: "Artikel laden..."
+    loaded_articles: "Artikel geladen"
     view_articles: "Klicken Sie hier, um Artikel anzuzeigen"
     exdecs_disabled: "Durchführungsvorschriften nicht geladen"
     load_anyway: "Laden"
@@ -184,6 +185,11 @@ de:
   ov_pdf: "Übersicht PDF"
   title_details: "Titel"
   toc: "Inhaltsverzeichnis"
+  toc_summary:
+    text: "Dieses Gesetz hat ein langes Inhaltsverzeichnis mit %{count} Einträgen. Es steht vollständig und durchsuchbar in der Seitenleiste."
+    open: "Inhaltsverzeichnis öffnen"
+    to_text: "Zum Text"
+    print: "Das vollständige Inhaltsverzeichnis (%{count} Einträge) steht auf der Webseite."
   updates: "Dieser Text hat folgende Texte geändert"
   exdecs_title: "Durchführungsvorschrift(en)"
   exdecs:
@@ -202,11 +208,62 @@ de:
   search_mode_hint: "Standard: flexibel (alle Wörter). Aktivieren: exakte Wortreihenfolge."
   search_hints_no_results_with_exact: "Keine Ergebnisse gefunden. Versuchen Sie weniger spezifische Suchbegriffe oder deaktivieren Sie die Option 'Exakte Übereinstimmung'."
   search_hints_no_results_without_exact: " Versuchen Sie den Filter 'Exakte Übereinstimmung' für präzise Ergebnisse."
+  # WW-LINK-01..03: the law page's related-sources panel and the parliamentary
+  # index's relation banner
+  related_sources:
+    heading: "Verwandte Quellen"
+    parliamentary:
+      heading: "Parlamentarische Vorarbeiten"
+      verified: "Geprüft"
+      verified_note: "Anhand der offiziellen Akte geprüft."
+      dossier_not_in_corpus: "Die Dokumente dieser Akte sind noch nicht in unserer Datenbank; siehe die offizielle Akte."
+      unverified: "Automatisch verknüpft, nicht geprüft"
+      unverified_note: "Diese Dokumente tragen in unserer parlamentarischen Datenbank die Nummer dieses Gesetzes. Die Verknüpfung wurde automatisch hergestellt und nicht geprüft; sie kann auch spätere Änderungen oder andere Texte umfassen."
+      empty: "Keine parlamentarischen Vorarbeiten in unserem Index verknüpft."
+      unavailable: "Die parlamentarischen Vorarbeiten sind vorübergehend nicht verfügbar."
+      view_all: "Alle Dokumente ansehen (%{count})"
+      view_all_unverified: "Alle automatisch verknüpften Dokumente ansehen (%{count})"
+      chamber: "Kammer"
+      senate: "Senat"
+      official_dossier: "Offizielle Akte"
+    vlaams:
+      heading: "Flämisches Parlament"
+      note: "Dokumente, die das Flämische Parlament diesem Dekret zuordnet."
+      no_document: "kein Dokument online"
+    jurisprudence:
+      heading: "Rechtsprechung"
+      empty: "Keine verknüpfte Rechtsprechung gefunden."
+      not_indexed: "Keine verknüpfte Rechtsprechung im aktuellen Index."
+      unavailable: "Die verknüpfte Rechtsprechung ist vorübergehend nicht verfügbar."
+      search: "In der Rechtsprechung suchen"
+      view_all: "Alle verknüpften Entscheidungen ansehen (%{count})"
+      view_available: "Verfügbare verknüpfte Entscheidungen ansehen (%{count})"
+      incomplete: "Unser Index enthält %{count} verknüpfte Entscheidungen, aber die gespeicherte Liste ist noch nicht vollständig aktualisiert. Derzeit sind %{available} Entscheidungen verfügbar."
+      previous: "Zurück"
+      next: "Weiter"
+      page: "Seite %{page} von %{pages}"
+      pagination: "Seitennummerierung der verknüpften Entscheidungen"
+    status:
+      loading: "Laden…"
+      loaded: "%{source} geladen"
+      failed: "Laden fehlgeschlagen. Bitte erneut versuchen."
+    index:
+      verified: "Parlamentarische Vorarbeiten zu %{law}, anhand der offiziellen Akte geprüft"
+      unverified: "Automatisch mit %{law} verknüpfte Dokumente, nicht geprüft"
+      empty: "Keine mit %{law} verknüpften Dokumente in unserem Index."
   popular_laws:
     title: "Häufig verwendete Gesetze"
+    source_toggle: "Quellen anzeigen oder ausblenden"
+    source_tabs: "Quellenregister"
     hint: ""
     show: "anzeigen"
     hide: "ausblenden"
+    catalogue:
+      civil_book_seven: "Zivilgesetzbuch - Buch 7 \"Besondere Verträge\""
+      future_from_september_2027: "(tritt am 1. September 2027 in Kraft)"
+      criminal_code_1867: "(altes) Strafgesetzbuch von 1867"
+      new_criminal_code_book_one: "Neues Strafgesetzbuch - Buch I"
+      new_criminal_code_book_two: "Neues Strafgesetzbuch - Buch II"
     categories:
       civil: "Zivilrecht"
       criminal: "Strafrecht"
@@ -238,7 +295,9 @@ de:
   hide_abolished: "Aufgehobene Gesetze ausblenden"
   hide_empty_content: "Gesetze ohne Inhalt ausblenden"
   hide_missing_translation: "Fehlende Übersetzungen ausblenden"
-  hide_german_translation: "Deutsche Übersetzungen ausblenden"
+  # hides the Dutch and French catalogue entries of the German translations
+  # ("Duitse vertaling", "Traduction allemande"), not the German texts
+  hide_german_translation: "NL/FR-Einträge zu deutschen Übersetzungen ausblenden"
   results_per_page: "Ergebnisse pro Seite"
   advanced_filters_title: "Erweiterte Filter"
   display_options_title: "Anzeigeoptionen"
@@ -260,6 +319,37 @@ de:
   language_dutch: "Niederländisch"
   language_french: "Französisch"
   language_german: "Deutsch"
+  # The German texts (language_id 3) and what the German site says about them:
+  # docs/ops/german-corpus-plan-2026-09-27.md, section 5. One label per
+  # source_method (GermanTextProvenance). %{published} is " vom <date>" (the
+  # Staatsblatt date of the text) or empty; %{state} is ", Stand <date>" or empty.
+  german_text:
+    heading: "Deutscher Text"
+    labels:
+      official_translation: "Offizielle deutsche Übersetzung, veröffentlicht im Belgischen Staatsblatt%{published}. Erstellt von der Zentralen Dienststelle für Deutsche Übersetzungen (Malmedy). Verbindlich sind der niederländische und der französische Text."
+      official_translation_extracts: "Offizielle deutsche Übersetzung von Auszügen dieses Textes (nicht der vollständige Text), veröffentlicht im Belgischen Staatsblatt%{published}. Erstellt von der Zentralen Dienststelle für Deutsche Übersetzungen (Malmedy). Verbindlich sind der niederländische und der französische Text."
+      unofficial_coordination: "Inoffizielle Koordinierung in deutscher Sprache, Belgisches Staatsblatt%{published}, ohne Rechtskraft."
+      unofficial_coordination_extracts: "Inoffizielle Koordinierung von Auszügen dieses Textes in deutscher Sprache (nicht der vollständige Text), Belgisches Staatsblatt%{published}, ohne Rechtskraft."
+      original: "Originaltext in deutscher Sprache, Belgisches Staatsblatt%{published}."
+      # A decree of the German-speaking Community or of its government in its
+      # German publication (law of 31 December 1983, art. 47 and 53: published
+      # in German, with a Dutch and a French translation).
+      dg_original: "Offizieller deutscher Originaltext, veröffentlicht im Belgischen Staatsblatt%{published}. Die Deutschsprachige Gemeinschaft veröffentlicht ihre Dekrete und die Erlasse ihrer Regierung in deutscher Sprache; die niederländische und die französische Fassung sind Übersetzungen."
+      zddu_consolidation: "Inoffizielle konsolidierte Fassung der Zentralen Dienststelle für Deutsche Übersetzungen%{state}, Quelle scta.be. Die offiziellen Übersetzungen der einzelnen Änderungen sind im Belgischen Staatsblatt veröffentlicht (Daten im Text)."
+      dg_coordinated: "Koordinierte Fassung des Ministeriums der Deutschsprachigen Gemeinschaft, nicht rechtsverbindlich. Nur der im Belgischen Staatsblatt veröffentlichte Originaltext ist verbindlich."
+    sources:
+      staatsblatt_de: "Belgisches Staatsblatt"
+      zddu: "Zentrale Dienststelle für Deutsche Übersetzungen (scta.be)"
+      dg_ministry: "Ministerium der Deutschsprachigen Gemeinschaft (ostbelgienlive.be)"
+    source: "Quelle"
+    fetched_on: "abgerufen am %{date}"
+    other_versions: "Andere Sprachfassungen unter derselben NUMAC"
+    source_link: "Deutscher Text (Quelle)"
+    eli_link: "ELI (Belgisches Staatsblatt)"
+    french_fallback: "Für diesen Text liegt keine deutsche Fassung vor. Angezeigt wird der französische Text."
+    german_available: "Für diesen Text liegt eine deutsche Fassung vor."
+    show_german: "Deutsche Fassung anzeigen"
+    show_version: "%{language}-Fassung anzeigen"
   pagination:
     display: "Ergebnisse"
     to: "bis"
@@ -295,6 +385,14 @@ de:
   clean_text_copied: "Zitat kopiert!"
   filter_references: "Änderungen und Referenzen ausblenden"
   text_copied: "Text kopiert!"
+  # WW-COPY-01: the clipboard controller's words (shared/_clipboard_messages)
+  clipboard:
+    copied: "Kopiert!"
+    copy_failed: "Kopieren fehlgeschlagen. Bitte versuchen Sie es erneut."
+    nothing_to_copy: "Es gibt nichts zu kopieren."
+    consulted_on: "Abgerufen am"
+    contents: "Inhalt"
+    citation: "Zitat"
 
   # Parliamentary preparations
   parliamentary_preparations: "Parlamentarische Arbeiten"
@@ -345,7 +443,7 @@ de:
     imprint: "Impressum"
     accessibility: "Barrierefreiheit"
     faq: "FAQ"
-    ai_security: "AI Security"
+    ai_security: "KI-Sicherheit"
     pricing: "Preise"
   
   # Accessibility labels
@@ -370,8 +468,9 @@ de:
   switch_to_dutch: "NL"
 
   chatbot:
+    noscript: "Der juristische Assistent baut seine Antworten live auf und funktioniert nur mit JavaScript. Aktivieren Sie JavaScript, um eine Frage zu stellen."
     messages: "Chat-Nachrichten"
-    title: "GesetzGuide Juristischer Chatbot"
+    title: "%{brand} Juristischer Chatbot"
     subtitle: "POC - KI-gestützter belgischer Gesetzgebungs-Q&A"
     widget_title: "Juristischer Chatbot"
     language: "Sprache"
@@ -466,8 +565,35 @@ de:
   auth:
     signed_in: "Erfolgreich angemeldet"
     signed_out: "Erfolgreich abgemeldet"
+    pending_sign_in_not_cancelled: "Sie sind abgemeldet, aber eine begonnene Anmeldung mit Zwei-Faktor-Authentifizierung konnte nicht abgebrochen werden. Sie verfällt innerhalb von 5 Minuten."
+    pending_sign_in_not_replaced: "Eine zuvor in diesem Browser begonnene Anmeldung mit Zwei-Faktor-Authentifizierung konnte nicht abgebrochen werden, daher wurde keine neue gestartet. Bitte versuchen Sie es in einigen Minuten erneut."
     invalid_credentials: "Ungültige E-Mail-Adresse oder Passwort"
     account_disabled: "Ihr Konto wurde deaktiviert"
+    access_unavailable: "Der Zugang zu diesem Konto ist nicht verfügbar. Kontaktieren Sie uns, wenn Sie glauben, dass dies ein Irrtum ist."
+    too_many_attempts: "Zu viele Versuche. Bitte versuchen Sie es später erneut."
+    registration_unavailable: "Die Registrierung ist vorübergehend nicht möglich. Bitte versuchen Sie es in einigen Minuten erneut."
+    registration_country_restricted:
+      title: "Die Registrierung ist nur in Belgien möglich"
+      message: "Sie können ein neues Konto nur über eine Internetverbindung in Belgien erstellen. Sie können die Website weiterhin nutzen oder sich bei einem bestehenden Konto anmelden."
+      browse: "Website besuchen"
+    # WW-ABUSE-01: the registration proof-of-work state
+    signup_challenge:
+      title: "Kurze Sicherheitsprüfung"
+      explanation: "Zum Schutz vor automatisierten Registrierungen führt Ihr Browser vor dem Anlegen des Kontos eine kurze Prüfung durch. Sie dauert einige Sekunden und erfordert nichts von Ihnen."
+      password_again: "Bitte geben Sie Ihr Passwort erneut ein: Aus Sicherheitsgründen speichern wir es nicht."
+      noscript: "Diese Prüfung erfordert JavaScript. Aktivieren Sie es oder versuchen Sie es später erneut."
+      noscript_help_html: "Können Sie JavaScript nicht aktivieren? %{contact}, wir helfen Ihnen weiter."
+      noscript_contact: "Kontaktieren Sie uns"
+      label: "Ich bin kein Roboter"
+      loading: "Wird geladen…"
+      verifying: "Prüfung läuft…"
+      verified: "Geprüft"
+      ready: "Prüfung abgeschlossen. Sie können Ihr Konto jetzt anlegen."
+      failed: "Die Prüfung ist fehlgeschlagen. Laden Sie die Seite neu und versuchen Sie es erneut."
+      expired: "Die Prüfung ist abgelaufen. Laden Sie die Seite neu."
+      wait: "Bitte warten Sie, bis die Prüfung abgeschlossen ist."
+      reload: "Neu laden"
+      verify: "Prüfen"
     login_required: "Bitte melden Sie sich an, um fortzufahren"
     account_created: "Konto erfolgreich erstellt"
     email_confirmed: "E-Mail bestätigt. Sie können sich jetzt anmelden."
@@ -498,6 +624,18 @@ de:
     password_blank: "Passwort darf nicht leer sein."
     passwords_dont_match: "Passwörter stimmen nicht überein."
     password_min_length: "Mindestens 8 Zeichen"
+    show_password: "Passwort anzeigen"
+    hide_password: "Passwort verbergen"
+    password_strength:
+      label: "Passwortstärke"
+      empty: "Geben Sie ein Passwort ein"
+      labels: ["Sehr schwach", "Schwach", "Mittel", "Gut", "Stark"]
+      requirements:
+        length: "Mindestens 8 Zeichen"
+        uppercase: "Großbuchstabe"
+        lowercase: "Kleinbuchstabe"
+        number: "Ziffer"
+        special: "Sonderzeichen (optional)"
     back_to_login: "Zurück zur Anmeldung"
     no_account: "Noch kein Konto?"
     have_account: "Haben Sie bereits ein Konto?"
@@ -520,6 +658,7 @@ de:
     account_reactivated: "Ihr Konto wurde reaktiviert. Sie können sich jetzt anmelden."
     invalid_reactivation_link: "Dieser Reaktivierungslink ist ungültig oder abgelaufen."
   subscriptions:
+    title: "Abonnement"
     invalid_tier: "Ungültiger Abonnementtyp"
     payment_error: "Zahlung fehlgeschlagen. Versuchen Sie es erneut."
     payment_success: "Zahlung erfolgreich! Ihr Abonnement ist aktiv."
@@ -569,47 +708,47 @@ de:
     contact_sales: "Kontaktieren Sie uns"
   mailer:
     reactivation:
-      subject: "Reaktivieren Sie Ihr GesetzGuide-Konto"
+      subject: "Reaktivieren Sie Ihr %{brand}-Konto"
       greeting: "Hallo %{name},"
       body: "Sie haben die Reaktivierung Ihres Kontos angefordert. Klicken Sie auf die Schaltfläche unten, um zu bestätigen."
       button: "Konto reaktivieren"
       link_text: "Oder kopieren Sie diesen Link in Ihren Browser:"
       ignore: "Wenn Sie dies nicht angefordert haben, können Sie diese E-Mail ignorieren."
     deletion_scheduled:
-      subject: "Ihr WetWijzer-Konto wird in 30 Tagen gelöscht"
+      subject: "Ihr %{brand}-Konto wird in 30 Tagen gelöscht"
       title: "Kontolöschung geplant"
       greeting: "Liebe(r) %{name},"
       body: "Wir bestätigen, dass Ihre Anfrage zur Kontolöschung eingegangen ist. Ihr Konto und alle zugehörigen Daten werden in 30 Tagen endgültig gelöscht."
       date_label: "Löschungsdatum"
       undo_info: "Haben Sie es sich anders überlegt? Sie können die Löschung jederzeit abbrechen, indem Sie auf die Schaltfläche unten klicken oder sich erneut anmelden."
     deletion_final_warning:
-      subject: "LETZTE WARNUNG: Ihr WetWijzer-Konto wird morgen gelöscht"
+      subject: "LETZTE WARNUNG: Ihr %{brand}-Konto wird morgen gelöscht"
       title: "Letzte Warnung"
       greeting: "Liebe(r) %{name},"
-      body: "Dies ist eine letzte Erinnerung, dass Ihr WetWijzer-Konto morgen endgültig gelöscht wird."
+      body: "Dies ist eine letzte Erinnerung, dass Ihr %{brand}-Konto morgen endgültig gelöscht wird."
       tomorrow: "Ihr Konto wird morgen gelöscht"
       last_chance: "Dies ist Ihre letzte Chance, die Löschung abzubrechen. Nach morgen können Ihre Daten nicht mehr wiederhergestellt werden."
     deletion_completed:
-      subject: "Ihr WetWijzer-Konto wurde gelöscht"
+      subject: "Ihr %{brand}-Konto wurde gelöscht"
       title: "Konto gelöscht"
-      body: "Ihr WetWijzer-Konto wurde endgültig gelöscht. Die folgenden Daten wurden entfernt:"
+      body: "Ihr %{brand}-Konto wurde endgültig gelöscht. Die folgenden Daten wurden entfernt:"
       item_profile: "Profil und persönliche Einstellungen"
       item_history: "Such- und Chatverlauf"
       item_bookmarks: "Lesezeichen und gespeicherte Elemente"
-      farewell: "Vielen Dank, dass Sie WetWijzer genutzt haben. Sie sind jederzeit willkommen, ein neues Konto zu erstellen."
+      farewell: "Vielen Dank, dass Sie %{brand} genutzt haben. Sie sind jederzeit willkommen, ein neues Konto zu erstellen."
     subscription_welcome:
-      subject: "Willkommen bei Pro! 🎉 - GesetzGuide"
+      subject: "Willkommen bei Pro! 🎉 - %{brand}"
       greeting: "Hallo %{name},"
       body: "Vielen Dank für Ihr Pro-Abonnement! Sie haben jetzt Zugang zu allen Premium-Funktionen."
       whats_included: "Was in Ihrem Pro-Abonnement enthalten ist:"
       feature_credits: "40 gratis Credits pro Monat"
       feature_models: "Alle 4 KI-Stufen (Level I–IV)"
       feature_jurisprudence: "Rechtsprechung und parlamentarische Dokumente via Chatbot"
-      feature_support: "Unterstützen Sie GesetzGuide"
+      feature_support: "Unterstützen Sie %{brand}"
       button: "Jetzt Fragen stellen"
-      thanks: "Vielen Dank für Ihre Unterstützung von GesetzGuide! Ihr Abonnement hilft uns, die Plattform weiterzuentwickeln und zu verbessern."
+      thanks: "Vielen Dank für Ihre Unterstützung von %{brand}! Ihr Abonnement hilft uns, die Plattform weiterzuentwickeln und zu verbessern."
     subscription_cancelled:
-      subject: "Ihr Pro-Abonnement wurde gekündigt - GesetzGuide"
+      subject: "Ihr Pro-Abonnement wurde gekündigt - %{brand}"
       greeting: "Hallo %{name},"
       body: "Es tut uns leid, Sie gehen zu sehen. Ihr Pro-Abonnement wurde gekündigt."
       access_until: "Sie behalten den Pro-Zugang bis:"
@@ -618,9 +757,9 @@ de:
       resubscribe_button: "Erneut Pro abonnieren"
       farewell: "Wir hoffen, Sie bald wiederzusehen. Wenn Sie Fragen haben, zögern Sie nicht, uns zu kontaktieren."
     payment_failed:
-      subject: "Zahlung für Ihr Pro-Abonnement fehlgeschlagen - GesetzGuide"
+      subject: "Zahlung für Ihr Pro-Abonnement fehlgeschlagen - %{brand}"
       greeting: "Hallo %{name},"
-      body: "Wir konnten Ihre letzte Zahlung für Ihr GesetzGuide Pro-Abonnement nicht verarbeiten."
+      body: "Wir konnten Ihre letzte Zahlung für Ihr %{brand} Pro-Abonnement nicht verarbeiten."
       status_label: "Status"
       status_past_due: "Ihr Abonnement ist überfällig. Bitte aktualisieren Sie Ihre Zahlungsmethode, um Ihre Pro-Funktionen zu behalten."
       decline_reason: "Grund:"
@@ -628,15 +767,15 @@ de:
       update_button: "Zahlungsmethode aktualisieren"
       contact: "Haben Sie Fragen? Zögern Sie nicht, uns zu kontaktieren."
     confirmation:
-      subject: "Bestätigen Sie Ihre E-Mail-Adresse - GesetzGuide"
+      subject: "Bestätigen Sie Ihre E-Mail-Adresse - %{brand}"
       greeting: "Hallo %{name},"
-      body: "Vielen Dank für Ihre Registrierung bei GesetzGuide. Klicken Sie auf die Schaltfläche unten, um Ihre E-Mail-Adresse zu bestätigen."
+      body: "Vielen Dank für Ihre Registrierung bei %{brand}. Klicken Sie auf die Schaltfläche unten, um Ihre E-Mail-Adresse zu bestätigen."
       button: "E-Mail bestätigen"
       link_text: "Oder kopieren Sie diesen Link in Ihren Browser:"
       expires: "Dieser Link ist 24 Stunden gültig."
       ignore: "Wenn Sie sich nicht registriert haben, können Sie diese E-Mail ignorieren."
     password_reset:
-      subject: "Passwort zurücksetzen - GesetzGuide"
+      subject: "Passwort zurücksetzen - %{brand}"
       title: "Passwort zurücksetzen"
       greeting: "Hallo %{name},"
       body: "Sie haben eine Anfrage zur Passwortwiederherstellung gestellt. Klicken Sie auf die Schaltfläche unten, um ein neues Passwort festzulegen."
@@ -646,9 +785,9 @@ de:
       expires: "Dieser Link ist 2 Stunden gültig."
       ignore: "Wenn Sie diese Anfrage nicht gestellt haben, können Sie diese E-Mail ignorieren."
     welcome:
-      subject: "Willkommen bei GesetzGuide"
+      subject: "Willkommen bei %{brand}"
     usage_warning:
-      subject: "Sie haben %{percent}%% Ihres Limits erreicht - GesetzGuide"
+      subject: "Sie haben %{percent}%% Ihres Limits erreicht - %{brand}"
       title: "Nutzungslimit fast erreicht"
       greeting: "Hallo %{name},"
       body: "Sie haben %{percent}%% Ihrer Credits verbraucht."
@@ -656,10 +795,10 @@ de:
       upgrade_prompt: "Upgrade auf Pro für mehr Credits."
       upgrade_button: "Upgrade"
     unverified_warning:
-      subject: "Bestätigen Sie Ihre E-Mail-Adresse - GesetzGuide"
-      subject_final: "Letzte Chance: Bestätigen Sie Ihre E-Mail-Adresse - GesetzGuide"
+      subject: "Bestätigen Sie Ihre E-Mail-Adresse - %{brand}"
+      subject_final: "Letzte Chance: Bestätigen Sie Ihre E-Mail-Adresse - %{brand}"
       greeting: "Hallo %{name},"
-      body: "Sie haben sich bei GesetzGuide registriert, aber Ihre E-Mail-Adresse wurde noch nicht bestätigt."
+      body: "Sie haben sich bei %{brand} registriert, aber Ihre E-Mail-Adresse wurde noch nicht bestätigt."
       button: "E-Mail jetzt bestätigen"
       link_text: "Oder kopieren Sie diesen Link in Ihren Browser:"
       deadline: "⚠ Ihr Konto wird gelöscht, wenn Sie Ihre E-Mail-Adresse nicht innerhalb von 7 Tagen bestätigen."
@@ -673,24 +812,26 @@ de:
       not_you: "Waren Sie das nicht? Ändern Sie sofort Ihr Passwort."
       review_button: "Konto überprüfen"
       login:
-        subject: "Neue Anmeldung auf Ihrem Konto - GesetzGuide"
+        subject: "Neue Anmeldung auf Ihrem Konto - %{brand}"
         title: "Neue Anmeldung erkannt"
-        message: "Es wurde gerade eine Anmeldung auf Ihrem GesetzGuide-Konto durchgeführt."
+        message: "Es wurde gerade eine Anmeldung auf Ihrem %{brand}-Konto durchgeführt."
       password_changed:
-        subject: "Ihr Passwort wurde geändert - GesetzGuide"
+        subject: "Ihr Passwort wurde geändert - %{brand}"
         title: "Passwort geändert"
         message: "Ihr Passwort wurde gerade geändert."
       account_locked:
-        subject: "Ihr Konto wurde gesperrt - GesetzGuide"
+        subject: "Ihr Konto wurde gesperrt - %{brand}"
         title: "Konto gesperrt"
         message: "Ihr Konto wurde aufgrund mehrerer fehlgeschlagener Anmeldeversuche vorübergehend gesperrt."
       registration_attempt:
-        subject: "Jemand hat versucht, sich mit Ihrer E-Mail-Adresse zu registrieren - GesetzGuide"
+        subject: "Jemand hat versucht, sich mit Ihrer E-Mail-Adresse zu registrieren - %{brand}"
         title: "Registrierungsversuch erkannt"
         message: "Jemand hat versucht, ein neues Konto mit Ihrer E-Mail-Adresse zu erstellen. Wenn Sie das nicht waren, müssen Sie nichts unternehmen. Ihr Konto ist sicher."
   filter_articles: "Artikel suchen…"
   to_top: "Nach oben"
   account:
+    invoices: "Rechnungen"
+    invoices_subtitle: "Ihre Rechnungen und Gutschriften"
     tier_free: "Kostenlos"
     title: "Mein Konto"
     info: "Kontoinformationen"
@@ -706,6 +847,7 @@ de:
     delete_account_desc: "Löschen Sie Ihr Konto und alle zugehörigen Daten dauerhaft"
     delete: "Löschen"
     delete_confirm: "Sind Sie sicher, dass Sie Ihr Konto löschen möchten? Dies kann nicht rückgängig gemacht werden."
+    delete_final: "Ja, mein Konto löschen"
     delete_checkbox_confirm: "Ich bestätige, dass ich mein Konto löschen möchte und verstehe, dass alle Daten nach 30 Tagen endgültig gelöscht werden."
     schedule_deletion: "Konto löschen"
     deletion_grace_period: "Ihr Konto wird nach 30 Tagen endgültig gelöscht. Sie können dies in der Zwischenzeit rückgängig machen."
@@ -748,6 +890,7 @@ de:
     2fa_enabled: "2FA ist aktiviert!"
     2fa_disabled: "2FA ist deaktiviert."
     2fa_setup_expired: "Sitzung abgelaufen. Starten Sie erneut."
+    2fa_replace_first: "2FA ist bereits aktiviert. Deaktivieren Sie 2FA zuerst (mit Ihrem Passwort), um einen neuen Authenticator einzurichten."
     invalid_otp: "Ungültiger Code. Versuchen Sie es erneut."
     disable_2fa_confirm: "Sind Sie sicher, dass Sie 2FA deaktivieren möchten?"
     backup_codes: "Backup-Codes"
@@ -799,6 +942,26 @@ de:
       otp_enabled: "2FA aktiviert"
       otp_disabled: "2FA deaktiviert"
       profile_updated: "Profil aktualisiert"
+  invoices:
+    number: "Nummer"
+    date: "Datum"
+    type: "Typ"
+    total: "Gesamt"
+    status: "Status"
+    download: "Herunterladen"
+    type_subscription: "Abonnement"
+    type_credits: "Credits"
+    type_credit_note: "Gutschrift"
+    type_chargeback_reversal: "Rücknahme der Rückbuchung"
+    type_other: "Sonstige"
+    excl_vat: "zzgl. MwSt."
+    status_sent: "Gesendet"
+    status_processing: "In Bearbeitung"
+    status_failed: "Fehlgeschlagen"
+    empty_title: "Noch keine Rechnungen"
+    empty_description: "Rechnungen für Abonnements und Credit-Käufe erscheinen hier."
+    pdf_not_found: "PDF-Rechnung nicht gefunden."
+    xml_not_found: "UBL-XML-Datei nicht gefunden."
   common:
     save: "Speichern"
     cancel: "Abbrechen"
@@ -807,6 +970,25 @@ de:
   classic:
     switch_modern: "Moderne Version"
     pagination_hint: "Erste %{count} Seiten angezeigt. Verwenden Sie die Suchfilter oben, um bestimmte Gesetze zu finden."
+    # On a modern page that cannot work without JavaScript
+    no_js:
+      notice: "Diese Seite funktioniert nur mit JavaScript. Aktivieren Sie JavaScript, um sie zu nutzen."
+      classic_link: "Gesetzestexte ohne JavaScript lesen Sie auf der klassischen Website."
+    theme:
+      label: "Darstellung"
+      system: "System"
+      light: "Hell"
+      dark: "Dunkel"
+    table_scroll: "Tabelle; horizontal scrollen, um alles zu sehen"
+    related:
+      label: "Verwandte Quellen"
+      parliamentary: "Parlamentarische Vorarbeiten"
+      jurisprudence: "Rechtsprechung"
+    toc:
+      skip_to_text: "Zum Text springen"
+    search:
+      reset: "Zurücksetzen"
+      title_label: "Nach Titel suchen"
   back_to_list: "Zurück zur Übersicht"
   search_prompt: "Suchen Sie über das Suchfeld oben nach belgischer Gesetzgebung."
   law_not_found: "Gesetz nicht gefunden."
@@ -844,6 +1026,8 @@ de:
     all_courts: "Alle Gerichte"
     search: "Suchen"
     no_results: "Keine Urteile gefunden"
+    search_failed: "Die Rechtsprechung konnte gerade nicht durchsucht werden. Bitte versuchen Sie es später erneut."
+    listing_limit: "Die Liste der neuesten Entscheidungen endet hier. Nutzen Sie die Suche oder die Filter, um ältere Entscheidungen zu finden."
     back_to_list: "Zurück zur Übersicht"
     full_text: "Volltext"
     summary: "Zusammenfassung"
@@ -851,6 +1035,7 @@ de:
 
   # Bookmarks
   bookmarks:
+    noscript: "Ihre Lesezeichen und Ordner werden mit JavaScript geladen und verwaltet. Aktivieren Sie JavaScript, um sie anzusehen."
     title: "Lesezeichen"
     add: "Lesezeichen hinzufügen"
     remove: "Lesezeichen entfernen"
@@ -897,8 +1082,13 @@ de:
 
   # Praxis cross-sell banner (shown to non-Praxis users on profile page)
   praxis_banner:
-    title: "Suchen Sie (erschwingliche) Verwaltungssoftware für Ihre Anwaltskanzlei?"
-    description: "Dokumentenverwaltung, Mandantenverwaltung, Rechnungsstellung, KI-Assistent - alles in einer Desktop-Anwendung und das ohne Ihr Budget zu sprengen! Kaufen Sie Praxis und unterstützen Sie WetWijzer / LisLoi / GesetzGuide / LexLibera!"
+    title: "Praxis: Verwaltungssoftware für Ihre Kanzlei"
+    description: "Praxis befindet sich noch in Entwicklung. Die geplante Software verbindet Akten, Dokumente, Zeiterfassung und Rechnungsstellung mit juristischer KI in Plus. Von den Machern von WetWijzer / LisLoi / GesetzGuide / LexLibera."
     cta: "Praxis entdecken"
-    tagline: "Ab €15/Monat - von den Machern von WetWijzer / LisLoi / GesetzGuide / LexLibera"
+    tagline: "Geplante Einführungspreise für 1 Nutzer: Essentials €%{essentials}/Monat · Plus mit KI €%{plus}/Monat (zzgl. MwSt.)"
+    teaser_title: "Praxis befindet sich in Entwicklung"
+    teaser_description: "Geplante Kanzleiverwaltung mit juristischer KI in Plus. Entdecken Sie das Projekt."
 
+  # Roll-call votes on dossier and MP pages; see en.yml.
+  parliamentary:
+    roll_call_votes_end: "Die Daten zu namentlichen Abstimmungen enden am 20. Juli 2023, weil die Quelle nicht mehr veröffentlicht. Spätere Abstimmungen werden hier nicht angezeigt."

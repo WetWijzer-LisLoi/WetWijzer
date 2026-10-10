@@ -23,6 +23,12 @@ class OctopusSyncJob < ApplicationJob
            wait: 30.seconds,
            attempts: 2
 
+  # These states require a person to inspect the provider record.  Retrying
+  # cannot establish whether a create/send call already took effect and may
+  # duplicate a financial document.
+  discard_on OctopusApiService::ManualReconciliationRequired
+  discard_on OctopusApiService::PeppolActionRequired
+  discard_on OctopusApiService::SyncInProgress
   discard_on ActiveJob::DeserializationError
 
   def perform(platform_invoice)
@@ -32,9 +38,21 @@ class OctopusSyncJob < ApplicationJob
     service.sync_invoice(platform_invoice)
 
     Rails.logger.info("[OctopusSyncJob] Invoice #{platform_invoice.invoice_number} synced successfully")
+  rescue OctopusApiService::SyncInProgress
+    # Never overwrite another worker's durable preparation/dispatch fence.
+    raise
+  rescue OctopusApiService::ManualReconciliationRequired, OctopusApiService::PeppolActionRequired => e
+    Rails.logger.warn("[OctopusSyncJob] Invoice #{platform_invoice.invoice_number} requires manual action: #{e.class.name}")
+    raise
   rescue OctopusApiService::OctopusError => e
     Rails.logger.error("[OctopusSyncJob] Sync failed for #{platform_invoice.invoice_number}: #{e.message}")
-    platform_invoice.update_columns(octopus_status: 'failed', octopus_error: e.message)
+    # A report failure says nothing about an already submitted document.
+    # Preserve its dispatch fence so retry resumes polling, never sends again.
+    if %w[peppol_sending peppol_sent].include?(platform_invoice.octopus_status)
+      platform_invoice.update_columns(octopus_error: 'OCTOPUS_STATUS_UNAVAILABLE')
+    else
+      platform_invoice.update_columns(octopus_status: 'failed', octopus_error: 'OCTOPUS_SYNC_FAILED')
+    end
     raise # Re-raise so retry_on kicks in
   end
 end

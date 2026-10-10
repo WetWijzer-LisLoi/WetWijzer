@@ -3,7 +3,17 @@
         turbo_action: 'advance'
       } do %>
   <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-    <% if @cases.empty? %>
+    <%# A failed search and the end of the bounded listing say so; neither is
+        "no cases found" (10:49 no-JS plan, C.2). %>
+    <% if @search_failed %>
+      <div class="p-12 text-center" role="alert">
+        <p class="text-lg text-gray-700 dark:text-gray-200"><%= t('jurisprudence.search_failed') %></p>
+      </div>
+    <% elsif @listing_limit_reached %>
+      <div class="p-12 text-center">
+        <p class="text-lg text-gray-700 dark:text-gray-200"><%= t('jurisprudence.listing_limit') %></p>
+      </div>
+    <% elsif @cases.empty? %>
       <div class="p-12 text-center">
         <svg class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/>
@@ -64,8 +74,11 @@
                   <%= c[:decision_date] %>
                 </span>
                 <!-- Language badge -->
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wide capitalize <%= c[:language_id].to_s == '1' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' : 'bg-(--accent-100,#dbeafe) text-(--accent-700) dark:bg-(--accent-900,#1e3a5f)/30 dark:text-(--accent-400)' %>">
-                  <%= c[:language_id].to_s == '1' ? 'NL' : 'FR' %>
+                <%# A German judgment (language_id 3) is listed on the German site and
+                    says DE; anything unrecognised still reads FR, as before. %>
+                <% badge_language = jurisprudence_language_label(c[:language_id]) || 'FR' %>
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wide capitalize <%= case badge_language when 'NL' then 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' when 'DE' then 'bg-gray-100 text-gray-700 dark:bg-gray-700/40 dark:text-gray-200' else 'bg-(--accent-100,#dbeafe) text-(--accent-700) dark:bg-(--accent-900,#1e3a5f)/30 dark:text-(--accent-400)' end %>">
+                  <%= badge_language %>
                 </span>
                 <!-- Arrow -->
                 <svg class="w-4 h-4 text-gray-300 group-hover:text-(--accent-500) dark:group-hover:text-(--accent-400) transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,7 +88,7 @@
             </div>
 
             <!-- Row 2: ECLI number (monospace, subtle) -->
-            <p class="text-xs font-mono text-gray-400 dark:text-gray-300/50 mb-2 truncate pl-7">
+            <p class="text-xs font-mono text-gray-500 dark:text-gray-300/50 mb-2 truncate pl-7">
               <%= c[:case_number] %>
             </p>
 
@@ -114,8 +127,12 @@
       <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
         <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div class="text-sm text-gray-600 dark:text-gray-300">
-            <%= case I18n.locale when :fr then 'Page' when :de then 'Seite' when :en then 'Page' else 'Pagina' end %> <span class="font-semibold"><%= @page %></span> <%= case I18n.locale when :fr then 'sur' when :de then 'von' when :en then 'of' else 'van' end %> <span class="font-semibold"><%= @total_pages %></span>
+            <%= case I18n.locale when :fr then 'Page' when :de then 'Seite' when :en then 'Page' else 'Pagina' end %> <span class="font-semibold"><%= @page %></span>
+            <%# The default listing counts no total; it links the next page while there is one. %>
+            <% if @total_count %>
+            <%= case I18n.locale when :fr then 'sur' when :de then 'von' when :en then 'of' else 'van' end %> <span class="font-semibold"><%= @total_pages %></span>
             <span class="text-gray-400 dark:text-gray-300/60 ml-2">(<%= number_with_delimiter(@total_count) %> <%= case I18n.locale when :fr then 'résultats' when :de then 'Ergebnisse' when :en then 'results' else 'resultaten' end %>)</span>
+            <% end %>
           </div>
           <div class="flex items-center gap-1">
             <% if @page > 1 %>
@@ -150,9 +167,11 @@
               <a href="<%= jurisprudence_index_path(filter_params.merge(page: @page + 1)) %>"
                  data-turbo-frame="jurisprudence_results"
                  class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-sky/10 rounded-lg transition-colors">›</a>
+              <% if @total_count %>
               <a href="<%= jurisprudence_index_path(filter_params.merge(page: @total_pages)) %>"
                  data-turbo-frame="jurisprudence_results"
                  class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-sky/10 rounded-lg transition-colors">»</a>
+              <% end %>
             <% end %>
           </div>
         </div>

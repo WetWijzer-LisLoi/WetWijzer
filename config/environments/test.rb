@@ -32,6 +32,10 @@ Rails.application.configure do
   # attempted a real delivery (found via FBL-032's outbox drain tests).
   config.action_mailer.delivery_method = :test
 
+  # Mailed links, as staging and production build them. This must be set
+  # here, before ActionMailer loads: eager loading (CI=1) loads it during boot.
+  config.action_mailer.default_url_options = { host: 'staging.wetwijzer.be', protocol: 'https' }
+
   # Disable request forgery protection in test environment.
   config.action_controller.allow_forgery_protection = false
 

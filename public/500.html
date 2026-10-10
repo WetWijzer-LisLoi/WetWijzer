@@ -155,6 +155,7 @@
         font-size: 0.7rem;
         color: #475569;
       }
+      .actions a { flex-wrap: wrap; max-width: 100%; justify-content: center; text-align: center; }
     </style>
   </head>
   <body>
@@ -166,34 +167,34 @@
       <div class="card">
         <div class="status">500</div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="nl">
           <span class="lang-label">NL</span>
           <h2>Interne serverfout</h2>
           <p>Er is een onverwachte fout opgetreden. Ons team is op de hoogte gesteld. Probeer het later opnieuw.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="fr">
           <span class="lang-label">FR</span>
           <h2>Erreur interne du serveur</h2>
           <p>Une erreur inattendue s'est produite. Notre équipe a été informée. Veuillez réessayer plus tard.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="de">
           <span class="lang-label">DE</span>
           <h2>Interner Serverfehler</h2>
           <p>Ein unerwarteter Fehler ist aufgetreten. Unser Team wurde benachrichtigt. Bitte versuchen Sie es später erneut.</p>
         </div>
 
-        <div class="lang-block">
+        <div class="lang-block" lang="en">
           <span class="lang-label">EN</span>
           <h2>Internal server error</h2>
           <p>An unexpected error occurred. Our team has been notified. Please try again later.</p>
         </div>
 
         <div class="actions">
-          <button onclick="location.reload()" class="btn-primary">&#8635; Retry</button>
-          <a href="/" class="btn-secondary">&larr; Home</a>
-          <a href="mailto:info@wetwijzer.be?subject=500%20Error%20Report&body=URL:%20${encodeURIComponent(window.location.href)}" class="btn-danger" onclick="this.href=this.href.replace('${encodeURIComponent(window.location.href)}', encodeURIComponent(window.location.href))">&#9888; Report</a>
+          <a href="" class="btn-primary">&#8635; <span lang="nl">Opnieuw</span> / <span lang="fr">Réessayer</span> / <span lang="de">Erneut versuchen</span> / <span lang="en">Retry</span></a>
+          <a href="/" class="btn-secondary">&larr; <span lang="nl">Startpagina</span> / <span lang="fr">Accueil</span> / <span lang="de">Startseite</span> / <span lang="en">Home</span></a>
+          <a href="mailto:info@wetwijzer.be?subject=500%20Error%20Report&body=URL:%20${encodeURIComponent(window.location.href)}" class="btn-danger" onclick="this.href=this.href.replace('${encodeURIComponent(window.location.href)}', encodeURIComponent(window.location.href))">&#9888; <span lang="nl">Melden</span> / <span lang="fr">Signaler</span> / <span lang="de">Melden</span> / <span lang="en">Report</span></a>
         </div>
 
         <div class="error-id" id="errorId"></div>

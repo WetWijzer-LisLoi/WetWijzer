@@ -8,7 +8,11 @@
     </span>
   </td>
 
-            <td class="w-full px-4 py-3 whitespace-normal text-sm leading-5 text-gray-900 dark:text-gray-300 text-justify">
+            <td class="law-result-title w-full px-4 py-3 whitespace-normal text-sm leading-5 text-gray-900 dark:text-gray-300" <%= tag.attributes(lang: legal_text_lang(law.language_id)) %>>
+     <%# The German site lists German texts beside French ones: each row says which %>
+     <% if german_site? && (row_language = law.respond_to?(:language_id) && law_language_label(law.language_id)) %>
+       <span class="badge-language" data-law-row-language="<%= row_language %>"><%= row_language %></span>
+     <% end %>
      <%= if params[:title].present? && !params[:title].strip.empty? 
            keyword_replacer(law_title: print_multiline(escape_angle_brackets(law.title)))
          else 
@@ -58,7 +62,7 @@
           <span class="sr-only">FisconetPlus</span>
           <span class="font-medium">F</span>
         <% end %>
-      <% elsif law.justel != "N/A" %>
+      <% elsif law.justel != "N/A" && !(law.language_id == HasLanguage::GERMAN_LANGUAGE_ID && law.justel.blank?) %>
         <%= link_to law.justel, class: %w[inline-flex items-center justify-center w-6 h-6 mx-auto border border-gray-300 dark:border-navy text-xs font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-(--accent-500)/10 focus:outline-hidden focus:ring-1 focus:ring-offset-1 focus:ring-(--accent-500) transition-colors duration-200].join(" "), target: "_blank", rel: "nofollow", title: 'Justel' do %>
           <span class="sr-only">Justel</span>
           <span class="font-medium">J</span>

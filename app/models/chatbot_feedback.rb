@@ -4,7 +4,9 @@ class ChatbotFeedback < AnalyticsRecord
   belongs_to :user, optional: true
 
   # GDPR by design: NO question/answer text stored
-  validates :feedback_type, presence: true, inclusion: { in: %w[positive negative] }
+  validates :feedback_type, presence: true, inclusion: { in: ChatbotMetadataVocabulary::FEEDBACK_TYPES }
+  # WW-SEC-07: language and source are request values too.
+  validate :metadata_in_vocabulary, on: :create
 
   scope :positive, -> { where(feedback_type: 'positive') }
   scope :negative, -> { where(feedback_type: 'negative') }
@@ -24,5 +26,16 @@ class ChatbotFeedback < AnalyticsRecord
     end
     connection.add_index :chatbot_feedbacks, :feedback_type
     connection.add_index :chatbot_feedbacks, :created_at
+  end
+
+  private
+
+  def metadata_in_vocabulary
+    { language: :language, source: :source }.each do |attribute, reader|
+      value = self[attribute]
+      next if value.nil?
+
+      errors.add(attribute, :inclusion) unless ChatbotMetadataVocabulary.public_send(reader, value) == value
+    end
   end
 end

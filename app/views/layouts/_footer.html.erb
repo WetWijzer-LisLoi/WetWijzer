@@ -33,9 +33,10 @@
         <%= link_to t('footer.accessibility'), accessibility_statement_path,
                     class: "hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors" %>
         <span class="text-gray-300 dark:text-gray-600">|</span>
-        <a href="<%= "https://classic.#{request.host.sub('staging.', '')}#{request.fullpath}" %>"
+        <%# This page on classic where classic renders it, else the classic home %>
+        <a href="<%= classic_link_url %>"
            class="hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors"
-           title="<%= case I18n.locale when :fr then 'Version classique (sans JavaScript)' when :de then 'Klassische Version (ohne JavaScript)' when :en then 'Classic version (no JavaScript)' else 'Klassieke versie (zonder JavaScript)' end %>"><%= case I18n.locale when :fr then 'Classic (sans JavaScript)' when :de then 'Classic (ohne JavaScript)' when :en then 'Classic (No Javascript)' else 'Classic (zonder JavaScript)' end %></a>
+           title="<%= case I18n.locale when :fr then 'Version classique' when :de then 'Klassische Ansicht' when :en then 'Classic view' else 'Klassieke weergave' end %>">Classic</a>
         <span class="text-gray-300 dark:text-gray-600">|</span>
         <span>
           <%= t('footer.contact_us') %>

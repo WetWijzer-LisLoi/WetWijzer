@@ -34,6 +34,10 @@ module LegalChatbot
       # slug or identifier that is not a permitted law page.
       text = normalize_internal_law_links(text)
 
+      stripped = []
+      rewritten = []
+      text = drop_unverified_german_language(text, german_original_pairs(leg_articles), rewritten)
+
       allowed_laws = Set.new
       allowed_article_pairs = Set.new
       (leg_articles + tax_articles).each do |article|
@@ -57,9 +61,6 @@ module LegalChatbot
         tax_titles[a[:numac].to_s] = "#{a[:document_type]} #{a[:legislation_title]}".downcase
       end
 
-      stripped = []
-      rewritten = []
-
       # Bare parenthesized paths are not Markdown links, but some renderers
       # still recognize them as internal paths. Validate them under the same
       # source/known-NUMAC policy before leaving a canonical route in output.
@@ -81,11 +82,11 @@ module LegalChatbot
                          true
                        end
         if allowed_laws.include?(canonical_id) && valid_target
-          if canonical_id != id
+          if canonical_id == id
+            whole
+          else
             rewritten << "#{id}→#{canonical_id}"
             "(/laws/#{canonical_id}#{suffix})"
-          else
-            whole
           end
         elsif canonical_id != id
           rewritten << "#{id}→#{id.upcase}"
@@ -96,7 +97,7 @@ module LegalChatbot
         end
       end
 
-      out = out.gsub(%r{(?<!\!)\[([^\]]+)\]\((/(?:laws|jurisprudence)/([^)\s?#]+))([^)]*)\)}) do
+      out = out.gsub(%r{(?<!!)\[([^\]]+)\]\((/(?:laws|jurisprudence)/([^)\s?#]+))([^)]*)\)}) do
         label = Regexp.last_match(1)
         path = Regexp.last_match(2)
         id = Regexp.last_match(3)
@@ -111,8 +112,8 @@ module LegalChatbot
             label
           end
         elsif allowed_laws.include?(id)
-          window = "#{label} #{Regexp.last_match.pre_match.last(100)} #{Regexp.last_match.post_match.first(120)}"
-          rehome_law_anchor(whole, label, id, suffix, allowed_article_pairs, rewritten, stripped, window)
+          after_text = Regexp.last_match.post_match.first(120)
+          rehome_law_anchor(whole, label, id, suffix, allowed_article_pairs, rewritten, stripped, after_text)
         elsif id.match?(/\Afisconet_\d+\z/i) && allowed_laws.include?(id.upcase)
           canonical_id = id.upcase
           canonical = "[#{label}](/laws/#{canonical_id}#{suffix})"
@@ -139,7 +140,7 @@ module LegalChatbot
 
       # Empty/legacy internal destinations cannot be evidence. This covers
       # model output such as /wetgeving, /verwijzing, or the site root.
-      out = out.gsub(%r{(?<!\!)\[([^\]]+)\]\((?:https?://(?:www\.)?wetwijzer\.be)?/(?:wetgeving|wetten|verwijzing)?/?(?:[?#][^)]*)?\)}) do
+      out = out.gsub(%r{(?<!!)\[([^\]]+)\]\((?:https?://(?:www\.)?wetwijzer\.be)?/(?:wetgeving|wetten|verwijzing)?/?(?:[?#][^)]*)?\)}) do
         stripped << Regexp.last_match(0)
         Regexp.last_match(1)
       end
@@ -148,7 +149,7 @@ module LegalChatbot
       # retrieved document has a URL. Models can fabricate plausible links on
       # any host, not only the known parliament/regional hosts, so keep an
       # external Markdown citation only when that exact URL was retrieved.
-      out = out.gsub(%r{(?<!\!)\[([^\]]+)\]\((https?://([^/)\s]+)[^)]*)\)}) do
+      out = out.gsub(%r{(?<!!)\[([^\]]+)\]\((https?://([^/)\s]+)[^)]*)\)}) do
         label = Regexp.last_match(1)
         url = Regexp.last_match(2)
         if allowed_external.include?(url)
@@ -159,31 +160,52 @@ module LegalChatbot
         end
       end
 
-      if stripped.any? || rewritten.any?
-        Rails.logger.info("[LinkGuard] stripped=#{stripped.uniq.size} rewritten=#{rewritten.uniq.size}")
-      end
+      Rails.logger.info("[LinkGuard] stripped=#{stripped.uniq.size} rewritten=#{rewritten.uniq.size}") if stripped.any? || rewritten.any?
       out
+    end
+
+    # A law path with ?language_id=3, the German text of the page on
+    # gesetzguide, in a Markdown link, a bare parenthesized path or prose.
+    GERMAN_LANGUAGE_LAW_PATH = %r{/laws/([^)\s?#]+)\?language_id=3(#[^)\s]*)?(?=[)\s]|\z)}
+
+    # ?language_id=3 stays only on a link to the article of a retrieved
+    # binding German original (german_original_pairs). On any other target
+    # the parameter is dropped and the anchor kept, so a citation of a
+    # retrieved French or Dutch article that only carries the wrong parameter
+    # is not blocked by CitationGuard, which verifies language 3 against the
+    # same pairs. Logged under rewritten, tagged (language).
+    def drop_unverified_german_language(text, german_pairs, rewritten)
+      text.gsub(GERMAN_LANGUAGE_LAW_PATH) do
+        whole = Regexp.last_match(0)
+        id = Regexp.last_match(1)
+        anchor = Regexp.last_match(2).to_s
+        number = link_article_number(anchor)
+        next whole if number && german_pairs.include?([id, number])
+
+        rewritten << "#{whole}→/laws/#{id}#{anchor} (language)"
+        "/laws/#{id}#{anchor}"
+      end
     end
 
     # Canonicalize malformed internal law paths without trusting them. The
     # caller's LinkGuard validation then checks both Markdown and bare paths
     # against retrieved/known sources before they reach the renderer.
     def normalize_internal_law_links(text)
-      normalized = text.gsub(%r{(?<!\!)\[([^\]]+)\]\(\s*https?://(?:www\.)?wetwijzer\.be/jurisprudence/([^)\s?#]+)([^)]*)\)}) do
+      normalized = text.gsub(%r{(?<!!)\[([^\]]+)\]\(\s*https?://(?:www\.)?wetwijzer\.be/jurisprudence/([^)\s?#]+)([^)]*)\)}) do
         label = Regexp.last_match(1)
         id = Regexp.last_match(2)
         suffix = Regexp.last_match(3)
         "[#{label}](/jurisprudence/#{id}#{suffix})"
       end
 
-      normalized = normalized.gsub(%r{(?<!\!)\[([^\]]+)\]\(\s*https?://(?:www\.)?wetwijzer\.be/(?:laws|wetgeving|wetten)/([^)\s?#]+)([^)]*)\)}) do
+      normalized = normalized.gsub(%r{(?<!!)\[([^\]]+)\]\(\s*https?://(?:www\.)?wetwijzer\.be/(?:laws|wetgeving|wetten)/([^)\s?#]+)([^)]*)\)}) do
         label = Regexp.last_match(1)
         id = Regexp.last_match(2)
         suffix = Regexp.last_match(3)
         "[#{label}](/laws/#{id}#{suffix})"
       end
 
-      normalized = normalized.gsub(%r{(?<!\!)\[([^\]]+)\]\(\s*(?:/)?(?:laws|wetgeving|wetten)/([^)\s?#]+)([^)]*)\)}) do
+      normalized = normalized.gsub(%r{(?<!!)\[([^\]]+)\]\(\s*(?:/)?(?:laws|wetgeving|wetten)/([^)\s?#]+)([^)]*)\)}) do
         label = Regexp.last_match(1)
         id = Regexp.last_match(2)
         suffix = Regexp.last_match(3)
@@ -205,17 +227,17 @@ module LegalChatbot
     # wraps it in [Art. 37/2 AOW](/laws/numac#art-37-2) using the search results.
     # Already-linked references (inside [...](url)) are left untouched.
     # The model sometimes attaches a correct article anchor to the WRONG
-    # retrieved law — both laws legitimately in context, e.g. 'Art. 37/2 van
+    # retrieved law, with both laws legitimately in context, e.g. 'Art. 37/2 van
     # de Arbeidsovereenkomstenwet' linked to the Sociaal Strafwetboek page.
     # The numac passes the retrieval check, so verify the ANCHOR: if the
     # article number does not exist under this law but exactly one other
     # retrieved law has it, re-home the link there. Ambiguity (0 or 2+ other
-    # candidates) leaves the link untouched — never guess.
+    # candidates) leaves the link untouched: never guess.
     # Generic law-name tokens that appear in many CORE_LAW_NUMACS short names
     # and cannot disambiguate on their own.
     REHOME_TOKEN_STOPLIST = %w[wetboek besluit koninklijk vlaamse waalse brussels codex decreet uitvoering].freeze
 
-    def rehome_law_anchor(whole, label, numac, suffix, allowed_article_pairs, rewritten, stripped, _window = nil)
+    def rehome_law_anchor(whole, label, numac, suffix, allowed_article_pairs, rewritten, stripped, after_text = nil)
       anchor_num = link_article_number(suffix)
       label_anchor = label_article_number(label)
       if anchor_num.blank?
@@ -230,10 +252,10 @@ module LegalChatbot
         return label
       end
 
-      # HIGHEST PRIORITY — honor the label. The visible text is what the user
+      # HIGHEST PRIORITY: honor the label. The visible text is what the user
       # is promised; the href must match it. When the label itself names a law
       # AND an article (e.g. "Art. 37/2 AOW"), and that law actually contains
-      # that article, the link MUST point there — even if the current href's
+      # that article, the link MUST point there, even if the current href's
       # own anchor happens to be valid in a DIFFERENT law. This catches the
       # class the anchor-existence check below cannot: label "Art. 37/2 AOW"
       # linked to /laws/2010A09589#art-201 (Sociaal Strafwetboek Art. 201
@@ -264,6 +286,10 @@ module LegalChatbot
       end
 
       if allowed_article_pairs.include?([numac, anchor_num])
+        if law_date_mismatch?(after_text, numac)
+          stripped << "/laws/#{numac}#{suffix} (law date mismatch)"
+          return label
+        end
         return whole unless numac.start_with?('FISCONET_')
 
         target_href = chatbot_article_href(numac, anchor_num)
@@ -280,6 +306,11 @@ module LegalChatbot
       end
 
       target = homes.first
+      if law_date_mismatch?(after_text, target.first)
+        stripped << "/laws/#{numac}#{suffix} (law date mismatch)"
+        return label
+      end
+
       target_href = chatbot_article_href(target.first, target.last)
       rewritten << "/laws/#{numac}#{suffix}→#{target_href}"
       "[#{label}](#{target_href})"
@@ -288,6 +319,53 @@ module LegalChatbot
       Rails.logger.warn("[LinkGuard] anchor re-home skipped: #{e.class}")
       stripped << "/laws/#{numac}#{suffix} (validation error)"
       label
+    end
+
+    # A law named by its date in the text that follows an article link or
+    # mention, within the sentence: "de la loi du 3 juillet 1978", "van de
+    # wet van 3 juli 1978", "des Gesetzes vom 3. Juli 1978". The date of a
+    # Belgian act is the first eight digits of its NUMAC, so a named date that
+    # disagrees with the target's NUMAC names another law than the one linked,
+    # and the link is withheld rather than minted or kept (German answers v4,
+    # q0046: "Art. 30, § 2 de la loi du 3 juillet 1978" was linked to Art. 30
+    # of the annual-holidays decree 1967033001, the one retrieved law with an
+    # Art. 30; the Employment Contracts Act had not been retrieved). Only the
+    # text after the mention is read, and never past a sentence end: a date
+    # before it or in the next sentence may name another law. A NUMAC that
+    # does not start with a date (2013A11134) is not checked.
+    LAW_WORD_SOURCE = '(?:lois?|décrets?|ordonnances?|arrêtés?|wet(?:ten)?|decre+t(?:en)?|besluit(?:en)?|ordonnanties?|' \
+                      'Gesetz(?:es)?|Dekret(?:s|es)?|Erlass(?:es)?|Verordnung|acts?)'
+    NAMED_LAW_DATE = /
+      \A(?:(?!\.\s+[[:upper:]])[^;\n]){0,60}?(?<![[:alpha:]])#{LAW_WORD_SOURCE}(?![[:alpha:]])
+      (?:(?!\.\s+[[:upper:]])[^;\n]){0,40}?(?<![[:alpha:]])(?:du|van|vom|of)\s+
+      (?<day>\d{1,2})(?:er|ste|de|\.)?[ \t\u00a0]+(?<month>[[:alpha:]]+)[ \t\u00a0]+(?<year>1[89]\d{2}|20\d{2})(?!\d)
+    /ix
+    LAW_DATE_MONTHS = {
+      'janvier' => 1, 'fevrier' => 2, 'mars' => 3, 'avril' => 4, 'mai' => 5, 'juin' => 6, 'juillet' => 7, 'aout' => 8,
+      'septembre' => 9, 'octobre' => 10, 'novembre' => 11, 'decembre' => 12,
+      'januari' => 1, 'februari' => 2, 'maart' => 3, 'april' => 4, 'mei' => 5, 'juni' => 6, 'juli' => 7, 'augustus' => 8,
+      'september' => 9, 'oktober' => 10, 'november' => 11, 'december' => 12,
+      'januar' => 1, 'februar' => 2, 'marz' => 3, 'august' => 8, 'dezember' => 12,
+      'january' => 1, 'february' => 2, 'march' => 3, 'may' => 5, 'june' => 6, 'july' => 7, 'october' => 10
+    }.freeze
+
+    def law_date_mismatch?(after_text, numac)
+      target = numac.to_s[/\A(?:1[89]\d{2}|20\d{2})(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])/]
+      return false unless target
+
+      named = named_law_date(after_text)
+      named.present? && named != target
+    end
+
+    # "YYYYMMDD" of the law the text names, nil when it names none.
+    def named_law_date(text)
+      match = text.to_s.match(NAMED_LAW_DATE)
+      return nil unless match
+
+      month = LAW_DATE_MONTHS[ActiveSupport::Inflector.transliterate(match[:month]).downcase]
+      return nil unless month
+
+      format('%<year>04d%<month>02d%<day>02d', year: match[:year].to_i, month: month, day: match[:day].to_i)
     end
 
     def chatbot_article_href(numac, article_number)
@@ -309,20 +387,20 @@ module LegalChatbot
       # Swapping it in silently disabled rehome_law_anchor's label-mismatch
       # repair for those laws, shipping links whose label named one article and
       # whose href opened another (Opus review round 4, 2026-08-04).
-      raw = label.to_s.match(/\b(?:Artikel|Article|Artt?)\.?\s*([[:alnum:]][\w\/.:-]*)/i)&.[](1)
+      raw = label.to_s.match(%r{\b(?:Artikel|Article|Artt?)\.?\s*([[:alnum:]][\w/.:-]*)}i)&.[](1)
       normalize_article_number(raw).presence
     end
 
     # If the link LABEL names both an article and a law it can be resolved to
     # (e.g. "Art. 37/2 AOW", "Artikel 15 W.Btw", "art. 1382 BW"), return
-    # [numac, normalized_anchor] for that law+article — but ONLY when the law
+    # [numac, normalized_anchor] for that law+article, but ONLY when the law
     # is named unambiguously (exactly one abbreviation/core-law match) and it
     # actually contains that article. Returns nil otherwise (label has no law,
     # names several, or the article isn't in the named law → don't guess).
     def label_declared_target(label)
       return nil if label.blank?
 
-      art_m = label.match(/\b(?:Artikel|Article|Artt?)\.?\s*([0-9][\w\/.:-]*)/i)
+      art_m = label.match(%r{\b(?:Artikel|Article|Artt?)\.?\s*([0-9][\w/.:-]*)}i)
       return nil unless art_m
 
       anchor = normalize_article_number(art_m[1])
@@ -344,16 +422,18 @@ module LegalChatbot
       nil
     end
 
-    # Normalized article-number set per numac (both languages — numbering is
-    # language-invariant), memoized for the duration of one answer.
+    # Normalized article-number set per numac (both site languages; numbering
+    # is language-invariant), memoized for the duration of one answer. A
+    # German row's articles (updater v0.894) have no anchor on the NL and FR
+    # pages, so they never make a link.
     def law_anchor_numbers(numac)
       @law_anchor_numbers ||= {}
-      @law_anchor_numbers[numac] ||= ::Article.where(content_numac: numac)
+      @law_anchor_numbers[numac] ||= ::Article.in_site_languages.where(content_numac: numac)
                                               .where("article_title LIKE 'Art%'")
                                               .distinct.pluck(:article_title)
-                                              .filter_map { |t|
+                                              .filter_map do |t|
                                                 normalize_article_number(Regexp.last_match(1)) if t =~ /\AArt\.?\s*(\S+)/i
-                                              }.to_set
+                                              end.to_set
     end
 
     def auto_linkify_articles(text, articles)
@@ -385,7 +465,7 @@ module LegalChatbot
         art_num ||= art.dig(:metadata, 'article_number') if art.respond_to?(:dig)
         art_num ||= art.dig('metadata', :article_number) if art.respond_to?(:dig)
         art_num ||= art.dig('metadata', 'article_number') if art.respond_to?(:dig)
-        art_num = art_num.presence || art_title.match(/Art\.?\s*([[:alnum:]][\w\/.:-]*)/i)&.[](1)
+        art_num = art_num.presence || art_title.match(%r{Art\.?\s*([[:alnum:]][\w/.:-]*)}i)&.[](1)
         # Importer-shaped titles end in sentence punctuation ("Art. 2bis.").
         # Keep meaningful internal separators such as 37/2 and VI.47, but do
         # not require the answer model to reproduce the terminal full stop.
@@ -394,12 +474,12 @@ module LegalChatbot
         # the BASE article number the answer actually writes; the underscore
         # form otherwise captures the whole tail and matches nothing.
         art_num = art_num.to_s.sub(TextProcessing::ARTICLE_VARIANT_SUFFIX, '') if art_num.present?
-        if art_num.present?
-          source_lookup[source_key][:articles][art_num] = {
-            title: art_title,
-            url: regional_url
-          }
-        end
+        next unless art_num.present?
+
+        source_lookup[source_key][:articles][art_num] = {
+          title: art_title,
+          url: regional_url
+        }
       end
 
       return text if source_lookup.empty?
@@ -472,7 +552,7 @@ module LegalChatbot
         # case-sensitively, so a retrieved "2bis" written as "2BIS" became
         # gate-visible and linkifier-blind - the very asymmetry this pattern
         # exists to close.
-        pattern = %r{(?<!\[)((?<![[:alpha:]])#{LINKIFY_ARTICLE_PREFIX_SOURCE}#{ARTICLE_SPACE_SOURCE}*#{Regexp.escape(art_num)}(?!\d)(?![/:.\-]\d)(?![[:alpha:]])(?:#{ARTICLE_SPACE_SOURCE}*\(\d+\))?)(?!\]\()}i
+        pattern = %r{(?<!\[)((?<![[:alpha:]])#{LINKIFY_ARTICLE_PREFIX_SOURCE}#{ARTICLE_SPACE_SOURCE}*#{Regexp.escape(art_num)}(?!\d)(?![/:.-]\d)(?![[:alpha:]])(?:#{ARTICLE_SPACE_SOURCE}*\(\d+\))?)(?!\]\()}i
         linkified.gsub!(pattern) do |match|
           match_data = Regexp.last_match
           # `(?<!\[)` only protects labels that start exactly with the article
@@ -505,6 +585,9 @@ module LegalChatbot
                      matching.one? ? matching.first : nil
                    end
           next match unless chosen
+          # The law the text names by its date right after the mention must
+          # be the target's (law_date_mismatch?).
+          next match if law_date_mismatch?(match_data.post_match.first(120), chosen[:url].to_s[%r{/laws/([^#?]+)}, 1])
 
           link_count += 1
           "[#{match}](#{chosen[:url]})"
@@ -549,7 +632,7 @@ module LegalChatbot
     def inside_blockquote_line?(prefix)
       line_start = prefix.to_s.rindex("\n")
       current_line = line_start ? prefix.to_s[(line_start + 1)..] : prefix.to_s
-      current_line.to_s.match?(/\A[ ]{0,3}>/)
+      current_line.to_s.match?(/\A {0,3}>/)
     end
 
     def inside_markdown_link_label?(prefix, suffix)

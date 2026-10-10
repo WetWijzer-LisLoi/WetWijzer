@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 
 /**
- * PII Mask Controller — Admin panel PII reveal/auto-hide
+ * PII Mask Controller: Admin panel PII reveal/auto-hide
  *
  * Masks emails and IPs by default. On click of the reveal button,
  * fetches the real value from the server (which logs the access),

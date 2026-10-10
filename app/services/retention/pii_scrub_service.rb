@@ -60,6 +60,16 @@ module Retention
               .update_all(last_sign_in_ip: nil)
 
       brands = scrub_activity_site_brands
+      admin_sessions = admin_sessions_table? ? AdminSession.purge_dead! : 0
+      # WW-PRIV-06: anonymous counters, bounded in time rather than scrubbed.
+      starter_clicks = SampleQuestionClick.purge_expired!
+      # WW-SEC-12: expired second-factor challenge rows (digests only).
+      challenges = PendingSecondFactor.purge_expired!
+      # WW-PRIV-10: history deletions a revocation could not finish.
+      history_cleanups = ConversationHistoryCleanup.sweep!
+      # D12: full client addresses left in the application's log files.
+      log_addresses = LogAddressRedaction.new.call
+      removed = analytics + feedback + activity + users + brands + admin_sessions + starter_clicks + challenges
 
       {
         analytics_ip_hashes: analytics,
@@ -67,12 +77,26 @@ module Retention
         activity_rows: activity,
         user_sign_in_ips: users,
         activity_site_brands: brands,
-        total: analytics + feedback + activity + users + brands,
+        dead_admin_sessions: admin_sessions,
+        expired_starter_clicks: starter_clicks,
+        expired_second_factor_challenges: challenges,
+        history_cleanups_finished: history_cleanups[:finished],
+        history_cleanups_pending: history_cleanups[:pending],
+        log_addresses_masked: log_addresses[:addresses],
+        log_files_left_unmasked: log_addresses[:failed_files],
+        total: removed + history_cleanups[:finished] + log_addresses[:addresses],
         oldest_unscrubbed_analytics_at: oldest_unscrubbed_analytics_at
       }
     end
 
     private
+
+    # Asks the database, not the schema cache. A test that creates this
+    # table inside its transaction rolls it back while the cache still says
+    # it exists, and the purge then failed on the missing table.
+    def admin_sessions_table?
+      AdminSession.connection.table_exists?(AdminSession.table_name)
+    end
 
     # Idempotent like every other pass, and gated on site_brand itself: by
     # day 91 the row's ip_address is ALREADY null (the 30-day pass took it),
@@ -97,8 +121,6 @@ module Retention
       end
       scrubbed
     end
-
-    private
 
     # The freshest signal that the scrub is keeping up: the oldest analytics
     # row still carrying an ip_hash must never be much older than the window.

@@ -11,8 +11,16 @@
 class ParliamentarySearchService
   DEFAULT_PER_PAGE = 20
   SearchResult = Struct.new(:results, :total_count, keyword_init: true)
+  PARLIAMENT_ALIASES = { 'kamer' => 'chamber', 'senaat' => 'senate' }.freeze
 
   class << self
+    # Saved searches used the Dutch labels as values. The corpus uses these
+    # canonical keys, irrespective of the visitor's interface language.
+    def normalize_parliament(value)
+      key = value.to_s.strip.downcase
+      PARLIAMENT_ALIASES.fetch(key, key)
+    end
+
     # @param query [String, nil] Free-text search query
     # @param parliament [String, nil] Parliament name filter
     # @param year [String, nil] Year filter (YYYY)
@@ -27,8 +35,8 @@ class ParliamentarySearchService
 
       db = connection
       conditions, bind_params = build_conditions(db, query, parliament, year, doc_type: doc_type,
-                                                lang: lang, search_body: search_body,
-                                                date_from: date_from, date_to: date_to)
+                                                                              lang: lang, search_body: search_body,
+                                                                              date_from: date_from, date_to: date_to)
 
       where_clause = conditions.any? ? "WHERE #{conditions.join(' AND ')}" : ''
 
@@ -101,12 +109,17 @@ class ParliamentarySearchService
       bind_params = []
 
       if query.present?
-        fts_expr = query.scan(/\p{Word}+/).map { |t| %("#{t}") }.join(' ')
+        fts_expr = ParliamentaryFtsQuery.build(query, word: /\p{Word}+/, quote_words: true)
         if fts5_available?(db) && fts_expr.present?
           # Quote each token so FTS5 punctuation (covid-19, art. 7, parentheses)
-          # is literal text, not MATCH operators — raw input raised or returned 0.
+          # is literal text, not MATCH operators; raw input raised or returned 0.
+          # An opinion number is a phrase of its own (ParliamentaryFtsQuery).
           conditions << 'id IN (SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?)'
-          bind_params << fts_expr
+          # FTS indexes body text as well as metadata. Its availability must
+          # not silently enable the unchecked body scope, nor search unrelated
+          # parliament/document-type metadata that the LIKE fallback omits.
+          columns = search_body ? 'title content dossier_number' : 'title dossier_number'
+          bind_params << "{#{columns}} : (#{fts_expr})"
         elsif search_body
           # LIKE fallback with body search enabled
           conditions << '(title LIKE ? OR content LIKE ? OR dossier_number LIKE ?)'
@@ -120,7 +133,7 @@ class ParliamentarySearchService
 
       if parliament.present?
         conditions << 'parliament = ?'
-        bind_params << parliament
+        bind_params << normalize_parliament(parliament)
       end
 
       if year.present?

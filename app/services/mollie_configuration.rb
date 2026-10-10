@@ -46,6 +46,15 @@ class MollieConfiguration
       payments_enabled? && configured?
     end
 
+    # Voluntary donations are switched off since 2026-09-26: the Mollie
+    # profile's "Charity and Donations" category carried a one-time onboarding
+    # fee and a EUR 20 minimum monthly invoice for a handful of donations. The
+    # server refuses every donation unless this flag is set; Pro subscriptions
+    # and credit packages do not depend on it.
+    def donations_enabled?
+      ENV['WW_DONATIONS_ENABLED'] == 'true'
+    end
+
     def webhook_url
       raise ConfigurationError, 'Mollie payments are not fully configured' unless configured?
 

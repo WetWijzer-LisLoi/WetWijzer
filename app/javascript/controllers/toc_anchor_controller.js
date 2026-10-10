@@ -47,7 +47,7 @@ export default class extends Controller {
     // Target doesn't exist yet - articles not loaded
     // Prevent default, load frame, then navigate
     event.preventDefault()
-    this.loadFrameAndNavigate(hash)
+    this.loadFrameAndNavigate(hash, link)
   }
   
   isFrameLoaded() {
@@ -59,7 +59,7 @@ export default class extends Controller {
     return articlesCard !== null
   }
   
-  loadFrameAndNavigate(hash) {
+  loadFrameAndNavigate(hash, link = null) {
     if (!this.hasFrameTarget) return
     
     const frame = this.frameTarget
@@ -73,7 +73,7 @@ export default class extends Controller {
       
       // Wait a tick for DOM to settle, then navigate to target
       requestAnimationFrame(() => {
-        this.navigateToHash(hash)
+        this.navigateToHash(this.currentHash(hash, link))
       })
     }
     
@@ -86,6 +86,14 @@ export default class extends Controller {
     }
   }
   
+  // Once the frame has loaded, toc-targets (WW-UI-02) may have pointed the
+  // clicked link, or the link an old deep link names, at another element.
+  currentHash(hash, link) {
+    if (link) return link.hash || hash
+    const moved = document.querySelector(`a[data-toc-original-href="${CSS.escape(hash)}"]`)
+    return (moved && moved.hash) || hash
+  }
+
   scrollToLoadingSection() {
     // Scroll to the "loading articles" section to show user that content is being loaded
     const loadingSection = document.getElementById('tekst')

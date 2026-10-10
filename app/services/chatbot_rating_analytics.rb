@@ -52,8 +52,11 @@ class ChatbotRatingAnalytics
     retrieval_version: :retrieval_version
   }.freeze
 
-  def initialize(period: :month, filters: {})
+  # `since` is an explicit window start and wins over the named period, as
+  # in ChatbotAnalytic.period_scope.
+  def initialize(period: :month, filters: {}, since: nil)
     @period = period
+    @since = since
     @filters = (filters || {}).symbolize_keys
   end
 
@@ -324,9 +327,7 @@ class ChatbotRatingAnalytics
     return nil if scores.empty?
     # Same floor as everywhere else. This bucket is the easiest one to isolate:
     # untraced rows are rare, so a period often holds exactly one.
-    if scores.size < MIN_VISIBLE_SAMPLE
-      return { n: nil, suppressed: true, minimum_sample: MIN_VISIBLE_SAMPLE, mean: nil, median: nil, rankable: false }
-    end
+    return { n: nil, suppressed: true, minimum_sample: MIN_VISIBLE_SAMPLE, mean: nil, median: nil, rankable: false } if scores.size < MIN_VISIBLE_SAMPLE
 
     { n: scores.size, mean: mean(scores), median: median(scores), rankable: false }
   end
@@ -350,6 +351,8 @@ class ChatbotRatingAnalytics
   private
 
   def apply_period(scope)
+    return scope.where('created_at >= ?', @since) if @since
+
     case @period.to_sym
     when :today then scope.today
     when :week then scope.this_week

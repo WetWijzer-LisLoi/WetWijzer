@@ -28,15 +28,15 @@ class GeoChallengesController < ApplicationController
         same_site: :lax
       }
 
-      Rails.logger.info("GeoChallenge: verified successfully from #{request.remote_ip} (#{request.headers['X-Geo-Country']})")
+      SecurityLog.info('geo_verified', request: request, country: request.headers['X-Geo-Country'])
 
       # Redirect back to the original page
-      return_path = cookies.signed[:geo_return_to].presence || root_path
+      return_path = local_path(cookies.signed[:geo_return_to]) || root_path
       cookies.delete(:geo_return_to)
 
       redirect_to return_path
     else
-      Rails.logger.warn("GeoChallenge: failed verification from #{request.remote_ip} (#{request.headers['X-Geo-Country']})")
+      SecurityLog.warn('geo_failed', request: request, country: request.headers['X-Geo-Country'])
       @error = true
       @country = request.headers['X-Geo-Country'].to_s.upcase.presence || 'Unknown'
       render :show, status: :unprocessable_entity
@@ -47,5 +47,15 @@ class GeoChallengesController < ApplicationController
   def challenge_json
     challenge = AltchaService.generate_challenge
     render json: challenge
+  end
+
+  private
+
+  # A path on this site, never another host (WW-PRIV-03).
+  def local_path(value)
+    path = value.to_s
+    return nil unless path.start_with?('/') && !path.start_with?('//') && !path.include?('\\')
+
+    path
   end
 end

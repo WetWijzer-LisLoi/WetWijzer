@@ -335,7 +335,7 @@ export const settingsMethods = {
     const locked = notch.dataset.intelligenceLocked === 'true'
     const proTag = locked ? ' <span class="text-amber-400 font-semibold">PRO</span>' : ''
 
-    subtitle.innerHTML = `<span data-active-label>${label}${proTag}</span> <span data-active-desc class="text-gray-400 dark:text-gray-500">| ${desc}</span>`
+    subtitle.innerHTML = `<span data-active-label>${label}${proTag}</span> <span data-active-desc class="text-gray-500">| ${desc}</span>`
   },
 
   // Sync slider positions from saved preferences (called on connect)
@@ -379,7 +379,11 @@ export const settingsMethods = {
       const parlCb = document.getElementById('widget-src-parl')
       if (legCb) legCb.checked = sources.includes('legislation')
       if (jurCb && !jurCb.disabled) jurCb.checked = sources.includes('jurisprudence')
-      if (parlCb) parlCb.checked = sources.includes('parliamentary')
+      // Same guard as the box above. A preference saved while the account was
+      // Pro ticked the disabled box, and _syncSourceCheckboxes skips disabled
+      // boxes, so nothing could untick it: "Parl." stayed ticked and greyed
+      // out for a source that is never searched.
+      if (parlCb && !parlCb.disabled) parlCb.checked = sources.includes('parliamentary')
     }
 
     // Restore only a reasoning value supported by the selected provider model.
@@ -812,40 +816,124 @@ export const settingsMethods = {
     if (this.hasSourceJurisprudenceTarget && !this.sourceJurisprudenceTarget.disabled) {
       this.sourceJurisprudenceTarget.checked = jurEl?.checked || false
     }
-    if (this.hasSourceParliamentaryTarget) this.sourceParliamentaryTarget.checked = parlEl?.checked || false
+    if (this.hasSourceParliamentaryTarget && !this.sourceParliamentaryTarget.disabled) {
+      this.sourceParliamentaryTarget.checked = parlEl?.checked || false
+    }
   },
 
   // Clear conversation history and messages (widget trash button)
 
-  createSourcesElement(sources) {
-    const lang = this.lastQuestionLang || this.languageValue
+  // What makes two sources the same line: the law (or ruling, or document) AND
+  // the part of it that was retrieved. The server sends one source per article,
+  // so a key of the law title alone kept only the first article of each law: an
+  // answer citing Art. 80, 81 and 95 showed "Verberg bronnen (1)", and the
+  // exports, which copy this block, lost the same articles. Empty means the
+  // source has nothing to show and is skipped.
 
+  _sourceDedupKey(source) {
+    const base = String(source.law_title || source.title || source.ecli || source.numac || '').trim()
+    if (!base) return ''
+    const part = [source.article_title || source.article_number, source.dossier, source.document_number]
+      .filter(Boolean).join('/')
+    return `${base}|${part}`
+  },
+
+  // Splits a bare article designation into its number and its variant:
+  // "Art.80" -> 80, "Art.VI.92" -> VI.92, "Art. 2:5" -> 2:5,
+  // "Art.1714_WAALS_GEWEST" -> 1714 + "WAALS GEWEST". The old pattern wanted a
+  // digit right after "Art.", so the books of the WER fell to the raw
+  // fallback, and it took the storage key whole, which put
+  // "Artikel 1714_WAALS_GEWEST" on the card.
+  // Returns null for anything that is not an article number after all: a
+  // heading row, a synthesized label ("Artikel 1, WIB 92 (inkomsten 2026)",
+  // whose income year rebuilding from the number alone would drop), and the
+  // Justel annex keys Art.N, Art.N1, Art.N2. Those last ones are the most
+  // common keys in the corpus after the plain numbers, and the digit is not
+  // the annex's own number (Art.N1 of one Flemish order is "Bijlage 2"), so
+  // "Artikel N1" would both invent an article and name the wrong annex. The
+  // caller prints all of these whole.
+
+  _sourceArticleParts(articleTitle) {
+    const m = String(articleTitle || '')
+      .match(/^\s*(?:Art\.|Art(?:ikel|icle)?(?=[\s\d]))\s*([0-9A-Za-z][^\s_]*)(?:_(\S+))?\s*$/i)
+    if (!m) return null
+    const number = m[1].replace(/[.,;:]+$/, '')
+    if (!number || !/\d/.test(number) || /^N/i.test(number)) return null
+    return { number, variant: (m[2] || '').replace(/_+/g, ' ').trim() }
+  },
+
+  // The visible text of one source line, HTML-escaped. `t` is the label set.
+  // Identifier first, then a neutral separator, then the title as stored. The
+  // line used to be a sentence with one fixed preposition per language, which
+  // no title survives: Justel titles open with their date ("Artikel 80 van de
+  // 2 APRIL 2009. - Decreet ...") and the gender is wrong for most of the rest
+  // ("van de Wetboek", "de la Code civil", "des Verfassung").
+
+  _sourceDisplayText(source, t) {
+    const esc = (value) => this._escapeHtml(String(value))
+    const rawTitle = String(source.law_title || source.title || source.ecli || source.numac || "Source")
+      .replace(/\s*\(NOTA\s*:[\s\S]*?\)/g, '')
+      .replace(/\s*\[NOTA\s*:[\s\S]*?\]/g, '')
+      .trim()
+    const title = esc(rawTitle)
+
+    // A ruling carries no title at all, so the line was the bare ECLI. The
+    // court and the date come with it and are what a reader recognises, in the
+    // order a Belgian citation puts them ("Cass. 14 januari 2019, ECLI:...").
+    if (!source.law_title && !source.title && source.ecli) {
+      const ruling = [source.court, source.date].filter(Boolean).map(esc).join(', ')
+      return ruling ? `${ruling} · ${esc(source.ecli)}` : esc(source.ecli)
+    }
+
+    // Regional hits carry article_number and no article_title. Without this
+    // every article of one decree printed as the same bare decree title.
+    const articleTitle = source.article_title || (source.article_number ? `Art. ${source.article_number}` : null)
+    if (articleTitle) {
+      const parts = this._sourceArticleParts(articleTitle)
+      // Registration/succession duties and parts of WIB 92 are regionalised, so a
+      // tax source can be a Flemish/Walloon/Brussels variant rather than the federal
+      // article. The scope MUST survive into the card, or the reader sees one
+      // region's rule presented as the article. Tax sources send it display-ready
+      // as jurisdiction_label; Justel rows only have the variant in their title.
+      const scopeText = source.jurisdiction_label || (parts && parts.variant)
+      const scope = scopeText ? ` (${esc(scopeText)})` : ""
+      if (!parts) return `${esc(articleTitle)}${scope} · ${title}`
+      return `${t.article} ${esc(parts.number)}${scope} · ${title}`
+    }
+
+    // Parliamentary documents of one dossier often share their title; the
+    // dossier reference is what tells them apart
+    const dossier = [source.dossier, source.document_number].filter(Boolean).join('/')
+    return dossier ? `${esc(dossier)} · ${title}` : title
+  },
+
+  createSourcesElement(sources) {
     const div = document.createElement("div")
     div.className = "message-sources mt-2 pt-2 border-t border-gray-200 dark:border-gray-600 text-xs"
 
-    // Translations for source labels
+    // Translations for source labels. The interface language picks the set,
+    // like it does for the answer, the meta row and every control around this
+    // block. It used to be the client-side guess at the question's language,
+    // whose word lists read Dutch "die", "werden" or "coördinator" as German:
+    // a Dutch answer then sat above "Quellen ausblenden (3)" and "Text
+    // zeigen". The four sets are the four the answer can be written in: the
+    // request carries the interface language and the server clamps it to
+    // these, so a Russian or Arabic set would only ever label Dutch text.
     const labels = {
-      nl: { sources: "Bronnen", article: "Artikel", of: "van de", showMore: "Toon tekst", showLess: "Verberg", showSources: "Toon bronnen", hideSources: "Verberg bronnen" },
-      fr: { sources: "Sources", article: "Article", of: "de la", showMore: "Voir texte", showLess: "Masquer", showSources: "Afficher les sources", hideSources: "Masquer les sources" },
-      en: { sources: "Sources", article: "Article", of: "of", showMore: "Show text", showLess: "Hide", showSources: "Show sources", hideSources: "Hide sources" },
-      de: { sources: "Quellen", article: "Artikel", of: "des", showMore: "Text zeigen", showLess: "Ausblenden", showSources: "Quellen anzeigen", hideSources: "Quellen ausblenden" },
-      ru: { sources: "Источники", article: "Статья", of: "", showMore: "Показать", showLess: "Скрыть", showSources: "Показать источники", hideSources: "Скрыть источники" },
-      zh: { sources: "来源", article: "第", of: "条", showMore: "显示", showLess: "隐藏", showSources: "显示来源", hideSources: "隐藏来源" },
-      ar: { sources: "المصادر", article: "المادة", of: "من", showMore: "إظهار", showLess: "إخفاء", showSources: "إظهار المصادر", hideSources: "إخفاء المصادر" }
+      nl: { sources: "Bronnen", article: "Artikel", showMore: "Toon tekst", showLess: "Verberg", showSources: "Toon bronnen", hideSources: "Verberg bronnen" },
+      fr: { sources: "Sources", article: "Article", showMore: "Voir texte", showLess: "Masquer", showSources: "Afficher les sources", hideSources: "Masquer les sources" },
+      en: { sources: "Sources", article: "Article", showMore: "Show text", showLess: "Hide", showSources: "Show sources", hideSources: "Hide sources" },
+      de: { sources: "Quellen", article: "Artikel", showMore: "Text zeigen", showLess: "Ausblenden", showSources: "Quellen anzeigen", hideSources: "Quellen ausblenden" }
     }
     // Final fallback based on domain (lisloi.be → fr, wetwijzer.be → nl)
     const domainLang = window.location.hostname.includes('lisloi') ? 'fr' : 'nl'
-    const t = labels[lang] || labels[this.languageValue] || labels[domainLang]
+    const t = labels[this.languageValue] || labels[domainLang]
 
-    // Deduplicate sources by law_title (keep first occurrence, highest relevance)
-    // Also filter out empty/invalid sources with no meaningful content
+    // Deduplicate sources per law AND article (keep first occurrence, highest
+    // relevance). Also filters out empty/invalid sources with no meaningful content
     const seen = new Set()
     const uniqueSources = sources.filter(source => {
-      // Skip sources with no identifiable content
-      const hasContent = source.law_title || source.title || source.ecli || source.numac
-      if (!hasContent) return false
-
-      const key = (source.law_title || source.title || source.ecli || source.numac).trim()
+      const key = this._sourceDedupKey(source)
       if (!key || seen.has(key)) return false
       seen.add(key)
       return true
@@ -865,35 +953,10 @@ export const settingsMethods = {
     html += `<div id="${sourcesListId}" class="mt-1.5">`
 
     uniqueSources.forEach((source, index) => {
-      const rawTitle = (source.law_title || source.title || source.ecli || source.numac || "Source")
-        .replace(/\s*\(NOTA\s*:[\s\S]*?\)/g, '')
-        .replace(/\s*\[NOTA\s*:[\s\S]*?\]/g, '')
-        .trim()
-      const title = this._escapeHtml(rawTitle)
       const relevance = source.relevance ? ` (${Math.min(100, (source.relevance * 100)).toFixed(0)}%)` : ""
 
-      // Format: "Artikel X van de Law Title" or just "Law Title" if no article
-      // Registration/succession duties and parts of WIB 92 are regionalised, so a
-      // tax source can be a Flemish/Walloon/Brussels variant rather than the federal
-      // article. The scope MUST survive into the card, or the reader sees one
-      // region's rule presented as the article. It arrives as its own field because
-      // the artMatch capture below cannot carry it: \S* stops at the first space, so
-      // anything appended to article_title after the number is dropped.
-      const scope = source.jurisdiction_label
-        ? ` (${this._escapeHtml(source.jurisdiction_label)})`
-        : ""
-
-      let displayText = title
-      if (source.article_title) {
-        // Extract article number from "Art.5" or "Art. 5" format
-        const artMatch = source.article_title.match(/Art\.?\s*(\d+\S*)/i)
-        if (artMatch) {
-          const artNum = this._escapeHtml(artMatch[1])
-          displayText = `${t.article} ${artNum}${scope} ${t.of} ${title}`.trim()
-        } else {
-          displayText = this._escapeHtml(source.article_title) + scope + " " + title
-        }
-      }
+      // Format: "Artikel X · Law Title" or just "Law Title" if no article
+      const displayText = this._sourceDisplayText(source, t)
 
       // Build the source entry with link and optional excerpt
       const excerptId = `excerpt-${this.messageCount}-${index}`
@@ -1010,7 +1073,7 @@ export const settingsMethods = {
   // NOTE: updateWidgetModel(), updateWidgetProfile(), and updateWidgetSources()
   // are defined earlier in this file (around L719-L786) with full implementations
   // including analytics tracking, intelligence pill sync, and credit cost refresh.
-  // DO NOT redefine them here — JS object literal property overwriting means only
+  // DO NOT redefine them here: JS object literal property overwriting means only
   // the LAST definition survives.
 
 

@@ -553,6 +553,7 @@
         <summary>Kan ik WetWijzer financieel steunen?</summary>
         <div>
             <p>Ja. Naast het kopen van credits of een Pro-abonnement kunt u een vrijwillige donatie doen via onze <%= link_to 'donatiepagina', support_page_path(anchor: 'donate') %>. Donaties zijn niet-terugbetaalbaar, geven geen recht op een tegenprestatie en zijn niet fiscaal aftrekbaar. Elke bijdrage helpt ons de wetgevingsdatabank gratis toegankelijk te houden.</p>
+            <%= render 'donations/disabled_notice' unless MollieConfiguration.donations_enabled? %>
         </div>
     </details>
 

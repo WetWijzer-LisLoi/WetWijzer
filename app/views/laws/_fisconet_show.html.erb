@@ -1,5 +1,6 @@
 <% lang_prefix = @language_id == 2 ? 'fr' : 'nl' %>
 <% info = @fisconet_info %>
+<%= render 'shared/clipboard_messages' %>
 <%# Build TOC structure from section_path data %>
 <%
   fisconet_toc_sections = []
@@ -195,73 +196,7 @@
     </div>
 
     <!-- Related Sources (Parliamentary Work, Jurisprudence) - lazy-loaded on button click -->
-    <div id="related-sources-card" class="no-print bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
-      <div class="p-4 md:p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-3">
-          <%= case I18n.locale when :fr then 'Sources connexes' when :de then 'Verwandte Quellen' else 'Gerelateerde bronnen' end %>
-        </h2>
-        <div class="flex flex-wrap gap-2">
-          <!-- Parliamentary Work Button -->
-          <button type="button" id="btn-load-parliamentary"
-                  data-source-type="parliamentary"
-                  class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-            </svg>
-            <%= case I18n.locale when :fr then 'Travaux préparatoires' when :de then 'Parlamentarische Vorarbeiten' else 'Parlementaire voorbereidingen' end %>
-          </button>
-          <%# Jurisprudence button (public since June 2026) %>
-          <button type="button" id="btn-load-jurisprudence"
-                  data-source-type="jurisprudence"
-                  class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-amber-300 dark:border-amber-600 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
-            </svg>
-            <%= case I18n.locale when :fr then 'Jurisprudence' when :de then 'Rechtsprechung' else 'Rechtspraak' end %>
-          </button>
-        </div>
-      </div>
-      <div id="parliamentary-content" class="hidden"></div>
-      <div id="jurisprudence-content" class="hidden"></div>
-    </div>
-
-    <script nonce="<%= content_security_policy_nonce %>">
-      function loadRelatedSource(type, btn) {
-        var container = document.getElementById(type + '-content');
-        if (!container) return;
-        if (container.dataset.loaded === 'true') {
-          container.classList.toggle('hidden');
-          return;
-        }
-        btn.disabled = true;
-        var origHTML = btn.innerHTML;
-        btn.innerHTML = '<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <%= case I18n.locale when :fr then "Chargement…" when :de then "Laden…" else "Laden…" end %>';
-        fetch('<%= related_sources_law_path(@law.numac, language_id: @language_id) %>&type=' + type, {
-          headers: { 'Accept': 'text/html' }
-        })
-        .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
-        .then(function(html) {
-          container.innerHTML = html;
-          container.dataset.loaded = 'true';
-          container.classList.remove('hidden');
-          btn.innerHTML = origHTML;
-          btn.disabled = false;
-        })
-        .catch(function() {
-          container.innerHTML = '<div class="px-4 pb-4 text-sm text-red-600 dark:text-red-400"><%= case I18n.locale when :fr then "Échec du chargement" when :de then "Laden fehlgeschlagen" else "Laden mislukt" end %></div>';
-          container.classList.remove('hidden');
-          btn.innerHTML = origHTML;
-          btn.disabled = false;
-        });
-      }
-
-      // Bind buttons via event listeners (CSP-compliant)
-      document.querySelectorAll('[data-source-type]').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          loadRelatedSource(this.dataset.sourceType, this);
-        });
-      });
-    </script>
+    <%= render 'laws/related_sources_card', numac: @law.numac, language_id: @language_id, card_class: 'shadow-lg' %>
 
     <!-- Document Metadata (matches _document_metadata.html.erb) -->
     <div id="document-info-card" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
@@ -287,7 +222,37 @@
 
     <!-- Title (matches _title.html.erb) -->
     <div id="title-card" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
-      <div class="p-6"><h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-(--accent-500)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg><%= @law.title %></h2></div>
+      <div class="p-6"><h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-(--accent-500)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg><%= @law.title %></h2>
+      <%# Annual codes (WIB 92, KB/WIB 92): each edition is its own page. Name this one and
+          link the others, so a reader in the filing season can reach the edition for the
+          income year being declared without the two ever sharing one article list. %>
+      <% if info && info[:edition_year].present? %>
+        <% fr = @language_id == 2 %>
+        <% this_label = FisconetSearchService.edition_label(info[:edition_year], language_id: @language_id) %>
+        <div id="fisconet-edition" class="mt-3 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+          <p>
+            <% if info[:edition_role] == 'current' %>
+              <%= fr ? "Édition #{this_label} : le texte de l'année de revenus en cours." : "Editie #{this_label}: de tekst voor het lopende inkomstenjaar." %>
+            <% else %>
+              <span class="font-medium"><%= fr ? "Édition #{this_label} : ce n'est pas l'édition de l'année de revenus en cours." : "Editie #{this_label}: dit is niet de editie van het lopende inkomstenjaar." %></span>
+            <% end %>
+          </p>
+          <% Array(info[:editions]).reject { |ed| ed[:numac] == @law.numac }.each do |ed| %>
+            <% later = ed[:edition_year].to_i > info[:edition_year].to_i %>
+            <% kind = if ed[:edition_role] == 'current'
+                        fr ? 'Édition en vigueur' : 'Geldende editie'
+                      elsif later
+                        fr ? 'Édition suivante' : 'Volgende editie'
+                      else
+                        fr ? 'Édition précédente' : 'Vorige editie'
+                      end %>
+            <p><%= kind %><%= fr ? ' :' : ':' %> <%= link_to FisconetSearchService.edition_label(ed[:edition_year], language_id: @language_id),
+                                        law_path(ed[:numac], language_id: @language_id),
+                                        class: "text-(--link-color) hover:text-(--link-hover-color) hover:underline" %></p>
+          <% end %>
+        </div>
+      <% end %>
+      </div>
     </div>
 
     <!-- Static main TOC (matches #main-toc-card) -->
@@ -474,7 +439,9 @@
                 <% current_level = is_top ? 1 : 4 %>
                 <% while section_stack.any? && section_stack.last >= current_level %><% section_stack.pop %></div></div><% end %>
                 <div data-controller="collapse" data-collapse-expanded-value="true" class="collapsible-section">
-                  <section class="section-heading group mt-2 md:mt-3 mb-2 md:mb-3" data-article-scope>
+                  <%# Section headings and article texts carry the language of the
+                      text; the toolbar and copy menus around them keep the page's. %>
+                  <section class="section-heading group mt-2 md:mt-3 mb-2 md:mb-3" data-article-scope <%= tag.attributes(lang: legal_text_lang) %>>
                     <h2 id="<%= section_id %>" class="scroll-mt-24 not-prose text-sm font-bold capitalize tracking-wide text-gray-700 dark:text-gray-200 flex items-start gap-2 flex-nowrap rounded-md px-2 py-1 transition-colors group hover:bg-gray-50 dark:hover:bg-gray-800">
                       <button type="button" class="flex items-start gap-2 flex-1 min-w-0 text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--accent-500) focus-visible:ring-offset-2" data-action="click->collapse#toggle" data-collapse-target="button" aria-expanded="true">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mt-0.5 shrink-0 transition-transform text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor" data-collapse-target="icon"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" /></svg>
@@ -496,7 +463,7 @@
                 <% top_pad = prev_was_heading ? 'pt-2' : 'pt-4' %>
                 <div class="<%= top_pad %> pb-4 flex items-start">
                   <div class="flex-1 min-w-0" id="article-text-<%= article_anchor_id %>">
-                    <div class="max-w-none article-content overflow-x-auto [&_table]:w-full [&_table]:max-w-full [&_table]:table-auto [&_td]:wrap-break-word [&_th]:wrap-break-word [&_p:last-child]:mb-0">
+                    <div class="max-w-none article-content overflow-x-auto [&_table]:w-full [&_table]:max-w-full [&_table]:table-auto [&_td]:wrap-break-word [&_th]:wrap-break-word [&_p:last-child]:mb-0" <%= tag.attributes(lang: legal_text_lang) %>>
                       <% if article[:end_date].present? %>
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 float-right ml-2"><%= @language_id == 2 ? 'Abrogé' : 'Opgeheven' %></span>
                       <% end %>
@@ -573,12 +540,14 @@
                       <% end %>
                     </div>
                   </div>
-                  <!-- Copy dropdown -->
-                  <div class="relative shrink-0 ml-2 hidden sm:block md:opacity-0 md:group-hover:opacity-100 transition-opacity" data-controller="dropdown">
-                    <button type="button" data-dropdown-target="button" data-action="click->dropdown#toggle" class="p-1 text-gray-400 hover:text-(--accent-600) transition-colors duration-200 rounded" title="<%= t(:copy_options, default: 'Kopieeropties') %>">
+                  <%# Phones keep copy away from the right-hand chat button.
+                      Desktop also has a left-hand overlay TOC, so put copy at
+                      the trailing edge with room reserved for the chat FAB. %>
+                  <div hidden class="relative order-first md:order-last shrink-0 mr-2 md:mr-20 md:ml-2 no-print" data-controller="dropdown js-only" data-dropdown-viewport-fit-value="true">
+                    <button type="button" data-dropdown-target="button" data-action="click->dropdown#toggle" aria-haspopup="true" aria-expanded="false" aria-label="<%= t(:copy_options, default: 'Kopieeropties') %>" class="inline-flex h-11 w-11 items-center justify-center scroll-mb-24 text-gray-400 hover:text-(--accent-600) transition-colors duration-200 rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-500)" title="<%= t(:copy_options, default: 'Kopieeropties') %>">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                     </button>
-                    <div data-dropdown-target="menu" class="hidden absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                    <div data-dropdown-target="menu" class="hidden absolute left-0 md:left-auto md:right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
                       <button type="button" data-controller="clipboard" data-action="click->clipboard#copy click->dropdown#close" data-clipboard-fragment-value="<%= article_anchor_id %>" data-clipboard-copied-label-value="<%= t(:link_copied) %>" class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg><%= t(:copy_article_link) %></button>
                       <button type="button" data-controller="clipboard" data-action="click->clipboard#copyText click->dropdown#close" data-clipboard-source-selector-value="#article-text-<%= article_anchor_id %>" data-clipboard-copied-label-value="<%= t(:text_copied) %>" class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M9.5 4.5A1.5 1.5 0 0111 3h2a1.5 1.5 0 011.5 1.5V6H17a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V8a2 2 0 012-2h2.5V4.5z" /></svg><%= t(:copy_article_text) %></button>
                       <button type="button" data-controller="clipboard" data-action="click->clipboard#copyCleanText click->dropdown#close" data-clipboard-source-selector-value="#article-text-<%= article_anchor_id %>" data-clipboard-copied-label-value="<%= t(:clean_text_copied) %>" class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg><%= t(:copy_clean_text) %></button>

@@ -20,10 +20,11 @@ class LawSearchService
   # Bring in constant mappings for types and sort options
   include LawSearchConstants
 
-  # Justel's production corpus is canonical only in Dutch and French.
-  # language_id=3 is reserved for a future provenance-checked German corpus
-  # and must remain invisible until that importer has been rebuilt.
-  CANONICAL_LANGUAGE_IDS = [1, 2].freeze
+  # Justel's production corpus is canonical only in Dutch and French, and the
+  # Dutch and French sites search nothing else. The German rows (language_id
+  # 3, updater v0.894) are searched on the German site only: search with
+  # german_site: true (phase B of docs/ops/german-corpus-plan-2026-09-27.md).
+  CANONICAL_LANGUAGE_IDS = HasLanguage::SITE_LANGUAGE_IDS
 
   # Common stop words to exclude from token-based search (would match too broadly)
   STOP_WORDS = %w[
@@ -96,11 +97,15 @@ class LawSearchService
   # @option params [String] :sort Sort order (e.g., 'title_asc', 'date_desc')
   # @option params [String] :lang_nl '1' to include Dutch, '0' to exclude, nil for no filter
   # @option params [String] :lang_fr '1' to include French, '0' to exclude, nil for no filter
+  # @option params [String] :lang_de '1' to include German: the German rows on
+  #   the German site, the French rows elsewhere (old URLs and saved searches)
   # @option params [String] :constitution '1' to include constitutions
   # @option params [String] :law '1' to include laws
   # @option params [String] :decree '1' to include decrees
   # @option params [String] :ordinance '1' to include ordinances
   # @option params [String] :decision '1' to include decisions
+  # @param german_site [Boolean] true on the German site, which also serves
+  #   the German rows with a known provenance (Legislation.served_on_german_site)
   # @return [ActiveRecord::Relation] The filtered and sorted scope of Legislation records
   # @raise [ArgumentError] if invalid parameters are provided
   #
@@ -114,20 +119,41 @@ class LawSearchService
   #     law: '1',
   #     lang_nl: '1'
   #   )
-  def self.search(params)
+  def self.search(params, german_site: false)
     # Convert to hash with indifferent access if it's ActionController::Parameters
     params = params.to_unsafe_h if params.respond_to?(:to_unsafe_h)
     params = params.with_indifferent_access if params.respond_to?(:with_indifferent_access)
 
     ensure_sqlite_timeout if sqlite_adapter?
 
-    scope = Legislation.where(language_id: CANONICAL_LANGUAGE_IDS)
-    scope = by_language(scope, params)
-    scope = by_type(scope, params)
+    scope = base_scope(german_site: german_site)
+    scope = by_language(scope, params, german_site: german_site)
+    scope = by_type(scope, params, german_site: german_site)
     scope = by_status_flags(scope, params)
     scope = by_date_range(scope, params)
     scope = by_text_or_title(scope, params)
     apply_sort(scope, params)
+  end
+
+  # The rows a search may return: Dutch and French, and on the German site
+  # also the German rows with a known provenance.
+  # The language filters a site applies when a search names none, the boxes
+  # its form shows checked (laws/_filter_section.html.erb): Dutch on the Dutch
+  # and English sites, French on the French, German and English ones, and on
+  # the German site also the German texts. Classic searches with them too
+  # (inbox 2026-10-08 10:49, B.4), so its results match its boxes.
+  # @return [Hash{String => String}] lang_nl, lang_fr and lang_de as '1' or '0'
+  def self.default_language_params(locale, german_site: false)
+    locale = locale.to_s
+    { 'lang_nl' => %w[nl en].include?(locale) ? '1' : '0',
+      'lang_fr' => %w[fr de en].include?(locale) ? '1' : '0',
+      'lang_de' => german_site ? '1' : '0' }
+  end
+
+  # @param german_site [Boolean]
+  # @return [ActiveRecord::Relation]
+  def self.base_scope(german_site: false)
+    german_site ? Legislation.served_on_german_site : Legislation.where(language_id: CANONICAL_LANGUAGE_IDS)
   end
 
   private
@@ -135,15 +161,17 @@ class LawSearchService
   # Filters the scope by the selected languages
   # @param scope [ActiveRecord::Relation] The current scope to filter
   # @param params [Hash] The search parameters
+  # @param german_site [Boolean] whether lang_de selects the German rows
   # @return [ActiveRecord::Relation] Scope filtered by language
   # @note Returns the original scope if no language filters are applied
   # @private
-  def self.by_language(scope, params)
+  def self.by_language(scope, params, german_site: false)
     return scope unless language_filtered?(params)
 
     language_ids = []
     language_ids << '1' if include_dutch?(params)
-    language_ids << '2' if include_french?(params) || include_german?(params)
+    language_ids << '2' if include_french?(params) || (include_german?(params) && !german_site)
+    language_ids << '3' if include_german?(params) && german_site
 
     # If no languages are selected, return none to prevent returning all records
     return scope.none if language_ids.empty?
@@ -178,9 +206,9 @@ class LawSearchService
   end
   private_class_method :include_french?
 
-  # Compatibility alias for old URLs and saved searches. Until a verified
-  # German source corpus exists, a German selection searches canonical French
-  # source text and the UI/answer layer remains responsible for German output.
+  # On the German site a German selection searches the German rows. On every
+  # other site it stays the compatibility alias for old URLs and saved
+  # searches: those sites serve no German row, so it searches the French text.
   # @param params [Hash] The search parameters
   # @return [Boolean] true if German documents should be included
   def self.include_german?(params)
@@ -191,11 +219,12 @@ class LawSearchService
   # Filters the scope by document types based on the selected languages and types
   # @param scope [ActiveRecord::Relation] The current scope to filter
   # @param params [Hash] The search parameters
+  # @param german_site [Boolean] whether lang_de selects the German types
   # @return [ActiveRecord::Relation] Scope filtered by document types
   # @note Only applies filters for languages that are enabled in the search
   # @private
-  def self.by_type(scope, params)
-    type_ids = type_ids_from_params(params)
+  def self.by_type(scope, params, german_site: false)
+    type_ids = type_ids_from_params(params, german_site: german_site)
 
     # If specific types are selected but none match, return no results
     return scope.none if type_ids.empty? && type_filter_applied?(params)
@@ -289,8 +318,9 @@ class LawSearchService
 
   # Extracts type IDs from parameters based on selected languages and types
   # @param params [Hash] The search parameters
+  # @param german_site [Boolean] whether lang_de selects the German types
   # @return [Array<String>] Array of type IDs to filter by
-  def self.type_ids_from_params(params)
+  def self.type_ids_from_params(params, german_site: false)
     type_ids = []
 
     # Add Dutch document types if Dutch is selected
@@ -299,8 +329,9 @@ class LawSearchService
     # Add French document types if French is selected
     type_ids += selected_type_ids(:fr, params) if include_french?(params)
 
-    # Old German filters currently fall back to canonical French source types.
-    type_ids += selected_type_ids(:fr, params) if include_german?(params)
+    # German documents: the German types on the German site; elsewhere old
+    # German filters fall back to the French types, as their language does.
+    type_ids += selected_type_ids(german_site ? :de : :fr, params) if include_german?(params)
 
     type_ids.uniq
   end

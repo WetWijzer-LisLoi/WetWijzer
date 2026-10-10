@@ -1,0 +1,9 @@
+<%# On a page that cannot work without JavaScript (ClassicRouting::
+    JAVASCRIPT_ONLY_PAGES): say so, and point to the classic site, where
+    legislation reads without it. %>
+<noscript>
+  <p data-no-js-notice class="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200">
+    <%= t('classic.no_js.notice') %>
+    <a href="<%= classic_link_url %>" class="underline"><%= t('classic.no_js.classic_link') %></a>
+  </p>
+</noscript>

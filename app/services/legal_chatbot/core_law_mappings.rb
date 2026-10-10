@@ -498,7 +498,7 @@ module LegalChatbot
       # NOTE 2026-07-13: the consolidated BTW-Wetboek (1969070305), W.Reg.
       # (1939113002) and W.Succ. (1936033102) now HAVE articles in the main DB
       # (ingested from FisconetPlus), so bare tax keywords map to the codes
-      # themselves — before the ingest they were empty shells and only
+      # themselves; before the ingest they were empty shells and only
       # amendment KBs could be cited. Regional keys keep the VCF (2013036154)
       # alongside the federal codes (erfbelasting/registratie are regionalised:
       # VCF for Flanders, federal W.Succ./W.Reg. for Brussels/Wallonia).

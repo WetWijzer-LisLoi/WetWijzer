@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
 # Anonymous, aggregated tracking of sample question clicks.
-# Stores only: question text, category, date, and count.
+# Stores only: the published starter question clicked, category, date, and
+# count. WW-PRIV-01: a click whose text is not a published starter in that
+# language (StarterQuestionCatalog) is refused, so no reader's own words and
+# no caller's free text reach the table.
 # Zero PII - no user_id, no IP, no cookies, no session data.
 # W7 (FBL-070): moved out of the legal corpus to the analytics database so
 # the corpus can go read-only; production data copy is a rehearsal step in
@@ -50,6 +53,18 @@ class SampleQuestionClick < AnalyticsRecord
 
   class InvalidClick < ArgumentError; end
 
+  # WW-PRIV-06: the daily counters are kept 13 months, long enough to compare
+  # a month with the same month a year earlier; the daily scrub
+  # (Retention::PiiScrubService, run by ww-gdpr-scrub) deletes older days.
+  RETENTION = 13.months
+
+  # Deletes the days older than RETENTION and returns how many rows went.
+  def self.purge_expired!(now: Time.current)
+    return 0 unless table_exists?
+
+    where(click_date: ...(now - RETENTION).to_date).delete_all
+  end
+
   # Increment the counter for a question on today's date.
   #
   # FBL-043: the increment is a single SQLite UPSERT against the unique
@@ -68,6 +83,7 @@ class SampleQuestionClick < AnalyticsRecord
     raise InvalidClick, 'question_too_long' if q.length > MAX_QUESTION_CHARS || q.bytesize > MAX_QUESTION_BYTES
     raise InvalidClick, 'unknown_category' unless CATEGORIES.include?(cat)
     raise InvalidClick, 'unknown_language' unless LANGUAGES.include?(lang)
+    raise InvalidClick, 'unknown_question' unless StarterQuestionCatalog.canonical?(lang, q)
 
     now = Time.current
     upsert_all(
@@ -88,8 +104,8 @@ class SampleQuestionClick < AnalyticsRecord
   # Summary: total clicks per question (all time)
   def self.top_questions(limit: 50)
     ensure_table!
-    group(:question_text, :category)
-      .select('question_text, category, SUM(click_count) as total_clicks')
+    group(:question_text, :category, :language)
+      .select('question_text, category, language, SUM(click_count) as total_clicks')
       .order(Arel.sql('SUM(click_count) DESC'))
       .limit(limit)
   end

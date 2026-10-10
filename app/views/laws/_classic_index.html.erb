@@ -13,12 +13,16 @@
   </p>
 </div>
 
+<%= render 'shared/site_tour' %>
+
 <form action="<%= laws_path %>" method="get">
+  <% if classic_theme != 'system' %><input type="hidden" name="classic_theme" value="<%= classic_theme %>" /><% end %>
   <div class="classic-search">
     <input type="search" name="title" value="<%= params[:title] %>"
-           placeholder="<%= t(:search_placeholder_classic) %>" />
+           placeholder="<%= t(:search_placeholder_classic) %>" aria-label="<%= t('classic.search.title_label') %>" />
     <input type="hidden" name="source_legislation" value="1" />
     <button type="submit"><%= t(:search) %></button>
+    <a href="<%= laws_path %>" class="classic-reset"><%= t('classic.search.reset') %></a>
   </div>
 
   <%# Type filter checkboxes - using canonical param names matching LawSearchService %>
@@ -44,21 +48,19 @@
 
     <span style="display:inline-block;width:1px;height:16px;background:#6b7280;margin:0 12px;vertical-align:middle;opacity:0.5"></span>
 
-    <%# Language filter checkboxes - defaults per brand %>
-    <% lang_defaults = case I18n.locale
-         when :nl then { lang_nl: true, lang_fr: false }
-         when :fr, :de then { lang_nl: false, lang_fr: true }
-         else          { lang_nl: false, lang_fr: true }
-       end %>
-    <% has_search = params[:commit].present? %>
-    <% { lang_nl: 'NL', lang_fr: 'FR' }.each do |param_name, label| %>
+    <%# Language filter checkboxes (inbox 2026-10-08 10:49, B.4). A request
+        naming no language searches the site's defaults, which the controller
+        puts in params (LawSearchService.default_language_params), so the
+        boxes always show what was searched. Each box has a zero shadow like
+        the type boxes: an unchecked language submits '0', and a form with no
+        language is refused instead of searching the defaults. %>
+    <%# The German site also lists the German texts (lang_de) %>
+    <% language_boxes = german_site? ? { lang_de: 'DE', lang_nl: 'NL', lang_fr: 'FR' } : { lang_nl: 'NL', lang_fr: 'FR' } %>
+    <% language_boxes.each do |param_name, label| %>
       <label>
+        <input type="hidden" name="<%= param_name %>" value="0" />
         <input type="checkbox" name="<%= param_name %>" value="1"
-               <%= if has_search
-                     params[param_name] == '1' ? 'checked' : ''
-                   else
-                     lang_defaults[param_name] ? 'checked' : ''
-                   end %> />
+               <%= params[param_name] == '1' ? 'checked' : '' %> />
         <%= label %>
       </label>
     <% end %>
@@ -66,6 +68,18 @@
     <input type="hidden" name="commit" value="1" />
   </div>
 </form>
+
+<%# The controller's validation, near the form; never "no results" for a form it refused. %>
+<% if @validation_failed %>
+  <div class="classic-alert" role="alert">
+    <p><strong><%= t('filters.validation.incomplete') %></strong></p>
+    <% if @missing_labels.present? %>
+      <ul>
+        <% @missing_labels.each do |label| %><li><%= label %></li><% end %>
+      </ul>
+    <% end %>
+  </div>
+<% end %>
 
 <% if @laws.present? %>
   <div style="margin-top:24px">
@@ -106,7 +120,7 @@
         <% @laws.each do |law| %>
           <tr>
             <td class="date-col"><%= law.respond_to?(:datum) ? (law.datum.presence || law.date) : (law.respond_to?(:date) ? law.date : '') %></td>
-            <td>
+            <td class="law-result-title" <%= tag.attributes(lang: legal_text_lang(law.language_id)) if law.respond_to?(:language_id) %>>
               <% law_title = if law.respond_to?(:titel)
                                 strip_tags(law.titel.presence || law.title.to_s)
                               elsif law.respond_to?(:title)
@@ -115,6 +129,11 @@
                                 law.to_s
                               end %>
               <% law_link = law.respond_to?(:numac) ? law_path(law.numac) : '#' %>
+              <%# The German site lists German and French rows of one NUMAC side
+                  by side: each links to its own language and says which it is %>
+              <% row_language = german_site? && law.respond_to?(:language_id) && law_language_label(law.language_id) %>
+              <% law_link = law_path(law.numac, language_id: law.language_id) if row_language %>
+              <% if row_language %><strong data-law-row-language="<%= row_language %>">[<%= row_language %>]</strong><% end %>
               <% if params[:title].present?
                    search_q = params[:title].to_s.strip
                    escaped_q = Regexp.escape(search_q)
@@ -125,16 +144,16 @@
               <a href="<%= law_link %>"><%= highlighted.html_safe %></a>
             </td>
             <td class="link-col">
-              <a href="<%= law.respond_to?(:numac) ? law_path(law.numac) : '#' %>"><%= t(:details).capitalize %></a>
+              <a href="<%= law_link %>"><%= t(:details).capitalize %></a>
             </td>
             <td class="link-col">
-              <% if law.respond_to?(:justel) && law.justel.present? %>
-                <a href="<%= law.justel %>" target="_blank" rel="nofollow"><%= t(:justel).capitalize %></a>
+              <% if law.respond_to?(:justel) && law.justel.present? && law.justel != 'N/A' %>
+                <a href="<%= law.justel %>" target="_blank" rel="nofollow noopener noreferrer"><%= t(:justel).capitalize %></a>
               <% end %>
             </td>
             <td class="link-col">
-              <% if law.respond_to?(:numac) %>
-                <a href="https://www.ejustice.just.fgov.be/cgi_loi/loi_a1.pl?DETAIL=<%= law.respond_to?(:datum) ? law.datum.to_s.gsub('-','') : '' %>%2F<%= law.numac %>&caller=list&row_id=1&numero=1&ression=1&cn=<%= law.respond_to?(:datum) ? law.datum.to_s.gsub('-','') : '' %>&table_name=wet&nm=<%= law.numac %>&la=N&cheression=t&language=nl&choession=N&fromtab=wet&nl=n&sql=numac+%3D+'<%= law.numac %>'&tri=dd+AS+RANK+&tession=N&ression=n&imagession=on" target="_blank" rel="nofollow"><%= t(:reflex).capitalize %></a>
+              <% if law.respond_to?(:reflex) && law.reflex.present? && law.reflex != 'N/A' %>
+                <a href="<%= law.reflex %>" target="_blank" rel="nofollow noopener noreferrer"><%= t(:reflex).capitalize %></a>
               <% end %>
             </td>
           </tr>
@@ -183,7 +202,7 @@
       <% end %>
     </nav>
   <% end %>
-<% elsif params[:title].present? %>
+<% elsif !@validation_failed && !@laws.nil? %>
   <div class="classic-card" style="margin-top:24px;text-align:center">
     <p><%= t('global_search.no_results') %></p>
   </div>

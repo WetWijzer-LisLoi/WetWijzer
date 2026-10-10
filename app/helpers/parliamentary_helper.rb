@@ -12,6 +12,22 @@ module ParliamentaryHelper
     title.sub(/\A(\s*)([a-zà-ÿ])/) { "#{::Regexp.last_match(1)}#{::Regexp.last_match(2).upcase}" }
   end
 
+  # Roll-call votes (naamstemmingen: plenary_votes and mp_votes in
+  # chamber.sqlite3) come from parlement.thundr.be through
+  # lib/tasks/scrape_thundr_votes.py, and that source stopped publishing.
+  # Measured on production 2026-09-26: 1,278 plenary votes, all legislature
+  # 55, from 2019-07-18 to 2023-07-20, and 177,297 MP votes. Legislature 55 ran
+  # on to 2024, so its last months are missing, and legislature 56 has none.
+  # Wherever votes are shown, the page says so (partial
+  # parliamentary/_roll_call_votes_notice, key parliamentary.roll_call_votes_end).
+  FIRST_LEGISLATURE_WITHOUT_ROLL_CALL_VOTES = 56
+
+  # True for a legislature that began after the roll-call vote source stopped,
+  # so an MP page for it can never show votes and shows the notice instead.
+  def self.roll_call_votes_ended_for?(legislature)
+    legislature.to_i >= FIRST_LEGISLATURE_WITHOUT_ROLL_CALL_VOTES
+  end
+
   # Format MP name from "De Block Maggie" to "De Block, Maggie"
   # The DB stores names as "FamilyName FirstName" where first name is the last word.
   def self.format_mp_name(name)
@@ -289,12 +305,31 @@ module ParliamentaryHelper
   end
 
   # Known generic placeholder titles from the dekamer.be scraper.
-  # These are web page titles, not actual document titles.
+  # These are web page titles, not actual document titles. "Request Rejected"
+  # is the source firewall's refusal page, stored as a title on 2026-08-14.
+  # Keep in step with GENERIC_PAGE_TITLES in lib/tasks/scrape_kamer.py
+  # (lib/tasks/test_scrape_kamer.py fails when a Python title is missing here).
+  #
+  # This is the ONE list. The laws index and the chatbot's parliamentary
+  # context each kept their own until 2026-09-26, and neither had "Request
+  # Rejected"; both now ask generic_parl_title?. The last two spellings are
+  # the ones laws/index.html.erb carried.
   GENERIC_PARL_TITLES = [
     'Opzoeken in documenten en databanken',
     'Recherche dans les documents et banques de données',
-    'Search in documents and databases'
+    'Search in documents and databases',
+    'Request Rejected',
+    'De Belgische Kamer van volksvertegenwoordigers',
+    'Recherche dans les documents et bases de données',
+    'Suche in Dokumenten und Datenbanken'
   ].freeze
+
+  # True when a stored title is empty or a page title that describes the site
+  # or its refusal page rather than a document. Callers show something else.
+  def self.generic_parl_title?(title)
+    s = title.to_s.strip
+    s.empty? || GENERIC_PARL_TITLES.any? { |g| s.casecmp?(g) }
+  end
 
   # Clean a parliamentary title for display.
   # Strips dossier number prefixes and generic placeholder titles.
@@ -307,7 +342,7 @@ module ParliamentaryHelper
     s = title.to_s.strip
 
     # Detect generic placeholder titles
-    is_generic = s.blank? || GENERIC_PARL_TITLES.any? { |g| s.casecmp?(g) }
+    is_generic = ParliamentaryHelper.generic_parl_title?(s)
 
     if is_generic
       # Try to extract a meaningful title from the document content or type
@@ -559,6 +594,7 @@ module ParliamentaryHelper
       # PDF-wrapped continuation line "Besluit van de Vlaamse Regering" starts
       # with a keyword too, and must stay prose.
       next true if s.match?(/\A(?:#{keyword.source[2..]})\s*[,:.]?\s*\z/i)
+
       # Or the phrase carrying its own clause ("PAR CES MOTIFS, DECIDE:"):
       # short and shouted. Counted with a regex, not String#count - the latter
       # reads a single-quoted set literally, so accented capitals scored as
@@ -671,8 +707,13 @@ module ParliamentaryHelper
         parts = stripped.split(/(\[\[IMG:.+?\|\d+x\d+\]\])/)
         parts.each do |part|
           img_m = part.match(/\A\[\[IMG:(.+?)\|(\d+)x(\d+)\]\]\z/)
+          # A file name the image route cannot carry stays escaped text.
+          img_m = nil if img_m && img_m[1].include?('/')
           if img_m
-            img_url = "/jurisprudence/#{case_number}/image/#{ERB::Util.html_escape(img_m[1])}"
+            # WW-SEC-15: the case number and the file name are imported text;
+            # the route helper encodes them as path segments and the whole URL
+            # is escaped for the attribute, so neither can close the tag.
+            img_url = ERB::Util.html_escape(jurisprudence_image_path(ecli: case_number, filename: img_m[1]))
             html_parts << "<figure class=\"my-4 text-center\"><img src=\"#{img_url}\" alt=\"\" loading=\"lazy\" class=\"inline-block h-auto rounded-lg border border-gray-200 dark:border-gray-700\" style=\"max-width: min(100%, #{[img_m[2].to_i, 800].min}px); max-height: 500px;\"></figure>"
           elsif part.strip.length.positive?
             html_parts << "<p class=\"mb-3\">#{ERB::Util.html_escape(part.strip)}</p>"

@@ -1,3 +1,4 @@
+<%= render 'shared/clipboard_messages' %>
 <!-- Compare Header -->
 <div class="mb-4" data-controller="article-preferences"
      data-article-preferences-show-colors-value="true"
@@ -198,8 +199,12 @@
       <% if @law_nl.present? %>
         <div><span class="font-medium">Numac:</span> <%= @law_nl.numac %></div>
         <div><span class="font-medium">Datum:</span> <%= @law_nl.date %></div>
-        <% if @law_nl.justel.present? %><div><span class="font-medium">Justel:</span> <%= link_to @law_nl.justel, @law_nl.justel, target: '_blank', class: 'text-(--accent-600) hover:underline' %></div><% end %>
-        <% if @law_nl.mon.present? && @law_nl.mon != 'N/A' %><div><span class="font-medium">Staatsblad:</span> <%= link_to 'Bekijken', @law_nl.mon, target: '_blank', class: 'text-(--accent-600) hover:underline' %></div><% end %>
+        <%# F4: only absolute addresses are links. For Dutch and French rows `mon`
+            holds the Moniteur's publication number, so the Staatsblad line goes
+            to the Moniteur PDF (as on the law page), or to `mon` where that is
+            an address (the German rows). %>
+        <% if (justel_url = http_url(@law_nl.justel)) %><div><span class="font-medium">Justel:</span> <%= link_to justel_url, justel_url, target: '_blank', rel: 'nofollow', class: 'text-(--accent-600) hover:underline' %></div><% end %>
+        <% if (mon_url = http_url(@law_nl.mon_pdf) || http_url(@law_nl.mon)) %><div><span class="font-medium">Staatsblad:</span> <%= link_to 'Bekijken', mon_url, target: '_blank', rel: 'nofollow', class: 'text-(--accent-600) hover:underline' %></div><% end %>
       <% else %>
         <span class="italic text-gray-400">-</span>
       <% end %>
@@ -211,8 +216,8 @@
       <% if @law_fr.present? %>
         <div><span class="font-medium">Numac:</span> <%= @law_fr.numac %></div>
         <div><span class="font-medium">Date:</span> <%= @law_fr.date %></div>
-        <% if @law_fr.justel.present? %><div><span class="font-medium">Justel:</span> <%= link_to @law_fr.justel, @law_fr.justel, target: '_blank', class: 'text-(--accent-600) hover:underline' %></div><% end %>
-        <% if @law_fr.mon.present? && @law_fr.mon != 'N/A' %><div><span class="font-medium">Moniteur:</span> <%= link_to 'Voir', @law_fr.mon, target: '_blank', class: 'text-(--accent-600) hover:underline' %></div><% end %>
+        <% if (justel_url = http_url(@law_fr.justel)) %><div><span class="font-medium">Justel:</span> <%= link_to justel_url, justel_url, target: '_blank', rel: 'nofollow', class: 'text-(--accent-600) hover:underline' %></div><% end %>
+        <% if (mon_url = http_url(@law_fr.mon_pdf) || http_url(@law_fr.mon)) %><div><span class="font-medium">Moniteur:</span> <%= link_to 'Voir', mon_url, target: '_blank', rel: 'nofollow', class: 'text-(--accent-600) hover:underline' %></div><% end %>
       <% else %>
         <span class="italic text-gray-400">-</span>
       <% end %>

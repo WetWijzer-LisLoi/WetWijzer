@@ -35,6 +35,9 @@ class PreferencesStore {
     this._initialized = false
     this._saveTimer = null
     this._dirty = {}
+    this._revisions = {}
+    this._nextRevision = 0
+    this._preInitChanges = {}
     this._loggedIn = null
   }
 
@@ -53,6 +56,19 @@ class PreferencesStore {
   async _doInit() {
     // Check if user is logged in via DOM metadata
     this._loggedIn = this._checkLoggedIn()
+    this._seedServerThemes()
+
+    // Bind navigation/unload flushing as soon as auth is known, before the
+    // preferences GET. A fast Turbo visit must not outrun hydration and drop
+    // a selection made during that request.
+    if (this._loggedIn && !this._unloadBound) {
+      this._unloadBound = true
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') this._flushSync()
+      })
+      window.addEventListener('pagehide', () => this._flushSync())
+      document.addEventListener('turbo:before-visit', () => this._flushSync())
+    }
 
     if (this._loggedIn) {
       try {
@@ -62,25 +78,32 @@ class PreferencesStore {
         })
         if (response.ok) {
           const data = await response.json()
-          this._cache = data.preferences || {}
+          // A controller may have written a choice while this GET was in
+          // flight. Keep those local values authoritative; otherwise the
+          // late response would visibly undo the user's choice.
+          this._cache = { ...(data.preferences || {}) }
         }
       } catch (e) {
         console.warn('[PreferencesStore] Failed to load preferences:', e.message)
       }
     }
 
+    // Apply local edits after either a successful or failed GET. This keeps a
+    // choice made during hydration authoritative, including over server-seeded
+    // values in the document metadata.
+    for (const [key, change] of Object.entries(this._preInitChanges)) {
+      this._applyPath(key, change.value, change.removed)
+    }
+
     this._initialized = true
+    this._preInitChanges = {}
+
+    // A set can happen before _doInit discovers that the visitor is logged in.
+    // Do not lose that pending write merely because _loggedIn was still null.
+    if (this._loggedIn && Object.keys(this._dirty).length > 0) this._scheduleSave()
 
     // Flush pending saves when the user navigates away or closes the tab.
     // pagehide fires reliably on tab close; visibilitychange on tab switch.
-    if (this._loggedIn && !this._unloadBound) {
-      this._unloadBound = true
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') this._flushSync()
-      })
-      window.addEventListener('pagehide', () => this._flushSync())
-    }
-
     return this._cache
   }
 
@@ -107,6 +130,8 @@ class PreferencesStore {
    * Auto-saves to server (debounced) for logged-in users.
    */
   set(key, value) {
+    const dirtyKey = key.includes('.') ? key.split('.')[0] : key
+    const revision = ++this._nextRevision
     if (key.includes('.')) {
       const parts = key.split('.')
       let obj = this._cache
@@ -123,6 +148,8 @@ class PreferencesStore {
       this._cache[key] = value
       this._dirty[key] = value
     }
+    this._revisions[dirtyKey] = revision
+    if (!this._initialized) this._preInitChanges[key] = { value, removed: false }
 
     this._scheduleSave()
   }
@@ -131,17 +158,18 @@ class PreferencesStore {
    * Merge multiple preferences at once.
    */
   merge(updates) {
-    Object.assign(this._cache, updates)
-    Object.assign(this._dirty, updates)
-    this._scheduleSave()
+    Object.entries(updates).forEach(([key, value]) => this.set(key, value))
   }
 
   /**
    * Remove a preference key.
    */
   remove(key) {
+    const revision = ++this._nextRevision
     delete this._cache[key]
     this._dirty[key] = null
+    this._revisions[key] = revision
+    if (!this._initialized) this._preInitChanges[key] = { value: null, removed: true }
     this._scheduleSave()
   }
 
@@ -184,6 +212,33 @@ class PreferencesStore {
     return false
   }
 
+  _seedServerThemes() {
+    if (!this._loggedIn) return
+    const meta = document.querySelector('meta[name="theme-preferences"]')
+    if (!meta?.content) return
+    try {
+      const parsed = JSON.parse(meta.content)
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return
+      if (typeof parsed.theme_accent === 'string' && parsed.theme_accent.length > 0) {
+        this._cache.theme_accent = parsed.theme_accent
+      }
+      if (['light', 'dark', 'system'].includes(parsed.theme)) this._cache.theme = parsed.theme
+    } catch (_) {
+      // Invalid metadata is ignored; the API remains the source of truth.
+    }
+  }
+
+  _applyPath(key, value, removed = false) {
+    const parts = key.split('.')
+    let obj = this._cache
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (obj[parts[i]] == null || typeof obj[parts[i]] !== 'object') obj[parts[i]] = {}
+      obj = obj[parts[i]]
+    }
+    if (removed) delete obj[parts[parts.length - 1]]
+    else obj[parts[parts.length - 1]] = value
+  }
+
   _scheduleSave() {
     if (!this._loggedIn) return // Anonymous: in-memory only
     if (this._saveTimer) clearTimeout(this._saveTimer)
@@ -197,11 +252,12 @@ class PreferencesStore {
     if (!this._loggedIn) return
 
     const toSave = { ...this._dirty }
+    const revisions = Object.fromEntries(Object.keys(toSave).map(key => [key, this._revisions[key]]))
     this._dirty = {}
 
     try {
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
-      await fetch('/api/preferences', {
+      const response = await fetch('/api/preferences', {
         method: 'PATCH',
         credentials: 'same-origin',
         headers: {
@@ -211,9 +267,23 @@ class PreferencesStore {
         },
         body: JSON.stringify({ preferences: toSave })
       })
+      if (!response.ok) {
+        // Keep newer values already written since this flush; restore only
+        // keys that still have the failed value. A failed response must never
+        // be treated as persisted, but retries are left to a later flush.
+        for (const [key, value] of Object.entries(toSave)) {
+          if (this._revisions[key] === revisions[key]) this._dirty[key] = value
+        }
+      } else {
+        for (const key of Object.keys(toSave)) {
+          if (this._revisions[key] === revisions[key]) delete this._dirty[key]
+        }
+      }
     } catch (e) {
       // Re-queue failed saves
-      Object.assign(this._dirty, toSave)
+      for (const [key, value] of Object.entries(toSave)) {
+        if (this._revisions[key] === revisions[key]) this._dirty[key] = value
+      }
       console.warn('[PreferencesStore] Save failed, will retry:', e.message)
     }
   }
@@ -234,7 +304,7 @@ class PreferencesStore {
     }
 
     const toSave = { ...this._dirty }
-    this._dirty = {}
+    const revisions = Object.fromEntries(Object.keys(toSave).map(key => [key, this._revisions[key]]))
 
     try {
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
@@ -248,10 +318,17 @@ class PreferencesStore {
           ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
         },
         body: JSON.stringify({ preferences: toSave })
-      })
+      }).then(response => {
+        if (!response.ok) return
+        for (const key of Object.keys(toSave)) {
+          if (this._revisions[key] === revisions[key]) delete this._dirty[key]
+        }
+      }).catch(() => {})
     } catch (e) {
       // Re-queue if fetch setup fails (extremely rare)
-      Object.assign(this._dirty, toSave)
+      for (const [key, value] of Object.entries(toSave)) {
+        if (this._revisions[key] === revisions[key]) this._dirty[key] = value
+      }
     }
   }
 }

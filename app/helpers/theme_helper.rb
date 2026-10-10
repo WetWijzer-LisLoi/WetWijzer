@@ -32,6 +32,23 @@ module ThemeHelper
     pink: { name: 'pink', swatch: '#ec4899', accent_500: '#ec4899', accent_700: '#be185d', row: 2 }
   }.freeze
 
+  # Paint the saved preference before JavaScript hydrates it. Never turn a
+  # legacy/unvalidated value into a CSS class: only the picker catalogue is valid.
+  def document_theme_preferences
+    preferences = current_user&.ui_prefs || {}
+    preferences = {} unless preferences.is_a?(Hash)
+    accent = preferences['theme_accent']
+    accent = 'original' unless THEMES.values.any? { |theme| theme[:name] == accent }
+    mode = preferences['theme']
+    mode = 'system' unless %w[light dark system].include?(mode)
+    { theme_accent: accent, theme: mode }
+  end
+
+  def document_theme_classes
+    preferences = document_theme_preferences
+    ["theme-#{preferences[:theme_accent]}", ('dark' if preferences[:theme] == 'dark')].compact.join(' ')
+  end
+
   # Get themes for a specific row (1 or 2)
   def themes_for_row(row_number)
     THEMES.select { |_key, theme| theme[:row] == row_number }

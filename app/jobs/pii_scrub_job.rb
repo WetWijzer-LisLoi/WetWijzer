@@ -14,7 +14,12 @@ class PiiScrubJob < ApplicationJob
       "[RETENTION] pii scrub analytics=#{result[:analytics_ip_hashes]} " \
       "feedback=#{result[:feedback_ip_hashes]} activity=#{result[:activity_rows]} " \
       "sign_in_ips=#{result[:user_sign_in_ips]} " \
-      "site_brands=#{result[:activity_site_brands]} total=#{result[:total]} " \
+      "site_brands=#{result[:activity_site_brands]} admin_sessions=#{result[:dead_admin_sessions]} " \
+      "starter_clicks=#{result[:expired_starter_clicks]} " \
+      "second_factor_challenges=#{result[:expired_second_factor_challenges]} " \
+      "history_cleanups=#{result[:history_cleanups_finished]} " \
+      "history_cleanups_pending=#{result[:history_cleanups_pending]} " \
+      "log_addresses=#{result[:log_addresses_masked]} total=#{result[:total]} " \
       "oldest_unscrubbed_analytics=#{result[:oldest_unscrubbed_analytics_at]}"
     )
     result

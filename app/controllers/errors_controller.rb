@@ -20,7 +20,7 @@ class ErrorsController < ApplicationController
   # @return [void]
   # @note The view template should be located at 'app/views/errors/not_found.html.erb'
   def not_found
-    @page_title = t('errors.not_found.title', default: 'Page Not Found')
+    @title = t('errors.not_found.title')
     respond_to do |format|
       format.html { render status: :not_found }
       format.any { head :not_found }
@@ -39,7 +39,7 @@ class ErrorsController < ApplicationController
   # @return [void]
   # @note The view template should be located at 'app/views/errors/internal_server_error.html.erb'
   def internal_server_error
-    @page_title = t('errors.internal_server_error.title', default: 'Internal Server Error')
+    @title = t('errors.internal_server_error.title')
     render status: :internal_server_error
   end
 
@@ -56,7 +56,7 @@ class ErrorsController < ApplicationController
   # @return [void]
   # @note The view template should be located at 'app/views/errors/unprocessable_entity.html.erb'
   def unprocessable_entity
-    @page_title = t('errors.unprocessable_entity.title', default: 'Unprocessable Entity')
+    @title = t('errors.unprocessable_entity.title')
     render status: :unprocessable_entity
   end
 end

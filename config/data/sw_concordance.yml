@@ -23,9 +23,30 @@ source_fr: "Loi 29/02/2024 (M.B. 08/04/2024) · En vigueur 01/09/2026"
 transition_nl: "Lex mitior (art. 2, derde lid, nieuw Sw.): \"In geval van wijziging van de strafwet na het plegen van het misdrijf gelden de voor de dader meest gunstige bepalingen.\" Voor feiten van vóór 01/09/2026 past de rechter dus de gunstigste regeling toe. Let op het verschil: het oude art. 2, tweede lid Sw. sprak enkel over de straf (\"de minst zware straf\"), het nieuwe artikel over de bepalingen in hun geheel. Per dossier te beoordelen."
 transition_fr: "Lex mitior (art. 2, alinéa 3, nouveau C. pén.): \"En cas de modification de la loi pénale postérieurement à l'infraction, les dispositions les plus favorables seront appliquées à son auteur.\" Pour les faits antérieurs au 01/09/2026, le juge applique donc le régime le plus favorable. Nuance: l'ancien art. 2, alinéa 2 C. pén. ne visait que la peine (\"la peine la moins forte\"), le nouvel article vise les dispositions dans leur ensemble. À apprécier au cas par cas."
 
-# Strafniveaus: Art. 36 nieuw Sw. (hoofdstraffen natuurlijke personen)
+# Strafniveaus: art. 36 nieuw Sw. (hoofdstraffen natuurlijke personen)
 # De klassieke driedeling misdaad/wanbedrijf/overtreding wordt vervangen
-# door 8 niveaus. N1-6 = correctioneel, N7-8 = crimineel.
+# door 8 niveaus.
+#
+# LET OP. Tot 2026-09-08 stond hier "N1-6 = correctioneel, N7-8 = crimineel" en
+# beschreef de toelichting de tabel in de woordenschat van het OUDE wetboek
+# ("correctionele gevangenisstraf", "criminele straf (opsluiting)"). Dat
+# onderscheid bestaat niet meer. Art. 41, para 2 kent EEN vrijheidsstraf - de
+# gevangenisstraf - "voor een duur van ten minste zes maanden tot ten hoogste
+# levenslang", geschaald over de acht niveaus. "Opsluiting" komt in boek I enkel
+# nog voor in art. 78, dat oude strafmaten NAAR een niveau vertaalt; dat is
+# precies wat het als oude woordenschat kenmerkt. De tabel sprak zichzelf ook
+# tegen: niveau 5 heette "hoogste correctioneel niveau" terwijl niveau 6 en 7
+# erboven stonden en niveau 6 ook "correctioneel" heette.
+#
+# De cijfers klopten wel. Alleen de grenzen stonden dubbelzinnig: art. 36 is
+# onderaan exclusief en bovenaan inclusief ("meer dan drie jaar tot ten hoogste
+# vijf jaar"), vandaar de "> " in de kolom - drie jaar exact is niveau 2.
+#
+# De toelichting geeft nu wat art. 36 toevoegt boven op de duurkolom: het
+# alternatief van de behandeling onder vrijheidsberoving, en de niveaus waarnaar
+# verzachtende omstandigheden de straf terugbrengen. Over assisen of
+# correctionalisering staat hier niets: dat is procesrecht, buiten art. 36, en
+# niet verifieerbaar uit deze tekst.
 strafniveaus:
   legal_basis: "Art. 36 nieuw Sw. (Wet 29/02/2024 tot invoering Boek I nieuw Strafwetboek, B.S. 08/04/2024)"
   legal_basis_url: "/laws/2024002052"
@@ -35,57 +56,57 @@ strafniveaus:
       label_fr: "Niveau 1 - Pas d'emprisonnement"
       gevangenisstraf_nl: "Uitgesloten als hoofdstraf"
       gevangenisstraf_fr: "Exclue comme peine principale"
-      beschrijving_nl: "Geldboete, werkstraf, probatiestraf of elektronisch toezicht. Gevangenisstraf kan niet worden opgelegd."
-      beschrijving_fr: "Amende, peine de travail, probation ou surveillance électronique. L'emprisonnement ne peut être prononcé."
+      beschrijving_nl: "Geen gevangenisstraf. Geldboete 200 tot 20.000 euro, werkstraf 20 tot 120 uur, probatiestraf 6 tot 12 maanden, verbeurdverklaring, geldstraf op basis van het behaalde voordeel, of veroordeling bij schuldigverklaring."
+      beschrijving_fr: "Pas d'emprisonnement. Amende de 200 à 20.000 euros, peine de travail de 20 à 120 heures, probation de 6 à 12 mois, confiscation, peine pécuniaire fondée sur le profit, ou condamnation par déclaration de culpabilité."
     - level: 2
       label_nl: "Niveau 2 - 6 maanden tot 3 jaar"
       label_fr: "Niveau 2 - 6 mois à 3 ans"
       gevangenisstraf_nl: "6 maanden – 3 jaar"
       gevangenisstraf_fr: "6 mois – 3 ans"
-      beschrijving_nl: "Gevangenisstraf is ultimum remedium: de rechter moet motiveren waarom een alternatieve straf (werkstraf, probatie, elektronisch toezicht) niet volstaat."
-      beschrijving_fr: "L'emprisonnement est l'ultimum remedium: le juge doit motiver pourquoi une peine alternative (travail, probation, surveillance électronique) ne suffit pas."
+      beschrijving_nl: "Ook mogelijk: behandeling onder vrijheidsberoving (6 maanden tot 2 jaar), elektronisch toezicht (1 maand tot 1 jaar), werkstraf (meer dan 120 tot 300 uur), probatiestraf (meer dan 12 maanden tot 2 jaar). Verzachtende omstandigheden: niveau 1."
+      beschrijving_fr: "Également possible: traitement sous privation de liberté (6 mois à 2 ans), surveillance électronique (1 mois à 1 an), peine de travail (plus de 120 à 300 heures), probation (plus de 12 mois à 2 ans). Circonstances atténuantes: niveau 1."
     - level: 3
       label_nl: "Niveau 3 - 3 tot 5 jaar"
       label_fr: "Niveau 3 - 3 à 5 ans"
-      gevangenisstraf_nl: "3 – 5 jaar"
-      gevangenisstraf_fr: "3 – 5 ans"
-      beschrijving_nl: "Correctionele gevangenisstraf. Alternatieve straffen blijven mogelijk."
-      beschrijving_fr: "Emprisonnement correctionnel. Les peines alternatives restent possibles."
+      gevangenisstraf_nl: "> 3 – 5 jaar"
+      gevangenisstraf_fr: "> 3 – 5 ans"
+      beschrijving_nl: "Of behandeling onder vrijheidsberoving van meer dan 2 tot 4 jaar. Verzachtende omstandigheden: niveau 2 of 1."
+      beschrijving_fr: "Ou traitement sous privation de liberté de plus de 2 à 4 ans. Circonstances atténuantes: niveau 2 ou 1."
     - level: 4
       label_nl: "Niveau 4 - 5 tot 10 jaar"
       label_fr: "Niveau 4 - 5 à 10 ans"
-      gevangenisstraf_nl: "5 – 10 jaar"
-      gevangenisstraf_fr: "5 – 10 ans"
-      beschrijving_nl: "Correctionele gevangenisstraf. Behandeling onder vrijheidsberoving mogelijk als alternatief."
-      beschrijving_fr: "Emprisonnement correctionnel. Traitement sous privation de liberté possible comme alternative."
+      gevangenisstraf_nl: "> 5 – 10 jaar"
+      gevangenisstraf_fr: "> 5 – 10 ans"
+      beschrijving_nl: "Of behandeling onder vrijheidsberoving van meer dan 4 tot 6 jaar. Verzachtende omstandigheden: niveau 3 of 2."
+      beschrijving_fr: "Ou traitement sous privation de liberté de plus de 4 à 6 ans. Circonstances atténuantes: niveau 3 ou 2."
     - level: 5
       label_nl: "Niveau 5 - 10 tot 15 jaar"
       label_fr: "Niveau 5 - 10 à 15 ans"
-      gevangenisstraf_nl: "10 – 15 jaar"
-      gevangenisstraf_fr: "10 – 15 ans"
-      beschrijving_nl: "Correctionele gevangenisstraf. Hoogste correctioneel niveau."
-      beschrijving_fr: "Emprisonnement correctionnel. Niveau correctionnel le plus élevé."
+      gevangenisstraf_nl: "> 10 – 15 jaar"
+      gevangenisstraf_fr: "> 10 – 15 ans"
+      beschrijving_nl: "Of behandeling onder vrijheidsberoving van meer dan 6 tot 11 jaar. Verzachtende omstandigheden: niveau 4, 3 of 2."
+      beschrijving_fr: "Ou traitement sous privation de liberté de plus de 6 à 11 ans. Circonstances atténuantes: niveau 4, 3 ou 2."
     - level: 6
       label_nl: "Niveau 6 - 15 tot 20 jaar"
       label_fr: "Niveau 6 - 15 à 20 ans"
-      gevangenisstraf_nl: "15 – 20 jaar"
-      gevangenisstraf_fr: "15 – 20 ans"
-      beschrijving_nl: "Correctionele gevangenisstraf. Grensgebied met criminele straffen."
-      beschrijving_fr: "Emprisonnement correctionnel. Zone frontière avec les peines criminelles."
+      gevangenisstraf_nl: "> 15 – 20 jaar"
+      gevangenisstraf_fr: "> 15 – 20 ans"
+      beschrijving_nl: "Of behandeling onder vrijheidsberoving van meer dan 11 tot 16 jaar. Verzachtende omstandigheden: niveau 5, 4, 3 of 2."
+      beschrijving_fr: "Ou traitement sous privation de liberté de plus de 11 à 16 ans. Circonstances atténuantes: niveau 5, 4, 3 ou 2."
     - level: 7
       label_nl: "Niveau 7 - 20 tot 30 jaar"
       label_fr: "Niveau 7 - 20 à 30 ans"
-      gevangenisstraf_nl: "20 – 30 jaar"
-      gevangenisstraf_fr: "20 – 30 ans"
-      beschrijving_nl: "Criminele straf (opsluiting). Assisenzaken of gecorrectionaliseerd."
-      beschrijving_fr: "Peine criminelle (réclusion). Assises ou correctionnalisé."
+      gevangenisstraf_nl: "> 20 – 30 jaar"
+      gevangenisstraf_fr: "> 20 – 30 ans"
+      beschrijving_nl: "Of behandeling onder vrijheidsberoving van meer dan 16 tot 18 jaar. Verzachtende omstandigheden: niveau 6, 5, 4 of 3."
+      beschrijving_fr: "Ou traitement sous privation de liberté de plus de 16 à 18 ans. Circonstances atténuantes: niveau 6, 5, 4 ou 3."
     - level: 8
       label_nl: "Niveau 8 - Levenslang"
       label_fr: "Niveau 8 - Perpétuité"
-      gevangenisstraf_nl: "Levenslange opsluiting"
-      gevangenisstraf_fr: "Réclusion à perpétuité"
-      beschrijving_nl: "Zwaarste straf. Behandeling onder vrijheidsberoving (18-20 jaar) kan als alternatief."
-      beschrijving_fr: "Peine la plus lourde. Traitement sous privation de liberté (18-20 ans) possible comme alternative."
+      gevangenisstraf_nl: "Levenslange gevangenisstraf"
+      gevangenisstraf_fr: "Emprisonnement à perpétuité"
+      beschrijving_nl: "Zwaarste straf. Of behandeling onder vrijheidsberoving van meer dan 18 tot 20 jaar. Verzachtende omstandigheden: niveau 7, 6, 5, 4 of 3."
+      beschrijving_fr: "Peine la plus lourde. Ou traitement sous privation de liberté de plus de 18 à 20 ans. Circonstances atténuantes: niveau 7, 6, 5, 4 ou 3."
 
 sections:
   - heading_nl: "Valsheid in geschriften (art. 193-214)"

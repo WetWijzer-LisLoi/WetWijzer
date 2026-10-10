@@ -3,8 +3,8 @@
 # == FisconetSearchService
 #
 # Service for searching tax legislation articles from the FisconetPlus database.
-# Returns ONE result per distinct legislation that has a matching article, so
-# each law appears as a single entry in search results - just like Justel laws.
+# Returns one result per matching legislation/language, like the Justel rows.
+# Title/code searches never implicitly search the tax articles' body text.
 #
 # Numac convention: "FISCONET_<legislation_id>" (e.g. FISCONET_1, FISCONET_2)
 #
@@ -153,71 +153,95 @@ class FisconetSearchService
   end
 
   # ─── Search ────────────────────────────────────────────────────────────
-  # Returns ONE FisconetResult per distinct legislation that has a matching article.
+  # Returns one FisconetResult per matching legislation/language. Fisconet has
+  # no tags column; a tags-only search must not silently become a body search.
   #
-  # @param params [Hash] Search parameters (:title, :lang_nl, :lang_fr)
+  # @param params [Hash] Search parameters (:title, :lang_nl, :lang_fr,
+  #   :search_in_title, :search_in_tags, :search_in_text)
   # @return [Array<FisconetResult>]
   def self.search(params)
     return [] unless File.exist?(FISCONET_DB_PATH)
 
-    title = params[:title]&.strip
+    params = params.to_h.with_indifferent_access
+    title = params[:title].to_s.strip
     return [] if title.blank?
 
-    include_nl = params[:lang_nl] == '1' || (!params[:lang_nl].present? && !params[:lang_fr].present?)
-    lang_id = include_nl ? 1 : 2
+    language_filters = %i[lang_nl lang_fr lang_de].any? { |key| params[key].present? }
+    languages = if language_filters
+                  { nl: 1, fr: 2 }.select { |language, _| params["lang_#{language}"] == '1' }
+                else
+                  { nl: 1 }
+                end
+    return [] if languages.empty?
+
+    search_title = params[:search_in_title] != '0'
+    search_text = params[:search_in_text] == '1'
+    return [] unless search_title || search_text
 
     begin
       db = SQLite3::Database.new(FISCONET_DB_PATH)
       db.results_as_hash = true
 
-      search_term = "%#{title.downcase}%"
+      search_term = "%#{ActiveRecord::Base.sanitize_sql_like(title.downcase)}%"
 
-      # Find distinct legislation IDs that have at least one matching article.
-      # Walk-corpus schema (2026-08-08): tax_legislation carries only
-      # id/document_type/title_nl/title_fr, and tax_articles has no
-      # section_path - the old scraper's extra columns made every query here
-      # raise "no such column", which the rescue turned into empty results and
-      # the law pages turned into 404s.
-      rows = db.execute(<<~SQL, [search_term, search_term, search_term])
-        SELECT DISTINCT l.id, l.title_nl, l.title_fr, l.document_type
-        FROM tax_articles a
-        JOIN tax_legislation l ON a.legislation_id = l.id
-        WHERE (
-          LOWER(a.article_number) LIKE ?
-          OR LOWER(a.text_nl)     LIKE ?
-          OR LOWER(a.text_fr)     LIKE ?
-        )
-      SQL
+      # Query each selected source language separately. A French-only body hit
+      # must not produce a Dutch row (nor vice versa); selecting both languages
+      # may produce the two distinct language versions of the same code.
+      languages.flat_map do |language, lang_id|
+        predicates = []
+        binds = []
+        if search_title
+          # In the walk corpus title_nl/title_fr may be NULL. document_type is
+          # the code's actual displayed title in that case, not article text.
+          predicates << "(LOWER(l.title_#{language}) LIKE ? ESCAPE '\\' OR LOWER(l.document_type) LIKE ? ESCAPE '\\')"
+          binds.push(search_term, search_term)
+          if language == :fr
+            predicates << "(l.document_type = 'WIB 92' AND LOWER('CIR 92') LIKE ? ESCAPE '\\')"
+            binds << search_term
+          end
+        end
+        if search_text
+          predicates << <<~SQL.squish
+            EXISTS (SELECT 1 FROM tax_articles a WHERE a.legislation_id = l.id
+              AND NULLIF(TRIM(a.text_#{language}), '') IS NOT NULL
+              AND (LOWER(a.article_number) LIKE ? ESCAPE '\\'
+                OR LOWER(a.text_#{language}) LIKE ? ESCAPE '\\'))
+          SQL
+          binds.push(search_term, search_term)
+        end
 
-      db.close
+        rows = db.execute(<<~SQL, binds)
+          SELECT l.id, l.title_nl, l.title_fr, l.document_type
+          FROM tax_legislation l
+          WHERE #{predicates.join(' OR ')}
+          ORDER BY l.id
+        SQL
 
-      rows.map do |row|
-        title_nl = row['title_nl']
-        title_fr = row['title_fr']
-        doc_type = row['document_type'] || 'WIB 92'
+        rows.map do |row|
+          doc_type = row['document_type'] || 'WIB 92'
+          display_code = lang_id == 2 && doc_type == 'WIB 92' ? 'CIR 92' : doc_type
 
-        # The taxonomy-walk corpus stores NULL in title_nl/title_fr on all five
-        # rows, so without this fallback every tax code renders a blank heading,
-        # a blank <title> and a blank og:title. document_type ('WIB 92', 'BTW',
-        # 'W.Succ.', ...) is the only name it carries, and it is how the codes
-        # are cited anyway.
-        display_title = lang_id == 2 ? (title_fr || title_nl) : (title_nl || title_fr)
-        display_title = doc_type if display_title.blank?
+          # A missing source-language title falls back to the code, never to a
+          # title in an unchecked language. The walk corpus may carry no titles.
+          display_title = row["title_#{language}"].presence || display_code
 
-        FisconetResult.new(
-          id: row['id'],
-          numac: numac_for(row['id']),
-          title: display_title,
-          date: KNOWN_TAX_DATES[doc_type],
-          document_type: lang_id == 2 && doc_type == 'WIB 92' ? 'CIR 92' : doc_type,
-          language_id: lang_id,
-          source_url: nil,
-          is_in_force: true
-        )
+          FisconetResult.new(
+            id: row['id'],
+            numac: numac_for(row['id']),
+            title: display_title,
+            date: KNOWN_TAX_DATES[doc_type],
+            document_type: display_code,
+            language_id: lang_id,
+            source_url: nil,
+            is_in_force: true
+          )
+        end
       end
     rescue SQLite3::Exception => e
       Rails.logger.error("[FisconetSearch] Database error: #{e.message}")
       []
+    ensure
+      db&.close
     end
   end
 
@@ -246,22 +270,30 @@ class FisconetSearchService
         WHERE l.id = ?
       SQL
 
+      edition = edition_of(db, legislation_id)
       db.close
       return nil unless row
 
       doc_type = row['document_type']
+      # The code this row is an edition of. 'WIB 92 (inkomsten 2027)' is still WIB 92, so
+      # it keeps the Justel cross-link and the code's dates.
+      code = edition[:base_code].presence || doc_type
       {
         id: row['id'],
         fisconet_id: nil,
-        numac_real: REAL_NUMACS[doc_type],
+        numac_real: REAL_NUMACS[doc_type] || REAL_NUMACS[code],
         document_number: nil,
         title_nl: row['title_nl'].presence || doc_type,
         title_fr: row['title_fr'].presence || doc_type,
         title_de: nil,
         document_type: doc_type,
+        base_code: code,
+        edition_year: edition[:edition_year],
+        edition_role: edition[:edition_role],
+        editions: edition[:editions],
         category: doc_type,
         subcategory: nil,
-        publication_date: KNOWN_TAX_DATES[doc_type]&.iso8601,
+        publication_date: (KNOWN_TAX_DATES[doc_type] || KNOWN_TAX_DATES[code])&.iso8601,
         effective_date: nil,
         end_date: nil,
         is_consolidated: true,
@@ -275,6 +307,58 @@ class FisconetSearchService
     rescue SQLite3::Exception => e
       Rails.logger.error("[FisconetSearch] legislation_info error: #{e.message}")
       nil
+    end
+  end
+
+  # ─── Editions of the annual codes ──────────────────────────────────────
+  # WIB 92 and KB/WIB 92 are published once per INCOME year. Since 2026-09-26 the corpus
+  # keeps each edition as its own tax_legislation row (base_code, edition_year,
+  # edition_role): the edition for the current income year answers to the bare code
+  # ('WIB 92'), the other one is 'WIB 92 (inkomsten 2027)'. So a page never lists two
+  # editions' articles together, and each page names its own edition and links the others.
+  #
+  # Returns { base_code:, edition_year:, edition_role:, editions: [...] }, with nils and []
+  # for a single-edition code or a corpus built before the edition columns existed.
+  def self.edition_of(db, legislation_id)
+    blank = { base_code: nil, edition_year: nil, edition_role: nil, editions: [] }
+    columns = db.execute('PRAGMA table_info(tax_legislation)').map { |col| col.is_a?(Hash) ? col['name'] : col[1] }
+    return blank unless (%w[base_code edition_year edition_role] - columns).empty?
+
+    own = db.get_first_row('SELECT base_code, edition_year, edition_role FROM tax_legislation WHERE id = ?',
+                           [legislation_id])
+    return blank if own.nil? || own['edition_year'].nil?
+
+    siblings = db.execute(<<~SQL, [own['base_code']])
+      SELECT id, document_type, edition_year, COALESCE(edition_role, 'current') AS edition_role
+      FROM tax_legislation
+      WHERE base_code = ? AND edition_year IS NOT NULL
+      ORDER BY edition_year DESC
+    SQL
+    {
+      base_code: own['base_code'],
+      edition_year: own['edition_year'].to_i,
+      edition_role: own['edition_role'].presence || 'current',
+      editions: siblings.map do |sib|
+        { id: sib['id'], numac: numac_for(sib['id']), document_type: sib['document_type'],
+          edition_year: sib['edition_year'].to_i, edition_role: sib['edition_role'] }
+      end
+    }
+  rescue SQLite3::Exception => e
+    Rails.logger.error("[FisconetSearch] edition_of error: #{e.message}")
+    blank
+  end
+
+  # "inkomsten 2026 (aanslagjaar 2027)". Fisconet names editions by income year, and the
+  # income of year Y is assessed in aanslagjaar Y + 1 (KB/WIB 92 art. 200; the 2026 edition of
+  # KB/WIB 92 art. 4 is headed "inkomsten 2026 - aanslagjaar 2027").
+  def self.edition_label(edition_year, language_id: 1)
+    year = edition_year.to_i
+    return nil if year.zero?
+
+    if language_id.to_i == 2
+      "revenus #{year} (exercice d'imposition #{year + 1})"
+    else
+      "inkomsten #{year} (aanslagjaar #{year + 1})"
     end
   end
 

@@ -43,7 +43,7 @@
       <!-- Invoice Language Preference -->
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-          🌐 <%= t('account.invoice_language', default: 'Factuurtaal') %>
+          <%= account_icon(:globe) %> <%= t('account.invoice_language', default: 'Factuurtaal') %>
         </h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
           <%= t('account.invoice_language_desc', default: 'Kies de taal voor uw facturen. Standaard wordt de taal van de website gebruikt.') %>
@@ -57,16 +57,43 @@
                   id="invoice_locale"
                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-(--accent-500) focus:border-transparent">
             <option value="" <%= 'selected' if @user.invoice_locale.blank? %>>
-              🔄 <%= t('account.invoice_language_auto', default: 'Automatisch') %> (<%= { 'nl' => 'Nederlands', 'fr' => 'Français', 'de' => 'Deutsch' }[@user.locale] || 'Nederlands' %>)
+              <%= t('account.invoice_language_auto') %> (<%= invoice_language_label(@user.locale) %>)
             </option>
-            <option value="nl" <%= 'selected' if @user.invoice_locale == 'nl' %>>🇧🇪 Nederlands (Factuur)</option>
-            <option value="fr" <%= 'selected' if @user.invoice_locale == 'fr' %>>🇧🇪 Français (Facture)</option>
-            <option value="de" <%= 'selected' if @user.invoice_locale == 'de' %>>🇩🇪 Deutsch (Rechnung)</option>
-            <option value="en" <%= 'selected' if @user.invoice_locale == 'en' %>>🇬🇧 English (Invoice)</option>
+            <option value="nl" <%= 'selected' if @user.invoice_locale == 'nl' %>>Nederlands (Factuur)</option>
+            <option value="fr" <%= 'selected' if @user.invoice_locale == 'fr' %>>Français (Facture)</option>
+            <option value="de" <%= 'selected' if @user.invoice_locale == 'de' %>>Deutsch (Rechnung)</option>
+            <option value="en" <%= 'selected' if @user.invoice_locale == 'en' %>>English (Invoice)</option>
           </select>
         </div>
         <p class="text-xs text-gray-400 dark:text-gray-500">
           <%= t('account.invoice_language_note', default: 'Toekomstige facturen worden in de gekozen taal opgesteld. Bestaande facturen wijzigen niet.') %>
+        </p>
+
+        <%# Which of our four sites is yours. Defaults to the one you signed up
+            on, which is what most readers expect and never have to touch. The
+            empty option is not "none" - it means "keep following my
+            registration", stored as an ABSENT preference rather than a value. %>
+        <div class="mb-2 mt-4">
+          <label for="default_portal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <%= t('account.default_portal', default: 'Standaard portaal') %>
+          </label>
+          <% current_portal = @user.ui_prefs[BrandMailerIdentity::PREFERENCE_KEY] %>
+          <select name="default_portal"
+                  id="default_portal"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-(--accent-500) focus:border-transparent">
+            <option value="" <%= 'selected' if current_portal.blank? %>>
+              <%= t('account.default_portal_auto', default: 'Automatisch') %>
+              (<%= SiteBrand::LABELS[@user.registration_brand] || SiteBrand::LABELS['wetwijzer'] %>)
+            </option>
+            <% SiteBrand::KEYS.each do |brand_key| %>
+              <option value="<%= brand_key %>" <%= 'selected' if current_portal == brand_key %>>
+                <%= SiteBrand::LABELS[brand_key] %> (<%= SiteBrand::CANONICAL_DOMAINS[brand_key] %>)
+              </option>
+            <% end %>
+          </select>
+        </div>
+        <p class="text-xs text-gray-400 dark:text-gray-500">
+          <%= t('account.default_portal_note', default: 'Bepaalt welke site u e-mails stuurt en waar de links in die e-mails naartoe leiden. Standaard is dit de site waarop u zich registreerde.') %>
         </p>
       </div>
 
@@ -95,7 +122,10 @@
             </div>
           </div>
           
-          <div data-controller="password-visibility">
+          <div data-controller="password-strength password-visibility"
+               data-password-strength-labels-value="<%= t('auth.password_strength.labels').to_json %>"
+               data-password-strength-requirements-value="<%= t('auth.password_strength.requirements').to_json %>"
+               data-password-strength-empty-value="<%= t('auth.password_strength.empty') %>">
             <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               <%= t('account.new_password') %>
             </label>
@@ -105,39 +135,19 @@
                      id="password"
                      autocomplete="new-password"
                      data-password-visibility-target="input"
+                     data-password-strength-target="input"
+                     data-action="input->password-strength#check"
                      minlength="8"
                      class="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-(--accent-500) focus:border-transparent">
               <%= render 'shared/password_toggle' %>
             </div>
-            <div id="pw-strength" class="mt-2 hidden">
-              <div class="flex items-center gap-2">
-                <div class="flex-1 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                  <div id="pw-strength-bar" class="h-full rounded-full transition-all duration-300" style="width: 0%"></div>
-                </div>
-                <span id="pw-strength-label" class="text-xs font-medium w-16 text-right"></span>
+            <div id="pw-strength" class="mt-2">
+              <div class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                <div id="pw-strength-bar" data-password-strength-target="meter" role="progressbar" aria-label="<%= t('auth.password_strength.label') %>" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0" aria-valuetext="<%= t('auth.password_strength.empty') %>" class="h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
               </div>
+              <span id="pw-strength-label" data-password-strength-target="text" role="status" aria-live="polite" aria-atomic="true" class="text-xs mt-1"></span>
+              <div data-password-strength-target="requirements" class="mt-2 flex flex-wrap"><% t('auth.password_strength.requirements').each_value do |requirement| %><span class="text-gray-400 text-xs mr-3"><%= requirement %></span><% end %></div>
             </div>
-            <script nonce="<%= content_security_policy_nonce %>">
-              function updatePasswordStrength(pw) {
-                var wrap = document.getElementById('pw-strength');
-                var bar = document.getElementById('pw-strength-bar');
-                var label = document.getElementById('pw-strength-label');
-                if (!pw) { wrap.classList.add('hidden'); return; }
-                wrap.classList.remove('hidden');
-                var score = 0;
-                if (pw.length >= 8) score++;
-                if (pw.length >= 12) score++;
-                if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
-                if (/\d/.test(pw)) score++;
-                if (/[^a-zA-Z0-9]/.test(pw)) score++;
-                var pct = Math.min(score * 20, 100);
-                bar.style.width = pct + '%';
-                if (score <= 2) { bar.className = 'h-full rounded-full transition-all duration-300 bg-red-500'; label.textContent = '<%= t("account.pw_weak", default: "Zwak") %>'; label.className = 'text-xs font-medium w-16 text-right text-red-500'; }
-                else if (score <= 3) { bar.className = 'h-full rounded-full transition-all duration-300 bg-amber-500'; label.textContent = '<%= t("account.pw_medium", default: "Gemiddeld") %>'; label.className = 'text-xs font-medium w-16 text-right text-amber-500'; }
-                else { bar.className = 'h-full rounded-full transition-all duration-300 bg-green-500'; label.textContent = '<%= t("account.pw_strong", default: "Sterk") %>'; label.className = 'text-xs font-medium w-16 text-right text-green-500'; }
-              }
-              document.getElementById('password').addEventListener('input', function() { updatePasswordStrength(this.value); });
-            </script>
           </div>
           
           <div data-controller="password-visibility">
@@ -167,6 +177,10 @@
         </button>
       </div>
     <% end %>
+    <section class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2"><%= t('account.billing_info') %></h3>
+      <%= render 'billing_form', subscription: @subscription %>
+    </section>
     </main>
   </div>
 </div>

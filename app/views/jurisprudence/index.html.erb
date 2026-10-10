@@ -8,7 +8,7 @@
       <%= case I18n.locale when :fr then 'Jurisprudence Belge' when :de then 'Belgische Rechtsprechung' when :en then 'Belgian Case Law' else 'Belgische Rechtspraak' end %>
     </h1>
     <p class="text-lg text-gray-600 dark:text-gray-300">
-      <span class="font-semibold text-(--accent-600) dark:text-(--accent-400)"><%= number_with_delimiter(@total_count) %></span> <%= case I18n.locale when :fr then 'arrêts disponibles' when :de then 'verfügbare Urteile' when :en then 'cases available' else 'arresten beschikbaar' end %>
+      <span class="font-semibold text-(--accent-600) dark:text-(--accent-400)"><%= number_with_delimiter(@corpus_count) %></span> <%= case I18n.locale when :fr then 'arrêts disponibles' when :de then 'verfügbare Urteile' when :en then 'cases available' else 'arresten beschikbaar' end %>
     </p>
   </div>
 
@@ -71,7 +71,7 @@
             </label>
             <select name="year" id="jur-year" class="w-full py-2.5 rounded-lg border-gray-300 dark:border-gray-600/50 dark:bg-gray-800 dark:text-gray-300 text-sm focus:ring-2 focus:ring-(--accent-500)">
               <option value=""><%= case I18n.locale when :fr then 'Toutes' when :de then 'Alle' when :en then 'All' else 'Alle' end %></option>
-              <% (Date.current.year).downto(1985).each do |y| %>
+              <% jurisprudence_years.each do |y| %>
                 <option value="<%= y %>" <%= 'selected' if @year.to_i == y %>><%= y %></option>
               <% end %>
             </select>
@@ -86,6 +86,12 @@
               <option value=""><%= case I18n.locale when :fr then 'Toutes' when :de then 'Alle' when :en then 'All' else 'Alle' end %></option>
               <option value="NL" <%= 'selected' if @lang == 'NL' %>>Nederlands</option>
               <option value="FR" <%= 'selected' if @lang == 'FR' %>>Français</option>
+              <%# The German site's own listing, German and French judgments together
+                  (JurisprudenceController::LISTING_LANGUAGE_IDS). Offered there, and
+                  wherever a link has already chosen it, so the select shows what is listed. %>
+              <% if I18n.locale == :de || @lang.to_s.upcase == 'DE' %>
+                <option value="DE" <%= 'selected' if @lang.to_s.upcase == 'DE' %>><%= case I18n.locale when :fr then 'Allemand et français' when :de then 'Deutsch und Französisch' when :en then 'German and French' else 'Duits en Frans' end %></option>
+              <% end %>
             </select>
           </div>
         </div>
@@ -129,7 +135,7 @@
           </div>
 
           <% if @query.present? || @court.present? || @year.present? || @date_from.present? || @date_to.present? || @lang.present? || @subject.present? %>
-            <a href="<%= jurisprudence_index_path %>" class="text-sm text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-1 transition-colors">
+            <a href="<%= jurisprudence_index_path %>" class="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-1 transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
@@ -143,44 +149,11 @@
     <% end %>
   </div>
 
-  <!-- Results (Turbo Frame - lazy loaded) -->
+  <!-- Results (rendered with the page; a Turbo Frame for enhanced navigation) -->
   <div aria-live="polite" aria-relevant="additions removals" role="region" aria-label="<%= case I18n.locale when :fr then 'Résultats' when :de then 'Ergebnisse' when :en then 'Results' else 'Resultaten' end %>">
-    <% has_search = @query.present? || @court.present? || @year.present? || @date_from.present? || @date_to.present? || @subject.present?
-       frame_src = if has_search || params[:commit].present?
-         jurisprudence_index_path(q: @query, court: @court, year: @year, date_from: @date_from, date_to: @date_to,
-                                  lang: @lang, subject: @subject, sort: @sort, per_page: @per_page, page: @page)
-       else
-         # On initial visit, also load default results lazily
-         jurisprudence_index_path(lang: @lang, sort: @sort, per_page: @per_page, page: @page)
-       end
-    %>
-    <%= turbo_frame_tag 'jurisprudence_results', src: frame_src, loading: :lazy do %>
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-        <!-- Skeleton loader while Turbo Frame loads -->
-        <div class="divide-y divide-gray-100 dark:divide-sky/20 animate-pulse">
-          <% 5.times do %>
-            <div class="px-5 py-4">
-              <div class="flex items-start justify-between gap-3 mb-2">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-5 h-5 rounded-full bg-gray-200 dark:bg-sky/20"></div>
-                  <div class="h-4 w-48 bg-gray-200 dark:bg-sky/20 rounded"></div>
-                </div>
-                <div class="h-4 w-24 bg-gray-200 dark:bg-sky/20 rounded"></div>
-              </div>
-              <div class="pl-7 space-y-2">
-                <div class="h-3 w-64 bg-gray-100 dark:bg-sky/10 rounded"></div>
-                <div class="flex gap-1.5">
-                  <div class="h-5 w-20 bg-gray-100 dark:bg-sky/10 rounded-full"></div>
-                  <div class="h-5 w-16 bg-gray-100 dark:bg-sky/10 rounded-full"></div>
-                </div>
-                <div class="h-3 w-full bg-gray-100 dark:bg-sky/10 rounded"></div>
-                <div class="h-3 w-3/4 bg-gray-100 dark:bg-sky/10 rounded"></div>
-              </div>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
+    <%# 10:49 no-JS plan, C.2: rendered with the page, through the frame's
+        query path; the frame keeps answering filters and pages with scripts. %>
+    <%= render 'results' %>
   </div>
 
   <!-- Link to chatbot -->

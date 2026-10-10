@@ -5,10 +5,29 @@ module LawsFiltering
 
   private
 
+  CLASSIC_FILTER_KEYS = %w[constitution law decree ordinance decision misc lang_nl lang_fr lang_de].freeze
+  LANGUAGE_FILTER_KEYS = %w[lang_nl lang_fr lang_de].freeze
+
   # Returns true only if the form was explicitly submitted by the user.
   # The hidden languages_present flag should NOT count as submission.
+  # On Classic a direct URL that names type or language filters is a
+  # submitted search too (inbox 2026-10-08 10:49, B.4); sort, page and other
+  # metadata alone are not.
   def filters_submitted?
-    params[:commit].present?
+    params[:commit].present? || (classic_host? && classic_filters_in_request?)
+  end
+
+  # The request's own query, before apply_classic_language_defaults.
+  def classic_filters_in_request?
+    CLASSIC_FILTER_KEYS.any? { |key| request.query_parameters.key?(key) }
+  end
+
+  def apply_classic_language_defaults
+    return if LANGUAGE_FILTER_KEYS.any? { |key| params.key?(key) }
+
+    LawSearchService.default_language_params(I18n.locale, german_site: german_site?).each do |key, value|
+      params[key] = value
+    end
   end
 
   # Performs server-side validation and sets instance variables used by the view
@@ -74,14 +93,19 @@ module LawsFiltering
 
       # Guard against runaway queries (ngram joins on broad terms can exceed 15s)
       begin
-        legislation_scope = Timeout.timeout(10) { LawSearchService.search(effective_params) }
+        legislation_scope = Timeout.timeout(10) do
+          LawSearchService.search(effective_params, german_site: german_site?)
+        end
       rescue Timeout::Error
-        Rails.logger.warn("[SEARCH TIMEOUT] LawSearchService.search timed out for query=#{effective_params[:title].inspect}")
+        # WW-PRIV-02: the event only, never the search terms.
+        Rails.logger.warn('[SEARCH TIMEOUT] LawSearchService.search timed out')
         # Fallback: simple LIKE search, fast but less feature-rich
         term = effective_params[:title].to_s.strip.downcase
-        canonical_scope = Legislation.where(
-          language_id: LawSearchService::CANONICAL_LANGUAGE_IDS
-        )
+        canonical_scope = if german_site?
+                            Legislation.served_on_german_site
+                          else
+                            Legislation.where(language_id: LawSearchService::CANONICAL_LANGUAGE_IDS)
+                          end
         legislation_scope = if term.present?
                               canonical_scope.where(
                                 'LOWER(title) LIKE ?',
@@ -92,7 +116,8 @@ module LawsFiltering
                             end
       end
 
-      # Merge FiscoNet tax legislation (not for classic – FiscoNet searches article text, not titles)
+      # Merge FiscoNet tax legislation, with the same language/scope switches.
+      # Classic keeps its existing Justel-only result contract.
       if FisconetSearchService.available? && !classic_host?
         fisconet_results = FisconetSearchService.search(search_params.to_h)
         if fisconet_results.any?
@@ -118,7 +143,7 @@ module LawsFiltering
           @juris_pagy = Pagy::Offset.new(count: juris_result.total_count, page: juris_page, limit: @per_page, page_key: 'juris_page', request: request)
         end
       rescue Timeout::Error
-        Rails.logger.warn("[SEARCH TIMEOUT] Jurisprudence search timed out for query=#{params[:title].inspect}")
+        Rails.logger.warn('[SEARCH TIMEOUT] Jurisprudence search timed out')
         @jurisprudence_results = []
         @jurisprudence_total_count = 0
       end
@@ -136,7 +161,7 @@ module LawsFiltering
           @parl_pagy = Pagy::Offset.new(count: parl_result.total_count, page: parl_page, limit: @per_page, page_key: 'parl_page', request: request)
         end
       rescue Timeout::Error
-        Rails.logger.warn("[SEARCH TIMEOUT] Parliamentary search timed out for query=#{params[:title].inspect}")
+        Rails.logger.warn('[SEARCH TIMEOUT] Parliamentary search timed out')
         @parliamentary_results = []
         @parliamentary_total_count = 0
       end

@@ -119,16 +119,29 @@ class Legislation < ReadonlyRecord
 
   # @!attribute [rw] law_type_id
   #   @return [Integer] The type/category of the legislation
-  #   @note Must be an integer between 1 and 10 (inclusive)
+  #   @note 1 to 5 Dutch, 6 to 10 French, 11 miscellaneous, 12 to 17 German
+  #     (verfassung, gesetz, dekret, verordnung, erlass, misc_de)
   validates :law_type_id,
             presence: true,
             numericality: {
               only_integer: true,
               greater_than_or_equal_to: 1,
-              less_than_or_equal_to: 11
+              less_than_or_equal_to: 17
             }
 
   # == Scopes =============================================================
+
+  # The German rows the German site may serve: those whose source_method
+  # names a known provenance, so their page can say what the text is
+  # (GermanTextProvenance).
+  scope :german_with_provenance, lambda {
+    where(language_id: GERMAN_LANGUAGE_ID, source_method: GermanTextProvenance::SOURCE_METHODS)
+  }
+
+  # The rows the German site (gesetzguide.be) serves: the Dutch and French
+  # rows, as every site does, and the proven German rows (phase B of
+  # docs/ops/german-corpus-plan-2026-09-27.md).
+  scope :served_on_german_site, -> { in_site_languages.or(german_with_provenance) }
 
   # Orders legislation by date
   # @param direction [Symbol] the sort direction (:asc or :desc)

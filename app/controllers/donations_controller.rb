@@ -9,6 +9,12 @@ class DonationsController < ApplicationController
   RETURN_TOKEN = /\A[A-Za-z0-9_-]{40,64}\z/
 
   MESSAGES = {
+    disabled: {
+      nl: 'Donaties zijn momenteel uitgeschakeld wegens technische problemen.',
+      fr: 'Les dons sont actuellement désactivés en raison de problèmes techniques.',
+      en: 'Donations are currently disabled due to technical issues.',
+      de: 'Spenden sind derzeit aufgrund technischer Probleme deaktiviert.'
+    },
     unavailable: {
       nl: 'Donaties zijn tijdelijk niet beschikbaar. Probeer het later opnieuw.',
       fr: 'Les dons sont temporairement indisponibles. Veuillez réessayer plus tard.',
@@ -54,6 +60,11 @@ class DonationsController < ApplicationController
   }.freeze
 
   def create
+    unless MollieConfiguration.donations_enabled?
+      redirect_to donation_page_path, alert: localized(:disabled), status: :see_other
+      return
+    end
+
     amount_cents = Integer(params[:amount_cents], exception: false)
     unless MolliePayment::DONATION_AMOUNTS_CENTS.include?(amount_cents)
       redirect_to donation_page_path, alert: localized(:invalid_amount), status: :see_other

@@ -1,24 +1,18 @@
-<% @title = { fr: 'Hémicycle historique', de: 'Historischer Halbkreis', nl: 'Historisch Hemicyclus' }[I18n.locale] || 'Historisch Hemicyclus' %>
+<% @title = t('public_navigation.hemicycle_history.title') %>
 
 <div class="max-w-6xl mx-auto px-4">
   <!-- Header -->
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900 dark:text-blue-400 mb-2 flex items-center gap-3">
       <span class="text-4xl">🏛️</span>
-      <% if I18n.locale == :fr %>Hémicycle historique<% elsif I18n.locale == :de %>Historischer Halbkreis<% else %>Historisch Hemicyclus<% end %>
+      <%= t('public_navigation.hemicycle_history.title') %>
     </h1>
     <p class="text-lg text-gray-600 dark:text-gray-300">
-      <% if I18n.locale == :fr %>
-        Composition de la Chambre des représentants depuis 1894
-      <% elsif I18n.locale == :de %>
-        Zusammensetzung der Abgeordnetenkammer seit 1894
-      <% else %>
-        Samenstelling van de Kamer van volksvertegenwoordigers sinds 1894
-      <% end %>
+      <%= t('public_navigation.hemicycle_history.description') %>
     </p>
     <div class="mt-2 flex gap-4">
       <a href="<%= mp_directory_path %>" class="text-sm text-(--accent-600) dark:text-(--accent-400) hover:underline">
-        ← <% if I18n.locale == :fr %>Retour aux députés<% elsif I18n.locale == :de %>Zurück zu den Abgeordneten<% elsif I18n.locale == :en %>Back to members<% else %>Terug naar kamerleden<% end %>
+        ← <%= t('public_navigation.hemicycle_history.back') %>
       </a>
     </div>
   </div>
@@ -28,7 +22,7 @@
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-8" data-controller="hemicycle-hover" data-hemicycle-hover-mode-value="click">
       <div class="flex flex-wrap items-center gap-4 mb-4">
         <label class="text-sm font-bold text-gray-700 dark:text-gray-300">
-          <% if I18n.locale == :fr %>Élections<% elsif I18n.locale == :de %>Wahlen<% else %>Verkiezingen<% end %>
+          <%= t('public_navigation.hemicycle_history.elections') %>
         </label>
         <div class="flex flex-wrap gap-1.5">
           <% @years.reverse.each do |year| %>
@@ -46,15 +40,15 @@
       <!-- Current year title -->
       <div class="text-center mb-6">
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-          <% if I18n.locale == :fr %>Chambre des représentants<% elsif I18n.locale == :de %>Abgeordnetenkammer<% else %>Kamer van volksvertegenwoordigers<% end %>
+          <%= t('public_navigation.hemicycle_history.chamber') %>
           - <span class="text-(--accent-600) dark:text-(--accent-400)"><%= @selected_year %></span>
         </h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
           <span class="font-semibold"><%= @hemicycle[:total_seats] %></span>
-          <% if I18n.locale == :fr %>sièges<% elsif I18n.locale == :de %>Sitze<% else %>zetels<% end %>
+          <%= t('public_navigation.seats') %>
           -
           <span class="font-semibold"><%= @hemicycle[:parties].size %></span>
-          <% if I18n.locale == :fr %>partis<% elsif I18n.locale == :de %>Parteien<% else %>partijen<% end %>
+          <%= t('public_navigation.hemicycle_history.parties') %>
         </p>
       </div>
 
@@ -137,7 +131,7 @@
 
             <!-- Center label -->
             <text x="250" y="255" text-anchor="middle" fill="currentColor" class="text-gray-600 dark:text-gray-400 text-xs font-semibold" font-size="12">
-              <%= total_seats %> <% if I18n.locale == :fr %>sièges<% elsif I18n.locale == :de %>Sitze<% else %>zetels<% end %>
+              <%= total_seats %> <%= t('public_navigation.seats') %>
             </text>
             <text x="250" y="240" text-anchor="middle" fill="currentColor" class="text-gray-800 dark:text-gray-200 font-bold" font-size="16">
               <%= @selected_year %>
@@ -169,11 +163,11 @@
     <!-- Political spectrum legend -->
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-8">
       <h3 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-        <% if I18n.locale == :fr %>Spectre politique<% elsif I18n.locale == :de %>Politisches Spektrum<% else %>Politiek spectrum<% end %>
+        <%= t('public_navigation.hemicycle_history.spectrum') %>
       </h3>
       <div class="flex items-center gap-2">
         <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
-          <% if I18n.locale == :fr %>Gauche<% elsif I18n.locale == :de %>Links<% else %>Links<% end %>
+          <%= t('public_navigation.hemicycle_history.left') %>
         </span>
         <div class="flex-1 h-3 rounded-full overflow-hidden flex">
           <% @hemicycle[:parties].each do |party| %>
@@ -183,7 +177,7 @@
           <% end %>
         </div>
         <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
-          <% if I18n.locale == :fr %>Droite<% elsif I18n.locale == :de %>Rechts<% else %>Rechts<% end %>
+          <%= t('public_navigation.hemicycle_history.right') %>
         </span>
       </div>
     </div>
@@ -191,7 +185,7 @@
     <!-- Timeline overview -->
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-8">
       <h3 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">
-        <% if I18n.locale == :fr %>Évolution de la composition<% elsif I18n.locale == :de %>Entwicklung der Zusammensetzung<% else %>Evolutie van de samenstelling<% end %>
+        <%= t('public_navigation.hemicycle_history.evolution') %>
       </h3>
       <div class="space-y-1">
         <% @timeline.each do |tdata| %>
@@ -215,7 +209,7 @@
     <div class="text-center py-12 text-gray-500 dark:text-gray-400">
       <span class="text-4xl">🏛️</span>
       <p class="mt-2">
-        <% if I18n.locale == :fr %>Données indisponibles<% elsif I18n.locale == :de %>Daten nicht verfügbar<% else %>Gegevens niet beschikbaar<% end %>
+        <%= t('public_navigation.hemicycle_history.unavailable') %>
       </p>
     </div>
   <% end %>

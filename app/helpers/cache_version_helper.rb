@@ -149,6 +149,7 @@ module CacheVersionHelper
     app/helpers/application_helper.rb
     app/helpers/laws_helper.rb
     app/helpers/article_references_helper.rb
+    app/services/law_toc_entries.rb
   ].freeze
 
   # The home page's popular-laws and concordance block renders through its own
@@ -162,6 +163,7 @@ module CacheVersionHelper
   # happened to touch the view as well, and Rails folds the template digest in.
   POPULAR_LAWS_CODE_FILES = %w[
     app/helpers/popular_laws_helper.rb
+    config/data/popular_law_abbreviations.yml
   ].freeze
 
   # Memoised on the module, not on `self`: as a mixed-in view helper `self` is

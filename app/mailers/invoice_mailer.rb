@@ -2,6 +2,7 @@
 
 class InvoiceMailer < ApplicationMailer
   helper BrandingHelper
+  include InvoicesHelper
 
   # Locale-aware billing emails per brand
   BILLING_EMAILS = {
@@ -92,7 +93,7 @@ class InvoiceMailer < ApplicationMailer
 
   def attach_invoice_files(invoice)
     file_prefix = FILE_PREFIXES[@locale] || 'factuur'
-    @peppol_sent = invoice.octopus_synced? || invoice.octopus_status == 'peppol_sent'
+    @peppol_state = invoice_peppol_state(invoice)
     @is_b2b = invoice.customer_vat.present?
 
     if invoice.pdf_exists?

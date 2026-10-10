@@ -34,6 +34,7 @@
     <h2>How <%= site_name %> is funded</h2>
     <p><%= site_name %> is funded by <strong>WetWijzer Pro</strong> subscriptions and chatbot credits.</p>
     <p>You can also support <%= site_name %> directly through our <%= link_to 'donation page', support_page_path(anchor: 'donate') %>.</p>
+    <%= render 'donations/disabled_notice' unless MollieConfiguration.donations_enabled? %>
 
     <h2>Contact</h2>
     <p>Contact me via my <a href="https://www.advocaat.be/nl/zoek-een-advocaat/advocaat/63fee2a5-637a-4839-a5a6-c833482f1e3a" target="_blank" rel="noopener">advocaat.be profile</a> or via <a href="https://www.linkedin.com/in/gauthier-b-017447138/" target="_blank" rel="noopener">LinkedIn</a>.</p>

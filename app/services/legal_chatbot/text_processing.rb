@@ -126,8 +126,13 @@ module LegalChatbot
     def lookup_law_title(numac, language_id = nil)
       return nil if numac.blank?
 
-      # First check CORE_LAW_NUMACS constant
-      return CORE_LAW_NUMACS[numac] if CORE_LAW_NUMACS.key?(numac)
+      # First check CORE_LAW_NUMACS constant. Qualified: this method is
+      # defined in TextProcessing, whose lexical scope does not see the
+      # constant of CoreLawMappings, so the bare name raised NameError on
+      # every call, whatever class included both (answer_linking.rb:333
+      # qualifies it the same way).
+      core_laws = ::LegalChatbot::CoreLawMappings::CORE_LAW_NUMACS
+      return core_laws[numac] if core_laws.key?(numac)
 
       lang_id = language_id || @language_id
 
@@ -142,13 +147,14 @@ module LegalChatbot
         return legislation.display_title if legislation&.title.present?
       end
 
-      # Last resort: try any language
-      legislation = Legislation.find_by(numac: numac)
+      # Last resort: the other site language (never a German row, which the
+      # NL and FR answers must not cite before phase B of the German plan)
+      legislation = Legislation.in_site_languages.find_by(numac: numac)
       return legislation.display_title if legislation&.title.present?
 
       if numac =~ /^(\d{4})[AB](\d+)$/
         base_numac = "#{::Regexp.last_match(1)}#{::Regexp.last_match(2)}"
-        legislation = Legislation.find_by(numac: base_numac)
+        legislation = Legislation.in_site_languages.find_by(numac: base_numac)
         return legislation.display_title if legislation&.title.present?
       end
 

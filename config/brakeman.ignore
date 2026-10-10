@@ -1,6 +1,26 @@
 {
   "ignored_warnings": [
     {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "3377b08a48322454c2552ea29b36a5cf3d1b8529501f8e2fed9bbc364db448e0",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/models/ai_provider_monthly_spend.rb",
+      "line": 75,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "Arel.sql(\"spend_micro_eur = #{new_total_sql}, updated_at = excluded.updated_at\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "AiProviderMonthlySpend",
+        "method": "self.write_returning_total!"
+      },
+      "user_input": "new_total_sql",
+      "confidence": "Medium",
+      "note": "write_returning_total! is private and has two callers in the same class, adjust! and saturate!, which build new_total_sql from integers that went through Integer() (delta, floor) and from identifiers quoted by the connection (quoted_table_name, quote_column_name); the provider and month values reach the upsert as bound attributes, never as SQL text. No caller-supplied string is interpolated. [Verified against code 2026-09-27 when ww-security-audit started failing on Brakeman warnings. Owner: ops-alerts lane. Review: 2027-03.]"
+    },
+    {
       "warning_type": "File Access",
       "warning_code": 16,
       "fingerprint": "d9230def7ddedcc6b6ecb359751052a9772d6d7786e2b72a4a027e7d9d1e6bf3",
@@ -81,26 +101,6 @@
       "note": "The request.get? guard only exempts non-GET verbs (including HEAD) from an SEO/UX brand-domain canonicalization 301 triggered by an explicit ?locale= param. The redirect is not a security control: no authentication, authorization, CSRF, or state change is conditioned on reaching the canonical host, so a HEAD request bypassing the redirect just renders the same public page on the current host. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
     },
     {
-      "warning_type": "HTTP Verb Confusion",
-      "warning_code": 118,
-      "fingerprint": "16efe74610a15396ecfaed60c413f794a5037780a6e39e76efcb26384bdf98e0",
-      "check_name": "VerbConfusion",
-      "message": "Potential HTTP verb confusion. `HEAD` is routed like `GET` but `request.get?` will return `false`",
-      "file": "app/controllers/application_controller.rb",
-      "line": 342,
-      "link": "https://brakemanscanner.org/docs/warning_types/http_verb_confusion/",
-      "code": "if request.get? then\n  cookies.signed[:return_to] = { :value => request.fullpath, :expires => 5.minutes.from_now, :httponly => true }\nend",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "ApplicationController",
-        "method": "store_location"
-      },
-      "user_input": "request.get?",
-      "confidence": "Weak",
-      "note": "request.get? gates writing the return_to cookie inclusively: HEAD requests simply do not get a stored return location, which fails closed \u2014 the auth redirect in require_authentication still fires for HEAD. The cookie is signed, httponly, path-only (request.fullpath) and expires in 5 minutes, and no code path in the app currently reads it back, so treating HEAD as non-GET cannot bypass any security control. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
-    },
-    {
       "warning_type": "File Access",
       "warning_code": 16,
       "fingerprint": "67c87c12b28faa25124265270fee6b4758b59457109502a8c4471fc1abf18b95",
@@ -178,7 +178,7 @@
       },
       "user_input": "params[:title].to_s.strip.split(/\\s+/).reject(&:blank?).map",
       "confidence": "Weak",
-      "note": "Every fragment interpolated into this pattern passes through Regexp.escape first (line 589 for the per-word flexible mode, line 586 for exact mode), so the regex is a pure alternation of literal strings with no user-controllable quantifiers, groups, or backreferences \u2014 the constructs catastrophic backtracking requires. It is matched only against short law titles, and params[:title] is a GET parameter bounded by URL length, so worst-case cost is linear, not exponential. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+      "note": "Every fragment interpolated into this pattern passes through Regexp.escape first (line 589 for the per-word flexible mode, line 586 for exact mode), so the regex is a pure alternation of literal strings with no user-controllable quantifiers, groups, or backreferences — the constructs catastrophic backtracking requires. It is matched only against short law titles, and params[:title] is a GET parameter bounded by URL length, so worst-case cost is linear, not exponential. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
     },
     {
       "warning_type": "SQL Injection",
@@ -298,7 +298,7 @@
       },
       "user_input": "build_tag_rank_clause(extract_tokens(normalize_query(params[:title])))",
       "confidence": "Medium",
-      "note": "Every dynamic value in this Arel.sql ORDER BY clause is a token produced by extract_tokens, whose scan regex allowlists characters to alphanumerics, dot, and hyphen \u2014 quotes, whitespace, LIKE wildcards, and backslashes cannot appear, so nothing can break out of the single-quoted LIKE literals. Single quotes are additionally doubled (gsub at lines 900/921) as defense in depth, which is a sufficient escape in SQLite string literals (no backslash escapes). ORDER BY cannot take bound parameters usefully here, hence the deliberate allowlist-then-interpolate design. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+      "note": "Every dynamic value in this Arel.sql ORDER BY clause is a token produced by extract_tokens, whose scan regex allowlists characters to alphanumerics, dot, and hyphen — quotes, whitespace, LIKE wildcards, and backslashes cannot appear, so nothing can break out of the single-quoted LIKE literals. Single quotes are additionally doubled (gsub at lines 900/921) as defense in depth, which is a sufficient escape in SQLite string literals (no backslash escapes). ORDER BY cannot take bound parameters usefully here, hence the deliberate allowlist-then-interpolate design. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
     },
     {
       "warning_type": "SQL Injection",
@@ -378,6 +378,6 @@
       "note": "Dead branch: the guard `law.respond_to?(:fisconet?) && law.fisconet?` is false for every object rendered by this partial (Legislation has no fisconet column, and FisconetResult intentionally does not define fisconet? - see the design comment at fisconet_search_service.rb:26), and fisconet_url is not defined on any class in the codebase, so this href can never render. Revisit this ignore if fisconet_url is ever actually implemented; at that point the URL should come from the corpus source_url with a scheme allowlist. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
     }
   ],
-  "updated": "2026-08-17",
+  "updated": "2026-09-27",
   "brakeman_version": "8.0.5"
 }

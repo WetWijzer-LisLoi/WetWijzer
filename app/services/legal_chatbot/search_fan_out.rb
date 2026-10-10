@@ -7,9 +7,11 @@ module LegalChatbot
   # shared monotonic deadline with kill+join of stragglers, deep-frozen
   # detached payloads so a killed worker cannot retain references, retrieval
   # evidence recording (@last_retrieval_searches, read by the pipeline), the
-  # legislation quality filters and the regional-question gating. Mixed into
-  # LegalChatbotService alongside the orchestrator; the *_svc memo readers
-  # and is_tax_question? are host methods.
+  # degraded-source record behind the user-facing notice
+  # (@last_retrieval_degradation), the legislation quality filters and the
+  # regional-question gating. Mixed into LegalChatbotService alongside the
+  # orchestrator; the *_svc memo readers and is_tax_question? are host
+  # methods.
   module SearchFanOut
     extend ActiveSupport::Concern
 
@@ -39,12 +41,50 @@ module LegalChatbot
     def execute_parallel_searches(sources, question, question_embedding, hyde_embedding)
       results = { legislation: [], jurisprudence: [], parliamentary: [], fisconet: [], regional: [] }
       search_evidence = ChatbotQualityEvidence.empty_retrieval_searches
+      # source => reason, for the sources that were NOT searched properly:
+      # timeout | error | saturated, or the reason a completed search reports
+      # itself (semantic_unavailable). Only a created job can land here, so a
+      # source the user did not select, one that does not apply to the
+      # question, or one disabled by its env flag can never be called degraded.
+      # Kept apart from search_evidence on purpose: that hash is an exact-key
+      # contract shared with the capture and judge scripts.
+      #
+      # COVERAGE GAP, deliberate and owner-gated: :fisconet can reach this hash
+      # only through a fan-out-level timeout, error or saturation, never
+      # through a failure of its own. FisconetSearch#search returns [] for a DB
+      # it cannot open (fisconet_search.rb:219) and wraps its whole body in
+      # `rescue StandardError => e; ...; []` (:240), with a second rescue on the
+      # FAISS supplement (:938). A dead tax DB, a locked file or a failed
+      # supplement therefore arrive here as status 'completed' with zero rows,
+      # which the completion branch below correctly refuses to call degraded -
+      # a check that cannot go red on the path where it matters most, since
+      # WIB 92 was deliberately never ingested into laws.prod and the
+      # consolidated tax text exists only in fisconet. Closing it is one line
+      # in fisconet_search.rb (a @retrieval_degradation memo in that rescue,
+      # as the other four searches now keep) on a file outside this change.
+      degraded = {}
       jobs = {}
 
       if sources.include?(:legislation)
-        # Legislation: via extracted service object
+        # Legislation: via extracted service object. On gesetzguide the German
+        # lane (german_lane?, off by default) first asks the German pointer
+        # index with the RAW question vector, never HyDE, in the same worker:
+        # no new fan-out key, no change to the search_evidence contract. Only
+        # the pointers and wording modes hand the rows to the legislation
+        # search; shadow mode logs the comparison and leaves the result as it
+        # is. A lane that fails or finds nothing gives [] and changes nothing.
         jobs[:legislation] = lambda do
-          legislation_search_svc.search(hyde_embedding, limit: 15, question: question)
+          kwargs = { limit: 15, question: question }
+          german_pointers = german_article_search_svc.search(question_embedding) if german_lane?
+          merge_pointers = german_pointers.present? && german_article_search_svc.merges_pointers?
+          kwargs[:german_pointers] = german_pointers if merge_pointers
+          rows = legislation_search_svc.search(hyde_embedding, **kwargs)
+          shadow = german_pointers.present? && german_article_search_svc.shadow?
+          LegalChatbot::GermanArticleSearch.log_shadow_overlap(german_pointers, rows) if shadow
+          # Originals hydrated but withheld (either switch in shadow) are
+          # compared with their translations in the pool, for the replay.
+          german_article_search_svc.try(:log_shadow_originals, rows) if german_lane?
+          rows
         end
 
         # Fisconet: via extracted service object (keyword search over the tax
@@ -109,6 +149,9 @@ module LegalChatbot
                 timeout: false,
                 error: nil,
                 payload: payload,
+                # Read in the worker, right after its own search: the payload
+                # is a frozen array and cannot carry the flag out.
+                degradation: search_degradation_for(source),
                 finished_at: finished_at
               }.freeze
             else
@@ -171,11 +214,14 @@ module LegalChatbot
           pending.delete(source)
           results[source] = completion.fetch(:payload).deep_dup
           search_evidence[source] = completion.slice(:status, :duration_ms, :timeout, :error)
+          degraded[source] = completion[:degradation] if completion[:degradation]
+          degraded[source] = completion.fetch(:status) unless completion.fetch(:status) == 'completed'
         end
         break if pending.empty? || monotonic_now >= deadline
       end
 
       pending.each_key do |source|
+        degraded[source] = 'timeout'
         search_evidence[source] = {
           status: 'timeout',
           duration_ms: elapsed_milliseconds(worker_started.fetch(source), deadline),
@@ -192,7 +238,19 @@ module LegalChatbot
       threads.each_value(&:join)
 
       @last_retrieval_searches = deep_freeze_search_value(search_evidence.deep_dup)
+      # In the fixed source order, not in completion order: the notice names
+      # the sources in this order.
+      @last_retrieval_degradation = deep_freeze_search_value(degraded.slice(*results.keys))
       results
+    end
+
+    # What the source's own search reported about itself, or nil. Reads the
+    # memo ivar the job has just filled rather than the *_svc reader, and
+    # guards with respond_to?: the suites that install fakes set that same
+    # ivar, and their fakes have no such reader.
+    def search_degradation_for(source)
+      svc = instance_variable_get(:"@#{source}_search_svc")
+      svc.retrieval_degradation if svc.respond_to?(:retrieval_degradation)
     end
 
     def parallel_search_timeout_seconds
@@ -302,10 +360,10 @@ module LegalChatbot
       explicit_region || regional_subject
     end
 
+    # One predicate, shared with the German question translation, which must
+    # not turn a refused question into one that is answered.
     def unsupported_regional_corpus_question?(question)
-      q = question.to_s
-      q.match?(LegalChatbot::RegionalSearch::UNSUPPORTED_GERMAN_COMMUNITY_PATTERN) &&
-        q.match?(/\b(?:groeipakket|kinderbijslag|allocations?\s+familiales|kindergeld|child\s+benefit|family\s+allowance)\b/i)
+      LegalChatbot::RegionalSearch.unsupported_corpus_question?(question)
     end
   end
 end

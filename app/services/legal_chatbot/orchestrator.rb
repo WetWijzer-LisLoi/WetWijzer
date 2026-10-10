@@ -112,6 +112,19 @@ module LegalChatbot
         )
       end
 
+      # The German pointer lane (gesetzguide only; GERMAN_LANE_MODE). Reads
+      # its mode when built, so one ask sees one mode.
+      def german_article_search_svc
+        @german_article_search_svc ||= LegalChatbot::GermanArticleSearch.new
+      end
+
+      # The controller decides the host (SiteBrand, never a parameter) and the
+      # environment decides the mode; both must say yes. False everywhere but
+      # on gesetzguide browser requests with the lane switched on.
+      def german_lane?
+        @german_lane == true && german_article_search_svc.active?
+      end
+
       def jurisprudence_search_svc
         @jurisprudence_search_svc ||= LegalChatbot::JurisprudenceSearch.new(
           language: @language,
@@ -170,11 +183,23 @@ module LegalChatbot
       t_hyde = ((Time.current - phase_start) * 1000).round
       phase_start = Time.current
 
-      # Parallel multi-source search via extracted service objects
+      # Parallel multi-source search via extracted service objects. The
+      # degradation record is cleared HERE, not only in the fan-out: one
+      # service instance can serve more than one ask, and four suites besides
+      # the notice's own replace execute_parallel_searches by name at 14 call
+      # sites (chatbot_answer_safety 1, legal_chatbot_incomplete_response 1,
+      # legal_chatbot_quote_repair 2, legal_chatbot_quality_guardrails 10), so
+      # a replaced fan-out must never inherit the previous ask's degraded
+      # sources.
+      @last_retrieval_degradation = nil
       all_results = execute_parallel_searches(sources, question, question_embedding, hyde_embedding)
       retrieval_searches = @last_retrieval_searches || ChatbotQualityEvidence.empty_retrieval_searches
+      degraded_sources = @last_retrieval_degradation || {}
       t_search = ((Time.current - phase_start) * 1000).round
       phase_start = Time.current
+      # Logged here rather than next to [Perf], so the record survives the
+      # no-results return and a later provider failure.
+      log_retrieval_degradation(sources, degraded_sources, retrieval_searches, t_search) if degraded_sources.any?
 
       leg_articles = all_results[:legislation] || []
       jur_cases = all_results[:jurisprudence] || []
@@ -201,7 +226,7 @@ module LegalChatbot
         jur_cases = jur_cases.take(context_policy.fetch(:jurisprudence))
         parl_docs = parl_docs.take(context_policy.fetch(:parliamentary))
         # Tax codes live ONLY in fisconet (BTW/WIB92 are empty in the main
-        # laws DB) — one snippet is rarely enough to answer a tax question
+        # laws DB); one snippet is rarely enough to answer a tax question
         # under the database-only prompt rule, so keep 3 even on the low tier.
         # NOT .take: FisconetSearch emits the regional variants of one article as an
         # indivisible group, and a bare take(3) splits it, which is exactly the partial
@@ -239,7 +264,16 @@ module LegalChatbot
             retrieval_searches: retrieval_searches
           )
         end
-        return result
+        # "I found no provision" after a search that did not complete is the
+        # 2026-09-20 answer in its purest form; it must not stand alone. The
+        # notice LEADS on this path instead of trailing: no_governing_rule_message
+        # (prompts.rb) opens with "in de Belgische geconsolideerde wetgeving die
+        # ik heb doorzocht", which asserts a completed search, so the qualifier
+        # has to be read before the claim it qualifies. Rewording that message
+        # is an owner decision on a file outside this change. Nothing else is
+        # at risk here: no_answer_response returns sources: [], so this path
+        # stores no NUMACs.
+        return apply_retrieval_notice!(result, degraded_sources, lead: true)
       end
 
       # Build combined context via service
@@ -250,7 +284,8 @@ module LegalChatbot
         tax_articles,
         regional_docs,
         max_article_chars: max_article_chars,
-        authoritative_docs: authoritative_docs
+        authoritative_docs: authoritative_docs,
+        question: question
       )
       context = ensure_utf8(context)
       t_context = ((Time.current - phase_start) * 1000).round
@@ -301,7 +336,8 @@ module LegalChatbot
         context = ensure_utf8(
           build_combined_context_from_db(
             leg_articles, jur_cases, parl_docs, tax_articles, regional_docs,
-            max_article_chars: max_article_chars, authoritative_docs: authoritative_docs
+            max_article_chars: max_article_chars, authoritative_docs: authoritative_docs,
+            question: question
           )
         )
         Rails.logger.info("[QuoteRepair] added #{quote_repairs.length} quote-attributed article(s)")
@@ -347,7 +383,8 @@ module LegalChatbot
           repaired_context = ensure_utf8(
             build_combined_context_from_db(
               leg_articles, jur_cases, parl_docs, tax_articles, regional_docs,
-              max_article_chars: max_article_chars, authoritative_docs: authoritative_docs
+              max_article_chars: max_article_chars, authoritative_docs: authoritative_docs,
+              question: question
             )
           )
           begin
@@ -418,7 +455,7 @@ module LegalChatbot
         # passes the guard, and re-validating it replaced the rejecting result
         # with a passing one. That made `citations_verified` read true for an
         # answer whose analysis was withheld, and destroyed the only record of
-        # the offending references — the exact data needed to decide whether a
+        # the offending references, the exact data needed to decide whether a
         # rejection was retryable (unsupported prose refs) or structural (a
         # required regime that retrieval never returned).
         @citation_guard_rejection = @last_citation_guard_result
@@ -467,7 +504,7 @@ module LegalChatbot
       result = {
         answer: clean_answer,
         # Fisconet and regional results have their own shapes (no numac/law_title),
-        # so they must go through their services' own formatters — routing them
+        # so they must go through their services' own formatters; routing them
         # through format_legislation silently dropped every entry.
         sources: source_formatter_svc.format_all(
           legislation: leg_articles,
@@ -494,11 +531,27 @@ module LegalChatbot
         citation_guard_retries: @citation_guard_retries || 0,
         response_time: (Time.current - start_time).round(2)
       }
+      # Before the guard-failure marker below, which copies :answer into
+      # :error: a refusal must keep showing exactly the text it refunds.
+      apply_retrieval_notice!(result, degraded_sources)
       # CitationGuard rejection means no verified legal answer was delivered.
       # Mark it as an error so every controller path refunds/skips the charge;
       # the localized message remains the user-facing explanation.
       mark_citation_guard_failure!(result)
       if @include_quality_evidence
+        # NO degradation field here, and that is a measurement gap, not an
+        # oversight. For the 2026-09-20 shape this row reads perfectly healthy:
+        # retrieval_status 'results', generation_status 'generated',
+        # source_counts[:legislation] = 3 and retrieval_searches[:legislation]
+        # 'completed' (the worker really did complete; only its semantic leg
+        # failed), and ChatbotQualityEvidence.validation_errors passes it.
+        # ChatbotAnalytic has no column for it either (api/chatbot_analytics.rb
+        # writes a fixed list) and scripts/capture_chatbot_quality_run.rb keeps
+        # only answer/sources/quality_evidence/quality_provenance, so a degraded
+        # ask is measurable ONLY by grepping [RetrievalDegraded]. The key set
+        # below is validated exactly, so adding :retrieval_degraded means
+        # changing ChatbotQualityEvidence and its validator together: do it at
+        # the next evidence schema bump rather than alongside the notice.
         evidence_context = llm_svc.last_evidence_context.to_s
         result[:quality_evidence] = ChatbotQualityEvidence.generated(
           context: evidence_context,
@@ -573,7 +626,7 @@ module LegalChatbot
 
     # LinkGuard: validate every internal link the model wrote. The prompt
     # instructs the model to only copy LINK values from the context, but cheap
-    # tiers sometimes slugify a law title into /laws/btw-wetboek — a route
+    # tiers sometimes slugify a law title into /laws/btw-wetboek, a route
     # that does not exist (law pages are keyed by NUMAC or FISCONET_<id>).
     # Policy per citation link:
     #   - target belongs to a source retrieved this turn → keep
@@ -585,7 +638,10 @@ module LegalChatbot
     # Deterministic quote guard. Prompt instructions reduce fabrication but do
     # not make a lower-cost model trustworthy: every Markdown blockquote must
     # occur verbatim in one of the source texts supplied to that same answer.
-    MARKDOWN_BLOCKQUOTE_PATTERN = /(?:^[ ]{0,3}>[^\n]*(?:\n|\z))+/.freeze
+    # A list marker before the ">" ("- > ...", "1. > ...") still opens a
+    # quotation: German answers v6 found four statutory quotations set as list
+    # items that the guard and the translation's protection did not see.
+    MARKDOWN_BLOCKQUOTE_PATTERN = /(?:^[ ]{0,3}(?:(?:[-*+]|\d{1,2}[.)])[ ]+)?>[^\n]*(?:\n|\z))+/.freeze
     MARKDOWN_LINK_PATTERN = /!?\[[^\]\n]+\]\([^)\n]+\)/.freeze
     ARTICLE_SPACE_SOURCE = '[[:space:]\u00A0\u2007\u202F]'.freeze
     ARTICLE_PREFIX_SOURCE = '(?i:(?:Art(?:t|s)?\.?|Artikel(?:en|s)?|Article(?:s)?))'.freeze
@@ -724,5 +780,266 @@ module LegalChatbot
     # long-standing name, which tests and docs reference. A later span cut
     # once swallowed this alias into AnswerGuards - it belongs HERE.
     CITATION_REPAIR_LIMIT = CitationRepair::CITATION_REPAIR_LIMIT
+
+    # ------------------------------------------------------------------
+    # RETRIEVAL NOTICE
+    # ------------------------------------------------------------------
+    #
+    # 2026-09-20, 05:37 UTC: the first question in about 14 hours, 80 s after
+    # a deploy, met three cold mmap'd FAISS indexes. [Perf] read
+    # search=30002ms total=32685ms results=L3/J0/P0/T0/R0: jurisprudence and
+    # parliamentary ran into the shared 30 s deadline, the legislation
+    # semantic leg gave up after its 10 s read and keywords filled in. The
+    # model said, correctly, that its three "kleding" articles did not cover
+    # the question, and nothing told the user that the search behind that
+    # answer had been incomplete. It recurs (faiss-large answered too late on
+    # 12 of the 21 days before it), so the answer now says so itself.
+    #
+    # Inserted into the finished text, deterministically. Asking the model to
+    # mention it would need a PROMPT_VERSION bump, is unreliable on the small
+    # default tier and invites "my sources are incomplete, so from general
+    # knowledge", which breaks the database-only rule. Plain text also reaches
+    # every surface (widget, full page, legacy HTML page, exports, service
+    # clients) without a Vite build.
+    #
+    # Hard signals only (SearchFanOut fills @last_retrieval_degradation): a
+    # low similarity, few hits or an empty result never counts, so a healthy
+    # search cannot fire it. It also cannot fire for a silently failed
+    # :fisconet search - see the COVERAGE GAP note in search_fan_out.rb.
+    #
+    # It names no cause: the fan-out establishes only THAT a source was not
+    # searched through, never why. The first draft said "door een tijdelijke
+    # vertraging", which is wrong for 'error' (also a refused connection to a
+    # dead unit and a missing chamber.sqlite3, see parliamentary_search.rb and
+    # regional_search.rb) and for 'saturated' (the worker cap was full).
+    #
+    # It invites the user to ask again in a moment only for the two reasons a
+    # short wait cures, RETRIEVAL_RETRY_REASONS below: a source that ran into
+    # the shared deadline and a semantic leg that gave up, which is what a
+    # cold index warming up looks like (owner decision, 2026-09-26). Not for
+    # 'error', which waiting does not cure, nor for 'saturated', where a
+    # prompted re-ask would pile onto the pool that was already starved. The
+    # re-ask is charged in full; it is no longer retrieval-poisoned, because
+    # api/conversation_persistence.rb stores no context NUMACs for a degraded
+    # ask (see apply_retrieval_notice! below).
+    #
+    # The degraded answer itself costs no credit (owner default, 2026-09-27,
+    # to-do 6.7): api/chatbot_controller.rb releases the reservation of any
+    # result that carries :retrieval_degraded, whatever the reason, and adds
+    # RETRIEVAL_FREE_ANSWER_NOTES to the notice through with_free_answer_note.
+    # Billing stays in the controller, which alone knows whether anything was
+    # reserved; this module only owns the copy.
+    RETRIEVAL_RETRY_REASONS = %w[timeout semantic_unavailable].freeze
+
+    RETRIEVAL_NOTICE_SOURCE_LABELS = {
+      'nl' => {
+        legislation: 'de wetgeving', jurisprudence: 'de rechtspraak',
+        parliamentary: 'de parlementaire voorbereidingen',
+        fisconet: 'de fiscale wetgeving', regional: 'de regionale wetgeving'
+      },
+      'fr' => {
+        legislation: 'la législation', jurisprudence: 'la jurisprudence',
+        parliamentary: 'les travaux préparatoires',
+        fisconet: 'la législation fiscale', regional: 'la législation régionale'
+      },
+      'en' => {
+        legislation: 'legislation', jurisprudence: 'case law',
+        parliamentary: 'preparatory works',
+        fisconet: 'tax legislation', regional: 'regional legislation'
+      },
+      'de' => {
+        legislation: 'die Gesetzgebung', jurisprudence: 'die Rechtsprechung',
+        parliamentary: 'die parlamentarischen Vorarbeiten',
+        fisconet: 'die Steuergesetzgebung', regional: 'die regionale Gesetzgebung'
+      }
+    }.freeze
+
+    # The lines a model appends after its analysis: the follow-up hint (light
+    # bulb), the privacy tip (warning sign) and the disclaimer, plus the blank
+    # and rule lines between them. They are MODEL-written (build_system_prompt
+    # asks for "Dit is geen officieel juridisch advies." and the three
+    # translations), so the wording is not guaranteed and the disclaimer is
+    # recognised by shape rather than by one fixed sentence.
+    #
+    # The shape is a DEMONSTRATIVE SUBJECT plus the negation: the disclaimer
+    # denies that THIS ANSWER is legal advice. Matching the negation alone was
+    # too permissive - the same family as the two ART_NUM_RE bugs, a pattern
+    # careless about what surrounds the token. "U hebt geen recht op kosteloos
+    # juridisch advies." and "You are not entitled to free legal advice." both
+    # matched, and the trailing-run walk-back below then placed the notice
+    # above a real closing sentence. The failure in the other direction costs
+    # nothing: an unrecognised disclaimer only means the notice is appended
+    # below it instead of above it.
+    RETRIEVAL_NOTICE_FOOTER_LINE = Regexp.union(
+      /\A[\s>*_-]*\z/,
+      /\A[\s>*_]*(?:\u{1F4A1}|\u{26A0})/,
+      /\A[\s>*_]*(?:dit|deze|dat)\b[^\n]{0,30}\bgeen\b[^\n]{0,40}\bjuridisch advies\b/i,
+      /\A[\s>*_]*(?:ceci|cela|cette|le présent|la présente)\b[^\n]{0,30}\bpas\b[^\n]{0,40}\b(?:avis|conseil) juridique\b/i,
+      /\A[\s>*_]*(?:this|that|the above|it)\b[^\n]{0,30}\bnot\b[^\n]{0,40}\blegal advice\b/i,
+      /\A[\s>*_]*(?:dies|das|diese[rs]?)\b[^\n]{0,30}\bkein(?:e|en)?\b[^\n]{0,40}\b(?:Rechtsberatung|Rechtsrat|Rechtsauskunft)\b/i
+    ).freeze
+
+    # The bolded opener of each localized notice, used to REMOVE one. The
+    # notice lives in result[:answer], which api/conversation_persistence.rb
+    # persists verbatim and which comes back to the model as one of the last
+    # six messages, so the model can echo it into a LATER answer. That copy is
+    # plain prose with no citation, so every guard passes it: a warning firing
+    # on healthy behaviour, with no [RetrievalDegraded] line to contradict it.
+    RETRIEVAL_NOTICE_LEADS = [
+      'Let op: de zoekopdracht was onvolledig.',
+      'Attention : la recherche était incomplète.',
+      'Please note: the search was incomplete.',
+      'Hinweis: Die Suche war unvollständig.'
+    ].freeze
+
+    RETRIEVAL_NOTICE_PARAGRAPH = /\A[\s>*_]*#{Regexp.union(RETRIEVAL_NOTICE_LEADS)}/
+
+    # One greppable record per degraded ask. Source names, reasons and
+    # numbers only: the question is personal data, and an exception message
+    # can echo it.
+    def log_retrieval_degradation(sources, degraded, retrieval_searches, search_ms)
+      durations = retrieval_searches.filter_map do |source, record|
+        next if %w[not_requested not_applicable].include?(record[:status])
+
+        "#{source}:#{record[:duration_ms]}"
+      end
+      Rails.logger.warn(
+        "[RetrievalDegraded] sources=#{sources.join(',')} " \
+        "degraded=#{degraded.map { |source, reason| "#{source}:#{reason}" }.join(',')} " \
+        "durations_ms=#{durations.join(',')} search=#{search_ms}ms"
+      )
+    end
+
+    # Source NAMES go to the client (the result hash is serialized as is);
+    # the reasons stay in the log. No :error key: the answer is delivered,
+    # and :error would turn it into an error bubble without source cards.
+    #
+    # result[:retrieval_degraded] is also what keeps the invited re-ask clean:
+    # api/conversation_persistence.rb (#context_numacs_for) stores no context
+    # NUMACs for a result that carries it. Otherwise the degraded ask's
+    # sources would lead the conversation's 10-slot context_numacs list, and
+    # the next ask would INJECT them and multiply their score by
+    # CONTEXT_LAW_BOOST = 2.5 (legislation_search.rb). On 2026-09-20 that
+    # would have force-fed the rest-home-hygiene, nickel-limit and
+    # identity-card articles into the re-ask, at full charge.
+    def apply_retrieval_notice!(result, degraded, lead: false)
+      # Strip first and unconditionally, so exactly one notice survives and it
+      # is this ask's: an echoed copy from the replayed history would otherwise
+      # ride along on a healthy answer, or name the previous ask's sources.
+      result[:answer] = without_retrieval_notice(result[:answer])
+      return result if degraded.blank?
+
+      retry_later = degraded.values.any? { |reason| RETRIEVAL_RETRY_REASONS.include?(reason.to_s) }
+      result[:answer] = with_retrieval_notice(result[:answer], degraded.keys, lead: lead, retry_later: retry_later)
+      result[:retrieval_degraded] = degraded.keys.map(&:to_s)
+      result
+    end
+
+    # Removes an echoed notice paragraph. Returns the SAME string when there is
+    # nothing to remove, so a healthy answer stays byte-identical, and keeps
+    # the text untouched when the notice is all there is, rather than
+    # delivering an empty answer.
+    def without_retrieval_notice(answer)
+      return answer unless answer.is_a?(String)
+
+      paragraphs = answer.split(/\n{2,}/)
+      kept = paragraphs.grep_v(RETRIEVAL_NOTICE_PARAGRAPH)
+      return answer if kept.length == paragraphs.length || kept.empty?
+
+      kept.join("\n\n").strip
+    end
+
+    # Above the generic tips, so it reads as part of the answer and not as one
+    # more boilerplate line under them. Only the TRAILING run of footer lines
+    # is examined, so nothing in the body can match; with no footers (every
+    # code-built message) this is a plain append. `lead:` puts it on top
+    # instead, for a message that already claims to have searched everything.
+    def with_retrieval_notice(answer, sources, lead: false, retry_later: false)
+      notice = retrieval_notice_text(sources, retry_later: retry_later)
+      text = answer.to_s
+      return text if text.include?(notice)
+      return [notice, text].reject(&:blank?).join("\n\n") if lead
+
+      lines = text.split("\n", -1)
+      body_length = lines.length
+      body_length -= 1 while body_length.positive? && lines[body_length - 1].match?(RETRIEVAL_NOTICE_FOOTER_LINE)
+
+      [
+        lines.take(body_length).join("\n").rstrip,
+        notice,
+        lines.drop(body_length).join("\n").strip
+      ].reject(&:blank?).join("\n\n")
+    end
+
+    # The closing sentence for RETRIEVAL_RETRY_REASONS, in the notice's own
+    # paragraph so that stripping an echoed notice also strips it.
+    RETRIEVAL_RETRY_INVITATIONS = {
+      'nl' => 'U kunt uw vraag over een ogenblik opnieuw stellen.',
+      'fr' => 'Vous pouvez reposer votre question dans un instant.',
+      'en' => 'You can ask your question again in a moment.',
+      'de' => 'Sie können Ihre Frage in einem Moment erneut stellen.'
+    }.freeze
+
+    # Added by the controller once it has released the credit reservation of
+    # a degraded answer (to-do 6.7). Same paragraph as the notice, for the
+    # same reason as the invitation: history replay strips the paragraph, so
+    # the model can never echo "this answer was free" into a charged one.
+    # No model or provider name, no cause.
+    RETRIEVAL_FREE_ANSWER_NOTES = {
+      'nl' => 'Dit antwoord kostte u geen credit, omdat de zoekopdracht onvolledig was.',
+      'fr' => "Cette réponse ne vous a coûté aucun crédit, car la recherche était incomplète.",
+      'en' => 'This answer cost you no credit because the search was incomplete.',
+      'de' => 'Diese Antwort hat Sie keinen Credit gekostet, weil die Suche unvollständig war.'
+    }.freeze
+
+    # Appends the free-answer note to the notice paragraph of `answer`, in
+    # `language` (falling back to Dutch like the notice itself). An answer
+    # without a notice paragraph is returned untouched: the note only ever
+    # rides inside the paragraph that history replay strips, never on its
+    # own. A class method because the controller holds the result, not the
+    # service, when it decides about the charge.
+    def self.with_free_answer_note(answer, language)
+      return answer unless answer.is_a?(String)
+
+      note = RETRIEVAL_FREE_ANSWER_NOTES.fetch(language.to_s) { RETRIEVAL_FREE_ANSWER_NOTES.fetch('nl') }
+      return answer if answer.include?(note)
+
+      paragraphs = answer.split(/\n{2,}/, -1)
+      index = paragraphs.index { |paragraph| paragraph.match?(RETRIEVAL_NOTICE_PARAGRAPH) }
+      return answer unless index
+
+      paragraphs[index] = "#{paragraphs[index].rstrip} #{note}"
+      paragraphs.join("\n\n")
+    end
+
+    # No emoji, article number or link: it is added after the guard chain and
+    # must not look like a citation. No cause either: the fan-out establishes
+    # only THAT a source was not searched through (see the block comment
+    # above), never why. `retry_later:` adds the invitation to ask again.
+    def retrieval_notice_text(sources, retry_later: false)
+      language = RETRIEVAL_NOTICE_SOURCE_LABELS.key?(@language) ? @language : 'nl'
+      labels = RETRIEVAL_NOTICE_SOURCE_LABELS.fetch(language).values_at(*sources.map(&:to_sym)).compact
+      # Explicit connectors rather than to_sentence(locale:), which depends on
+      # i18n data this app does not ship for every language.
+      connector = { 'fr' => ' et ', 'en' => ' and ', 'de' => ' und ' }.fetch(language, ' en ')
+      named = [labels[0...-1].join(', ').presence, labels.last].compact.join(connector)
+
+      notice = case language
+               when 'fr'
+                 "**Attention : la recherche était incomplète.** Une partie de la recherche ne s'est pas terminée : " \
+                 "je n'ai pas pu consulter entièrement #{named}, de sorte que cette réponse peut omettre des " \
+                 'sources pertinentes.'
+               when 'de'
+                 '**Hinweis: Die Suche war unvollständig.** Ein Teil der Suche wurde nicht abgeschlossen: ich konnte ' \
+                 "#{named} nicht vollständig durchsuchen, diese Antwort kann daher relevante Quellen übersehen."
+               when 'en'
+                 '**Please note: the search was incomplete.** Part of the search did not finish: I could not fully ' \
+                 "search #{named}, so this answer may miss relevant sources."
+               else
+                 '**Let op: de zoekopdracht was onvolledig.** Een deel van de zoekopdracht is niet afgerond: ik kon ' \
+                 "#{named} niet volledig doorzoeken, dus dit antwoord kan relevante bronnen missen."
+               end
+      retry_later ? "#{notice} #{RETRIEVAL_RETRY_INVITATIONS.fetch(language)}" : notice
+    end
   end
 end

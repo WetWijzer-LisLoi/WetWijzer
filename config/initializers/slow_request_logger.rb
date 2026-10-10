@@ -31,11 +31,13 @@ ActiveSupport::Notifications.subscribe('process_action.action_controller') do |*
   action      = payload[:action]
   format      = payload[:format]
 
-  # Extract useful request params for diagnostics
+  # Extract useful request params for diagnostics: only values of the
+  # expected shape, so a raw parameter cannot carry a newline into the log
+  # and forge a record (WW-PRIV-02); anything else is left out.
   req_params  = payload[:params] || {}
-  numac       = req_params['numac']
-  lang_id     = req_params['language_id']
-  page        = req_params['page']
+  numac       = req_params['numac'].to_s[/\A[0-9A-Za-z_-]{1,40}\z/]
+  lang_id     = req_params['language_id'].to_s[/\A\d{1,2}\z/]
+  page        = req_params['page'].to_s[/\A\d{1,7}\z/]
   param_str   = [numac && "numac=#{numac}", lang_id && "lang=#{lang_id}", page && "page=#{page}"].compact.join(' ')
   param_str   = " (#{param_str})" if param_str.present?
 

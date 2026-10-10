@@ -419,6 +419,16 @@ module LegalChatbot
     # provider cost (credits per ask, no anonymous tier), the ceiling only
     # needs to catch runaway spend, not to sit near normal monthly volume
     # (~EUR 12 across all providers in July incl. quality campaigns).
+    #
+    # The running monthly total lives in the analytics database
+    # (AiProviderMonthlySpend), not in Rails.cache: until 2026-09-27 the
+    # production cache was cleared weekly, and a monthly ceiling kept there
+    # restarted every week. The per-model DAILY breakers below stay in the
+    # cache on purpose; they are 25-hour runaway detectors, not a monthly
+    # spend record. The weekly jobs no longer clear the store, they remove
+    # the related-sources panel by prefix and prune expired entries only
+    # (Linkage::JurisprudenceCacheInvalidation, CacheMaintenance), so a live
+    # daily counter outlives them.
     PROVIDER_MONTHLY_BUDGET_EUR = {
       openai: 100.0, # Azure OpenAI EU Data Zone
       mistral: 100.0, # Mistral EU/EFTA regional endpoint
@@ -442,10 +452,18 @@ module LegalChatbot
       [(MODEL_DAILY_BUDGET_EUR / configuration.fetch(:cost_per_query_eur)).floor, 1].max
     end.freeze
 
-    # Cache counters must remain integers for atomic FileStore increments.
+    # Counters must remain integers for atomic increments (cache and ledger).
     # One unit is one millionth of a euro, preserving sub-cent requests such
     # as Mistral Small (€0.004) that rounded to zero in the former cents key.
     PROVIDER_SPEND_UNITS_PER_EUR = 1_000_000
+
+    # Budget counter keys with this prefix address a row of the durable
+    # monthly ledger (provider_spend_ledger:<provider>:<YYYYMM>) instead of a
+    # Rails.cache entry. Reservations carry the key they were made against,
+    # so a reservation that straddles midnight on the last day of a month
+    # still reconciles against the month it was charged to.
+    PROVIDER_SPEND_LEDGER_KEY_PREFIX = 'provider_spend_ledger'
+    PROVIDER_SPEND_LEDGER_KEY = /\A#{PROVIDER_SPEND_LEDGER_KEY_PREFIX}:([a-z_]+):(\d{6})\z/
 
     # Provider prices above are published in USD. Use a deliberately high
     # application accounting rate and never allow runtime configuration to
@@ -511,6 +529,21 @@ module LegalChatbot
         MODEL_DAILY_CAPS[model]
       end
 
+      # An evaluation run (scripts/ops/german_answer_eval.rb and the capture
+      # scripts, started with CHATBOT_BENCHMARK_RUN=1 in their own process)
+      # is legitimate paid traffic that must never deny live users, so it
+      # stays outside the per-model daily CALL COUNT breaker: its cheap
+      # translation calls spend that count three times faster than the spend
+      # ceiling (2026-10-04: four paired runs of about 640 calls each reached
+      # the 2,500 calls of mistral-small, and the breaker would have refused
+      # every live question on the default model until the day change). The
+      # daily spend ceiling, the monthly provider ledger and the fault keys
+      # still count every call of such a run. The flag is read per process:
+      # the web and job processes never carry it.
+      def benchmark_run?
+        ENV['CHATBOT_BENCHMARK_RUN'].to_s == '1'
+      end
+
       # Check if a model has hit its daily cap
       def model_at_daily_cap?(model)
         cap = daily_cap_for(model)
@@ -520,7 +553,8 @@ module LegalChatbot
         count = Rails.cache.read(model_daily_count_key(model)) || 0
         spend_units = Rails.cache.read(model_daily_spend_key(model)).to_i
         next_query_units = model_budget_reservation_units(model)
-        count >= cap || spend_units + next_query_units > model_daily_budget_units
+        at_call_cap = !benchmark_run? && count >= cap
+        at_call_cap || spend_units + next_query_units > model_daily_budget_units
       end
 
       # Atomically reserve one provider call before network I/O. The LLM client
@@ -528,9 +562,10 @@ module LegalChatbot
       # and serialized messages. A byte-based input ceiling is conservative for
       # provider tokenizers while avoiding a provider-side tokenize round trip.
       #
-      # The post-increment comparison serializes concurrent FileStore/MemoryStore
-      # callers at each counter. A reservation beyond a ceiling is rolled back
-      # before provider dispatch.
+      # The post-increment comparison serializes concurrent callers at each
+      # counter (cache counters for the daily breakers, one database upsert
+      # for the monthly provider ledger). A reservation beyond a ceiling is
+      # rolled back before provider dispatch.
       def reserve_model_budget!(model, reasoning_effort: nil, max_output_tokens: nil, messages: nil)
         cap = daily_cap_for(model)
         provider = provider_for_model(model)
@@ -554,12 +589,14 @@ module LegalChatbot
           messages: messages
         )
 
-        model_key = model_daily_count_key(model)
-        model_count = mutate_budget_counter(model_key, 1, expires_in: 25.hours)
-        raise BudgetLimitExceeded.new(reason: :cache_unavailable, model: model, provider: provider) if model_count.nil?
+        unless benchmark_run?
+          model_key = model_daily_count_key(model)
+          model_count = mutate_budget_counter(model_key, 1, expires_in: 25.hours)
+          raise BudgetLimitExceeded.new(reason: :cache_unavailable, model: model, provider: provider) if model_count.nil?
 
-        reservation[:counters] << [model_key, 1]
-        raise BudgetLimitExceeded.new(reason: :model_daily_cap, model: model, provider: provider) if model_count > cap
+          reservation[:counters] << [model_key, 1]
+          raise BudgetLimitExceeded.new(reason: :model_daily_cap, model: model, provider: provider) if model_count > cap
+        end
 
         daily_spend_key = model_daily_spend_key(model)
         daily_spend_units = mutate_budget_counter(daily_spend_key, cost_units, expires_in: 25.hours)
@@ -792,7 +829,15 @@ module LegalChatbot
       # lock the replacement inode while older waiters still hold the old one.
       # Use a separate stable flock plus read/write for FileStore. Other cache
       # stores retain their native atomic increment/decrement primitives.
+      #
+      # A monthly provider ledger key is written to the database instead, in
+      # one atomic upsert that clamps at zero. Any failure returns nil, which
+      # every caller treats as "accounting unavailable" and fails closed.
       def mutate_budget_counter(key, amount, expires_in:)
+        if (ledger = provider_spend_ledger_address(key))
+          return AiProviderMonthlySpend.adjust!(**ledger, amount: amount)
+        end
+
         cache = Rails.cache
         if cache.is_a?(ActiveSupport::Cache::FileStore)
           with_budget_file_store_lock(cache) do
@@ -850,6 +895,10 @@ module LegalChatbot
       end
 
       def saturate_budget_counter(key, ceiling_units, expires_in:)
+        if (ledger = provider_spend_ledger_address(key))
+          return AiProviderMonthlySpend.saturate!(**ledger, floor_units: ceiling_units)
+        end
+
         cache = Rails.cache
         if cache.is_a?(ActiveSupport::Cache::FileStore)
           with_budget_file_store_lock(cache) do
@@ -967,13 +1016,20 @@ module LegalChatbot
         "model_daily_budget_accounting_fault:#{model}:#{Date.current}"
       end
 
-      # Fixed-point key for new monthly provider spend. Legacy counters are
-      # added at read time instead of copied into this key: during a rolling
-      # deploy that avoids a seed-then-increment race and still observes usage
-      # written by an older application process.
+      # Address of this month's row in the durable provider spend ledger.
+      # Counters kept in Rails.cache by earlier releases are added at read
+      # time instead of copied into the ledger: that avoids a seed-then-
+      # increment race and still observes usage an older process wrote.
       def provider_monthly_spend_key(provider)
-        month = Date.current.strftime('%Y%m')
-        "provider_monthly_spend_micro_eur:#{provider}:#{month}"
+        "#{PROVIDER_SPEND_LEDGER_KEY_PREFIX}:#{provider}:#{AiProviderMonthlySpend.budget_month_for(Date.current)}"
+      end
+
+      # { provider:, budget_month: } for a ledger key, nil for a cache key.
+      def provider_spend_ledger_address(key)
+        match = PROVIDER_SPEND_LEDGER_KEY.match(key.to_s)
+        return nil unless match
+
+        { provider: match[1], budget_month: match[2] }
       end
 
       def provider_monthly_budget_fault_key(provider)
@@ -1011,21 +1067,41 @@ module LegalChatbot
         provider_monthly_spend_units(provider).fdiv(PROVIDER_SPEND_UNITS_PER_EUR)
       end
 
+      # An unreadable ledger reads as a spent budget: the advisory preflight
+      # then refuses, which is the same fail-closed answer the authoritative
+      # reservation gives when it cannot write.
       def provider_monthly_spend_units(provider)
-        current_units = Rails.cache.read(provider_monthly_spend_key(provider)).to_i
-        total_units = current_units + legacy_provider_monthly_spend_units(provider)
+        ledger_units = provider_monthly_ledger_units(provider)
+        return provider_monthly_budget_units(provider) if ledger_units.nil?
+
+        total_units = ledger_units + legacy_provider_monthly_spend_units(provider)
         return [total_units, provider_monthly_budget_units(provider)].max if Rails.cache.read(provider_monthly_budget_fault_key(provider))
 
         total_units
       end
 
+      def provider_monthly_ledger_units(provider)
+        AiProviderMonthlySpend.units_for(
+          provider: provider,
+          budget_month: AiProviderMonthlySpend.budget_month_for(Date.current)
+        )
+      rescue StandardError => e
+        Rails.logger.error("[AI BUDGET] Provider spend ledger unreadable provider=#{provider}: #{e.class}")
+        nil
+      end
+
+      # Spend that earlier releases recorded in Rails.cache for this month:
+      # the micro-euro counter used until the ledger existed, plus the older
+      # cents or euro counter. Nothing writes these any more; they only carry
+      # the deploy month's earlier spend forward until they expire.
       def legacy_provider_monthly_spend_units(provider)
         month = Date.current.strftime('%Y%m')
+        micro_units = Rails.cache.read("provider_monthly_spend_micro_eur:#{provider}:#{month}").to_i
         legacy_cents = Rails.cache.read("provider_monthly_spend_cents:#{provider}:#{month}")
-        return legacy_cents.to_i * (PROVIDER_SPEND_UNITS_PER_EUR / 100) unless legacy_cents.nil?
+        return micro_units + (legacy_cents.to_i * (PROVIDER_SPEND_UNITS_PER_EUR / 100)) unless legacy_cents.nil?
 
         legacy_eur = Rails.cache.read("provider_monthly_spend:#{provider}:#{month}").to_f
-        (legacy_eur * PROVIDER_SPEND_UNITS_PER_EUR).round
+        micro_units + (legacy_eur * PROVIDER_SPEND_UNITS_PER_EUR).round
       end
 
       # Get current daily model usage (for dashboard)

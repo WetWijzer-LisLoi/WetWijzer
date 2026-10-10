@@ -14,7 +14,7 @@ module LegalChatbot
     # NOTE: this module once held per-language header/label helpers
     # (language_name, language_headers, main_rule_header, exceptions_header,
     # legal_basis_header, not_in_sources_text, domain_default_language) and a
-    # detect_question_language copy. All were dead code — no callers; the live
+    # detect_question_language copy. All were dead code, with no callers; the live
     # prompt text is built inline in LegalChatbotService#build_system_prompt,
     # language detection lives in LegalChatbot::LanguageDetection, and the
     # JURIDISCHE BASIS section they referenced is no longer requested (UI
@@ -31,7 +31,7 @@ module LegalChatbot
     # the corpus lacks it. Checking that against the corpus killed the idea:
     # "CAO nr. 109 matters" were filed as outside the statutory corpus, yet
     # CAO 109 is present as NUMAC 2014A01545 with 24 article-level rows, and the
-    # 2024 dismissal-motivation law sits alongside it. A domain-gap message
+    # 2024 law on the reasons for dismissal sits alongside it. A domain-gap message
     # would have stated, confidently and in the product, that we lack something
     # we hold. A wrong explanation is worse than no explanation.
     #

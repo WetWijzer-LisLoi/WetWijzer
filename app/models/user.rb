@@ -15,6 +15,8 @@ class User < AccountRecord
   has_many :crypto_payments, dependent: :nullify
   has_many :mollie_payments, dependent: :nullify
   has_many :account_request_leases, dependent: :restrict_with_exception
+  # WW-SEC-12: short-lived second-factor challenge rows (digests only).
+  has_many :pending_second_factor_challenges, dependent: :delete_all
 
   # Cross-database records cannot use dependent associations. Every permanent
   # deletion path must go through AccountErasureService, which fences the
@@ -42,6 +44,51 @@ class User < AccountRecord
   # This is the application write boundary; update_columns and raw SQL bypass
   # it by design, which the admin tooling must simply never do.
   validate :registration_brand_is_immutable, on: :update
+
+  # WW-ABUSE-01: a durable abuse suspension, distinct from ordinary
+  # inactivity (active=false stays reversible). Set and lifted only through
+  # these methods, by the dedicated admin actions; database CHECK constraints
+  # keep the pair together, the reason allowlisted and a suspended row
+  # inactive with no session, against raw SQL and update_columns too.
+  ABUSE_SUSPENSION_REASONS = %w[
+    automated_registration credential_abuse payment_abuse policy_abuse other_reviewed
+  ].freeze
+  # The admin console's labels; never shown to the account holder.
+  ABUSE_SUSPENSION_REASON_LABELS = {
+    'automated_registration' => 'Automated registration',
+    'credential_abuse' => 'Credential abuse',
+    'payment_abuse' => 'Payment abuse',
+    'policy_abuse' => 'Policy abuse',
+    'other_reviewed' => 'Other (reviewed)'
+  }.freeze
+
+  # A suspension call that contradicts the row's state: a second reason
+  # (changing it is its own audited admin action) or no suspension to change.
+  class AbuseSuspensionConflict < StandardError; end
+
+  validates :abuse_suspension_reason, inclusion: { in: ABUSE_SUSPENSION_REASONS }, allow_nil: true
+  validate :abuse_suspension_coherent
+
+  def abuse_suspension_coherent
+    errors.add(:abuse_suspended_at, 'and its reason are set and cleared together') if abuse_suspended_at.present? != abuse_suspension_reason.present?
+    return unless abuse_suspended?
+
+    errors.add(:active, 'cannot be true while the account is suspended for abuse') unless active == false
+    errors.add(:session_token, 'cannot be set while the account is suspended for abuse') if session_token.present?
+    # No link can be minted for a suspended account either: a raw writer that
+    # skips this still meets the guarded paths, which refuse the account.
+    errors.add(:confirmation_token, 'cannot be issued while the account is suspended for abuse') if confirmation_token.present?
+    errors.add(:reset_password_token, 'cannot be issued while the account is suspended for abuse') if reset_password_token.present?
+  end
+  private :abuse_suspension_coherent
+
+  def allowlisted_abuse_reason!(reason)
+    reason = reason.to_s
+    raise ArgumentError, 'unknown abuse suspension reason' unless ABUSE_SUSPENSION_REASONS.include?(reason)
+
+    reason
+  end
+  private :allowlisted_abuse_reason!
 
   def registration_brand_is_immutable
     return unless registration_brand_changed?
@@ -81,6 +128,75 @@ class User < AccountRecord
     confirmed_at.present?
   end
 
+  def abuse_suspended?
+    abuse_suspended_at.present?
+  end
+
+  # Every activation path asks this before writing active=true: a suspended
+  # account is never reactivated by an ordinary path.
+  def activatable?
+    !abuse_suspended?
+  end
+
+  # Suspends atomically under the row lock: the timestamp and reason,
+  # active=false and the session token cleared in one update. The same reason
+  # again changes nothing and returns false; another reason on a suspended row
+  # raises AbuseSuspensionConflict.
+  #
+  # The three suspension methods take an optional block, the caller's audit
+  # record: it runs inside the same locked transaction after the change, so
+  # the record commits with the change or not at all, and a call that changes
+  # nothing (a concurrent second admin, a repeated procedure) never runs it.
+  def suspend_for_abuse!(reason:, suspended_at: Time.current)
+    reason = allowlisted_abuse_reason!(reason)
+    suspended = with_lock do
+      if abuse_suspended?
+        raise AbuseSuspensionConflict, 'suspended for another reason' unless abuse_suspension_reason == reason
+
+        next false
+      end
+
+      # The confirmation and reset tokens go too: no link minted before the
+      # suspension may later confirm, reset or reactivate the account.
+      update!(abuse_suspended_at: suspended_at, abuse_suspension_reason: reason, active: false, session_token: nil,
+              confirmation_token: nil, reset_password_token: nil, reset_password_sent_at: nil)
+      yield if block_given?
+      true
+    end
+    AbuseDefenceMetrics.record(:admin_suspension) if suspended
+    suspended
+  end
+
+  # The explicit, audited admin action that changes the reason of a
+  # suspension in place.
+  def change_abuse_suspension_reason!(reason:)
+    reason = allowlisted_abuse_reason!(reason)
+    changed = with_lock do
+      raise AbuseSuspensionConflict, 'not suspended' unless abuse_suspended?
+      next false if abuse_suspension_reason == reason
+
+      update!(abuse_suspension_reason: reason)
+      yield if block_given?
+      true
+    end
+    AbuseDefenceMetrics.record(:admin_reason_change) if changed
+    changed
+  end
+
+  # Clears the suspension only. The account stays inactive: reactivating it is
+  # a separate, deliberate admin action after review.
+  def lift_abuse_suspension!
+    lifted = with_lock do
+      next false unless abuse_suspended?
+
+      update!(abuse_suspended_at: nil, abuse_suspension_reason: nil)
+      yield if block_given?
+      true
+    end
+    AbuseDefenceMetrics.record(:admin_lift) if lifted
+    lifted
+  end
+
   def confirm!
     update!(confirmed_at: Time.current, confirmation_token: nil)
   end
@@ -109,6 +225,24 @@ class User < AccountRecord
 
   def clear_session_token!
     update!(session_token: nil)
+  end
+
+  # WW-SEC-06: a backup code works once. The codes are read again under a row
+  # lock, so two parallel requests offering the same code cannot both pass;
+  # deciding from this instance's own copy let both through.
+  def consume_backup_code!(code)
+    candidate = code.to_s.strip.upcase
+    return false if candidate.empty?
+
+    with_lock do
+      codes = JSON.parse(otp_backup_codes.presence || '[]')
+      next false unless codes.include?(candidate)
+
+      update!(otp_backup_codes: (codes - [candidate]).to_json)
+      true
+    end
+  rescue JSON::ParserError
+    false
   end
 
   def current_tier
@@ -206,7 +340,7 @@ class User < AccountRecord
 
   # Deduct credits from the unified pool.
   # Returns hash with deduction details, or false if insufficient.
-  # Uses a guarded UPDATE (credits >= amount in the WHERE clause) — the only
+  # Uses a guarded UPDATE (credits >= amount in the WHERE clause), the only
   # race-free primitive on SQLite, where with_lock is a no-op because Arel
   # silently drops FOR UPDATE. Two concurrent deductions can no longer both
   # pass the balance check and drive the balance negative.
@@ -229,7 +363,7 @@ class User < AccountRecord
 
   # Total available credits. Clamped at zero: a refund claw-back can leave the
   # raw credits column negative (the true financial state), but "available to
-  # spend" is never less than nothing — and user-facing UI/API read this.
+  # spend" is never less than nothing, and user-facing UI/API read this.
   def total_available_credits
     [credits.to_i, 0].max
   end
@@ -317,8 +451,14 @@ class User < AccountRecord
     update!(locked_until: nil, failed_attempts: 0)
   end
 
+  # WW-SEC-02: the count is incremented in SQL and the lock decided from the
+  # stored result. Deciding from this instance's own count let parallel
+  # failures, each loaded below the threshold, all stay below it in memory
+  # and leave the account unlocked.
   def record_failed_login!
-    increment!(:failed_attempts)
+    self.class.update_counters(id, failed_attempts: 1)
+    self.failed_attempts = self.class.where(id: id).pick(:failed_attempts).to_i
+    clear_attribute_changes([:failed_attempts])
     lock_account! if failed_attempts >= MAX_FAILED_ATTEMPTS
   end
 
@@ -453,12 +593,16 @@ class User < AccountRecord
     )
   end
 
+  # WW-PRIV-10: the denial and the pending deletion of the stored history are
+  # one update; ConversationHistoryCleanup clears the mark once the history
+  # is gone. A mark already set keeps its time.
   def revoke_conversation_storage_consent!
     update!(
       conversation_storage_consent: false,
       conversation_storage_consented_at: nil,
       encrypted_master_key: nil,
-      key_derivation_salt: nil
+      key_derivation_salt: nil,
+      conversation_storage_cleanup_requested_at: conversation_storage_cleanup_requested_at || Time.current
     )
   end
 
@@ -558,6 +702,12 @@ class User < AccountRecord
   # immediately; a stolen admin cookie cannot outlive a credential reset.
   after_update_commit :revoke_admin_sessions_on_credential_change
 
+  # WW-SEC-03: a password change ends the account's session in the same
+  # UPDATE, whatever path changed it (the reset link, an admin, a console). A
+  # path that keeps the current device signed in sets the new token itself,
+  # as AccountController#update does; every other path leaves none.
+  before_update :revoke_session_on_password_change
+
   private
 
   def downcase_email
@@ -585,6 +735,16 @@ class User < AccountRecord
     return unless DISPOSABLE_DOMAINS.include?(domain)
 
     errors.add(:email, I18n.t('auth.disposable_email'))
+  end
+
+  def revoke_session_on_password_change
+    return unless will_save_change_to_password_digest?
+    return if will_save_change_to_session_token?
+
+    self.session_token = nil
+    # Written even when this copy already read nil: a session created after
+    # the row was loaded (a second factor completed meanwhile) ends too.
+    session_token_will_change!
   end
 
   def revoke_admin_sessions_on_credential_change

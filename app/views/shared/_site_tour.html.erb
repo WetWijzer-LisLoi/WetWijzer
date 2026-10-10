@@ -1,0 +1,62 @@
+<% site_tour_steps = t('site_tour.steps').map(&:stringify_keys) %>
+<% site_tour_site_name = t(:app_title) %>
+<section id="site-tour-entry" class="site-tour my-5" data-controller="site-tour">
+  <div class="rounded-xl border border-(--accent-200) bg-(--accent-50) px-4 py-4 text-center dark:border-(--accent-700)/60 dark:bg-(--accent-950)/30">
+    <p class="text-sm font-semibold text-gray-800 dark:text-gray-100"><%= t('site_tour.entry') %></p>
+    <button type="button" hidden class="mt-3 inline-flex min-h-11 items-center rounded-lg bg-(--accent-600-solid) px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-(--accent-700-solid) focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-500)" data-site-tour-target="opener" data-action="site-tour#open"><%= t('site_tour.entry_button') %></button>
+  </div>
+
+  <%# Functional without JavaScript; summary remains a visible close control while open. %>
+  <details class="site-tour-fallback mt-3 rounded-lg border border-gray-200 p-3 text-left dark:border-gray-700">
+    <summary class="cursor-pointer font-semibold text-(--accent-700) dark:text-(--accent-400)">
+      <span class="site-tour-fallback-open"><%= t('site_tour.open') %>: <%= t('site_tour.title', site_name: site_tour_site_name) %></span>
+      <span class="site-tour-fallback-close"><span aria-hidden="true">×</span> <%= t('site_tour.close') %></span>
+    </summary>
+    <p class="mt-3 text-sm text-gray-600 dark:text-gray-300"><%= t('site_tour.fallback_intro') %></p>
+    <% site_tour_steps.each_with_index do |step, index| %>
+      <details class="mt-2 rounded border border-gray-200 p-2 dark:border-gray-700">
+        <summary class="cursor-pointer font-medium"><%= index + 1 %>. <%= step['title'] %></summary>
+        <p class="mt-2 text-sm leading-6 text-gray-700 dark:text-gray-200"><%= step['body'] %></p>
+      </details>
+    <% end %>
+  </details>
+
+  <dialog class="site-tour-dialog m-auto w-[calc(100%_-_1rem)] max-w-2xl overflow-hidden rounded-xl border border-gray-200 bg-white p-0 text-gray-900 shadow-2xl dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" aria-labelledby="site-tour-title" data-site-tour-target="dialog" data-action="close->site-tour#closed cancel->site-tour#cancel keydown->site-tour#keydown">
+    <div class="sticky top-0 z-10 flex min-h-14 items-center justify-between gap-3 border-b border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900">
+      <h2 id="site-tour-title" class="text-base font-bold"><%= t('site_tour.title', site_name: site_tour_site_name) %></h2>
+      <button type="button" class="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-md border border-gray-300 px-3 py-2 text-sm font-semibold hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-500) dark:border-gray-600 dark:hover:bg-gray-800" title="<%= t('site_tour.close') %>" aria-label="<%= t('site_tour.close') %>" data-action="site-tour#close"><span aria-hidden="true" class="text-lg leading-none">×</span><span><%= t('site_tour.close') %></span></button>
+    </div>
+    <div class="max-h-[calc(100dvh_-_10rem)] overflow-y-auto px-4 py-4 sm:px-6" data-site-tour-target="body">
+      <nav aria-label="<%= t('site_tour.contents') %>" class="mb-4 rounded-lg bg-gray-50 p-3 dark:bg-gray-800/70">
+        <p class="mb-2 text-sm font-semibold"><%= t('site_tour.contents') %></p>
+        <ol class="grid gap-1 sm:grid-cols-2">
+          <% site_tour_steps.each_with_index do |step, index| %>
+            <li><button type="button" class="text-left text-sm text-(--accent-700) underline-offset-2 hover:underline dark:text-(--accent-400)" data-action="site-tour#go" data-site-tour-index-param="<%= index %>"><%= index + 1 %>. <%= step['title'] %></button></li>
+          <% end %>
+        </ol>
+      </nav>
+      <% site_tour_steps.each_with_index do |step, index| %>
+        <article data-site-tour-target="step" <%= 'hidden' unless index.zero? %>>
+          <p class="text-sm font-semibold text-(--accent-700) dark:text-(--accent-400)"><%= t('site_tour.step_counter', current: index + 1, total: site_tour_steps.length) %></p>
+          <h3 class="mt-1 text-xl font-bold"><%= step['title'] %></h3>
+          <p class="mt-3 text-sm leading-6 text-gray-700 dark:text-gray-200"><%= step['body'] %></p>
+        </article>
+      <% end %>
+    </div>
+    <div class="flex items-center justify-between gap-3 border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900 sm:px-6">
+      <button type="button" class="min-h-11 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-800" data-site-tour-target="previous" data-action="site-tour#previous"><%= t('site_tour.previous') %></button>
+      <button type="button" class="min-h-11 rounded-lg bg-(--accent-600-solid) px-4 py-2 text-sm font-semibold text-white hover:bg-(--accent-700-solid)" data-site-tour-target="next" data-site-tour-next-label="<%= t('site_tour.next') %>" data-site-tour-finish-label="<%= t('site_tour.finish') %>" data-action="site-tour#next"><%= t('site_tour.next') %></button>
+    </div>
+  </dialog>
+</section>
+
+<style nonce="<%= content_security_policy_nonce %>">
+  .site-tour-fallback { display: block; }
+  .site-tour:has(dialog[data-site-tour-enhanced]) .site-tour-fallback { display: none; }
+  .site-tour-fallback-close { display: none; }
+  .site-tour-fallback[open] > summary { position: sticky; top: 0; z-index: 1; display: block; margin: -0.75rem -0.75rem 0; padding: 0.75rem; background: inherit; border-bottom: 1px solid currentColor; }
+  .site-tour-fallback[open] .site-tour-fallback-open { display: none; }
+  .site-tour-fallback[open] .site-tour-fallback-close { display: inline; }
+  .site-tour-dialog::backdrop { background: rgb(0 0 0 / 0.6); }
+  @media (prefers-reduced-motion: reduce) { .site-tour-dialog, .site-tour-dialog::backdrop { transition: none !important; } }
+</style>

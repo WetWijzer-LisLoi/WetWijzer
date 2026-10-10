@@ -34,6 +34,7 @@
     <h2>Hoe WetWijzer gefinancierd wordt</h2>
     <p>WetWijzer wordt gefinancierd door <strong>WetWijzer Pro</strong>-abonnementen en chatbot-credits.</p>
     <p>U kunt WetWijzer ook rechtstreeks steunen via onze <%= link_to 'donatiepagina', support_page_path(anchor: 'donate') %>.</p>
+    <%= render 'donations/disabled_notice' unless MollieConfiguration.donations_enabled? %>
 
     <h2>Contact</h2>
     <p>Contacteer mij via mijn <a href="https://www.advocaat.be/nl/zoek-een-advocaat/advocaat/63fee2a5-637a-4839-a5a6-c833482f1e3a" target="_blank" rel="noopener">advocaat.be-profiel</a> of via <a href="https://www.linkedin.com/in/gauthier-b-017447138/" target="_blank" rel="noopener">LinkedIn</a>.</p>

@@ -100,7 +100,7 @@ export default class extends Controller {
 
   // Apply hero chatbot settings to the widget controller before sending
   _applySettingsToWidget(widgetCtrl) {
-    // Intelligence level — set override flag to prevent async loadPreferences() race
+    // Intelligence level: set override flag to prevent async loadPreferences() race
     widgetCtrl._heroOverrideActive = true
     widgetCtrl.intelligenceValue = this.intelligenceValue
 
@@ -121,6 +121,14 @@ export default class extends Controller {
     if (this.hasModelSelectTarget && this.modelSelectTarget.value) {
       widgetCtrl.modelOverrideValue = this.modelSelectTarget.value
     }
+    // Reconcile all request controls in one transition, including the hidden
+    // widget dropdown and the send-time entitlement gate. A value alone left
+    // the selected option/reasoning/cost at the previous (cheapest) model.
+    const selectedOption = widgetCtrl._syncModelDropdowns(this.intelligenceValue, widgetCtrl.modelOverrideValue)
+    widgetCtrl._applyModelReasoningCapabilities(selectedOption, widgetCtrl.reasoningLevelValue)
+    widgetCtrl._syncSlidersFromPreferences()
+    widgetCtrl._syncWidgetPills()
+    widgetCtrl._syncSourceCheckboxes()
   }
 
   // Get the widget chatbot controller via Stimulus
@@ -257,7 +265,7 @@ export default class extends Controller {
       const lang = this.languageValue || 'nl'
       const prefixes = { nl: 'AI-Intelligentie', fr: 'Intelligence IA', de: 'KI-Intelligenz', en: 'AI Intelligence' }
       const prefix = prefixes[lang] || prefixes.nl
-      indicator.innerHTML = `${prefix}: <span data-hero-active-label>${label}</span> <span data-hero-active-desc class="text-gray-300 dark:text-gray-600">| ${desc}</span>`
+      indicator.innerHTML = `${prefix}: <span data-hero-active-label>${label}</span> <span data-hero-active-desc class="text-gray-600 dark:text-gray-300">| ${desc}</span>`
     }
   }
 
@@ -469,7 +477,7 @@ export default class extends Controller {
     if (!creditsInfo) return
 
     // Update the credit counter. The widget's _updateCreditPools already wrote
-    // credits_remaining to #credits-value — subtracting credits_deducted on top
+    // credits_remaining to #credits-value; subtracting credits_deducted on top
     // of that displayed a double deduction. Prefer the server's absolute value.
     if (creditsInfo.credits_deducted > 0) {
       const el = document.getElementById('credits-value')

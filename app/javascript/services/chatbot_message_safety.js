@@ -41,12 +41,20 @@ export function sanitizeVisibleAssistantAnswer(content, language = 'nl') {
   }
 }
 
+// A German answer on gesetzguide carries context_content, the French answer
+// it was made from (see services/chatbot_send_request.js). When the turn is
+// hidden, that text goes with it: it is never shown, and never sent back as
+// context either.
 export function sanitizeRestoredMessages(messages, language = 'nl') {
   return Array.isArray(messages) ? messages.map(message => {
-    if (message?.role !== 'assistant' || !isLegacyReasoningPayload(message.content)) return message
+    if (message?.role !== 'assistant') return message
+    const hasContext = message.context_content !== undefined && message.context_content !== null
+    if (!isLegacyReasoningPayload(message.content) &&
+        !(hasContext && isLegacyReasoningPayload(message.context_content))) return message
 
+    const { context_content: _hidden, ...rest } = message
     return {
-      ...message,
+      ...rest,
       content: legacyReasoningHiddenMessage(language),
       legacy_reasoning_hidden: true
     }

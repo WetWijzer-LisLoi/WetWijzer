@@ -12,7 +12,11 @@ export default class extends Controller {
   connect() {
     this.boundKeyHandler = this.handleKeydown.bind(this)
     document.addEventListener("keydown", this.boundKeyHandler)
-    this.updateTabCounts()
+    // Totals belong to the server search, not to the twenty cards loaded for
+    // each source. Never replace them with the number of cards on this page.
+    this.tabButtonTargets.forEach(btn => {
+      btn.setAttribute("tabindex", btn.dataset.tab === this.activeTabValue ? "0" : "-1")
+    })
   }
 
   disconnect() {
@@ -42,7 +46,8 @@ export default class extends Controller {
 
     // Reset focus index
     this.focusIndexValue = -1
-    this.updateVisibleResults()
+    // These controls are real links. Their normal navigation preserves the
+    // source tab and page in the URL and works without JavaScript as well.
   }
 
   // FBL-047: WAI-ARIA tablist keyboard contract on the tab buttons.
@@ -64,9 +69,10 @@ export default class extends Controller {
 
   // Keyboard navigation
   handleKeydown(event) {
+    if (event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey) return
     // Only handle when search page is focused
-    if (document.activeElement?.tagName === "INPUT" && event.key !== "Escape") {
-      if (event.key === "Enter") return // Let form submit
+    const active = document.activeElement
+    if ((["INPUT", "TEXTAREA", "SELECT"].includes(active?.tagName) || active?.isContentEditable) && event.key !== "Escape") {
       return
     }
 
@@ -83,13 +89,9 @@ export default class extends Controller {
         this.focusIndexValue = Math.max(this.focusIndexValue - 1, 0)
         this.highlightResult(visibleResults)
         break
-      case "Enter": // Open focused result
-        if (this.focusIndexValue >= 0 && visibleResults[this.focusIndexValue]) {
-          event.preventDefault()
-          const link = visibleResults[this.focusIndexValue].querySelector("a")
-          if (link) link.click()
-        }
-        break
+      // j/k focus the primary link, so Enter already activates the focused
+      // link natively. Do not hijack Enter on another action (such as Ask AI)
+      // merely because that action belongs to the same result card.
       case "/": // Focus search
         event.preventDefault()
         if (this.hasSearchInputTarget) this.searchInputTarget.focus()
@@ -118,6 +120,7 @@ export default class extends Controller {
       const item = results[this.focusIndexValue]
       item.classList.add("unified-search__result--focused")
       item.scrollIntoView({ behavior: "smooth", block: "nearest" })
+      item.querySelector("a")?.focus({ preventScroll: true })
     }
   }
 
@@ -131,32 +134,6 @@ export default class extends Controller {
     return this.resultItemTargets.filter(item => {
       const panel = item.closest("[data-unified-search-target='tabPanel']")
       return panel && !panel.classList.contains("hidden")
-    })
-  }
-
-  updateVisibleResults() {
-    // Update count badge for "All" tab
-    const visibleCount = this.getVisibleResults().length
-    const allCountBadge = this.element.querySelector("[data-count-for='all']")
-    if (allCountBadge) {
-      allCountBadge.textContent = visibleCount
-    }
-  }
-
-  updateTabCounts() {
-    this.tabButtonTargets.forEach(btn => {
-      const tab = btn.dataset.tab
-      const badge = btn.querySelector("[data-count-for]")
-      if (!badge) return
-
-      if (tab === "all") {
-        badge.textContent = this.resultItemTargets.length
-      } else {
-        const panel = this.tabPanelTargets.find(p => p.dataset.source === tab)
-        if (panel) {
-          badge.textContent = panel.querySelectorAll("[data-unified-search-target='resultItem']").length
-        }
-      }
     })
   }
 

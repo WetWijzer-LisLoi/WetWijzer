@@ -27,6 +27,11 @@ module UiPreferenceSchema
     # audit found silently rejected as unknown_key (their whole debounced
     # batch was dropped for logged-in users).
     'theme_accent' => BOUNDED_STRING,
+    # The reader's default portal: which of the four sites is theirs. Decides
+    # which brand writes to them and where the links in that mail lead.
+    # Validated against the registry, so a preference blob can never select a
+    # site we do not run or an address the SMTP account may not send as.
+    'default_portal' => ->(value) { SiteBrand::KEYS.include?(value) },
     'toc_follow_enabled' => BOOL,
     'dark_mode' => BOOL,
     'font_size' => BOUNDED_STRING,

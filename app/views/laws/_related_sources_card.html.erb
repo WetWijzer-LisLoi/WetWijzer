@@ -1,0 +1,44 @@
+<%# WW-LINK-03, and the no-JavaScript plan of 2026-10-08 (C.3): one card for
+    the law page and the Fisconet page. Each button submits an ordinary GET
+    form to the full related-sources page when scripts are off; the
+    related-sources controller makes them disclosure buttons that load their
+    panel in place. Locals: numac, language_id, card_class. %>
+<% button_base = 'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--accent-500)' %>
+<% buttons = {
+     'parliamentary' => ['border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40',
+                         'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'],
+     'jurisprudence' => ['border-amber-300 dark:border-amber-600 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40',
+                         'M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3']
+   } %>
+<div id="related-sources-card" class="no-print bg-white dark:bg-gray-800 rounded-xl <%= card_class %> scroll-mt-24"
+     data-controller="related-sources"
+     data-related-sources-url-value="<%= related_sources_law_path(numac, language_id: language_id) %>"
+     data-related-sources-loading-value="<%= t('related_sources.status.loading') %>"
+     data-related-sources-failed-value="<%= t('related_sources.status.failed') %>">
+  <div class="p-4 md:p-6">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-3"><%= t('related_sources.heading') %></h2>
+    <%= form_with url: related_sources_law_path(numac), method: :get, local: true, data: { turbo: false },
+                  class: 'flex flex-wrap gap-2' do %>
+      <%= hidden_field_tag :language_id, language_id, id: nil %>
+      <%= hidden_field_tag :view, 'page', id: nil %>
+      <% buttons.each do |type, (colors, icon)| %>
+        <% label = t("related_sources.#{type}.heading") %>
+        <%= button_tag type: 'submit', name: 'type', value: type, id: "btn-load-#{type}",
+                       class: "#{button_base} #{colors}", aria: { controls: "#{type}-content" },
+                       data: { related_sources_target: 'button', action: 'related-sources#toggle',
+                               related_sources_type_param: type,
+                               related_sources_loaded_param: t('related_sources.status.loaded', source: label) } do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<%= icon %>"/>
+          </svg>
+          <%= label %>
+        <% end %>
+      <% end %>
+    <% end %>
+    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400 empty:hidden" role="status" data-related-sources-target="status"></p>
+  </div>
+  <% buttons.each_key do |type| %>
+    <div id="<%= type %>-content" role="region" aria-labelledby="btn-load-<%= type %>" hidden
+         data-related-sources-target="panel"></div>
+  <% end %>
+</div>

@@ -26,17 +26,26 @@ export default class extends Controller {
   }
 
   connect() {
-    // Apply theme on initial load
-    this.applyTheme()
+    this._connected = true
+    // Preserve the server-rendered class while preferences are hydrating.
+    // applyTheme below runs once the cache is authoritative.
     
     // Listen for system theme changes
     this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    this.mediaQuery.addEventListener('change', this.handleSystemThemeChange.bind(this))
+    this._onMediaChange = this.handleSystemThemeChange.bind(this)
+    this.mediaQuery.addEventListener('change', this._onMediaChange)
+
+    // Re-apply after the asynchronous server preference hydration. The store
+    // preserves choices made while its GET was in flight.
+    this._hydratePromise = prefs.init().then(() => {
+      if (this._connected) this.applyTheme()
+    }).catch(() => {})
   }
 
   disconnect() {
-    if (this.mediaQuery) {
-      this.mediaQuery.removeEventListener('change', this.handleSystemThemeChange.bind(this))
+    this._connected = false
+    if (this.mediaQuery && this._onMediaChange) {
+      this.mediaQuery.removeEventListener('change', this._onMediaChange)
     }
   }
 
@@ -117,7 +126,8 @@ export default class extends Controller {
 
   handleSystemThemeChange() {
     // Only apply system theme if user hasn't set an explicit preference
-    if (!this.getStoredTheme()) {
+    const stored = this.getStoredTheme()
+    if (!stored || stored === 'system') {
       this.applyTheme()
     }
   }

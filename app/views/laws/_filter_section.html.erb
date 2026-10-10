@@ -5,11 +5,15 @@
 
   <% explicit_lang = params[:languages_present].present? || params.key?(:lang_nl) || params.key?(:lang_fr) || params.key?(:lang_de) %>
   <% nl_checked = explicit_lang ? (params[:lang_nl] == '1') : I18n.locale.in?(%i[nl en]) %>
-  <% fr_checked = explicit_lang ? (params[:lang_fr] == '1' || params[:lang_de] == '1') : I18n.locale.in?(%i[fr de en]) %>
-  
+  <%# On the German site lang_de selects the German texts; elsewhere it is the
+      old alias for French (LawSearchService.include_german?) %>
+  <% fr_checked = explicit_lang ? (params[:lang_fr] == '1' || (!german_site? && params[:lang_de] == '1')) : I18n.locale.in?(%i[fr de en]) %>
+  <% de_checked = german_site? && (explicit_lang ? params[:lang_de] == '1' : true) %>
+
   <%# Hidden fields for default language selections %>
   <%= form.hidden_field :lang_nl, value: (nl_checked ? '1' : '0') unless explicit_lang %>
   <%= form.hidden_field :lang_fr, value: (fr_checked ? '1' : '0') unless explicit_lang %>
+  <%= form.hidden_field :lang_de, value: '1' if german_site? && !explicit_lang %>
 
     <!-- Wetgevingsfilters heading -->
     <h3 class="text-base font-semibold capitalize tracking-wider text-gray-800 dark:text-white/90 mb-4 flex items-center gap-2">
@@ -105,6 +109,13 @@
         <div id="filter-languages" data-search-validation-target="languages">
           <h4 class="<%= filters_heading_classes %>"><%= t(:languages_title) %></h4>
           <div class="filters-group">
+            <% if german_site? %>
+              <%# German texts first, with the French ones the German site falls back to %>
+              <div class="flex items-center gap-2">
+                <%= form.check_box :lang_de, { include_hidden: false, checked: de_checked, class: form_checkbox_classes } %>
+                <%= form.label :lang_de, t(:language_german), class: form_inline_label_classes %>
+              </div>
+            <% end %>
             <div class="flex items-center gap-2">
               <%= form.check_box :lang_nl, { include_hidden: false, checked: nl_checked, class: form_checkbox_classes } %>
               <%= form.label :lang_nl, t(:language_dutch), class: form_inline_label_classes %>
@@ -334,7 +345,7 @@
           <%= case I18n.locale when :fr then 'Année' when :de then 'Jahr' when :en then 'Year' else 'Jaar' end %>
           </label>
           <%= form.select :juris_year,
-          options_for_select([[case I18n.locale when :fr then 'Toutes' when :de then 'Alle' when :en then 'All' else 'Alle' end, '']] + (Date.current.year).downto(1985).map { |y| [y, y] }, params[:juris_year]),
+          options_for_select([[case I18n.locale when :fr then 'Toutes' when :de then 'Alle' when :en then 'All' else 'Alle' end, '']] + jurisprudence_years.map { |y| [y, y] }, params[:juris_year]),
           {},
           { class: "w-full text-sm rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200" }
           %>
@@ -402,12 +413,12 @@
           <%= form.select :parl_parliament,
           options_for_select([
           [case I18n.locale when :fr then 'Tous' when :de then 'Alle' when :en then 'All' else 'Alle' end, ''],
-          ['Kamer', 'kamer'],
-          ['Senaat', 'senaat'],
+          [case I18n.locale when :fr then 'Chambre' when :de then 'Abgeordnetenkammer' when :en then 'Chamber' else 'Kamer' end, 'chamber'],
+          [case I18n.locale when :fr then 'Sénat' when :de then 'Senat' when :en then 'Senate' else 'Senaat' end, 'senate'],
           ['Vlaams Parlement', 'vlaams'],
           ['Brussels Parlement', 'brussels'],
           ['Waals Parlement', 'waals']
-          ], params[:parl_parliament]),
+          ], ParliamentarySearchService.normalize_parliament(params[:parl_parliament])),
           {},
           { class: "w-full text-sm rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200" }
           %>

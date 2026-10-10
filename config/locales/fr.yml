@@ -177,6 +177,7 @@ fr:
     show_exdecs_tooltip: "Afficher les arrêtés d'exécution sous les articles"
     loading_message: "Veuillez patienter, chargement des articles…"
     loading_articles: "Chargement des articles..."
+    loaded_articles: "Articles chargés"
     view_articles: "Cliquez ici pour voir les articles"
     exdecs_disabled: "Arrêtés d'exécution non chargés"
     load_anyway: "Charger"
@@ -208,6 +209,11 @@ fr:
   ov_pdf: "aperçu PDF"
   title_details: "titre "
   toc: "table des matières "
+  toc_summary:
+    text: "Cette loi a une longue table des matières de %{count} éléments. Elle figure en entier, avec une recherche, dans le panneau latéral."
+    open: "Ouvrir la table des matières"
+    to_text: "Aller au texte"
+    print: "La table des matières complète (%{count} éléments) figure sur la page web."
   updates: "Ce texte modifie le(s) texte(s) suivant(s) "
   exdecs_title: "Arrêté(s) d'exécution "
   exdecs:
@@ -226,11 +232,62 @@ fr:
   search_mode_hint: "Par défaut : flexible (tous les mots). Cocher : ordre exact."
   search_hints_no_results_with_exact: "Aucun résultat trouvé. Essayez des termes de recherche moins spécifiques ou désactivez l'option 'correspondance exacte'."
   search_hints_no_results_without_exact: "Aucun résultat trouvé. Essayez des termes de recherche moins spécifiques ou alternatifs."
+  # WW-LINK-01..03: the law page's related-sources panel and the parliamentary
+  # index's relation banner
+  related_sources:
+    heading: "Sources connexes"
+    parliamentary:
+      heading: "Travaux préparatoires"
+      verified: "Vérifié"
+      verified_note: "Contrôlé sur la base du dossier officiel."
+      dossier_not_in_corpus: "Les documents de ce dossier ne figurent pas encore dans notre base de données ; voyez le dossier officiel."
+      unverified: "Lien automatique, non vérifié"
+      unverified_note: "Ces documents portent le numéro de cette loi dans notre base de données parlementaire. Ce lien a été établi automatiquement et n'a pas été contrôlé ; il peut aussi viser des modifications ultérieures ou d'autres textes."
+      empty: "Aucun travail préparatoire lié dans notre index."
+      unavailable: "Les travaux préparatoires sont temporairement indisponibles."
+      view_all: "Voir tous les documents (%{count})"
+      view_all_unverified: "Voir tous les documents liés automatiquement (%{count})"
+      chamber: "Chambre"
+      senate: "Sénat"
+      official_dossier: "Dossier officiel"
+    vlaams:
+      heading: "Parlement flamand"
+      note: "Documents que le Parlement flamand associe à ce décret."
+      no_document: "aucun document en ligne"
+    jurisprudence:
+      heading: "Jurisprudence"
+      empty: "Aucune jurisprudence liée trouvée."
+      not_indexed: "Aucune jurisprudence liée dans l'index actuel."
+      unavailable: "La jurisprudence liée est temporairement indisponible."
+      search: "Rechercher dans la jurisprudence"
+      view_all: "Voir toutes les décisions liées (%{count})"
+      view_available: "Voir les décisions liées disponibles (%{count})"
+      incomplete: "Notre index contient %{count} décisions liées, mais la liste enregistrée n'a pas encore été entièrement mise à jour. %{available} décisions sont actuellement disponibles."
+      previous: "Précédent"
+      next: "Suivant"
+      page: "Page %{page} sur %{pages}"
+      pagination: "Pagination des décisions liées"
+    status:
+      loading: "Chargement…"
+      loaded: "%{source} : chargement terminé"
+      failed: "Échec du chargement. Réessayez."
+    index:
+      verified: "Travaux préparatoires de %{law}, contrôlés sur la base du dossier officiel"
+      unverified: "Documents liés automatiquement à %{law}, non vérifiés"
+      empty: "Aucun document lié à %{law} dans notre index."
   popular_laws:
     title: "Législation fréquemment utilisée"
+    source_toggle: "Afficher ou masquer les sources"
+    source_tabs: "Onglets des sources"
     hint: ""
     show: "afficher"
     hide: "masquer"
+    catalogue:
+      civil_book_seven: "Code civil - Livre 7 \"Les contrats spéciaux\""
+      future_from_september_2027: "(entrée en vigueur : 1er septembre 2027)"
+      criminal_code_1867: "(ancien) Code pénal de 1867"
+      new_criminal_code_book_one: "Nouveau Code pénal - Livre I"
+      new_criminal_code_book_two: "Nouveau Code pénal - Livre II"
     categories:
       civil: "Droit civil"
       criminal: "Droit pénal"
@@ -319,6 +376,14 @@ fr:
   clean_text_copied: "Citation copiée!"
   filter_references: "Masquer modifications et références"
   text_copied: "Texte copié!"
+  # WW-COPY-01: the clipboard controller's words (shared/_clipboard_messages)
+  clipboard:
+    copied: "Copié!"
+    copy_failed: "La copie a échoué. Veuillez réessayer."
+    nothing_to_copy: "Il n'y a rien à copier."
+    consulted_on: "Consulté le"
+    contents: "Table des matières"
+    citation: "citation"
 
   # Parliamentary preparations
   parliamentary_preparations: "Travaux parlementaires"
@@ -369,7 +434,7 @@ fr:
     imprint: "Mentions légales"
     accessibility: "Accessibilité"
     faq: "FAQ"
-    ai_security: "AI Security"
+    ai_security: "Sécurité de l’IA"
     pricing: "Tarifs"
   
   # Accessibility labels
@@ -394,8 +459,9 @@ fr:
   switch_to_dutch: "NL"
 
   chatbot:
+    noscript: "L'assistant juridique construit ses réponses en direct et ne fonctionne qu'avec JavaScript. Activez JavaScript pour poser une question."
     messages: "Messages du chat"
-    title: "LisLoi Chatbot Juridique"
+    title: "%{brand} Chatbot Juridique"
     subtitle: "POC - Q&R sur la législation belge assistée par IA"
     widget_title: "Chatbot Juridique"
     language: "Langue"
@@ -490,8 +556,35 @@ fr:
   auth:
     signed_in: "Connexion réussie"
     signed_out: "Déconnexion réussie"
+    pending_sign_in_not_cancelled: "Vous êtes déconnecté, mais une connexion en deux étapes commencée n'a pas pu être annulée. Elle expire dans les 5 minutes."
+    pending_sign_in_not_replaced: "Une connexion en deux étapes commencée plus tôt dans ce navigateur n'a pas pu être annulée, donc aucune nouvelle n'a été lancée. Réessayez dans quelques minutes."
     invalid_credentials: "Adresse e-mail ou mot de passe invalide"
     account_disabled: "Votre compte est désactivé"
+    access_unavailable: "L'accès à ce compte n'est pas disponible. Contactez-nous si vous pensez qu'il s'agit d'une erreur."
+    too_many_attempts: "Trop de tentatives. Veuillez réessayer plus tard."
+    registration_unavailable: "L'inscription est momentanément indisponible. Veuillez réessayer dans quelques minutes."
+    registration_country_restricted:
+      title: "L'inscription est uniquement disponible en Belgique"
+      message: "Vous pouvez créer un nouveau compte uniquement depuis une connexion internet en Belgique. Vous pouvez toujours consulter le site ou vous connecter à un compte existant."
+      browse: "Consulter le site"
+    # WW-ABUSE-01: the registration proof-of-work state
+    signup_challenge:
+      title: "Courte vérification de sécurité"
+      explanation: "Pour contrer les inscriptions automatisées, votre navigateur effectue une courte vérification avant la création du compte. Elle prend quelques secondes et ne vous demande rien."
+      password_again: "Saisissez à nouveau votre mot de passe : pour votre sécurité, nous ne le conservons pas."
+      noscript: "Cette vérification nécessite JavaScript. Activez-le ou réessayez plus tard."
+      noscript_help_html: "Vous ne pouvez pas activer JavaScript ? %{contact} et nous vous aiderons."
+      noscript_contact: "Contactez-nous"
+      label: "Je ne suis pas un robot"
+      loading: "Chargement…"
+      verifying: "Vérification en cours…"
+      verified: "Vérifié"
+      ready: "Vérification terminée. Vous pouvez maintenant créer votre compte."
+      failed: "La vérification a échoué. Rechargez la page et réessayez."
+      expired: "La vérification a expiré. Rechargez la page."
+      wait: "Veuillez attendre la fin de la vérification."
+      reload: "Recharger"
+      verify: "Vérifier"
     login_required: "Connectez-vous pour continuer"
     account_created: "Compte créé avec succès"
     email_confirmed: "E-mail confirmé. Vous pouvez maintenant vous connecter."
@@ -522,6 +615,18 @@ fr:
     password_blank: "Le mot de passe ne peut pas être vide."
     passwords_dont_match: "Les mots de passe ne correspondent pas."
     password_min_length: "Minimum 8 caractères"
+    show_password: "Afficher le mot de passe"
+    hide_password: "Masquer le mot de passe"
+    password_strength:
+      label: "Robustesse du mot de passe"
+      empty: "Saisissez un mot de passe"
+      labels: ["Très faible", "Faible", "Moyen", "Bon", "Fort"]
+      requirements:
+        length: "Au moins 8 caractères"
+        uppercase: "Majuscule"
+        lowercase: "Minuscule"
+        number: "Chiffre"
+        special: "Caractère spécial (facultatif)"
     back_to_login: "Retour à la connexion"
     no_account: "Pas encore de compte?"
     have_account: "Déjà un compte?"
@@ -544,6 +649,7 @@ fr:
     account_reactivated: "Votre compte a été réactivé. Vous pouvez maintenant vous connecter."
     invalid_reactivation_link: "Ce lien de réactivation est invalide ou expiré."
   subscriptions:
+    title: "Abonnement"
     invalid_tier: "Type d'abonnement invalide"
     payment_error: "Paiement échoué. Veuillez réessayer."
     payment_success: "Paiement réussi! Votre abonnement est actif."
@@ -593,47 +699,47 @@ fr:
     contact_sales: "Nous contacter"
   mailer:
     reactivation:
-      subject: "Réactivez votre compte LisLoi"
+      subject: "Réactivez votre compte %{brand}"
       greeting: "Bonjour %{name},"
       body: "Vous avez demandé la réactivation de votre compte. Cliquez sur le bouton ci-dessous pour confirmer."
       button: "Réactiver mon compte"
       link_text: "Ou copiez ce lien dans votre navigateur :"
       ignore: "Si vous n'avez pas fait cette demande, vous pouvez ignorer cet e-mail."
     deletion_scheduled:
-      subject: "Votre compte WetWijzer sera supprimé dans 30 jours"
+      subject: "Votre compte %{brand} sera supprimé dans 30 jours"
       title: "Suppression de compte programmée"
       greeting: "Cher/Chère %{name},"
       body: "Nous confirmons que votre demande de suppression de compte a été reçue. Votre compte et toutes les données associées seront définitivement supprimés dans 30 jours."
       date_label: "Date de suppression"
       undo_info: "Vous avez changé d'avis ? Vous pouvez annuler la suppression à tout moment en cliquant sur le bouton ci-dessous ou en vous reconnectant."
     deletion_final_warning:
-      subject: "DERNIER AVERTISSEMENT: Votre compte WetWijzer sera supprimé demain"
+      subject: "DERNIER AVERTISSEMENT: Votre compte %{brand} sera supprimé demain"
       title: "Dernier avertissement"
       greeting: "Cher/Chère %{name},"
-      body: "Ceci est un dernier rappel que votre compte WetWijzer sera définitivement supprimé demain."
+      body: "Ceci est un dernier rappel que votre compte %{brand} sera définitivement supprimé demain."
       tomorrow: "Votre compte sera supprimé demain"
       last_chance: "C'est votre dernière chance d'annuler la suppression. Après demain, vos données ne pourront plus être récupérées."
     deletion_completed:
-      subject: "Votre compte WetWijzer a été supprimé"
+      subject: "Votre compte %{brand} a été supprimé"
       title: "Compte supprimé"
-      body: "Votre compte WetWijzer a été définitivement supprimé. Les données suivantes ont été effacées :"
+      body: "Votre compte %{brand} a été définitivement supprimé. Les données suivantes ont été effacées :"
       item_profile: "Profil et paramètres personnels"
       item_history: "Historique de recherche et de conversation"
       item_bookmarks: "Favoris et éléments enregistrés"
-      farewell: "Merci d'avoir utilisé WetWijzer. Vous êtes toujours le bienvenu pour créer un nouveau compte."
+      farewell: "Merci d'avoir utilisé %{brand}. Vous êtes toujours le bienvenu pour créer un nouveau compte."
     subscription_welcome:
-      subject: "Bienvenue sur Pro ! 🎉 - LisLoi"
+      subject: "Bienvenue sur Pro ! 🎉 - %{brand}"
       greeting: "Bonjour %{name},"
       body: "Merci de vous être abonné à Pro ! Vous avez désormais accès à toutes les fonctionnalités premium."
       whats_included: "Ce qui est inclus dans votre abonnement Pro :"
       feature_credits: "40 crédits gratuits par mois"
       feature_models: "Les 4 niveaux d'intelligence IA (Level I–IV)"
       feature_jurisprudence: "Jurisprudence et documents parlementaires via le chatbot"
-      feature_support: "Soutenez LisLoi"
+      feature_support: "Soutenez %{brand}"
       button: "Commencer à poser des questions"
-      thanks: "Merci de soutenir LisLoi ! Votre abonnement nous aide à maintenir et améliorer la plateforme."
+      thanks: "Merci de soutenir %{brand} ! Votre abonnement nous aide à maintenir et améliorer la plateforme."
     subscription_cancelled:
-      subject: "Votre abonnement Pro a été annulé - LisLoi"
+      subject: "Votre abonnement Pro a été annulé - %{brand}"
       greeting: "Bonjour %{name},"
       body: "Nous sommes désolés de vous voir partir. Votre abonnement Pro a été annulé."
       access_until: "Vous conserverez l'accès Pro jusqu'au :"
@@ -642,9 +748,9 @@ fr:
       resubscribe_button: "Se réabonner à Pro"
       farewell: "Nous espérons vous revoir. N'hésitez pas à nous contacter si vous avez des questions."
     payment_failed:
-      subject: "Échec du paiement de votre abonnement Pro - LisLoi"
+      subject: "Échec du paiement de votre abonnement Pro - %{brand}"
       greeting: "Bonjour %{name},"
-      body: "Nous n'avons pas pu traiter votre dernier paiement pour votre abonnement LisLoi Pro."
+      body: "Nous n'avons pas pu traiter votre dernier paiement pour votre abonnement %{brand} Pro."
       status_label: "Statut"
       status_past_due: "Votre abonnement est en retard de paiement. Mettez à jour votre moyen de paiement pour conserver vos fonctionnalités Pro."
       decline_reason: "Raison :"
@@ -652,15 +758,15 @@ fr:
       update_button: "Mettre à jour le moyen de paiement"
       contact: "Des questions ? N'hésitez pas à nous contacter."
     confirmation:
-      subject: "Confirmez votre adresse e-mail - LisLoi"
+      subject: "Confirmez votre adresse e-mail - %{brand}"
       greeting: "Bonjour %{name},"
-      body: "Merci de votre inscription sur LisLoi. Cliquez sur le bouton ci-dessous pour confirmer votre adresse e-mail."
+      body: "Merci de votre inscription sur %{brand}. Cliquez sur le bouton ci-dessous pour confirmer votre adresse e-mail."
       button: "Confirmer l'e-mail"
       link_text: "Ou copiez ce lien dans votre navigateur:"
       expires: "Ce lien est valable 24 heures."
       ignore: "Si vous ne vous êtes pas inscrit, vous pouvez ignorer cet e-mail."
     password_reset:
-      subject: "Réinitialiser le mot de passe - LisLoi"
+      subject: "Réinitialiser le mot de passe - %{brand}"
       greeting: "Bonjour %{name},"
       body: "Vous avez demandé la réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour définir un nouveau mot de passe."
       button: "Réinitialiser le mot de passe"
@@ -668,9 +774,9 @@ fr:
       expires: "Ce lien est valable 2 heures."
       ignore: "Si vous n'avez pas fait cette demande, vous pouvez ignorer cet e-mail."
     welcome:
-      subject: "Bienvenue sur LisLoi"
+      subject: "Bienvenue sur %{brand}"
     usage_warning:
-      subject: "Vous avez atteint %{percent}%% de votre limite - LisLoi"
+      subject: "Vous avez atteint %{percent}%% de votre limite - %{brand}"
       title: "Limite d'utilisation presque atteinte"
       greeting: "Bonjour %{name},"
       body: "Vous avez utilisé %{percent}%% de vos crédits."
@@ -678,10 +784,10 @@ fr:
       upgrade_prompt: "Passez à Pro pour plus de crédits."
       upgrade_button: "Mettre à niveau"
     unverified_warning:
-      subject: "Confirmez votre adresse e-mail - LisLoi"
-      subject_final: "Dernière chance : confirmez votre adresse e-mail - LisLoi"
+      subject: "Confirmez votre adresse e-mail - %{brand}"
+      subject_final: "Dernière chance : confirmez votre adresse e-mail - %{brand}"
       greeting: "Bonjour %{name},"
-      body: "Vous vous êtes inscrit(e) sur LisLoi, mais votre adresse e-mail n'a pas encore été confirmée."
+      body: "Vous vous êtes inscrit(e) sur %{brand}, mais votre adresse e-mail n'a pas encore été confirmée."
       button: "Confirmer mon e-mail"
       link_text: "Ou copiez ce lien dans votre navigateur :"
       deadline: "Votre compte sera supprimé si vous ne confirmez pas votre adresse e-mail dans les 7 jours."
@@ -695,24 +801,26 @@ fr:
       not_you: "Ce n'était pas vous? Changez immédiatement votre mot de passe."
       review_button: "Vérifier le compte"
       login:
-        subject: "Nouvelle connexion à votre compte - LisLoi"
+        subject: "Nouvelle connexion à votre compte - %{brand}"
         title: "Nouvelle connexion détectée"
-        message: "Une connexion vient d'être effectuée sur votre compte LisLoi."
+        message: "Une connexion vient d'être effectuée sur votre compte %{brand}."
       password_changed:
-        subject: "Votre mot de passe a été modifié - LisLoi"
+        subject: "Votre mot de passe a été modifié - %{brand}"
         title: "Mot de passe modifié"
         message: "Votre mot de passe vient d'être modifié."
       account_locked:
-        subject: "Votre compte est verrouillé - LisLoi"
+        subject: "Votre compte est verrouillé - %{brand}"
         title: "Compte verrouillé"
         message: "Votre compte a été temporairement verrouillé en raison de plusieurs tentatives de connexion infructueuses."
       registration_attempt:
-        subject: "Quelqu'un a essayé de s'inscrire avec votre adresse e-mail - LisLoi"
+        subject: "Quelqu'un a essayé de s'inscrire avec votre adresse e-mail - %{brand}"
         title: "Tentative d'inscription détectée"
         message: "Quelqu'un a essayé de créer un nouveau compte avec votre adresse e-mail. Si ce n'était pas vous, aucune action n'est nécessaire. Votre compte est en sécurité."
   filter_articles: "Rechercher un article…"
   to_top: "Vers le haut"
   account:
+    invoices: "Factures"
+    invoices_subtitle: "Vos factures et notes de crédit"
     tier_free: "Gratuit"
     title: "Mon Compte"
     info: "Informations du compte"
@@ -728,6 +836,7 @@ fr:
     delete_account_desc: "Supprimez définitivement votre compte et toutes les données associées"
     delete: "Supprimer"
     delete_confirm: "Êtes-vous sûr de vouloir supprimer votre compte? Cette action est irréversible."
+    delete_final: "Oui, supprimer mon compte"
     delete_checkbox_confirm: "Je confirme vouloir supprimer mon compte et comprends que toutes les données seront définitivement effacées après 30 jours."
     schedule_deletion: "Supprimer le compte"
     deletion_grace_period: "Votre compte sera définitivement supprimé après 30 jours. Vous pouvez annuler cette action entre-temps."
@@ -770,6 +879,7 @@ fr:
     2fa_enabled: "2FA est activé!"
     2fa_disabled: "2FA est désactivé."
     2fa_setup_expired: "Session expirée. Recommencez."
+    2fa_replace_first: "La 2FA est déjà activée. Désactivez-la d'abord (avec votre mot de passe) pour configurer un nouvel authentificateur."
     invalid_otp: "Code invalide. Réessayez."
     disable_2fa_confirm: "Êtes-vous sûr de vouloir désactiver 2FA ?"
     backup_codes: "Codes de secours"
@@ -821,6 +931,26 @@ fr:
       otp_enabled: "2FA activé"
       otp_disabled: "2FA désactivé"
       profile_updated: "Profil mis à jour"
+  invoices:
+    number: "Numéro"
+    date: "Date"
+    type: "Type"
+    total: "Total"
+    status: "Statut"
+    download: "Télécharger"
+    type_subscription: "Abonnement"
+    type_credits: "Crédits"
+    type_credit_note: "Note de crédit"
+    type_chargeback_reversal: "Annulation de rétrofacturation"
+    type_other: "Autre"
+    excl_vat: "hors TVA"
+    status_sent: "Envoyée"
+    status_processing: "En cours de traitement"
+    status_failed: "Échec"
+    empty_title: "Aucune facture pour le moment"
+    empty_description: "Les factures des abonnements et des achats de crédits apparaîtront ici."
+    pdf_not_found: "Facture PDF introuvable."
+    xml_not_found: "Fichier XML UBL introuvable."
   common:
     save: "Enregistrer"
     cancel: "Annuler"
@@ -829,6 +959,25 @@ fr:
   classic:
     switch_modern: "Version moderne"
     pagination_hint: "Premières %{count} pages affichées. Utilisez les filtres de recherche ci-dessus pour trouver une législation spécifique."
+    # On a modern page that cannot work without JavaScript
+    no_js:
+      notice: "Cette page ne fonctionne qu'avec JavaScript. Activez JavaScript pour l'utiliser."
+      classic_link: "Pour lire la législation sans JavaScript, utilisez le site classique."
+    theme:
+      label: "Apparence"
+      system: "Système"
+      light: "Clair"
+      dark: "Sombre"
+    table_scroll: "Tableau ; faites défiler horizontalement pour tout voir"
+    related:
+      label: "Sources connexes"
+      parliamentary: "Travaux préparatoires"
+      jurisprudence: "Jurisprudence"
+    toc:
+      skip_to_text: "Aller au texte"
+    search:
+      reset: "Effacer"
+      title_label: "Rechercher par titre"
   back_to_list: "Retour à la liste"
   search_prompt: "Recherchez la législation belge via le champ de recherche ci-dessus."
   law_not_found: "Loi introuvable."
@@ -855,6 +1004,8 @@ fr:
     all_courts: "Toutes les cours"
     search: "Rechercher"
     no_results: "Aucun arrêt trouvé"
+    search_failed: "La jurisprudence n'a pas pu être consultée pour le moment. Réessayez plus tard."
+    listing_limit: "La liste des décisions récentes s'arrête ici. Utilisez la recherche ou les filtres pour trouver des décisions plus anciennes."
     back_to_list: "Retour à la liste"
     full_text: "Texte intégral"
     summary: "Résumé"
@@ -862,6 +1013,7 @@ fr:
 
   # Bookmarks
   bookmarks:
+    noscript: "Vos signets et dossiers sont chargés et gérés avec JavaScript. Activez JavaScript pour les consulter."
     title: "Signets"
     add: "Ajouter un signet"
     remove: "Supprimer le signet"
@@ -908,8 +1060,13 @@ fr:
 
   # Praxis cross-sell banner (shown to non-Praxis users on profile page)
   praxis_banner:
-    title: "À la recherche d'un logiciel de gestion (abordable) pour votre cabinet d'avocat ?"
-    description: "Gestion documentaire, gestion clients, facturation, assistant IA - tout en une application de bureau et sans vous ruiner ! Achetez Praxis et soutenez WetWijzer / LisLoi / GesetzGuide / LexLibera !"
+    title: "Praxis : un logiciel de gestion pour votre cabinet"
+    description: "Praxis est encore en développement. Le logiciel prévu combine dossiers, documents, suivi du temps et facturation, avec l'IA juridique dans Plus. Par les créateurs de WetWijzer / LisLoi / GesetzGuide / LexLibera."
     cta: "Découvrir Praxis"
-    tagline: "À partir de €15/mois - par les créateurs de WetWijzer / LisLoi / GesetzGuide / LexLibera"
+    tagline: "Tarifs de lancement prévus pour 1 utilisateur : Essentials %{essentials} €/mois · Plus avec IA %{plus} €/mois (hors TVA)"
+    teaser_title: "Praxis est en développement"
+    teaser_description: "Gestion de cabinet prévue avec l'IA juridique dans Plus. Découvrez le projet."
 
+  # Roll-call votes on dossier and MP pages; see en.yml.
+  parliamentary:
+    roll_call_votes_end: "Les données des votes nominatifs s'arrêtent au 20 juillet 2023, car la source a cessé de publier. Les votes ultérieurs ne sont pas affichés ici."

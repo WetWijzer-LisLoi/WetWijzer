@@ -1,58 +1,129 @@
+<%# WW-LINK-01..03. Each section names its relation's status in
+    data-relation-status, and a verified relation its document count in
+    data-relation-count. A count badge appears only where the number is true:
+    a reviewed relation's documents, the reverse index's cases, or an explicit
+    empty payload. An unavailable store never shows as an empty list, and a
+    link leaves the site only for an https URL. %>
+<% link_class = 'block rounded-lg p-2 transition-colors hover:bg-purple-50 dark:hover:bg-purple-900/20' %>
+<% note_class = 'text-sm text-gray-500 dark:text-gray-400' %>
+<% badge_class = 'rounded-full px-2 py-0.5 text-xs font-medium' %>
 <div class="px-4 pb-4 md:px-6 md:pb-6">
-  <% if type != 'jurisprudence' %>
-    <section class="pt-2">
-      <h3 class="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-        <span><%= case I18n.locale when :fr then 'Travaux préparatoires' when :de then 'Parlamentarische Vorarbeiten' when :en then 'Preparatory works' else 'Parlementaire voorbereidingen' end %></span>
-        <span class="text-xs text-gray-400">(<%= parliamentary_total.to_i %>)</span>
+  <% if parliamentary %>
+    <% parl = parliamentary %>
+    <%= tag.section class: 'pt-2',
+                    data: { related_source: 'parliamentary', relation_status: parl.status,
+                            relation_count: (parl.count if parl.verified?) }.compact do %>
+      <h3 class="mb-2 flex flex-wrap items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <span><%= t('related_sources.parliamentary.heading') %></span>
+        <% if parl.verified? && parl.count.to_i.positive? %>
+          <span class="text-xs text-gray-400">(<%= parl.count %>)</span>
+        <% end %>
+        <% if parl.verified? %>
+          <span class="<%= badge_class %> bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"><%= t('related_sources.parliamentary.verified') %></span>
+        <% elsif parl.status == :unverified %>
+          <span class="<%= badge_class %> bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"><%= t('related_sources.parliamentary.unverified') %></span>
+        <% end %>
       </h3>
 
-      <% if related_parliamentary.present? %>
-        <div class="space-y-1">
-          <% related_parliamentary.each do |doc| %>
-            <% destination =
-                 if doc[:source] == :vlaamse_codex && doc[:pdf_url].present?
-                   doc[:pdf_url]
-                 elsif doc[:source] == :dossier_summary && doc[:dossier_url].present?
-                   doc[:dossier_url]
-                 else
-                   parliamentary_path(doc[:id])
-                 end %>
-            <% external = destination.to_s.match?(%r{\Ahttps?://}i) %>
-            <%= link_to destination,
-                        class: 'block rounded-lg p-2 transition-colors hover:bg-purple-50 dark:hover:bg-purple-900/20',
-                        target: (external ? '_blank' : nil),
-                        rel: (external ? 'noopener noreferrer' : nil) do %>
-              <div class="text-sm text-gray-900 dark:text-white">
-                <%= doc[:title].presence&.truncate(80) || doc[:document_number] || doc[:dossier_number] %>
-              </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">
-                <%= [doc[:parliament], doc[:dossier_number], doc[:document_type]].compact_blank.join(' · ') %>
-              </div>
-            <% end %>
-          <% end %>
-        </div>
-        <%= link_to parliamentary_work_path(numac: lookup_numac),
-                    class: 'mt-2 inline-flex text-xs text-purple-600 hover:underline dark:text-purple-400' do %>
-          <%= case I18n.locale when :fr then 'Voir tous les travaux préparatoires' when :de then 'Alle parlamentarischen Dokumente ansehen' when :en then 'View all preparatory works' else 'Alle parlementaire documenten bekijken' end %>
-        <% end %>
+      <% if parl.status.in?(%i[unavailable empty]) %>
+        <p class="<%= note_class %>"><%= t("related_sources.parliamentary.#{parl.status}") %></p>
       <% else %>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          <%= case I18n.locale when :fr then 'Aucun travail préparatoire lié trouvé.' when :de then 'Keine verknüpften parlamentarischen Dokumente gefunden.' when :en then 'No linked preparatory works found.' else 'Geen gekoppelde parlementaire voorbereiding gevonden.' end %>
-        </p>
+        <% if parl.dossiers.any? %>
+          <p class="mb-2 flex flex-wrap gap-x-3 text-xs text-gray-600 dark:text-gray-400">
+            <% parl.dossiers.each do |dossier| %>
+              <%= link_to "#{t("related_sources.parliamentary.#{dossier.parliament}")} #{dossier.label}", dossier.url,
+                          target: '_blank', rel: 'noopener noreferrer',
+                          class: 'text-(--link-color) hover:text-(--link-hover-color) hover:underline',
+                          title: t('related_sources.parliamentary.official_dossier') %>
+            <% end %>
+            <% if parl.verified? %><span><%= t('related_sources.parliamentary.verified_note') %></span><% end %>
+          </p>
+        <% end %>
+        <% if parl.status == :unverified %>
+          <p class="mb-2 text-xs text-gray-600 dark:text-gray-400"><%= t('related_sources.parliamentary.unverified_note') %></p>
+        <% end %>
+
+        <% if parl.items.any? %>
+          <div class="space-y-1">
+            <% parl.items.each do |doc| %>
+              <% summary = doc[:source] == :dossier_summary %>
+              <% destination = summary ? doc[:dossier_url] : parliamentary_path(doc[:id]) %>
+              <% reference = summary ? doc[:dossier_number] : [[doc[:legislature], doc[:dossier_number].to_s.rjust(4, '0')].compact_blank.join('-'), doc[:document_number]].compact_blank.join('/') %>
+              <% body = capture do %>
+                <div class="text-sm text-gray-900 dark:text-white">
+                  <%= doc[:title].presence&.truncate(80) || reference %>
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  <%= [t("related_sources.parliamentary.#{doc[:parliament]}", default: doc[:parliament].to_s), reference, doc[:document_type]].compact_blank.join(' · ') %>
+                </div>
+              <% end %>
+              <% if !summary %>
+                <%= link_to body, destination, class: link_class %>
+              <% elsif destination.to_s.match?(%r{\Ahttps://}i) %>
+                <%= link_to body, destination, class: link_class, target: '_blank', rel: 'noopener noreferrer' %>
+              <% else %>
+                <div class="rounded-lg p-2"><%= body %></div>
+              <% end %>
+            <% end %>
+          </div>
+          <%= link_to parliamentary_work_path(numac: lookup_numac),
+                      class: 'mt-2 inline-flex text-xs text-purple-600 hover:underline dark:text-purple-400' do %>
+            <%= t(parl.verified? ? 'related_sources.parliamentary.view_all' : 'related_sources.parliamentary.view_all_unverified', count: parl.count.to_i) %>
+          <% end if parl.count.to_i.positive? %>
+        <% elsif parl.verified? %>
+          <p class="<%= note_class %>"><%= t('related_sources.parliamentary.dossier_not_in_corpus') %></p>
+        <% end %>
       <% end %>
-    </section>
+    <% end %>
+
+    <% if (vlaams = parl.vlaams) %>
+      <%= tag.section class: 'mt-4 border-t border-gray-200 pt-4 dark:border-gray-700',
+                      data: { related_source: 'vlaams', relation_status: vlaams.status, relation_count: vlaams.count }.compact do %>
+        <h3 class="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+          <span><%= t('related_sources.vlaams.heading') %></span>
+          <% if vlaams.count %><span class="text-xs text-gray-400">(<%= vlaams.count %>)</span><% end %>
+        </h3>
+        <% if vlaams.status == :unavailable %>
+          <p class="<%= note_class %>"><%= t('related_sources.parliamentary.unavailable') %></p>
+        <% else %>
+          <p class="mb-2 text-xs text-gray-600 dark:text-gray-400"><%= t('related_sources.vlaams.note') %></p>
+          <div class="space-y-1">
+            <% vlaams.items.each do |doc| %>
+              <% body = capture do %>
+                <div class="text-sm text-gray-900 dark:text-white"><%= doc[:title].presence&.truncate(80) || doc[:label] %></div>
+                <div class="text-xs text-gray-500 dark:text-gray-400"><%= [doc[:label], doc[:document_type]].compact_blank.join(' · ') %></div>
+              <% end %>
+              <% if doc[:pdf_url].to_s.match?(%r{\Ahttps://}i) %>
+                <%= link_to body, doc[:pdf_url], class: link_class, target: '_blank', rel: 'noopener noreferrer' %>
+              <% else %>
+                <div class="rounded-lg p-2"><%= body %><span class="text-xs text-gray-500 dark:text-gray-400">(<%= t('related_sources.vlaams.no_document') %>)</span></div>
+              <% end %>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
   <% end %>
 
-  <% if type != 'parliamentary' %>
-    <section class="<%= type == 'all' ? 'mt-4 border-t border-gray-200 pt-4 dark:border-gray-700' : 'pt-2' %>">
+  <% if jurisprudence %>
+    <% status = jurisprudence[:status] %>
+    <%= tag.section class: (parliamentary ? 'mt-4 border-t border-gray-200 pt-4 dark:border-gray-700' : 'pt-2'),
+                    data: { related_source: 'jurisprudence', relation_status: status } do %>
       <h3 class="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-        <span><%= case I18n.locale when :fr then 'Jurisprudence' when :de then 'Rechtsprechung' when :en then 'Case law' else 'Rechtspraak' end %></span>
-        <span class="text-xs text-gray-400">(<%= jurisprudence_total.to_i %>)</span>
+        <span><%= t('related_sources.jurisprudence.heading') %></span>
+        <% if status.in?(%i[linked empty]) %>
+          <span class="text-xs text-gray-400">(<%= jurisprudence[:total_count].to_i %>)</span>
+        <% end %>
       </h3>
 
-      <% if related_jurisprudence.present? %>
+      <% if status == :linked %>
+        <% if jurisprudence[:incomplete] %>
+          <p class="mb-2 text-sm text-gray-600 dark:text-gray-400" data-related-jurisprudence-incomplete>
+            <%= t('related_sources.jurisprudence.incomplete', count: jurisprudence[:total_count], available: jurisprudence[:available_count]) %>
+          </p>
+        <% end %>
         <div class="space-y-1">
-          <% related_jurisprudence.each do |case_item| %>
+          <% jurisprudence[:items].each do |case_item| %>
             <%= link_to jurisprudence_path(case_item[:case_number]),
                         class: 'block rounded-lg p-2 transition-colors hover:bg-(--accent-50,#eff6ff) dark:hover:bg-(--accent-900,#1e3a5f)/20' do %>
               <div class="font-mono text-sm text-gray-900 dark:text-white">
@@ -64,15 +135,38 @@
             <% end %>
           <% end %>
         </div>
-        <%= link_to jurisprudence_index_path,
-                    class: 'mt-2 inline-flex text-xs text-(--accent-600) hover:underline dark:text-(--accent-400)' do %>
-          <%= case I18n.locale when :fr then 'Rechercher dans la jurisprudence' when :de then 'In der Rechtsprechung suchen' when :en then 'Search case law' else 'Zoeken in rechtspraak' end %>
+        <% if jurisprudence[:paginated] %>
+          <% if jurisprudence[:pages] > 1 %>
+            <nav class="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm"
+                 aria-label="<%= t('related_sources.jurisprudence.pagination') %>" data-related-jurisprudence-pagination>
+              <% page_options = { language_id: law.language_id, type: type, view: 'page', per_page: jurisprudence[:per_page] } %>
+              <% if jurisprudence[:page] > 1 %>
+                <%= link_to t('related_sources.jurisprudence.previous'),
+                            related_sources_law_path(law.numac, **page_options, page: jurisprudence[:page] - 1),
+                            rel: 'prev', class: 'text-(--link-color) hover:underline' %>
+              <% end %>
+              <span aria-current="page"><%= t('related_sources.jurisprudence.page', page: jurisprudence[:page], pages: jurisprudence[:pages]) %></span>
+              <% if jurisprudence[:page] < jurisprudence[:pages] %>
+                <%= link_to t('related_sources.jurisprudence.next'),
+                            related_sources_law_path(law.numac, **page_options, page: jurisprudence[:page] + 1),
+                            rel: 'next', class: 'text-(--link-color) hover:underline' %>
+              <% end %>
+            </nav>
+          <% end %>
+        <% else %>
+          <%= link_to t(jurisprudence[:incomplete] ? 'related_sources.jurisprudence.view_available' : 'related_sources.jurisprudence.view_all',
+                        count: (jurisprudence[:incomplete] ? jurisprudence[:available_count] : jurisprudence[:total_count])),
+                      related_sources_law_path(law.numac, language_id: law.language_id, type: 'jurisprudence', view: 'page'),
+                      class: 'mt-2 inline-flex text-xs text-(--accent-600) hover:underline dark:text-(--accent-400)',
+                      data: { related_jurisprudence_view_all: true } %>
         <% end %>
       <% else %>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          <%= case I18n.locale when :fr then 'Aucune jurisprudence liée trouvée.' when :de then 'Keine verknüpfte Rechtsprechung gefunden.' when :en then 'No linked case law found.' else 'Geen gekoppelde rechtspraak gevonden.' end %>
-        </p>
+        <p class="<%= note_class %>"><%= t("related_sources.jurisprudence.#{status}") %></p>
       <% end %>
-    </section>
+      <% unless status == :unavailable %>
+        <%= link_to t('related_sources.jurisprudence.search'), jurisprudence_index_path,
+                    class: 'mt-2 inline-flex text-xs text-(--accent-600) hover:underline dark:text-(--accent-400)' %>
+      <% end %>
+    <% end %>
   <% end %>
 </div>

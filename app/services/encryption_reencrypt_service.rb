@@ -21,7 +21,7 @@ class EncryptionReencryptService
     end
 
     journal = load_journal(journal_path)
-    summaries = models.map do |klass|
+    models.map do |klass|
       resume_after = journal.dig(klass.name, 'last_id').to_i
       scanned = 0
       needing = 0
@@ -61,8 +61,6 @@ class EncryptionReencryptService
       Summary.new(model: klass.name, scanned: scanned, needing: needing,
                   reencrypted: reencrypted, failed_ids: failed_ids.first(200))
     end
-
-    summaries
   end
 
   def self.load_journal(path)

@@ -310,7 +310,9 @@
           </div>
         </div>
         
-        <div class="article-content pt-3">
+        <%# The legal text, in its own language (the page keeps the UI's); the
+            toolbar above stays outside, and UI labels inside are marked back. %>
+        <div class="article-content pt-3" <%= tag.attributes(lang: legal_text_lang) %>>
         <%# Content-keyed, not count-keyed. The digest over the loaded rows moves on any
             change to article text, title or type - a consolidation that rewrites Art. 5
             without adding a row, a raw-SQL repair - which a count never saw, so readers
@@ -339,19 +341,19 @@
 
             <%# Reset unique section heading counters so numbering matches TOC %>
       <% @_section_heading_counts = Hash.new(0) %>
-      <% used_base_ids = Set.new %>
       <% prev_was_heading = false %>
       <% section_stack = [] %> <%# Track open sections with their hierarchy levels %>
 
       <%# Pre-compute article types and permalinks to avoid redundant helper calls %>
       <%# This eliminates ~2× determine_article_type calls per article (current + peek-ahead) %>
       <% article_types = articles.map { |a| determine_article_type(a.article_title, a.article_text, a.article_type) } %>
-      <% article_permalinks = articles.map do |a|
-           text = a.article_text.chomp.strip
-           title = a.article_title.to_s.chomp.strip
-           is_lnk = a.article_type == 'LNK'
-           article_id_from_toc_line(title) || (!is_lnk && article_id_from_toc_line(text)) || generate_short_permalink(is_lnk ? title : text, prefer_article_id: !is_lnk)
-         end %>
+      <%# The Classic page derives the same anchors (LawsHelper#law_body_anchors). %>
+      <% article_permalinks = articles.map { |a| article_permalink_for(a) } %>
+      <%# WW-UI-02: anchors are unique. Every real article permalink is known up
+          front, so a variant's alias never takes one, and a second row that
+          derives a permalink already written gets a free numeric suffix. %>
+      <% real_article_ids = article_permalinks.each_with_index.filter_map { |link, i| link unless [:section_heading, :abolished_section].include?(article_types[i]) }.to_set %>
+      <% emitted_article_ids = Set.new %>
 
       <% articles.each_with_index do |article, index| %>
         <% determined_type = article_types[index] %>
@@ -383,6 +385,7 @@
             <% section_stack.push(current_level) %>
         <% else %>
           <!-- Regular Article -->
+          <% permalink = unique_article_permalink(permalink, real_article_ids, emitted_article_ids) %>
           <%# Invisible anchors placed before the article to ensure correct scroll offset for fixed headers %>
           <article id="<%= permalink %>"
                    data-article-scope
@@ -390,10 +393,9 @@
             <%# Hidden alias anchor moved inside the article to avoid creating extra space between siblings %>
             <span id="section-<%= permalink %>" class="block h-0 overflow-hidden scroll-mt-24 mt-0!" aria-hidden="true"></span>
             <% # Add a base-ID alias anchor for variant articles so TOC links (which lack variant info) still work %>
-            <% base_permalink = permalink.sub(/-(toekomstig|futur|vlaams_gewest|waals_gewest|brussels_hoofdstedelijk_gewest|region_wallonne|region_flamande|region_bruxelles_capitale)$/, '') %>
-            <% if base_permalink != permalink && !used_base_ids.include?(base_permalink) %>
+            <% base_permalink = permalink.sub(LawsHelper::ARTICLE_VARIANT_SUFFIX, '') %>
+            <% if base_permalink != permalink && !real_article_ids.include?(base_permalink) && emitted_article_ids.add?(base_permalink) %>
               <span id="<%= base_permalink %>" class="block h-0 overflow-hidden scroll-mt-24 mt-0!" aria-hidden="true"></span>
-              <% used_base_ids.add(base_permalink) %>
             <% end %>
             <% top_pad = prev_was_heading ? 'pt-2' : 'pt-4' %>
             <% bottom_pad = next_is_heading ? 'pb-2' : 'pb-4' %>
@@ -412,7 +414,7 @@
               <% related_exdecs = @article_exdec_mapping[article_id] if article_id %>
               
               <% if related_exdecs.present? %>
-                <div class="mt-2 mb-1 ml-4 border-l-2 border-gray-400 dark:border-gray-600 bg-gray-50/50 dark:bg-gray-800/10 rounded-r-lg" data-controller="collapse" data-collapse-expanded-value="true">
+                <div class="mt-2 mb-1 ml-4 border-l-2 border-gray-400 dark:border-gray-600 bg-gray-50/50 dark:bg-gray-800/10 rounded-r-lg" data-controller="collapse" data-collapse-expanded-value="true" lang="<%= I18n.locale %>">
                   <div class="py-1.5 pr-3 pl-4">
                     <%# Collapsible header %>
                     <button type="button" 
@@ -471,88 +473,3 @@
   </div>
 
 <% end %>
-
-<script nonce="<%= content_security_policy_nonce %>">
-  // Click handler for .article-number spans: copies the article permalink URL to clipboard
-  // Delegates from the articles container so it works for turbo-frame-loaded content
-  (function() {
-    var container = document.getElementById('tekst');
-    if (!container) return;
-
-    container.addEventListener('click', function(e) {
-      var artNum = e.target.closest('.article-number');
-      if (!artNum) return;
-
-      // Find the parent article or section-heading that has a permalink/id
-      var scope = artNum.closest('[data-article-scope]');
-      if (!scope) return;
-
-      var permalink = null;
-      // For regular articles: look for data-permalink on the inner div
-      var inner = scope.querySelector('[data-permalink]');
-      if (inner) {
-        permalink = inner.dataset.permalink;
-      }
-      // Fallback: use the article/section id
-      if (!permalink && scope.id) {
-        permalink = scope.id;
-      }
-      // Fallback: use data-section-heading if present (for section headings)
-      if (!permalink) {
-        var heading = scope.querySelector('[data-section-heading]');
-        if (heading) permalink = heading.dataset.sectionHeading;
-      }
-
-      if (!permalink) return;
-
-      // Build the full URL with the fragment
-      var base = window.location.origin + window.location.pathname + window.location.search;
-      var url = base + '#' + permalink;
-
-      // Copy to clipboard
-      var copiedMsg = <%= raw((case I18n.locale when :fr then 'Lien copié!' when :de then 'Link kopiert!' when :en then 'Link copied!' else 'Link gekopieerd!' end).to_json) %>;
-
-      var showFeedback = function() {
-        // Brief visual feedback on the article number
-        artNum.style.textDecoration = 'underline';
-        artNum.style.textDecorationColor = 'var(--accent-500, #3b82f6)';
-        setTimeout(function() {
-          artNum.style.textDecoration = '';
-          artNum.style.textDecorationColor = '';
-        }, 1200);
-
-        // Show toast if available
-        if (typeof window.showToast === 'function') {
-          window.showToast(copiedMsg);
-        } else {
-          // Simple built-in toast
-          var toast = document.createElement('div');
-          toast.textContent = copiedMsg;
-          toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;pointer-events:none;background:var(--accent-600-solid,#2563eb);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.15);opacity:0;transition:opacity 0.3s ease;';
-          document.body.appendChild(toast);
-          requestAnimationFrame(function() { toast.style.opacity = '1'; });
-          setTimeout(function() {
-            toast.style.opacity = '0';
-            setTimeout(function() { toast.remove(); }, 300);
-          }, 1800);
-        }
-      };
-
-      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(showFeedback).catch(function() {
-          // Fallback
-          try {
-            var ta = document.createElement('textarea');
-            ta.value = url;
-            ta.style.cssText = 'position:fixed;top:-9999px;opacity:0';
-            document.body.appendChild(ta);
-            ta.focus(); ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
-            showFeedback();
-          } catch(_) {}
-        });
-      }
-    });
-  })();
-</script>

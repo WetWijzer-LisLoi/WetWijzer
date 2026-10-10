@@ -26,6 +26,14 @@
         </div>
 
         <%= form_with url: enable_2fa_path, method: :post, class: "space-y-4" do |f| %>
+          <%# WW-SEC-13: enrolment needs the account password, as switching 2FA off does. %>
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <%= t('auth.password') %>
+            </label>
+            <input type="password" name="password" id="password" autocomplete="current-password" required
+                   class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+          </div>
           <div>
             <label for="otp_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               <%= t('account.enter_code') %>

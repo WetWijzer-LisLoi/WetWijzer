@@ -1,11 +1,154 @@
 # frozen_string_literal: true
 
+require 'yaml'
+
 # == Popular Laws Helper
 #
 # Batch lookup and path generation for frequently-referenced Belgian laws.
 # Extracted from ApplicationHelper to isolate the 120+ title strings and
 # caching logic from the core rendering pipeline.
 module PopularLawsHelper
+  POPULAR_LAW_ABBREVIATIONS_PATH = Rails.root.join('config', 'data', 'popular_law_abbreviations.yml').freeze
+  POPULAR_LAW_ABBREVIATIONS = begin
+    abbreviations = YAML.safe_load(File.binread(POPULAR_LAW_ABBREVIATIONS_PATH), aliases: false)
+    abbreviations = {} unless abbreviations.is_a?(Hash)
+
+    freeze_value = lambda do |value|
+      case value
+      when Hash
+        value.each do |key, nested_value|
+          freeze_value.call(key)
+          freeze_value.call(nested_value)
+        end
+      when Array
+        value.each { |nested_value| freeze_value.call(nested_value) }
+      end
+      value.freeze
+    end
+    freeze_value.call(abbreviations)
+  rescue Errno::ENOENT, Psych::Exception
+    {}.freeze
+  end
+
+  POPULAR_LAW_ABBREVIATION_CLASSES =
+    'font-mono text-xs text-(--accent-text) dark:text-(--accent-400) font-semibold'
+  POPULAR_LAW_ABBREVIATION_UNAVAILABLE_CLASSES =
+    'font-mono text-xs text-gray-500 dark:text-gray-400 font-semibold'
+
+  # Catalogue card titles are kept separate from the abbreviation map: a
+  # translated title is UI copy, not a legal citation.  EN/DE are explicit
+  # here so those sites never silently inherit French text.
+  POPULAR_LAW_CATALOGUE_TITLES = {
+    '1804032150' => { en: '(old) Civil Code - Book I: Persons', de: '(alt) Zivilgesetzbuch - Buch I: Personen' },
+    '1804032151' => { en: '(old) Civil Code - Book II: Property and limits of ownership', de: '(alt) Zivilgesetzbuch - Buch II: Sachen und Eigentumsbeschränkungen' },
+    '1804032152' => { en: '(old) Civil Code - Book III: Acquisition of ownership - Titles I-II', de: '(alt) Zivilgesetzbuch - Buch III: Eigentumserwerb - Titel I-II' },
+    '1804032153' => { en: '(old) Civil Code - Book III: Acquisition of ownership - Titles III-V', de: '(alt) Zivilgesetzbuch - Buch III: Eigentumserwerb - Titel III-V' },
+    '1804032154' => { en: '(old) Civil Code - Book III: Acquisition of ownership - Titles VI-XIII', de: '(alt) Zivilgesetzbuch - Buch III: Eigentumserwerb - Titel VI-XIII' },
+    '1804032155' => { en: '(old) Civil Code - Book III: Acquisition of ownership - Titles XIV-XX', de: '(alt) Zivilgesetzbuch - Buch III: Eigentumserwerb - Titel XIV-XX' },
+    '1804032156' => { en: '(old) Civil Code - Book III, Title V: Community property regime', de: '(alt) Zivilgesetzbuch - Buch III, Titel V: Gütergemeinschaft' },
+    '2022A32057' => { en: 'Civil Code - Book 1 "General provisions"', de: 'Zivilgesetzbuch - Buch 1 «Allgemeine Bestimmungen»' },
+    '2022A30600' => { en: 'Civil Code - Book 2 "Property relations"', de: 'Zivilgesetzbuch - Buch 2 «Vermögensrechtliche Beziehungen»' },
+    '2020A20347' => { en: 'Civil Code - Book 3 "Property"', de: 'Zivilgesetzbuch - Buch 3 «Sachen»' },
+    '2022B30600' => { en: 'Civil Code - Book 4 "Successions, gifts and wills"', de: 'Zivilgesetzbuch - Buch 4 «Erbschaften, Schenkungen und Testamente»' },
+    '2022A32058' => { en: 'Civil Code - Book 5 "Obligations"', de: 'Zivilgesetzbuch - Buch 5 «Verbindlichkeiten»' },
+    '2024A01600' => { en: 'Civil Code - Book 6 "Non-contractual liability"', de: 'Zivilgesetzbuch - Buch 6 «Außervertragliche Haftung»' },
+    '2019A12168' => { en: 'Civil Code - Book 8 "Evidence"', de: 'Zivilgesetzbuch - Buch 8 «Beweis»' },
+    '2025A05089' => { en: 'Civil Code - Book 9 "Security interests"', de: 'Zivilgesetzbuch - Buch 9 «Sicherheiten»' },
+    '1967101052' => { en: 'Judicial Code - Part I: General principles', de: 'Gerichtsgesetzbuch - Teil I: Allgemeine Grundsätze' },
+    '1967101053' => { en: 'Judicial Code - Part II: Judicial organization', de: 'Gerichtsgesetzbuch - Teil II: Gerichtsorganisation' },
+    '1967101054' => { en: 'Judicial Code - Part III: Jurisdiction', de: 'Gerichtsgesetzbuch - Teil III: Zuständigkeit' },
+    '1967101055' => { en: 'Judicial Code - Part IV: Civil procedure', de: 'Gerichtsgesetzbuch - Teil IV: Zivilverfahren' },
+    '1967101056' => { en: 'Judicial Code - Part V: Attachments, enforcement and collective debt settlement', de: 'Gerichtsgesetzbuch - Teil V: Pfändungen, Vollstreckung und kollektive Schuldenregelung' },
+    '1967101057' => { en: 'Judicial Code - Part VI: Arbitration', de: 'Gerichtsgesetzbuch - Teil VI: Schiedsgerichtsbarkeit' },
+    '1967101063' => { en: 'Judicial Code - Part VII: Mediation', de: 'Gerichtsgesetzbuch - Teil VII: Mediation' },
+    '1967101064' => { en: 'Judicial Code - Part VIII: Collaborative negotiation', de: 'Gerichtsgesetzbuch - Teil VIII: Kollaborative Verhandlung' },
+    '1967101058' => { en: 'Judicial Code - Annex: Territorial boundaries', de: 'Gerichtsgesetzbuch - Anhang: Gebietsabgrenzung' },
+    '1976071406' => { en: 'Law on matrimonial property regimes (14 July 1976)', de: 'Gesetz über eheliche Güterstände (14. Juli 1976)' },
+    '1867060850' => { en: '(old) Criminal Code 1867', de: '(altes) Strafgesetzbuch von 1867' },
+    '2024002052' => { en: 'New Criminal Code - Book I', de: 'Neues Strafgesetzbuch - Buch I' },
+    '2024002088' => { en: 'New Criminal Code - Book II', de: 'Neues Strafgesetzbuch - Buch II' },
+    '1878041750' => { en: 'Code of Criminal Procedure - Preliminary title', de: 'Strafprozessordnung - Einleitender Titel' },
+    '1808111701' => { en: 'Code of Criminal Procedure - Book I', de: 'Strafprozessordnung - Buch I' },
+    '1808111901' => { en: 'Code of Criminal Procedure - Book II, Title I', de: 'Strafprozessordnung - Buch II, Titel I' },
+    '1808120950' => { en: 'Code of Criminal Procedure - Book II, Title II', de: 'Strafprozessordnung - Buch II, Titel II' },
+    '1808121050' => { en: 'Code of Criminal Procedure - Book II, Title III', de: 'Strafprozessordnung - Buch II, Titel III' },
+    '1808121250' => { en: 'Code of Criminal Procedure - Book II, Title IV', de: 'Strafprozessordnung - Buch II, Titel IV' },
+    '1808121450' => { en: 'Code of Criminal Procedure - Book II, Titles V-VI', de: 'Strafprozessordnung - Buch II, Titel V-VI' },
+    '1808121650' => { en: 'Code of Criminal Procedure - Book II, Title VII', de: 'Strafprozessordnung - Buch II, Titel VII' },
+    '2010A09589' => { en: 'Social Criminal Code', de: 'Sozialstrafgesetzbuch' },
+    '2024003317' => { en: 'Criminal Procedure Act I', de: 'Strafprozessgesetz I' },
+    '1992000606' => { en: 'Police Act (5 August 1992)', de: 'Polizeigesetz (5. August 1992)' },
+    '1921022450' => { en: 'Drug Act', de: 'Drogengesetz' },
+    '2007000528' => { en: 'Camera Act', de: 'Kameragesetz' },
+    '1994021048' => { en: 'Constitution', de: 'Verfassung' },
+    '1894041255' => { en: 'Electoral Code', de: 'Wahlgesetzbuch' },
+    '1984900065' => { en: 'Belgian Nationality Code', de: 'Belgisches Staatsangehörigkeitsgesetzbuch' },
+    '2019A40586' => { en: 'Code of Companies and Associations', de: 'Gesellschafts- und Vereinigungsrecht' },
+    '2013A11134' => { en: 'Code of Economic Law', de: 'Wirtschaftsrechtsgesetzbuch' },
+    '1973100550' => { en: 'European Patent Convention', de: 'Europäisches Patentübereinkommen' },
+    '1978070303' => { en: 'Employment Contracts Act', de: 'Arbeitsvertragsgesetz' },
+    'birth_leave' => { en: 'Birth leave (Employment Contracts Act, art. 30)', de: 'Geburtsurlaub (Arbeitsvertragsgesetz, Art. 30)' },
+    '1996012650' => { en: 'Well-being at Work Act', de: 'Gesetz über das Wohlbefinden bei der Arbeit' },
+    '1968120503' => { en: 'Collective Agreements Act', de: 'Gesetz über die Tarifverträge' },
+    '1971062850' => { en: 'Coordinated annual holidays laws', de: 'Koordinierte Jahresurlaubsregelungen' },
+    '1967033001' => { en: 'Royal Decree implementing holiday pay', de: 'Königlicher Erlass zur Durchführung des Urlaubsgeldes' },
+    '2016021053' => { en: 'Public Procurement Act', de: 'Gesetz über das öffentliche Beschaffungswesen' },
+    '1971031602' => { en: 'Labour Act', de: 'Arbeitsgesetz' },
+    '1963082803' => { en: 'Royal Decree on short leave', de: 'Königlicher Erlass über kurzfristigen Urlaub' },
+    '1965041207' => { en: 'Wage Protection Act', de: 'Lohnschutzgesetz' },
+    '1974010407' => { en: 'Public Holidays Act', de: 'Feiertagsgesetz' },
+    '1987012597' => { en: 'Temporary Agency Work Act', de: 'Gesetz über Zeitarbeit' },
+    '2001013224' => { en: 'Royal Decree on time credit', de: 'Königlicher Erlass über Zeitkredit' },
+    '1948092002' => { en: 'Business Organization Act (works councils)', de: 'Gesetz über die Organisation der Wirtschaft (Betriebsräte)' },
+    '2007201609' => { en: 'Royal Decree on unemployment with company supplement (3 May 2007)', de: 'Königlicher Erlass über Arbeitslosigkeit mit Unternehmenszuschlag (3. Mai 2007)' },
+    '1971041001' => { en: 'Occupational Accidents Act', de: 'Arbeitsunfallgesetz' },
+    '1998012088' => { en: 'Renault Act (collective redundancies)', de: 'Renault-Gesetz (Massenentlassungen)' },
+    '2007002098' => { en: 'Gender Act', de: 'Gleichstellungsgesetz' },
+    '2007002099' => { en: 'Anti-discrimination Act', de: 'Antidiskriminierungsgesetz' },
+    '1967072702' => { en: 'Royal Decree No. 38: self-employed social status', de: 'Königlicher Erlass Nr. 38: Sozialstatut der Selbstständigen' },
+    '2013036154' => { en: 'Flemish Tax Code', de: 'Flämisches Steuergesetzbuch' },
+    '1991013192' => { en: 'Unemployment Decree', de: 'Arbeitslosigkeitserlass' },
+    '1994071451' => { en: 'Compulsory health care and benefits insurance law', de: 'Gesetz über die Pflichtversicherung für Krankenpflege und Leistungen' },
+    '2002022559' => { en: 'Social Integration Act', de: 'Gesetz über die soziale Eingliederung' },
+    '1967102410' => { en: 'Royal Decree on employees pensions', de: 'Königlicher Erlass über Arbeitnehmerpensionen' },
+    '2001022201' => { en: 'Income Guarantee for the Elderly Act', de: 'Gesetz über die Einkommensgarantie für ältere Menschen' },
+    '2024202431' => { en: 'Pension reform 2024', de: 'Pensionsreform 2024' },
+    '2020A43545' => { en: 'Flemish Housing Code', de: 'Flämisches Wohnungsgesetzbuch' },
+    '2009A35738' => { en: 'Flemish Spatial Planning Code', de: 'Flämisches Raumordnungsgesetzbuch' },
+    '2018015087' => { en: 'Flemish Residential Tenancy Decree', de: 'Flämischer Erlass über Wohnraummiete' },
+    '2017040697' => { en: 'Brussels Residential Tenancy Ordinance', de: 'Brüsseler Wohnraummietverordnung' },
+    '2018201408' => { en: 'Walloon Residential Tenancy Decree', de: 'Wallonischer Erlass über Wohnraummiete' },
+    '1968031601' => { en: 'Road Traffic Act', de: 'Straßenverkehrsgesetz' },
+    '1989011371' => { en: 'Compulsory motor vehicle liability insurance act', de: 'Gesetz über die Pflichtversicherung für Kraftfahrzeuge' },
+    '2023044829' => { en: 'Flemish Enforcement Framework Decree', de: 'Flämisches Rahmendekret zur Durchsetzung' },
+    '2013A31614' => { en: 'Brussels Housing Code', de: 'Brüsseler Wohnungsgesetzbuch' },
+    '1951043003' => { en: 'Commercial Lease Act', de: 'Gesetz über die Geschäftsmiete' },
+    '1969110450' => { en: 'Farm Lease Act', de: 'Landpachtgesetz' },
+    '1971070904' => { en: 'Breyne Act (housing construction)', de: 'Breyne-Gesetz (Wohnungsbau)' },
+    '2014036510' => { en: 'Integrated Environmental Permit Decree', de: 'Erlass über die integrierte Umweltgenehmigung' },
+    '2010035645' => { en: 'Environmental Permit Exemptions Decree', de: 'Erlass über Ausnahmen von Umweltgenehmigungen' },
+    '1980121550' => { en: 'Foreigners Act', de: 'Ausländergesetz' },
+    '2002022737' => { en: 'Patient Rights Act', de: 'Patientenrechtegesetz' },
+    '2019A12565' => { en: 'Belgian Navigation Code', de: 'Belgisches Schifffahrtsgesetzbuch' },
+    '2014A15009' => { en: 'Consular Code', de: 'Konsulargesetzbuch' },
+    'tax_wib92' => { en: 'Income Tax Code 1992', de: 'Einkommensteuergesetzbuch 1992' },
+    'tax_kb_wib92' => { en: 'Royal Decree implementing the Income Tax Code 1992', de: 'Königlicher Erlass zur Durchführung des Einkommensteuergesetzbuchs 1992' },
+    'tax_vat' => { en: 'VAT Code', de: 'Mehrwertsteuergesetzbuch' },
+    'tax_registration' => { en: 'Code of registration, mortgage and court fees', de: 'Gesetzbuch über Registrierungs-, Hypothekar- und Gerichtsgebühren' },
+    'tax_succession' => { en: 'Inheritance Tax Code', de: 'Erbschaftsteuergesetzbuch' }
+  }.freeze
+
+  def popular_law_catalogue_title(key, dutch:, french:, locale: I18n.locale)
+    translated = POPULAR_LAW_CATALOGUE_TITLES.fetch(key.to_s, {})[locale.to_sym]
+    return translated if translated
+
+    # Never silently show French on the English or German brands. A missing
+    # translation is intentionally blank until reviewed and added explicitly.
+    return nil if %i[en de].include?(locale.to_sym)
+
+    locale.to_sym == :nl ? dutch : french
+  end
+
   RECENT_PARLIAMENTARY_LIMIT = 8
   RECENT_PARLIAMENTARY_CANDIDATE_LIMIT = 500
   RECENT_PARLIAMENTARY_SQL = <<~SQL.freeze
@@ -25,6 +168,34 @@ module PopularLawsHelper
       AND LENGTH(documents.title) > 20
     ORDER BY documents.id DESC
   SQL
+
+  # Returns the catalogue's explicitly supported abbreviation for an
+  # instrument and locale. Missing keys and missing locale labels deliberately
+  # remain blank: guessing from a title would turn a convenience label into an
+  # unsupported legal citation.
+  def popular_law_abbreviation(key, locale: I18n.locale)
+    entry = POPULAR_LAW_ABBREVIATIONS[key.to_s]
+    return nil unless entry.is_a?(Hash)
+
+    label = entry['labels'].is_a?(Hash) && entry['labels'][locale.to_s]
+    label if label.is_a?(String) && label.present?
+  end
+
+  # A compact, locale-labelled rendering of a supported abbreviation. The
+  # unavailable state is for cards whose target document cannot currently be
+  # opened; it must not cause an abbreviation to appear where none is attested.
+  def popular_law_abbreviation_badge(key, locale: I18n.locale, unavailable: false)
+    label = popular_law_abbreviation(key, locale: locale)
+    return nil unless label
+
+    content_tag(
+      :span,
+      label,
+      class: unavailable ? POPULAR_LAW_ABBREVIATION_UNAVAILABLE_CLASSES : POPULAR_LAW_ABBREVIATION_CLASSES,
+      data: { popular_law_abbreviation: key.to_s },
+      lang: locale.to_s
+    )
+  end
 
   # Fetch a small, deterministic window of the newest parliamentary rows.
   #
@@ -333,7 +504,7 @@ module PopularLawsHelper
   # @return [ActiveSupport::SafeBuffer] HTML with article numbers wrapped in <a> tags
   def linkify_concordance_article(text, numac, book_numacs: {}, old_article: nil, book_by_number: {})
     stripped = text.to_s.strip
-    return concordance_no_successor_html(old_article) if stripped == '-' || stripped == '/'
+    return concordance_no_successor_html(old_article) if ['-', '/'].include?(stripped)
     return ERB::Util.html_escape(text.to_s) if numac.blank? || stripped.empty?
     return ERB::Util.html_escape(text.to_s) if stripped.match?(/\AVolledige wet/i)
 
@@ -381,7 +552,10 @@ module PopularLawsHelper
             else
               "#{ERB::Util.html_escape(ref)} (#{concordance_no_successor_label})"
             end
-    %(<span class="italic font-normal text-gray-400 dark:text-gray-500">#{inner}</span>).html_safe
+    # Muted, but readable: gray-400 on the white table was 2.6:1, under the
+    # 4.5:1 WCAG AA needs for text this size. gray-600 is 7.56:1 on white and
+    # 7.23:1 on a hovered row; dark keeps the gray-300 it was already forced to.
+    %(<span class="italic font-normal text-gray-600 dark:text-gray-300">#{inner}</span>).html_safe
   end
 
   # Routes an old BW article number to the correct NUMAC.
@@ -444,7 +618,7 @@ module PopularLawsHelper
         (?<!N)                                  # NOT preceded by N (strafniveau like N3, N4)
         \d+[a-z]*                               # base number, optional bis/ter/quater
         (?:[.:/]\d+[a-z]*)*                     # dotted/colon/slash sub-numbers
-        (?:-\d{1,2}[a-z]*(?![\d.:\/]))?         # hyphen sub-number ("10.4-1"), never a range:
+        (?:-\d{1,2}[a-z]*(?![\d.:/]))?         # hyphen sub-number ("10.4-1"), never a range:
                                                 #   in "113-118" or "417/12-417/13" the digits
                                                 #   after the hyphen open the RIGHT endpoint, and
                                                 #   eating two of them made both halves dead links
@@ -467,7 +641,7 @@ module PopularLawsHelper
       if numac
         anchor = "art-#{num.strip.downcase.gsub(%r{[./:]+}, '-').gsub(/[^a-z0-9-]/, '').gsub(/-+/, '-').gsub(/\A-|-\z/, '')}"
         href = "/laws/#{numac}##{anchor}"
-        %(<a href="#{href}" target="_blank" rel="noopener noreferrer" style="text-decoration:none" class="hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors">#{match.sub(/\A(Art\.?)[ 	]+/i) { "#{Regexp.last_match(1)}&nbsp;" }}</a>)
+        %(<a href="#{href}" target="_blank" rel="noopener noreferrer" class="no-underline dark:underline hover:text-(--accent-text) dark:hover:text-(--accent-400) transition-colors">#{match.sub(/\A(Art\.?)[ 	]+/i) { "#{Regexp.last_match(1)}&nbsp;" }}</a>)
       else
         match
       end

@@ -34,6 +34,7 @@
     <h2>Comment LisLoi est financ&eacute;</h2>
     <p>LisLoi est financ&eacute; par les abonnements <strong>WetWijzer Pro</strong> et les cr&eacute;dits chatbot.</p>
     <p>Vous pouvez aussi soutenir LisLoi directement via notre <%= link_to 'page de don', support_page_path(anchor: 'donate') %>.</p>
+    <%= render 'donations/disabled_notice' unless MollieConfiguration.donations_enabled? %>
 
     <h2>Contact</h2>
     <p>Contactez-moi via mon <a href="https://www.advocaat.be/nl/zoek-een-advocaat/advocaat/63fee2a5-637a-4839-a5a6-c833482f1e3a" target="_blank" rel="noopener">profil advocaat.be</a> ou via <a href="https://www.linkedin.com/in/gauthier-b-017447138/" target="_blank" rel="noopener">LinkedIn</a>.</p>

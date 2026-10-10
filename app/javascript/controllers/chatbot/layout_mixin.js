@@ -7,7 +7,111 @@
 
 import { prefs as prefsStore } from "../../services/preferences_store"
 
+// How far the open panel has to move to sit inside the viewport.
+//
+// The panel hangs up and to the left of the 56px bubble, and only the bubble
+// was ever clamped to the viewport. With the bubble dragged within a panel's
+// width of the left edge, or a panel's height of the top, the panel opened
+// partly or wholly outside the window (bubble at top:0 = panel entirely above
+// the viewport, header and its buttons included), and that position was
+// persisted and re-applied on every page. The bubble stays where the user put
+// it; the panel gives way instead.
+export function panelNudgeIntoView(left, top, margin = 8) {
+  return {
+    x: left < margin ? Math.ceil(margin - left) : 0,
+    y: top < margin ? Math.ceil(margin - top) : 0
+  }
+}
+
+// The panel's bottom edge sits this far above the container's, straight from
+// the `bottom-[4.5rem]` class on #chatbot-widget-panel.
+const PANEL_BOTTOM_OFFSET = 72
+
 export const layoutMethods = {
+  // Nudge the open panel back on screen after the bubble was dragged.
+  //
+  // Measured from layout boxes, never from the panel's own rect: on open the
+  // enter animation's from-keyframe (translateY(16px) scale(0.95)) still
+  // applies, so the rect reads about 29px too low and the nudge would come
+  // out short, leaving the header clipped.
+  _fitPanelInViewport() {
+    const container = document.getElementById('chatbot-widget-container')
+    const panel = document.getElementById('chatbot-widget-panel')
+    if (!container || !panel) return
+
+    // Always start from the CSS anchor. close() resets the container position
+    // while the panel is still on screen, so a leftover nudge would push the
+    // panel away from its default corner on the next open.
+    panel.style.right = ''
+    panel.style.bottom = ''
+    // Below 640px the panel is inset: 0 !important - nothing to fit.
+    if (window.innerWidth < 640 || panel.classList.contains('hidden')) return
+
+    const rect = container.getBoundingClientRect()
+    const nudge = panelNudgeIntoView(
+      rect.right - panel.offsetWidth,
+      rect.bottom - PANEL_BOTTOM_OFFSET - panel.offsetHeight
+    )
+    // A negative `right` moves the panel rightwards, a smaller `bottom` down.
+    if (nudge.x) panel.style.right = `${-nudge.x}px`
+    if (nudge.y) panel.style.bottom = `${PANEL_BOTTOM_OFFSET - nudge.y}px`
+  },
+
+  // The panel is opened from six places - the bubble, the header minimise
+  // button, Escape, the context toast, the docked bottom bar and the hero
+  // form - and most of them sit outside this mixin. Rather than hook each
+  // one, watch the single thing they all do: take `hidden` off the panel.
+  _watchPanelFit() {
+    const panel = document.getElementById('chatbot-widget-panel')
+    if (!panel || typeof MutationObserver === 'undefined') return
+    // Compared against the node, not a boolean: Stimulus reuses one controller
+    // instance when its element is disconnected and reconnected (a Turbo cache
+    // restore), and an "already watching" flag would leave the observers on
+    // the panel node that was replaced - silently no longer fitting the panel
+    // the reader is looking at.
+    if (this._panelFitPanel === panel) return
+    this._unwatchPanelFit()
+    this._panelFitPanel = panel
+
+    this._panelFitObserver = new MutationObserver(() => this._fitPanelInViewport())
+    this._panelFitObserver.observe(panel, { attributes: true, attributeFilter: ['class'] })
+
+    // The default panel has no height of its own, only `max-height`, so it
+    // grows with the conversation up to the 520px cap. Its bottom edge stays
+    // pinned, so a nudge measured when it opened is stale as soon as an answer
+    // lands and the header climbs back over the top of the window. Nothing
+    // else reports that growth: the class does not change, and `height: auto`
+    // fires no transition. Writing `right`/`bottom` cannot resize the panel,
+    // so this does not feed itself.
+    if (typeof ResizeObserver !== 'undefined') {
+      this._panelFitSizeObserver = new ResizeObserver(() => this._fitPanelInViewport())
+      this._panelFitSizeObserver.observe(panel)
+    }
+
+    // Maximizing, restoring and reset-position animate the panel's size over
+    // 0.3s, so the class change above is seen while it still has the box it
+    // is leaving. transitionend bubbles, hence the target check.
+    this._boundPanelFitTransitionEnd = (event) => {
+      if (event.target === panel) this._fitPanelInViewport()
+    }
+    panel.addEventListener('transitionend', this._boundPanelFitTransitionEnd)
+  },
+
+  // Same discipline as the controller's disconnect(), which removes every
+  // listener it installs: these three hang off the panel node, and a Turbo
+  // visit replaces it under a controller instance that is kept.
+  _unwatchPanelFit() {
+    this._panelFitObserver?.disconnect()
+    this._panelFitObserver = null
+    this._panelFitSizeObserver?.disconnect()
+    this._panelFitSizeObserver = null
+    if (this._panelFitPanel && this._boundPanelFitTransitionEnd) {
+      this._panelFitPanel.removeEventListener('transitionend', this._boundPanelFitTransitionEnd)
+    }
+    this._boundPanelFitTransitionEnd = null
+    this._panelFitPanel = null
+  },
+
   handleFabKeydown(event) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
@@ -25,7 +129,7 @@ export const layoutMethods = {
   },
 
   // Toggle between default and expanded size (maximize / restore)
-  // NOTE: Use resetWidgetLayout() instead — this is the canonical
+  // NOTE: Use resetWidgetLayout() instead; this is the canonical
   // maximize/restore toggle bound to the □ button and dblclick.
 
   // ═══════════════════════════════════════════════
@@ -39,7 +143,7 @@ export const layoutMethods = {
   startFabDrag(event) {
     if (window.innerWidth < 640) {
       // Mobile: no drag, just toggle. A tap fires touchstart AND an emulated
-      // mousedown (~300ms later), both bound to this handler — running toggle()
+      // mousedown (~300ms later), both bound to this handler, and running toggle()
       // twice makes the widget open then immediately auto-close on reopen. On a
       // phone there is no real mouse, so ignore mousedown and act only on the tap.
       if (event.type === 'mousedown') return
@@ -106,9 +210,20 @@ export const layoutMethods = {
     container.style.left = `${newLeft}px`
     container.style.top = `${newTop}px`
     document.body.classList.add('widget-dragging')
+    // Dragging the bubble with the panel open moves the panel with it.
+    this._fitPanelInViewport()
   },
 
   _onFabDragEnd(event) {
+    // A tap that ends here is followed by an emulated mousedown + mouseup on the
+    // same spot, and the FAB is still under it: that second pass through this
+    // handler ran toggle() again, so from 640px up (tablets, phones in
+    // landscape) a tap opened the widget and closed it straight away. The guard
+    // in startFabDrag only covers the no-drag path below 640px. Cancelling the
+    // touchend is what stops the browser emulating the mouse at all. Stateless
+    // on purpose: a timestamp guard was tried and removed as unreliable.
+    if (event?.type === 'touchend' && event.cancelable) event.preventDefault()
+
     document.removeEventListener('mousemove', this._boundFabDragMove)
     document.removeEventListener('mouseup', this._boundFabDragEnd)
     document.removeEventListener('touchmove', this._boundFabDragMove)
@@ -163,6 +278,10 @@ export const layoutMethods = {
       container.style.left = `${newLeft}px`
       container.style.top  = `${newTop}px`
       container.classList.add('widget-custom-pos')
+      // Only the 56px container is clamped above; the panel hangs up and to
+      // the left of it, so without this the header (with the reset and
+      // minimise buttons) is dragged straight off the top-left of the window.
+      this._fitPanelInViewport()
     }
 
     const onUp = () => {
@@ -249,6 +368,9 @@ export const layoutMethods = {
       document.removeEventListener('touchmove', onMove)
       document.removeEventListener('touchend', onUp)
       panel.style.transition = ''
+      // A taller or wider panel can reach past the top-left of the window
+      // from a bubble position that fitted before the resize.
+      this._fitPanelInViewport()
       this._persistWidgetLayout()
       this._syncResetPositionButton()
     }
@@ -354,6 +476,10 @@ export const layoutMethods = {
       maxBtn.setAttribute('title', label)
     }
 
+    // Back at the default corner nothing needs nudging, so this clears the
+    // inline offsets the previous position left on the panel.
+    this._fitPanelInViewport()
+
     // Clear stored layout prefs
     try {
       prefsStore.set('chatbot_widget', {})
@@ -387,6 +513,11 @@ export const layoutMethods = {
    */
 
   _restoreWidgetLayout() {
+    // connect() always calls this, which makes it the mixin's init hook; the
+    // watcher has to be bound before the mobile bail-out so it is in place if
+    // the window is widened later.
+    this._watchPanelFit()
+
     if (window.innerWidth < 640) return // never restore on mobile
 
     let saved
@@ -400,7 +531,7 @@ export const layoutMethods = {
     const panel = this.hasWidgetTarget ? this.widgetTarget : document.getElementById('chatbot-widget-panel')
 
     // Only the floating widget has a panel. On the full /chatbot page the
-    // controller element is the main chat container — applying a saved
+    // controller element is the main chat container; applying a saved
     // drag position there would shove the whole page layout around.
     if (!panel) return
 
