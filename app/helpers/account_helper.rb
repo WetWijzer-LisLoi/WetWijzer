@@ -13,6 +13,7 @@ module AccountHelper
     credit: 'M21 12a9 9 0 11-18 0 9 9 0 0118 0zM15 8h-4a2 2 0 000 4h2a2 2 0 010 4H9m3-10v12',
     undo: 'M9 5L4 10l5 5M4 10h10a6 6 0 010 12',
     check: 'M5 13l4 4L19 7',
+    calendar: 'M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z',
     clock: 'M21 12a9 9 0 11-18 0 9 9 0 0118 0zM12 7v5l3 2',
     close: 'M6 6l12 12M6 18L18 6',
     link: 'M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-2 2M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l2-2'

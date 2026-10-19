@@ -328,7 +328,8 @@ module ParliamentaryHelper
   # or its refusal page rather than a document. Callers show something else.
   def self.generic_parl_title?(title)
     s = title.to_s.strip
-    s.empty? || GENERIC_PARL_TITLES.any? { |g| s.casecmp?(g) }
+    s.empty? || s.match?(%r{\ADossier\s+\d+\s*/\s*\d+\z}i) ||
+      GENERIC_PARL_TITLES.any? { |g| s.casecmp?(g) }
   end
 
   # Clean a parliamentary title for display.
@@ -455,6 +456,25 @@ module ParliamentaryHelper
     s.truncate(300)
   end
 
+  JURISPRUDENCE_PAGE_FOOTER = %r{\A[IVXLC]+[a-z]{0,2}\s*[-–]\s*\d[\d.]*\s*[-–]\s*\d{1,3}\s*[/\\]\s*\d{1,3}\z}
+  JURISPRUDENCE_MARGIN_STAMP = /\A‡\s?(?:[A-Z]{2}-)?[A-Z\[\]^_]{9}-[A-Z\[\]^_]{0,7}‡?\z/
+
+  # A symbol font's glyphs, which the PDF text extraction carries as the
+  # private-use code points Symbol and Wingdings use (U+F020-U+F0FF), shown as
+  # an empty box (ledger item 26). Read from their masked contexts in the
+  # archived advice texts on 2026-10-14: U+F0B0 is the degree of "1°" and "n°"
+  # (3,423 times), U+F028 U+F02A U+F029 the footnote mark "(*)", U+F0B7,
+  # U+F0A7 and U+F0F0 a list's bullet at a line start, U+F05B U+F05D the
+  # brackets of "[…]", U+F02D a list's dash, U+F03D, U+F0E5 and U+F0D7 a
+  # formula's "=", "∑" and "×". U+F02F (25 times, "1/°"?) is left as it is.
+  # Display only: the stored text keeps the code points.
+  SYMBOL_FONT_GLYPHS = {
+    "\uF0B0" => '°', "\uF028" => '(', "\uF029" => ')', "\uF02A" => '*',
+    "\uF0B7" => '•', "\uF0A7" => '•', "\uF0F0" => '•', "\uF05B" => '[', "\uF05D" => ']',
+    "\uF02D" => '-', "\uF03D" => '=', "\uF0E5" => '∑', "\uF0D7" => '×'
+  }.freeze
+  SYMBOL_FONT_GLYPH = Regexp.union(SYMBOL_FONT_GLYPHS.keys)
+
   # Clean jurisprudence full text for display.
   # Strips repeating page headers, page numbers, and OCR artifacts from scanned court decisions.
   # When rich_text with [[IMG:filename|WxH]] markers is provided, renders images inline.
@@ -465,10 +485,14 @@ module ParliamentaryHelper
   def clean_jurisprudence_full_text(text, case_number: nil)
     return '' if text.blank?
 
-    # First pass: strip form feed characters and normalize
-    text = text.gsub("\f", "\n").gsub("\r\n", "\n")
+    # First pass: strip form feed characters and normalize; a symbol font's
+    # glyphs become the characters they draw.
+    text = text.gsub("\f", "\n").gsub("\r\n", "\n").gsub(SYMBOL_FONT_GLYPH, SYMBOL_FONT_GLYPHS)
 
     lines = text.lines.map(&:rstrip)
+    # A judgment that prints its own ECLI on every page: the line is furniture
+    # once it recurs; named once, it stays.
+    own_ecli_repeats = case_number.present? && lines.count { |l| l.strip == case_number } >= 2
     cleaned = []
     prev_blank = false
     skip_next = 0
@@ -519,6 +543,19 @@ module ParliamentaryHelper
       # Skip JuPortal PDF page markers: "X-18.860-6/30", "IX-10.902-1/20", "VII-7080-1/3"
       # Format: {optional-roman}-{case_ref}-{page}/{total}  (standalone line)
       next if stripped.match?(%r{\A[IVXLC]*-?[\d.]+-\d+/\d+\z})
+
+      # The Council of State's page furniture (WW-RVSADV-01 follow-up,
+      # 2026-10-13): its page footer in the spaced forms ("XIII - 1234 - 2/5",
+      # an en dash, a backslash), the margin stamp printed down the right
+      # margin ("‡ABCDEFGHI-JKLMNOP‡", the advice's with "LW-", sometimes cut
+      # short), and the typed page number of older documents ("- 3 -").
+      # Measured over production's Council judgments: the footer between the
+      # paragraphs of 50,569 rows, the stamp in 4,988, the own ECLI on every
+      # page in 7,613; typed page numbers in 67,069 older advice rows.
+      next if stripped.match?(JURISPRUDENCE_PAGE_FOOTER)
+      next if stripped.match?(JURISPRUDENCE_MARGIN_STAMP)
+      next if stripped.match?(/\A-\s*\d{1,3}\s*-\z/)
+      next if own_ecli_repeats && stripped == case_number
 
       # Skip JuPortal system noise: "ERROR JUPORTARobotRecordLienECLI", "RobotRecordLienECLI", etc.
       next if stripped.match?(/\A(?:ERROR\s+)?JUPORTA/i)

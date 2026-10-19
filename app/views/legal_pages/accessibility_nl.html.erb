@@ -16,7 +16,7 @@
 
     <h3>Wat we doen</h3>
     <ul>
-        <li><strong>Semantische HTML:</strong> Gebruik van correcte headings, landmarks en structuur</li>
+        <li><strong>Semantische HTML:</strong> Gebruik van correcte koppen, herkenbare paginagebieden en structuur</li>
         <li><strong>Toetsenbordnavigatie:</strong> Alle interactieve elementen zijn bereikbaar via toetsenbord</li>
         <li><strong>Kleurcontrast:</strong> Tekst voldoet aan minimale contrastverhoudingen</li>
         <li><strong>Donker thema:</strong> Ondersteuning voor een donker thema met behoud van leesbaarheid</li>
@@ -26,6 +26,7 @@
     </ul>
 
     <h3>Bekende Beperkingen</h3>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Onderdeel</th>
@@ -48,6 +49,7 @@
             <td>Wij hebben geen controle over externe websites</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <h2>Technische Specificaties</h2>
     <p>Toegankelijkheid van WetWijzer/LisLoi/GesetzGuide/LexLibera is afhankelijk van de volgende technologieën:</p>

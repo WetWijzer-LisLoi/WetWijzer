@@ -244,6 +244,15 @@ module LegalChatbot
       @clock = clock
     end
 
+    # The browser question's paid-AI dispatch receipt (owner policy
+    # 2026-10-18), passed explicitly by the controller.
+    def provider_work_receipt=(receipt)
+      return unless @client.respond_to?(:provider_work_receipt=)
+
+      @client.provider_work_receipt = receipt
+      @client.provider_work_kind = 'question_translation'
+    end
+
     # The question the reasoning path is given: the French one, or the
     # reader's own when the translation is refused twice, fails or is
     # skipped. Never raises a StandardError.

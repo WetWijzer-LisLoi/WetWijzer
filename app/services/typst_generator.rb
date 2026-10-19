@@ -142,6 +142,8 @@ class TypstGenerator
       ecli = case_data[:case_number].to_s
       subject = case_data[:subject_matter].to_s.presence
       outcome = case_data[:outcome].to_s.presence
+      # An advice says what it is (WW-RVSADV-01): no judgment, no rule in force.
+      kind = case_data[:decision_type].to_s.presence if case_data[:case_number].to_s.start_with?('RVSADV:')
       accessed_label = accessed_label_for(locale)
 
       labels = jurisprudence_labels(locale)
@@ -159,6 +161,7 @@ class TypstGenerator
             [*#{escape(labels[:date])}:*], [#{escape(date)}],
       TYPST
 
+      typ += "        [*#{escape(labels[:type])}:*], [#{escape(kind)}],\n" if kind
       typ += "        [*#{escape(labels[:subject])}:*], [#{escape(subject)}],\n" if subject
       typ += "        [*#{escape(labels[:ruling])}:*], [#{escape(outcome)}],\n" if outcome
 
@@ -318,10 +321,10 @@ class TypstGenerator
 
     def jurisprudence_labels(locale)
       case locale
-      when :fr then { court: 'Juridiction', date: 'Date', subject: 'Domaine', ruling: 'Décision' }
-      when :de then { court: 'Gericht', date: 'Datum', subject: 'Rechtsgebiet', ruling: 'Urteil' }
-      when :en then { court: 'Court', date: 'Date', subject: 'Subject', ruling: 'Ruling' }
-      else { court: 'Rechtsinstantie', date: 'Datum', subject: 'Rechtsdomein', ruling: 'Uitspraak' }
+      when :fr then { court: 'Juridiction', date: 'Date', subject: 'Domaine', ruling: 'Décision', type: 'Type de document' }
+      when :de then { court: 'Gericht', date: 'Datum', subject: 'Rechtsgebiet', ruling: 'Urteil', type: 'Dokumentart' }
+      when :en then { court: 'Court', date: 'Date', subject: 'Subject', ruling: 'Ruling', type: 'Document type' }
+      else { court: 'Rechtsinstantie', date: 'Datum', subject: 'Rechtsdomein', ruling: 'Uitspraak', type: 'Documentsoort' }
       end
     end
 

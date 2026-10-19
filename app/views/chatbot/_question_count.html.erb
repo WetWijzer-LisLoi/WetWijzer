@@ -1,0 +1,19 @@
+<%# How many characters the question may still take before the server refuses
+    it (LegalChatbotService::MAX_QUESTION_LENGTH, carried as data-max). The
+    count is written and kept by services/chatbot_question_length.js, which
+    measures as the server does; it turns amber near the end and red past it,
+    and Send is refused while it is red. The visible count is aria-hidden: the
+    box points at it with aria-describedby, and the status beside it speaks
+    once typing pauses.
+    Locals: id (the box's aria-describedby), controller (the Stimulus
+    identifier that owns the box), size_class (optional). %>
+<% size_class = local_assigns.fetch(:size_class, 'text-[11px]') %>
+<div class="mt-1 flex justify-end">
+  <span id="<%= id %>"
+        data-<%= controller %>-target="questionCount"
+        data-max="<%= LegalChatbotService::MAX_QUESTION_LENGTH %>"
+        data-state="ok"
+        aria-hidden="true"
+        class="min-h-4 <%= size_class %> leading-4 tabular-nums text-gray-500 dark:text-gray-400 data-[state=warning]:text-amber-700 dark:data-[state=warning]:text-amber-300 data-[state=over]:font-semibold data-[state=over]:text-red-600 dark:data-[state=over]:text-red-400"></span>
+  <span data-<%= controller %>-target="questionCountStatus" class="sr-only" role="status" aria-live="polite"></span>
+</div>

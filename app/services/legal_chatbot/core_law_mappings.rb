@@ -57,6 +57,7 @@ module LegalChatbot
       '1996012650' => 'Welzijnswet',
       '1963082803' => 'KB Klein verlet',
       '1988050250' => 'CAO nr. 43 - Gewaarborgd gemiddeld minimummaandinkomen',
+      '2022206298' => 'Wet van 7 oktober 2022 transparante en voorspelbare arbeidsvoorwaarden',
       # Corporate & Economic
       '2019A40586' => 'Wetboek van vennootschappen en verenigingen',
       '2013A11134' => 'Wetboek economisch recht',
@@ -174,6 +175,16 @@ module LegalChatbot
       'dringende reden' => ['1978070303'],
       'arbeidsovereenkomst' => ['1978070303'],
       'concurrentiebeding' => ['1978070303'],
+      # The 2022 parallel-employment rule is often described functionally,
+      # without the word "concurrentiebeding". Keep these high-confidence
+      # statutory phrases additive; the dedicated article pin still requires
+      # employment context plus the exclusivity/side-work pattern.
+      'gehele beroepsactiviteit' => ['2022206298'],
+      'parallelle arbeid' => ['2022206298'],
+      'andere werkgever' => ['2022206298'],
+      'nevenactiviteit' => ['2022206298'],
+      'exclusiviteitsbeding' => ['2022206298'],
+      'another employer' => ['2022206298'],
       'proefperiode' => ['1978070303'],
       'proeftijd' => ['1978070303'],
       'anciënniteit' => ['1978070303'],
@@ -189,6 +200,9 @@ module LegalChatbot
       'licenciement' => %w[1978070303 2010A09589],
       'contrat de travail' => ['1978070303'],
       'non-concurrence' => ['1978070303'],
+      'activité professionnelle parallèle' => ['2022206298'],
+      'activité accessoire' => ['2022206298'],
+      'autre employeur' => ['2022206298'],
       'période d\'essai' => ['1978070303'],
       'ancienneté' => ['1978070303'],
       # Working time (NL)
@@ -682,6 +696,13 @@ module LegalChatbot
       'hospitalisation insurance' => ['2014011239'],
       'hospitalization insurance' => ['2014011239'],
       'krankenhauszusatzversicherung' => ['2014011239'],
+      'rechtsbijstandverzekering' => ['2014011239'],
+      'rechtsbijstandsverzekering' => ['2014011239'],
+      'assurance protection juridique' => ['2014011239'],
+      'legal assistance insurance' => ['2014011239'],
+      'legal-assistance insurance' => ['2014011239'],
+      'legal expenses insurance' => ['2014011239'],
+      'rechtsschutzversicherung' => ['2014011239'],
       # Social Security - OCMW/Leefloon (NL)
       'leefloon' => ['2002022559'],
       'ocmw' => ['2002022559'],
@@ -923,6 +944,11 @@ module LegalChatbot
       "don d'organes" => ['1986062458'],
       'erreur médicale' => ['2002022737'],
       # COMPANY LAW ADDITIONS - Weak category: 14.8%
+      'oprichtingsakte' => ['2019A40586'],
+      'akte van oprichting' => ['2019A40586'],
+      'oprichtingsdocument' => ['2019A40586'],
+      'acte constitutif' => ['2019A40586'],
+      'acte de constitution' => ['2019A40586'],
       'oprichting vennootschap' => ['2019A40586'],
       'statutenwijziging' => ['2019A40586'],
       'ontbinding vennootschap' => ['2019A40586'],
@@ -1423,13 +1449,19 @@ module LegalChatbot
       'consumer' => ['2013A11134'],
       'withdrawal' => ['2013A11134'],
       'cooling off' => ['2013A11134'],
-      'hidden defect' => ['2013A11134'],
+      'hidden defect' => ['1804032154'],
+      'latent defect' => ['1804032154'],
       'online purchase' => ['2013A11134'],
       'refund' => ['2013A11134'],
       # Employment
       'dismissal' => ['1978070303'],
       'notice period' => ['1978070303'],
       'employment contract' => ['1978070303'],
+      'job offer' => ['1978070303'],
+      'employment offer' => ['1978070303'],
+      'full-time job' => ['1978070303'],
+      'offer letter' => ['1978070303'],
+      'compensation package' => ['1978070303'],
       'public holiday' => ['1974010407'],
       'holiday' => ['1971062850'],
       'minimum wage' => ['1978070303'],
@@ -1458,7 +1490,7 @@ module LegalChatbot
       'property inventory' => %w[2018015087 2013A31614],
       'condition report' => %w[2018015087 2013A31614],
       'short-term rental' => %w[2018015087 2013A31614],
-      'hidden defects real estate' => %w[1804032154 2013A11134],
+      'hidden defects real estate' => ['1804032154'],
 
       # === GERMAN CONSUMER ADDITIONS (benchmark gaps) ===
       # Consumer credit / APR (DE)
@@ -1621,9 +1653,13 @@ module LegalChatbot
       'Fahrprüfung' => ['1998014078']
     }.freeze
 
-    # Boost factor for core laws (multiplied with similarity score)
-    # Increased from 1.5 to 2.0 for stronger prioritization of foundational laws over CAOs
+    # Boost factor for core laws explicitly matched by the question
+    # (multiplied with similarity score). Unmatched core laws get only the
+    # neutral factor below; otherwise an unrelated semantic neighbour can
+    # outrank a directly retrieved specialist act merely because it is in this
+    # list. Explicitly matched core laws retain the strong promotion.
     CORE_LAW_BOOST = 2.0
+    CORE_LAW_UNMATCHED_BOOST = 1.0
 
     # Penalty factor for sector-specific CAOs (less relevant for general questions)
     CAO_PENALTY = 0.6
@@ -1801,6 +1837,21 @@ module LegalChatbot
         nl: ['Wat is de opzegtermijn voor een huurcontract?', 'Wat zijn mijn rechten als huurder?', 'Wat is de maximale huurwaarborg?'],
         fr: ['Quel est le délai de préavis pour un bail?', 'Quels sont mes droits en tant que locataire?',
              'Quel est le montant maximum de la garantie locative?']
+      },
+      # Consumer / vehicle warranty
+      'garantie' => {
+        nl: ['Welke wettelijke garantie geldt voor mijn aankoop?',
+             'Wat kan ik doen bij een verborgen gebrek aan een product?',
+             'Hoe spreek ik de verkoper aan bij een defect?'],
+        fr: ['Quelle garantie légale s’applique à mon achat?',
+             'Que faire en cas de défaut caché d’un produit?',
+             'Comment agir contre le vendeur en cas de défaut?'],
+        en: ['What legal warranty applies to my purchase?',
+             'What can I do about a hidden defect in a product?',
+             'How can I pursue the seller for a defect?'],
+        de: ['Welche gesetzliche Garantie gilt für meinen Kauf?',
+             'Was kann ich bei einem versteckten Mangel an einem Produkt tun?',
+             'Wie kann ich den Verkäufer wegen eines Mangels belangen?']
       },
       # Criminal
       'straf' => {

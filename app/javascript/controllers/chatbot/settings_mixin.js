@@ -5,6 +5,411 @@
  * Mixed into the controller prototype - all methods use 'this' as normal.
  */
 
+
+export const researchDepthMethods = {
+  // The fresh default the server rendered for this surface (owner
+  // 2026-10-18): the enabled default option of the rendered intelligence
+  // level. A stored or unknown level falls back here, not to the first
+  // option, which may be a disabled or Pro-only one.
+  _freshDefaultOption(options = []) {
+    const level = this.element?.dataset?.chatbotIntelligenceValue || this.element?.dataset?.heroChatbotIntelligenceValue || 'genius'
+    return options.find(opt => opt.dataset.intelligence === level && opt.dataset.default === 'true' && !opt.disabled) || null
+  },
+
+  _researchDepthKeys() { return ['quick', 'balanced', 'thorough', 'extensive'] },
+  _normalizedResearchDepth(value = this.researchDepthValue) {
+    return this._researchDepthKeys().includes(value) ? value : 'balanced'
+  },
+  _depthFromLegacyReasoning(level) {
+    return ({ low: 'quick', medium: 'balanced', high: 'thorough' })[level] || 'balanced'
+  },
+  _researchDepthControls() {
+    const root = this._isHeroResearchDepth ? this.element : document
+    return Array.from(root?.querySelectorAll?.('[data-research-depth-control]') || [])
+      .filter(control => this._isHeroResearchDepth || !control.closest?.('[data-controller~="hero-chatbot"]'))
+  },
+  _researchModelSelects() {
+    if (this._isHeroResearchDepth) return this.hasModelSelectTarget ? [this.modelSelectTarget] : []
+    if (typeof document === 'undefined') return []
+    return ['model-select', 'widget-model-select'].map(id => document.getElementById?.(id)).filter(Boolean)
+  },
+  _getActiveResearchCombination() {
+    // The lightweight hero does not include the full chatbot's credits mixin.
+    // Use its native selection without replacing the full/widget getter's
+    // authoritative selection (including an intentionally missing option).
+    if (typeof this._getActiveModelOption === 'function') return this._getActiveModelOption()
+    return this._researchModelSelects()[0]?.selectedOptions?.[0] || null
+  },
+  _researchCombinationOrder(a, b) {
+    const ranks = this._researchDepthKeys()
+    const depthDifference = ranks.indexOf(a.dataset.researchDepth) - ranks.indexOf(b.dataset.researchDepth)
+    if (depthDifference) return depthDifference
+    const costDifference = Number(a.dataset.totalCredits) - Number(b.dataset.totalCredits)
+    if (costDifference) return costDifference
+    return (a.dataset.modelName || a.value || '').localeCompare(b.dataset.modelName || b.value || '')
+      || (a.dataset.reasoningOption || '').localeCompare(b.dataset.reasoningOption || '')
+  },
+  _researchCombinations() {
+    return Array.from(this._researchModelSelects()[0]?.options || [])
+      .filter(option => option.dataset.reasoningOption)
+      // Keep the full selector portfolio, including manual-only variants.
+      .sort((a, b) => this._researchCombinationOrder(a, b))
+  },
+  _combinationOnResearchBar(option) {
+    return Boolean(option && option.dataset.researchBarOption !== 'false'
+      // Preserve the curated contract with older or restored option markup.
+      && !(option.value === 'mistral-small' && option.dataset.reasoningOption === 'high')
+      && option.value !== 'mistral-large-4')
+  },
+  _researchBarCombinations() {
+    return this._researchCombinations().filter(option => this._combinationOnResearchBar(option))
+  },
+  // The full-page selector and the floating widget intentionally contain
+  // separate <option> nodes.  Never compare those nodes by object identity:
+  // after a response the widget can be the active selector while the ruler is
+  // built from the full-page selector.  That used to add the selected choice
+  // a second time and place the ruler thumb on the wrong step.
+  _researchCombinationMatches(a, b) {
+    return Boolean(a && b && a.value === b.value
+      && a.dataset?.reasoningOption === b.dataset?.reasoningOption)
+  },
+  _researchChoiceIndex(choices, option) {
+    return Array.from(choices || []).findIndex(candidate => this._researchCombinationMatches(candidate, option))
+  },
+  _hasLinkedResearchCombinations() { return this._researchCombinations().length > 0 },
+  _researchRulerChoices(combinations, activeOption) {
+    const choices = combinations.filter(option => this._combinationOnResearchBar(option) && this._combinationAvailable(option))
+    // Preserve an explicitly saved unavailable choice without making it a
+    // selectable step or silently substituting a cheaper model.
+    if (activeOption && this._combinationOnResearchBar(activeOption)
+      && this._researchChoiceIndex(choices, activeOption) < 0) choices.push(activeOption)
+    return choices.sort((a, b) => this._researchCombinationOrder(a, b))
+  },
+  _researchRulerIndex(choices, option) {
+    const exact = this._researchChoiceIndex(choices, option)
+    if (exact >= 0) return exact
+    // A manual-only choice has no tick. Use the nearest same-category price
+    // solely as its keyboard anchor; never replace the selected model here.
+    const sameDepth = choices.filter(candidate => candidate.dataset.researchDepth === option?.dataset.researchDepth)
+    const candidates = sameDepth.length ? sameDepth : choices
+    const nearest = candidates.reduce((best, candidate) => !best
+      || Math.abs(Number(candidate.dataset.totalCredits) - Number(option?.dataset.totalCredits || 0))
+        < Math.abs(Number(best.dataset.totalCredits) - Number(option?.dataset.totalCredits || 0)) ? candidate : best, null)
+    return Math.max(0, this._researchChoiceIndex(choices, nearest))
+  },
+  _combinationAvailable(option) {
+    if (!option) return false
+    const followup = !this._isHeroResearchDepth && this.conversationHistory?.length > 0
+    return !option.disabled && option.dataset.modelAvailable !== 'false'
+      && !(followup && option.value === 'mistral-small' && option.dataset.reasoningOption !== 'low')
+  },
+  _selectResearchCombination(option) {
+    if (!option || !this._combinationAvailable(option)) return
+    this._researchDepthTouched = true
+    this.reasoningLevelValue = option.dataset.reasoningOption === 'fixed' ? 'low' : option.dataset.reasoningOption
+    this.researchDepthValue = this._normalizedResearchDepth(option.dataset.researchDepth)
+    this.intelligenceValue = option.dataset.intelligence || this.intelligenceValue
+    if (this._isHeroResearchDepth) {
+      this._heroModelChoiceTouched = true
+    } else {
+      this._modelChoiceTouched = true
+      this.modelOverrideValue = option.value
+      this._syncModelDropdowns?.(this.intelligenceValue, option.value)
+    }
+    this._researchModelSelects().forEach(select => {
+      const index = Array.from(select.options).findIndex(candidate => candidate.value === option.value
+        && candidate.dataset.reasoningOption === option.dataset.reasoningOption)
+      if (index >= 0) select.selectedIndex = index
+    })
+  },
+  _adoptResearchCombination(option) {
+    if (!option?.dataset.reasoningOption) return
+    this._researchDepthTouched = true
+    this.reasoningLevelValue = option.dataset.reasoningOption === 'fixed' ? 'low' : option.dataset.reasoningOption
+    this.researchDepthValue = this._normalizedResearchDepth(option.dataset.researchDepth)
+  },
+  _syncResearchCombinations(option, hasContext) {
+    if (!option?.dataset.reasoningOption) return option
+    this._researchModelSelects().forEach(select => {
+      Array.from(select.options).forEach(candidate => {
+        const privateFollowup = hasContext && candidate.value === 'mistral-small' && candidate.dataset.reasoningOption !== 'low'
+        candidate.disabled = candidate.dataset.modelAvailable === 'false'
+          || candidate.dataset.combinationLocked === 'true' || privateFollowup
+      })
+      const index = Array.from(select.options).findIndex(candidate => candidate.value === option.value
+        && (candidate.dataset.reasoningOption === this.reasoningLevelValue || candidate.dataset.reasoningOption === 'fixed'))
+      if (index >= 0) select.selectedIndex = index
+    })
+    return this._researchModelSelects()[0]?.selectedOptions?.[0] || option
+  },
+  _researchReasoningForOption(option, hasContext = false) {
+    if (option?.dataset.reasoningOption) {
+      if (option.value === 'mistral-small' && hasContext) return 'low'
+      return option.dataset.reasoningOption === 'fixed' ? 'low' : option.dataset.reasoningOption
+    }
+    const depth = this._normalizedResearchDepth()
+    const desired = { quick: 'low', balanced: 'medium', thorough: 'high', extensive: 'high' }[depth]
+    const allowed = (option?.dataset.reasoningLevels || '').split(',').filter(Boolean)
+    const hasAccess = option?.dataset.researchReasoningAllowed !== 'false' && this.proValue !== false
+    if (!hasAccess || option?.dataset.supportsReasoning !== 'true') return 'low'
+    if (option?.value === 'mistral-small' && hasContext) return 'low'
+    return allowed.includes(desired) ? desired : (allowed.includes('low') ? 'low' : (allowed[0] || 'low'))
+  },
+  updateResearchDepth(event) {
+    this._researchDepthTouched = true
+    const choices = this._researchBarCombinations().filter(option => this._combinationAvailable(option))
+    if (choices.length) {
+      const index = Math.max(0, Math.min(choices.length - 1, Math.round(Number(event.currentTarget.value) || 0)))
+      this._selectResearchCombination(choices[index])
+      this._refreshResearchDepthState(event.currentTarget)
+      this.savePreferences?.()
+      this._saveHeroPreferences?.()
+      return
+    }
+    const value = Math.max(0, Math.min(3, Number(event.currentTarget.value) || 0))
+    this.researchDepthValue = this._researchDepthKeys()[Math.round(value)]
+    this._syncResearchDepthControls(event.currentTarget)
+    this._refreshResearchDepthState(event.currentTarget)
+    this.savePreferences?.()
+    this._saveHeroPreferences?.()
+  },
+  handleResearchDepthKeydown(event) {
+    const choices = this._researchBarCombinations().filter(option => this._combinationAvailable(option))
+    if (choices.length) {
+      const current = this._getActiveResearchCombination()
+      const index = this._researchRulerIndex(choices, current)
+      const next = { ArrowLeft: index - 1, ArrowDown: index - 1, ArrowRight: index + 1, ArrowUp: index + 1, Home: 0, End: choices.length - 1 }[event.key]
+      if (next === undefined) return
+      event.preventDefault()
+      this._selectResearchCombination(choices[Math.max(0, Math.min(choices.length - 1, next))])
+      this.commitResearchDepth()
+      this.savePreferences?.()
+      this._saveHeroPreferences?.()
+      return
+    }
+    const index = this._researchDepthKeys().indexOf(this._normalizedResearchDepth())
+    const next = { ArrowLeft: index - 1, ArrowDown: index - 1, ArrowRight: index + 1, ArrowUp: index + 1, Home: 0, End: 3 }[event.key]
+    if (next === undefined) return
+    event.preventDefault()
+    event.currentTarget.value = Math.max(0, Math.min(3, next))
+    this.updateResearchDepth(event)
+    this.commitResearchDepth()
+  },
+  commitResearchDepth() { this._syncResearchDepthControls(); this._refreshResearchDepthState() },
+  selectResearchDepth(event) {
+    const choices = this._researchBarCombinations()
+    if (choices.length) {
+      const depth = event.currentTarget.dataset.researchDepth
+      const available = choices.filter(option => option.dataset.researchDepth === depth && this._combinationAvailable(option))
+      if (!available.length) return
+      const current = this._getActiveResearchCombination()
+      const index = this._researchChoiceIndex(available, current)
+      this._selectResearchCombination(index >= 0 ? available[index] : available[0])
+      this._refreshResearchDepthState()
+      this.savePreferences?.()
+      this._saveHeroPreferences?.()
+      return
+    }
+    this._researchDepthTouched = true
+    this.researchDepthValue = this._normalizedResearchDepth(event.currentTarget.dataset.researchDepth)
+    this._syncResearchDepthControls()
+    this._refreshResearchDepthState()
+    this.savePreferences?.()
+    this._saveHeroPreferences?.()
+  },
+  _syncResearchDepthControls(draggedRange = null) {
+    const depth = this._normalizedResearchDepth()
+    this.researchDepthValue = depth
+    const index = this._researchDepthKeys().indexOf(depth)
+    const combinations = this._researchCombinations()
+    const linked = combinations.length > 0
+    const activeOption = this._researchModelSelects()[0]?.selectedOptions?.[0]
+    const total = linked ? (this._isHeroResearchDepth ? this._heroTotalCredits() : this._getActiveModelTotalCredits?.()) : null
+    const choices = this._researchRulerChoices(combinations, activeOption)
+    const selectedIndex = this._researchRulerIndex(choices, activeOption)
+    const manual = linked && activeOption?.dataset.reasoningOption && !this._combinationOnResearchBar(activeOption)
+    this._researchDepthControls().forEach(control => {
+      control.classList?.toggle('research-depth-control--manual', Boolean(manual))
+      const range = control.querySelector('[data-research-depth-range]')
+      const active = control.querySelector('[data-research-depth="' + depth + '"]')
+      if (range) {
+        range.min = 0
+        range.max = linked ? Math.max(1, choices.length - 1) : 3
+        range.step = linked ? 1 : 0.01
+        if (linked) range.disabled = choices.length <= 1 || !this._combinationAvailable(activeOption)
+        if (linked || range !== draggedRange) range.value = linked ? selectedIndex : index
+        range.style?.setProperty('--slider-pct', (linked ? selectedIndex / Math.max(1, choices.length - 1) : Number(range.value) / 3) * 100 + '%')
+        const selectedLabel = linked ? activeOption?.textContent?.trim() || depth : active?.dataset.depthLabel || depth
+        range.setAttribute('aria-valuetext', selectedLabel + (manual && control.dataset?.manualSelectionMessage ? ' · ' + control.dataset.manualSelectionMessage : ''))
+        if (linked) {
+          this._updateResearchDepthCreditRuler(control, total, choices, activeOption)
+          this._updateResearchDepthCategoryWidths(control, choices)
+        }
+      }
+      control.querySelectorAll('[data-research-depth]').forEach(stop => {
+        stop.setAttribute('aria-pressed', String(stop.dataset.researchDepth === depth))
+        if (linked && stop.tagName === 'BUTTON') stop.disabled = !choices.some(option =>
+          option.dataset.researchDepth === stop.dataset.researchDepth && this._combinationAvailable(option))
+      })
+      const selected = control.querySelector('[data-research-depth-selected]')
+      const description = control.querySelector('[data-research-depth-description]')
+      if (selected) selected.textContent = active?.dataset.depthLabel || depth
+      if (description) description.textContent = active?.dataset.depthDescription || ''
+    })
+  },
+  _refreshResearchDepthState(draggedRange = null) {
+    let option = this._isHeroResearchDepth
+      ? this.modelSelectTarget?.options?.[this.modelSelectTarget.selectedIndex]
+      : this._getActiveModelOption?.()
+    const hasContext = !this._isHeroResearchDepth && Array.isArray(this.conversationHistory) && this.conversationHistory.length > 0
+    if (option?.dataset.reasoningOption) this.researchDepthValue = this._normalizedResearchDepth(option.dataset.researchDepth)
+    this.reasoningLevelValue = this._researchReasoningForOption(option, hasContext)
+    option = this._syncResearchCombinations(option, hasContext)
+    // A Small/high follow-up resolves to the low/quick combination. Update the
+    // category from that actual selection, not its now-disabled high option.
+    if (option?.dataset.reasoningOption) this.researchDepthValue = this._normalizedResearchDepth(option.dataset.researchDepth)
+    this._refreshCreditDisplay?.()
+    this._refreshHeroCreditDisplay?.()
+    this._syncResearchDepthControls(draggedRange)
+    this._updateResearchDepthPreview(option, hasContext)
+  },
+  _updateResearchDepthPreview(option = this._getActiveModelOption?.(), hasContext = false) {
+    const depth = this._normalizedResearchDepth()
+    const total = this._isHeroResearchDepth ? this._heroTotalCredits() : this._getActiveModelTotalCredits?.()
+    this._researchDepthControls().forEach(control => {
+      const active = control.querySelector('[data-research-depth="' + depth + '"]')
+      const preview = control.querySelector('[data-research-depth-preview]')
+      if (!option?.dataset.reasoningOption) this._updateResearchDepthCreditRuler(control, total)
+      if (preview) preview.textContent = (control.dataset.previewTemplate || '')
+        .replace('%{model}', option?.dataset.modelName || option?.value || '')
+        .replace('%{reasoning}', option?.dataset.reasoningLabel || '')
+        .replace('%{credits}', String(total ?? 0))
+        .replace('%{time}', active?.dataset.depthTime || '')
+        + (option?.dataset.reasoningOption && !this._combinationOnResearchBar(option)
+          && control.dataset.manualSelectionMessage ? ' · ' + control.dataset.manualSelectionMessage : '')
+      const capability = control.querySelector('[data-research-depth-capability]')
+      if (capability) {
+        const desired = option?.dataset.reasoningOption
+          ? (option.dataset.reasoningOption === 'fixed' ? 'low' : option.dataset.reasoningOption)
+          : { quick: 'low', balanced: 'medium', thorough: 'high', extensive: 'high' }[depth]
+        capability.textContent = option?.value === 'mistral-small' && hasContext && (option?.dataset.reasoningOption || desired === 'high')
+          ? control.dataset.followupReasoningMessage
+          : option?.dataset.supportsReasoning !== 'true'
+            ? control.dataset.fixedReasoningMessage
+            : this.reasoningLevelValue !== desired ? control.dataset.limitedReasoningMessage : ''
+      }
+      const indicator = this._isHeroResearchDepth
+        ? this.element?.querySelector('#hero-level-indicator')
+        : document.getElementById('widget-level-indicator')
+      if (indicator && active) indicator.textContent = active.dataset.depthLabel + ' · ' + (option?.dataset.modelName || option?.value || '')
+    })
+  },
+  _updateResearchDepthCreditRuler(control, total, choices = null, activeOption = null) {
+    const ruler = control.querySelector('[data-research-depth-credit-ruler]')
+    if (!ruler) return
+    if (Array.isArray(choices) && choices.length) {
+      const selected = activeOption || this._getActiveModelOption?.() || this._researchModelSelects()[0]?.selectedOptions?.[0]
+      const selectedIndex = this._researchChoiceIndex(choices, selected)
+      const signature = JSON.stringify(choices.map(option => [option.value, option.dataset.reasoningOption, option.dataset.totalCredits]))
+      const creditPrices = [...new Set(choices.map(option => Number(option.dataset.totalCredits)))]
+      if (ruler.dataset.tickSignature !== signature) {
+        const createTick = (kind, position, value) => {
+          const tick = ruler.ownerDocument.createElement('span')
+          tick.className = 'research-depth-' + kind + '-tick'
+          tick.setAttribute('aria-hidden', 'true')
+          if (kind === 'step') tick.dataset.stepIndex = String(value)
+          else {
+            tick.dataset.credit = String(value)
+            tick.dataset.creditIndex = String(position)
+          }
+          tick.style.setProperty('--tick-position', position / Math.max(1, choices.length - 1) * 100 + '%')
+          return tick
+        }
+        const ticks = choices.map((option, index) => createTick('step', index, index))
+        for (const credit of creditPrices) {
+          ticks.push(createTick('credit', choices.findIndex(option => Number(option.dataset.totalCredits) === credit), credit))
+        }
+        ruler.replaceChildren(...ticks)
+        ruler.dataset.tickSignature = signature
+        ruler.dataset.stepCount = String(choices.length)
+        ruler.dataset.creditCount = String(creditPrices.length)
+      }
+      Array.from(ruler.children).forEach(tick => {
+        const active = selectedIndex >= 0 && (tick.dataset.stepIndex !== undefined
+          ? Number(tick.dataset.stepIndex) <= selectedIndex : Number(tick.dataset.creditIndex) <= selectedIndex)
+        tick.classList?.toggle('research-depth-credit-tick--active', active)
+      })
+      return
+    }
+    // Compatibility for older markup without linked combination metadata.
+    const maxCredits = total
+    const credits = Number.isSafeInteger(Number(maxCredits)) && Number(maxCredits) >= 0 ? Number(maxCredits) : 0
+    if (ruler.dataset.creditCount === String(credits)) {
+      Array.from(ruler.children).forEach((tick, index) => tick.classList?.toggle('research-depth-credit-tick--active', index < Number(total)))
+      return
+    }
+    const ticks = Array.from({ length: credits }, (_, index) => {
+      const tick = ruler.ownerDocument.createElement('span')
+      tick.className = 'research-depth-credit-tick' + (index < Number(total) ? ' research-depth-credit-tick--active' : '')
+      tick.setAttribute('aria-hidden', 'true')
+      tick.style?.setProperty('--tick-position', index / Math.max(1, credits - 1) * 100 + '%')
+      return tick
+    })
+    ruler.replaceChildren(...ticks)
+    ruler.dataset.creditCount = String(credits)
+  },
+  // The four research categories are summaries of the individual ruler
+  // choices. Their boundaries sit halfway between adjacent ticks. Empty
+  // categories get a compact disabled tail beside the actual track; scaling
+  // the real track keeps its tick spacing and category proportions intact.
+  _updateResearchDepthCategoryWidths(control, choices) {
+    const profiles = control.querySelector?.('[data-research-depth-profiles]')
+    if (!profiles || !Array.isArray(choices) || !choices.length) return
+
+    const lastIndex = choices.length - 1
+    const divisor = Math.max(1, lastIndex)
+    const depths = this._researchDepthKeys()
+    const indexesFor = depth => choices.reduce((indexes, option, index) => {
+      if (option.dataset.researchDepth === depth) indexes.push(index)
+      return indexes
+    }, [])
+    const midpointBefore = index => (index - .5) / divisor * 100
+    const midpointAfter = index => (index + .5) / divisor * 100
+
+    const emptyDepths = depths.filter(depth => indexesFor(depth).length === 0)
+    const emptyWidth = Math.min(18, 54 / Math.max(1, emptyDepths.length))
+    const availableWidth = 100 - emptyDepths.length * emptyWidth
+    control.style?.setProperty('--available-track-scale', String(availableWidth / 100))
+    profiles.classList?.toggle('research-depth-stops--has-empty', emptyDepths.length > 0)
+    control.classList?.toggle('research-depth-control--has-empty', emptyDepths.length > 0)
+
+    depths.forEach(depth => {
+      const stop = profiles.querySelector?.('[data-research-depth="' + depth + '"]')
+      if (!stop) return
+      const indexes = indexesFor(depth)
+      let start
+      let end
+
+      if (indexes.length) {
+        const first = indexes[0]
+        const last = indexes[indexes.length - 1]
+        start = (first === 0 ? 0 : midpointBefore(first)) * availableWidth / 100
+        end = (last === lastIndex ? 100 : midpointAfter(last)) * availableWidth / 100
+        stop.classList?.remove('research-depth-stop--empty')
+      } else {
+        // This segment contains no choice or credit tick. Keep it outside the
+        // range input, so dragging or using the keyboard cannot select it.
+        start = availableWidth + emptyDepths.indexOf(depth) * emptyWidth
+        end = start + emptyWidth
+        stop.classList?.add('research-depth-stop--empty')
+      }
+
+      stop.style?.setProperty('--category-start', start + '%')
+      stop.style?.setProperty('--category-width', Math.max(0, end - start) + '%')
+    })
+  }
+}
+
 export const settingsMethods = {
   updateSource(event) {
     this.sourceValue = event.target.value
@@ -109,6 +514,11 @@ export const settingsMethods = {
   // Intelligence level keys (must match server order)
   get _intelligenceLevels() {
     const notches = document.querySelectorAll('#intelligence-slider-section .notch-label[data-intelligence-level]')
+    if (!notches.length) {
+      const options = this._allModelOptions || this._allWidgetModelOptions || Array.from(document.querySelectorAll('#model-select option, #widget-model-select option'))
+      const seen = new Set()
+      return options.filter(option => { const level = option.dataset.intelligence; if (seen.has(level)) return false; seen.add(level); return true }).map(option => ({ id: option.dataset.intelligence, credits: parseInt(option.dataset.credits || '1'), locked: option.disabled && option.dataset.modelAvailable !== 'false', tier: option.dataset.tier || 'free' }))
+    }
     return Array.from(notches).map(n => ({
       id: n.dataset.intelligenceLevel,
       credits: parseInt(n.dataset.intelligenceCredits || '1'),
@@ -134,6 +544,10 @@ export const settingsMethods = {
   // (provider none/high), while Mistral Large exposes no reasoning control.
   // Unsupported saved values are reset to low so they are neither sent nor charged.
   _applyModelReasoningCapabilities(option, preferredLevel = this.reasoningLevelValue) {
+    if (this._researchDepthControls().length) {
+      this._refreshResearchDepthState()
+      return option?.dataset.supportsReasoning === 'true'
+    }
     const controls = document.getElementById('reasoning-controls')
     const levels = this._reasoningLevels
     const advertised = (option?.dataset.reasoningLevels || '')
@@ -192,6 +606,7 @@ export const settingsMethods = {
     if (idx >= levels.length) return
 
     const level = levels[idx]
+    this._modelChoiceTouched = true
 
     // Allow selection of locked levels - blocked at send time instead
     // Track locked state for send-time validation
@@ -342,10 +757,10 @@ export const settingsMethods = {
 
   _syncSlidersFromPreferences() {
     const levels = this._intelligenceLevels
-    const savedLevel = this.intelligenceValue || 'smart'
+    const savedLevel = this.intelligenceValue || 'genius'
     const savedModel = this.modelOverrideValue
     const idx = levels.findIndex(l => l.id === savedLevel)
-    if (idx < 0) return
+    if (idx < 0 && levels.length) return
 
     const slider = document.getElementById('intelligence-range')
     if (slider) {
@@ -390,6 +805,7 @@ export const settingsMethods = {
     this._applyModelReasoningCapabilities(selectedModelOption, this.reasoningLevelValue || 'low')
 
     // Use shared credit refresh (reads per-model credits from the selected <option>)
+    this._refreshResearchDepthState()
     this._refreshCreditDisplay()
   },
 
@@ -405,6 +821,7 @@ export const settingsMethods = {
       return
     }
 
+    this._modelChoiceTouched = true
     this.intelligenceValue = level
     this.reasoningLevelValue = button.dataset.defaultReasoning || 'low'
     this._trackEvent('chatbot-intelligence-change', { intelligence: level })
@@ -423,6 +840,8 @@ export const settingsMethods = {
     const select = event.currentTarget
     const modelId = select.value
     if (!modelId) return
+    this._modelChoiceTouched = true
+    this._adoptResearchCombination(select.options?.[select.selectedIndex])
 
     const selectedOption = this._syncModelDropdowns(this.intelligenceValue, modelId)
     this._trackEvent('chatbot-model-change', { model: modelId, intelligence: this.intelligenceValue })
@@ -456,19 +875,21 @@ export const settingsMethods = {
     let preferredForTier = null
 
     for (const opt of this._allModelOptions) {
-      if (opt.dataset.intelligence === level) {
+      {
         select.appendChild(opt)
-        if (!firstVisible) firstVisible = opt
-        if (opt.dataset.default === 'true' && !opt.disabled) {
+        if (!firstVisible && !opt.disabled) firstVisible = opt
+        if (opt.dataset.intelligence === level && opt.dataset.default === 'true' && !opt.disabled) {
           defaultForTier = opt
         }
-        if (opt.value === preferredModel && !opt.disabled) preferredForTier = opt
+        if (opt.value === preferredModel && (!opt.disabled || opt.dataset.modelAvailable === 'false')
+          && (!preferredForTier || opt.dataset.reasoningOption === this.reasoningLevelValue)) preferredForTier = opt
       }
     }
 
     // Preserve an explicit/saved selection when it belongs to the tier;
-    // otherwise use the server-rendered default.
-    const toSelect = preferredForTier || defaultForTier || firstVisible
+    // otherwise use the server-rendered default of that tier, then the fresh
+    // default rendered on this surface, never a disabled option.
+    const toSelect = preferredForTier || defaultForTier || this._freshDefaultOption(this._allModelOptions) || firstVisible
     if (toSelect) {
       toSelect.selected = true
     }
@@ -496,7 +917,69 @@ export const settingsMethods = {
 
     selected = mainOption || widgetOption || selected
     this.modelOverrideValue = selected.value
+    this.intelligenceValue = selected.dataset.intelligence || level
+    this._selectedLevelLocked = selected.disabled && selected.dataset.modelAvailable !== 'false'
+    this._selectedLevelTier = selected.dataset.tier || 'pro'
+    this._refreshModelAvailability(selected)
     return selected
+  },
+
+  // A pending saved choice stays explicit and visible: never substitute a
+  // cheaper tier default, and never treat a Pro preview as provider access.
+  _unavailableModelOption(modelId = this.modelOverrideValue) {
+    const options = [
+      ...(this._allModelOptions || []), ...(this._allWidgetModelOptions || []),
+      ...Array.from(document.getElementById('model-select')?.options || []),
+      ...Array.from(document.getElementById('widget-model-select')?.options || [])
+    ]
+    const option = modelId ? options.find(candidate => candidate.value === modelId) : this._getActiveModelOption?.()
+    return option?.dataset.modelAvailable === 'false' ? option : null
+  },
+
+  _refreshModelAvailability(option) {
+    const pending = option?.dataset.modelAvailable === 'false'
+    for (const id of ['model-availability-notice', 'widget-model-availability-notice']) {
+      const notice = document.getElementById(id)
+      if (!notice) continue
+      notice.hidden = !pending
+      notice.textContent = pending ? option.dataset.comingSoonMessage : ''
+    }
+  },
+
+  _blockUnavailableModelRequest(modelId = this.modelOverrideValue) {
+    const option = this._unavailableModelOption(modelId)
+    if (!option) return false
+    this._refreshModelAvailability(option)
+    this._showToast?.(option.dataset.comingSoonMessage, 'info')
+    return true
+  },
+
+  async _prepareModelPreferenceForSend() {
+    const token = this._modelPreferenceLoadToken
+    let timer
+    let cancel
+    this._modelPreferenceSendWaiting = true
+    try {
+      const stopped = new Promise(resolve => {
+        cancel = () => resolve(false)
+        this._cancelModelPreferenceWait = cancel
+        timer = setTimeout(cancel, 5000)
+      })
+      const ready = await Promise.race([this._modelPreferencesReady.then(loaded => loaded === true, () => false), stopped])
+      if (this._modelPreferencesConnected === false || token !== this._modelPreferenceLoadToken) return false
+      if (ready || this._modelChoiceTouched || this._heroOverrideActive) return true
+      for (const id of ['model-availability-notice', 'widget-model-availability-notice']) {
+        const notice = document.getElementById(id)
+        if (!notice) continue
+        notice.textContent = notice.dataset.preferencesLoadingMessage
+        notice.hidden = false
+      }
+      return false
+    } finally {
+      clearTimeout(timer)
+      if (this._cancelModelPreferenceWait === cancel) this._cancelModelPreferenceWait = null
+      this._modelPreferenceSendWaiting = false
+    }
   },
 
   // Show a non-intrusive inline toast when user clicks a locked tier
@@ -645,6 +1128,7 @@ export const settingsMethods = {
   // ═══════════════════════════════════════════════
 
   selectWidgetIntelligence(event) {
+    this._modelChoiceTouched = true
     const pill = event.currentTarget
     const level = pill.dataset.widgetLevel
     const credits = pill.dataset.widgetCredits
@@ -726,17 +1210,18 @@ export const settingsMethods = {
     let preferredForTier = null
 
     for (const opt of this._allWidgetModelOptions) {
-      if (opt.dataset.intelligence === level) {
+      {
         // When browsing a locked tier, temporarily enable options so they're selectable
-        if (tierLocked) opt.disabled = false
+        // Entitlements stay server-rendered; research depth never unlocks a model.
         select.appendChild(opt)
         if (!firstVisible) firstVisible = opt
-        if (opt.dataset.default === 'true') defaultForTier = opt
-        if (opt.value === preferredModel) preferredForTier = opt
+        if (opt.dataset.intelligence === level && opt.dataset.default === 'true' && !opt.disabled) defaultForTier = opt
+        if (opt.value === preferredModel && (!opt.disabled || opt.dataset.modelAvailable === 'false')
+          && (!preferredForTier || opt.dataset.reasoningOption === this.reasoningLevelValue)) preferredForTier = opt
       }
     }
 
-    const toSelect = preferredForTier || defaultForTier || firstVisible
+    const toSelect = preferredForTier || defaultForTier || this._freshDefaultOption(this._allWidgetModelOptions) || firstVisible
     if (toSelect) {
       toSelect.selected = true
     }
@@ -769,8 +1254,10 @@ export const settingsMethods = {
   updateWidgetModel(event) {
     const modelId = event.target.value
     if (!modelId) return
+    this._modelChoiceTouched = true
 
     const opt = event.target.selectedOptions[0]
+    this._adoptResearchCombination(opt)
     const level = opt?.dataset.intelligence || this.intelligenceValue
     const selectedOption = this._syncModelDropdowns(level, modelId)
     this._trackEvent('chatbot-model-change', { model: modelId, source: 'widget' })
@@ -1095,3 +1582,5 @@ export const settingsMethods = {
   },
 
 }
+
+Object.defineProperties(settingsMethods, Object.getOwnPropertyDescriptors(researchDepthMethods))

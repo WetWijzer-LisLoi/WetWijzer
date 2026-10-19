@@ -34,13 +34,45 @@ module LegalChatbot
     # gap as rejected citations, but it surfaces as a quote silently degraded
     # to "geen exact citaat beschikbaar" rather than as a withheld analysis.
     def quote_attributed_article_numbers(text)
-      text.to_s.scan(MARKDOWN_BLOCKQUOTE_PATTERN).flat_map do |block|
+      quote_attributed_article_targets(text).map { |target| target.fetch(:number) }.uniq
+    end
+
+    # Keep the law identity as well as the number. Art. 1 of law A cannot
+    # satisfy a quote explicitly attributed to Art. 1 of law B. A trailing
+    # attribution takes precedence over cross-references inside the quote,
+    # just as it does in QuoteGuard.
+    def quote_attributed_article_targets(text)
+      normalize_internal_law_links(text.to_s).scan(MARKDOWN_BLOCKQUOTE_PATTERN).flat_map do |block|
         block = block.first if block.is_a?(Array)
-        numbers = block.to_s.scan(%r{/laws/[^?#/)\s]+#art[-_]([^?#)\s]+)}i).flatten
-        plain = block.to_s.match(PLAIN_QUOTE_ARTICLE_ATTRIBUTION_PATTERN)
-        numbers << plain[1].delete(' ') if plain
-        numbers
-      end.map { |number| number.to_s.strip }.reject(&:blank?).uniq
+        trailing = block.to_s.match(/\s+[—–-]\s+\[([^\]]+)\]\(([^)]+)\).*\z/m)
+        plain = block.to_s.match(PLAIN_QUOTE_ARTICLE_ATTRIBUTION_PATTERN) unless trailing
+        links = if trailing
+                  [[trailing[1], trailing[2]]]
+                elsif plain
+                  []
+                else
+                  block.to_s.scan(/\[([^\]]+)\]\(([^)]+)\)/)
+                end
+        targets = links.filter_map do |_label, href|
+          match = href.match(%r{\A/laws/([^?#/)\s]+)([^)\s]*)\z}i)
+          next unless match
+
+          number = match[2].match(/#art[-_]([^?&#\s)]+)/i)&.[](1)
+          next if number.blank?
+
+          numac = match[1].match?(/\Afisconet_\d+\z/i) ? match[1].upcase : match[1]
+          { numac: numac, number: number }
+        end
+        # Never reinterpret an explicit but invalid/external attribution as
+        # a bare reference in another law.
+        next targets if links.any?
+
+        if plain
+          targets << { number: plain[1].delete(' '),
+                       named_laws: plain_quote_named_laws(block, plain) }
+        end
+        targets
+      end.uniq
     end
 
     # Fetch quote-attributed articles that are missing from the evidence, so a
@@ -49,19 +81,44 @@ module LegalChatbot
     # must still occur in the fetched text, so this can only rescue quotes
     # that are genuine.
     def repair_quote_sources(text, leg_articles)
-      numbers = quote_attributed_article_numbers(text)
-      return [] if numbers.empty? || leg_articles.blank?
+      targets = quote_attributed_article_targets(text)
+      return [] if targets.empty? || leg_articles.blank?
 
       numacs = leg_articles.filter_map { |article| retrieved_source_numac(article) }.uniq
       return [] if numacs.empty?
 
-      have = leg_articles.filter_map { |article| retrieved_source_article_number(article) }.to_set
-      wanted = numbers.reject { |number| have.include?(normalize_article_number(number)) }
+      have = leg_articles.filter_map do |article|
+        numac = retrieved_source_numac(article)
+        number = retrieved_source_article_number(article)
+        [numac, number] if numac.present? && number.present?
+      end.to_set
+      wanted = targets.filter_map do |target|
+        candidates = if target[:numac]
+                       numacs & [target[:numac]]
+                     elsif !target[:named_laws].nil?
+                       numacs & target[:named_laws].to_a
+                     else
+                       numacs
+                     end
+        # A bare number in several retrieved laws carries no identity. Do
+        # not pick whichever law happens to rank first.
+        next unless candidates.one?
+
+        pair = [candidates.first, normalize_article_number(target.fetch(:number))]
+        [candidates.first, target.fetch(:number)] unless have.include?(pair)
+      end.uniq.first(CITATION_REPAIR_LIMIT)
       return [] if wanted.empty?
 
-      legislation_search_svc.fetch_articles_by_number(
-        numacs: numacs, article_numbers: wanted, limit: CITATION_REPAIR_LIMIT
-      )
+      repairs = []
+      wanted.group_by(&:first).each do |numac, pairs|
+        remaining = CITATION_REPAIR_LIMIT - repairs.length
+        break unless remaining.positive?
+
+        repairs.concat(legislation_search_svc.fetch_articles_by_number(
+          numacs: [numac], article_numbers: pairs.map(&:last), limit: remaining
+        ).first(remaining))
+      end
+      repairs
     end
 
     # Belgian answers cite spans ("Art. 52-71 ZIV-wet", "Art. 66-69"), which no
@@ -141,6 +198,23 @@ module LegalChatbot
       )
     end
 
+    # Existence in an admitted law does not prove applicability. A late
+    # article lookup must obey the same question scope as initial retrieval,
+    # including unresolved regional tax regimes and specialist occupations.
+    # Keep the service's explicit/viewed-source exceptions intact.
+    def scope_repair_sources_for_question(articles, question)
+      svc = legislation_search_svc
+      return svc.send(:scope_repair_articles_to_question, Array(articles), question) if svc.respond_to?(:scope_repair_articles_to_question, true)
+
+      Array(articles).select do |article|
+        if svc.respond_to?(:contextual_source_relevant?, true)
+          svc.send(:contextual_source_relevant?, article, question)
+        else
+          LegislationSearch.contextual_source_relevant?(article, question)
+        end
+      end
+    end
+
     # Retry feedback for the unsupported-prose-reference class only. Missing
     # required regimes/external citations are handled by the deterministic
     # appenders; a regeneration cannot cite sources that were never retrieved.
@@ -151,16 +225,69 @@ module LegalChatbot
       # produced them, and carry article numbers, never question or answer
       # text, so the prompt use is legitimate while the log ban stays strict.
       rejected_refs = Array(guard_result&.fetch(:unsupported_references, nil)).first(10)
-      return nil if rejected_refs.empty?
-
-      <<~FEEDBACK.strip
-        CORRECTION - your previous answer was rejected by the citation check and was NOT shown to the user.
-        These article references could not be linked to any provided source: #{rejected_refs.join(', ')}.
-        Write the complete answer again, applying these rules strictly:
-        - Cite ONLY articles that appear in the numbered sources above, ALWAYS as a markdown link copying the exact LINK value.
-        - Do NOT mention any article number that is not in the sources. Describe such rules in words, without a number, and state that the specific provision is not among the consulted sources.
-        - Do not mention this correction or the rejected attempt in your answer.
-      FEEDBACK
+      sections = []
+      if rejected_refs.any?
+        sections << <<~FEEDBACK.strip
+          CORRECTION - your previous answer was rejected by the citation check and was NOT shown to the user.
+          These legal-unit references could not be linked to any provided source: #{rejected_refs.join(', ')}.
+          Write the complete answer again, applying these rules strictly:
+          - Cite ONLY articles or recitals that appear in the numbered sources above, ALWAYS as a markdown link copying the exact LINK value.
+          - Every occurrence of an article or recital number, including an explanatory repeat or list item, must itself be that exact markdown link at that point; never use bare numbers beside or before a later link.
+          - Put the whole reference inside the link label, never the number outside the link. For an EU act the label names the article and at most its paragraph, for example [art. 7(1)](LINK); a point or letter such as "onder a)" or "sub b" cannot be verified, so leave it out.
+          - Never cite a range such as "Art. 732-733": link each supplied article separately. Copy each LINK value exactly as given; a relative link such as /laws/... stays relative, without https:// or a host in front.
+          - Do NOT introduce a cross-reference number merely because a supplied source mentions it. If that provision is not itself supplied, explain the condition or exception in ordinary words without naming its number.
+          - Do not mention this correction or the rejected attempt in your answer.
+        FEEDBACK
+      end
+      childcare_feedback = ChildcareExpenseGrounding.corrective_feedback(
+        guard_result&.fetch(:missing_childcare_conditions, nil)
+      )
+      sections << childcare_feedback if childcare_feedback.present?
+      house_feedback = HouseHiddenDefectPracticalGrounding.corrective_feedback(
+        guard_result&.fetch(:missing_house_practical_conditions, nil), language: @language
+      )
+      sections << house_feedback if house_feedback.present?
+      marketplace_feedback = MarketplaceCivilClaimGrounding.corrective_feedback(
+        guard_result&.fetch(:missing_marketplace_conditions, nil), language: @language
+      )
+      sections << marketplace_feedback if marketplace_feedback.present?
+      platform_feedback = PlatformRedressGrounding.corrective_feedback(
+        guard_result&.fetch(:missing_platform_redress_conditions, nil), language: @language
+      )
+      sections << platform_feedback if platform_feedback.present?
+      flight_feedback = FlightDisruptionGrounding.corrective_feedback(
+        guard_result&.fetch(:missing_flight_disruption_conditions, nil), language: @language
+      )
+      sections << flight_feedback if flight_feedback.present?
+      commute_feedback = OfficeCommuteGrounding.corrective_feedback(
+        guard_result&.fetch(:missing_office_commute_conditions, nil), language: @language
+      )
+      sections << commute_feedback if commute_feedback.present?
+      minor_feedback = SalduzMinorGrounding.corrective_feedback(
+        guard_result&.fetch(:missing_minor_conditions, nil), language: @language
+      )
+      sections << minor_feedback if minor_feedback.present?
+      payment_feedback = PaymentAcceptanceGrounding.corrective_feedback(
+        guard_result&.fetch(:missing_payment_conditions, nil), language: @language
+      )
+      sections << payment_feedback if payment_feedback.present?
+      formation_feedback = FormationDeedGrounding.corrective_feedback(
+        guard_result&.fetch(:missing_formation_deed_conditions, nil), language: @language
+      )
+      sections << formation_feedback if formation_feedback.present?
+      classification_feedback = FormationDeedClassification.corrective_feedback(
+        guard_result&.fetch(:missing_formation_deed_classification, nil), language: @language
+      )
+      sections << classification_feedback if classification_feedback.present?
+      capital_feedback = FormationBvCapitalGrounding.corrective_feedback(
+        guard_result&.fetch(:missing_formation_bv_capital_conditions, nil), language: @language
+      )
+      sections << capital_feedback if capital_feedback.present?
+      checklist_feedback = FormationBvChecklist.corrective_feedback(
+        guard_result&.fetch(:missing_formation_bv_source_grounding, nil), language: @language
+      )
+      sections << checklist_feedback if checklist_feedback.present?
+      sections.join("\n\n").presence
     end
   end
 end

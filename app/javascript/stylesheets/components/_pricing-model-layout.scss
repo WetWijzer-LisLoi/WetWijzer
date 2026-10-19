@@ -1,0 +1,68 @@
+/* Pricing cards can be narrow in both the phone and two-column tablet layout.
+   Stack the cost below the identity according to the card's available width. */
+.ww-pricing-page .ww-pricing-tier-card {
+  container: pricing-tier / inline-size;
+}
+
+.ww-pricing-page [data-testid="pricing-model"],
+.ww-pricing-page .ww-pricing-tier-header > div {
+  gap: 0.75rem;
+}
+
+.ww-pricing-page [data-testid="pricing-model"] > :first-child,
+.ww-pricing-page [data-testid="pricing-model"] > :first-child > div,
+.ww-pricing-page .ww-pricing-tier-header > div > :first-child,
+.ww-pricing-page .ww-pricing-tier-header > div > :first-child > div {
+  min-width: 0;
+}
+
+.ww-pricing-page [data-testid="pricing-model"] > :first-child {
+  flex: 1 1 auto;
+}
+
+.ww-pricing-page [data-testid="pricing-model"] > :first-child > span,
+.ww-pricing-page [data-testid="pricing-model"] svg,
+.ww-pricing-page [data-testid="pricing-model"] .w-3.h-2,
+.ww-pricing-page .ww-pricing-tier-header svg {
+  flex-shrink: 0;
+}
+
+.ww-pricing-page [data-testid="pricing-model"] > :last-child,
+.ww-pricing-page [data-testid="pricing-model"] > :last-child > span,
+.ww-pricing-page .ww-pricing-tier-header > div > :last-child {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.ww-pricing-page [data-testid="pricing-model"] > :first-child > div {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+@container pricing-tier (max-width: 26rem) {
+  .ww-pricing-page [data-testid="pricing-model"],
+  .ww-pricing-page .ww-pricing-tier-header > div {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .ww-pricing-page [data-testid="pricing-model"] > :first-child,
+  .ww-pricing-page .ww-pricing-tier-header > div > :first-child {
+    width: 100%;
+  }
+
+  .ww-pricing-page [data-testid="pricing-model"] > :last-child {
+    /* Align the second row with the model name, beyond its 2rem initial. */
+    margin-left: 2.75rem;
+    max-width: calc(100% - 2.75rem);
+  }
+
+  .ww-pricing-page .ww-pricing-tier-header > div > :last-child {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: left;
+  }
+}

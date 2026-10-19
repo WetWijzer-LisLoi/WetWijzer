@@ -1,0 +1,70 @@
+<%# One canonical model/reasoning portfolio for the full page, homepage and widget.
+    Values remain model IDs for API/preference compatibility; the reasoning
+    option distinguishes combinations with the same model or credit price. %>
+<% user_is_pro = local_assigns.fetch(:user_is_pro, current_user&.pro?) %>
+<% user_has_purchased = local_assigns.fetch(:user_has_purchased, current_user&.advanced_intelligence_access?) %>
+<% user_model_tier = local_assigns.fetch(:user_model_tier, current_user&.current_tier || :free) %>
+<% option_class = local_assigns.fetch(:option_class, 'model-option') %>
+<% model_configurations = LegalChatbotService::AVAILABLE_MODELS %>
+<% tier_ranks = LegalChatbot::ModelsConfig::TIER_HIERARCHY %>
+<% user_tier_rank = tier_ranks[user_model_tier.to_sym] || 0 %>
+<% depths = %w[quick balanced thorough extensive] %>
+<% combinations = LegalChatbotService::INTELLIGENCE_LEVELS.flat_map do |level_id, config|
+     config.fetch(:models).flat_map do |model_id, model_config|
+       modes = LegalChatbotService.reasoning_levels_for_model(model_id)
+       modes = ['fixed'] if modes.empty?
+       modes.map { |mode| [level_id, config, model_id, model_config, mode] }
+     end
+   end.sort_by do |level_id, _config, model_id, model_config, mode|
+     depth = LegalChatbotService.research_depth_for_combination(model_id, mode)
+     total = LegalChatbotService.credits_for_model(level_id, model_id) + LegalChatbotService.reasoning_surcharge_for_model(model_id, mode)
+     [depths.index(depth) || depths.length, total, model_config[:name].to_s, mode]
+   end %>
+<% combinations.each do |level_id, config, model_id, model_config, reasoning_option| %>
+  <%
+    tier_accessible = LegalChatbotService.intelligence_tier_accessible?(config[:tier], pro: user_is_pro, purchased: user_has_purchased)
+    provider_config = model_configurations.fetch(model_id)
+    model_pending = provider_config[:deployed] == false
+    model_accessible = if model_pending
+      user_tier_rank >= (tier_ranks[provider_config[:tier]] || 0)
+    else
+      LegalChatbotService.model_allowed?(model_id, user_model_tier)
+    end
+    combination_locked = !tier_accessible || !model_accessible
+    reasoning_levels = LegalChatbotService.reasoning_levels_for_model(model_id)
+    reasoning_surcharges = reasoning_levels.map { |reasoning| "#{reasoning}:#{LegalChatbotService.reasoning_surcharge_for_model(model_id, reasoning)}" }.join(',')
+    base_credits = LegalChatbotService.credits_for_model(level_id, model_id)
+    total_credits = base_credits + LegalChatbotService.reasoning_surcharge_for_model(model_id, reasoning_option)
+    depth = LegalChatbotService.research_depth_for_combination(model_id, reasoning_option)
+    reasoning_label = reasoning_option == 'fixed' ? t('chatbot.research_depth.fixed_reasoning_label') : t("chatbot.research_depth.variant_reasoning_#{reasoning_option}")
+    option_label = t('chatbot.research_depth.variant_label', profile: t("chatbot.research_depth.options.#{depth}.label"), model: model_config[:name], reasoning: reasoning_label, credits: total_credits)
+    option_label += " — #{t('chatbot.model_coming_soon')}" if model_pending
+    option_label += " — #{chatbot_pricing_copy.fetch(:preview)}" if provider_config[:preview] == true
+    option_label += ' (Pro)' if combination_locked
+    default_option = model_id == config[:default_model] && %w[low fixed].include?(reasoning_option)
+  %>
+      <option value="<%= model_id %>"
+              data-reasoning-option="<%= reasoning_option %>"
+              data-reasoning-label="<%= reasoning_label %>"
+              data-total-credits="<%= total_credits %>"
+              data-option-label="<%= option_label %>"
+              data-research-depth="<%= depth %>"
+              data-research-bar-option="<%= LegalChatbotService.research_bar_combination?(model_id, reasoning_option) %>"
+              data-combination-locked="<%= combination_locked ? 'true' : 'false' %>"
+              data-model-available="<%= !model_pending %>"
+              data-coming-soon-message="<%= t('chatbot.model_unavailable_notice') %>"
+              data-model-name="<%= model_config[:name] %>"
+              data-intelligence="<%= level_id %>"
+              data-tier="<%= config[:tier] %>"
+              data-default="<%= default_option %>"
+              data-estimated-seconds="<%= model_config[:estimated_seconds] || 15 %>"
+              data-supports-reasoning="<%= reasoning_levels.any? ? 'true' : 'false' %>"
+              data-reasoning-levels="<%= reasoning_levels.join(',') %>"
+              data-reasoning-surcharges="<%= reasoning_surcharges %>"
+              data-research-reasoning-allowed="<%= user_is_pro || depth != 'extensive' ? 'true' : 'false' %>"
+              data-default-reasoning="<%= config[:reasoning_effort] || 'low' %>"
+              data-credits="<%= base_credits %>"
+              class="<%= option_class %>"
+              <%= 'disabled' if model_pending || combination_locked %>
+              <%= 'selected' if model_id == LegalChatbotService.ui_default_selection[:model] && reasoning_option == LegalChatbotService.ui_default_selection[:reasoning_effort] %>><%= option_label %></option>
+<% end %>

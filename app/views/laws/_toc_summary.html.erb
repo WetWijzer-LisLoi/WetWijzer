@@ -1,13 +1,23 @@
-<%# WW-WER-01: the main card of a law whose table of contents is very long
-    (the Wetboek van economisch recht has about 2,000 entries). Repeating it
-    here put the law text some 145,000 pixels down the page; the full,
-    searchable table of contents is in the sidebar (#toc-sidebar-panel). The
-    button opens it through sidebar-toggle, whose sync() keeps aria-expanded
-    true to the panel. Print has no sidebar, so it says where the list is. %>
-<div class="p-6" data-toc-summary>
-  <h2 class="text-xl font-bold text-gray-800 dark:text-(--accent-500)"><%= t(:toc).capitalize %></h2>
+<%# Long laws keep their complete contents in the main column as well as the
+    searchable sidebar, open as on any other law (until 2026-10-16 it started
+    closed, and readers took the card for a pointer to the sidebar). The list
+    scrolls inside a bounded region, so WER's 1,639 entries cannot bury the
+    text again; the native details still folds it, with or without scripts.
+    Print expands the full list through the scoped law-main-toc-disclosure
+    rules. %>
+<div class="p-4 md:p-6" data-toc-summary>
+  <details class="law-main-toc-disclosure" data-main-toc-disclosure open>
+    <summary class="w-full min-h-11 flex items-center justify-between gap-2 cursor-pointer text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--accent-500) group transition-colors">
+      <h2 class="text-xl font-bold text-gray-800 dark:text-(--accent-500) group-hover:text-(--accent-600) transition-colors"><%= t(:toc).capitalize %> <span class="text-base font-normal text-gray-500 dark:text-gray-400">(<%= count %>)</span></h2>
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-gray-500 dark:text-gray-400 law-main-toc-chevron print:hidden" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
+      </svg>
+    </summary>
+    <div class="mt-4" data-main-toc-list>
+      <%= render 'toc', content: content, hide_header: true, scrollable: false, track: false, variant: :main %>
+    </div>
+  </details>
   <p class="mt-2 text-sm text-gray-700 dark:text-gray-300 print:hidden"><%= t('toc_summary.text', count: count) %></p>
-  <p class="hidden print:block mt-2 text-sm" data-toc-summary-print><%= t('toc_summary.print', count: count) %></p>
   <div class="mt-4 flex flex-wrap gap-3 print:hidden">
     <button type="button"
             class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-(--accent-600-solid) text-white hover:bg-(--accent-700-solid) focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--accent-500) transition-colors"

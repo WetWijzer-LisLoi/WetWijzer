@@ -2,10 +2,9 @@
 
 # Helpers for law views
 module LawsHelper
-  # WW-WER-01: past this many entries the main card summarises the table of
-  # contents instead of repeating it before the text (the sidebar keeps it,
-  # searchable), and past this many rows a list of implementing decisions or
-  # of updates starts collapsed.
+  # Past this many entries the main table of contents starts collapsed in a
+  # bounded native disclosure (the sidebar also keeps it searchable), and
+  # past this many rows implementing decisions or updates start collapsed.
   LARGE_TOC_ENTRIES = 300
   LARGE_LIST_ROWS = 50
 
@@ -45,6 +44,22 @@ module LawsHelper
   ARTICLE_VARIANT_SUFFIX = /-(toekomstig|futur|vlaams_gewest|waals_gewest|brussels_hoofdstedelijk_gewest|region_wallonne|region_flamande|region_bruxelles_capitale)$/
   HEADING_TYPES = %i[section_heading abolished_section].freeze
 
+  # The VAT Code, the W.Reg. and the W.Succ. (ledger item 29): the July 2026
+  # fisconet ingest titled an article whose number has a superscript with the
+  # two run together, "Art.1222" for Art. 122² (fisconet's 122/2), so links
+  # went to #art-1222. Retitled "Art.122/2" (#art-122-2) on 2026-10-15, such a
+  # row answers to its old anchor too. Only these codes: elsewhere "Art.3/1"
+  # read as #art-31 would be another article's anchor.
+  FUSED_TITLE_CODES = %w[1969070305 1939113002 1936033102].freeze
+
+  def fused_title_anchor(article, reserved)
+    return unless FUSED_TITLE_CODES.include?(article.content_numac.to_s)
+
+    match = article.article_title.to_s.match(%r{\AArt\.\s?(\d+)/(\d+)\z})
+    anchor = "art-#{match[1]}#{match[2]}" if match
+    anchor unless anchor.nil? || reserved.include?(anchor)
+  end
+
   # An article row's anchor before it is made unique: the article number of
   # its title or text, or a slug of them.
   def article_permalink_for(article)
@@ -75,6 +90,8 @@ module LawsHelper
           base = permalink.sub(ARTICLE_VARIANT_SUFFIX, '')
           aliases = ["section-#{permalink}"]
           aliases << base if base != permalink && !reserved.include?(base) && emitted.add?(base)
+          fused = fused_title_anchor(article, reserved)
+          aliases << fused if fused && emitted.add?(fused)
           { heading: false, id: permalink, aliases: aliases }
         end
       end
@@ -135,6 +152,37 @@ module LawsHelper
     return html if html.blank?
 
     html.gsub(FISCONET_STYLE_ATTR) { Regexp.last_match(1).match?(FISCONET_ITALIC) ? ' class="italic"' : '' }
+  end
+
+  # The VAT Code, the W.Reg. and the W.Succ. have no article text from Justel:
+  # their Justel pages were empty shells, and every article row they show was
+  # filled from Fisconet by the 2026-07-13 ingest
+  # (lib/wetwijzer_updater/fisconet_ingest_to_laws.py; ledger item 23).
+  FISCONET_TEXT_NUMACS = %w[1969070305 1939113002 1936033102].freeze
+
+  # The sentence that says so on their pages, in the page language; nil for
+  # every other law.
+  def fisconet_text_source_note(numac)
+    return unless FISCONET_TEXT_NUMACS.include?(numac.to_s)
+
+    case I18n.locale
+    when :fr then 'Le texte des articles de cette page provient de Fisconet (SPF Finances), et non de la version consolidée de Justel.'
+    when :de then 'Der Artikeltext auf dieser Seite stammt aus Fisconet (FÖD Finanzen), nicht aus der konsolidierten Fassung von Justel.'
+    when :en then 'The article text on this page comes from Fisconet (FPS Finance), not from the Justel consolidation.'
+    else 'De artikeltekst op deze pagina komt uit Fisconet (FOD Financiën), niet uit de geconsolideerde versie van Justel.'
+    end
+  end
+
+  # Their rows keep the text in force (scripts/ops/tax_codes_text_refresh.py,
+  # ledger item 29); the amendment history and the older versions stay on
+  # the Fisconet version, which this sentence links: [lead, link text].
+  def fisconet_history_pointer
+    case I18n.locale
+    when :fr then ["L'historique des modifications et les versions antérieures figurent dans la", 'version Fisconet']
+    when :de then ['Die Änderungshistorie und die früheren Fassungen stehen in der', 'Fisconet-Fassung']
+    when :en then ['The amendment history and the earlier versions are in the', 'Fisconet version']
+    else ['De wijzigingsgeschiedenis en de vroegere versies staan in de', 'Fisconet-versie']
+    end
   end
 
   # Renders a single jurisdiction badge with tooltip

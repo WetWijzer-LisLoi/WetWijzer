@@ -1,0 +1,40 @@
+nl:
+  mobile_dock:
+    navigation: "Mobiele navigatie"
+    home: "Start"
+    search: "Zoeken"
+    chat: "Chat"
+    bookmarks: "Bladwijzers"
+    account: "Account"
+    hide: "Verbergen"
+    show: "Navigatie tonen"
+fr:
+  mobile_dock:
+    navigation: "Navigation mobile"
+    home: "Accueil"
+    search: "Chercher"
+    chat: "Chat"
+    bookmarks: "Signets"
+    account: "Compte"
+    hide: "Masquer"
+    show: "Afficher la navigation"
+de:
+  mobile_dock:
+    navigation: "Mobile Navigation"
+    home: "Start"
+    search: "Suche"
+    chat: "Chat"
+    bookmarks: "Merkliste"
+    account: "Konto"
+    hide: "Ausblenden"
+    show: "Navigation anzeigen"
+en:
+  mobile_dock:
+    navigation: "Mobile navigation"
+    home: "Home"
+    search: "Search"
+    chat: "Chat"
+    bookmarks: "Bookmarks"
+    account: "Account"
+    hide: "Hide"
+    show: "Show navigation"

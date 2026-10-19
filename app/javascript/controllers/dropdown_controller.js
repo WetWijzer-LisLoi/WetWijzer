@@ -48,7 +48,7 @@ export default class extends Controller {
     }
   }
 
-  // Fisconet article menus opt in: stay below near the viewport top, but
+  // Article menus opt in: stay below near the viewport top, but
   // avoid a clipped menu or the phone's fixed bottom bar near the bottom.
   // Other dropdowns keep their existing positioning and focus behavior.
   fitMenuToViewport() {
@@ -75,7 +75,12 @@ export default class extends Controller {
     // Measure the rendered lower edge anchor, including the wrapper's line
     // box and CSS gap rather than assuming it equals the button's bottom.
     const below = Math.max(0, usableBottom - menuBox.top)
-    const above = Math.max(0, button.top - gap - padding)
+    // bottom: 100% opens above the positioned ancestor, which can start a
+    // whole toolbar row above a wrapped trigger. Never count that row as
+    // available space, or a menu that "fits" above can still cross the top.
+    const parentTop = menu.offsetParent?.getBoundingClientRect?.().top
+    const aboveAnchor = Number.isFinite(parentTop) ? Math.min(button.top, parentTop) : button.top
+    const above = Math.max(0, aboveAnchor - gap - padding)
     const fitsBelow = menuBox.height <= below
     const fitsAbove = menuBox.height <= above
     const openAbove = !fitsBelow && (fitsAbove || above > below)

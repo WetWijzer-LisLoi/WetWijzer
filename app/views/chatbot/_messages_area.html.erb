@@ -21,22 +21,22 @@
       <% welcome_copy = case I18n.locale
           when :fr
             {
-              body: "Posez votre question en langage courant. #{site_name} consulte la législation, la jurisprudence et les travaux parlementaires.",
+              body: 'Posez votre question avec vos propres mots ou choisissez un exemple de question.',
               questions: StarterQuestionCatalog::WELCOME.fetch('fr')
             }
           when :de
             {
-              body: "Stellen Sie Ihre Frage in eigenen Worten. #{site_name} durchsucht Gesetzgebung, Rechtsprechung und parlamentarische Dokumente.",
+              body: 'Stellen Sie Ihre Frage in eigenen Worten oder wählen Sie eine Beispielfrage.',
               questions: StarterQuestionCatalog::WELCOME.fetch('de')
             }
           when :en
             {
-              body: "Ask your question in your own words. #{site_name} searches legislation, case law, and parliamentary documents.",
+              body: 'Ask your question in your own words or choose a sample question.',
               questions: StarterQuestionCatalog::WELCOME.fetch('en')
             }
           else
             {
-              body: "Stel uw vraag in uw eigen woorden. #{site_name} doorzoekt wetgeving, rechtspraak en parlementaire stukken.",
+              body: 'Stel uw vraag in uw eigen woorden of kies een voorbeeldvraag.',
               questions: StarterQuestionCatalog::WELCOME.fetch('nl')
             }
         end %>

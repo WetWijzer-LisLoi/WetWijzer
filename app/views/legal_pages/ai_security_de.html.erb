@@ -267,6 +267,7 @@
     <p>Anbieterverträge, Order Forms und Datenverarbeitungsbedingungen regeln diese Schutzmaßnahmen. Ihr Umfang muss für die konfigurierten WetWijzer-Konten geprüft werden; Anbieterdokumentation und -zertifizierungen zertifizieren WetWijzer selbst nicht.</p>
 
     <h3>2.2 Verschlüsselungsstandards</h3>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Schutzebene</th>
@@ -299,6 +300,7 @@
             <td>Europäisch begrenzte Anbieterkonfigurationen: Azure DataZoneStandard in der EU Data Zone für alle angebotenen Azure-Modelle, regionaler EU/EFTA-API-Endpunkt von Mistral (also nicht ausschließlich EU-Mitgliedstaaten) und AWS-EU-Geografieprofile</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <h3>2.3 Missbrauchsüberwachung</h3>
     <p>Sicherheitsüberwachung und betriebliche Aufbewahrung durch Anbieter sind nicht dasselbe wie Modelltraining. Für die konfigurierten Dienste gilt:</p>
@@ -316,7 +318,7 @@
     <p><%= chatbot_processing_location_summary(:de) %></p>
     <ul>
         <li><strong>Mistral AI:</strong> Betreibt von Frankreich aus - ein europäisches Unternehmen, das französischem und EU-Recht unterliegt</li>
-        <li><strong>Azure OpenAI:</strong> Alle angebotenen Modelle der GPT-5-Familie nutzen <code>DataZoneStandard</code> in der Azure EU Data Zone und Anfragen können innerhalb der von Microsoft dokumentierten EU Data Boundary geroutet werden. Für die angebotenen Modelle verwenden wir <strong>keine</strong> regionalen Standard-, Global-Standard- oder Global-Provisioned-Bereitstellungen</li>
+        <li><strong>Azure OpenAI:</strong> Alle angebotenen GPT-Modelle nutzen <code>DataZoneStandard</code> in der Azure EU Data Zone und Anfragen können innerhalb der von Microsoft dokumentierten EU Data Boundary geroutet werden. Für die angebotenen Modelle verwenden wir <strong>keine</strong> regionalen Standard-, Global-Standard- oder Global-Provisioned-Bereitstellungen</li>
         <li><strong>AWS Bedrock:</strong> geografische <code>eu.</code>-Profile, aufgerufen aus eu-central-1; Anfragen können innerhalb der dokumentierten EU-Geografie des Profils geroutet werden</li>
         <li>Die ausgewählten Anbieterrouten sind EU-begrenzt; ihre genauen Grenzen und offengelegten Übermittlungsvorbehalte stehen oben</li>
     </ul>
@@ -330,6 +332,7 @@
         <span class="cert-badge">Gewählten Dienst prüfen</span>
     </div>
 
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Nachweisquelle</th>
@@ -352,12 +355,14 @@
             <td>Nutzt diese Anbieterdienste, erbt deren Zertifizierungen aber nicht; WetWijzers eigene Kontrollen und Rechtspflichten bleiben getrennt</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
     <p class="small">Prüfen Sie die aktuellen dienstspezifischen Nachweise im <a href="https://servicetrust.microsoft.com/" target="_blank" rel="noopener">Microsoft Service Trust Portal</a>, im <a href="https://aws.amazon.com/compliance/" target="_blank" rel="noopener">AWS Compliance Center</a> und in der anwendbaren Vertrags- und Sicherheitsdokumentation von Mistral.</p>
 
     <!-- WAS WIR SPEICHERN -->
     <h2>4. Was wir speichern (und was nicht)</h2>
 
     <h3>4.1 Was wir speichern</h3>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Daten</th>
@@ -402,11 +407,13 @@
             <td>Folgefragen und optionalen gespeicherten Verlauf ermöglichen</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <h3>4.2 Was wir nicht in Analysen oder gewöhnlichen Anwendungslogs speichern</h3>
     <div class="highlight--success">
         <p><strong>So funktioniert es in der Praxis:</strong> Wir speichern weder lesbaren Fragetext noch einen deterministischen Fragen-Fingerabdruck in Chatbot-Analysen oder gewöhnlichen Anwendungslogs. Roher Fragetext wird für Azure-Retrieval, optionale HyDE-Anreicherung über Mistral Small und den gewählten Antwortanbieter im Arbeitsspeicher verarbeitet und nach der Anfrage nicht absichtlich durch WetWijzer persistiert; Anwendungsspeicher wird nicht kryptografisch gelöscht. Explizit gespeicherte Antworten, eingewilligter Verlauf und Nutzermeldungen sind getrennte Speicherentscheidungen, die unten beschrieben werden. Zur Missbrauchsprävention verwenden wir einen gesalzenen IP-Hash; da er sieben Tage lang ein pseudonymer Identifikator bleibt, bezeichnen wir ihn nicht als anonym.</p>
     </div>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Daten</th>
@@ -439,11 +446,13 @@
             <td>Standardmäßig speichern wir Ihr Gespräch <strong>nicht</strong> auf unserem Server; aktuelle Nachrichten werden nur pro Frage zum Kontext mitgesendet und danach verworfen. Wir speichern <strong>keine unverschlüsselten Gesprächsinhalte</strong> in localStorage oder sessionStorage. Wird eine Zero-Knowledge-Speicherung unterbrochen, kann ein Wiederholungsumschlag ausschließlich mit Chiffretext in localStorage verbleiben. Er kann nur wiederholt werden, solange der zugehörige Server-Claim gültig ist (fünf Minuten nach Ausgabe und ab Empfang der Antwort meist kürzer). Die App entfernt ihn nach Serverbestätigung, Widerruf der Einwilligung oder &mdash; während sie aktiv ist &mdash; beim Ablauf des Claims; war der Browser geschlossen, erfolgt die Bereinigung beim nächsten Öffnen von WetWijzer. Der Server verweigert einen abgelaufenen Umschlag. Wenn Sie sich für die Speicherung mit einem Speicherpasswort entscheiden, wird das Gespräch zero-knowledge-verschlüsselt gespeichert (AES-256-GCM) &mdash; wir können den Inhalt nicht entschlüsseln. Entscheiden Sie sich für die Speicherung ohne Speicherpasswort, wird das Gespräch verschlüsselt auf unserem Server gespeichert, aber wir können den Inhalt lesen, um Folgefragen zu beantworten. Gespeicherte Gespräche bleiben erhalten, bis Sie sie löschen oder Ihr Konto schließen. Welches Gespräch aktiv ist, verfolgen wir auf unserem Server; der verschlüsselte Wiederholungsumschlag ist die einzige Browser-Persistenz-Ausnahme für <em>Gesprächsdaten</em>.</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
     <p class="small">* Ausdrückliche Speicherentscheidungen: „Antwort speichern“ speichert die gewählte Frage und Antwort in Ihrem Konto; „Melden“ (🚩) sendet Frage und Antwort nach Bestätigung zur Qualitätsprüfung an den Administrator. Diese Datensätze sind auf dem Server im Ruhezustand verschlüsselt, für WetWijzer jedoch lesbar.</p>
 
     <!-- UNSERE EIGENE INFRASTRUKTUR -->
     <h2>5. Sicherheit unseres eigenen Servers</h2>
     <p>Ihre Daten sind nicht nur bei unseren KI-Anbietern sicher - auch unsere eigene Infrastruktur ist gehärtet:</p>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Maßnahme</th>
@@ -482,9 +491,11 @@
             <td>Selbst gehostetes Umami für cookielose, eigene aggregierte Analysen - kein Google Analytics und keine seitenübergreifenden Werbetracker</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <!-- DATENFLUSS-ÜBERSICHT -->
     <h2>6. Vollständige Zusammenfassung des Datenflusses</h2>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Von</th>
@@ -529,10 +540,12 @@
             <td>Unverschlüsselter Inhalt bleibt nur im Arbeitsspeicher des Browsers. In localStorage oder sessionStorage werden keine unverschlüsselten Gesprächsdaten gespeichert. Eine unterbrochene Zero-Knowledge-Speicherung kann einen Wiederholungsumschlag ausschließlich mit Chiffretext in localStorage behalten. Nach Ablauf des Server-Claims fünf Minuten nach Ausgabe ist er unbrauchbar und wird beim Ablauf oder beim nächsten Öffnen bereinigt.</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <!-- VERGLEICH -->
     <h2>7. Wie wir im Vergleich abschneiden</h2>
     <p>Anders als Verbraucher-KI-Chatbots verwendet WetWijzer KI-Anbieter der Enterprise-Klasse mit EU-begrenzten Konfigurationen und den oben beschriebenen Übermittlungsvorbehalten:</p>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Merkmal</th>
@@ -570,6 +583,7 @@
             <td><strong>Die aktuelle Frage und der relevante Kontext sind während der Antwortverarbeitung lesbar. Danach können wir passwortgeschützten Verlauf nicht direkt entschlüsseln; gewöhnlicher gespeicherter Verlauf, gespeicherte Antworten und Meldungen sind für WetWijzer lesbar. Fragetext und deterministische Fragen-Fingerabdrücke werden nicht in gewöhnlichen Anwendungslogs gespeichert.</strong></td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <!-- WARNUNG -->
     <h2>8. Ein Hinweis mit gesundem Menschenverstand</h2>
@@ -594,6 +608,7 @@
         <li><strong>Unternehmens-Proxys:</strong> Manche Unternehmens-Proxy-Ketten leiten den Verkehr über Nicht-EU-Gateways.</li>
     </ul>
     <h4>Was das in der Praxis bedeutet:</h4>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Szenario</th>
@@ -621,6 +636,7 @@
             <td>✅ Ja, nach Verifizierung</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
     <div class="legal-notice">
         <p><strong>Datenschutzhinweis für Tor-Nutzer:</strong> Wir respektieren Ihr Recht, anonym zu surfen. Die Geo-Sicherheitsprüfung identifiziert Sie nicht; sie prüft einen Arbeitsnachweis zwischen Ihrem Browser und unserem selbst gehosteten Server, ohne die Aufgabe an einen CAPTCHA-Drittanbieter zu senden. Beachten Sie jedoch, dass bei der Nutzung von Tor Ihr Verkehr über einen <strong>Relay-Node eines Dritten</strong> austritt, den Sie nicht kontrollieren. Während die TLS-Verschlüsselung den Inhalt Ihrer Chatbot-Fragen vor dem Exit-Node-Betreiber schützt, kann der Exit-Node sehen, welche Website Sie besuchen (wetwijzer.be). Dies ist eine Eigenschaft von Tor selbst, nicht unserer Plattform.</p>
     </div>

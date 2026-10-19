@@ -1,10 +1,6 @@
     <%# Compute default_credits locally - ERB partials have isolated scope,
         so the value set in _settings_panel.html.erb is not available here. %>
-    <% intelligence_levels = LegalChatbotService::INTELLIGENCE_LEVELS
-       level_keys = intelligence_levels.keys
-       _pro = current_user&.pro?
-       _didx = _pro ? (level_keys.index { |id| intelligence_levels[id][:default] } || 0) : (level_keys.index('smart') || 0)
-       default_credits = intelligence_levels[level_keys[_didx]][:credits] %>
+    <% default_credits = LegalChatbotService.ui_default_credits %>
     <%# Composer row of the single chat surface: hairline on top, no own
         background so it reads as part of the panel, not another box. %>
     <div class="p-4 border-t border-gray-200 dark:border-[#1e293b]">
@@ -15,16 +11,17 @@
           </p>
         </noscript>
         <%# ── Chat input (authenticated users only - chatbot requires login) ── %>
-        <div class="flex gap-3">
+        <div class="chatbot-composer-row flex gap-3">
           <textarea 
             data-chatbot-target="input"
             data-action="keydown->chatbot#handleKeydown input->chatbot#autoResizeWidget"
             autocomplete="off"
+            aria-describedby="chatbot-question-count"
             aria-label="<%= case I18n.locale when :fr then 'Votre question juridique' when :de then 'Ihre Rechtsfrage' when :en then 'Your legal question' else 'Uw juridische vraag' end %>"
             class="flex-1 resize-none rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 px-4 py-2 focus:ring-2 focus:ring-(--accent-500) focus:border-transparent"
-            rows="1"
+            rows="2"
             style="max-height: 150px;"
-            placeholder="<%= case I18n.locale when :fr then 'Posez une question... (Shift+Enter = nouvelle ligne)' when :de then 'Stellen Sie eine Frage... (Shift+Enter = neue Zeile)' when :en then 'Ask a question... (Shift+Enter = new line)' else 'Stel een vraag... (Shift+Enter = nieuwe regel)' end %>" data-translate-placeholder="inputPlaceholder"><%= params[:question] %></textarea>
+            placeholder="<%= case I18n.locale when :fr then 'Posez votre question juridique…' when :de then 'Stellen Sie Ihre Rechtsfrage…' when :en then 'Ask your legal question…' else 'Stel uw juridische vraag…' end %>" data-translate-placeholder="inputPlaceholder"><%= params[:question] %></textarea>
           
           <button type="button"
                   data-chatbot-target="sendButton"
@@ -38,6 +35,7 @@
             <span class="text-[10px] font-normal bg-black/25 px-1.5 py-0.5 rounded-full" id="send-credit-badge">−<%= default_credits %>cr</span>
           </button>
         </div>
+        <%= render 'chatbot/question_count', id: 'chatbot-question-count', controller: 'chatbot' %>
 
       <%# Long-question hint: complex questions are where the fast model's
           material legal errors concentrate (2026-08 tax spot check: 27.5%
@@ -67,27 +65,6 @@
         </span>
       </div>
 
-      <% if logged_in? %>
-        <%# ── Credit Deduction Preview - shows exactly what will be charged ── %>
-        <% credits_count = current_user.credits.to_i %>
-        <div class="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1" id="deduction-preview" style="font-variant-numeric: tabular-nums;">
-          <svg class="w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          <span id="deduction-preview-text">
-            <% cr_s = default_credits > 1 ? 's' : '' %>
-            <% cr_word = case I18n.locale when :fr then "crédit#{cr_s}" when :de then "Credit#{cr_s}" else "credit#{cr_s}" end %>
-            <% if credits_count >= default_credits %>
-              <% if I18n.locale == :fr %>
-                <span class="font-semibold text-amber-700 dark:text-amber-400">−<%= default_credits %> <%= cr_word %></span>
-              <% else %>
-                <span class="font-semibold text-amber-700 dark:text-amber-400">−<%= default_credits %></span> <%= cr_word %>
-              <% end %>
-            <% else %>
-              <a href="<%= credits_path %>" class="font-semibold text-red-500 hover:text-red-600 dark:hover:text-red-400 hover:underline">⚠️ <%= case I18n.locale when :fr then 'crédits insuffisants' when :de then 'unzureichende Credits' when :en then 'insufficient credits' else 'onvoldoende credits' end %></a>
-            <% end %>
-          </span>
-        </div>
-      <% end %>
-      
       <!-- Single loading indicator with animated progress bar -->
       <div data-chatbot-target="loading" class="hidden mt-4">
         <div class="w-full max-w-lg mx-auto">
@@ -102,6 +79,7 @@
                class="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
             <%= case I18n.locale when :fr then 'Traitement en cours...' when :de then 'Wird verarbeitet...' when :en then 'Processing...' else 'Bezig met verwerken...' end %>
           </div>
+          <%= render 'chatbot/long_wait_notice' %>
         </div>
       </div>
       <style nonce="<%= content_security_policy_nonce %>">
@@ -379,13 +357,13 @@
       <p class="mt-3 text-[10px] text-gray-500 dark:text-gray-400" data-translate="disclaimer">
         <%= case I18n.locale when :fr then 'Ceci n\'est pas un avis juridique officiel. Les modèles IA peuvent faire des erreurs et peuvent halluciner*. Vérifiez toujours auprès des sources officielles.' when :de then 'Dies ist keine offizielle Rechtsberatung. KI-Modelle können Fehler machen und halluzinieren*. Überprüfen Sie immer bei offiziellen Quellen.' when :en then 'This is not official legal advice. AI models can make mistakes and may hallucinate*. Always verify with official sources.' else 'Dit is geen officieel juridisch advies. AI-modellen kunnen fouten maken en kunnen mogelijks hallucineren*. Verifieer informatie altijd bij officiële bronnen.' end %>
       </p>
-      <p class="text-[10px] text-gray-500 dark:text-gray-400 italic mt-0.5" data-translate="footnote">
-        <%= case I18n.locale when :fr then '*Halluciner: inventer des informations qui semblent correctes mais qui sont fausses ou inexistantes.' when :de then '*Halluzinieren: Erfinden von Informationen, die korrekt erscheinen, aber faktisch falsch oder nicht existent sind.' when :en then '*Hallucinate: inventing information that appears correct but is factually wrong or non-existent.' else '*Hallucineren: het verzinnen van informatie die correct lijkt maar feitelijk onjuist of onbestaand is.' end %>
-        <%# dark:hover as in the widget's copy of this link: without it the
-            gray-600 hover dimmed the link to 2.4:1 on the dark panel, so it
-            nearly vanished exactly when pointed at. %>
-        (<a href="https://www.ibm.com/think/topics/ai-hallucinations" target="_blank" class="underline hover:text-gray-600 dark:hover:text-(--accent-400)">IBM</a>)
-      </p>
+        <p class="chatbot-fineprint text-[9px] text-gray-500 dark:text-gray-400 italic mt-0.5" data-translate="footnote">
+          <%= case I18n.locale when :fr then '*Halluciner: inventer des informations qui semblent correctes mais qui sont fausses ou inexistantes.' when :de then '*Halluzinieren: Erfinden von Informationen, die korrekt erscheinen, aber faktisch falsch oder nicht existent sind.' when :en then '*Hallucinate: inventing information that appears correct but is factually wrong or non-existent.' else '*Hallucineren: het verzinnen van informatie die correct lijkt maar feitelijk onjuist of onbestaand is.' end %>
+          <%# dark:hover as in the widget's copy of this link: without it the
+              gray-600 hover dimmed the link to 2.4:1 on the dark panel, so it
+              nearly vanished exactly when pointed at. %>
+          (<a href="https://www.ibm.com/think/topics/ai-hallucinations" target="_blank" class="underline hover:text-gray-600 dark:hover:text-(--accent-400)">IBM</a>)
+        </p>
       <p class="mt-1.5 text-[10px] text-gray-500" data-translate="legalConsent">
         <%= case I18n.locale
             when :fr

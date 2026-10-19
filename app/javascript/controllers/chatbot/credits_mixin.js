@@ -62,7 +62,7 @@ export const creditsMethods = {
   // Authoritative next-question charge used by every badge/preview. Keeping
   // base model credits and the model-specific reasoning surcharge together
   // prevents secondary UI (such as follow-up suggestions) from drifting.
-  _getActiveModelTotalCredits(reasoning = this.reasoningLevelValue) {
+  _getActiveModelTotalCredits(reasoning = this._effectiveReasoningForRequest(this.conversationHistory || [])) {
     const option = this._getActiveModelOption()
     return this._getActiveModelCredits() + this._reasoningSurchargeForModelOption(option, reasoning)
   },
@@ -91,29 +91,11 @@ export const creditsMethods = {
     })
   },
 
-  _updateReasoningCreditBreakdown(baseCredits, surcharge, totalCredits) {
-    const lang = this.languageValue || 'nl'
-    const words = {
-      nl: { base: 'basis', reasoning: 'redeneren', per: 'cr/vraag' },
-      fr: { base: 'base', reasoning: 'raisonnement', per: 'cr/question' },
-      de: { base: 'Basis', reasoning: 'Denken', per: 'cr/Frage' },
-      en: { base: 'base', reasoning: 'reasoning', per: 'cr/question' }
-    }[lang] || { base: 'base', reasoning: 'reasoning', per: 'cr/question' }
-    const text = `${baseCredits} ${words.base} + ${surcharge} ${words.reasoning} = ${totalCredits} ${words.per}`
-    const main = document.getElementById('reasoning-credit-breakdown')
-    const widget = document.getElementById('widget-reasoning-credit-breakdown')
-    if (main) main.textContent = text
-    if (widget) widget.textContent = text
-  },
-
   // Refresh all credit displays using the currently selected model's cost.
   // Call this whenever intelligence level OR model changes.
 
   _refreshCreditDisplay() {
-    const modelCredits = this._getActiveModelCredits()
     const totalCredits = this._getActiveModelTotalCredits()
-    const surcharge = totalCredits - modelCredits
-    this._updateReasoningCreditBreakdown(modelCredits, surcharge, totalCredits)
 
     // Update all credit badge locations
     const badge = document.getElementById('intelligence-credit-badge')
@@ -124,6 +106,7 @@ export const creditsMethods = {
 
     this._updateSuggestionCostBadges(totalCredits)
     this._updateDeductionPreview(totalCredits)
+    this._updateResearchDepthPreview?.(this._getActiveModelOption(), Array.isArray(this.conversationHistory) && this.conversationHistory.length > 0)
   },
   _updateTotalCreditsDisplay() {
     const total = this._getActiveModelTotalCredits()
@@ -271,14 +254,11 @@ export const creditsMethods = {
     textEl.innerHTML = html
   },
 
-  // Recalculate total credit cost when reasoning depth changes.
-  // Delegates to _refreshCreditDisplay for badge/send/deduction updates,
-  // then also updates the cost-per-question summary bar.
+  // Recalculate total credit cost when reasoning depth changes. The total is
+  // exposed through the linked model choice, research preview and Send badge.
 
   _updateCreditDisplayWithReasoning(surcharge) {
-    const modelCredits = this._getActiveModelCredits()
-    const totalCredits = modelCredits + surcharge
-    this._updateReasoningCreditBreakdown(modelCredits, surcharge, totalCredits)
+    const totalCredits = this._getActiveModelCredits() + surcharge
 
     // Reuse _refreshCreditDisplay logic - but we already know the surcharge,
     // so we update badges directly to avoid re-detecting reasoning state

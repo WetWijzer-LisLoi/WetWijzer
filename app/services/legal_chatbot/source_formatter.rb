@@ -10,6 +10,9 @@ module LegalChatbot
     # language_id => the card's language badge; 3 is a binding German
     # original, which only the German site's chatbot retrieves.
     SOURCE_LANGUAGE_LABELS = { 1 => 'NL', 2 => 'FR', 3 => 'DE' }.freeze
+    SOURCE_METADATA_KEYS = %i[source_kind authority_kind authority jurisdiction document_type legal_status
+                              status version_date publication_date effective_date end_date is_abolished
+                              source_language judicial_kind document_date edition_date historical].freeze
 
     def initialize(language: 'nl')
       @language = language
@@ -50,8 +53,8 @@ module LegalChatbot
           # binding German original (language 3, gesetzguide only) opens the
           # German text of the page.
           url: numac.present? ? "/laws/#{numac}#{german_language_query(language_id)}#{extract_article_anchor(article_title)}" : nil,
-          language: SOURCE_LANGUAGE_LABELS.fetch(language_id, 'FR')
-        }
+          language: SOURCE_LANGUAGE_LABELS[language_id.to_i]
+        }.merge(source_metadata(article, source_kind: 'legislation', authority_kind: 'legislation'))
       end
     end
 
@@ -74,14 +77,15 @@ module LegalChatbot
         internal_url = ecli.present? ? "/jurisprudence/#{ecli}" : nil
 
         {
-          type: AdvisoryOpinions.advisory?(ecli) ? 'ADVIES' : 'RECHTSPRAAK',
+          type: JurisprudenceSearch.source_metadata(case_number: ecli)[:authority_kind] == 'advisory' ? 'ADVIES' : 'RECHTSPRAAK',
           ecli: ecli,
           court: court_name,
           date: c[:decision_date],
           url: internal_url || c[:url],
-          language: c[:language_id] == 1 ? 'NL' : 'FR',
+          language: SOURCE_LANGUAGE_LABELS[c[:language_id].to_i],
           relevance: c[:similarity]&.round(2)
-        }
+        }.merge(JurisprudenceSearch.source_metadata(case_number: ecli, court: court_name))
+          .merge(source_metadata(c))
       end
     end
 
@@ -89,6 +93,7 @@ module LegalChatbot
     # Keys must match ParliamentarySearch#search output:
     # {parliament, dossier, document_number, title, url, similarity}
     def format_parliamentary(documents)
+      metadata_formatter = ParliamentarySearch.new(embedding_service: nil, language: @language)
       documents.map do |doc|
         {
           type: 'PARLEMENTAIR',
@@ -98,7 +103,7 @@ module LegalChatbot
           document_number: doc[:document_number],
           url: doc[:url],
           relevance: doc[:similarity]&.round(2)
-        }
+        }.merge(metadata_formatter.source_metadata(doc))
       end
     end
 
@@ -106,11 +111,43 @@ module LegalChatbot
     # display title because the browser source renderer de-duplicates cards by
     # title before it considers article metadata.
     def format_authoritative(articles)
-      articles.map do |article|
+      # A reviewed finite excerpt and the imported complete article may use
+      # the same exact official unit URL. Keep both as guard/context evidence,
+      # but show one card, preferring the verified complete representation.
+      grouped = articles.group_by do |article|
+        kind = article[:kind] || (article[:article_number].present? ? 'article' : nil)
+        number = article[:unit_number] || article[:article_number]
+        kind && number.present? ? [article[:url], kind, number.to_s] : article.object_id
+      end
+      display_articles = grouped.values.map do |rows|
+        rows.find { |row| row[:source] == EuCorpus::SOURCE && EuCorpus.verified_record?(row) } || rows.first
+      end
+      display_articles.filter_map do |article|
+        if article[:source] == EuCorpus::SOURCE
+          next unless EuCorpus.verified_record?(article)
+
+          type = if article[:source_kind] == 'jurisprudence'
+                   article[:judicial_kind] == 'advocate_general_opinion' ? 'ADVIES' : 'RECHTSPRAAK'
+                 elsif article[:kind] == 'recital'
+                   'OVERWEGING'
+                 else
+                   'WETGEVING'
+                 end
+          next {
+            type: type, source: EuCorpus::SOURCE, celex: article[:celex], ecli: article[:ecli],
+            title: article[:title], law_title: article[:title], article_title: article[:article_title],
+            url: article[:url], language: article[:language].upcase, source_kind: article[:source_kind],
+            kind: article[:kind], unit_number: article[:unit_number], document_type: article[:document_type],
+            edition_date: article[:edition_date], legal_status: article[:legal_status], correction_status: article[:correction_status],
+            correction_observed_at: article[:correction_observed_at], correction_verification: article[:correction_verification],
+            historical: article[:historical], source_notice: article[:historical] ? article[:title] : nil,
+            excerpt: article[:article_text].to_s.gsub(/\s+/, ' ').strip[0, 201]
+          }
+        end
         display_title = article[:title].presence ||
                         "#{article[:law_title]} — #{article[:article_title]}"
         {
-          type: 'WETGEVING',
+          type: article[:source] == 'official_guidance' ? 'INFO' : 'WETGEVING',
           law_title: display_title,
           title: display_title,
           url: article[:url],
@@ -133,6 +170,19 @@ module LegalChatbot
     end
 
     private
+
+    # Preserve known metadata; never manufacture applicability from a version
+    # or publication date. Records without those columns remain supported.
+    def source_metadata(record, **defaults)
+      SOURCE_METADATA_KEYS.each_with_object(defaults) do |key, metadata|
+        value = if record.respond_to?(key)
+                  record.public_send(key)
+                elsif record.is_a?(Hash)
+                  record[key]
+                end
+        metadata[key] = value unless value.nil?
+      end
+    end
 
     # "?language_id=3" for a binding German original, whose card opens the
     # German text of the law page on gesetzguide; '' for NL and FR.

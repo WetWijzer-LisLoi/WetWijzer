@@ -1,0 +1,105 @@
+<%# One research control shared by the homepage, full page and widget.
+    The ruler offers a curated subset of the full model/reasoning dropdown.
+    Source categories remain independently selected. %>
+<% prefix = local_assigns.fetch(:prefix, 'chatbot') %>
+<% controller_name = local_assigns.fetch(:controller_name, 'chatbot') %>
+<% compact = local_assigns.fetch(:compact, true) %>
+<% initial_credits = LegalChatbotService.ui_default_credits.to_i %>
+<% initial_depth = LegalChatbotService.ui_default_research_depth %>
+<% depths = %w[quick balanced thorough extensive] %>
+<% step_choices = LegalChatbotService::INTELLIGENCE_LEVELS.flat_map { |level, config|
+     config[:models].flat_map { |model, _|
+       next [] if LegalChatbotService::AVAILABLE_MODELS.dig(model, :deployed) == false
+       next [] unless LegalChatbotService.model_allowed?(model, current_user&.current_tier || :free)
+       base = LegalChatbotService.credits_for_model(level, model)
+       modes = LegalChatbotService.reasoning_levels_for_model(model)
+       modes = ['fixed'] if modes.empty?
+       modes.filter_map do |mode|
+         next unless LegalChatbotService.research_bar_combination?(model, mode)
+         { depth: LegalChatbotService.research_depth_for_combination(model, mode), credits: base + LegalChatbotService.reasoning_surcharge_for_model(model, mode), model_name: (LegalChatbotService::AVAILABLE_MODELS.dig(model, :name) || model).to_s, reasoning: mode }
+       end
+     }
+   }.sort_by { |choice| [depths.index(choice[:depth]) || depths.length, choice[:credits], choice[:model_name], choice[:reasoning]] } %>
+<% step_choices = [{ depth: initial_depth, credits: initial_credits }] if step_choices.empty? %>
+<% step_credits = step_choices.map { |choice| choice[:credits] } %>
+<% credit_prices = step_credits.uniq %>
+<% default_model_name = (LegalChatbotService::AVAILABLE_MODELS.dig(LegalChatbotService.ui_default_selection[:model], :name) || LegalChatbotService.ui_default_selection[:model]).to_s %>
+<% initial_step_index = step_choices.index { |choice| choice[:model_name] == default_model_name && choice[:reasoning] == LegalChatbotService.ui_default_selection[:reasoning_effort] } || step_credits.index(initial_credits) || 0 %>
+<% available_depths = step_choices.map { |choice| choice[:depth] }.uniq %>
+<% actual_last_step = step_choices.length - 1 %>
+<% last_step = [actual_last_step, 1].max %>
+<% depth_positions = depths.to_h { |depth| [depth, step_choices.each_index.select { |index| step_choices[index][:depth] == depth }] } %>
+<% empty_depths = depths.select { |depth| depth_positions.fetch(depth).empty? } %>
+<% empty_width = [18.0, 54.0.fdiv([empty_depths.length, 1].max)].min %>
+<% available_width = 100.0 - empty_depths.length * empty_width %>
+<% depth_spans = depths.to_h do |depth|
+     positions = depth_positions.fetch(depth)
+     if positions.any?
+       first, last = positions.first, positions.last
+       start = first.zero? ? 0.0 : (first - 0.5).fdiv(last_step) * available_width
+       finish = last == actual_last_step ? available_width : (last + 0.5).fdiv(last_step) * available_width
+       [depth, { start: start, width: finish - start, empty: false }]
+     else
+       start = available_width + empty_depths.index(depth) * empty_width
+       [depth, { start: start, width: empty_width, empty: true }]
+     end
+   end %>
+<div class="research-depth-control<%= ' research-depth-control--compact' if compact %><%= ' research-depth-control--has-empty' if empty_depths.any? %>" data-research-depth-control
+     style="--available-track-scale: <%= available_width.fdiv(100) %>"
+     data-preview-template="<%= t('chatbot.research_depth.preview', model: '%{model}', reasoning: '%{reasoning}', credits: '%{credits}', time: '%{time}') %>"
+     data-fixed-reasoning-message="<%= t('chatbot.research_depth.model_fixed_reasoning') %>"
+     data-limited-reasoning-message="<%= t('chatbot.research_depth.model_limited_reasoning') %>"
+     data-followup-reasoning-message="<%= t('chatbot.research_depth.followup_limited_reasoning') %>"
+     data-manual-selection-message="<%= t('chatbot.research_depth.manual_selection') %>">
+  <div class="research-depth-heading">
+    <label for="<%= prefix %>-research-depth" class="text-xs font-semibold text-gray-800 dark:text-gray-100"><%= t('chatbot.research_depth.label') %></label>
+  </div>
+  <details class="research-depth-help" data-research-depth-help>
+    <summary aria-label="<%= t('chatbot.research_depth.help_label') %>" title="<%= t('chatbot.research_depth.help_label') %>">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".8" fill="currentColor" stroke="none"/></svg>
+      <span class="sr-only"><%= t('chatbot.research_depth.help_label') %></span>
+    </summary>
+    <div class="research-depth-help-body">
+      <p id="<%= prefix %>-depth-explanation"><%= t('chatbot.research_depth.explanation') %></p>
+      <p id="<%= prefix %>-depth-description" data-research-depth-description><%= t('chatbot.research_depth.options.balanced.description') %></p>
+      <p data-research-depth-capability></p>
+      <p><%= t('chatbot.research_depth.model_explanation') %></p>
+      <p><%= t('chatbot.research_depth.access_note') %></p>
+      <p><%= t('chatbot.research_depth.credit_tick_explanation') %></p>
+      <p><%= t('chatbot.research_depth.cost_note') %></p>
+      <p><%= t('chatbot.research_depth.verification_note') %></p>
+    </div>
+  </details>
+  <div class="research-depth-scale">
+    <span class="research-depth-unavailable-track" aria-hidden="true"></span>
+    <input type="range" id="<%= prefix %>-research-depth" min="0" max="<%= last_step %>" step="1" value="<%= initial_step_index %>" <%= 'disabled' if step_choices.length <= 1 %>
+         aria-describedby="<%= prefix %>-depth-explanation <%= prefix %>-depth-description"
+         aria-valuetext="<%= t("chatbot.research_depth.options.#{initial_depth}.label") %>"
+         data-research-depth-range
+         data-action="input-><%= controller_name %>#updateResearchDepth change-><%= controller_name %>#commitResearchDepth keydown-><%= controller_name %>#handleResearchDepthKeydown"
+         class="research-depth-range w-full mt-1" style="--slider-pct: <%= initial_step_index.fdiv(last_step) * 100 %>%">
+    <div class="research-depth-credit-ruler" data-research-depth-credit-ruler data-step-count="<%= step_credits.length %>" data-credit-count="<%= credit_prices.length %>" aria-hidden="true">
+      <% step_credits.each_index do |index| %>
+        <span class="research-depth-step-tick<%= ' research-depth-credit-tick--active' if index == initial_step_index %>" data-step-index="<%= index %>" style="--tick-position: <%= index.fdiv(last_step) * 100 %>%" aria-hidden="true"></span>
+      <% end %>
+      <% credit_prices.each do |credit| %>
+        <% position = step_credits.index(credit) %>
+        <span class="research-depth-credit-tick<%= ' research-depth-credit-tick--active' if position <= initial_step_index %>" data-credit="<%= credit %>" data-credit-index="<%= position %>" style="--tick-position: <%= position.fdiv(last_step) * 100 %>%" aria-hidden="true"></span>
+      <% end %>
+    </div>
+  </div>
+  <div class="research-depth-stops<%= ' research-depth-stops--has-empty' if empty_depths.any? %>" data-research-depth-profiles>
+    <% depths.each_with_index do |depth, index| %>
+      <% span = depth_spans.fetch(depth) %>
+      <button type="button" class="research-depth-stop<%= ' research-depth-stop--empty' if span[:empty] %>" aria-pressed="<%= depth == initial_depth %>" <%= 'disabled' if span[:empty] || !available_depths.include?(depth) %>
+              data-action="<%= controller_name %>#selectResearchDepth"
+              data-research-depth="<%= depth %>" data-depth-index="<%= index %>"
+              data-depth-label="<%= t("chatbot.research_depth.options.#{depth}.label") %>"
+              data-depth-description="<%= t("chatbot.research_depth.options.#{depth}.description") %>"
+              data-depth-time="<%= t("chatbot.research_depth.options.#{depth}.time") %>"
+              style="--category-start: <%= span[:start] %>%; --category-width: <%= span[:width] %>%;"
+              ><span class="research-depth-stop-label"><%= t("chatbot.research_depth.options.#{depth}.label") %></span></button>
+    <% end %>
+  </div>
+  <p class="research-depth-preview text-xs font-semibold text-gray-800 dark:text-gray-100" data-research-depth-preview aria-live="polite" aria-atomic="true"></p>
+</div>

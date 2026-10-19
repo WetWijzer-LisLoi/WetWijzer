@@ -28,6 +28,26 @@ export function panelNudgeIntoView(left, top, margin = 8) {
 const PANEL_BOTTOM_OFFSET = 72
 
 export const layoutMethods = {
+  // Mobile has no floating launcher. Return focus to the dock's Chat link,
+  // or its native reopen handle when the user has collapsed navigation.
+  _focusWidgetLauncher() {
+    if (this.hasWidgetTarget && this.widgetTarget.contains(document.activeElement)) {
+      document.activeElement?.blur?.()
+    }
+    const candidates = [
+      this.hasToggleButtonTarget ? this.toggleButtonTarget : null,
+      document.getElementById('mobile-chat-btn'),
+      document.querySelector('#mobile-bottom-bar > summary')
+    ]
+    for (const candidate of candidates) {
+      if (candidate?.isConnected && candidate.getClientRects().length &&
+          window.getComputedStyle(candidate).visibility !== 'hidden') {
+        candidate.focus()
+        return
+      }
+    }
+  },
+
   // Nudge the open panel back on screen after the bubble was dragged.
   //
   // Measured from layout boxes, never from the panel's own rect: on open the
@@ -76,13 +96,11 @@ export const layoutMethods = {
     this._panelFitObserver = new MutationObserver(() => this._fitPanelInViewport())
     this._panelFitObserver.observe(panel, { attributes: true, attributeFilter: ['class'] })
 
-    // The default panel has no height of its own, only `max-height`, so it
-    // grows with the conversation up to the 520px cap. Its bottom edge stays
-    // pinned, so a nudge measured when it opened is stale as soon as an answer
-    // lands and the header climbs back over the top of the window. Nothing
-    // else reports that growth: the class does not change, and `height: auto`
-    // fires no transition. Writing `right`/`bottom` cannot resize the panel,
-    // so this does not feed itself.
+    // The default panel fills the useful viewport height. A saved manual
+    // resize, maximize/restore, or a viewport change can still change that
+    // box without changing its class, so re-fit whenever its layout box moves.
+    // Writing `right`/`bottom` cannot resize the panel, so this does not feed
+    // itself.
     if (typeof ResizeObserver !== 'undefined') {
       this._panelFitSizeObserver = new ResizeObserver(() => this._fitPanelInViewport())
       this._panelFitSizeObserver.observe(panel)
@@ -119,6 +137,13 @@ export const layoutMethods = {
     }
   },
 
+  handleFabClick(event) {
+    // Native button activation covers narrow-window mouse users, touch taps
+    // (one synthesized click), keyboard and assistive technology. Desktop
+    // pointer releases are already handled by the drag state machine.
+    if (window.innerWidth < 768 || event.detail === 0) this.toggle()
+  },
+
   // Auto-resize widget textarea
 
   autoResizeWidget() {
@@ -137,17 +162,13 @@ export const layoutMethods = {
   // ═══════════════════════════════════════════════
 
   // Start dragging the FAB button itself (mousedown/touchstart on the circle)
-  // ALL interaction is handled via mousedown→mousemove→mouseup.
-  // Click event on FAB is removed - we handle open/close in mouseup.
+  // Desktop pointer interaction uses mousedown→mousemove→mouseup. Mobile
+  // and keyboard activation use the native click handler, without dragging.
 
   startFabDrag(event) {
-    if (window.innerWidth < 640) {
-      // Mobile: no drag, just toggle. A tap fires touchstart AND an emulated
-      // mousedown (~300ms later), both bound to this handler, and running toggle()
-      // twice makes the widget open then immediately auto-close on reopen. On a
-      // phone there is no real mouse, so ignore mousedown and act only on the tap.
-      if (event.type === 'mousedown') return
-      this.toggle()
+    if (window.innerWidth < 768) {
+      // Do not toggle or cancel touchstart: let the button emit its one
+      // native click. Mouse input is legitimate even at a phone-sized width.
       return
     }
     if (event.type === 'mousedown' && event.button !== 0) return
@@ -219,7 +240,7 @@ export const layoutMethods = {
     // same spot, and the FAB is still under it: that second pass through this
     // handler ran toggle() again, so from 640px up (tablets, phones in
     // landscape) a tap opened the widget and closed it straight away. The guard
-    // in startFabDrag only covers the no-drag path below 640px. Cancelling the
+    // native click handler covers the no-drag path below 768px. Cancelling the
     // touchend is what stops the browser emulating the mouse at all. Stateless
     // on purpose: a timestamp guard was tried and removed as unreliable.
     if (event?.type === 'touchend' && event.cancelable) event.preventDefault()

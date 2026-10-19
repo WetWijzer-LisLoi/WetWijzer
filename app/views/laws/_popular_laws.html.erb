@@ -10,8 +10,8 @@
           </svg>
           <%= case I18n.locale when :fr then 'Sources' when :de then 'Quellen' when :en then 'Sources' else 'Bronnen' end %>
         </h2>
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor" data-collapse-target="icon">
-          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
+        <svg xmlns="http://www.w3.org/2000/svg" class="search-section-chevron w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" data-collapse-target="icon" aria-hidden="true" focusable="false">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
       <% if I18n.locale == :en %>
@@ -50,7 +50,8 @@
     and its evidence-backed abbreviation YAML. Rails folds the TEMPLATE digest into the key
     but knows nothing about helpers, and the file store outlives a deploy - so a
     helper-only fix shipped green and reached nobody until this was added. %>
-<% cache ["popular_laws", "v15", I18n.locale, content_lang, collapsed,
+<% catalogue_date = Date.current %>
+<% cache ["popular_laws", "v16", I18n.locale, content_lang, collapsed, catalogue_date,
           laws_db_version, popular_laws_code_version,
           files_version(FisconetSearchService::FISCONET_DB_PATH,
                         ENV.fetch('JURISPRUDENCE_SOURCE_DB') { Rails.root.join('storage/jurisprudence.db') },
@@ -60,20 +61,14 @@
                         Rails.root.join('config/data/wvv_concordance.yml'))],
          expires_in: 1.day do %>
 <%
-  # Is this popular law abolished or empty? Looked up per link, memoised for
+  # Is this popular law repealed or unavailable? Looked up per link, memoised for
   # the render: one indexed probe on (numac, language_id) each, ~90 per render,
   # once a day per variant. It used to be one query over is_core = 1 laws, but
   # 37 of the 91 laws linked here are not flagged core, so an abolition of one
   # of those could never have struck it through.
   lang_id = current_language_id
-  abolished_lookup = Hash.new do |memo, numac|
-    memo[numac] = begin
-      Legislation.where(numac: numac, language_id: lang_id)
-                 .where('is_abolished = 1 OR is_empty_content = 1')
-                 .exists?
-    rescue StandardError
-      false
-    end
+  law_status_lookup = Hash.new do |memo, numac|
+    memo[numac] = popular_law_status(numac, language_id: lang_id, as_of: catalogue_date)
   end
 
   # Tax codes live in the fisconet corpus and their ids drift on merge, so the
@@ -85,19 +80,30 @@
   base_class = "text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-text) dark:hover:text-(--accent-400) transition-colors"
   # Helper to get the right classes for a given numac
   popular_law_class = ->(numac, extra: "") {
-    if abolished_lookup[numac]
+    if law_status_lookup[numac]
       "#{base_class} line-through text-gray-500 dark:text-gray-400 #{extra}".strip
     else
       "#{base_class} #{extra}".strip
     end
   }
   abolished_title = case I18n.locale
-                    when :fr then 'Plus en vigueur / indisponible'
-                    when :de then 'Nicht mehr in Kraft / nicht verfügbar'
-                    when :en then 'No longer in force / unavailable'
-                    else 'Niet meer van kracht / onbeschikbaar'
+                    when :fr then 'Abrogé (des dispositions transitoires peuvent encore être applicables)'
+                    when :de then 'Aufgehoben (Übergangsrecht kann weiterhin anwendbar sein)'
+                    when :en then 'Repealed (transitional rules may still apply)'
+                    else 'Opgeheven (overgangsrecht kan nog van toepassing zijn)'
                     end
-  popular_law_title = ->(numac) { abolished_lookup[numac] ? abolished_title : nil }
+  unavailable_title = case I18n.locale
+                      when :fr then 'Texte indisponible (ne signifie pas que la loi est abrogée)'
+                      when :de then 'Text nicht verfügbar (bedeutet nicht, dass das Gesetz aufgehoben ist)'
+                      when :en then 'Text unavailable (does not mean the law is repealed)'
+                      else 'Tekst niet beschikbaar (betekent niet dat de wet is opgeheven)'
+                      end
+  popular_law_title = ->(numac) {
+    case law_status_lookup[numac]
+    when :repealed then abolished_title
+    when :unavailable then unavailable_title
+    end
+  }
 
   # Recent-legislation type badge: the types table holds language-specific
   # ASCII codes ('wet', 'decret', 'arrete'); capitalising them put "Arrete" on
@@ -450,8 +456,8 @@
                       title: popular_law_title.('1867060850'),
                       class: popular_law_class.('1867060850', extra: 'flex flex-wrap items-baseline gap-2 group') do %>
             <span class="group-hover:underline"><%= popular_law_catalogue_title('1867060850', dutch: t('popular_laws.catalogue.criminal_code_1867', locale: :nl), french: t('popular_laws.catalogue.criminal_code_1867', locale: :fr)) %></span>
-            <%# This is deliberately not derived from is_abolished: the official
-                record remains unflagged although this catalogue entry is historical. %>
+            <%# The historical name stays explicit, independently of whether
+                its repeal has reached the importer's article-body flag. %>
             <%= popular_law_abbreviation_badge('1867060850') %>
           <% end %>
         </li>
@@ -1400,14 +1406,14 @@
       </div>
       <%
         recent_parl = recent_parliamentary_documents
-        parliament_labels = { 'kamer' => 'Kamer', 'senaat' => 'Senaat', 'vlaams' => 'Vlaams Parlement', 'brussels' => 'Brussels Parlement', 'waals' => 'Waals Parlement' }
+        parliament_aliases = { 'kamer' => 'chamber', 'senaat' => 'senate' }
       %>
       <% if recent_parl.any? %>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <% recent_parl.each do |p| %>
             <a href="<%= parliamentary_path(id: p[0]) %>" class="block p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-sky/10 hover:border-(--accent-400) transition-colors">
               <div class="font-medium text-gray-900 dark:text-blue-400 text-sm line-clamp-2"><%= (p[1] || p[3]).to_s.strip %></div>
-              <div class="text-xs text-gray-500 dark:text-gray-300 mt-1"><%= parliament_labels[p[2]] || p[2] %> • Dossier <%= p[3] %><% if p[4].present? %> • <%= p[4] %><% end %></div>
+              <div class="text-xs text-gray-500 dark:text-gray-300 mt-1"><%= t("public_navigation.parliaments.#{parliament_aliases.fetch(p[2], p[2])}", default: p[2]) %> • <%= t('public_navigation.dossier') %> <%= p[3] %><% if p[4].present? %> • <%= p[4] %><% end %></div>
             </a>
           <% end %>
         </div>
@@ -1485,7 +1491,7 @@
               <% book['sections'].each_with_index do |section, si| %>
                 <% section_heading = I18n.locale == :fr ? section['heading_fr'] : section['heading_nl'] %>
                 <% if book['sections'].size > 1 %>
-                  <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 capitalize tracking-wider mb-3 <%= 'mt-6' if si > 0 %>"><%= section_heading %></h4>
+                  <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider mb-3 <%= 'mt-6' if si > 0 %>"><%= section_heading %></h4>
                   <%# A section may carry a note explaining a discontinuity a reader would
                       otherwise misread - e.g. the zedenmisdrijven, whose old articles were
                       repealed in 2022 and replaced inside the OLD code before the new one. %>
@@ -1606,7 +1612,7 @@
                 anchors that do not exist. %>
             <% sw_concordance['sections'].each_with_index do |section, si| %>
               <% section_heading = I18n.locale == :fr ? section['heading_fr'] : section['heading_nl'] %>
-              <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 capitalize tracking-wider mb-3 <%= 'mt-6' if si > 0 %>"><%= section_heading %></h4>
+              <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider mb-3 <%= 'mt-6' if si > 0 %>"><%= section_heading %></h4>
               <%# A section may carry a note explaining a discontinuity a reader would
                   otherwise misread - e.g. the zedenmisdrijven, whose old articles were
                   repealed in 2022 and replaced inside the OLD code before the new one. %>
@@ -1670,7 +1676,7 @@
           <div class="px-2 py-4 sm:px-5 border-t border-gray-200 dark:border-gray-700"><%# px-2 on a phone: at 390px this card sits inside 88px of nested padding and the table box is only 268px wide, so 12px of it either side decides whether the reader can see the new-article column without swiping. %>
             <% wvv_concordance['sections'].each_with_index do |section, si| %>
               <% section_heading = I18n.locale == :fr ? section['heading_fr'] : section['heading_nl'] %>
-              <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 capitalize tracking-wider mb-3 <%= 'mt-6' if si > 0 %>"><%= section_heading %></h4>
+              <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider mb-3 <%= 'mt-6' if si > 0 %>"><%= section_heading %></h4>
               <%# A section may carry a note explaining a discontinuity a reader would
                   otherwise misread - e.g. the zedenmisdrijven, whose old articles were
                   repealed in 2022 and replaced inside the OLD code before the new one. %>

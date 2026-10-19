@@ -89,7 +89,14 @@ module LegalChatbot
       'loonbescherming' => ['loonbescherming', 'loonbeslag', 'loonoverdracht', 'saisie sur salaire', 'wage protection'],
       'gdpr_processor' => ['verwerker', 'verwerkersovereenkomst', 'gegevensverwerker', 'subverwerker',
                            'processor', 'data processor', 'sous-traitant', 'auftragsverarbeiter'],
-      'gdpr' => ['gdpr', 'avg', 'privacy', 'gegevensbescherming', 'rgpd', 'data protection', 'datenschutz', 'dpo', 'datalek']
+      'gdpr_retention' => ['bewaartermijn', 'opslagbeperking', 'sollicitatiegegevens', 'cv bewaren',
+                           'retention period', 'storage limitation', 'applicant data',
+                           'durée de conservation', 'limitation de conservation',
+                           'speicherdauer', 'speicherbegrenzung', 'bewerberdaten'],
+      'gdpr_direct_marketing' => ['spam calls', 'cold calls', 'unsolicited calls', 'telemarketing',
+                                  'ongevraagde telefoontjes', 'reclameoproepen',
+                                  'démarchage téléphonique', 'appels non sollicités',
+                                  'werbeanrufe', 'telefonwerbung']
     }.freeze
 
     # ── Semantic topic matching ──
@@ -225,9 +232,11 @@ module LegalChatbot
     def select_authoritative_sources(question)
       return [] if question.blank?
 
-      keyword_matched_keys(question.downcase).select do |key|
+      official = keyword_matched_keys(question.downcase).select do |key|
         contextually_applicable?(key, question)
-      end.flat_map { |key| @fact_provider.authoritative_sources_for(key) }.uniq { |source| source[:url] }
+      end.flat_map { |key| @fact_provider.authoritative_sources_for(key) }
+      (official + MortgageFinanceSources.sources_for(question) + CivilClaimGuidanceSources.sources_for(question))
+        .uniq { |source| source[:url] }
     rescue StandardError => e
       Rails.logger.warn("[REFSHEET] Official source selection failed: #{e.class}")
       []
@@ -289,12 +298,10 @@ module LegalChatbot
     def contextually_applicable?(key, question)
       q = question.to_s.downcase
 
-      processor_question = LegalFactProvider.gdpr_processor_question?(question)
-      return processor_question if key == LegalFactProvider::GDPR_PROCESSOR_TOPIC_KEY
-      # The Belgian 2018 Act supplements the EU regulation. For a processor
-      # definition/duties question, admitting its unrelated article numbers as
-      # an "AVG" fact is precisely the source-confusion failure we must avoid.
-      return false if key == 'gdpr' && processor_question
+      return LegalFactProvider.gdpr_processor_question?(question) if key == LegalFactProvider::GDPR_PROCESSOR_TOPIC_KEY
+      return LegalFactProvider.gdpr_retention_question?(question) if key == LegalFactProvider::GDPR_RETENTION_TOPIC_KEY
+      return LegalFactProvider.gdpr_direct_marketing_question?(question) if key == LegalFactProvider::GDPR_DIRECT_MARKETING_TOPIC_KEY
+      return CommercialWebsiteIntent.topic?(question) if key == LegalFactProvider::GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY
 
       # "opzeg(termijn)" is shared by employment, leases, insurance, telecom,
       # and subscriptions. Do not inject the employment ladder into a
@@ -422,9 +429,14 @@ module LegalChatbot
     # The (?:s|es|en|e|n)? suffix admits NL/FR plurals/inflections while still
     # rejecting compound continuations like "minimumloon".
     def keyword_matched_keys(q_down)
-      SECTION_KEYWORD_MAP.select do |_key, keywords|
+      keys = SECTION_KEYWORD_MAP.select do |_key, keywords|
         keywords.any? { |kw| q_down.match?(keyword_pattern(kw)) }
       end.keys
+      # Official EU packs use their bounded, deterministic topic classifiers.
+      # Descriptor keywords are not a second admission rule: otherwise normal
+      # phrasings such as "mijn bedrijf kan CV's bewaren" could be classified as
+      # retention while failing to receive any of its mandatory sources.
+      (keys + LegalFactProvider.required_official_topic_keys(q_down)).uniq
     end
 
     def keyword_pattern(keyword)

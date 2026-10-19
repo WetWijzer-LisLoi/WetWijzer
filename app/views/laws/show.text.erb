@@ -8,6 +8,12 @@ NUMAC: <%= @law.numac %>
 <%- if @law.respond_to?(:justel) && @law.justel.present? -%>
 Justel: <%= @law.justel %>
 <%- end -%>
+<%- if (fisconet_note = fisconet_text_source_note(@law.numac)) -%>
+<%= fisconet_note %>
+<%- if (fisconet_numac = FisconetSearchService.fisconet_numac_for_justel(@law.numac)).present? -%>
+<%= fisconet_history_pointer.join(' ') %>: <%= law_url(fisconet_numac) %>
+<%- end -%>
+<%- end -%>
 <%- if @german_notice -%>
 
 <%= raw @german_notice[:label] %>

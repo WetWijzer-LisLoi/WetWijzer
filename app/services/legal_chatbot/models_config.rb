@@ -16,9 +16,9 @@ require 'fileutils'
 #  4. HERE → REASONING_CAPABLE_MODELS   (auto-derived from provider - no manual edit)
 #  5. llm_client.rb → AZURE_DEPLOYMENT_NAMES   (if Azure deployment name ≠ model ID)
 #  6. llm_client.rb → mistral_model_id case    (if Mistral: internal ID → API model ID)
-#  7. llm_client.rb → bedrock_model_id case    (if Bedrock: internal ID → Bedrock ARN)
+#  7. HERE → :bedrock_inference_profile       (if Bedrock: exact geographic profile)
 #  8. index.html.erb  → auto-derived via REASONING_CAPABLE_MODELS (no manual edit)
-#  9. chatbot_controller.js → deep-think model names (line ~2326, display-name map)
+#  9. Browser model names and pricing cards → auto-derived from this registry
 # 10. api/chatbot_controller.rb → DEEP_ANALYSIS_MODELS (auto-derived - no manual edit)
 # 11. api/partner_controller.rb → DEEP_MODELS (auto-derived - no manual edit)
 # 12. legal_chatbot_service.rb → reasoning checks (auto-derived - no manual edit)
@@ -51,105 +51,161 @@ module LegalChatbot
     EMBEDDING_MODEL = 'text-embedding-3-large'
     EMBEDDING_DIMENSIONS = 3072 # Must match articles_large_pq.faiss
     CHAT_MODEL = 'mistral-small'
+    # The selection a fresh browser shows before any saved or explicit
+    # choice (owner 2026-10-18): Gebalanceerd with GPT-6 Luna at low effort,
+    # priced by the ordinary credit calculation. It is a rendering default
+    # only: saved preferences, explicit requests, CHAT_MODEL and the API's
+    # missing-parameter fallback are unchanged, and Mistral stays selectable.
+    UI_DEFAULT_SELECTION = { intelligence: 'genius', model: 'gpt-6-luna', reasoning_effort: 'low' }.freeze
+    # Deprecated IDs are rejected before billing so stale clients cannot be
+    # silently charged at a replacement model's price. Browser preferences
+    # migrate these IDs explicitly and then resubmit with the new tier/cost.
+    RETIRED_MODEL_REPLACEMENTS = {
+      'o4-mini' => 'gpt-6-luna',
+      'gpt-5-mini' => 'gpt-6-luna',
+      'gpt-5.6-luna' => 'gpt-6-luna',
+      'gpt-5' => 'gpt-6.1-sol',
+      'gpt-5.4' => 'gpt-6.1-sol',
+      'gpt-5.5' => 'gpt-6.1-sol',
+      'gpt-5.6-terra' => 'gpt-6.1-sol',
+      'gpt-5.6-sol' => 'gpt-6.1-sol',
+      'gpt-6-sol' => 'gpt-6.1-sol',
+      'mistral-large-3' => 'mistral-large-4',
+      'claude-4.5-haiku' => 'claude-haiku-5-5',
+      'claude-sonnet-4-6' => 'claude-sonnet-5-5',
+      'claude-opus-4-6' => 'claude-opus-5-5'
+    }.freeze
+    # Historical analytics rows outlive the active catalogue. Keep their
+    # provider classification explicit for reporting only; this map is never
+    # consulted by model selection or provider dispatch.
+    RETIRED_MODEL_PROVIDERS = {
+      'o4-mini' => :openai,
+      'gpt-5-mini' => :openai,
+      'gpt-5.6-luna' => :openai,
+      'gpt-5' => :openai,
+      'gpt-5.4' => :openai,
+      'gpt-5.5' => :openai,
+      'gpt-5.6-terra' => :openai,
+      'gpt-5.6-sol' => :openai,
+      'gpt-6-sol' => :openai,
+      'mistral-large-3' => :mistral,
+      'claude-4.5-haiku' => :bedrock,
+      'claude-sonnet-4-6' => :bedrock,
+      'claude-opus-4-6' => :bedrock
+    }.freeze
+    # Display-only metadata keeps past analytics readable. These IDs are not
+    # offered, authorized or dispatched by the active model catalogue.
+    RETIRED_MODEL_NAMES = {
+      'o4-mini' => 'o4-mini',
+      'gpt-5-mini' => 'GPT-5 Mini',
+      'gpt-5' => 'GPT-5',
+      'gpt-5.4' => 'GPT-5.4',
+      'gpt-5.5' => 'GPT-5.5',
+      'gpt-5.6-luna' => 'GPT-5.6 Luna',
+      'gpt-5.6-terra' => 'GPT-5.6 Terra',
+      'gpt-5.6-sol' => 'GPT-5.6 Sol',
+      'gpt-6-sol' => 'GPT-6 Sol',
+      'mistral-large-3' => 'Mistral Large 3',
+      'claude-4.5-haiku' => 'Claude Haiku 4.5',
+      'claude-sonnet-4-6' => 'Claude Sonnet 4.6',
+      'claude-opus-4-6' => 'Claude Opus 4.6'
+    }.freeze
     MAX_CONTEXT_ARTICLES = 12 # Increased from 5 for better topic coverage (May 2026 benchmark)
 
-    # The slider shows 4 intelligence tiers. Each tier has a base credit cost.
+    # Intelligence keys remain for API compatibility and canonical model grouping.
+    # Linked clients derive the bounded retrieval profile from the chosen model's
+    # group and select an exact supported reasoning variant independently.
+    # Each internal tier has a base credit cost.
     # intelligence=smart|genius|mastermind|omniscient (internal keys)
     #   → maps to model(s) + base credit cost (per-model overrides possible)
-    # Users can optionally choose a reasoning depth (Low/Medium/High) which adds
-    # a credit surcharge (defined in REASONING_LEVELS below).
+    # Legacy clients choose Low/Medium/High directly. New clients choose an
+    # independent research-depth profile when linked_research is absent, mapped
+    # to supported reasoning effort and its existing surcharge.
     #
-    # Access: Mistral Small/Large in Slim (I) = any user with credits.
-    #          GPT-5 Mini and every model in Geniaal (II), Meesterbrein (III),
-    #          and Alwetend (IV) = Pro subscribers with sufficient credits.
-    #          A purchased credit balance never bypasses a model's :pro tier.
+    # Access: all deployed models and supported reasoning variants through
+    #          Meesterbrein/Grondig are available to accounts with credits.
+    #          Alwetend/Uitgebreid remains Pro; pending models stay unavailable.
     #
     # ARCHITECTURE NOTE (June 2026 - 4-Tier Consolidation + Per-Model Credits):
     #   Models within a tier can override the tier-level credit cost via :credits.
     #   credits_for_model(level, model) checks model-specific :credits first,
     #   then falls back to the tier's base :credits.
     #
-    #   Tier restructure (June 2026; prices reverified 23 July 2026):
-    #   Level I (1-2cr):     Mistral Small €0.004 (1cr), Mistral Large 3 €0.012 (2cr), GPT-5 Mini €0.010 (2cr)
-    #   Level II (4cr):      Claude Haiku 4.5 €0.027 (4cr), GPT-5.6 Luna €0.033 (4cr)
-    #   Level III (6cr):     GPT-5 €0.050, Claude Sonnet 4.6 €0.081, GPT-5.6 Terra €0.083 (all 6cr)
-    #   Level IV (12-13cr):  GPT-5.6 Sol €0.165 (13cr), Claude Opus 4.6 €0.135 (12cr)
+    #   Exact current per-model costs and credit prices are defined below.
     INTELLIGENCE_LEVELS = {
       'smart' => {
         credits: 1,
         tier: :free,
         icon: '',
         reasoning_effort: 'low',
-        supports_reasoning: true, # Mistral Small 4 + GPT-5 Mini support reasoning
+        supports_reasoning: true, # Mistral Small 4 supports reasoning
         tag: nil,
         labels: { nl: 'Slim', fr: 'Malin', de: 'Schlau', en: 'Smart' },
         descriptions: { nl: 'Snel & betrouwbaar', fr: 'Rapide & fiable', de: 'Schnell & zuverlässig', en: 'Fast & reliable' },
         default_model: 'mistral-small',
         models: {
-          'mistral-small' => { name: 'Mistral Small 4', tier: :free, credits: 1, estimated_seconds: 8 },
-          'mistral-large-3' => { name: 'Mistral Large 3', tier: :pro, credits: 2, estimated_seconds: 10 },
-          'gpt-5-mini' => { name: 'GPT-5 Mini', tier: :pro, credits: 2, estimated_seconds: 6 }
+          'mistral-small' => { name: 'Mistral Small 4', tier: :free, credits: 1, estimated_seconds: 8 }
         }
       },
       'genius' => {
-        # 4cr, not 3: at 3 credits this tier bought EUR 0.027-0.033 of model
-        # per query (0.0090-0.0110 per credit), the thinnest margin in the
-        # catalogue - Slim runs 0.0040-0.0060 and GPT-5 in Meesterbrein 0.0083.
-        # 4 credits puts Geniaal at 0.0067-0.0083, on the same curve as the
-        # tiers either side of it. (2026-08-14 credit-vs-cost audit.)
+        # A model-specific credit price overrides this tier fallback.
         credits: 4,
-        tier: :pro,
+        tier: :free,
         icon: '',
         reasoning_effort: 'medium',
-        supports_reasoning: true,    # Pro users can override reasoning depth
+        supports_reasoning: true,
         tag: nil,
         labels: { nl: 'Geniaal', fr: 'Génial', de: 'Genial', en: 'Genius' },
         descriptions: { nl: 'Diepgaande analyse', fr: 'Analyse approfondie', de: 'Tiefgehende Analyse', en: 'Deep analysis' },
         default: true,
-        default_model: 'gpt-5.6-luna',
+        default_model: 'gpt-6-luna',
         models: {
-          'gpt-5.6-luna' => { name: 'GPT-5.6 Luna', tier: :pro, credits: 4, estimated_seconds: 20 },
-          'claude-4.5-haiku' => { name: 'Claude Haiku 4.5', tier: :pro, credits: 4, estimated_seconds: 12 }
+          'gpt-6-luna' => { name: 'GPT-6 Luna', tier: :free, credits: 2, estimated_seconds: 20 },
+          'claude-haiku-5-5' => { name: 'Claude Haiku 5.5', tier: :free, credits: 2, estimated_seconds: 12 },
+          'mistral-large-4' => { name: 'Mistral Large 4', tier: :free, credits: 4, estimated_seconds: 14, preview: true }
         }
       },
       'mastermind' => {
         credits: 5,
-        tier: :subscriber,
+        tier: :free,
         icon: '',
-        reasoning_effort: 'medium', # GPT-5 sweet spot
-        supports_reasoning: true,   # Pro users can override reasoning depth
+        reasoning_effort: 'medium',
+        supports_reasoning: true,
         tag: nil,
         labels: { nl: 'Meesterbrein', fr: 'Cerveau', de: 'Meisterhirn', en: 'Mastermind' },
         descriptions: { nl: 'Uitgebreide analyse', fr: 'Analyse étendue', de: 'Umfassende Analyse', en: 'Extended analysis' },
-        default_model: 'gpt-5',
+        default_model: 'gpt-6.1-sol',
         models: {
-          # 6cr, not 7: GPT-5 is the CHEAPEST model in this tier (EUR 0.050/q
-          # vs Sonnet 0.081 and Terra 0.083) yet charged the most credits -
-          # customers paid a premium for our cheapest option. The 2026-08-13
-          # tax-40 A/B also put it level with Sonnet on quality (both GOOD 13/40;
-          # MLE 0.0% vs 5.0%), so the surcharge had no quality justification
-          # either. Lowered rather than raising the others: no customer pays
-          # more, and the incentive now points at the model that costs us least.
-          'gpt-5' => { name: 'GPT-5', tier: :pro, credits: 6, estimated_seconds: 20 },
-          'claude-sonnet-4-6' => { name: 'Claude Sonnet 4.6', tier: :pro, credits: 6, estimated_seconds: 20 },
-          'gpt-5.6-terra' => { name: 'GPT-5.6 Terra', tier: :pro, credits: 6, estimated_seconds: 15 }
+          'claude-sonnet-5-5' => { name: 'Claude Sonnet 5.5', tier: :free, credits: 6, estimated_seconds: 20 },
+          'gpt-6.1-sol' => { name: 'GPT-6.1 Sol', tier: :free, credits: 6, estimated_seconds: 15 }
         }
       },
       'omniscient' => {
         credits: 12,
         tier: :subscriber,
         icon: '',
-        reasoning_effort: 'medium', # Both GPT-5.6 Sol and Claude Opus 4.6 support reasoning
+        reasoning_effort: 'medium', # Claude Opus 5.5 supports adaptive reasoning
         supports_reasoning: true,
         tag: nil,
         labels: { nl: 'Alwetend', fr: 'Omniscient', de: 'Allwissend', en: 'Omniscient' },
         descriptions: { nl: 'Geavanceerde modelopties', fr: 'Options de modèles avancées', de: 'Fortgeschrittene Modelloptionen', en: 'Advanced model options' },
-        default_model: 'claude-opus-4-6',
+        default_model: 'claude-opus-5-5',
         models: {
-          'gpt-5.6-sol' => { name: 'GPT-5.6 Sol', tier: :pro, credits: 13, estimated_seconds: 15 },
-          'claude-opus-4-6' => { name: 'Claude Opus 4.6', tier: :pro, credits: 12, estimated_seconds: 25 }
+          'claude-opus-5-5' => { name: 'Claude Opus 5.5', tier: :pro, credits: 12, estimated_seconds: 25 }
         }
       }
+    }.freeze
+
+    INTELLIGENCE_RESEARCH_DEPTHS = {
+      'smart' => 'quick', 'genius' => 'balanced',
+      'mastermind' => 'thorough', 'omniscient' => 'extensive'
+    }.freeze
+
+    # Research categories describe a retrieval budget, not a demonstrated
+    # ranking of answer quality. Extra supported thinking on Small is a
+    # balanced combination; low/none keeps its quick budget and base price.
+    MODEL_REASONING_RESEARCH_DEPTHS = {
+      'mistral-small' => { 'high' => 'balanced' }.freeze
     }.freeze
 
     # Reasoning levels with credit surcharges.
@@ -189,93 +245,81 @@ module LegalChatbot
       }
     }.freeze
 
+    # Bounded research profiles are independent of selected source categories.
+    # Linked clients derive the profile from the canonical model group; older
+    # clients may still supply a depth directly under the same access boundary.
+    # These are bounded relevance budgets, not promised source counts. Every
+    # stop keeps the same citation/quote/scope guards and mandatory legal packs.
+    # Retrieval itself has no surcharge; only an actually supported/used
+    # reasoning mode uses the existing +0/+1/+2 credit schedule.
+    RESEARCH_DEPTHS = {
+      'quick' => {
+        reasoning_effort: 'low', max_article_chars: 1800,
+        legislation: 5, jurisprudence: 1, parliamentary: 1, fisconet: 3, regional: 3,
+        legislation_candidates: 15, keyword_candidates: 5, keyword_passes: 1,
+        jurisprudence_candidates: 3, parliamentary_candidates: 3,
+        fisconet_candidates: 4, regional_candidates: 3, lexical_quota: 2
+      }.freeze,
+      'balanced' => {
+        reasoning_effort: 'medium', max_article_chars: 2000,
+        legislation: 6, jurisprudence: 2, parliamentary: 2, fisconet: 3, regional: 3,
+        legislation_candidates: 18, keyword_candidates: 7, keyword_passes: 1,
+        jurisprudence_candidates: 4, parliamentary_candidates: 4,
+        fisconet_candidates: 5, regional_candidates: 3, lexical_quota: 2
+      }.freeze,
+      'thorough' => {
+        reasoning_effort: 'high', max_article_chars: 2200,
+        legislation: 7, jurisprudence: 2, parliamentary: 2, fisconet: 3, regional: 3,
+        legislation_candidates: 21, keyword_candidates: 9, keyword_passes: 2,
+        jurisprudence_candidates: 5, parliamentary_candidates: 5,
+        fisconet_candidates: 6, regional_candidates: 6, lexical_quota: 3
+      }.freeze,
+      'extensive' => {
+        reasoning_effort: 'high', max_article_chars: 2500,
+        legislation: 8, jurisprudence: 3, parliamentary: 3, fisconet: 3, regional: 3,
+        legislation_candidates: 24, keyword_candidates: 12, keyword_passes: 3,
+        jurisprudence_candidates: 6, parliamentary_candidates: 6,
+        fisconet_candidates: 7, regional_candidates: 6, lexical_quota: 3
+      }.freeze
+    }.freeze
+
     # Available AI models with tier requirements and credit costs
     AVAILABLE_MODELS = {
-      'gpt-5-mini' => {
-        name: 'GPT-5 Mini',
+      'gpt-6-luna' => {
+        name: 'GPT-6 Luna',
         provider: :openai,
-        reasoning_support: :openai_effort, # reasoning_effort: low/medium/high
-        tier: :pro,
+        reasoning_support: :openai_effort,
+        tier: :free,
         deployed: true,
-        data_region: :eu, # DataZoneStandard; processing may route within Microsoft's EU boundary
+        data_region: :eu,
         deployment_type: :data_zone_standard,
+        deployment_version: '2026-09-22',
+        azure_capacity_units: 100,
         extra_credits: 0,
-        input_usd_per_million_tokens: 0.275,
-        output_usd_per_million_tokens: 2.20,
-        cost_per_query_eur: 0.010, # 2026-07-22 retail rates total $0.0099 at the standard 12k-input/3k-output envelope
-        description_nl: 'GPT-5 Mini - snel & betaalbaar',
-        description_fr: 'GPT-5 Mini - rapide & abordable',
-        description_en: 'GPT-5 Mini - fast & affordable'
+        input_usd_per_million_tokens: 0.12,
+        output_usd_per_million_tokens: 0.60,
+        cost_per_query_eur: 0.004,
+        description_nl: 'GPT-6 Luna - efficiënt redeneren',
+        description_fr: 'GPT-6 Luna - raisonnement efficace',
+        description_en: 'GPT-6 Luna - efficient reasoning'
       },
-      'gpt-5.6-luna' => {
-        name: 'GPT-5.6 Luna',
+      'gpt-6.1-sol' => {
+        name: 'GPT-6.1 Sol',
         provider: :openai,
-        reasoning_support: :openai_effort, # reasoning_effort: low/medium/high
-        tier: :pro,
+        reasoning_support: :openai_effort,
+        tier: :free,
         deployed: true,
         data_region: :eu, # DataZoneStandard; processing may route within Microsoft's EU boundary
         deployment_type: :data_zone_standard,
-        deployment_version: '2026-07-09',
+        deployment_version: '2026-09-29',
         azure_capacity_units: 100,
-        extra_credits: 2,
-        input_usd_per_million_tokens: 1.10,
-        output_usd_per_million_tokens: 6.60,
-        cost_per_query_eur: 0.033, # 2026-07-23 retail rates total $0.033 at the standard 12k/3k envelope
-        description_nl: 'GPT-5.6 Luna - efficiënt redeneren',
-        description_fr: 'GPT-5.6 Luna - raisonnement efficace',
-        description_en: 'GPT-5.6 Luna - efficient reasoning'
-      },
-      'gpt-5' => {
-        name: 'GPT-5',
-        provider: :openai,
-        reasoning_support: :openai_effort,
-        tier: :pro,
-        deployed: true,
-        data_region: :eu, # DataZoneStandard; processing may route within Microsoft's EU boundary
-        deployment_type: :data_zone_standard,
-        extra_credits: 2,
-        input_usd_per_million_tokens: 1.375,
-        output_usd_per_million_tokens: 11.00,
-        cost_per_query_eur: 0.050, # 2026-07-22 retail rates total $0.0495 at the standard 12k/3k envelope
-        description_nl: 'GPT-5 - uitgebreide analyse',
-        description_fr: 'GPT-5 - analyse étendue',
-        description_en: 'GPT-5 - extended analysis'
-      },
-      'gpt-5.6-terra' => {
-        name: 'GPT-5.6 Terra',
-        provider: :openai,
-        reasoning_support: :openai_effort,
-        tier: :pro,
-        deployed: true,
-        data_region: :eu, # DataZoneStandard; processing may route within Microsoft's EU boundary
-        deployment_type: :data_zone_standard,
-        deployment_version: '2026-07-09',
-        azure_capacity_units: 30,
-        extra_credits: 5,
-        input_usd_per_million_tokens: 2.75,
-        output_usd_per_million_tokens: 16.50,
-        cost_per_query_eur: 0.083, # 2026-07-23 retail rates total $0.0825 at the standard 12k/3k envelope
-        description_nl: 'GPT-5.6 Terra - krachtig en betrouwbaar',
-        description_fr: 'GPT-5.6 Terra - puissant et fiable',
-        description_en: 'GPT-5.6 Terra - powerful and reliable'
-      },
-      'gpt-5.6-sol' => {
-        name: 'GPT-5.6 Sol',
-        provider: :openai,
-        reasoning_support: :openai_effort,
-        tier: :pro,
-        deployed: true,
-        data_region: :eu, # DataZoneStandard; processing may route within Microsoft's EU boundary
-        deployment_type: :data_zone_standard,
-        deployment_version: '2026-07-09',
-        azure_capacity_units: 100,
-        extra_credits: 12,
-        input_usd_per_million_tokens: 5.50,
-        output_usd_per_million_tokens: 33.00,
-        cost_per_query_eur: 0.165, # 2026-07-23 retail rates total $0.165 at the standard 12k/3k envelope
-        description_nl: 'GPT-5.6 Sol - geavanceerde analyse',
-        description_fr: 'GPT-5.6 Sol - analyse avancée',
-        description_en: 'GPT-5.6 Sol - advanced analysis'
+        extra_credits: 0,
+        input_usd_per_million_tokens: 2.40,
+        output_usd_per_million_tokens: 12.00,
+        cost_per_query_eur: 0.072,
+        description_nl: 'GPT-6.1 Sol - geavanceerde analyse',
+        description_fr: 'GPT-6.1 Sol - analyse avancée',
+        description_en: 'GPT-6.1 Sol - advanced analysis'
       },
       'mistral-small' => {
         name: 'Mistral Small 4',
@@ -296,77 +340,89 @@ module LegalChatbot
         description_fr: 'Mistral Small 4 - rapide · point de terminaison régional UE/AELE',
         description_en: 'Mistral Small 4 - fast · EU/EFTA regional endpoint'
       },
-      'mistral-large-3' => {
-        name: 'Mistral Large 3',
+      'mistral-large-4' => {
+        name: 'Mistral Large 4',
         provider: :mistral,
-        api_model: 'mistral-large-2512',
-        # Large 3 has no documented adjustable reasoning control. Do not send
-        # reasoning_effort or expose/charge the product reasoning selector.
+        api_model: 'mistral-large-4',
+        # Initial preview is deliberately fixed to documented non-reasoning
+        # mode. Never leave the provider default free to consume the answer
+        # envelope entirely on thinking, or charge an unsupported UI surcharge.
         reasoning_support: nil,
-        # No reasoning params, but completions are the slowest of the wired
-        # models: needs the long service timeout (see SLOW_COMPLETION_MODELS).
+        fixed_reasoning_effort: 'none',
         slow_completion: true,
-        tier: :pro, # Level I tier, but Pro-only since 2026-09-04 (owner: only Mistral Small is free)
-        deployed: true, # ✅ Level I tier - EU regional endpoint, €0.012/q (2cr model)
-        data_region: :eu, # Routed only through api.eu.mistral.ai; no global endpoint fallback
-        extra_credits: 1,
-        input_usd_per_million_tokens: 0.55,
-        output_usd_per_million_tokens: 1.65,
-        cost_per_query_eur: 0.012, # EU regional rates imply about $0.0116 at 12k/3k; keep a conservative €0.012 estimate
-        description_nl: 'Mistral Large - krachtige Europese AI',
-        description_fr: 'Mistral Large - IA européenne puissante',
-        description_en: 'Mistral Large - powerful European AI'
+        tier: :free,
+        deployed: true,
+        preview: true,
+        data_region: :eu,
+        extra_credits: 0,
+        input_usd_per_million_tokens: 1.496,
+        output_usd_per_million_tokens: 4.598,
+        cost_per_query_eur: 0.035,
+        description_nl: 'Mistral Large 4 - krachtige Europese AI (testversie)',
+        description_fr: 'Mistral Large 4 - IA européenne puissante (aperçu)',
+        description_en: 'Mistral Large 4 - powerful European AI (preview)'
       },
-      'claude-4.5-haiku' => {
-        name: 'Claude Haiku 4.5',
+      'claude-haiku-5-5' => {
+        name: 'Claude Haiku 5.5',
         provider: :bedrock,
-        # Haiku 4.5 supports fixed-budget extended thinking, not the adaptive
-        # output_config accepted by Sonnet 4.6 and Opus 4.6.
-        reasoning_support: :bedrock_budgeted,
-        tier: :pro,
-        deployed: true, # Bedrock EU geographic profile, invoked from Frankfurt
+        bedrock_inference_profile: 'eu.anthropic.claude-haiku-5-5',
+        # Claude 5.5 uses adaptive thinking; manual budget_tokens are rejected.
+        reasoning_support: :bedrock_adaptive,
+        tier: :free,
+        planned_intelligence_level: 'genius',
+        planned_credits: 2,
+        deployed: false, # Enable only after the WW Frankfurt runtime probe passes.
         data_region: :eu,
         extra_credits: 1,
-        input_usd_per_million_tokens: 1.10,
-        output_usd_per_million_tokens: 5.50,
-        cost_per_query_eur: 0.027, # Bedrock EU geography rates verified 2026-07-22: $1.10/MTok in + $5.50/MTok out
-        description_nl: 'Claude Haiku - snel & nauwkeurig',
-        description_fr: 'Claude Haiku - rapide & précis',
-        description_en: 'Claude Haiku - fast & accurate'
+        # WW PUBLIC EU offer verified 2026-10-11, USD per million tokens.
+        # Above 100k prompt tokens, both higher rates apply to the whole request.
+        input_usd_per_million_tokens: 0.11,
+        output_usd_per_million_tokens: 0.55,
+        long_context_threshold_tokens: 100_000,
+        long_context_input_usd_per_million_tokens: 0.55,
+        long_context_output_usd_per_million_tokens: 2.75,
+        cost_per_query_eur: 0.004, # Standard 12k/3k envelope at the conservative EUR/USD accounting floor.
+        description_nl: 'Claude Haiku 5.5 - snel & nauwkeurig',
+        description_fr: 'Claude Haiku 5.5 - rapide & précis',
+        description_en: 'Claude Haiku 5.5 - fast & accurate'
       },
-      'claude-sonnet-4-6' => {
-        name: 'Claude Sonnet 4.6',
+      'claude-sonnet-5-5' => {
+        name: 'Claude Sonnet 5.5',
         provider: :bedrock,
-        reasoning_support: :bedrock_adaptive, # thinking: {type: "adaptive", effort: low/medium/high}
-        tier: :pro,
-        deployed: true, # Bedrock EU geographic profile, invoked from Frankfurt
+        bedrock_inference_profile: 'eu.anthropic.claude-sonnet-5-5',
+        reasoning_support: :bedrock_adaptive, # thinking adaptive + output_config effort low/medium/high
+        tier: :free,
+        planned_intelligence_level: 'mastermind',
+        planned_credits: 6,
+        deployed: false, # Enable only after the WW Frankfurt runtime probe passes.
         data_region: :eu,
         extra_credits: 3,
-        input_usd_per_million_tokens: 3.30,
-        output_usd_per_million_tokens: 16.50,
-        cost_per_query_eur: 0.081, # Bedrock EU geography rates verified 2026-07-22: $3.30/MTok in + $16.50/MTok out
-        description_nl: 'Claude Sonnet - topkwaliteit analyse',
-        description_fr: 'Claude Sonnet - analyse de premier ordre',
-        description_en: 'Claude Sonnet - top-tier analysis'
+        input_usd_per_million_tokens: 2.20,
+        output_usd_per_million_tokens: 11.00,
+        cost_per_query_eur: 0.066, # WW PUBLIC EU offer; standard 12k/3k envelope with conservative FX.
+        description_nl: 'Claude Sonnet 5.5 - topkwaliteit analyse',
+        description_fr: 'Claude Sonnet 5.5 - analyse de premier ordre',
+        description_en: 'Claude Sonnet 5.5 - top-tier analysis'
       },
-      'claude-opus-4-6' => {
-        name: 'Claude Opus 4.6',
+      'claude-opus-5-5' => {
+        name: 'Claude Opus 5.5',
         provider: :bedrock,
-        reasoning_support: :bedrock_adaptive, # thinking: {type: "adaptive", effort: low/medium/high}
+        bedrock_inference_profile: 'eu.anthropic.claude-opus-5-5',
+        reasoning_support: :bedrock_adaptive, # Always on; output_config effort low/medium/high
         tier: :pro,
-        deployed: true, # Bedrock EU geographic profile, invoked from Frankfurt
+        planned_intelligence_level: 'omniscient',
+        planned_credits: 12,
+        deployed: false, # Enable only after the WW Frankfurt runtime probe passes.
         data_region: :eu,
         extra_credits: 11,
-        input_usd_per_million_tokens: 5.50,
-        output_usd_per_million_tokens: 27.50,
-        # Conservative EUR estimate for the configured 12k-input/3k-output
-        # envelope at the EU geographic profile's $5.50/$27.50 per MTok rate. The former
-        # €0.175 value accidentally retained an Opus 4.8 tokenizer uplift
-        # after the runtime was rolled back to 4.6.
-        cost_per_query_eur: 0.135,
-        description_nl: 'Claude Opus 4.6 - geavanceerde analyse',
-        description_fr: 'Claude Opus 4.6 - analyse avancée',
-        description_en: 'Claude Opus 4.6 - advanced analysis'
+        input_usd_per_million_tokens: 4.40,
+        output_usd_per_million_tokens: 22.00,
+        # WW PUBLIC EU offer; conservative 12k-input/3k-output envelope.
+        # Pre-I/O byte ceilings cover larger tokenizers and reasoning headroom.
+        cost_per_query_eur: 0.131,
+        description_nl: 'Claude Opus 5.5 - geavanceerde analyse',
+        description_fr: 'Claude Opus 5.5 - analyse avancée',
+        description_en: 'Claude Opus 5.5 - advanced analysis'
       }
     }.freeze
 
@@ -376,8 +432,8 @@ module LegalChatbot
     # Models that accept some form of reasoning control:
     #   :openai_effort   -> reasoning_effort: low/medium/high (Azure OpenAI)
     #   :mistral_effort  -> reasoning_effort: high/none (Mistral Small 4+)
-    #   :bedrock_budgeted -> thinking: {type: "enabled", budget_tokens: N} (Claude Haiku)
-    #   :bedrock_adaptive -> thinking: {type: "adaptive"} + output_config effort (Claude Sonnet/Opus)
+    #   :bedrock_budgeted -> legacy fixed-budget capability, not in the offered portfolio
+    #   :bedrock_adaptive -> thinking: {type: "adaptive"} + output_config effort (pending Claude 5.5)
     #
     # AUTO-DERIVED from AVAILABLE_MODELS[:reasoning_support]. When you add or remove
     # a model, this set updates automatically - no other files to touch.
@@ -498,7 +554,7 @@ module LegalChatbot
       def models_for_tier(tier)
         tier_level = TIER_HIERARCHY[tier.to_sym] || 0
         AVAILABLE_MODELS.select do |_key, config|
-          TIER_HIERARCHY[config[:tier]] <= tier_level
+          config[:deployed] != false && TIER_HIERARCHY[config[:tier]] <= tier_level
         end
       end
 
@@ -507,7 +563,7 @@ module LegalChatbot
         return true if model == CHAT_MODEL # Default always allowed
 
         config = AVAILABLE_MODELS[model]
-        return false unless config
+        return false unless config && config[:deployed] != false
 
         tier_level = TIER_HIERARCHY[tier.to_sym] || 0
         model_tier_level = TIER_HIERARCHY[config[:tier]] || 0
@@ -937,8 +993,11 @@ module LegalChatbot
         output = Integer(output_tokens)
         raise ArgumentError, 'Token counts must be non-negative' if input.negative? || output.negative?
 
-        input_rate = BigDecimal(config.fetch(:input_usd_per_million_tokens).to_s)
-        output_rate = BigDecimal(config.fetch(:output_usd_per_million_tokens).to_s)
+        long_context = config[:long_context_threshold_tokens] && input > config.fetch(:long_context_threshold_tokens)
+        input_rate_key = long_context ? :long_context_input_usd_per_million_tokens : :input_usd_per_million_tokens
+        output_rate_key = long_context ? :long_context_output_usd_per_million_tokens : :output_usd_per_million_tokens
+        input_rate = BigDecimal(config.fetch(input_rate_key).to_s)
+        output_rate = BigDecimal(config.fetch(output_rate_key).to_s)
         fx = BigDecimal(provider_budget_usd_to_eur_rate.to_s)
 
         # USD/MTok * tokens * EUR/USD equals micro-euro units directly.
@@ -1138,7 +1197,23 @@ module LegalChatbot
         end
       end
 
-      # Resolve intelligence level to model ID (e.g. 'genius' → 'gpt-5.6-luna')
+      def ui_default_selection
+        UI_DEFAULT_SELECTION
+      end
+
+      # The fresh selection's displayed and reserved price: the model's own
+      # credits plus its effort surcharge, never the tier fallback.
+      def ui_default_credits
+        selection = UI_DEFAULT_SELECTION
+        credits_for_model(selection[:intelligence], selection[:model]) +
+          reasoning_surcharge_for_model(selection[:model], selection[:reasoning_effort])
+      end
+
+      def ui_default_research_depth
+        research_depth_for_combination(UI_DEFAULT_SELECTION[:model], UI_DEFAULT_SELECTION[:reasoning_effort])
+      end
+
+      # Resolve intelligence level to its current default model ID.
       def model_for_intelligence(level)
         config = INTELLIGENCE_LEVELS[level.to_s]
         return CHAT_MODEL unless config
@@ -1153,9 +1228,9 @@ module LegalChatbot
 
       # Get credit cost for a specific model within a tier.
       # Returns model-specific :credits if defined, otherwise falls back to tier :credits.
-      # Example: credits_for_model('mastermind', 'gpt-5') → 7
-      #          credits_for_model('omniscient', 'gpt-5.6-sol') → 13
-      #          credits_for_model('genius') → 3 (no model override, uses tier base)
+      # Example: credits_for_model('mastermind', 'gpt-6.1-sol') → 6
+      #          credits_for_model('genius', 'gpt-6-luna') → 2
+      #          credits_for_model('genius') → 4 (no model override, uses tier base)
       def credits_for_model(level, model = nil)
         tier_config = INTELLIGENCE_LEVELS[level.to_s]
         return 1 unless tier_config
@@ -1177,6 +1252,36 @@ module LegalChatbot
         INTELLIGENCE_LEVELS.dig(level.to_s, :models)&.key?(model.to_s) == true
       end
 
+      def intelligence_level_for_model(model)
+        INTELLIGENCE_LEVELS.find { |_level, config| config.fetch(:models).key?(model.to_s) }&.first
+      end
+
+      def research_depth_for_intelligence(level)
+        INTELLIGENCE_RESEARCH_DEPTHS[level.to_s]
+      end
+
+      def research_depth_for_model(model)
+        research_depth_for_intelligence(intelligence_level_for_model(model))
+      end
+
+      def research_depth_for_combination(model, reasoning_effort = nil)
+        depth = research_depth_for_model(model)
+        return unless depth
+
+        effective = effective_reasoning_effort_for_model(model, reasoning_effort)
+        MODEL_REASONING_RESEARCH_DEPTHS.dig(model.to_s, effective) || depth
+      end
+
+      # The ruler is a curated shortcut, not the complete model selector.
+      # Small/high and Large 4 (owner 2026-10-18, every mode) remain
+      # supported, priced and selectable in Settings, Large 4 marked as a
+      # preview (Testversie); neither is a ruler recommendation.
+      def research_bar_combination?(model, reasoning_effort = nil)
+        return false if model.to_s == 'mistral-large-4'
+
+        !(model.to_s == 'mistral-small' && reasoning_effort.to_s == 'high')
+      end
+
       def canonical_credits_for_model(model, fallback: nil)
         canonical_prices = INTELLIGENCE_LEVELS.values.filter_map do |config|
           config.dig(:models, model.to_s, :credits)
@@ -1185,10 +1290,10 @@ module LegalChatbot
       end
 
       # Get total credits including reasoning surcharge
-      # e.g. credits_with_reasoning('genius', 'medium', 'gpt-5.6-luna') → 3 + 1 = 4
-      # e.g. credits_with_reasoning('genius', 'medium', 'claude-4.5-haiku') → 4
+      # e.g. credits_with_reasoning('genius', 'medium', 'gpt-6-luna') → 2 + 1 = 3
+      # e.g. credits_with_reasoning('genius', 'medium', 'claude-haiku-5-5') → 2 + 1 = 3 (when deployed)
       # e.g. credits_with_reasoning('smart', 'medium', 'mistral-small') → 1 (unsupported, not charged)
-      # e.g. credits_with_reasoning('omniscient', 'medium', 'gpt-5.6-sol') → 13 + 1 = 14
+      # e.g. credits_with_reasoning('mastermind', 'medium', 'gpt-6.1-sol') → 6 + 1 = 7
       def credits_with_reasoning(level, reasoning = nil, model = nil)
         base = credits_for_model(level, model)
         return base unless reasoning.present? && REASONING_LEVELS.key?(reasoning.to_s)
@@ -1233,6 +1338,25 @@ module LegalChatbot
       # Validate reasoning level
       def valid_reasoning_level?(level)
         REASONING_LEVELS.key?(level.to_s)
+      end
+
+      # nil deliberately means legacy client/service behaviour. Supplied but
+      # malformed values select the bounded default rather than accepting an
+      # arbitrary effort, budget or expensive provider setting.
+      def normalize_research_depth(value)
+        return nil if value.nil?
+
+        depth = value.is_a?(String) || value.is_a?(Symbol) ? value.to_s.strip : ''
+        RESEARCH_DEPTHS.key?(depth) ? depth : 'balanced'
+      end
+
+      def reasoning_effort_for_research_depth(depth, model:, reasoning_access: true)
+        normalized = normalize_research_depth(depth)
+        return nil unless normalized
+        return nil if normalized == 'extensive' && !reasoning_access
+
+        requested = RESEARCH_DEPTHS.fetch(normalized).fetch(:reasoning_effort)
+        effective_reasoning_effort_for_model(model, requested)
       end
 
       # Check if a specific model supports any form of reasoning control.

@@ -52,6 +52,7 @@ module Api
     def terminate_chatbot_query_thread(thread)
       return unless thread
 
+      thread[:chatbot_cancelled] = true if thread.alive?
       thread.kill if thread.alive?
       thread.join(1)
     rescue StandardError => e

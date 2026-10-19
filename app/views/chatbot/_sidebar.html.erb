@@ -1,7 +1,7 @@
   <%# Sample-question panel: right column on desktop, below chat on mobile.
       It stays in normal document flow; only its question list scrolls. %>
   <%# Collapsed state: hidden panel + floating re-open tab %>
-  <div id="sidebar-wrapper" class="lg:w-[350px] lg:shrink-0 lg:self-stretch lg:overflow-hidden lg:flex lg:flex-col mt-6 lg:mt-28 transition-all duration-300 ease-in-out">
+  <div id="sidebar-wrapper" class="lg:w-[350px] lg:shrink-0 lg:self-stretch lg:overflow-hidden lg:flex lg:flex-col mt-6 lg:mt-0 transition-all duration-300 ease-in-out">
   <%# Deliberately NOT a <form>: the CSP (no unsafe-inline) blocks inline
       onsubmit handlers, so Enter in the search field would trigger a real
       GET submission and wipe the conversation. A div can't be submitted. %>
@@ -59,10 +59,10 @@
       </svg>
       <span>
         <%= case I18n.locale
-            when :fr then "Vous ne trouvez pas votre question ? Recherchez ci-dessus ou posez votre propre question dans le chatbot."
-            when :de then "Ihre Frage ist nicht dabei? Suchen Sie oben oder stellen Sie Ihre eigene Frage im Chatbot."
-            when :en then "Cannot find your question? Search above or ask your own question in the chatbot."
-            else "Uw vraag niet gevonden? Zoek hierboven of stel uw eigen vraag in de chatbot."
+            when :fr then "Posez votre propre question dans le chatbot."
+            when :de then "Stellen Sie Ihre eigene Frage im Chatbot."
+            when :en then "Ask your own question in the chatbot."
+            else "Stel uw eigen vraag in de chatbot."
             end %>
       </span>
     </div>
@@ -75,5 +75,5 @@
           class="hidden fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-[#1e293b] border-r-0 rounded-l-lg shadow-lg px-1.5 py-3 text-gray-500 dark:text-gray-400 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 group"
           title="<%= case I18n.locale when :fr then 'Afficher les questions' when :de then 'Fragen anzeigen' when :en then 'Show questions' else 'Vragen tonen' end %>">
     <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7M19 19l-7-7 7-7"/></svg>
-    <span style="writing-mode: vertical-rl; text-orientation: mixed;" class="text-[10px] font-medium mt-1.5 tracking-wider capitalize"><%= case I18n.locale when :fr then 'Questions' when :de then 'Fragen' when :en then 'Questions' else 'Vragen' end %></span>
+    <span style="writing-mode: vertical-rl; text-orientation: mixed;" class="text-[10px] font-medium mt-1.5 tracking-wider"><%= case I18n.locale when :fr then 'Questions' when :de then 'Fragen' when :en then 'Questions' else 'Vragen' end %></span>
   </button>

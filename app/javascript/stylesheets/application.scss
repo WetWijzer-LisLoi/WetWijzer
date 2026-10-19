@@ -4,6 +4,11 @@
 @import 'themes/accent';
 @import 'components/theme-components';
 @import 'components/global-border-fixes';
+@import 'components/mobile-dock';
+@import 'components/source-detail-controls';
+@import 'components/source-card-controls';
+@import 'components/pricing-model-layout';
+@import 'components/research-depth';
 
 /* ===========================================
  * Dark mode: use .dark class, NOT @media prefers-color-scheme
@@ -1109,7 +1114,7 @@ html, body {
 .gs-section-label {
   font-size: 0.6875rem;
   font-weight: 600;
-  text-transform: capitalize;
+  text-transform: none;
   letter-spacing: 0.05em;
   color: #9ca3af;
 }
@@ -1384,9 +1389,9 @@ html, body {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid #e5e7eb;
+  gap: 0.4rem 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 0;
 }
 
 .dark .chat-topbar { border-color: #1e293b; }
@@ -1426,6 +1431,24 @@ html, body {
   align-items: center;
   gap: 0.75rem;
   margin-left: auto;
+}
+.chat-topbar-actions > div { gap: 0.2rem; }
+.chat-topbar-actions button { min-width: 36px; min-height: 36px; justify-content: center; border-radius: 6px; }
+.chat-topbar-actions button:hover { background: var(--accent-active-bg, rgba(100,116,139,.08)); }
+.chat-topbar-actions #export-dropdown-menu button { justify-content: flex-start; }
+.chatbot-settings-body select { min-width: 0; max-width: 100%; min-height: 36px; }
+.chatbot-settings-body .source-checkbox { min-height: 32px; }
+.chatbot-composer-row { align-items: flex-end; }
+.chatbot-composer-row textarea { min-width: 0; min-height: 68px; line-height: 1.5; }
+.chatbot-composer-row .send-button { min-height: 44px; flex-shrink: 0; box-shadow: none; }
+.chatbot-fineprint { margin-top: 4px; font-size: 9px; line-height: 1.45; color: var(--text-muted, #64748b); }
+@media (max-width: 639px) {
+  .chat-topbar-actions { width: 100%; margin-left: 0; }
+  .chat-topbar-actions > div { justify-content: space-between; width: 100%; }
+  .chat-topbar-actions button { min-width: 44px; min-height: 44px; }
+  .chatbot-settings-body select, .chatbot-settings-body .source-checkbox { min-height: 44px; }
+  .chatbot-composer-row textarea { min-height: 92px; }
+  .chat-topbar-cost { margin-left: auto; }
 }
 
 .chatbot-settings-body {

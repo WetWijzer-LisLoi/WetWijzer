@@ -4,9 +4,9 @@
 <div class="max-w-6xl mx-auto px-4">
   <!-- Header with count -->
   <div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-900 dark:text-blue-400 mb-2 flex items-center gap-3">
-      <span class="text-4xl">🏛️</span>
-      <% case I18n.locale when :fr %>Travaux Préparatoires<% when :de %>Gesetzgebungsvorarbeiten<% when :en %>Parliamentary Works<% else %>Parlementaire Voorbereidingen<% end %>
+    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-blue-400 mb-2 flex items-center gap-3">
+      <span class="text-4xl shrink-0" aria-hidden="true">🏛️</span>
+      <span class="min-w-0 [overflow-wrap:anywhere]"><% case I18n.locale when :fr %>Travaux Préparatoires<% when :de %>Gesetzgebungsvorarbeiten<% when :en %>Parliamentary Works<% else %>Parlementaire Voorbereidingen<% end %></span>
     </h1>
     <p class="text-lg text-gray-600 dark:text-gray-300">
       <% case I18n.locale
@@ -105,7 +105,8 @@
       <!-- Main search bar -->
       <div class="flex flex-col sm:flex-row gap-4 mb-6">
         <div class="flex-1 relative">
-          <input type="text" name="q" value="<%= @query %>" 
+          <label for="parl-query" class="sr-only"><%= t('search') %></label>
+          <input type="text" name="q" id="parl-query" value="<%= @query %>"
                  class="w-full pl-4 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600/50 dark:bg-gray-800 dark:text-gray-300 focus:border-(--accent-400) focus:ring-2 focus:ring-(--accent-200) dark:focus:ring-(--accent-500)/30 transition-all"
                  placeholder="<%= case I18n.locale when :fr then 'Titre, numéro de dossier...' when :de then 'Titel, Dossiernummer...' when :en then 'Title, dossier number...' else 'Titel, dossiernummer...' end %>">
         </div>
@@ -120,10 +121,10 @@
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
           <!-- Parliament -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label for="parl-parliament" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 [overflow-wrap:anywhere]">
               <% case I18n.locale when :de %>Parlament<% when :en %>Parliament<% else %>Parlement<% end %>
             </label>
-            <select name="parliament" class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600/50 dark:bg-gray-800 dark:text-gray-300 text-sm focus:ring-2 focus:ring-(--accent-500)">
+            <select name="parliament" id="parl-parliament" class="w-full min-w-0 py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600/50 dark:bg-gray-800 dark:text-gray-300 text-sm focus:ring-2 focus:ring-(--accent-500)">
               <option value=""><%= case I18n.locale when :fr then 'Tous' when :de then 'Alle' when :en then 'All' else 'Alle' end %></option>
 
               <% @parliaments.each do |parl| %>
@@ -134,10 +135,10 @@
 
           <!-- Legislature -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label for="parl-legislature" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 [overflow-wrap:anywhere]">
               <% case I18n.locale when :fr %>Législature<% when :de %>Legislaturperiode<% when :en %>Legislature<% else %>Legislatuur<% end %>
             </label>
-            <select name="legislature" class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600/50 dark:bg-gray-800 dark:text-gray-300 text-sm focus:ring-2 focus:ring-(--accent-500)">
+            <select name="legislature" id="parl-legislature" class="w-full min-w-0 py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600/50 dark:bg-gray-800 dark:text-gray-300 text-sm focus:ring-2 focus:ring-(--accent-500)">
               <option value=""><%= case I18n.locale when :fr then 'Toutes' when :de then 'Alle' when :en then 'All' else 'Alle' end %></option>
               <% (@legislatures || []).each do |leg| %>
                 <option value="<%= leg %>" <%= 'selected' if @legislature.to_i == leg %>><%= leg %></option>
@@ -147,10 +148,10 @@
 
           <!-- Year -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label for="parl-year" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 [overflow-wrap:anywhere]">
               <% case I18n.locale when :fr %>Année<% when :de %>Jahr<% when :en %>Year<% else %>Jaar<% end %>
             </label>
-            <select name="year" class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600/50 dark:bg-gray-800 dark:text-gray-300 text-sm focus:ring-2 focus:ring-(--accent-500)">
+            <select name="year" id="parl-year" class="w-full min-w-0 py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600/50 dark:bg-gray-800 dark:text-gray-300 text-sm focus:ring-2 focus:ring-(--accent-500)">
               <option value=""><%= case I18n.locale when :fr then 'Toutes' when :de then 'Alle' when :en then 'All' else 'Alle' end %></option>
               <% @years.each do |y| %>
                 <option value="<%= y %>" <%= 'selected' if @year.to_i == y %>><%= y %></option>
@@ -160,20 +161,20 @@
 
           <!-- Sorting -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label for="parl-sort" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 [overflow-wrap:anywhere]">
               <% case I18n.locale when :fr %>Trier<% when :de %>Sortieren<% when :en %>Sort<% else %>Sorteren<% end %>
             </label>
-            <select name="sort" class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600/50 dark:bg-gray-800 dark:text-gray-300 text-sm focus:ring-2 focus:ring-(--accent-500)">
+            <select name="sort" id="parl-sort" class="w-full min-w-0 py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600/50 dark:bg-gray-800 dark:text-gray-300 text-sm focus:ring-2 focus:ring-(--accent-500)">
               <option value="date_desc" <%= 'selected' if @sort == 'date_desc' %>><%= case I18n.locale when :fr then 'Plus récent' when :de then 'Neueste zuerst' when :en then 'Newest first' else 'Nieuwste eerst' end %></option>
               <option value="date_asc" <%= 'selected' if @sort == 'date_asc' %>><%= case I18n.locale when :fr then 'Plus ancien' when :de then 'Älteste zuerst' when :en then 'Oldest first' else 'Oudste eerst' end %></option>
             </select>
           </div>
 
           <!-- Clear filters -->
-          <div class="flex items-end">
+          <div class="col-span-2 md:col-span-1 flex items-end">
             <% if @query.present? || @parliament.present? || @year.present? || @legislature.present? || @numac.present? %>
               <a href="<%= parliamentary_work_path %>" 
-                 class="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors">
+                 data-source-clear-filters class="inline-flex min-h-[44px] sm:min-h-0 px-2 sm:px-0 items-center gap-1 text-sm text-gray-500 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -233,11 +234,12 @@
       <div class="space-y-4 p-4">
         <% @documents.each do |doc| %>
           <a href="<%= parliamentary_path(doc[:id]) %>" 
+             data-source-result="parliamentary"
              class="block p-5 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:border-(--accent-400) dark:hover:border-(--accent-400) hover:shadow-xl transition-all duration-200 group overflow-hidden">
             
             <!-- Top row: Parliament badge + Document type + Date -->
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center gap-2 text-sm flex-wrap">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2 text-sm flex-wrap min-w-0 [overflow-wrap:anywhere]" data-source-result-meta>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-(--accent-100) text-(--accent-700) dark:bg-(--accent-500)/20 dark:text-(--accent-400)">
                   <%= parl_labels[doc[:parliament]] || doc[:parliament]&.capitalize %>
                 </span>
@@ -271,26 +273,26 @@
             
             <%# Document title – pass full doc for content-based extraction when title is generic %>
             <% cleaned_title = clean_parliamentary_title_display(doc[:title], doc[:dossier_number], doc: doc) %>
-            <h3 class="font-semibold text-gray-900 dark:text-blue-400 text-base group-hover:text-(--accent-600) dark:group-hover:text-(--accent-400) transition-colors mb-1.5 line-clamp-2">
+            <h3 class="font-semibold text-gray-900 dark:text-blue-400 text-base group-hover:text-(--accent-600) dark:group-hover:text-(--accent-400) transition-colors mb-1.5 line-clamp-2 [overflow-wrap:anywhere]">
               <%= cleaned_title %>
             </h3>
 
             <%# 2-line content description (cleaned of OCR artifacts) %>
             <% cleaned_desc = doc[:description].present? ? clean_parliamentary_description(doc[:description]) : '' %>
             <% if cleaned_desc.present? %>
-              <p class="text-sm text-gray-500 dark:text-gray-300/70 mb-2 leading-relaxed line-clamp-2">
+              <p class="text-sm text-gray-500 dark:text-gray-300/70 mb-2 leading-relaxed line-clamp-2 [overflow-wrap:anywhere]">
                 <%= cleaned_desc %>
               </p>
             <% end %>
             
             <!-- Bottom row: dossier number -->
-            <div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-300/50">
+            <div class="flex flex-wrap items-center gap-2 text-xs text-gray-400 dark:text-gray-300/50" data-source-result-reference>
               <% if doc[:dossier_number].present? %>
-                <span class="font-mono">📁 <%= doc[:dossier_number] %></span>
+                <span class="font-mono min-w-0 max-w-full [overflow-wrap:anywhere]">📁 <%= doc[:dossier_number] %></span>
               <% end %>
               <% if doc[:document_number].present? && doc[:document_number] != doc[:dossier_number] %>
-                <span class="text-gray-300 dark:text-blue-400/20">|</span>
-                <span class="font-mono">📄 <%= doc[:document_number] %></span>
+                <span class="text-gray-300 dark:text-blue-400/20" aria-hidden="true">|</span>
+                <span class="font-mono min-w-0 max-w-full [overflow-wrap:anywhere]">📄 <%= doc[:document_number] %></span>
               <% end %>
             </div>
           </a>
@@ -311,12 +313,14 @@
                else %>Pagina <span class="font-semibold"><%= @page %></span> van <span class="font-semibold"><%= @total_pages %></span><%
             end %>
           </div>
-          <div class="flex items-center gap-1">
+          <nav class="flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-end gap-1 max-w-full" aria-label="<%= t('aria.pagination') %>" data-source-pagination="parliamentary">
             <% if @page > 1 %>
               <a href="<%= parliamentary_work_path(filter_params.merge(page: 1)) %>"
-                 class="px-3 py-1.5 text-sm text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10 rounded transition-colors">«</a>
+                 aria-label="<%= case I18n.locale when :fr then 'Première page' when :de then 'Erste Seite' when :en then 'First page' else 'Eerste pagina' end %>"
+                 class="inline-flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 px-3 py-1.5 text-sm text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10 rounded transition-colors">«</a>
               <a href="<%= parliamentary_work_path(filter_params.merge(page: @page - 1)) %>"
-                 class="px-3 py-1.5 text-sm text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10 rounded transition-colors">‹</a>
+                 rel="prev" aria-label="<%= case I18n.locale when :fr then 'Page précédente' when :de then 'Vorherige Seite' when :en then 'Previous page' else 'Vorige pagina' end %>"
+                 class="inline-flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 px-3 py-1.5 text-sm text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10 rounded transition-colors">‹</a>
             <% end %>
             <% 
               pages_to_show = [1]
@@ -330,20 +334,22 @@
                 <span class="px-2 text-gray-400">…</span>
               <% end %>
               <% if p == @page %>
-                <span class="px-3 py-1.5 bg-(--accent-600-solid) text-white text-sm rounded-lg font-medium"><%= p %></span>
+                <span aria-current="page" class="inline-flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 px-3 py-1.5 bg-(--accent-600-solid) text-white text-sm rounded-lg font-medium"><%= p %></span>
               <% else %>
                 <a href="<%= parliamentary_work_path(filter_params.merge(page: p)) %>"
-                   class="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10 rounded-lg transition-colors"><%= p %></a>
+                   class="inline-flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10 rounded-lg transition-colors"><%= p %></a>
               <% end %>
               <% prev_page = p %>
             <% end %>
             <% if @page < @total_pages %>
               <a href="<%= parliamentary_work_path(filter_params.merge(page: @page + 1)) %>"
-                 class="px-3 py-1.5 text-sm text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10 rounded transition-colors">›</a>
+                 rel="next" aria-label="<%= case I18n.locale when :fr then 'Page suivante' when :de then 'Nächste Seite' when :en then 'Next page' else 'Volgende pagina' end %>"
+                 class="inline-flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 px-3 py-1.5 text-sm text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10 rounded transition-colors">›</a>
               <a href="<%= parliamentary_work_path(filter_params.merge(page: @total_pages)) %>"
-                 class="px-3 py-1.5 text-sm text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10 rounded transition-colors">»</a>
+                 aria-label="<%= case I18n.locale when :fr then 'Dernière page' when :de then 'Letzte Seite' when :en then 'Last page' else 'Laatste pagina' end %>"
+                 class="inline-flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 px-3 py-1.5 text-sm text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10 rounded transition-colors">»</a>
             <% end %>
-          </div>
+          </nav>
         </div>
       </div>
     <% end %>

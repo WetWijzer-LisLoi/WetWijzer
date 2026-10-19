@@ -210,8 +210,8 @@ fr:
   title_details: "titre "
   toc: "table des matières "
   toc_summary:
-    text: "Cette loi a une longue table des matières de %{count} éléments. Elle figure en entier, avec une recherche, dans le panneau latéral."
-    open: "Ouvrir la table des matières"
+    text: "La table des matières ci-dessus compte %{count} éléments. Faites-la défiler ou cherchez dans le panneau latéral."
+    open: "Rechercher dans le panneau latéral"
     to_text: "Aller au texte"
     print: "La table des matières complète (%{count} éléments) figure sur la page web."
   updates: "Ce texte modifie le(s) texte(s) suivant(s) "
@@ -426,6 +426,7 @@ fr:
     tagline: "Moteur de recherche open-source pour la législation et la jurisprudence belges"
     contact_us: "Contactez-nous :"
     github_tooltip: "Voir le code source sur GitHub"
+    version_tooltip: "Version de l'application"
     support_tooltip: "Soutenez ce projet"
     support_us: "Soutenez-nous"
     terms: "Conditions d'utilisation"
@@ -459,6 +460,9 @@ fr:
   switch_to_dutch: "NL"
 
   chatbot:
+    model_coming_soon: "Bientôt disponible"
+    model_preferences_loading_notice: "Votre préférence de modèle n'a pas encore pu être chargée. Choisissez un modèle avant d'envoyer votre question."
+    model_unavailable_notice: "Ce modèle sera bientôt disponible. Choisissez un modèle disponible pour envoyer votre question."
     noscript: "L'assistant juridique construit ses réponses en direct et ne fonctionne qu'avec JavaScript. Activez JavaScript pour poser une question."
     messages: "Messages du chat"
     title: "%{brand} Chatbot Juridique"
@@ -481,6 +485,7 @@ fr:
     feedback_negative: "Pas utile"
     error_connection: "Erreur de connexion. Veuillez réessayer."
     error_required: "La question est obligatoire"
+    error_too_long: "La question est trop longue (%{count} caractères, maximum %{max})"
     limit_exceeded: "Vous n'avez plus de crédits. Achetez des crédits ou passez à Pro."
     capacity_limit: "Le chatbot a temporairement atteint sa limite de capacité. Veuillez réessayer plus tard."
     upgrade_required: "Passez à Pro ou achetez des crédits pour continuer."

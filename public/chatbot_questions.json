@@ -1248,7 +1248,7 @@
   {
     "nl": "Landingsbaan tijdskrediet?",
     "category": "SOCIALE ZEKERHEID",
-    "en": "Landing strip time credit?",
+    "en": "End-of-career time credit (landingsbaan)?",
     "de": "Landingsbaan beim Zeitkredit?",
     "fr": "Landingsbaan et crédit-temps ?"
   },
@@ -1526,11 +1526,11 @@
     "de": "DNA-Test zur Feststellung der Abstammung?"
   },
   {
-    "nl": "Afstamming meemoeder?",
+    "nl": "Hoe wordt de afstamming van een meemoeder vastgesteld?",
     "category": "FAMILIERECHT",
-    "en": "Descent of the mother?",
-    "fr": "Filiation de la mère sociale ?",
-    "de": "Abstammung der Mitmutter?"
+    "en": "How is a co-mother's parentage established?",
+    "fr": "Comment la filiation de la coparente est-elle établie ?",
+    "de": "Wie wird die Abstammung von der Mitmutter festgestellt?"
   },
   {
     "nl": "Adoptie procedure België?",
@@ -1673,11 +1673,11 @@
     "de": "Testament widerrufen?"
   },
   {
-    "nl": "Schenking voor notaris?",
+    "nl": "Moet een schenking bij een notaris gebeuren?",
     "category": "FAMILIERECHT",
-    "en": "Gift for notary?",
-    "fr": "Donation devant notaire ?",
-    "de": "Erfordert eine Schenkung die Mitwirkung eines Notars?"
+    "en": "Does a gift have to be made before a notary?",
+    "fr": "Une donation doit-elle se faire devant notaire ?",
+    "de": "Muss eine Schenkung vor einem Notar erfolgen?"
   },
   {
     "nl": "Wanneer is een handgift rechtsgeldig?",
@@ -2275,10 +2275,10 @@
     "de": "Worin besteht der Unterschied zwischen Untersuchungshaft und Hausarrest?"
   },
   {
-    "nl": "Wat is een Voortgezette Opleiding voor Volwassenen?",
+    "nl": "Wat is vrijheid onder voorwaarden (VOV)?",
     "category": "STRAFRECHT",
-    "en": "What is a VOV?",
-    "fr": "Qu'est-ce qu'un VOV ?",
+    "en": "What is release on conditions (VOV)?",
+    "fr": "Qu'est-ce que la liberté sous conditions ?",
     "de": "Was ist eine VOV?"
   },
   {
@@ -2371,13 +2371,6 @@
     "en": "Is racism punishable?",
     "fr": "Le racisme est-il pénalement réprimé ?",
     "de": "Ist Rassismus strafbar?"
-  },
-  {
-    "nl": "Wat is het verschil tussen een BV en een NV?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "en": "Difference between BV and NV?",
-    "fr": "Différence entre une BV (SRL) et une NV (SA) ?",
-    "de": "Was ist der Unterschied zwischen einer BV und einer NV?"
   },
   {
     "nl": "Oprichten BV vereisten?",
@@ -3334,9 +3327,9 @@
   {
     "nl": "Wat is de carensdag bij ziekte?",
     "category": "ARBEIDSRECHT",
-    "en": "Sick leave day?",
-    "fr": "Jour de carence en cas de maladie ?",
-    "de": "Besteht ein Karenztag bei Krankheit?"
+    "en": "What is the waiting day in case of illness?",
+    "fr": "Qu'est-ce que le jour de carence en cas de maladie ?",
+    "de": "Was ist der Karenztag bei Krankheit?"
   },
   {
     "nl": "Medisch attest termijn?",
@@ -3927,11 +3920,11 @@
     "de": "Einkommensersatzleistung?"
   },
   {
-    "nl": "Tegemoetkoming hulp derden?",
+    "nl": "Wat is de tegemoetkoming voor hulp van derden?",
     "category": "SOCIALE ZEKERHEID",
-    "en": "Assistance for third parties?",
-    "fr": "Allocation pour l'aide de tiers ?",
-    "de": "Zuschuss für Hilfe durch Dritte?"
+    "en": "What is the allowance for help from a third person?",
+    "fr": "Qu'est-ce que l'allocation pour l'aide d'une tierce personne ?",
+    "de": "Was ist die Zulage für die Hilfe einer Drittperson?"
   },
   {
     "nl": "Parkeerkaart handicap?",
@@ -4050,259 +4043,259 @@
     "category": "SOCIALE ZEKERHEID",
     "en": "Prosthesis reimbursement?",
     "fr": "Remboursement d'une prothèse ?",
-    "de": "Terugbetaling prothese? -> Erstattung von Prothesen?"
+    "de": "Erstattung von Prothesen?"
   },
   {
     "nl": "Rolstoel terugbetaling?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Wheelchair reimbursement?",
     "fr": "Remboursement d'un fauteuil roulant ?",
-    "de": "Terugbetaling rolstoel? -> Erstattung von Rollstühlen?"
+    "de": "Erstattung von Rollstühlen?"
   },
   {
     "nl": "Hoortoestel terugbetaling?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Hearing aid reimbursement?",
     "fr": "Remboursement d'un appareil auditif ?",
-    "de": "Terugbetaling hoortoestel? -> Erstattung von Hörgeräten?"
+    "de": "Erstattung von Hörgeräten?"
   },
   {
     "nl": "Dialyse terugbetaling?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Dialysis reimbursement?",
     "fr": "Remboursement de la dialyse ?",
-    "de": "Terugbetaling dialyse? -> Erstattung von Dialysebehandlungen?"
+    "de": "Erstattung von Dialysebehandlungen?"
   },
   {
     "nl": "Chemotherapie terugbetaling?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Chemotherapy reimbursement?",
     "fr": "Remboursement de la chimiothérapie ?",
-    "de": "Terugbetaling chemotherapie? -> Erstattung von Chemotherapie?"
+    "de": "Erstattung von Chemotherapie?"
   },
   {
     "nl": "Wordt IVF terugbetaald door het ziekenfonds?",
     "category": "SOCIALE ZEKERHEID",
     "en": "IVF reimbursement?",
     "fr": "Remboursement de la FIV ?",
-    "de": "Terugbetaling IVF? -> Erstattung von In-vitro-Fertilisation (IVF)?"
+    "de": "Erstattung von In-vitro-Fertilisation (IVF)?"
   },
   {
     "nl": "Vruchtbaarheidsbehandeling?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Fertility treatment?",
     "fr": "Traitement de fertilité ?",
-    "de": "Vruchtbaarheidsbehandeling? -> Fruchtbarkeitsbehandlung?"
+    "de": "Fruchtbarkeitsbehandlung?"
   },
   {
     "nl": "Revalidatie terugbetaling?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Rehabilitation reimbursement?",
     "fr": "Remboursement de la rééducation ?",
-    "de": "Revalidatie terugbetaling? -> Erstattung von Rehabilitation?"
+    "de": "Erstattung von Rehabilitation?"
   },
   {
     "nl": "Logopedie terugbetaling?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Speech therapy reimbursement?",
     "fr": "Remboursement de l'orthophonie ?",
-    "de": "Logopedie terugbetaling? -> Erstattung von Logopädie?"
+    "de": "Erstattung von Logopädie?"
   },
   {
     "nl": "Ergotherapie terugbetaling?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Occupational therapy reimbursement?",
     "fr": "Remboursement de l'ergothérapie ?",
-    "de": "Ergotherapie terugbetaling? -> Erstattung von Ergotherapie?"
+    "de": "Erstattung von Ergotherapie?"
   },
   {
     "nl": "Podologie terugbetaling?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Podiatry reimbursement?",
     "fr": "Remboursement de la podologie ?",
-    "de": "Podologie terugbetaling? -> Erstattung von Podologie?"
+    "de": "Erstattung von Podologie?"
   },
   {
     "nl": "Diëtist terugbetaling?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Dietitian reimbursement?",
     "fr": "Remboursement d'un diététicien ?",
-    "de": "Diëtist terugbetaling? -> Erstattung von Diätetik?"
+    "de": "Erstattung von Diätetik?"
   },
   {
     "nl": "Osteopaat terugbetaling?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Osteopath reimbursement?",
     "fr": "Remboursement d'un ostéopathe ?",
-    "de": "Osteopaat terugbetaling? -> Erstattung von Osteopathie?"
+    "de": "Erstattung von Osteopathie?"
   },
   {
     "nl": "Chiropractor terugbetaling?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Chiropractor reimbursement?",
     "fr": "Remboursement d'un chiropracteur ?",
-    "de": "Chiropractor terugbetaling? -> Erstattung von Chiropraktik?"
+    "de": "Erstattung von Chiropraktik?"
   },
   {
     "nl": "Wat betekent het dat een arts geconventioneerd is?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Convention doctor?",
     "fr": "Médecin conventionné ?",
-    "de": "Conventie arts? -> Konventionsarzt?"
+    "de": "Konventionsarzt?"
   },
   {
-    "nl": "Geconventioneerde arts?",
+    "nl": "Wat is een geconventioneerde arts?",
     "category": "SOCIALE ZEKERHEID",
-    "en": "Conventional doctor?",
-    "fr": "Médecin conventionné ?",
-    "de": "Geconventioneerde arts? -> Konventionierter Arzt?"
+    "en": "What is a contracted (conventioned) doctor?",
+    "fr": "Qu'est-ce qu'un médecin conventionné ?",
+    "de": "Was ist ein konventionierter Arzt?"
   },
   {
     "nl": "Ereloonsupplementen ziekenhuis?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Honorarium supplements hospital?",
     "fr": "Suppléments d'honoraires à l'hôpital ?",
-    "de": "Ereloonsupplementen ziekenhuis? -> Honorarsupplemente im Krankenhaus?"
+    "de": "Honorarsupplemente im Krankenhaus?"
   },
   {
     "nl": "Kamersupplement ziekenhuis?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Room supplement hospital?",
     "fr": "Supplément de chambre à l'hôpital ?",
-    "de": "Kamersupplement ziekenhuis? -> Zimmerzuschlag im Krankenhaus?"
+    "de": "Zimmerzuschlag im Krankenhaus?"
   },
   {
     "nl": "Forfait chronisch zieken?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Flat rate chronic illness?",
     "fr": "Forfait pour malades chroniques ?",
-    "de": "Forfait chronisch zieken? -> Pauschale für chronisch Kranke?"
+    "de": "Pauschale für chronisch Kranke?"
   },
   {
     "nl": "Zorgtraject diabetes?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Care trajectory diabetes?",
     "fr": "Parcours de soins pour le diabète ?",
-    "de": "Zorgtraject diabetes? -> Versorgungsprogramm für Diabetes?"
+    "de": "Versorgungsprogramm für Diabetes?"
   },
   {
     "nl": "Elektronisch voorschrift?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Electronic prescription?",
     "fr": "Ordonnance électronique ?",
-    "de": "Elektronisch voorschrift? -> Elektronisches Rezept?"
+    "de": "Elektronisches Rezept?"
   },
   {
     "nl": "Terugbetaling generiek medicijn?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Reimbursement generic medicine?",
     "fr": "Remboursement d'un médicament générique ?",
-    "de": "Terugbetaling generiek medicijn? -> Erstattung von Generika?"
+    "de": "Erstattung von Generika?"
   },
   {
     "nl": "Voorschrijven op stofnaam?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Prescribing by substance name?",
     "fr": "Prescrire sous dénomination commune internationale (DCI) ?",
-    "de": "Voorschrijven op stofnaam? -> Verschreibung nach Wirkstoffname?"
+    "de": "Verschreibung nach Wirkstoffname?"
   },
   {
     "nl": "Magistrale bereiding?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Magistral preparation?",
     "fr": "Préparation magistrale ?",
-    "de": "Magistrale bereiding? -> Magistrale Zubereitung?"
+    "de": "Magistrale Zubereitung?"
   },
   {
     "nl": "Hoe werkt de ziekenhuisapotheek en de prijzen?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Hospital pharmacy?",
     "fr": "Pharmacie hospitalière ?",
-    "de": "Ziekenhuisapotheek? -> Krankenhausapotheke?"
+    "de": "Krankenhausapotheke?"
   },
   {
     "nl": "Huwelijksvoorwaarden België?",
     "category": "FAMILIERECHT",
     "en": "Marriage conditions Belgium?",
     "fr": "Contrat de mariage en Belgique ?",
-    "de": "Huwelijksvoorwaarden België? -> Ehevertrag in Belgien?"
+    "de": "Ehevertrag in Belgien?"
   },
   {
     "nl": "Toestemming ouders huwelijk?",
     "category": "FAMILIERECHT",
     "en": "Parental consent marriage?",
     "fr": "Consentement des parents pour le mariage ?",
-    "de": "Toestemming ouders huwelijk? -> Zustimmung der Eltern zur Ehe?"
+    "de": "Zustimmung der Eltern zur Ehe?"
   },
   {
     "nl": "Wat zijn de huwelijksbeletselen in België?",
     "category": "FAMILIERECHT",
     "en": "Marriage impediment?",
     "fr": "Empêchement au mariage ?",
-    "de": "Huwelijksbeletsel? -> Ehehindernis?"
+    "de": "Ehehindernis?"
   },
   {
     "nl": "Nietigverklaring huwelijk?",
     "category": "FAMILIERECHT",
     "en": "Annulment of marriage?",
     "fr": "Déclaration de nullité du mariage ?",
-    "de": "Nietigverklaring huwelijk? -> Feststellung der Nichtigkeit der Ehe?"
+    "de": "Feststellung der Nichtigkeit der Ehe?"
   },
   {
     "nl": "Wat is een putatief huwelijk en wat zijn de gevolgen?",
     "category": "FAMILIERECHT",
     "en": "Putative marriage?",
     "fr": "Mariage putatif ?",
-    "de": "Putatief huwelijk? -> Putative Ehe?"
+    "de": "Putative Ehe?"
   },
   {
     "nl": "Hoe beschermt de wet tegen een gedwongen huwelijk?",
     "category": "FAMILIERECHT",
     "en": "Forced marriage?",
     "fr": "Mariage forcé ?",
-    "de": "Gedwongen huwelijk? -> Zwangsheirat?"
+    "de": "Zwangsheirat?"
   },
   {
     "nl": "Huwelijk onder voorwaarde?",
     "category": "FAMILIERECHT",
     "en": "Marriage under condition?",
     "fr": "Mariage sous condition ?",
-    "de": "Huwelijk onder voorwaarde? -> Ehe unter Bedingung?"
+    "de": "Ehe unter Bedingung?"
   },
   {
     "nl": "Hoe wordt het huwelijksdomicilie bepaald?",
     "category": "FAMILIERECHT",
     "en": "Marriage domicile?",
     "fr": "Domicile conjugal ?",
-    "de": "Huwelijksdomicilie? -> Ehedomizil?"
+    "de": "Ehedomizil?"
   },
   {
     "nl": "Gezinswoning bescherming?",
     "category": "FAMILIERECHT",
     "en": "Family home protection?",
     "fr": "Protection du logement familial ?",
-    "de": "Gezinswoning bescherming? -> Schutz der Familienwohnung?"
+    "de": "Schutz der Familienwohnung?"
   },
   {
     "nl": "Bescherming echtelijke woning?",
     "category": "FAMILIERECHT",
     "en": "Protection of marital home?",
     "fr": "Protection du domicile conjugal ?",
-    "de": "Bescherming echtelijke woning? -> Schutz der ehelichen Wohnung?"
+    "de": "Schutz der ehelichen Wohnung?"
   },
   {
     "nl": "Hoofdelijke aansprakelijkheid gehuwden?",
     "category": "FAMILIERECHT",
     "en": "Joint liability of spouses?",
     "fr": "Responsabilité conjointe et solidaire des époux ?",
-    "de": "Hoofdelijke aansprakelijkheid gehuwden? -> Gesamtschuldnerische Haftung der Ehegatten?"
+    "de": "Gesamtschuldnerische Haftung der Ehegatten?"
   },
   {
     "nl": "Huishoudelijke schulden huwelijk?",
     "category": "FAMILIERECHT",
     "en": "Household debts marriage?",
     "fr": "Dettes ménagères dans le mariage ?",
-    "de": "Huishoudelijke schulden huwelijk? -> Haushaltsverbindlichkeiten in der Ehe?"
+    "de": "Haushaltsverbindlichkeiten in der Ehe?"
   },
   {
     "nl": "Verdeling schulden echtscheiding?",
@@ -5047,11 +5040,11 @@
     "de": "Quellensteuerskalen (bedrijfsvoorheffing)?"
   },
   {
-    "nl": "Vrijstelling doorstorting BV?",
+    "nl": "Hoe werkt de vrijstelling van doorstorting van bedrijfsvoorheffing?",
     "category": "FISCAAL",
-    "en": "Exemption for BV contributions?",
-    "fr": "Exonération du versement pour une SRL ?",
-    "de": "Befreiung von der Abführung der Quellensteuer (bedrijfsvoorheffing)?"
+    "en": "How does the exemption from remitting payroll withholding tax work?",
+    "fr": "Comment fonctionne la dispense de versement du précompte professionnel ?",
+    "de": "Wie funktioniert die Befreiung von der Zahlung des Berufssteuervorabzugs?"
   },
   {
     "nl": "Wetenschappelijk onderzoek vrijstelling?",
@@ -5145,18 +5138,18 @@
     "de": "Registrierungssteuer für eine Wohnung?"
   },
   {
-    "nl": "Verkooprecht onroerend goed?",
+    "nl": "Wat is het verkooprecht op onroerend goed?",
     "category": "FISCAAL",
-    "en": "Sales tax on real estate?",
-    "fr": "Droit de vente sur les biens immobiliers ?",
-    "de": "Verkaufsrecht für Immobilien?"
+    "en": "What is the registration duty on the sale of real estate?",
+    "fr": "Qu'est-ce que le droit de vente sur un bien immobilier ?",
+    "de": "Was ist die Registrierungsgebühr beim Verkauf einer Immobilie?"
   },
   {
     "nl": "Wanneer heb ik recht op het klein beschrijf bij vastgoed?",
     "category": "FISCAAL",
-    "en": "Small description?",
-    "fr": "Petite transcription ?",
-    "de": "Kleine Eintragung?"
+    "en": "When am I entitled to the 'klein beschrijf' (reduced registration duties) on property?",
+    "fr": "Quand ai-je droit au « klein beschrijf » (droits d’enregistrement réduits) pour un bien immobilier ?",
+    "de": "Wann habe ich beim Immobilienkauf Anspruch auf den „klein beschrijf“ (ermäßigte Registrierungsgebühren)?"
   },
   {
     "nl": "Meeneembaarheid registratierechten?",
@@ -5245,7 +5238,7 @@
   {
     "nl": "Uitonverdeeldheidtreding?",
     "category": "FISCAAL",
-    "en": "Unallocated entry?",
+    "en": "Leaving joint ownership (uitonverdeeldheidtreding)?",
     "fr": "Sortie de l'indivision ?",
     "de": "Austritt aus dem ungeteilten Miteigentum?"
   },
@@ -6372,9 +6365,9 @@
   {
     "nl": "Hoe werkt de sperperiode voor de solden?",
     "category": "ALGEMEEN",
-    "en": "Cooling-off period sales?",
-    "fr": "Période de blocage pour les soldes ?",
-    "de": "Sperrperiode für Schlussverkäufe?"
+    "en": "How does the waiting period before the sales work?",
+    "fr": "Comment fonctionne la période d'attente avant les soldes ?",
+    "de": "Wie funktioniert die Sperrfrist vor dem Schlussverkauf?"
   },
   {
     "nl": "Misleidende reclame?",
@@ -6778,7 +6771,7 @@
   {
     "nl": "Zijn giften aan goede doelen fiscaal aftrekbaar?",
     "en": "Are donations to charities tax-deductible?",
-    "fr": "Les dons aux Å“uvres caritatives sont-ils déductibles fiscalement?",
+    "fr": "Les dons aux œuvres caritatives sont-ils déductibles fiscalement?",
     "category": "FISCAAL",
     "de": "Sind Spenden an gemeinnützige Organisationen steuerlich absetzbar?"
   },
@@ -6791,10 +6784,10 @@
   },
   {
     "nl": "Hoe werkt de bedrijfsvoorheffing?",
-    "en": "How does the corporate withholding tax work?",
-    "fr": "Comment fonctionne le précompte professionnel?",
+    "en": "How does payroll withholding tax work?",
+    "fr": "Comment fonctionne le précompte professionnel ?",
     "category": "FISCAAL",
-    "de": "Wie funktioniert der Lohnsteuerabzug bzw. die Quellensteuer auf Arbeitsentgelt?"
+    "de": "Wie funktioniert der Berufssteuervorabzug?"
   },
   {
     "nl": "Wat zijn de fiscale voordelen van een groepsverzekering?",
@@ -7274,7 +7267,7 @@
   },
   {
     "nl": "Wat is een datalek en wat moet ik doen als het gebeurt?",
-    "en": "Wat is een datalek?",
+    "en": "What is a data breach and what should I do if it happens?",
     "fr": "Qu'est-ce qu'une violation de données?",
     "category": "ALGEMEEN",
     "de": "Was ist eine Verletzung des Schutzes personenbezogener Daten?"
@@ -8369,28 +8362,28 @@
     "category": "ARBEIDSRECHT - VAKANTIE",
     "en": "What is palliative leave?",
     "fr": "Qu'est-ce que le congé palliatif ?",
-    "de": "Wat is palliatief verlof? -> Was ist palliatives Pflegefreistellungsrecht?"
+    "de": "Was ist palliatives Pflegefreistellungsrecht?"
   },
   {
     "nl": "Wat is mantelzorgverlof?",
     "category": "ARBEIDSRECHT - VAKANTIE",
     "en": "What is carer's leave?",
     "fr": "Qu'est-ce que le congé pour aidants proches ?",
-    "de": "Wat is mantelzorgverlof? -> Was ist Pflegefreistellung zur Pflege von Angehörigen?"
+    "de": "Was ist Pflegefreistellung zur Pflege von Angehörigen?"
   },
   {
     "nl": "Uren opleidingsverlof?",
     "category": "ARBEIDSRECHT - VAKANTIE",
     "en": "Hours of training leave?",
     "fr": "Heures de congé de formation ?",
-    "de": "Uren opleidingsverlof? -> Wie viele Stunden Bildungsfreistellung?"
+    "de": "Wie viele Stunden Bildungsfreistellung?"
   },
   {
     "nl": "Hoeveel wettelijke feestdagen?",
     "category": "ARBEIDSRECHT - VAKANTIE",
     "en": "How many statutory public holidays?",
     "fr": "Combien de jours fériés légaux ?",
-    "de": "Hoeveel wettelijke feestdagen? -> Wie viele gesetzliche Feiertage bestehen?"
+    "de": "Wie viele gesetzliche Feiertage bestehen?"
   },
   {
     "nl": "Wat is een ADV-dag (arbeidsduurvermindering)?",
@@ -9221,9 +9214,9 @@
   {
     "nl": "Hoe werkt een sterfhuisclausule in het huwelijkscontract?",
     "category": "FISCAAL - REGISTRATIE",
-    "en": "What is a sterfhuis clause?",
-    "fr": "Clause de maintien dans le logement du défunt ?",
-    "de": "Sterfhausklausel?"
+    "en": "How does a 'sterfhuis' clause in a marriage contract work?",
+    "fr": "Comment fonctionne une clause mortuaire (sterfhuisclausule) dans un contrat de mariage ?",
+    "de": "Wie funktioniert eine Sterfhuis-Klausel im Ehevertrag?"
   },
   {
     "nl": "Erfovereenkomst fiscaal?",
@@ -9940,13 +9933,6 @@
     "de": "Zur Bewährung ausgesetzte Strafe?"
   },
   {
-    "nl": "Hoe werkt een werkstraf als alternatieve straf?",
-    "category": "STRAFRECHT",
-    "en": "Community service?",
-    "fr": "Travail d'intérêt général ?",
-    "de": "Gemeinnützige Arbeit?"
-  },
-  {
     "nl": "Voorlopige hechtenis?",
     "category": "STRAFRECHT",
     "en": "Pre-trial detention?",
@@ -10001,13 +9987,6 @@
     "en": "Penal mediation?",
     "fr": "Médiation pénale ?",
     "de": "Strafmediation?"
-  },
-  {
-    "nl": "Wat is het Verblijfsloket Online Systeem (VLOS)?",
-    "category": "STRAFRECHT",
-    "en": "VLOS?",
-    "fr": "VLOS ?",
-    "de": "VLOS?"
   },
   {
     "nl": "Wat zijn de gevolgen van recidive bij strafrecht?",
@@ -10276,7 +10255,7 @@
     "fr": "Droits en cas de produit défectueux ?"
   },
   {
-    "nl": "Hoe eis ik herstel na een verkeersongeval of geschil?",
+    "nl": "Kan een consument herstelling eisen?",
     "category": "CONSUMENTENRECHT",
     "en": "Can a consumer demand repair?",
     "de": "Reparatur verlangen?",
@@ -11410,13 +11389,6 @@
     "de": "Aktienoption?"
   },
   {
-    "nl": "Heb ik recht op outplacement na vakantie?",
-    "fr": "Ai-je droit à un outplacement après un congé ?",
-    "en": "Am I entitled to outplacement after a holiday?",
-    "category": "ARBEIDSRECHT",
-    "de": "Habe ich nach dem Urlaub Anspruch auf Outplacement?"
-  },
-  {
     "nl": "Hoeveel werkloosheidsuitkering krijg ik na een arbeidsongeval?",
     "fr": "À quel montant d'allocation de chômage ai-je droit après un accident du travail ?",
     "en": "How much unemployment benefit do I receive after an occupational accident?",
@@ -11424,17 +11396,10 @@
     "de": "Wie hoch ist das Arbeitslosengeld, das ich nach einem Arbeitsunfall erhalte?"
   },
   {
-    "nl": "Kan ik de huurprijs ontslag nemen na jaar?",
-    "fr": "Puis-je résilier le bail après un an ?",
-    "en": "Can I terminate the rent after a year?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich den Mietpreis nach einem Jahr kündigen?"
-  },
-  {
     "nl": "Wat is het verschil tussen ontslag om dringende reden en verbreking?",
     "fr": "Quelle est la différence entre le licenciement pour motif grave et la rupture du contrat ?",
     "en": "What is the difference between dismissal for urgent cause and termination?",
-    "category": "VENNOOTSCHAPSRECHT",
+    "category": "ARBEIDSRECHT",
     "de": "Was ist der Unterschied zwischen einer fristlosen Kündigung aus wichtigem Grund und einer Auflösung des Arbeitsverhältnisses?"
   },
   {
@@ -11445,10 +11410,10 @@
     "de": "Welche Regeln gelten für ein Wettbewerbsverbot in einer Gesellschaft?"
   },
   {
-    "nl": "Wat is de studentenstatuut?",
+    "nl": "Wat is het studentenstatuut?",
     "fr": "Quel est le statut d'étudiant ?",
     "en": "What is the student status?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Was ist das Studentenstatut?"
   },
   {
@@ -11462,13 +11427,13 @@
     "nl": "Kan ik mijn ontslag aanvechten?",
     "fr": "Puis-je contester mon licenciement ?",
     "en": "Can I challenge my dismissal?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Kann ich meine Kündigung anfechten?"
   },
   {
     "nl": "Hoeveel belasting betaal ik op een inkomen van 40000 euro?",
     "fr": "Combien d'impôt paie-je sur un revenu de 40 000 euros ?",
-    "en": "How much tax do I pay on an income of â‚¬40,000?",
+    "en": "How much tax do I pay on an income of €40,000?",
     "category": "FISCAAL",
     "de": "Wie viel Steuern zahle ich bei einem Einkommen von 40.000 Euro?"
   },
@@ -11476,7 +11441,7 @@
     "nl": "Hoe wijzig ik mijn rijbewijs?",
     "fr": "Comment puis-je modifier mon permis de conduire ?",
     "en": "How do I change my driving licence?",
-    "category": "FISCAAL",
+    "category": "VERKEERSRECHT",
     "de": "Wie ändere ich meinen Führerschein?"
   },
   {
@@ -11501,13 +11466,6 @@
     "de": "Darf mein Arbeitgeber meine E-Mails kontrollieren?"
   },
   {
-    "nl": "Kan ik een samenlevingscontract krijgen na een arbeidsongeval?",
-    "fr": "Puis-je obtenir un contrat de cohabitation après un accident du travail ?",
-    "en": "Can I obtain a cohabitation agreement after an occupational accident?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach einem Arbeitsunfall einen Zusammenlebensvertrag abschließen?"
-  },
-  {
     "nl": "Wat is het minimumkapitaal voor een vennootschap?",
     "fr": "Quel est le capital minimum pour une société ?",
     "en": "What is the minimum capital for a company?",
@@ -11518,7 +11476,7 @@
     "nl": "Wat vergoedt de mutualiteit?",
     "fr": "Que rembourse la mutualité ?",
     "en": "What does the health insurance fund reimburse?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Was erstattet die Krankenkasse?"
   },
   {
@@ -11529,39 +11487,11 @@
     "de": "Wie lautet die Kündigungsfrist bei Entlassung nach sieben Jahren Dienstzugehörigkeit?"
   },
   {
-    "nl": "Kan ik een firmawagen krijgen als vakantie?",
-    "fr": "Puis-je obtenir une voiture de société pour les vacances ?",
-    "en": "Can I get a company car for a holiday?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich einen Firmenwagen für den Urlaub erhalten?"
-  },
-  {
-    "nl": "Kan ik persoonlijk aansprakelijk zijn als biologische?",
-    "fr": "Puis-je être personnellement responsable en tant que parent biologique ?",
-    "en": "Can I be personally liable as the biological parent?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Kann ich persönlich haftbar sein als biologische(r)?"
-  },
-  {
-    "nl": "Wat is de procedure voor verlof aanvragen van een huurder?",
-    "fr": "Quelle est la procédure pour qu'un locataire demande un congé ?",
-    "en": "What is the procedure for a tenant to apply for leave?",
-    "category": "VASTGOEDRECHT",
-    "de": "Wie lautet das Verfahren zur Beantragung von Urlaub durch einen Mieter?"
-  },
-  {
     "nl": "Moet mijn werkgever werkkleding voorzien?",
     "fr": "Mon employeur doit-il fournir des vêtements de travail ?",
     "en": "Is my employer required to provide work clothing?",
     "category": "ARBEIDSRECHT",
     "de": "Muss mein Arbeitgeber Arbeitskleidung bereitstellen?"
-  },
-  {
-    "nl": "Kan ik een testament krijgen na vakantie?",
-    "fr": "Puis-je établir un testament après des vacances ?",
-    "en": "Can I make a will after a holiday?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich ein Testament nach dem Urlaub erhalten?"
   },
   {
     "nl": "Wat is de verjaringstermijn?",
@@ -11574,84 +11504,35 @@
     "nl": "Wat is de straf voor rijden onder invloed?",
     "fr": "Quelle est la sanction pour conduite en état d'ivresse ?",
     "en": "What is the penalty for driving under the influence?",
-    "category": "FISCAAL",
+    "category": "VERKEERSRECHT",
     "de": "Was ist die Strafe für Fahren unter Alkoholeinfluss?"
   },
   {
-    "nl": "Kan ik persoonlijk aansprakelijk zijn als plus?",
-    "fr": "Puis-je être personnellement responsable en tant que beau-parent ?",
-    "en": "Can I be personally liable as plus?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Kann ich persönlich haftbar sein als Plus?"
-  },
-  {
-    "nl": "Kan ik hypotheeklening claimen als ambtenaar?",
-    "fr": "Puis-je prétendre à un prêt hypothécaire en tant que fonctionnaire ?",
-    "en": "Can I obtain a mortgage loan as a civil servant?",
-    "category": "FISCAAL",
-    "de": "Kann ich als Beamter ein Hypothekendarlehen beanspruchen?"
-  },
-  {
-    "nl": "Wat zijn de kosten bij aankoop van een weekend woning?",
+    "nl": "Wat zijn de kosten bij aankoop van een weekendwoning?",
     "fr": "Quels sont les coûts lors de l'achat d'une maison de week-end ?",
     "en": "What are the costs when purchasing a weekend home?",
     "category": "VASTGOEDRECHT",
     "de": "Welche Kosten fallen beim Erwerb eines Wochenendhauses an?"
   },
   {
-    "nl": "Kan ik software terugsturen na week?",
-    "fr": "Puis-je renvoyer un logiciel après une semaine ?",
-    "en": "Can I return software after one week?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich Software nach einer Woche zurücksenden?"
-  },
-  {
-    "nl": "Kan ik een een dertiende maand krijgen voor een reorganisatie?",
-    "fr": "Puis-je obtenir un treizième mois en raison d'une réorganisation ?",
-    "en": "Can I receive a thirteenth month's pay in the context of a reorganisation?",
-    "category": "FISCAAL",
-    "de": "Kann ich wegen einer Umstrukturierung ein 13. Monatsgehalt erhalten?"
-  },
-  {
     "nl": "Wat doet het OCMW en hoe kan het mij helpen?",
     "fr": "Qu'est-ce que le CPAS ?",
     "en": "What is the OCMW?",
-    "category": "FISCAAL",
-    "de": "Was ist das OCMW?"
-  },
-  {
-    "nl": "Mag mijn werkgever mijn eindejaarspremie controleren?",
-    "fr": "Mon employeur peut-il contrôler ma prime de fin d'année ?",
-    "en": "May my employer verify my year-end bonus?",
-    "category": "ARBEIDSRECHT",
-    "de": "Darf mein Arbeitgeber meine Jahresendprämie prüfen?"
-  },
-  {
-    "nl": "Kan ik een firmawagen krijgen als een arbeidsongeval?",
-    "fr": "Puis-je obtenir une voiture de société en cas d'accident du travail ?",
-    "en": "Can I be provided with a company car following an occupational accident?",
     "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich infolge eines Arbeitsunfalls einen Dienstwagen erhalten?"
-  },
-  {
-    "nl": "Hoe geef ik computer aan in mijn belastingaangifte?",
-    "fr": "Comment déclarer un ordinateur dans ma déclaration fiscale ?",
-    "en": "How do I declare a computer on my tax return?",
-    "category": "FISCAAL",
-    "de": "Wie gebe ich einen Computer in meiner Steuererklärung an?"
+    "de": "Was ist das OCMW?"
   },
   {
     "nl": "Hoeveel vakantiedagen heb ik recht op?",
     "fr": "À combien de jours de congé ai-je droit ?",
     "en": "How many days' annual leave am I entitled to?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Auf wie viele Urlaubstage habe ich Anspruch?"
   },
   {
     "nl": "Hoeveel werkloosheidsuitkering krijg ik?",
     "fr": "Quel montant d'indemnité de chômage vais-je recevoir ?",
     "en": "How much unemployment benefit am I entitled to?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Wie viel Arbeitslosengeld bekomme ich?"
   },
   {
@@ -11665,36 +11546,22 @@
     "nl": "Wat is het kindergeld?",
     "fr": "Qu'est-ce que les allocations familiales ?",
     "en": "What is child benefit?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Was ist das Kindergeld?"
   },
   {
     "nl": "Kan mijn verhuurder mij zomaar uitzetten?",
     "fr": "Mon bailleur peut-il m'expulser sans motif ?",
     "en": "Can my landlord evict me without justification?",
-    "category": "FISCAAL",
+    "category": "HUURRECHT",
     "de": "Darf mein Vermieter mich ohne Weiteres aus meiner Wohnung räumen?"
   },
   {
-    "nl": "Wat gebeurt er met de vakantiedagen na echtscheiding?",
-    "fr": "Qu'advient-il des jours de congé après un divorce ?",
-    "en": "What happens to holiday entitlement after divorce?",
-    "category": "FAMILIERECHT",
-    "de": "Was passiert mit den Urlaubstagen nach einer Scheidung?"
-  },
-  {
-    "nl": "Hoe bereken ik mijn een dertiende maand?",
+    "nl": "Hoe bereken ik mijn dertiende maand?",
     "fr": "Comment calculer mon treizième mois ?",
     "en": "How do I calculate my thirteenth month's pay?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT",
     "de": "Wie berechne ich mein 13. Monatsgehalt?"
-  },
-  {
-    "nl": "Kan ik verlof aanvragen als ik verdacht word van drugs?",
-    "fr": "Puis-je demander un congé si l'on me soupçonne de consommation de drogue ?",
-    "en": "Can I request leave if I am suspected of drug use?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich Urlaub beantragen, wenn gegen mich ein Drogenverdacht besteht?"
   },
   {
     "nl": "Hoe betwist ik een huurverhoging met mijn verhuurder?",
@@ -11711,7 +11578,7 @@
     "de": "Wie lange dauert die Probezeit bei Teilzeitarbeit?"
   },
   {
-    "nl": "Wat zijn de regels voor weekend arbeid in België?",
+    "nl": "Wat zijn de regels voor weekendwerk in België?",
     "fr": "Quelles sont les règles régissant le travail du week-end en Belgique ?",
     "en": "What are the rules for weekend work in Belgium?",
     "category": "ARBEIDSRECHT",
@@ -11728,28 +11595,21 @@
     "nl": "Wat is een testament?",
     "fr": "Qu'est-ce qu'un testament ?",
     "en": "What is a will?",
-    "category": "FISCAAL",
+    "category": "ERFRECHT",
     "de": "Was ist ein Testament?"
-  },
-  {
-    "nl": "Kan ik hospitalisatieverzekering krijgen als een arbeidsongeval?",
-    "fr": "Puis-je obtenir une assurance hospitalisation en cas d'accident du travail ?",
-    "en": "Can I obtain hospitalisation insurance for a work-related accident?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich nach einem Arbeitsunfall eine Krankenhausversicherung erhalten?"
   },
   {
     "nl": "Wat zijn de fiscale voordelen van een flexi-job?",
     "fr": "Quels sont les avantages fiscaux d'un flexi-job ?",
     "en": "What are the tax advantages of a flexi-job?",
-    "category": "VENNOOTSCHAPSRECHT",
+    "category": "FISCAAL",
     "de": "Welche steuerlichen Vorteile bietet ein Flexi-Job?"
   },
   {
     "nl": "Hoeveel registratierechten betaal ik in Vlaanderen?",
     "fr": "Combien de droits d'enregistrement dois-je payer en Flandre ?",
     "en": "How much registration duty do I pay in Flanders?",
-    "category": "VASTGOEDRECHT",
+    "category": "FISCAAL - REGISTRATIE",
     "de": "Wie hoch sind die Registrierungssteuern, die ich in Flandern zahlen muss?"
   },
   {
@@ -11758,13 +11618,6 @@
     "en": "What is the property tax?",
     "category": "FISCAAL",
     "de": "Was ist die Grundsteuer?"
-  },
-  {
-    "nl": "Hoeveel kost het om een thuiswerk op te richten?",
-    "fr": "Combien coûte la mise en place d'un poste de télétravail ?",
-    "en": "How much does it cost to set up a home office?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie viel kostet es, ein Homeoffice einzurichten?"
   },
   {
     "nl": "Moet mijn werkgever veiligheidsuitrusting voorzien?",
@@ -11777,7 +11630,7 @@
     "nl": "Wat is de wachttijd voor een dertiende maand?",
     "fr": "Quel est le délai d'attente pour un treizième mois ?",
     "en": "What is the waiting period for a thirteenth month?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT",
     "de": "Was ist die Wartezeit für das 13. Monatsgehalt?"
   },
   {
@@ -11788,13 +11641,6 @@
     "de": "Welche Voraussetzungen gelten für eine Krankenhausversicherung?"
   },
   {
-    "nl": "Kan ik de huurprijs verlof aanvragen na jaar?",
-    "fr": "Puis-je demander un congé de loyer après un an ?",
-    "en": "Can I apply for rent leave after a year?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich nach einem Jahr eine Herabsetzung der Miete beantragen?"
-  },
-  {
     "nl": "Hoe bereken ik mijn opzegvergoeding na 20 jaar?",
     "fr": "Comment calculer mon indemnité de préavis après 20 ans ?",
     "en": "How do I calculate my compensation in lieu of notice after 20 years?",
@@ -11802,32 +11648,11 @@
     "de": "Wie berechne ich meine Kündigungsentschädigung nach 20 Jahren?"
   },
   {
-    "nl": "Wat is de wachttijd voor gerechtelijke procedure?",
-    "fr": "Quel est le délai d'attente pour une procédure judiciaire ?",
-    "en": "What is the waiting period for judicial proceedings?",
-    "category": "FAMILIERECHT",
-    "de": "Wie lange ist die Wartefrist für gerichtliche Verfahren?"
-  },
-  {
     "nl": "Kan ik persoonlijk aansprakelijk zijn?",
     "fr": "Puis-je être personnellement responsable ?",
     "en": "Can I be held personally liable?",
     "category": "FISCAAL",
     "de": "Kann ich persönlich haftbar sein?"
-  },
-  {
-    "nl": "Kan ik een maaltijdcheques krijgen voor ouderschapsverlof?",
-    "fr": "Puis-je percevoir des chèques-repas pendant le congé parental ?",
-    "en": "Can I receive meal vouchers during parental leave?",
-    "category": "FISCAAL",
-    "de": "Kann ich Essensgutscheine für Elternzeit erhalten?"
-  },
-  {
-    "nl": "Wat gebeurt er met mijn maaltijdcheques bij seksuele intimidatie?",
-    "fr": "Que deviennent mes chèques-repas en cas de harcèlement sexuel ?",
-    "en": "What happens to my meal vouchers in the event of sexual harassment?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Was passiert mit meinen Essensgutscheinen bei sexueller Belästigung?"
   },
   {
     "nl": "Hoelang is de garantie op een auto?",
@@ -11861,14 +11686,14 @@
     "nl": "Wat is een globaal medisch dossier?",
     "fr": "Qu'est-ce qu'un dossier médical global ?",
     "en": "What is a global medical record?",
-    "category": "FISCAAL",
+    "category": "MEDISCH",
     "de": "Was ist ein globales medizinisches Dossier?"
   },
   {
     "nl": "Kan ik een GAS-boete aanvechten?",
     "fr": "Puis-je contester une sanction administrative communale (GAS) ?",
     "en": "Can I contest a GAS fine?",
-    "category": "FISCAAL",
+    "category": "BESTUURSRECHT",
     "de": "Kann ich eine GAS-Sanktion anfechten?"
   },
   {
@@ -11903,29 +11728,22 @@
     "nl": "Hoe vraag ik maaltijdcheques aan?",
     "fr": "Comment demander des chèques-repas ?",
     "en": "How do I apply for meal vouchers?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT",
     "de": "Wie beantrage ich Essensgutscheine?"
   },
   {
     "nl": "Hoelang is de wettelijke garantie?",
     "fr": "Quelle est la durée de la garantie légale ?",
     "en": "How long is the statutory warranty?",
-    "category": "FISCAAL",
+    "category": "CONSUMENTENRECHT",
     "de": "Wie lange gilt die gesetzliche Gewährleistung?"
   },
   {
     "nl": "Wat zijn mijn rechten bij ziekteverlof?",
     "fr": "Quels sont mes droits en cas de congé de maladie ?",
     "en": "What are my rights during sick leave?",
-    "category": "CONSUMENTENRECHT",
+    "category": "ARBEIDSRECHT",
     "de": "Welche Rechte habe ich im Krankheitsurlaub?"
-  },
-  {
-    "nl": "Kan ik verlof aanvragen als enige aandeelhouder?",
-    "fr": "Puis-je demander un congé en tant qu'actionnaire unique ?",
-    "en": "Can I apply for leave as the sole shareholder?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Kann ich als alleiniger Gesellschafter Urlaub beantragen?"
   },
   {
     "nl": "Wat zijn de sancties voor zwartwerk?",
@@ -11942,13 +11760,6 @@
     "de": "Wie lange dauert die Probezeit bei einem befristeten Arbeitsverhältnis?"
   },
   {
-    "nl": "Hoeveel werkloosheidsuitkering krijg ik na vakantie?",
-    "fr": "Quel montant d'allocation de chômage puis-je percevoir après des vacances ?",
-    "en": "How much unemployment benefit will I receive after a holiday?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Wie viel Arbeitslosengeld erhalte ich nach dem Urlaub?"
-  },
-  {
     "nl": "Kan ik hypotheekrente aftrekken van mijn belastingen?",
     "fr": "Puis-je déduire les intérêts hypothécaires de mes impôts ?",
     "en": "Can I deduct mortgage interest from my taxes?",
@@ -11956,31 +11767,10 @@
     "de": "Kann ich Hypothekenzinsen von meinen Steuern absetzen?"
   },
   {
-    "nl": "Kan ik een firmawagen krijgen als ziekteverlof?",
-    "fr": "Puis-je bénéficier d'une voiture de société pendant un congé de maladie ?",
-    "en": "Can I receive a company car while on sick leave?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich während des Krankheitsurlaubs einen Dienstwagen erhalten?"
-  },
-  {
-    "nl": "Wat is het minimumkapitaal voor een thuiswerk?",
-    "fr": "Quel est le capital minimum pour le télétravail ?",
-    "en": "What is the minimum capital for teleworking?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie hoch ist das Mindestkapital für Telearbeit?"
-  },
-  {
-    "nl": "Hoe geef ik telefoon aan in mijn belastingaangifte?",
-    "fr": "Comment déclarer un téléphone dans ma déclaration fiscale ?",
-    "en": "How do I declare a telephone on my tax return?",
-    "category": "FISCAAL",
-    "de": "Wie gebe ich das Telefon in meiner Steuererklärung an?"
-  },
-  {
     "nl": "Kan ik een hospitalisatieverzekering krijgen voor zwangerschap?",
     "fr": "Puis-je obtenir une assurance hospitalisation pour une grossesse ?",
     "en": "Can I obtain hospitalisation insurance for pregnancy?",
-    "category": "FISCAAL",
+    "category": "VERZEKERINGEN",
     "de": "Kann ich eine Krankenhausversicherung für eine Schwangerschaft erhalten?"
   },
   {
@@ -11998,28 +11788,14 @@
     "de": "Wie lautet die Kündigungsfrist bei einer Kündigung nach fünf Jahren Betriebszugehörigkeit?"
   },
   {
-    "nl": "Hoeveel vakantiedagen heb ik recht op bij een bepaalde duur contract?",
+    "nl": "Op hoeveel vakantiedagen heb ik recht bij een contract van bepaalde duur?",
     "fr": "Combien de jours de congé ai-je droit avec un contrat à durée déterminée ?",
     "en": "How many vacation days am I entitled to on a fixed-term contract?",
     "category": "ARBEIDSRECHT",
     "de": "Wie viele Urlaubstage stehen mir bei einem befristeten Arbeitsvertrag zu?"
   },
   {
-    "nl": "Kan ik een auto terugsturen na dag?",
-    "fr": "Puis-je retourner une voiture après un jour ?",
-    "en": "Can I return a car after a day?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich ein Auto nach einem Tag zurückgeben?"
-  },
-  {
-    "nl": "Kan ik maaltijdcheques krijgen als ouderschapsverlof?",
-    "fr": "Puis-je percevoir des chèques-repas pendant un congé parental ?",
-    "en": "Can I receive meal vouchers while on parental leave?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich Mahlzeitgutscheine erhalten, wenn ich Elternzeit nehme?"
-  },
-  {
-    "nl": "Hoe wijzig ik de omgangs regeling?",
+    "nl": "Hoe wijzig ik de omgangsregeling?",
     "fr": "Comment modifier le régime de visite ?",
     "en": "How do I change the contact arrangement?",
     "category": "FAMILIERECHT",
@@ -12031,13 +11807,6 @@
     "en": "What is the penalty for drug offences in Belgium?",
     "category": "STRAFRECHT",
     "de": "Welche Strafen drohen bei Drogendelikten in Belgien?"
-  },
-  {
-    "nl": "Kan ik een dertiende maand krijgen als ouderschapsverlof?",
-    "fr": "Puis-je obtenir un treizième mois pendant un congé parental ?",
-    "en": "Can I receive a thirteenth month's pay while on parental leave?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich ein 13. Monatsgehalt erhalten, wenn ich Elternzeit nehme?"
   },
   {
     "nl": "Wat is de wachttijd voor hospitalisatieverzekering?",
@@ -12068,25 +11837,11 @@
     "de": "Welche Voraussetzungen gelten für die bedingte Freilassung?"
   },
   {
-    "nl": "Kan de verkoper thuiswerken weigeren?",
-    "fr": "Le vendeur peut-il refuser de télétravailler ?",
-    "en": "Can the seller refuse to work from home?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann der Verkäufer Telearbeit verweigern?"
-  },
-  {
-    "nl": "Hoe bezwaar ik tegen een bouwvergunning?",
+    "nl": "Hoe maak ik bezwaar tegen een bouwvergunning?",
     "fr": "Comment contester un permis de construire ?",
     "en": "How do I object to a building permit?",
     "category": "BESTUURSRECHT",
     "de": "Wie lege ich Einspruch gegen eine Baugenehmigung ein?"
-  },
-  {
-    "nl": "Kan ik software terugsturen na jaar?",
-    "fr": "Puis-je renvoyer un logiciel après un an ?",
-    "en": "Can I return software after a year?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich Software nach einem Jahr zurücksenden?"
   },
   {
     "nl": "Kan ik een studiejaar herkansen?",
@@ -12127,7 +11882,7 @@
     "nl": "Hoelang duurt een vergunningsaanvraag?",
     "fr": "Combien de temps dure une demande de permis ?",
     "en": "How long does a permit application take?",
-    "category": "FISCAAL",
+    "category": "BESTUURSRECHT",
     "de": "Wie lange dauert ein Antrag auf eine Genehmigung?"
   },
   {
@@ -12138,31 +11893,10 @@
     "de": "Was ist Rechtsbeistand?"
   },
   {
-    "nl": "Wat zijn de fiscale voordelen van een studentenarbeid?",
-    "fr": "Quels sont les avantages fiscaux du travail étudiant ?",
-    "en": "What are the tax advantages of student employment?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Welche steuerlichen Vorteile bietet eine Studentenbeschäftigung?"
-  },
-  {
-    "nl": "Hoe bezwaar ik tegen mijn testament?",
-    "fr": "Comment contester mon testament ?",
-    "en": "How do I contest a will?",
-    "category": "FISCAAL",
-    "de": "Wie fechte ich mein Testament an?"
-  },
-  {
-    "nl": "Hoe krijg ik toegang tot samenlevingscontract?",
-    "fr": "Comment obtenir l'accès au contrat de cohabitation ?",
-    "en": "How can I obtain access to a cohabitation agreement?",
-    "category": "BESTUURSRECHT",
-    "de": "Wie erhalte ich Zugang zu einem Zusammenlebensvertrag?"
-  },
-  {
     "nl": "Kan ik vroeger met pensioen?",
     "fr": "Puis-je prendre ma pension plus tôt ?",
     "en": "Can I retire earlier?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Kann ich frühzeitig in den Ruhestand treten?"
   },
   {
@@ -12173,13 +11907,6 @@
     "de": "Welche Strafe sieht das belgische Strafrecht für Diebstahl vor?"
   },
   {
-    "nl": "Kan ik een dertiende maand krijgen als vakantie?",
-    "fr": "Puis-je obtenir un treizième mois comme congé ?",
-    "en": "Can I receive a thirteenth month's pay as holiday?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich einen dreizehnten Monatslohn als Urlaubsvergütung erhalten?"
-  },
-  {
     "nl": "Hoelang is de garantie op diensten?",
     "fr": "Quelle est la durée de la garantie sur les services ?",
     "en": "How long is the guarantee on services?",
@@ -12187,46 +11914,25 @@
     "de": "Wie lange besteht die Garantie auf Dienstleistungen?"
   },
   {
-    "nl": "Kan mijn verhuurder thuiswerken zonder mijn toestemming?",
-    "fr": "Mon bailleur peut-il télétravailler sans mon autorisation ?",
-    "en": "Can my landlord work from home without my consent?",
-    "category": "VASTGOEDRECHT",
-    "de": "Darf mein Vermieter ohne meine Zustimmung von zu Hause aus arbeiten?"
-  },
-  {
-    "nl": "Wat zijn mijn rechten bij gerechtelijke procedure?",
+    "nl": "Wat zijn mijn rechten bij een gerechtelijke procedure?",
     "fr": "Quels sont mes droits lors d'une procédure judiciaire ?",
     "en": "What are my rights in judicial proceedings?",
-    "category": "BESTUURSRECHT",
-    "de": "Welke Rechte habe ich bei einem gerichtlichen Verfahren?"
+    "category": "PROCEDURERECHT",
+    "de": "Welche Rechte habe ich bei einem Gerichtsverfahren?"
   },
   {
     "nl": "Wat is brugpensioen?",
     "fr": "Qu'est-ce que la préretraite ?",
     "en": "What is a bridging pension?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Was ist Brückenpension?"
   },
   {
     "nl": "Kan de verhuurder de huur verhogen?",
     "fr": "Le bailleur peut-il augmenter le loyer ?",
     "en": "Can the landlord increase the rent?",
-    "category": "FISCAAL",
+    "category": "HUURRECHT",
     "de": "Kann der Vermieter die Miete erhöhen?"
-  },
-  {
-    "nl": "Wat gebeurt er met mijn een firmawagen bij discriminatie?",
-    "fr": "Que se passe-t-il avec ma voiture de société en cas de discrimination ?",
-    "en": "What happens to my company car in the event of discrimination?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Was geschieht mit meinem Firmenwagen bei Diskriminierung?"
-  },
-  {
-    "nl": "Kan ik een een dertiende maand krijgen voor een arbeidsongeval?",
-    "fr": "Puis-je obtenir un treizième mois pour un accident du travail ?",
-    "en": "Can I receive a thirteenth month's pay for a work accident?",
-    "category": "FISCAAL",
-    "de": "Kann ich einen dreizehnten Monatslohn wegen eines Arbeitsunfalls erhalten?"
   },
   {
     "nl": "Hoelang duurt de proefperiode voor interim?",
@@ -12243,20 +11949,6 @@
     "de": "Kann mich mein Arbeitgeber während eines Arbeitsunfalls kündigen?"
   },
   {
-    "nl": "Wat zijn de fiscale voordelen van een overuren?",
-    "fr": "Quels sont les avantages fiscaux des heures supplémentaires ?",
-    "en": "What are the tax advantages of overtime?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Welche steuerlichen Vorteile ergeben sich aus Überstunden?"
-  },
-  {
-    "nl": "Hoe betwist ik een onderhoud met mijn verhuurder?",
-    "fr": "Comment contester un entretien avec mon bailleur ?",
-    "en": "How do I dispute a maintenance issue with my landlord?",
-    "category": "VASTGOEDRECHT",
-    "de": "Wie kann ich Instandhaltungsarbeiten gegenüber meinem Vermieter anfechten?"
-  },
-  {
     "nl": "Wat zijn de regels voor geheimhoudingsclausule in een vennootschap?",
     "fr": "Quelles sont les règles relatives à la clause de confidentialité dans une société ?",
     "en": "What are the rules for a confidentiality clause in a company?",
@@ -12264,39 +11956,18 @@
     "de": "Welche Regeln gelten für eine Geheimhaltungsklausel in einer Gesellschaft?"
   },
   {
-    "nl": "Kan ik een auto terugsturen na jaar?",
-    "fr": "Puis-je renvoyer une voiture après un an ?",
-    "en": "Can I return a car after a year?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich ein Auto nach einem Jahr zurückgeben?"
-  },
-  {
     "nl": "Hoeveel punten heb ik op mijn rijbewijs?",
     "fr": "Combien de points ai-je sur mon permis de conduire ?",
     "en": "How many points do I have on my driving licence?",
-    "category": "FISCAAL",
+    "category": "VERKEERSRECHT",
     "de": "Wie viele Punkte habe ich auf meinem Führerschein?"
-  },
-  {
-    "nl": "Heb ik recht op outplacement na zwangerschap?",
-    "fr": "Ai-je droit à un outplacement après une grossesse ?",
-    "en": "Am I entitled to outplacement after pregnancy?",
-    "category": "ARBEIDSRECHT",
-    "de": "Habe ich Anspruch auf Outplacement nach einer Schwangerschaft?"
   },
   {
     "nl": "Wat zijn de sancties voor onterecht ontslag?",
     "fr": "Quelles sont les sanctions en cas de licenciement injustifié ?",
     "en": "What are the sanctions for wrongful dismissal?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Welche Sanktionen gelten bei einer ungerechtfertigten Kündigung?"
-  },
-  {
-    "nl": "Wat zijn de kosten bij aankoop van een nacht woning?",
-    "fr": "Quels sont les coûts liés à l'achat d'un logement de nuit ?",
-    "en": "What are the costs when purchasing a night house?",
-    "category": "VASTGOEDRECHT",
-    "de": "Welche Kosten fallen beim Kauf einer Nachtwohnung an?"
   },
   {
     "nl": "Kan ik beroep aantekenen?",
@@ -12306,25 +11977,11 @@
     "de": "Kann ich Berufung einlegen?"
   },
   {
-    "nl": "Wat is de procedure voor klacht indienen van kinderen?",
-    "fr": "Quelle est la procédure pour le dépôt d'une plainte par des enfants ?",
-    "en": "What is the procedure for children to file a complaint?",
-    "category": "FAMILIERECHT",
-    "de": "Wie lautet das Verfahren zur Einreichung einer Beschwerde durch Kinder?"
-  },
-  {
     "nl": "Wat is de procedure voor ontslag nemen bij mijn werkgever?",
     "fr": "Quelle est la procédure pour démissionner auprès de mon employeur ?",
     "en": "What is the procedure for resigning from my employment with my employer?",
     "category": "ARBEIDSRECHT",
     "de": "Wie ist das Verfahren für die Kündigung bei meinem Arbeitgeber?"
-  },
-  {
-    "nl": "Wat is de wachttijd voor maaltijdcheques?",
-    "fr": "Quel est le délai d'attente pour les chèques-repas ?",
-    "en": "What is the waiting period for meal vouchers?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Wie lange ist die Wartezeit für Essensgutscheine?"
   },
   {
     "nl": "Wat is de termijn voor verlof aanvragen?",
@@ -12344,36 +12001,15 @@
     "nl": "Hoe werkt het erfrecht in België?",
     "fr": "Qu'est-ce que le droit successoral ?",
     "en": "What is succession law?",
-    "category": "FISCAAL",
+    "category": "ERFRECHT",
     "de": "Was ist das Erbrecht?"
-  },
-  {
-    "nl": "Hoe betwist ik een gebreken met mijn verhuurder?",
-    "fr": "Comment contester un vice auprès de mon bailleur ?",
-    "en": "How do I contest a defect with my landlord?",
-    "category": "VASTGOEDRECHT",
-    "de": "Wie bestreite ich Mängel gegenüber meinem Vermieter?"
   },
   {
     "nl": "Wat is de consumentenbescherming?",
     "fr": "Qu'est-ce que la protection des consommateurs ?",
     "en": "What is consumer protection?",
-    "category": "FISCAAL",
+    "category": "CONSUMENTENRECHT",
     "de": "Was ist der Verbraucherschutz?"
-  },
-  {
-    "nl": "Wat gebeurt er met de telefoon na echtscheiding?",
-    "fr": "Que devient le téléphone après le divorce ?",
-    "en": "What happens to the telephone after divorce?",
-    "category": "FAMILIERECHT",
-    "de": "Was geschieht mit dem Telefon nach der Scheidung?"
-  },
-  {
-    "nl": "Kan ik een een firmawagen krijgen voor vakantie?",
-    "fr": "Puis-je obtenir une voiture de société pour des vacances ?",
-    "en": "Can I obtain a company car for a holiday?",
-    "category": "FISCAAL",
-    "de": "Kann ich einen Dienstwagen für den Urlaub bekommen?"
   },
   {
     "nl": "Wat zijn mijn rechten bij zwangerschap?",
@@ -12381,13 +12017,6 @@
     "en": "What are my rights during pregnancy?",
     "category": "CONSUMENTENRECHT",
     "de": "Welche Rechte stehen mir bei einer Schwangerschaft zu?"
-  },
-  {
-    "nl": "Wat zijn de fiscale voordelen van een vennootschap?",
-    "fr": "Quels sont les avantages fiscaux d'une société ?",
-    "en": "What are the tax advantages of a company?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Welche steuerlichen Vorteile hat eine Gesellschaft?"
   },
   {
     "nl": "Wat gebeurt er met mijn computer bij ontslag?",
@@ -12404,13 +12033,6 @@
     "de": "Kann ich die Pendelkosten von der Steuer absetzen?"
   },
   {
-    "nl": "Kan ik een huwelijkscontract krijgen na ouderschapsverlof?",
-    "fr": "Puis-je obtenir un contrat de mariage après un congé parental ?",
-    "en": "Can I conclude a marriage contract after parental leave?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach der Elternzeit einen Ehevertrag abschließen?"
-  },
-  {
     "nl": "Kan ik pensioensparen claimen als werknemer?",
     "fr": "Puis-je bénéficier de l'épargne-pension en tant que salarié ?",
     "en": "Can I claim pension savings as an employee?",
@@ -12423,13 +12045,6 @@
     "en": "What is a sole proprietorship?",
     "category": "FISCAAL",
     "de": "Was ist ein Einzelunternehmen?"
-  },
-  {
-    "nl": "Mag mijn werkgever mijn maaltijdcheques controleren?",
-    "fr": "Mon employeur a-t-il le droit de contrôler mes chèques-repas ?",
-    "en": "May my employer inspect my meal vouchers?",
-    "category": "ARBEIDSRECHT",
-    "de": "Darf mein Arbeitgeber meine Mahlzeitengutscheine kontrollieren?"
   },
   {
     "nl": "Hoe bereken ik mijn opzegvergoeding na 3 jaar?",
@@ -12449,22 +12064,15 @@
     "nl": "Kan mijn werkgever mij ontslaan tijdens ziekte?",
     "fr": "Mon employeur peut-il me licencier pendant ma maladie ?",
     "en": "Can my employer dismiss me while I am ill?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Kann mein Arbeitgeber mich während einer Krankheit entlassen?"
   },
   {
-    "nl": "Hoe wordt het schulden verdeeld bij scheiding?",
+    "nl": "Hoe worden de schulden verdeeld bij een scheiding?",
     "fr": "Comment les dettes sont-elles réparties en cas de divorce ?",
     "en": "How are debts divided upon divorce?",
     "category": "FAMILIERECHT",
     "de": "Wie werden die Schulden bei einer Scheidung aufgeteilt?"
-  },
-  {
-    "nl": "Hoe bereken ik mijn hospitalisatieverzekering?",
-    "fr": "Comment calculer la prime de mon assurance hospitalisation ?",
-    "en": "How do I calculate my hospitalisation insurance?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Wie berechne ich meine Krankenhausversicherung?"
   },
   {
     "nl": "Kan ik ontslagen worden wegens economische redenen?",
@@ -12491,11 +12099,11 @@
     "nl": "Wat zijn mijn rechten bij ouderschapsverlof?",
     "fr": "Quels sont mes droits pendant un congé parental ?",
     "en": "What are my rights during parental leave?",
-    "category": "CONSUMENTENRECHT",
+    "category": "ARBEIDSRECHT",
     "de": "Welche Rechte habe ich beim Elternurlaub?"
   },
   {
-    "nl": "Wat zijn de regels voor thuiswerk arbeid in België?",
+    "nl": "Wat zijn de regels voor thuiswerk in België?",
     "fr": "Quelles sont les règles du télétravail en Belgique ?",
     "en": "What are the rules for telework in Belgium?",
     "category": "ARBEIDSRECHT",
@@ -12505,22 +12113,8 @@
     "nl": "Wat zijn de voorwaarden voor een dertiende maand?",
     "fr": "Quelles sont les conditions pour bénéficier d'un treizième mois ?",
     "en": "What are the conditions for a thirteenth-month payment?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT",
     "de": "Welche Voraussetzungen gelten für ein dreizehntes Monatsgehalt?"
-  },
-  {
-    "nl": "Kan ik een huwelijkscontract krijgen na een reorganisatie?",
-    "fr": "Puis-je obtenir un contrat de mariage après une réorganisation ?",
-    "en": "Can I conclude a marriage contract after a reorganisation?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach einer Reorganisation einen Ehevertrag erhalten?"
-  },
-  {
-    "nl": "Kan ik een auto terugsturen na week?",
-    "fr": "Puis-je retourner une voiture après une semaine ?",
-    "en": "Can I return a car after a week?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich ein Auto nach einer Woche zurückgeben?"
   },
   {
     "nl": "Wat zijn de sancties bij zwartwerk?",
@@ -12533,7 +12127,7 @@
     "nl": "Wat is ziekte-uitkering?",
     "fr": "Qu'est-ce que l'indemnité de maladie ?",
     "en": "What is sickness benefit?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Was ist Krankengeld?"
   },
   {
@@ -12547,14 +12141,14 @@
     "nl": "Kan ik alimentatie stopzetten?",
     "fr": "Puis-je arrêter la pension alimentaire ?",
     "en": "Can I stop paying alimony?",
-    "category": "FISCAAL",
+    "category": "FAMILIERECHT",
     "de": "Kann ich Unterhalt einstellen?"
   },
   {
     "nl": "Heb ik recht op thuiswerk?",
     "fr": "Ai-je droit au télétravail ?",
     "en": "Am I entitled to work from home?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Habe ich Anspruch auf Telearbeit?"
   },
   {
@@ -12563,20 +12157,6 @@
     "en": "How do I apply for a company car?",
     "category": "SOCIALE ZEKERHEID",
     "de": "Wie beantrage ich einen Firmenwagen?"
-  },
-  {
-    "nl": "Kan ik hospitalisatieverzekering krijgen als ziekteverlof?",
-    "fr": "Puis-je obtenir une assurance hospitalisation pendant un congé de maladie ?",
-    "en": "Can I obtain hospitalisation insurance while on sick leave?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich eine Hospitalisationsversicherung erhalten, wenn ich krankgeschrieben bin?"
-  },
-  {
-    "nl": "Hoeveel kost het om een vennootschap op te richten?",
-    "fr": "Combien coûte la constitution d'une société ?",
-    "en": "How much does it cost to set up a company?",
-    "category": "FISCAAL",
-    "de": "Wie viel kostet es, eine Gesellschaft zu gründen?"
   },
   {
     "nl": "Wat is pensioensparen?",
@@ -12593,20 +12173,6 @@
     "de": "Wie berechne ich meine Kündigungsentschädigung nach 10 Jahren?"
   },
   {
-    "nl": "Kan ik thuiswerken als ik verdacht word van diefstal?",
-    "fr": "Puis-je travailler à domicile si je suis soupçonné de vol ?",
-    "en": "Can I work from home if I am suspected of theft?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich Telearbeit leisten, wenn ich des Diebstahls verdächtigt werde?"
-  },
-  {
-    "nl": "Hoeveel kost het om een overuren op te richten?",
-    "fr": "Combien coûte la création d'heures supplémentaires ?",
-    "en": "How much does it cost to set up overtime?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie viel kostet es, Überstunden einzurichten?"
-  },
-  {
     "nl": "Wat is de opzegtermijn bij ontslag na 15 jaar anciënniteit?",
     "fr": "Quel est le délai de préavis en cas de licenciement après 15 ans d'ancienneté ?",
     "en": "What is the notice period on dismissal after 15 years' seniority?",
@@ -12617,22 +12183,8 @@
     "nl": "Kan ik werken als asielzoeker?",
     "fr": "Puis-je travailler en tant que demandeur d'asile ?",
     "en": "Can I work as an asylum seeker?",
-    "category": "FISCAAL",
+    "category": "VREEMDELINGENRECHT",
     "de": "Kann ich als Asylbewerber arbeiten?"
-  },
-  {
-    "nl": "Wat is de wachttijd voor bemiddeling?",
-    "fr": "Quel est le délai d'attente pour la médiation ?",
-    "en": "What is the waiting period for mediation?",
-    "category": "FAMILIERECHT",
-    "de": "Wie lange ist die Wartezeit für eine Vermittlung?"
-  },
-  {
-    "nl": "Hoe ontbind ik een vennootschap?",
-    "fr": "Comment dissoudre une société ?",
-    "en": "How do I dissolve a company?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie löse ich eine Wochenendgesellschaft auf?"
   },
   {
     "nl": "Kan ik kinderopvang claimen als gepensioneerde?",
@@ -12659,15 +12211,8 @@
     "nl": "Wat is de opzegtermijn bij ontslag?",
     "fr": "Quel est le délai de préavis en cas de licenciement ?",
     "en": "What is the notice period on dismissal?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Wie lautet die Kündigungsfrist bei einer Entlassung?"
-  },
-  {
-    "nl": "Wat is de opzegtermijn voor een nacht huurcontract?",
-    "fr": "Quel est le délai de préavis pour un contrat de location nocturne ?",
-    "en": "What is the notice period for a night rental contract?",
-    "category": "VASTGOEDRECHT",
-    "de": "Wie lautet die Kündigungsfrist für einen Nachtmietvertrag?"
   },
   {
     "nl": "Wat gebeurt er met de eindejaarspremie na echtscheiding?",
@@ -12680,7 +12225,7 @@
     "nl": "Kan ik mijn huurcontract opzeggen?",
     "fr": "Puis-je résilier mon contrat de location ?",
     "en": "Can I terminate my lease?",
-    "category": "FISCAAL",
+    "category": "HUURRECHT",
     "de": "Kann ich meinen Mietvertrag kündigen?"
   },
   {
@@ -12698,13 +12243,6 @@
     "de": "Wie viel Steuern zahle ich?"
   },
   {
-    "nl": "Kan ik de huurprijs thuiswerken na maand?",
-    "fr": "Puis-je télétravailler le prix du loyer après un mois ?",
-    "en": "Can I have the rent price for teleworking after a month?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich die Miete nach einem Monat von zu Hause aus bezahlen?"
-  },
-  {
     "nl": "Wat is een arbeidskaart?",
     "fr": "Qu'est-ce qu'une carte de travail ?",
     "en": "What is a work permit?",
@@ -12717,20 +12255,6 @@
     "en": "What is the minimum wage for a student in Belgium?",
     "category": "ARBEIDSRECHT",
     "de": "Wie hoch ist der Mindestlohn für Studierende in Belgien?"
-  },
-  {
-    "nl": "Hoeveel kost het om een studentenarbeid op te richten?",
-    "fr": "Combien coûte la création d'un emploi étudiant ?",
-    "en": "How much does it cost to set up student employment?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie viel kostet es, eine Studentenarbeit einzurichten?"
-  },
-  {
-    "nl": "Kan ik een samenlevingscontract krijgen na een reorganisatie?",
-    "fr": "Puis-je obtenir un contrat de cohabitation après une réorganisation ?",
-    "en": "Can I obtain a cohabitation agreement after a reorganisation?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach einer Reorganisation einen Zusammenlebensvertrag erhalten?"
   },
   {
     "nl": "Wat is een administratief beroep?",
@@ -12747,35 +12271,7 @@
     "de": "Wie verfasse ich ein Testament für meine Kinder?"
   },
   {
-    "nl": "Kan ik een maaltijdcheques krijgen voor vakantie?",
-    "fr": "Puis-je obtenir des chèques-repas pour des vacances ?",
-    "en": "Can I receive meal vouchers for holidays?",
-    "category": "FISCAAL",
-    "de": "Kann ich Essensgutscheine für den Urlaub erhalten?"
-  },
-  {
-    "nl": "Kan ik een maaltijdcheques krijgen voor een arbeidsongeval?",
-    "fr": "Puis-je obtenir des chèques-repas pour un accident du travail ?",
-    "en": "Can I receive meal vouchers for a work accident?",
-    "category": "FISCAAL",
-    "de": "Kann ich Essensgutscheine bei einem Arbeitsunfall erhalten?"
-  },
-  {
-    "nl": "Hoe lang blijft eindejaarspremie op mijn strafblad?",
-    "fr": "Combien de temps la prime de fin d'année reste-t-elle sur mon casier judiciaire ?",
-    "en": "How long does the year-end bonus remain on my criminal record?",
-    "category": "STRAFRECHT",
-    "de": "Wie lange bleibt die Jahresendprämie in meinem Strafregister?"
-  },
-  {
-    "nl": "Kan ik de huurprijs verlof aanvragen na week?",
-    "fr": "Puis-je demander un congé du loyer après une semaine ?",
-    "en": "Can I apply for rent-price leave after a week?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich eine Mietzinsfreistellung nach einer Woche beantragen?"
-  },
-  {
-    "nl": "Wat is het belastingtarief voor overuren inkomsten?",
+    "nl": "Wat is het belastingtarief voor inkomsten uit overuren?",
     "fr": "Quel est le taux d'imposition pour les revenus d'heures supplémentaires ?",
     "en": "What is the tax rate for overtime income?",
     "category": "FISCAAL",
@@ -12796,13 +12292,6 @@
     "de": "Was geschieht mit meinem Telefon bei einer Kündigung?"
   },
   {
-    "nl": "Kan ik een een dertiende maand krijgen voor vakantie?",
-    "fr": "Puis-je obtenir un treizième mois pour les vacances ?",
-    "en": "Can I receive a thirteenth month for holidays?",
-    "category": "FISCAAL",
-    "de": "Kann ich ein dreizehntes Monatsgehalt für Urlaub erhalten?"
-  },
-  {
     "nl": "Hoeveel belasting betaal ik op een inkomen van 60000 euro?",
     "fr": "Combien d'impôt dois-je payer sur un revenu de 60 000 euros ?",
     "en": "How much tax do I pay on an income of 60,000 euros?",
@@ -12817,13 +12306,6 @@
     "de": "Kann ich Berufsauslagen als Selbständiger geltend machen?"
   },
   {
-    "nl": "Hoelang kan de politie mij thuiswerken?",
-    "fr": "Pendant combien de temps la police peut-elle me faire travailler à domicile ?",
-    "en": "How long can the police require me to work from home?",
-    "category": "STRAFRECHT",
-    "de": "Wie lange kann die Polizei mich zum Arbeiten von zu Hause verpflichten?"
-  },
-  {
     "nl": "Hoe bereken ik mijn opzegvergoeding na 30 jaar?",
     "fr": "Comment calculer mon indemnité compensatoire de préavis après 30 ans ?",
     "en": "How do I calculate my notice compensation after 30 years' service?",
@@ -12831,17 +12313,10 @@
     "de": "Wie berechne ich meine Kündigungsentschädigung nach 30 Jahren?"
   },
   {
-    "nl": "Wat is het verschil tussen gewoon ontslag en opzegging ontslag?",
-    "fr": "Quelle est la différence entre le licenciement ordinaire et le licenciement avec préavis ?",
-    "en": "What is the difference between ordinary dismissal and dismissal by notice?",
-    "category": "ARBEIDSRECHT",
-    "de": "Was ist der Unterschied zwischen einer normalen Entlassung und einer Kündigung?"
-  },
-  {
     "nl": "Wat gebeurt er met mijn maaltijdcheques bij een ongeval?",
-    "fr": "Que devient mes chèques-repas en cas d'accident ?",
+    "fr": "Que deviennent mes chèques-repas en cas d'accident ?",
     "en": "What happens to my meal vouchers in the event of an accident?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT",
     "de": "Was geschieht mit meinen Essensgutscheinen bei einem Unfall?"
   },
   {
@@ -12866,34 +12341,6 @@
     "de": "Kann ich Studium und Berufstätigkeit kombinieren?"
   },
   {
-    "nl": "Kan ik hospitalisatieverzekering krijgen als ouderschapsverlof?",
-    "fr": "Puis-je bénéficier d'une assurance hospitalisation pendant un congé parental ?",
-    "en": "Can I obtain hospitalisation insurance during parental leave?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich eine Hospitalisationsversicherung während der Elternzeit erhalten?"
-  },
-  {
-    "nl": "Wat gebeurt er met mijn hospitalisatieverzekering bij discriminatie?",
-    "fr": "Que se passe-t-il avec mon assurance hospitalisation en cas de discrimination ?",
-    "en": "What happens to my hospitalisation insurance in the event of discrimination?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Was geschieht mit meiner Hospitalisationsversicherung im Falle von Diskriminierung?"
-  },
-  {
-    "nl": "Kan ik hospitalisatieverzekering krijgen als vakantie?",
-    "fr": "Puis-je bénéficier d'une assurance hospitalisation pendant les vacances ?",
-    "en": "Can I obtain hospitalisation insurance while on holiday?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich eine Hospitalisationsversicherung erhalten, wenn ich im Urlaub bin?"
-  },
-  {
-    "nl": "Kan ik een testament krijgen na een arbeidsongeval?",
-    "fr": "Puis-je obtenir un testament après un accident du travail ?",
-    "en": "Can I obtain a will after an employment-related accident?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich ein Testament nach einem Arbeitsunfall erhalten?"
-  },
-  {
     "nl": "Hoeveel BTW moet ik betalen op voeding?",
     "fr": "Quel taux de TVA dois-je payer sur l'alimentation ?",
     "en": "How much VAT must I pay on food?",
@@ -12904,7 +12351,7 @@
     "nl": "Wat is een werkstraf?",
     "fr": "Qu'est-ce que le travail d'intérêt général ?",
     "en": "What is a community service order?",
-    "category": "FISCAAL",
+    "category": "STRAFRECHT",
     "de": "Was ist gemeinnützige Arbeit?"
   },
   {
@@ -12915,17 +12362,10 @@
     "de": "Muss mein Arbeitgeber den Transport zur Verfügung stellen?"
   },
   {
-    "nl": "Kan ik een samenlevingscontract krijgen na vakantie?",
-    "fr": "Puis-je conclure un contrat de cohabitation après des vacances ?",
-    "en": "Can I obtain a cohabitation agreement after a holiday?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach einem Urlaub einen Zusammenlebensvertrag erhalten?"
-  },
-  {
     "nl": "Hoeveel verdient een student per uur?",
     "fr": "Combien gagne un étudiant par heure ?",
     "en": "How much does a student earn per hour?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Wie viel verdient ein Student pro Stunde?"
   },
   {
@@ -12934,13 +12374,6 @@
     "en": "Can I contest my dismissal on economic grounds?",
     "category": "ARBEIDSRECHT",
     "de": "Kann ich meine Kündigung aus wirtschaftlichen Gründen anfechten?"
-  },
-  {
-    "nl": "Hoeveel alimentatie moet ik betalen voor zwangerschap?",
-    "fr": "Combien de pension alimentaire dois-je payer en cas de grossesse ?",
-    "en": "How much maintenance must I pay for pregnancy?",
-    "category": "FAMILIERECHT",
-    "de": "Wie viel Unterhalt muss ich wegen einer Schwangerschaft zahlen?"
   },
   {
     "nl": "Hoeveel belasting op dividenden?",
@@ -12957,32 +12390,11 @@
     "de": "Kann ich Medikamente erstattet bekommen?"
   },
   {
-    "nl": "Kan ik een firmawagen krijgen als alleenstaande ouder?",
-    "fr": "Puis-je obtenir une voiture de société en tant que parent isolé ?",
-    "en": "Can I obtain a company car as a single parent?",
-    "category": "FAMILIERECHT",
-    "de": "Kann ich als alleinerziehender Elternteil einen Firmenwagen erhalten?"
-  },
-  {
-    "nl": "Kan ik hospitalisatieverzekering krijgen als slachtoffer?",
-    "fr": "Puis-je bénéficier d'une assurance hospitalisation en tant que victime ?",
-    "en": "Can I obtain hospitalisation insurance as a victim?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich als Geschädigter eine Hospitalisationsversicherung erhalten?"
-  },
-  {
     "nl": "Wat zijn de regels voor geheimhoudingsclausule in de arbeidsovereenkomst?",
     "fr": "Quelles sont les règles relatives à la clause de confidentialité dans le contrat de travail ?",
     "en": "What are the rules for a confidentiality clause in the employment contract?",
     "category": "ARBEIDSRECHT",
     "de": "Welche Regeln gelten für eine Geheimhaltungsklausel im Arbeitsvertrag?"
-  },
-  {
-    "nl": "Kan mijn verhuurder verlof aanvragen zonder mijn toestemming?",
-    "fr": "Mon bailleur peut-il demander un congé sans mon autorisation ?",
-    "en": "Can my landlord apply for leave without my consent?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann mein Vermieter eine Beurlaubung ohne meine Zustimmung beantragen?"
   },
   {
     "nl": "Wat zijn de sancties voor onterecht ontslag door de werkgever?",
@@ -13002,7 +12414,7 @@
     "nl": "Hoe krijg ik een advocaat?",
     "fr": "Comment obtenir un avocat ?",
     "en": "How do I obtain a lawyer?",
-    "category": "FISCAAL",
+    "category": "PROCEDURERECHT",
     "de": "Wie bekomme ich einen Anwalt?"
   },
   {
@@ -13013,25 +12425,11 @@
     "de": "Was ist die Einkommensteuer?"
   },
   {
-    "nl": "Wat is de opzegtermijn voor een overuren huurcontract?",
-    "fr": "Quel est le délai de préavis pour un contrat de location d'heures supplémentaires ?",
-    "en": "What is the notice period for an overtime rental contract?",
-    "category": "VASTGOEDRECHT",
-    "de": "Wie lautet die Kündigungsfrist für einen Überstunden-Mietvertrag?"
-  },
-  {
     "nl": "Kan ik ontslag nemen als enige aandeelhouder?",
     "fr": "Puis-je démissionner en tant qu'actionnaire unique ?",
     "en": "Can I resign as the sole shareholder?",
     "category": "VENNOOTSCHAPSRECHT",
     "de": "Kann ich als alleiniger Aktionär kündigen?"
-  },
-  {
-    "nl": "Wat gebeurt er met de computer na echtscheiding?",
-    "fr": "Que devient l'ordinateur après un divorce ?",
-    "en": "What happens to the computer after divorce?",
-    "category": "FAMILIERECHT",
-    "de": "Was passiert mit dem Computer nach der Scheidung?"
   },
   {
     "nl": "Mag mijn werkgever mijn telefoon controleren?",
@@ -13041,35 +12439,14 @@
     "de": "Darf mein Arbeitgeber mein Telefon kontrollieren?"
   },
   {
-    "nl": "Kan ik hypotheeklening claimen als werknemer?",
-    "fr": "Puis-je obtenir un prêt hypothécaire en tant que salarié ?",
-    "en": "Can I obtain a mortgage loan as an employee?",
-    "category": "FISCAAL",
-    "de": "Kann ich als Arbeitnehmer ein Hypothekendarlehen beanspruchen?"
-  },
-  {
     "nl": "Hoe vraag ik een verblijfsvergunning aan?",
     "fr": "Comment demander un permis de séjour ?",
     "en": "How do I apply for a residence permit?",
-    "category": "FISCAAL",
+    "category": "VREEMDELINGENRECHT",
     "de": "Wie beantrage ich eine Aufenthaltsgenehmigung?"
   },
   {
-    "nl": "Kan de overheid ontslag nemen zonder mijn toestemming?",
-    "fr": "L'administration peut-elle me licencier sans mon consentement ?",
-    "en": "Can the government dismiss me without my consent?",
-    "category": "BESTUURSRECHT",
-    "de": "Kann die Behörde mich ohne meine Zustimmung entlassen?"
-  },
-  {
-    "nl": "Heb ik recht op outplacement na ouderschapsverlof?",
-    "fr": "Ai-je droit à un outplacement après un congé parental ?",
-    "en": "Am I entitled to outplacement after parental leave?",
-    "category": "ARBEIDSRECHT",
-    "de": "Habe ich nach dem Elternurlaub Anspruch auf Outplacement?"
-  },
-  {
-    "nl": "Wat is het verschil tussen ontslag om dringende reden en opzegging ontslag?",
+    "nl": "Wat is het verschil tussen ontslag om dringende reden en ontslag met opzegging?",
     "fr": "Quelle est la différence entre le licenciement pour motif grave et le licenciement avec préavis ?",
     "en": "What is the difference between dismissal for urgent cause and dismissal by notice?",
     "category": "ARBEIDSRECHT",
@@ -13083,60 +12460,32 @@
     "de": "Kann ich Spenden von der Steuer absetzen?"
   },
   {
-    "nl": "Hoe richt ik een overuren op in België?",
-    "fr": "Comment mettre en place des heures supplémentaires en Belgique ?",
-    "en": "How do I set up overtime in Belgium?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie regle ich Überstunden in Belgien?"
-  },
-  {
-    "nl": "Kan ik maaltijdcheques krijgen als vakantie?",
-    "fr": "Puis-je obtenir des chèques-repas en tant que congé ?",
-    "en": "Can I receive meal vouchers while on holiday?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich Essensgutscheine als Urlaub erhalten?"
-  },
-  {
     "nl": "Hoe verleng ik mijn verblijfsvergunning?",
     "fr": "Comment puis-je prolonger mon permis de séjour ?",
     "en": "How do I renew my residence permit?",
-    "category": "FISCAAL",
+    "category": "VREEMDELINGENRECHT",
     "de": "Wie verlängere ich meine Aufenthaltserlaubnis?"
   },
   {
     "nl": "Wat is het herroepingsrecht?",
     "fr": "Qu'est-ce que le droit de rétractation ?",
     "en": "What is the right of withdrawal?",
-    "category": "FISCAAL",
+    "category": "CONSUMENTENRECHT",
     "de": "Was ist das Widerrufsrecht?"
   },
   {
-    "nl": "Kan mijn verhuurder ontslag nemen zonder mijn toestemming?",
-    "fr": "Mon bailleur peut-il donner congé sans mon consentement ?",
-    "en": "Can my landlord dismiss me without my consent?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann mein Vermieter ohne meine Zustimmung eine Kündigung aussprechen?"
-  },
-  {
-    "nl": "Wat is de termijn voor ontslag nemen?",
-    "fr": "Quel est le délai pour donner sa démission ?",
-    "en": "What is the notice period for dismissal?",
+    "nl": "Welke opzeggingstermijn geldt als ik zelf ontslag neem?",
+    "fr": "Quel délai de préavis s'applique si je démissionne ?",
+    "en": "What notice period applies if I resign?",
     "category": "BESTUURSRECHT",
-    "de": "Welche Frist gilt für eine Kündigung?"
+    "de": "Welche Kündigungsfrist gilt, wenn ich selbst kündige?"
   },
   {
     "nl": "Hoeveel is de moederschapsuitkering?",
     "fr": "Quel est le montant de l'indemnité de maternité ?",
     "en": "What is the amount of the maternity allowance?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Wie hoch ist das Mutterschaftsgeld?"
-  },
-  {
-    "nl": "Kan ik kleding terugsturen na jaar?",
-    "fr": "Puis-je renvoyer des vêtements après un an ?",
-    "en": "Can I return clothing after a year?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich Kleidung nach einem Jahr zurücksenden?"
   },
   {
     "nl": "Wat zijn mijn rechten bij seksuele intimidatie op het werk?",
@@ -13144,13 +12493,6 @@
     "en": "What are my rights in cases of sexual harassment at work?",
     "category": "ARBEIDSRECHT",
     "de": "Welche Rechte stehen mir bei sexueller Belästigung am Arbeitsplatz zu?"
-  },
-  {
-    "nl": "Hoe geef ik vakantiedagen aan in mijn belastingaangifte?",
-    "fr": "Comment déclarer mes jours de congé dans ma déclaration fiscale ?",
-    "en": "How do I declare holiday days in my tax return?",
-    "category": "FISCAAL",
-    "de": "Wie gebe ich Urlaubstage in meiner Steuererklärung an?"
   },
   {
     "nl": "Hoeveel werkloosheidsuitkering krijg ik na ziekteverlof?",
@@ -13165,20 +12507,6 @@
     "en": "Can I claim professional expenses as a pensioner?",
     "category": "FISCAAL",
     "de": "Kann ich Berufskosten als Rentner geltend machen?"
-  },
-  {
-    "nl": "Kan ik een maaltijdcheques krijgen voor een reorganisatie?",
-    "fr": "Puis-je obtenir des chèques-repas dans le cadre d'une réorganisation ?",
-    "en": "Can I receive meal vouchers in the context of a reorganisation?",
-    "category": "FISCAAL",
-    "de": "Kann ich im Rahmen einer Reorganisation Mahlzeitgutscheine erhalten?"
-  },
-  {
-    "nl": "Wat is de procedure voor thuiswerken van kinderen?",
-    "fr": "Quelle est la procédure pour le télétravail des enfants ?",
-    "en": "What is the procedure for children to work from home?",
-    "category": "FAMILIERECHT",
-    "de": "Wie ist das Verfahren für die Telearbeit von Kindern?"
   },
   {
     "nl": "Wat moet ik aangeven bij pesterijen?",
@@ -13198,7 +12526,7 @@
     "nl": "Wat zijn de voorwaarden voor maaltijdcheques?",
     "fr": "Quelles sont les conditions d'attribution des chèques-repas ?",
     "en": "What are the conditions for meal vouchers?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT",
     "de": "Welche Voraussetzungen gelten für Mahlzeitengutscheine?"
   },
   {
@@ -13233,15 +12561,8 @@
     "nl": "Hoeveel is het leefloon?",
     "fr": "Quel est le montant du revenu d'intégration ?",
     "en": "What is the amount of the social assistance (leefloon)?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Wie hoch ist das Existenzminimum?"
-  },
-  {
-    "nl": "Kan ik een testament krijgen na zwangerschap?",
-    "fr": "Puis-je rédiger un testament après une grossesse ?",
-    "en": "Can I make a will after pregnancy?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach einer Schwangerschaft ein Testament errichten?"
   },
   {
     "nl": "Wat moet ik aangeven bij discriminatie?",
@@ -13251,25 +12572,11 @@
     "de": "Was muss ich angeben, wenn ich Diskriminierung anzeige?"
   },
   {
-    "nl": "Hoe lang blijft telefoon op mijn strafblad?",
-    "fr": "Pendant combien de temps un téléphone reste-t-il inscrit sur mon casier judiciaire ?",
-    "en": "How long will a phone remain on my criminal record?",
-    "category": "STRAFRECHT",
-    "de": "Wie lange bleibt ein Eintrag wegen eines Telefons in meinem Strafregister?"
-  },
-  {
     "nl": "Kan ik ontslagen worden tijdens zwangerschap?",
     "fr": "Puis-je être licencié pendant ma grossesse ?",
     "en": "Can I be dismissed during pregnancy?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Kann ich während der Schwangerschaft entlassen werden?"
-  },
-  {
-    "nl": "Kan de verkoper klacht indienen weigeren?",
-    "fr": "Le vendeur peut-il refuser de déposer une plainte ?",
-    "en": "May the seller refuse to accept a complaint?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann der Verkäufer die Einreichung einer Beschwerde verweigern?"
   },
   {
     "nl": "Hoeveel mag ik drinken achter het stuur?",
@@ -13282,15 +12589,8 @@
     "nl": "Wat is een interim-contract?",
     "fr": "Qu'est-ce qu'un contrat d'intérim ?",
     "en": "What is an interim contract?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Was ist ein Zeitarbeitsvertrag?"
-  },
-  {
-    "nl": "Kan ik de huurprijs verlof aanvragen na dag?",
-    "fr": "Puis-je demander un congé concernant le montant du loyer après un jour ?",
-    "en": "May I apply for permission concerning the rent after one day?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich den Mietpreis-Urlaub nach Tag beantragen?"
   },
   {
     "nl": "Hoelang is de garantie op software?",
@@ -13300,45 +12600,24 @@
     "de": "Wie lange besteht die Garantie auf Software?"
   },
   {
-    "nl": "Kan ik de huurprijs thuiswerken na week?",
-    "fr": "Puis-je déduire le loyer si je travaille à domicile après une semaine ?",
-    "en": "Can I deduct the rent for teleworking on a weekly basis?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich den Mietpreis-Telearbeit nach Woche beantragen?"
-  },
-  {
     "nl": "Wat is een vennootschap onder firma en hoe richt ik die op?",
     "fr": "Qu'est-ce qu'une VOF ?",
     "en": "What is a VOF (general partnership)?",
-    "category": "FISCAAL",
+    "category": "VENNOOTSCHAPSRECHT",
     "de": "Was ist eine VOF?"
-  },
-  {
-    "nl": "Kan ik een hospitalisatieverzekering krijgen voor ouderschapsverlof?",
-    "fr": "Puis-je obtenir une assurance hospitalisation pendant un congé parental ?",
-    "en": "Can I obtain hospitalisation insurance for parental leave?",
-    "category": "FISCAAL",
-    "de": "Kann ich eine Krankenhauszusatzversicherung für Elternzeit erhalten?"
-  },
-  {
-    "nl": "Wat is het belastingtarief voor thuiswerk inkomsten?",
-    "fr": "Quel est le taux d'imposition applicable aux revenus provenant du télétravail ?",
-    "en": "What is the tax rate for income from teleworking?",
-    "category": "FISCAAL",
-    "de": "Wie hoch ist der Steuersatz für Einkünfte aus Telearbeit?"
   },
   {
     "nl": "Wat is een naamloze vennootschap en wanneer kies ik daarvoor?",
     "fr": "Qu'est-ce qu'une SA ?",
     "en": "What is an NV?",
-    "category": "FISCAAL",
+    "category": "VENNOOTSCHAPSRECHT",
     "de": "Was ist eine NV?"
   },
   {
     "nl": "Wat zijn de rechten van een huurder?",
     "fr": "Quels sont les droits d'un locataire ?",
     "en": "What are the rights of a tenant?",
-    "category": "FISCAAL",
+    "category": "HUURRECHT",
     "de": "Welche Rechte stehen einem Mieter zu?"
   },
   {
@@ -13356,7 +12635,7 @@
     "de": "Habe ich als Arbeitnehmer Anspruch auf eine Krankenhausversicherung?"
   },
   {
-    "nl": "Wat zijn mijn rechten als co- ouder?",
+    "nl": "Wat zijn mijn rechten als co-ouder?",
     "fr": "Quels sont mes droits en tant que co-parent ?",
     "en": "What are my rights as a co-parent?",
     "category": "FAMILIERECHT",
@@ -13373,7 +12652,7 @@
     "nl": "Wat is het verschil tussen gewoon ontslag en opzegging?",
     "fr": "Quelle est la différence entre licenciement et préavis ?",
     "en": "What is the difference between ordinary dismissal and termination by notice?",
-    "category": "VENNOOTSCHAPSRECHT",
+    "category": "ARBEIDSRECHT",
     "de": "Was ist der Unterschied zwischen gewöhnlicher Entlassung und Kündigung?"
   },
   {
@@ -13405,25 +12684,11 @@
     "de": "Kann ich Kinderbetreuungskosten absetzen?"
   },
   {
-    "nl": "Wat is het minimumkapitaal voor een vennootschap?",
-    "fr": "Quel est le capital minimum pour un week-end ?",
-    "en": "What is the minimum capital for a company?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie hoch ist das Mindestkapital für eine Gesellschaft?"
-  },
-  {
     "nl": "Wat is ontslag om dringende reden?",
     "fr": "Qu'est-ce que le licenciement pour motif grave ?",
     "en": "What is dismissal for urgent cause?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Was ist eine fristlose Kündigung aus wichtigem Grund?"
-  },
-  {
-    "nl": "Kan ik een een dertiende maand krijgen voor zwangerschap?",
-    "fr": "Puis-je recevoir un treizième mois en cas de grossesse ?",
-    "en": "Can I receive a thirteenth-month payment because of pregnancy?",
-    "category": "FISCAAL",
-    "de": "Kann ich wegen Schwangerschaft einen 13. Monatslohn erhalten?"
   },
   {
     "nl": "Wat is de opzegtermijn bij ontslag na 10 jaar anciënniteit?",
@@ -13433,20 +12698,6 @@
     "de": "Wie lange ist die Kündigungsfrist bei einer Entlassung nach 10 Jahren Dienstzugehörigkeit?"
   },
   {
-    "nl": "Kan ik elektronica terugsturen na week?",
-    "fr": "Puis-je retourner un appareil électronique après une semaine ?",
-    "en": "Can I return electronics after one week?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich Elektronikartikel nach einer Woche zurücksenden?"
-  },
-  {
-    "nl": "Kan ik ontslag nemen als ik verdacht word van verkeersovertreding?",
-    "fr": "Puis-je démissionner si je suis soupçonné d'une infraction routière ?",
-    "en": "Can I resign if I am suspected of a traffic offence?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich kündigen, wenn ich wegen eines Verkehrsverstoßes verdächtigt werde?"
-  },
-  {
     "nl": "Hoe bereken ik mijn opzegvergoeding na 5 jaar?",
     "fr": "Comment calculer mon indemnité de préavis après 5 ans ?",
     "en": "How do I calculate my notice compensation after 5 years' service?",
@@ -13454,25 +12705,11 @@
     "de": "Wie berechne ich meine Kündigungsentschädigung nach 5 Jahren?"
   },
   {
-    "nl": "Kan ik een hospitalisatieverzekering krijgen voor ziekteverlof?",
-    "fr": "Puis-je obtenir une assurance hospitalisation pendant un congé maladie ?",
-    "en": "Can I obtain hospitalisation insurance during sick leave?",
-    "category": "FISCAAL",
-    "de": "Kann ich eine Krankenhausversicherung für Krankheitsurlaub erhalten?"
-  },
-  {
     "nl": "Hoeveel registratierechten betaal ik in Brussel?",
     "fr": "Combien de droits d'enregistrement dois-je payer à Bruxelles ?",
     "en": "How much registration duty do I pay in Brussels?",
-    "category": "VASTGOEDRECHT",
+    "category": "FISCAAL - REGISTRATIE",
     "de": "Wie hoch sind die Registrierungsabgaben, die ich in Brüssel zu entrichten habe?"
-  },
-  {
-    "nl": "Hoe lang blijft vakantiedagen op mijn strafblad?",
-    "fr": "Combien de temps les jours de vacances restent-ils inscrits sur mon casier judiciaire ?",
-    "en": "How long do vacation days remain on my criminal record?",
-    "category": "STRAFRECHT",
-    "de": "Wie lange bleiben Urlaubstage in meinem Strafregister vermerkt?"
   },
   {
     "nl": "Hoeveel uren mag ik maximaal werken per dag?",
@@ -13489,14 +12726,7 @@
     "de": "Was ist der Unterschied zwischen der Einkommensteuer und der Grundsteuer?"
   },
   {
-    "nl": "Wat is de opzegtermijn voor een weekend huurcontract?",
-    "fr": "Quel est le délai de préavis pour un contrat de location pour un week-end ?",
-    "en": "What is the notice period for a weekend rental contract?",
-    "category": "VASTGOEDRECHT",
-    "de": "Wie lange beträgt die Kündigungsfrist für einen Wochenendmietvertrag?"
-  },
-  {
-    "nl": "Hoeveel vakantiedagen heb ik recht op bij een onbepaalde duur contract?",
+    "nl": "Op hoeveel vakantiedagen heb ik recht bij een contract van onbepaalde duur?",
     "fr": "De combien de jours de vacances ai-je droit avec un contrat à durée indéterminée ?",
     "en": "How many vacation days am I entitled to under a contract of indefinite duration?",
     "category": "ARBEIDSRECHT",
@@ -13506,7 +12736,7 @@
     "nl": "Wat is een flexi-job?",
     "fr": "Qu'est-ce qu'un flexi-job ?",
     "en": "What is a flexi-job?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Was ist ein Flexi-Job?"
   },
   {
@@ -13524,60 +12754,11 @@
     "de": "Kann ich eine Beschwerde einreichen, wenn ich des Betrugs verdächtigt werde?"
   },
   {
-    "nl": "Kan ik de huurprijs thuiswerken na dag?",
-    "fr": "Puis-je déduire le loyer pour le télétravail après un jour ?",
-    "en": "Can I deduct the rent for working from home after one day?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich die Mietkosten für das Arbeiten von zu Hause pro Tag geltend machen?"
-  },
-  {
     "nl": "Kan ik klacht indienen als ik verdacht word van belastingfraude?",
     "fr": "Puis-je déposer plainte si je suis soupçonné d'une fraude fiscale ?",
     "en": "Can I file a complaint if I am suspected of tax fraud?",
     "category": "STRAFRECHT",
     "de": "Kann ich eine Beschwerde einlegen, wenn ich des Steuerbetrugs verdächtigt werde?"
-  },
-  {
-    "nl": "Hoe bezwaar ik tegen mijn huwelijkscontract?",
-    "fr": "Comment puis-je contester mon contrat de mariage ?",
-    "en": "How do I object to my marriage contract?",
-    "category": "FISCAAL",
-    "de": "Wie kann ich meinen Ehevertrag anfechten?"
-  },
-  {
-    "nl": "Wat is de opzegtermijn voor een studentenarbeid huurcontract?",
-    "fr": "Quel est le délai de préavis pour un contrat de location étudiant ?",
-    "en": "What is the notice period for a student employment rental contract?",
-    "category": "VASTGOEDRECHT",
-    "de": "Wie lautet die Kündigungsfrist für einen Studentenarbeitsvertrag?"
-  },
-  {
-    "nl": "Kan ik ontslag nemen zonder toestemming van mijn ex?",
-    "fr": "Puis-je démissionner sans l'autorisation de mon ex-conjoint ?",
-    "en": "Can I resign without the consent of my ex-partner?",
-    "category": "FAMILIERECHT",
-    "de": "Kann ich kündigen, ohne die Zustimmung meines Ex-Partners einzuholen?"
-  },
-  {
-    "nl": "Kan ik kleding terugsturen na maand?",
-    "fr": "Puis-je renvoyer des vêtements après un mois ?",
-    "en": "Can I return clothing after one month?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich Kleidung nach einem Monat zurücksenden?"
-  },
-  {
-    "nl": "Kan ik een samenlevingscontract krijgen na zwangerschap?",
-    "fr": "Puis-je obtenir un contrat de cohabitation après une grossesse ?",
-    "en": "Can I obtain a cohabitation agreement after pregnancy?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach einer Schwangerschaft einen Zusammenlebensvertrag erhalten?"
-  },
-  {
-    "nl": "Kan ik een testament krijgen na ziekteverlof?",
-    "fr": "Puis-je obtenir un testament après un congé maladie ?",
-    "en": "Can I make a will after sick leave?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach einem Krankenstand ein Testament erhalten?"
   },
   {
     "nl": "Kan ik een product terugsturen?",
@@ -13589,16 +12770,9 @@
   {
     "nl": "Hoeveel belasting betaal ik op een inkomen van 150000 euro?",
     "fr": "Combien d'impôt paie-je sur un revenu de 150 000 euros ?",
-    "en": "How much tax do I pay on an income of â‚¬150,000?",
+    "en": "How much tax do I pay on an income of €150,000?",
     "category": "FISCAAL",
     "de": "Wie viel Steuer zahle ich bei einem Einkommen von 150.000 Euro?"
-  },
-  {
-    "nl": "Kan ik verlof aanvragen als ik verdacht word van belastingfraude?",
-    "fr": "Puis-je demander un congé si je suis soupçonné d'une fraude fiscale ?",
-    "en": "Can I request leave if I am suspected of tax fraud?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich Beurlaubung beantragen, wenn ich des Steuerbetrugs verdächtigt werde?"
   },
   {
     "nl": "Moet mijn werkgever opleiding voorzien?",
@@ -13606,27 +12780,6 @@
     "en": "Is my employer required to provide training?",
     "category": "ARBEIDSRECHT",
     "de": "Muss mein Arbeitgeber eine Schulung bereitstellen?"
-  },
-  {
-    "nl": "Kan ik een huwelijkscontract krijgen na een arbeidsongeval?",
-    "fr": "Puis-je obtenir un contrat de mariage après un accident du travail ?",
-    "en": "Can I obtain a marriage contract after an occupational accident?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach einem Arbeitsunfall einen Ehevertrag erhalten?"
-  },
-  {
-    "nl": "Kan ik hospitalisatieverzekering krijgen als zwangerschap?",
-    "fr": "Puis-je obtenir une assurance hospitalisation en cas de grossesse ?",
-    "en": "Can I obtain hospitalisation insurance during pregnancy?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich eine Krankenhausversicherung im Falle einer Schwangerschaft abschließen?"
-  },
-  {
-    "nl": "Wat is de procedure voor thuiswerken van een huurder?",
-    "fr": "Quelle est la procédure pour le télétravail d'un locataire ?",
-    "en": "What is the procedure for a tenant to telework?",
-    "category": "VASTGOEDRECHT",
-    "de": "Wie lautet das Verfahren für Telearbeit durch einen Mieter?"
   },
   {
     "nl": "Kan ik kinderopvang claimen als zelfstandige?",
@@ -13639,15 +12792,8 @@
     "nl": "Wat zijn de snelheidslimieten?",
     "fr": "Quelles sont les limitations de vitesse ?",
     "en": "What are the speed limits?",
-    "category": "FISCAAL",
+    "category": "VERKEERSRECHT",
     "de": "Welche Geschwindigkeitsbegrenzungen gelten?"
-  },
-  {
-    "nl": "Wat gebeurt er met de e-mails na echtscheiding?",
-    "fr": "Que deviennent les courriels après un divorce ?",
-    "en": "What happens to the e-mails after divorce?",
-    "category": "FAMILIERECHT",
-    "de": "Was passiert mit den E-Mails nach der Scheidung?"
   },
   {
     "nl": "Hoe bereken ik mijn opzegvergoeding na 1 jaar?",
@@ -13657,7 +12803,7 @@
     "de": "Wie berechne ich meine Kündigungsentschädigung nach einem Jahr?"
   },
   {
-    "nl": "Hoe wijzig ik de alimentatie regeling?",
+    "nl": "Hoe wijzig ik de alimentatieregeling?",
     "fr": "Comment modifier la pension alimentaire ?",
     "en": "How do I modify the maintenance arrangement?",
     "category": "FAMILIERECHT",
@@ -13674,7 +12820,7 @@
     "nl": "Kan de gemeente mijn vergunning weigeren?",
     "fr": "La commune peut-elle refuser mon permis ?",
     "en": "Can the municipality refuse my permit?",
-    "category": "FISCAAL",
+    "category": "BESTUURSRECHT",
     "de": "Kann die Gemeinde meine Genehmigung verweigern?"
   },
   {
@@ -13688,7 +12834,7 @@
     "nl": "Hoe dien ik een klacht in bij de ombudsman?",
     "fr": "Comment introduire une plainte auprès du médiateur ?",
     "en": "How do I file a complaint with the ombudsman?",
-    "category": "FISCAAL",
+    "category": "BESTUURSRECHT",
     "de": "Wie reiche ich eine Beschwerde beim Ombudsmann ein?"
   },
   {
@@ -13713,39 +12859,11 @@
     "de": "Was ist der steuerfreie Betrag?"
   },
   {
-    "nl": "Wat is de procedure voor ontslag nemen van een huurder?",
-    "fr": "Quelle est la procédure pour qu'un locataire donne son congé ?",
-    "en": "What is the procedure for a tenant to give notice?",
-    "category": "VASTGOEDRECHT",
-    "de": "Wie ist das Verfahren zur Kündigung eines Mieters?"
-  },
-  {
-    "nl": "Wat zijn mijn rechten als adoptie ouder?",
+    "nl": "Wat zijn mijn rechten als adoptieouder?",
     "fr": "Quels sont mes droits en tant que parent adoptif ?",
     "en": "What are my rights as an adoptive parent?",
     "category": "FAMILIERECHT",
     "de": "Was sind meine Rechte als Adoptivelternteil?"
-  },
-  {
-    "nl": "Kan ik maaltijdcheques krijgen als alleenstaande ouder?",
-    "fr": "Puis-je recevoir des chèques-repas en tant que parent isolé ?",
-    "en": "Can I receive meal vouchers as a single parent?",
-    "category": "FAMILIERECHT",
-    "de": "Kann ich als alleinerziehender Elternteil Essensgutscheine erhalten?"
-  },
-  {
-    "nl": "Wat is de deadline voor thuiswerken bij de belastingen?",
-    "fr": "Quelle est la date limite pour le télétravail auprès de l'administration fiscale ?",
-    "en": "What is the deadline for teleworking with the tax authorities?",
-    "category": "FISCAAL",
-    "de": "Was ist die Frist für Telearbeit bei den Steuerbehörden?"
-  },
-  {
-    "nl": "Kan ik thuiswerken als ik verdacht word van belastingfraude?",
-    "fr": "Puis-je télétravailler si je suis soupçonné de fraude fiscale ?",
-    "en": "Can I telework if I am suspected of tax fraud?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich Telearbeit leisten, wenn ich des Steuerbetrugs verdächtigt werde?"
   },
   {
     "nl": "Hoe vraag ik een studiebeurs aan?",
@@ -13765,7 +12883,7 @@
     "nl": "Hoeveel bedraagt de eindejaarspremie?",
     "fr": "Quel est le montant de la prime de fin d'année ?",
     "en": "How much is the end-of-year bonus?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Wie hoch ist die Jahresendprämie?"
   },
   {
@@ -13779,36 +12897,8 @@
     "nl": "Hoe kies ik een ziekenfonds?",
     "fr": "Comment choisir une mutualité ?",
     "en": "How do I choose a health insurance fund?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Wie wähle ich eine Krankenkasse?"
-  },
-  {
-    "nl": "Kan ik een een firmawagen krijgen voor ouderschapsverlof?",
-    "fr": "Puis-je obtenir une voiture de société pour un congé parental ?",
-    "en": "Can I obtain a company car for parental leave?",
-    "category": "FISCAAL",
-    "de": "Kann ich für die Elternzeit einen Firmenwagen erhalten?"
-  },
-  {
-    "nl": "Wat is het minimumkapitaal voor een overuren?",
-    "fr": "Quel est le capital minimum pour des heures supplémentaires ?",
-    "en": "What is the minimum capital for overtime?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Was ist das Mindestkapital für Überstunden?"
-  },
-  {
-    "nl": "Kan ik een samenlevingscontract krijgen na ouderschapsverlof?",
-    "fr": "Puis-je obtenir un contrat de cohabitation après un congé parental ?",
-    "en": "Can I obtain a cohabitation agreement after parental leave?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach der Elternzeit einen Zusammenlebensvertrag abschließen?"
-  },
-  {
-    "nl": "Kan ik persoonlijk aansprakelijk zijn als co-?",
-    "fr": "Puis-je être personnellement responsable en tant que co-?",
-    "en": "Can I be personally liable as co-?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Kann ich persönlich haftbar sein als Co-?"
   },
   {
     "nl": "Wat is de maximumfactuur?",
@@ -13825,38 +12915,17 @@
     "de": "Was ist die Verjährungsfrist für Betrug?"
   },
   {
-    "nl": "Kan de overheid thuiswerken zonder mijn toestemming?",
-    "fr": "L'administration peut-elle imposer le télétravail sans mon consentement ?",
-    "en": "Can the government telework without my consent?",
-    "category": "BESTUURSRECHT",
-    "de": "Kann die öffentliche Hand anordnen, dass ich ohne meine Zustimmung von zu Hause aus arbeite?"
-  },
-  {
     "nl": "Hoelang is de opzegtermijn voor huur?",
     "fr": "Quelle est la durée du préavis pour un bail ?",
     "en": "How long is the notice period for a lease?",
-    "category": "FISCAAL",
+    "category": "HUURRECHT",
     "de": "Wie lange beträgt die Kündigungsfrist für einen Mietvertrag?"
-  },
-  {
-    "nl": "Wat gebeurt er met mijn hospitalisatieverzekering bij seksuele intimidatie?",
-    "fr": "Que se passe-t-il avec mon assurance hospitalisation en cas de harcèlement sexuel ?",
-    "en": "What happens to my hospitalisation insurance in case of sexual harassment?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Was geschieht mit meiner Krankenhausversicherung im Falle sexueller Belästigung?"
-  },
-  {
-    "nl": "Kan ik een dertiende maand krijgen als alleenstaande ouder?",
-    "fr": "Puis-je recevoir un treizième mois en tant que parent isolé ?",
-    "en": "Can I receive a thirteenth month as a single parent?",
-    "category": "FAMILIERECHT",
-    "de": "Kann ich als alleinerziehende Person ein 13. Monatsgehalt erhalten?"
   },
   {
     "nl": "Wat is de huurwaarborg?",
     "fr": "Qu'est-ce que la garantie locative ?",
     "en": "What is the rental deposit?",
-    "category": "FISCAAL",
+    "category": "HUURRECHT",
     "de": "Was ist die Mietkaution?"
   },
   {
@@ -13865,27 +12934,6 @@
     "en": "What is the limitation period for drug offences?",
     "category": "STRAFRECHT",
     "de": "Wie lange beträgt die Verjährungsfrist für Drogendelikte?"
-  },
-  {
-    "nl": "Kan ik een een dertiende maand krijgen voor ziekteverlof?",
-    "fr": "Puis-je bénéficier d'un treizième mois en cas de congé maladie ?",
-    "en": "Can I receive a thirteenth month for sick leave?",
-    "category": "FISCAAL",
-    "de": "Kann ich ein dreizehntes Monatsgehalt während des Krankenstands erhalten?"
-  },
-  {
-    "nl": "Hoelang kan de politie mij klacht indienen?",
-    "fr": "Pendant combien de temps la police peut-elle porter plainte contre moi ?",
-    "en": "How long can the police file a complaint against me?",
-    "category": "STRAFRECHT",
-    "de": "Wie lange kann die Polizei gegen mich Anzeige erstatten?"
-  },
-  {
-    "nl": "Kan ik hospitalisatieverzekering krijgen als alleenstaande ouder?",
-    "fr": "Puis-je obtenir une assurance hospitalisation en tant que parent isolé ?",
-    "en": "Can I obtain hospitalisation insurance as a single parent?",
-    "category": "FAMILIERECHT",
-    "de": "Kann ich als alleinerziehende Person eine Hospitalisationsversicherung abschließen?"
   },
   {
     "nl": "Kan ik giften aftrekken?",
@@ -13909,41 +12957,6 @@
     "de": "Was versteht man unter Pflegefamilienbetreuung?"
   },
   {
-    "nl": "Wat zijn de voorwaarden voor thuiswerk voogdij?",
-    "fr": "Quelles sont les conditions pour la tutelle en télétravail ?",
-    "en": "What are the conditions for teleworking guardianship?",
-    "category": "FAMILIERECHT",
-    "de": "Welche Voraussetzungen gelten für die Vormundschaft bei Telearbeit?"
-  },
-  {
-    "nl": "Wat zijn de verplichtingen van een biologische?",
-    "fr": "Quelles sont les obligations d'un parent biologique ?",
-    "en": "What are the obligations of a biological parent?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Welche Verpflichtungen hat eine Biologische?"
-  },
-  {
-    "nl": "Hoe lang blijft maaltijdcheques op mijn strafblad?",
-    "fr": "Combien de temps les chèques-repas restent-ils inscrits sur mon casier judiciaire ?",
-    "en": "How long do meal vouchers remain on my criminal record?",
-    "category": "STRAFRECHT",
-    "de": "Wie lange bleiben Mahlzeitenschecks in meinem Strafregister?"
-  },
-  {
-    "nl": "Wat is de wachttijd voor een firmawagen?",
-    "fr": "Quel est le délai d'attente pour une voiture de société ?",
-    "en": "What is the waiting period for a company car?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Wie lange beträgt die Wartezeit für einen Dienstwagen?"
-  },
-  {
-    "nl": "Wat zijn de kosten bij aankoop van een overuren woning?",
-    "fr": "Quels sont les frais lors de l'achat d'un logement « overuren » ?",
-    "en": "What are the costs when purchasing an overtime dwelling?",
-    "category": "VASTGOEDRECHT",
-    "de": "Welche Kosten fallen beim Erwerb einer \"overuren\"-Wohnung an?"
-  },
-  {
     "nl": "Wat is het minimumloon voor een bediende in België?",
     "fr": "Quel est le salaire minimum pour un employé en Belgique ?",
     "en": "What is the minimum wage for an employee in Belgium?",
@@ -13951,39 +12964,18 @@
     "de": "Wie hoch ist der Mindestlohn für einen Angestellten in Belgien?"
   },
   {
-    "nl": "Wat zijn de kosten bij aankoop van een flexi-job woning?",
-    "fr": "Quels sont les frais lors de l'achat d'un logement « flexi-job » ?",
-    "en": "What are the costs when purchasing a flexi-job dwelling?",
-    "category": "VASTGOEDRECHT",
-    "de": "Welche Kosten fallen beim Erwerb einer Flexi-Job-Wohnung an?"
-  },
-  {
     "nl": "Hoe vraag ik echtscheiding aan?",
     "fr": "Comment puis-je introduire une demande de divorce ?",
     "en": "How do I apply for a divorce?",
-    "category": "FISCAAL",
+    "category": "FAMILIERECHT",
     "de": "Wie beantrage ich eine Ehescheidung?"
   },
   {
     "nl": "Hoeveel kost een verkeersboete?",
     "fr": "Combien coûte une amende de circulation ?",
     "en": "How much does a traffic fine cost?",
-    "category": "FISCAAL",
+    "category": "VERKEERSRECHT",
     "de": "Wie viel kostet ein Verkehrsbußgeld?"
-  },
-  {
-    "nl": "Wat gebeurt er met mijn een dertiende maand bij seksuele intimidatie?",
-    "fr": "Qu'advient-il de mon treizième mois en cas de harcèlement sexuel ?",
-    "en": "What happens to my thirteenth-month pay in cases of sexual harassment?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Was passiert mit meinem 13. Monatsgehalt im Falle sexueller Belästigung?"
-  },
-  {
-    "nl": "Kan ik verlof aanvragen als ik verdacht word van oplichting?",
-    "fr": "Puis-je demander un congé si je fais l'objet de soupçons d'escroquerie ?",
-    "en": "Can I apply for leave if I am suspected of fraud?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich Urlaub beantragen, wenn ich des Betrugs verdächtigt werde?"
   },
   {
     "nl": "Kan ik ontslag nemen als ik verdacht word van diefstal?",
@@ -13993,13 +12985,6 @@
     "de": "Kann ich kündigen, wenn ich des Diebstahls verdächtigt werde?"
   },
   {
-    "nl": "Wat is het belastingtarief voor nacht inkomsten?",
-    "fr": "Quel est le taux d'imposition applicable aux revenus de nuit ?",
-    "en": "What is the tax rate on night income?",
-    "category": "FISCAAL",
-    "de": "Wie hoch ist der Steuersatz für Nachteinkünfte?"
-  },
-  {
     "nl": "Wat is de opzegtermijn bij ontslag na 25 jaar anciënniteit?",
     "fr": "Quelle est la durée du préavis en cas de licenciement après 25 ans d'ancienneté ?",
     "en": "What is the notice period for dismissal after 25 years of service?",
@@ -14007,46 +12992,11 @@
     "de": "Wie lang ist die Kündigungsfrist im Falle einer Kündigung nach 25 Jahren Dienstalter?"
   },
   {
-    "nl": "Wat zijn mijn rechten als adoptie van een woning?",
-    "fr": "Quels sont mes droits en cas d'adoption d'un logement ?",
-    "en": "What are my rights when adopting a dwelling?",
-    "category": "VASTGOEDRECHT",
-    "de": "Welche Rechte habe ich bei der Adoption einer Wohnung?"
-  },
-  {
-    "nl": "Wat is het belastingtarief voor weekend inkomsten?",
-    "fr": "Quel est le taux d'imposition applicable aux revenus de week-end ?",
-    "en": "What is the tax rate on weekend income?",
-    "category": "FISCAAL",
-    "de": "Wie hoch ist der Steuersatz für Wochenendeinkünfte?"
-  },
-  {
-    "nl": "Kan ik maaltijdcheques krijgen als slachtoffer?",
-    "fr": "Puis-je obtenir des chèques-repas en tant que victime ?",
-    "en": "Can I receive meal vouchers as a victim?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich Essensgutscheine erhalten, wenn ich Opfer bin?"
-  },
-  {
     "nl": "Hoeveel kost een ziekenhuisopname?",
     "fr": "Combien coûte une hospitalisation ?",
     "en": "How much does a hospital admission cost?",
-    "category": "FISCAAL",
+    "category": "MEDISCH",
     "de": "Wie viel kostet ein Krankenhausaufenthalt?"
-  },
-  {
-    "nl": "Kan ik de huurprijs klacht indienen na dag?",
-    "fr": "Puis-je déposer une plainte concernant le prix du loyer après un jour ?",
-    "en": "Can I file a complaint about the rent after one day?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich die Beschwerde über den Mietpreis nach einem Tag einreichen?"
-  },
-  {
-    "nl": "Wat gebeurt er met mijn een dertiende maand bij discriminatie?",
-    "fr": "Que se passe-t-il avec mon treizième mois en cas de discrimination ?",
-    "en": "What happens to my thirteenth-month pay in cases of discrimination?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Was passiert mit meinem 13. Monatsgehalt im Falle von Diskriminierung?"
   },
   {
     "nl": "Wat is de opzegtermijn bij ontslag na 3 jaar anciënniteit?",
@@ -14056,25 +13006,18 @@
     "de": "Wie lang ist die Kündigungsfrist im Falle einer Kündigung nach 3 Jahren Dienstalter?"
   },
   {
-    "nl": "Wat zijn de regels voor flexi-job arbeid in België?",
+    "nl": "Wat zijn de regels voor flexi-jobs in België?",
     "fr": "Quelles sont les règles relatives au travail en flexi-job en Belgique ?",
     "en": "What are the rules for flexi-job work in Belgium?",
     "category": "ARBEIDSRECHT",
     "de": "Welche Regeln gelten für Flexi-Jobs in Belgien?"
   },
   {
-    "nl": "Wat zijn mijn rechten als plus ouder?",
+    "nl": "Wat zijn mijn rechten als plusouder?",
     "fr": "Quels sont mes droits en tant que beau-parent ?",
     "en": "What are my rights as a step-parent?",
     "category": "FAMILIERECHT",
     "de": "Welche Rechte habe ich als Stiefelternteil?"
-  },
-  {
-    "nl": "Kan ik verlof aanvragen als ik verdacht word van diefstal?",
-    "fr": "Puis-je demander un congé si je suis soupçonné de vol ?",
-    "en": "Can I apply for leave if I am suspected of theft?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich Beurlaubung beantragen, wenn gegen mich der Verdacht des Diebstahls besteht?"
   },
   {
     "nl": "Hoeveel kost een notaris?",
@@ -14084,25 +13027,11 @@
     "de": "Wie viel kostet ein Notar?"
   },
   {
-    "nl": "Kan ik een testament krijgen na een reorganisatie?",
-    "fr": "Puis-je obtenir un testament après une réorganisation ?",
-    "en": "Can I obtain a will after a reorganisation?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach einer Reorganisation ein Testament erhalten?"
-  },
-  {
     "nl": "Wat gebeurt er met de auto na echtscheiding?",
     "fr": "Que devient la voiture après le divorce ?",
     "en": "What happens to the car after a divorce?",
     "category": "FAMILIERECHT",
     "de": "Was geschieht mit dem Auto nach der Scheidung?"
-  },
-  {
-    "nl": "Kan ik een een dertiende maand krijgen voor ouderschapsverlof?",
-    "fr": "Puis-je obtenir un treizième mois pour un congé parental ?",
-    "en": "Can I receive a thirteenth-month payment for parental leave?",
-    "category": "FISCAAL",
-    "de": "Kann ich ein 13. Monatsgehalt für Elternzeit erhalten?"
   },
   {
     "nl": "Wat zijn mijn rechten bij vakantie?",
@@ -14112,7 +13041,7 @@
     "de": "Welche Rechte habe ich hinsichtlich meines Urlaubs?"
   },
   {
-    "nl": "Wat is de notariskosten bij aankoop woning?",
+    "nl": "Wat zijn de notariskosten bij aankoop van een woning?",
     "fr": "Quels sont les frais de notaire lors de l'achat d'un logement ?",
     "en": "What are the notary fees when purchasing a dwelling?",
     "category": "FISCAAL",
@@ -14122,25 +13051,18 @@
     "nl": "Heb ik recht op een dertiende maand?",
     "fr": "Ai-je droit à un treizième mois ?",
     "en": "Am I entitled to a thirteenth-month payment?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Habe ich Anspruch auf ein dreizehntes Monatsgehalt?"
   },
   {
     "nl": "Kan ik mijn rijbewijs terugkrijgen?",
     "fr": "Puis-je récupérer mon permis de conduire ?",
     "en": "Can I have my driving licence reinstated?",
-    "category": "FISCAAL",
+    "category": "VERKEERSRECHT",
     "de": "Kann ich meinen Führerschein zurückerhalten?"
   },
   {
-    "nl": "Wat is het verschil tussen ontslag om dringende reden en verbreking ontslag?",
-    "fr": "Quelle est la différence entre un licenciement pour motif grave et la rupture du contrat de travail ?",
-    "en": "What is the difference between dismissal for urgent reasons and dismissal by termination?",
-    "category": "ARBEIDSRECHT",
-    "de": "Was ist der Unterschied zwischen einer fristlosen Kündigung aus wichtigem Grund und der Auflösung des Arbeitsverhältnisses?"
-  },
-  {
-    "nl": "Hoe bezwaar ik tegen mijn belastingaanslag?",
+    "nl": "Hoe maak ik bezwaar tegen mijn belastingaanslag?",
     "fr": "Comment puis-je contester mon avis d'imposition ?",
     "en": "How do I object to my tax assessment?",
     "category": "FISCAAL",
@@ -14154,32 +13076,11 @@
     "de": "Kann ich allein eine BV gründen?"
   },
   {
-    "nl": "Hoe geef ik e-mails aan in mijn belastingaangifte?",
-    "fr": "Comment déclarer des e-mails dans ma déclaration fiscale ?",
-    "en": "How do I declare e-mails on my tax return?",
-    "category": "FISCAAL",
-    "de": "Wie gebe ich E-Mails in meiner Steuererklärung an?"
-  },
-  {
-    "nl": "Wat gebeurt er met mijn maaltijdcheques bij pesterijen?",
-    "fr": "Que se passe-t-il avec mes chèques-repas en cas de harcèlement ?",
-    "en": "What happens to my meal vouchers in the event of harassment?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Was geschieht mit meinen Essensgutscheinen bei Mobbing?"
-  },
-  {
     "nl": "Kan ik een hospitalisatieverzekering krijgen voor vakantie?",
     "fr": "Puis-je souscrire une assurance hospitalisation pour les vacances ?",
     "en": "Can I obtain hospitalisation insurance for a holiday?",
-    "category": "FISCAAL",
+    "category": "VERZEKERINGEN",
     "de": "Kann ich für den Urlaub eine Krankenhausversicherung abschließen?"
-  },
-  {
-    "nl": "Hoe betwist ik een lawaai met mijn verhuurder?",
-    "fr": "Comment contester un bruit auprès de mon bailleur ?",
-    "en": "How do I dispute a noise nuisance with my landlord?",
-    "category": "VASTGOEDRECHT",
-    "de": "Wie kann ich eine Lärmbeeinträchtigung gegenüber meinem Vermieter anfechten?"
   },
   {
     "nl": "Wat is het minimumloon voor een flexi-jobber in België?",
@@ -14187,20 +13088,6 @@
     "en": "What is the minimum wage for a flexi-job worker in Belgium?",
     "category": "ARBEIDSRECHT",
     "de": "Wie hoch ist der Mindestlohn für einen Flexi-Jobber in Belgien?"
-  },
-  {
-    "nl": "Wat is het minimumkapitaal voor een studentenarbeid?",
-    "fr": "Quel est le capital minimum pour un travail étudiant ?",
-    "en": "What is the minimum capital for student employment?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie hoch ist das Mindestkapital für eine Studentenarbeit?"
-  },
-  {
-    "nl": "Wat zijn de voorwaarden voor weekend voogdij?",
-    "fr": "Quelles sont les conditions pour la garde le week-end ?",
-    "en": "What are the conditions for weekend custody?",
-    "category": "FAMILIERECHT",
-    "de": "Welche Voraussetzungen gelten für das Wochenend-Sorgerecht?"
   },
   {
     "nl": "Kan ik twee jobs combineren?",
@@ -14213,35 +13100,21 @@
     "nl": "Wat is een stiefouder?",
     "fr": "Qu'est-ce qu'un parent par alliance ?",
     "en": "What is a stepparent?",
-    "category": "FISCAAL",
+    "category": "FAMILIERECHT",
     "de": "Was ist ein Stiefelternteil?"
   },
   {
-    "nl": "Hoe geef ik eindejaarspremie aan in mijn belastingaangifte?",
+    "nl": "Hoe geef ik een eindejaarspremie aan in mijn belastingaangifte?",
     "fr": "Comment puis-je déclarer la prime de fin d'année dans ma déclaration fiscale ?",
     "en": "How do I declare a year-end bonus on my tax return?",
     "category": "FISCAAL",
     "de": "Wie muss ich die Jahresendprämie in meiner Steuererklärung angeben?"
   },
   {
-    "nl": "Hoe ontbind ik een vennootschap?",
-    "fr": "Comment puis-je dissoudre une société ?",
-    "en": "How do I dissolve a company?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie löse ich eine Nachtgesellschaft auf?"
-  },
-  {
-    "nl": "Kan ik de huurprijs thuiswerken na jaar?",
-    "fr": "Puis-je modifier le loyer lié au télétravail après un an ?",
-    "en": "Can I deduct the rent for homeworking after one year?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich die Miete für das Homeoffice nach einem Jahr steuerlich geltend machen?"
-  },
-  {
     "nl": "Hoe vraag ik een dertiende maand aan?",
     "fr": "Comment puis-je demander un treizième mois ?",
     "en": "How do I request a thirteenth-month payment?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT",
     "de": "Wie beantrage ich das 13. Monatsgehalt?"
   },
   {
@@ -14259,13 +13132,6 @@
     "de": "Was ist ein Leerkrediet?"
   },
   {
-    "nl": "Kan ik de huurprijs ontslag nemen na dag?",
-    "fr": "Puis-je donner congé du bail après un jour ?",
-    "en": "Can I terminate the lease after one day?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich den Mietvertrag nach einem Tag kündigen?"
-  },
-  {
     "nl": "Heb ik recht op een firmawagen als werknemer?",
     "fr": "Ai-je droit à une voiture de société en tant que salarié ?",
     "en": "Am I entitled to a company car as an employee?",
@@ -14280,20 +13146,6 @@
     "de": "Kann ich eine Beschwerde einreichen, wenn ich des Diebstahls verdächtigt werde?"
   },
   {
-    "nl": "Hoe wordt het auto verdeeld bij scheiding?",
-    "fr": "Comment la voiture est-elle répartie en cas de divorce ?",
-    "en": "How is the car divided in the event of divorce?",
-    "category": "FAMILIERECHT",
-    "de": "Wie wird das Auto bei einer Scheidung aufgeteilt?"
-  },
-  {
-    "nl": "Kan ik software terugsturen na dag?",
-    "fr": "Puis-je renvoyer un logiciel après un jour ?",
-    "en": "Can I return software after one day?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich Software nach einem Tag zurücksenden?"
-  },
-  {
     "nl": "Wat is het verschil tussen personenbelasting en roerende voorheffing?",
     "fr": "Quelle est la différence entre l'impôt des personnes physiques et le précompte mobilier ?",
     "en": "What is the difference between personal income tax and withholding tax on movable income?",
@@ -14306,20 +13158,6 @@
     "en": "What are professional expenses?",
     "category": "FISCAAL",
     "de": "Was versteht man unter Berufskosten?"
-  },
-  {
-    "nl": "Wat is de opzegtermijn voor een thuiswerk huurcontract?",
-    "fr": "Quel est le délai de préavis pour un contrat de bail pour le télétravail ?",
-    "en": "What is the notice period for a homeworking rental contract?",
-    "category": "VASTGOEDRECHT",
-    "de": "Wie lautet die Kündigungsfrist für einen Mietvertrag für Telearbeit?"
-  },
-  {
-    "nl": "Mag mijn werkgever mijn vakantiedagen controleren?",
-    "fr": "Mon employeur peut-il contrôler mes jours de congé ?",
-    "en": "May my employer verify my holiday days?",
-    "category": "ARBEIDSRECHT",
-    "de": "Darf mein Arbeitgeber meine Urlaubstage überprüfen?"
   },
   {
     "nl": "Wat gebeurt er met mijn eindejaarspremie bij ontslag?",
@@ -14357,28 +13195,14 @@
     "de": "Kann ich ohne Zustimmung meines früheren Partners oder meiner früheren Partnerin eine Beschwerde einreichen?"
   },
   {
-    "nl": "Kan ik een dertiende maand krijgen als zwangerschap?",
-    "fr": "Puis-je obtenir un 13e mois en cas de grossesse ?",
-    "en": "Can I receive a thirteenth-month payment in the event of pregnancy?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich ein 13. Monatsgehalt erhalten, wenn ich schwanger bin?"
-  },
-  {
     "nl": "Hoelang heb ik recht op maaltijdcheques?",
     "fr": "Combien de temps ai-je droit aux chèques-repas ?",
     "en": "How long am I entitled to meal vouchers?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT",
     "de": "Wie lange habe ich Anspruch auf Essensgutscheine?"
   },
   {
-    "nl": "Hoe bezwaar ik tegen mijn samenlevingscontract?",
-    "fr": "Comment puis-je contester mon contrat de cohabitation ?",
-    "en": "How do I contest my cohabitation agreement?",
-    "category": "FISCAAL",
-    "de": "Wie kann ich gegen meinen Zusammenlebensvertrag Einspruch erheben?"
-  },
-  {
-    "nl": "Wat zijn de regels voor overuren arbeid in België?",
+    "nl": "Wat zijn de regels voor overuren in België?",
     "fr": "Quelles sont les règles relatives aux heures supplémentaires en Belgique ?",
     "en": "What are the rules for overtime work in Belgium?",
     "category": "ARBEIDSRECHT",
@@ -14388,29 +13212,8 @@
     "nl": "Wat zijn mijn rechten bij een arbeidsongeval?",
     "fr": "Quels sont mes droits en cas d'accident du travail ?",
     "en": "What are my rights in the event of an occupational accident?",
-    "category": "CONSUMENTENRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Welche Rechte habe ich im Falle eines Arbeitsunfalls?"
-  },
-  {
-    "nl": "Kan ik maaltijdcheques krijgen als een arbeidsongeval?",
-    "fr": "Puis-je recevoir des chèques-repas en cas d'accident du travail ?",
-    "en": "Can I receive meal vouchers in the event of an occupational accident?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich Essensgutscheine im Falle eines Arbeitsunfalls erhalten?"
-  },
-  {
-    "nl": "Kan ik een dertiende maand krijgen als een arbeidsongeval?",
-    "fr": "Puis-je bénéficier d'un 13e mois en cas d'accident du travail ?",
-    "en": "Can I receive a thirteenth-month payment in the event of an occupational accident?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich ein dreizehntes Monatsgehalt erhalten, wenn ich einen Arbeitsunfall erlitten habe?"
-  },
-  {
-    "nl": "Kan de verkoper ontslag nemen weigeren?",
-    "fr": "Le vendeur peut-il refuser de démissionner ?",
-    "en": "Can the seller refuse termination?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann sich der Verkäufer weigern, sein Arbeitsverhältnis zu kündigen?"
   },
   {
     "nl": "Wat zijn de voorwaarden voor belastingvermindering?",
@@ -14423,43 +13226,29 @@
     "nl": "Hoe wordt alimentatie berekend in België?",
     "fr": "Qu'est-ce que la pension alimentaire ?",
     "en": "What is maintenance?",
-    "category": "FISCAAL",
+    "category": "FAMILIERECHT",
     "de": "Was ist Unterhalt?"
   },
   {
     "nl": "Wat is het verschil tussen ontslag om dringende reden en opzegging?",
     "fr": "Quelle est la différence entre le licenciement pour cause grave et le licenciement avec préavis ?",
     "en": "What is the difference between dismissal for urgent reason and dismissal with notice?",
-    "category": "VENNOOTSCHAPSRECHT",
+    "category": "ARBEIDSRECHT",
     "de": "Was ist der Unterschied zwischen einer fristlosen Kündigung aus wichtigem Grund und einer ordentlichen Kündigung?"
   },
   {
     "nl": "Mag mijn werkgever overuren verplichten?",
     "fr": "Mon employeur peut-il m'imposer des heures supplémentaires ?",
     "en": "May my employer require overtime?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Darf mein Arbeitgeber Überstunden anordnen?"
   },
   {
     "nl": "Wat is een zaakvoerder?",
     "fr": "Qu'est-ce qu'un gérant ?",
     "en": "What is a managing director?",
-    "category": "FISCAAL",
+    "category": "VENNOOTSCHAPSRECHT",
     "de": "Was ist ein Geschäftsführer?"
-  },
-  {
-    "nl": "Kan ik een een firmawagen krijgen voor ziekteverlof?",
-    "fr": "Puis-je bénéficier d'une voiture de société pendant un congé de maladie ?",
-    "en": "Can I receive a company car during sick leave?",
-    "category": "FISCAAL",
-    "de": "Kann ich während des Krankenurlaubs einen Firmenwagen erhalten?"
-  },
-  {
-    "nl": "Kan ik de huurprijs ontslag nemen na week?",
-    "fr": "Puis-je résilier le bail après une semaine ?",
-    "en": "Can I terminate the lease after a week?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich den Mietvertrag nach einer Woche kündigen?"
   },
   {
     "nl": "Wat is de opzegtermijn bij ontslag na 2 jaar anciënniteit?",
@@ -14483,17 +13272,10 @@
     "de": "Wie viel Steuer zahle ich bei einem Einkommen von 75.000 Euro?"
   },
   {
-    "nl": "Kan ik een dertiende maand krijgen als slachtoffer?",
-    "fr": "Puis-je prétendre à un treizième mois en tant que victime ?",
-    "en": "Can I receive a thirteenth month's pay as a victim?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich als Geschädigter ein dreizehntes Monatsgehalt erhalten?"
-  },
-  {
     "nl": "Hoe bereken ik mijn maaltijdcheques?",
     "fr": "Comment puis-je calculer mes chèques-repas ?",
     "en": "How do I calculate my meal vouchers?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT",
     "de": "Wie berechne ich meine Mahlzeitengutscheine?"
   },
   {
@@ -14504,35 +13286,14 @@
     "de": "Kann mein Arbeitgeber mich während eines Krankenstandes kündigen?"
   },
   {
-    "nl": "Kan ik kleding terugsturen na week?",
-    "fr": "Puis-je renvoyer des vêtements après une semaine ?",
-    "en": "Can I return clothing after a week?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich Kleidung nach einer Woche zurücksenden?"
-  },
-  {
-    "nl": "Wat is de wachttijd voor administratief beroep?",
-    "fr": "Quel est le délai pour introduire un recours administratif ?",
-    "en": "What is the waiting period for an administrative appeal?",
-    "category": "FAMILIERECHT",
-    "de": "Wie lange ist die Wartefrist für eine Verwaltungsbeschwerde?"
-  },
-  {
-    "nl": "Kan ik elektronica terugsturen na maand?",
-    "fr": "Puis-je renvoyer de l'électronique après un mois ?",
-    "en": "Can I return electronics after a month?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich Elektronik nach einem Monat zurücksenden?"
-  },
-  {
     "nl": "Wat is een GAS-boete voor parkeren?",
     "fr": "Quelle est l'amende communale (GAS) pour stationnement ?",
     "en": "What is a GAS fine for parking?",
-    "category": "FISCAAL",
+    "category": "BESTUURSRECHT",
     "de": "Was ist ein GAS-Bußgeld für Parkverstöße?"
   },
   {
-    "nl": "Wat is het belastingtarief voor flexi-job inkomsten?",
+    "nl": "Wat is het belastingtarief voor inkomsten uit een flexi-job?",
     "fr": "Quel est le taux d'imposition pour les revenus de flexi-job ?",
     "en": "What is the tax rate for flexi-job income?",
     "category": "FISCAAL",
@@ -14542,22 +13303,15 @@
     "nl": "Hoe wijzig ik de verblijfsregeling?",
     "fr": "Comment modifier le régime de résidence ?",
     "en": "How do I change the residence arrangement?",
-    "category": "FISCAAL",
+    "category": "FAMILIERECHT",
     "de": "Wie ändere ich die Aufenthaltsregelung?"
   },
   {
-    "nl": "Hoe bezwaar ik tegen een belastingaanslag?",
+    "nl": "Hoe dien ik bezwaar in tegen een belastingaanslag?",
     "fr": "Comment contester un avis d'imposition ?",
     "en": "How do I lodge an objection against a tax assessment?",
-    "category": "BESTUURSRECHT",
+    "category": "FISCAAL",
     "de": "Wie lege ich Einspruch gegen einen Steuerbescheid ein?"
-  },
-  {
-    "nl": "Wat zijn de fiscale voordelen van een thuiswerk?",
-    "fr": "Quels sont les avantages fiscaux du télétravail ?",
-    "en": "What are the tax advantages of working from home?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Welche steuerlichen Vorteile hat Telearbeit?"
   },
   {
     "nl": "Mag mijn werkgever mijn computer controleren?",
@@ -14567,32 +13321,11 @@
     "de": "Darf mein Arbeitgeber meinen Computer kontrollieren?"
   },
   {
-    "nl": "Kan ik een dertiende maand krijgen als ziekteverlof?",
-    "fr": "Puis-je recevoir un treizième mois en cas de congé de maladie ?",
-    "en": "Can I receive a thirteenth month's pay while on sick leave?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich ein 13. Monatsgehalt erhalten, wenn ich im Krankenstand bin?"
-  },
-  {
     "nl": "Hoe werkt probatie als strafmaatregel?",
     "fr": "Qu'est-ce que la probation ?",
     "en": "What is probation?",
-    "category": "FISCAAL",
+    "category": "STRAFRECHT",
     "de": "Was ist Bewährung?"
-  },
-  {
-    "nl": "Kan de overheid klacht indienen zonder mijn toestemming?",
-    "fr": "L'administration peut-elle porter plainte sans mon consentement ?",
-    "en": "Can the government file a complaint without my consent?",
-    "category": "BESTUURSRECHT",
-    "de": "Kann die Behörde ohne meine Zustimmung eine Beschwerde einreichen?"
-  },
-  {
-    "nl": "Hoeveel alimentatie moet ik betalen voor ziekteverlof?",
-    "fr": "Quel montant de pension alimentaire dois-je payer pendant un congé de maladie ?",
-    "en": "How much maintenance do I have to pay during sick leave?",
-    "category": "FAMILIERECHT",
-    "de": "Wie viel Unterhalt muss ich während eines Krankenstandes zahlen?"
   },
   {
     "nl": "Kan ik onterfd worden?",
@@ -14607,27 +13340,6 @@
     "en": "What is the appeal period?",
     "category": "FISCAAL",
     "de": "Was ist die Berufungsfrist?"
-  },
-  {
-    "nl": "Kan ik persoonlijk aansprakelijk zijn als adoptie?",
-    "fr": "Puis-je être tenu personnellement responsable en cas d'adoption ?",
-    "en": "Can I be personally liable in the event of adoption?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Kann ich bei einer Adoption persönlich haftbar sein?"
-  },
-  {
-    "nl": "Hoe krijg ik toegang tot huwelijkscontract?",
-    "fr": "Comment puis-je avoir accès au contrat de mariage ?",
-    "en": "How do I obtain access to the marriage contract?",
-    "category": "BESTUURSRECHT",
-    "de": "Wie erhalte ich Zugang zum Ehevertrag?"
-  },
-  {
-    "nl": "Wat zijn de fiscale voordelen van een vennootschap?",
-    "fr": "Quels sont les avantages fiscaux d'une société ?",
-    "en": "What are the tax advantages of company work?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Was sind die steuerlichen Vorteile einer Gesellschaft?"
   },
   {
     "nl": "Hoelang mag ik in België blijven als toerist?",
@@ -14651,31 +13363,17 @@
     "de": "Welche Rechte habe ich bei Mobbing am Arbeitsplatz?"
   },
   {
-    "nl": "Kan ik thuiswerken zonder toestemming van mijn ex?",
-    "fr": "Puis-je télétravailler sans l'autorisation de mon ex ?",
-    "en": "Can I work from home without my ex's permission?",
-    "category": "FAMILIERECHT",
-    "de": "Kann ich ohne Zustimmung meines Ex-Partners von zu Hause aus arbeiten?"
-  },
-  {
-    "nl": "Hoe bescherm ik mijn schulden bij huwelijk?",
-    "fr": "Comment puis-je protéger mes dettes lors du mariage ?",
-    "en": "How do I protect my debts upon marriage?",
-    "category": "FAMILIERECHT",
-    "de": "Wie schütze ich meine Schulden bei Eheschließung?"
-  },
-  {
     "nl": "Hoeveel alimentatie moet ik betalen?",
     "fr": "Combien de pension alimentaire dois-je payer ?",
     "en": "How much maintenance must I pay?",
-    "category": "FISCAAL",
+    "category": "FAMILIERECHT",
     "de": "Wie viel Unterhalt muss ich zahlen?"
   },
   {
     "nl": "Wie betaalt herstellingen: huurder of verhuurder?",
     "fr": "Qui paie les réparations : le locataire ou le bailleur ?",
     "en": "Who is responsible for paying repairs: the tenant or the landlord?",
-    "category": "FISCAAL",
+    "category": "HUURRECHT",
     "de": "Wer bezahlt die Reparaturen: der Mieter oder der Vermieter?"
   },
   {
@@ -14689,20 +13387,13 @@
     "nl": "Wat is invaliditeit?",
     "fr": "Qu'est-ce que l'invalidité ?",
     "en": "What is invalidity?",
-    "category": "FISCAAL",
-    "de": "Was versteht man unter Invalidität?"
-  },
-  {
-    "nl": "Kan ik hospitalisatieverzekering krijgen als een reorganisatie?",
-    "fr": "Puis-je obtenir une assurance hospitalisation en cas de réorganisation ?",
-    "en": "Can I obtain hospitalisation insurance in the event of a reorganisation?",
     "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich im Falle einer Reorganisation eine Krankenhausversicherung erhalten?"
+    "de": "Was versteht man unter Invalidität?"
   },
   {
     "nl": "Hoeveel belasting betaal ik op een inkomen van 30000 euro?",
     "fr": "Combien d'impôt dois-je payer sur un revenu de 30 000 euros ?",
-    "en": "How much tax do I pay on an income of â‚¬30,000?",
+    "en": "How much tax do I pay on an income of €30,000?",
     "category": "FISCAAL",
     "de": "Wie viel Steuern zahle ich auf ein Einkommen von 30.000 Euro?"
   },
@@ -14710,7 +13401,7 @@
     "nl": "Hoe ontbind ik mijn vennootschap?",
     "fr": "Comment puis-je dissoudre ma société ?",
     "en": "How do I dissolve my company?",
-    "category": "FISCAAL",
+    "category": "VENNOOTSCHAPSRECHT",
     "de": "Wie löse ich meine Gesellschaft auf?"
   },
   {
@@ -14721,25 +13412,11 @@
     "de": "Wie viele Urlaubstage stehen mir bei einem Teilzeitarbeitsvertrag zu?"
   },
   {
-    "nl": "Kan ik een huwelijkscontract krijgen na ziekteverlof?",
-    "fr": "Puis-je conclure un contrat de mariage après un congé de maladie ?",
-    "en": "Can I enter into a marriage contract after sick leave?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach einem Krankenstand noch einen Ehevertrag abschließen?"
-  },
-  {
     "nl": "Hoe bescherm ik mijn huis bij huwelijk?",
     "fr": "Comment puis-je protéger ma maison lors du mariage ?",
     "en": "How can I protect my house upon marriage?",
     "category": "FAMILIERECHT",
     "de": "Wie kann ich mein Haus bei einer Heirat schützen?"
-  },
-  {
-    "nl": "Hoe richt ik een studentenarbeid op in België?",
-    "fr": "Comment mettre en place un emploi étudiant en Belgique ?",
-    "en": "How do I set up student employment in Belgium?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie richte ich eine Studentenbeschäftigung in Belgien ein?"
   },
   {
     "nl": "Wat is een non-concurrentiebeding?",
@@ -14763,13 +13440,6 @@
     "de": "Was ist die Drittzahlerregelung?"
   },
   {
-    "nl": "Wat is de procedure voor klacht indienen van een huurder?",
-    "fr": "Quelle est la procédure pour qu'un locataire dépose une plainte ?",
-    "en": "What is the procedure for a tenant to lodge a complaint?",
-    "category": "VASTGOEDRECHT",
-    "de": "Was ist das Verfahren zur Einreichung einer Beschwerde durch einen Mieter?"
-  },
-  {
     "nl": "Hoeveel registratierechten betaal ik?",
     "fr": "Combien de droits d'enregistrement dois-je payer ?",
     "en": "How much registration duty do I have to pay?",
@@ -14777,24 +13447,10 @@
     "de": "Wie hoch sind die Registrierungsgebühren, die ich zahlen muss?"
   },
   {
-    "nl": "Kan ik maaltijdcheques krijgen als zwangerschap?",
-    "fr": "Puis-je obtenir des chèques-repas en cas de grossesse ?",
-    "en": "Am I entitled to meal vouchers during pregnancy?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich während der Schwangerschaft Essensgutscheine erhalten?"
-  },
-  {
-    "nl": "Wat is de deadline voor ontslag nemen bij de belastingen?",
-    "fr": "Quel est le délai pour démissionner auprès de l'administration fiscale ?",
-    "en": "What is the deadline for resigning with the tax authorities?",
-    "category": "FISCAAL",
-    "de": "Was ist die Frist für eine Kündigung gegenüber der Steuerbehörde?"
-  },
-  {
     "nl": "Wat is een bouwvergunning?",
     "fr": "Qu'est-ce qu'un permis d'urbanisme ?",
     "en": "What is a building permit?",
-    "category": "FISCAAL",
+    "category": "BOUWEN",
     "de": "Was ist eine Baugenehmigung?"
   },
   {
@@ -14822,42 +13478,14 @@
     "nl": "Kan ik bijverdienen met werkloosheid?",
     "fr": "Puis-je percevoir des revenus complémentaires en étant au chômage ?",
     "en": "Can I earn additional income while unemployed?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Kann ich während der Arbeitslosigkeit hinzuverdienen?"
-  },
-  {
-    "nl": "Kan ik verlof aanvragen zonder toestemming van mijn ex?",
-    "fr": "Puis-je demander un congé sans le consentement de mon ex-partenaire ?",
-    "en": "Can I apply for leave without my ex's consent?",
-    "category": "FAMILIERECHT",
-    "de": "Kann ich Urlaub beantragen, ohne die Zustimmung meines Ex-Partners?"
-  },
-  {
-    "nl": "Hoeveel alimentatie moet ik betalen voor ouderschapsverlof?",
-    "fr": "Combien de pension alimentaire dois-je verser pour un congé parental ?",
-    "en": "How much maintenance must I pay for parental leave?",
-    "category": "FAMILIERECHT",
-    "de": "Wie viel Unterhalt muss ich während der Elternzeit zahlen?"
-  },
-  {
-    "nl": "Hoe lang blijft auto op mijn strafblad?",
-    "fr": "Combien de temps une voiture reste-t-elle inscrite sur mon casier judiciaire ?",
-    "en": "How long does a car remain on my criminal record?",
-    "category": "STRAFRECHT",
-    "de": "Wie lange bleibt ein Auto in meinem Strafregister?"
-  },
-  {
-    "nl": "Kan de verkoper verlof aanvragen weigeren?",
-    "fr": "Le vendeur peut-il refuser une demande de congé ?",
-    "en": "Can the seller refuse to grant a request for leave?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann der Verkäufer die Beantragung von Urlaub verweigern?"
   },
   {
     "nl": "Hoeveel kost een notaris voor oprichting?",
     "fr": "Combien coûte un notaire pour une constitution ?",
     "en": "How much does a notary charge for the incorporation?",
-    "category": "FISCAAL",
+    "category": "VENNOOTSCHAPSRECHT",
     "de": "Wie viel kostet ein Notar für die Gründung?"
   },
   {
@@ -14871,14 +13499,14 @@
     "nl": "Kan ik een hospitalisatieverzekering krijgen voor een arbeidsongeval?",
     "fr": "Puis-je obtenir une assurance hospitalisation pour un accident du travail ?",
     "en": "Can I obtain hospitalisation insurance for an occupational accident?",
-    "category": "FISCAAL",
+    "category": "VERZEKERINGEN",
     "de": "Kann ich eine Krankenhausversicherung für einen Arbeitsunfall erhalten?"
   },
   {
     "nl": "Hoe krijg ik toegang tot overheidsdocumenten?",
     "fr": "Comment puis-je accéder aux documents publics ?",
     "en": "How can I obtain access to government documents?",
-    "category": "FISCAAL",
+    "category": "BESTUURSRECHT",
     "de": "Wie erhalte ich Zugang zu behördlichen Dokumenten?"
   },
   {
@@ -14899,7 +13527,7 @@
     "nl": "Wat zijn de verplichtingen van een adoptie?",
     "fr": "Quelles sont les obligations résultant d'une adoption ?",
     "en": "What are the obligations arising from an adoption?",
-    "category": "VENNOOTSCHAPSRECHT",
+    "category": "FAMILIERECHT",
     "de": "Welche Verpflichtungen ergeben sich aus einer Adoption?"
   },
   {
@@ -14913,11 +13541,11 @@
     "nl": "Hoe krijg ik verhoogde tegemoetkoming?",
     "fr": "Comment puis-je obtenir l'intervention majorée ?",
     "en": "How can I obtain increased reimbursement?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Wie erhalte ich eine erhöhte Beihilfe?"
   },
   {
-    "nl": "Wat zijn de regels voor nacht arbeid in België?",
+    "nl": "Wat zijn de regels voor nachtarbeid in België?",
     "fr": "Quelles sont les règles relatives au travail de nuit en Belgique ?",
     "en": "What are the rules for night work in Belgium?",
     "category": "ARBEIDSRECHT",
@@ -14934,7 +13562,7 @@
     "nl": "Wat gebeurt er met mijn maaltijdcheques bij burn-out?",
     "fr": "Que deviennent mes chèques-repas en cas de burn-out ?",
     "en": "What happens to my meal vouchers in the event of a burn-out?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT",
     "de": "Was geschieht mit meinen Essensgutscheinen bei einem Burn-out?"
   },
   {
@@ -14948,12 +13576,12 @@
     "nl": "Hoelang duurt een echtscheiding?",
     "fr": "Combien de temps dure un divorce ?",
     "en": "How long does a divorce take?",
-    "category": "FISCAAL",
+    "category": "FAMILIERECHT",
     "de": "Wie lange dauert eine Scheidung?"
   },
   {
     "nl": "Wat zijn de kosten bij aankoop van een tweede woning?",
-    "fr": "Quels sont les frais lors de l'achat d'un seconde résidence ?",
+    "fr": "Quels sont les frais lors de l'achat d'une résidence secondaire ?",
     "en": "What are the costs associated with the purchase of a second home?",
     "category": "VASTGOEDRECHT",
     "de": "Welche Kosten entstehen beim Kauf einer Zweitwohnung?"
@@ -14966,24 +13594,10 @@
     "de": "Kann ich meine Kündigung wegen einer Reorganisation anfechten?"
   },
   {
-    "nl": "Hoeveel kost het om een flexi-job op te richten?",
-    "fr": "Combien coûte la création d'un flexi-job ?",
-    "en": "How much does it cost to establish a flexi-job?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Was kostet es, einen Flexi-Job einzurichten?"
-  },
-  {
-    "nl": "Kan ik hypotheeklening claimen als zelfstandige?",
-    "fr": "Puis-je prétendre à un prêt hypothécaire en tant qu'indépendant ?",
-    "en": "Can I claim a mortgage loan as a self-employed person?",
-    "category": "FISCAAL",
-    "de": "Kann ich als Selbständiger einen Hypothekarkredit beantragen?"
-  },
-  {
     "nl": "Kan mijn werkgever mijn loon verlagen?",
     "fr": "Mon employeur peut-il réduire mon salaire ?",
     "en": "Can my employer reduce my salary?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Kann mein Arbeitgeber meinen Lohn kürzen?"
   },
   {
@@ -14994,32 +13608,11 @@
     "de": "Welche Sanktionen bestehen bei Nichtzahlung des Lohns durch den Arbeitgeber?"
   },
   {
-    "nl": "Kan ik een huwelijkscontract krijgen na vakantie?",
-    "fr": "Puis-je obtenir un contrat de mariage après mes vacances ?",
-    "en": "Can I obtain a marriage contract after a holiday?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach dem Urlaub einen Ehevertrag abschließen?"
-  },
-  {
-    "nl": "Hoelang kan de politie mij ontslag nemen?",
-    "fr": "Combien de temps la police peut-elle me licencier ?",
-    "en": "How long can the police detain me?",
-    "category": "STRAFRECHT",
-    "de": "Wie lange darf die Polizei mich festhalten?"
-  },
-  {
-    "nl": "Wat zijn de regels voor studentenarbeid arbeid in België?",
+    "nl": "Wat zijn de regels voor studentenarbeid in België?",
     "fr": "Quelles sont les règles relatives au travail étudiant en Belgique ?",
     "en": "What are the rules for student employment in Belgium?",
     "category": "ARBEIDSRECHT",
     "de": "Welche Regeln gelten für Studentenarbeit in Belgien?"
-  },
-  {
-    "nl": "Hoe lang blijft computer op mijn strafblad?",
-    "fr": "Combien de temps l'ordinateur reste-t-il sur mon casier judiciaire ?",
-    "en": "How long does a conviction remain on my criminal record?",
-    "category": "STRAFRECHT",
-    "de": "Wie lange bleibt ein Eintrag im Strafregister bestehen?"
   },
   {
     "nl": "Kan ik pensioensparen claimen als ambtenaar?",
@@ -15053,7 +13646,7 @@
     "nl": "Wat is de verjaringstermijn voor verkeersovertreding?",
     "fr": "Quel est le délai de prescription pour une infraction routière ?",
     "en": "What is the limitation period for a traffic offence?",
-    "category": "STRAFRECHT",
+    "category": "VERKEERSRECHT",
     "de": "Wie lautet die Verjährungsfrist für eine Verkehrsübertretung?"
   },
   {
@@ -15064,24 +13657,10 @@
     "de": "Kann ich Kinderbetreuungskosten von meinen Steuern absetzen?"
   },
   {
-    "nl": "Kan ik een een firmawagen krijgen voor een arbeidsongeval?",
-    "fr": "Puis-je obtenir une voiture de société en cas d'accident du travail ?",
-    "en": "May I receive a company car in the event of an occupational accident?",
-    "category": "FISCAAL",
-    "de": "Kann ich einen Dienstwagen wegen eines Arbeitsunfalls erhalten?"
-  },
-  {
-    "nl": "Hoe stel ik een samenlevingscontract op voor mijn kinderen?",
-    "fr": "Comment rédiger un contrat de cohabitation pour mes enfants ?",
-    "en": "How do I draw up a cohabitation contract for my children?",
-    "category": "FAMILIERECHT",
-    "de": "Wie erstelle ich einen Zusammenlebensvertrag für meine Kinder?"
-  },
-  {
     "nl": "Wat is co-ouderschap?",
     "fr": "Qu'est-ce que la coparentalité ?",
     "en": "What is joint custody?",
-    "category": "FISCAAL",
+    "category": "FAMILIERECHT",
     "de": "Was ist das gemeinsame Sorgerecht?"
   },
   {
@@ -15109,22 +13688,15 @@
     "nl": "Hoeveel pensioen krijg ik?",
     "fr": "Quel montant de pension vais-je recevoir ?",
     "en": "How much pension will I receive?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Wie viel Rente erhalte ich?"
   },
   {
     "nl": "Hoe adopteer ik een kind?",
     "fr": "Comment adopter un enfant ?",
     "en": "How do I adopt a child?",
-    "category": "FISCAAL",
+    "category": "FAMILIERECHT",
     "de": "Wie adoptiere ich ein Kind?"
-  },
-  {
-    "nl": "Kan ik thuiswerken als ik verdacht word van geweld?",
-    "fr": "Puis-je travailler à domicile si je suis soupçonné de violence ?",
-    "en": "May I work from home if I am suspected of violence?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich Telearbeit ausüben, wenn gegen mich der Verdacht einer Gewalttat besteht?"
   },
   {
     "nl": "Hoeveel uren mag ik maximaal werken per maand?",
@@ -15137,13 +13709,13 @@
     "nl": "Wat is een huurindexatie?",
     "fr": "Qu'est-ce qu'une indexation du loyer ?",
     "en": "What is rent indexation?",
-    "category": "FISCAAL",
+    "category": "HUURRECHT",
     "de": "Was ist eine Mietindexierung?"
   },
   {
     "nl": "Hoeveel belasting betaal ik op een inkomen van 20000 euro?",
     "fr": "Combien d'impôts dois-je payer sur un revenu de 20 000 euros ?",
-    "en": "How much tax do I pay on an income of â‚¬20,000?",
+    "en": "How much tax do I pay on an income of €20,000?",
     "category": "FISCAAL",
     "de": "Wie viel Steuern zahle ich bei einem Einkommen von 20.000 Euro?"
   },
@@ -15153,13 +13725,6 @@
     "en": "Do I have a right to a thirteenth month's pay as an employee?",
     "category": "ARBEIDSRECHT",
     "de": "Habe ich als Arbeitnehmer Anspruch auf ein dreizehntes Monatsgehalt?"
-  },
-  {
-    "nl": "Hoe ontbind ik een flexi-job vennootschap?",
-    "fr": "Comment dissoudre une société flexi-job ?",
-    "en": "How do I dissolve a flexi-job company?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie löse ich eine Flexi-Job-Gesellschaft auf?"
   },
   {
     "nl": "Hoeveel uren mag ik maximaal werken per week?",
@@ -15183,39 +13748,11 @@
     "de": "Was ist der Gesellschaftssitz?"
   },
   {
-    "nl": "Wat zijn mijn rechten als biologische van een woning?",
-    "fr": "Quels sont mes droits en tant que biologique d'un logement ?",
-    "en": "What are my rights as the biological owner of a dwelling?",
-    "category": "VASTGOEDRECHT",
-    "de": "Welche Rechte habe ich als biologische(r) einer Wohnung?"
-  },
-  {
     "nl": "Wat kost een doktersbezoek?",
     "fr": "Combien coûte une consultation médicale ?",
     "en": "How much does a doctor's visit cost?",
     "category": "FISCAAL",
     "de": "Was kostet ein Arztbesuch?"
-  },
-  {
-    "nl": "Wat gebeurt er met mijn een dertiende maand bij pesterijen?",
-    "fr": "Que devient mon treizième mois en cas de harcèlement ?",
-    "en": "What happens to my thirteenth month's pay in the event of harassment?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Was geschieht mit meinem dreizehnten Monatsgehalt bei Mobbing?"
-  },
-  {
-    "nl": "Wat gebeurt er met de maaltijdcheques na echtscheiding?",
-    "fr": "Que deviennent mes chèques-repas en cas de divorce ?",
-    "en": "What happens to the meal vouchers after divorce?",
-    "category": "FAMILIERECHT",
-    "de": "Was passiert mit den Essensgutscheinen nach der Scheidung?"
-  },
-  {
-    "nl": "Hoe richt ik een thuiswerk op in België?",
-    "fr": "Comment mettre en place le travail à domicile en Belgique ?",
-    "en": "How do I establish a teleworking arrangement in Belgium?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie richte ich Telearbeit in Belgien ein?"
   },
   {
     "nl": "Hoeveel belasting op huurinkomsten?",
@@ -15235,43 +13772,15 @@
     "nl": "Kan ik een blanco strafblad krijgen?",
     "fr": "Puis-je obtenir un casier judiciaire vierge ?",
     "en": "Can I obtain a clean criminal record?",
-    "category": "FISCAAL",
+    "category": "STRAFRECHT",
     "de": "Kann ich ein eintragungsfreies Führungszeugnis erhalten?"
-  },
-  {
-    "nl": "Hoeveel alimentatie moet ik betalen voor een arbeidsongeval?",
-    "fr": "Combien de pension alimentaire dois-je payer pour un accident du travail ?",
-    "en": "How much maintenance must I pay for an occupational accident?",
-    "category": "FAMILIERECHT",
-    "de": "Wie viel Unterhalt muss ich für einen Arbeitsunfall zahlen?"
-  },
-  {
-    "nl": "Kan ik elektronica terugsturen na jaar?",
-    "fr": "Puis-je renvoyer des appareils électroniques après un an ?",
-    "en": "Can I return electronics after one year?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich elektronische Geräte nach einem Jahr zurücksenden?"
-  },
-  {
-    "nl": "Wat zijn de voorwaarden voor overuren voogdij?",
-    "fr": "Quelles sont les conditions pour les heures supplémentaires de tutelle ?",
-    "en": "What are the conditions for overtime guardianship?",
-    "category": "FAMILIERECHT",
-    "de": "Was sind die Voraussetzungen für Überstunden in der Vormundschaft?"
   },
   {
     "nl": "Wat zijn de sancties bij onterecht ontslag?",
     "fr": "Quelles sont les sanctions en cas de licenciement injustifié ?",
     "en": "What are the sanctions for unlawful dismissal?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT",
     "de": "Welche Sanktionen gibt es bei ungerechtfertigter Kündigung?"
-  },
-  {
-    "nl": "Kan ik diensten terugsturen na dag?",
-    "fr": "Puis-je renvoyer des services après un jour ?",
-    "en": "Can I return services after one day?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich Dienstleistungen nach einem Tag zurückschicken?"
   },
   {
     "nl": "Hoeveel belasting op crypto?",
@@ -15279,13 +13788,6 @@
     "en": "How much tax is payable on cryptocurrency?",
     "category": "FISCAAL",
     "de": "Wie hoch ist die Besteuerung von Kryptowährungen?"
-  },
-  {
-    "nl": "Kan ik de huurprijs klacht indienen na week?",
-    "fr": "Puis-je introduire une plainte relative au montant du loyer après une semaine ?",
-    "en": "Can I file a rent complaint after one week?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich nach einer Woche eine Beschwerde über die Miethöhe einreichen?"
   },
   {
     "nl": "Wat zijn de regels voor concurrentiebeding in de arbeidsovereenkomst?",
@@ -15298,14 +13800,14 @@
     "nl": "Wat kost rijden zonder verzekering?",
     "fr": "Quel est le coût de la conduite sans assurance ?",
     "en": "What does driving without insurance cost?",
-    "category": "FISCAAL",
+    "category": "VERKEERSRECHT",
     "de": "Was kostet das Fahren ohne Versicherung?"
   },
   {
     "nl": "Wat is het verschil tussen gewoon ontslag en verbreking?",
     "fr": "Quelle est la différence entre un licenciement ordinaire et une rupture ?",
     "en": "What is the difference between ordinary dismissal and termination?",
-    "category": "STRAFRECHT",
+    "category": "ARBEIDSRECHT",
     "de": "Was ist der Unterschied zwischen einer ordentlichen Kündigung und einer fristlosen Kündigung?"
   },
   {
@@ -15337,20 +13839,6 @@
     "de": "Wie ist das Verfahren zur Beantragung von Freistellung bei meinem Arbeitgeber?"
   },
   {
-    "nl": "Wat gebeurt er met mijn maaltijdcheques bij discriminatie?",
-    "fr": "Que deviennent mes chèques-repas en cas de discrimination ?",
-    "en": "What happens to my meal vouchers in the event of discrimination?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Was geschieht mit meinen Mahlzeitengutscheinen bei Diskriminierung?"
-  },
-  {
-    "nl": "Kan ik een maaltijdcheques krijgen voor zwangerschap?",
-    "fr": "Puis-je obtenir des chèques-repas en cas de grossesse ?",
-    "en": "Can I receive meal vouchers for pregnancy?",
-    "category": "FISCAAL",
-    "de": "Kann ich Mahlzeitengutscheine aufgrund einer Schwangerschaft erhalten?"
-  },
-  {
     "nl": "Heb ik recht op outplacement na een reorganisatie?",
     "fr": "Ai-je droit à un outplacement après une réorganisation ?",
     "en": "Am I entitled to outplacement following a reorganisation?",
@@ -15363,13 +13851,6 @@
     "en": "What are the conditions for community service?",
     "category": "STRAFRECHT",
     "de": "Welche Voraussetzungen gelten für gemeinnützige Arbeit?"
-  },
-  {
-    "nl": "Kan ik een auto terugsturen na maand?",
-    "fr": "Puis-je renvoyer une voiture après un mois ?",
-    "en": "Can I return a car after a month?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich ein Auto nach einem Monat zurückgeben?"
   },
   {
     "nl": "Kan de verkoper retour weigeren?",
@@ -15396,35 +13877,14 @@
     "nl": "Hoelang duurt een strafzaak?",
     "fr": "Combien de temps dure une affaire pénale ?",
     "en": "How long does a criminal case take?",
-    "category": "FISCAAL",
+    "category": "STRAFRECHT",
     "de": "Wie lange dauert ein Strafverfahren?"
-  },
-  {
-    "nl": "Kan ik thuiswerken als ik verdacht word van verkeersovertreding?",
-    "fr": "Puis-je télétravailler si je suis soupçonné d'une infraction routière ?",
-    "en": "Can I work from home if I am suspected of a traffic offence?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich von zu Hause aus arbeiten, wenn ich eines Verkehrsverstoßes verdächtigt werde?"
-  },
-  {
-    "nl": "Hoelang kan de politie mij verlof aanvragen?",
-    "fr": "Combien de temps la police peut-elle me demander un congé ?",
-    "en": "How long can the police request my leave?",
-    "category": "STRAFRECHT",
-    "de": "Wie lange kann die Polizei für mich Freistellung beantragen?"
-  },
-  {
-    "nl": "Kan ik de huurprijs klacht indienen na maand?",
-    "fr": "Puis-je introduire une plainte relative au montant du loyer après un mois ?",
-    "en": "Can I file a complaint about the rent after a month?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich eine Beschwerde über die Miethöhe nach einem Monat einreichen?"
   },
   {
     "nl": "Wat zijn de sancties voor niet-betaling loon?",
     "fr": "Quelles sont les sanctions pour non-paiement des salaires ?",
     "en": "What are the sanctions for non-payment of wages?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Welche Sanktionen gibt es bei Nichtzahlung des Lohns?"
   },
   {
@@ -15435,27 +13895,6 @@
     "de": "Kann ich eine Beschwerde einreichen, wenn ich wegen einer Verkehrsübertretung verdächtigt werde?"
   },
   {
-    "nl": "Wat is de procedure voor ontslag nemen van kinderen?",
-    "fr": "Quelle est la procédure pour licencier des enfants ?",
-    "en": "What is the procedure for dismissing children?",
-    "category": "FAMILIERECHT",
-    "de": "Wie lautet das Verfahren für die Entlassung von Kindern?"
-  },
-  {
-    "nl": "Kan ik maaltijdcheques krijgen als een reorganisatie?",
-    "fr": "Puis-je recevoir des chèques-repas en cas de réorganisation ?",
-    "en": "Can I receive meal vouchers in the event of a reorganisation?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich Essensgutscheine erhalten bei einer Reorganisation?"
-  },
-  {
-    "nl": "Hoeveel alimentatie moet ik betalen voor een reorganisatie?",
-    "fr": "Combien de pension alimentaire dois-je payer pour une réorganisation ?",
-    "en": "How much maintenance must I pay for a reorganisation?",
-    "category": "FAMILIERECHT",
-    "de": "Wie viel Unterhalt muss ich für eine Reorganisation zahlen?"
-  },
-  {
     "nl": "Kan ik mijn BV omzetten naar eenmanszaak?",
     "fr": "Puis-je transformer ma SRL en entreprise individuelle ?",
     "en": "Can I convert my BV into a sole proprietorship?",
@@ -15463,39 +13902,11 @@
     "de": "Kann ich meine BV in ein Einzelunternehmen umwandeln?"
   },
   {
-    "nl": "Kan ik de huurprijs ontslag nemen na maand?",
-    "fr": "Puis-je résilier le bail après un mois ?",
-    "en": "Can I terminate the rent after a month?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich die Miete nach einem Monat kündigen?"
-  },
-  {
     "nl": "Wat is EOT (echtscheiding door onderlinge toestemming)?",
     "fr": "Qu'est-ce que l'EOT (divorce par consentement mutuel) ?",
     "en": "What is EOT (divorce by mutual consent)?",
-    "category": "FISCAAL",
-    "de": "Was ist EOT (Ehescheidung durch gegenseitige Zustimmung)?"
-  },
-  {
-    "nl": "Kan ik de huurprijs klacht indienen na jaar?",
-    "fr": "Puis-je introduire une plainte concernant le loyer après un an ?",
-    "en": "Can I file a complaint regarding the rent after a year?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich eine Beschwerde über die Miete nach einem Jahr einreichen?"
-  },
-  {
-    "nl": "Wat zijn de voorwaarden voor flexi-job voogdij?",
-    "fr": "Quelles sont les conditions pour le flexi-job en matière de tutelle ?",
-    "en": "What are the conditions for flexi-job guardianship?",
     "category": "FAMILIERECHT",
-    "de": "Was sind die Voraussetzungen für Flexi-Job-Vormundschaft?"
-  },
-  {
-    "nl": "Kan ik een firmawagen krijgen als slachtoffer?",
-    "fr": "Puis-je obtenir une voiture de société en tant que victime ?",
-    "en": "Can I obtain a company car as a victim?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich als Geschädigter einen Firmenwagen erhalten?"
+    "de": "Was ist EOT (Ehescheidung durch gegenseitige Zustimmung)?"
   },
   {
     "nl": "Wat is het verschil tussen arbeider en bediende?",
@@ -15515,7 +13926,7 @@
     "nl": "Hoe vraag ik werkloosheidsuitkering aan?",
     "fr": "Comment puis-je introduire une demande d'allocation de chômage ?",
     "en": "How do I apply for unemployment benefits?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Wie beantrage ich Arbeitslosengeld?"
   },
   {
@@ -15536,7 +13947,7 @@
     "nl": "Hoelang krijg ik werkloosheidsuitkering?",
     "fr": "Pendant combien de temps puis-je percevoir une allocation de chômage ?",
     "en": "How long am I entitled to unemployment benefits?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Wie lange erhalte ich Arbeitslosengeld?"
   },
   {
@@ -15585,15 +13996,8 @@
     "nl": "Wat zijn maaltijdcheques?",
     "fr": "Que sont les chèques-repas ?",
     "en": "What are meal vouchers?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Was sind Essensgutscheine?"
-  },
-  {
-    "nl": "Hoe ontbind ik een studentenarbeid vennootschap?",
-    "fr": "Comment dissoudre une société de travail étudiant ?",
-    "en": "How do I dissolve a student labour company?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie löse ich eine Gesellschaft für Studentenarbeit auf?"
   },
   {
     "nl": "Kan ik kinderopvang claimen als werknemer?",
@@ -15624,27 +14028,6 @@
     "de": "Wie viel Arbeitslosengeld erhalte ich nach einer Schwangerschaft?"
   },
   {
-    "nl": "Kan ik elektronica terugsturen na dag?",
-    "fr": "Puis-je retourner de l'électronique après un jour ?",
-    "en": "Can I return electronics after a day?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich elektronische Geräte nach einem Tag zurücksenden?"
-  },
-  {
-    "nl": "Kan ik thuiswerken als ik verdacht word van drugs?",
-    "fr": "Puis-je travailler à domicile si je suis soupçonné(e) d'infractions liées aux stupéfiants ?",
-    "en": "Can I work from home if I am suspected of a drug offence?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich von zu Hause aus arbeiten, wenn gegen mich ein Verdacht wegen Drogen besteht?"
-  },
-  {
-    "nl": "Wat zijn de voorwaarden voor studentenarbeid voogdij?",
-    "fr": "Quelles sont les conditions pour le travail étudiant sous tutelle ?",
-    "en": "What are the conditions for student employment guardianship?",
-    "category": "FAMILIERECHT",
-    "de": "Welche Voraussetzungen gelten für die Beschäftigung von Studierenden unter Vormundschaft?"
-  },
-  {
     "nl": "Wat is de verjaringstermijn voor belastingfraude?",
     "fr": "Quel est le délai de prescription pour la fraude fiscale ?",
     "en": "What is the limitation period for tax fraud?",
@@ -15652,18 +14035,11 @@
     "de": "Was ist die Verjährungsfrist für Steuerbetrug?"
   },
   {
-    "nl": "Wat is het belastingtarief voor studentenarbeid inkomsten?",
+    "nl": "Wat is het belastingtarief voor inkomsten uit studentenarbeid?",
     "fr": "Quel est le taux d'imposition sur les revenus du travail étudiant ?",
     "en": "What is the tax rate for income from student employment?",
     "category": "FISCAAL",
     "de": "Wie hoch ist der Steuersatz für Einkünfte aus Studentenarbeit?"
-  },
-  {
-    "nl": "Wat is het minimumkapitaal voor een flexi-job?",
-    "fr": "Quel est le capital minimum pour un flexi-job ?",
-    "en": "What is the minimum capital for a flexi-job?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie hoch ist das Mindestkapital für einen Flexi-Job?"
   },
   {
     "nl": "Kan mijn werkgever mij ontslaan tijdens ouderschapsverlof?",
@@ -15676,14 +14052,14 @@
     "nl": "Hoeveel registratierechten betaal ik in Wallonië?",
     "fr": "Combien de droits d'enregistrement dois-je payer en Wallonie ?",
     "en": "How much registration duty do I pay in Wallonia?",
-    "category": "VASTGOEDRECHT",
+    "category": "FISCAAL - REGISTRATIE",
     "de": "Wie hoch sind die Registrierungssteuern, die ich in Wallonien zu zahlen habe?"
   },
   {
     "nl": "Wat is een omgevingsvergunning?",
     "fr": "Qu'est-ce qu'un permis d'environnement ?",
     "en": "What is an environmental permit?",
-    "category": "FISCAAL",
+    "category": "BESTUURSRECHT",
     "de": "Was ist eine Umweltgenehmigung?"
   },
   {
@@ -15701,13 +14077,6 @@
     "de": "Welche Rechte habe ich bei Burn-out am Arbeitsplatz?"
   },
   {
-    "nl": "Kan de overheid verlof aanvragen zonder mijn toestemming?",
-    "fr": "L'autorité publique peut-elle demander un congé sans mon consentement ?",
-    "en": "Can the government request leave without my consent?",
-    "category": "BESTUURSRECHT",
-    "de": "Kann die Behörde ohne meine Zustimmung Urlaub beantragen?"
-  },
-  {
     "nl": "Kan ik pensioensparen claimen als gepensioneerde?",
     "fr": "Puis-je prétendre à l'épargne-pension en tant que pensionné ?",
     "en": "Can I claim pension savings as a retiree?",
@@ -15722,28 +14091,14 @@
     "de": "Wie hoch ist die Mehrwertsteuer, die ich auf Elektronik zahlen muss?"
   },
   {
-    "nl": "Kan mijn verhuurder klacht indienen zonder mijn toestemming?",
-    "fr": "Mon bailleur peut-il déposer une plainte sans mon consentement ?",
-    "en": "Can my landlord file a complaint without my consent?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann mein Vermieter eine Beschwerde einreichen, ohne meine Zustimmung?"
-  },
-  {
-    "nl": "Kan ik een dertiende maand krijgen als een reorganisatie?",
-    "fr": "Puis-je obtenir un treizième mois en cas de réorganisation ?",
-    "en": "Can I receive a thirteenth month's salary in the event of a reorganisation?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich aufgrund einer Reorganisation ein dreizehntes Monatsgehalt erhalten?"
-  },
-  {
     "nl": "Hoelang heb ik bedenktijd bij online aankoop?",
     "fr": "Quel est le délai de rétractation pour un achat en ligne ?",
     "en": "How long is the cooling-off period for online purchases?",
-    "category": "FISCAAL",
+    "category": "CONSUMENTENRECHT",
     "de": "Wie lange habe ich das Widerrufsrecht bei einem Onlinekauf?"
   },
   {
-    "nl": "Hoeveel vakantiedagen heb ik recht op bij een student contract?",
+    "nl": "Op hoeveel vakantiedagen heb ik recht met een studentencontract?",
     "fr": "À combien de jours de congé ai-je droit dans le cadre d'un contrat étudiant ?",
     "en": "How many vacation days am I entitled to under a student contract?",
     "category": "ARBEIDSRECHT",
@@ -15757,13 +14112,6 @@
     "de": "Wie lange beträgt die Verjährungsfrist für Diebstahl?"
   },
   {
-    "nl": "Kan ik thuiswerken als enige aandeelhouder?",
-    "fr": "Puis-je télétravailler en tant qu'actionnaire unique ?",
-    "en": "Can I work from home as the sole shareholder?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Kann ich als alleiniger Aktionär von zu Hause aus arbeiten?"
-  },
-  {
     "nl": "Wat zijn de sancties voor zwartwerk door de werkgever?",
     "fr": "Quelles sont les sanctions pour le travail dissimulé commis par l'employeur ?",
     "en": "What are the sanctions for undeclared work by the employer?",
@@ -15771,17 +14119,10 @@
     "de": "Welche Sanktionen drohen dem Arbeitgeber bei Schwarzarbeit?"
   },
   {
-    "nl": "Kan ik verlof aanvragen als ik verdacht word van geweld?",
-    "fr": "Puis-je demander un congé si je suis soupçonné de violences ?",
-    "en": "Can I apply for leave if I am suspected of violence?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich Urlaub beantragen, wenn ich wegen eines Gewaltdelikts verdächtigt werde?"
-  },
-  {
     "nl": "Wat zijn de sancties bij niet-betaling loon?",
     "fr": "Quelles sont les sanctions en cas de non-paiement du salaire ?",
     "en": "What are the sanctions for non-payment of wages?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT",
     "de": "Welche Sanktionen bestehen bei Nichtzahlung des Lohns?"
   },
   {
@@ -15792,13 +14133,6 @@
     "de": "Kann ich aufgrund einer Reorganisation entlassen werden?"
   },
   {
-    "nl": "Wat is de opzegtermijn voor een flexi-job huurcontract?",
-    "fr": "Quel est le délai de préavis pour un contrat de location flexi-job ?",
-    "en": "What is the notice period for a flexi-job rental contract?",
-    "category": "VASTGOEDRECHT",
-    "de": "Wie lange ist die Kündigungsfrist für einen Flexi-Job-Mietvertrag?"
-  },
-  {
     "nl": "Wat gebeurt er met mijn maaltijdcheques bij ontslag?",
     "fr": "Que deviennent mes chèques-repas en cas de licenciement ?",
     "en": "What happens to my meal vouchers on dismissal?",
@@ -15806,32 +14140,11 @@
     "de": "Was geschieht mit meinen Essensgutscheinen im Falle einer Entlassung?"
   },
   {
-    "nl": "Kan ik een een firmawagen krijgen voor zwangerschap?",
-    "fr": "Puis-je obtenir une voiture de société en raison d'une grossesse ?",
-    "en": "Can I get a company car because of pregnancy?",
-    "category": "FISCAAL",
-    "de": "Kann ich wegen Schwangerschaft einen Dienstwagen erhalten?"
-  },
-  {
-    "nl": "Hoeveel alimentatie moet ik betalen voor vakantie?",
-    "fr": "Combien de pension alimentaire dois-je verser pour des vacances ?",
-    "en": "How much maintenance must I pay for holiday?",
-    "category": "FAMILIERECHT",
-    "de": "Wie viel Unterhalt muss ich für Urlaub zahlen?"
-  },
-  {
     "nl": "Hoeveel kapitaal heb ik nodig voor een BV?",
     "fr": "De combien de capital ai-je besoin pour une SRL ?",
     "en": "How much capital do I need for a BV?",
-    "category": "FISCAAL",
+    "category": "VENNOOTSCHAPSRECHT",
     "de": "Wie viel Kapital benötige ich für eine BV?"
-  },
-  {
-    "nl": "Kan ik een samenlevingscontract krijgen na ziekteverlof?",
-    "fr": "Puis-je obtenir un contrat de cohabitation après un congé de maladie ?",
-    "en": "Can I obtain a cohabitation agreement after sick leave?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach einem Krankenstand einen Zusammenlebensvertrag erhalten?"
   },
   {
     "nl": "Hoeveel BTW moet ik betalen op een auto?",
@@ -15862,13 +14175,6 @@
     "de": "Welche Sanktionen sind für Diskriminierung vorgesehen?"
   },
   {
-    "nl": "Hoeveel kost het om een vennootschap op te richten?",
-    "fr": "Combien coûte la création d'une société ?",
-    "en": "How much does it cost to establish a company?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie viel kostet es, eine Gesellschaft zu gründen?"
-  },
-  {
     "nl": "Wat is de straf voor verkeersovertreding in België?",
     "fr": "Quelle est la peine pour une infraction routière en Belgique ?",
     "en": "What is the penalty for a traffic offence in Belgium?",
@@ -15879,22 +14185,8 @@
     "nl": "Hoe bereken ik mijn opzegvergoeding?",
     "fr": "Comment calculer mon indemnité de préavis ?",
     "en": "How do I calculate my compensation in lieu of notice?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Wie berechne ich meine Kündigungsentschädigung?"
-  },
-  {
-    "nl": "Hoe geef ik auto aan in mijn belastingaangifte?",
-    "fr": "Comment dois-je déclarer une voiture dans ma déclaration fiscale ?",
-    "en": "How do I declare a car in my tax return?",
-    "category": "FISCAAL",
-    "de": "Wie gebe ich ein Auto in meiner Steuererklärung an?"
-  },
-  {
-    "nl": "Kan ik een testament krijgen na ouderschapsverlof?",
-    "fr": "Puis-je établir un testament après un congé parental ?",
-    "en": "Can I obtain a will after parental leave?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich nach der Elternzeit ein Testament errichten?"
   },
   {
     "nl": "Wat is de opzegtermijn bij ontslag na 30 jaar anciënniteit?",
@@ -15904,32 +14196,11 @@
     "de": "Wie lange ist die Kündigungsfrist bei einer Kündigung nach 30 Jahren Dienstalter?"
   },
   {
-    "nl": "Kan ik een hospitalisatieverzekering krijgen voor een reorganisatie?",
-    "fr": "Puis-je obtenir une assurance hospitalisation en cas de réorganisation ?",
-    "en": "Can I obtain hospitalisation insurance for a reorganisation?",
-    "category": "FISCAAL",
-    "de": "Kann ich eine Krankenhausversicherung im Zusammenhang mit einer Reorganisation erhalten?"
-  },
-  {
     "nl": "Hoelang duurt de proefperiode?",
     "fr": "Quelle est la durée de la période d'essai ?",
     "en": "How long does the probationary period last?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Wie lange dauert die Probezeit?"
-  },
-  {
-    "nl": "Kan ik verlof aanvragen als ik verdacht word van verkeersovertreding?",
-    "fr": "Puis-je demander un congé si je suis soupçonné d'une infraction au code de la route ?",
-    "en": "Can I apply for leave if I am suspected of a traffic offence?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich Urlaub beantragen, wenn ich wegen eines Verkehrsverstoßes verdächtigt werde?"
-  },
-  {
-    "nl": "Kan ik een firmawagen krijgen als ouderschapsverlof?",
-    "fr": "Puis-je bénéficier d'une voiture de société pendant un congé parental ?",
-    "en": "Can I get a company car during parental leave?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich einen Firmenwagen erhalten, wenn ich Elternzeit nehme?"
   },
   {
     "nl": "Hoeveel vakantiedagen heb ik recht op bij een voltijds contract?",
@@ -15967,13 +14238,6 @@
     "de": "Kann ich Beiträge zum Pensionssparplan von der Steuer absetzen?"
   },
   {
-    "nl": "Wat is de deadline voor verlof aanvragen bij de belastingen?",
-    "fr": "Quelle est la date limite pour introduire une demande de congé auprès des autorités fiscales ?",
-    "en": "What is the deadline for applying for leave with the tax authorities?",
-    "category": "FISCAAL",
-    "de": "Wie lautet die Frist für die Beantragung von Urlaub bei den Steuerbehörden?"
-  },
-  {
     "nl": "Hoeveel BTW moet ik betalen op kleding?",
     "fr": "Quel montant de TVA dois-je payer sur les vêtements ?",
     "en": "How much VAT must I pay on clothing?",
@@ -15995,38 +14259,17 @@
     "de": "Welche Voraussetzungen gelten für die Gewährung eines Firmenwagens?"
   },
   {
-    "nl": "Hoe bereken ik mijn een firmawagen?",
-    "fr": "Comment calculer ma voiture de société ?",
-    "en": "How do I calculate my company car?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Wie berechne ich meinen Firmenwagen?"
-  },
-  {
-    "nl": "Wat is de procedure voor verlof aanvragen van kinderen?",
-    "fr": "Quelle est la procédure pour demander un congé pour des enfants ?",
-    "en": "What is the procedure for applying for leave for children?",
-    "category": "FAMILIERECHT",
-    "de": "Wie ist das Verfahren zur Beantragung von Urlaub für Kinder?"
-  },
-  {
-    "nl": "Hoe wordt het meubels verdeeld bij scheiding?",
-    "fr": "Comment les meubles sont-ils répartis en cas de séparation ?",
-    "en": "How is the furniture divided upon divorce?",
-    "category": "FAMILIERECHT",
-    "de": "Wie werden die Möbel bei einer Scheidung verteilt?"
-  },
-  {
     "nl": "Wat is gezinshereniging?",
     "fr": "Qu'est-ce que le regroupement familial ?",
     "en": "What is family reunification?",
-    "category": "FISCAAL",
+    "category": "VREEMDELINGENRECHT",
     "de": "Was ist Familienzusammenführung?"
   },
   {
     "nl": "Hoelang heb ik recht op een dertiende maand?",
     "fr": "Combien de temps ai-je droit à un treizième mois ?",
     "en": "How long am I entitled to a thirteenth month's pay?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT",
     "de": "Wie lange habe ich Anspruch auf ein dreizehntes Monatsgehalt?"
   },
   {
@@ -16037,13 +14280,6 @@
     "de": "Wie viel darf ein Studierender verdienen?"
   },
   {
-    "nl": "Hoe stel ik een huwelijkscontract op voor mijn kinderen?",
-    "fr": "Comment rédiger un contrat de mariage pour mes enfants ?",
-    "en": "How do I draw up a marriage contract for my children?",
-    "category": "FAMILIERECHT",
-    "de": "Wie erstelle ich einen Ehevertrag für meine Kinder?"
-  },
-  {
     "nl": "Hoe bescherm ik mijn pensioen bij huwelijk?",
     "fr": "Comment protéger ma pension lors du mariage ?",
     "en": "How do I protect my pension upon marriage?",
@@ -16051,25 +14287,11 @@
     "de": "Wie schütze ich meine Rentenansprüche bei einer Heirat?"
   },
   {
-    "nl": "Hoe ontbind ik een overuren vennootschap?",
-    "fr": "Comment dissoudre une société d'heures supplémentaires ?",
-    "en": "How do I dissolve an overtime company?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie löse ich eine Überstunden-Gesellschaft auf?"
-  },
-  {
     "nl": "Kan ik dienstencheques aftrekken van mijn belastingen?",
     "fr": "Puis-je déduire les chèques-service de mes impôts ?",
     "en": "Can I deduct service vouchers from my taxes?",
     "category": "FISCAAL",
     "de": "Kann ich Dienstleistungsschecks von meinen Steuern absetzen?"
-  },
-  {
-    "nl": "Wat is het verschil tussen gewoon ontslag en verbreking ontslag?",
-    "fr": "Quelle est la différence entre un licenciement ordinaire et une rupture du contrat de travail ?",
-    "en": "What is the difference between ordinary dismissal and dismissal by termination?",
-    "category": "ARBEIDSRECHT",
-    "de": "Was ist der Unterschied zwischen einer ordentlichen Kündigung und einer Kündigung durch Auflösung?"
   },
   {
     "nl": "Kan mijn werkgever mij ontslaan tijdens vakantie?",
@@ -16086,20 +14308,6 @@
     "de": "Habe ich Anspruch auf Outplacement nach einem Arbeitsunfall?"
   },
   {
-    "nl": "Wat is de termijn voor thuiswerken?",
-    "fr": "Quel est le délai applicable au télétravail ?",
-    "en": "What is the period for teleworking?",
-    "category": "BESTUURSRECHT",
-    "de": "Welche Frist gilt für Telearbeit?"
-  },
-  {
-    "nl": "Hoe richt ik een flexi-job op in België?",
-    "fr": "Comment créer un flexi-job en Belgique ?",
-    "en": "How do I set up a flexi-job in Belgium?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie richte ich einen Flexi-Job in Belgien ein?"
-  },
-  {
     "nl": "Hoeveel waarborg mag de verhuurder vragen?",
     "fr": "Quel montant de garantie le bailleur peut-il demander ?",
     "en": "How much deposit may the landlord require?",
@@ -16112,27 +14320,6 @@
     "en": "How do I protect my car upon marriage?",
     "category": "FAMILIERECHT",
     "de": "Wie schütze ich mein Auto bei einer Heirat?"
-  },
-  {
-    "nl": "Kan ik een firmawagen krijgen als zwangerschap?",
-    "fr": "Puis-je obtenir une voiture de société en cas de grossesse ?",
-    "en": "Can I receive a company car during pregnancy?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich während einer Schwangerschaft einen Dienstwagen bekommen?"
-  },
-  {
-    "nl": "Kan ik de huurprijs verlof aanvragen na maand?",
-    "fr": "Puis-je demander un congé de loyer après un mois ?",
-    "en": "Can I apply for rent relief after a month?",
-    "category": "VASTGOEDRECHT",
-    "de": "Kann ich nach einem Monat eine Bewilligung für die Miethöhe beantragen?"
-  },
-  {
-    "nl": "Kan ik een maaltijdcheques krijgen voor ziekteverlof?",
-    "fr": "Puis-je recevoir des chèques-repas pour un congé maladie ?",
-    "en": "Can I receive meal vouchers for sick leave?",
-    "category": "FISCAAL",
-    "de": "Kann ich während des Krankheitsurlaubs Essensgutscheine erhalten?"
   },
   {
     "nl": "Wat zijn de voorwaarden voor voogdij?",
@@ -16180,15 +14367,8 @@
     "nl": "Wat is een strafblad?",
     "fr": "Qu'est-ce qu'un casier judiciaire ?",
     "en": "What is a criminal record?",
-    "category": "FISCAAL",
-    "de": "Was ist ein Strafregister?"
-  },
-  {
-    "nl": "Hoe lang blijft e-mails op mijn strafblad?",
-    "fr": "Combien de temps les e-mails restent-ils sur mon casier judiciaire ?",
-    "en": "How long do e-mails remain on my criminal record?",
     "category": "STRAFRECHT",
-    "de": "Wie lange bleiben E-Mails in meinem Strafregister?"
+    "de": "Was ist ein Strafregister?"
   },
   {
     "nl": "Heb ik recht op outplacement na ziekteverlof?",
@@ -16196,13 +14376,6 @@
     "en": "Am I entitled to outplacement after sick leave?",
     "category": "ARBEIDSRECHT",
     "de": "Habe ich nach Krankheitsurlaub Anspruch auf Outplacement?"
-  },
-  {
-    "nl": "Kan ik kleding terugsturen na dag?",
-    "fr": "Puis-je renvoyer des vêtements après un jour ?",
-    "en": "Can I return clothing after a day?",
-    "category": "CONSUMENTENRECHT",
-    "de": "Kann ich Kleidung nach einem Tag zurückschicken?"
   },
   {
     "nl": "Wat zijn de voorwaarden voor enkelband?",
@@ -16219,13 +14392,6 @@
     "de": "Wie hoch ist die Studienbeihilfe?"
   },
   {
-    "nl": "Kan ik hypotheeklening claimen als gepensioneerde?",
-    "fr": "Puis-je prétendre à un prêt hypothécaire en tant que pensionné ?",
-    "en": "Can I apply for a mortgage loan as a pensioner?",
-    "category": "FISCAAL",
-    "de": "Kann ich als Rentner ein Hypothekendarlehen beantragen?"
-  },
-  {
     "nl": "Wat is een bindend studieadvies?",
     "fr": "Qu'est-ce qu'un avis d'orientation contraignant ?",
     "en": "What is a binding study advice?",
@@ -16236,7 +14402,7 @@
     "nl": "Kan ik het omgangsrecht weigeren?",
     "fr": "Puis-je refuser le droit de visite ?",
     "en": "Can I refuse visitation rights?",
-    "category": "FISCAAL",
+    "category": "FAMILIERECHT",
     "de": "Kann ich das Umgangsrecht verweigern?"
   },
   {
@@ -16249,16 +14415,9 @@
   {
     "nl": "Hoeveel belasting betaal ik op een inkomen van 100000 euro?",
     "fr": "Combien d'impôt paie-je sur un revenu de 100 000 euros ?",
-    "en": "How much tax do I pay on an income of â‚¬100,000?",
+    "en": "How much tax do I pay on an income of €100,000?",
     "category": "FISCAAL",
     "de": "Wie viel Steuern zahle ich auf ein Einkommen von 100.000 Euro?"
-  },
-  {
-    "nl": "Kan ik een huwelijkscontract krijgen na zwangerschap?",
-    "fr": "Puis-je obtenir un contrat de mariage après une grossesse ?",
-    "en": "Can I obtain a marriage contract after pregnancy?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich einen Ehevertrag nach einer Schwangerschaft erhalten?"
   },
   {
     "nl": "Hoe bereken ik mijn opzegvergoeding na 7 jaar?",
@@ -16282,32 +14441,11 @@
     "de": "Wie beantrage ich die Scheidung in Belgien?"
   },
   {
-    "nl": "Kan ik maaltijdcheques krijgen als ziekteverlof?",
-    "fr": "Puis-je recevoir des chèques-repas pendant un congé maladie ?",
-    "en": "Can I receive meal vouchers during sick leave?",
-    "category": "SOCIALE ZEKERHEID",
-    "de": "Kann ich während eines Krankheitsurlaubs Essensgutscheine erhalten?"
-  },
-  {
-    "nl": "Hoe krijg ik toegang tot testament?",
+    "nl": "Hoe krijg ik toegang tot een testament?",
     "fr": "Comment puis-je avoir accès à un testament ?",
     "en": "How do I gain access to a will?",
-    "category": "BESTUURSRECHT",
+    "category": "ERFRECHT",
     "de": "Wie erhalte ich Zugang zum Testament?"
-  },
-  {
-    "nl": "Kan ik thuiswerken als ik verdacht word van oplichting?",
-    "fr": "Puis-je travailler à domicile si je suis soupçonné d'escroquerie ?",
-    "en": "Can I work from home if I am suspected of fraud?",
-    "category": "STRAFRECHT",
-    "de": "Kann ich von zu Hause aus arbeiten, wenn ich des Betrugs verdächtigt werde?"
-  },
-  {
-    "nl": "Hoe ontbind ik een thuiswerk vennootschap?",
-    "fr": "Comment dissoudre une société de télétravail ?",
-    "en": "How do I dissolve a teleworking company?",
-    "category": "VENNOOTSCHAPSRECHT",
-    "de": "Wie löse ich eine Gesellschaft für Heimarbeit auf?"
   },
   {
     "nl": "Wat is de opzegtermijn bij ontslag na 20 jaar anciënniteit?",
@@ -16688,11 +14826,11 @@
     "de": "Was ist eine Gruppenversicherung?"
   },
   {
-    "nl": "Wat is een bonus fiscaal?",
+    "nl": "Hoe wordt een bonus belast?",
     "category": "ARBEIDSRECHT",
-    "en": "What is a bonus for tax purposes?",
-    "fr": "Qu'est-ce qu'un bonus fiscal ?",
-    "de": "Was ist ein steuerlicher Bonus?"
+    "en": "How is a bonus taxed?",
+    "fr": "Comment une prime est-elle imposée ?",
+    "de": "Wie wird ein Bonus besteuert?"
   },
   {
     "nl": "Wat is een winstpremie?",
@@ -16947,7 +15085,7 @@
     "de": "Was sind größere Reparaturen?"
   },
   {
-    "nl": "Wie betaalt de ketelonderhoud?",
+    "nl": "Wie betaalt het ketelonderhoud?",
     "category": "HUURRECHT",
     "en": "Who pays for boiler maintenance?",
     "fr": "Qui paie l'entretien de la chaudière ?",
@@ -17503,7 +15641,7 @@
     "nl": "Erven samenwonenden automatisch?",
     "category": "ERFRECHT",
     "en": "Do cohabitants inherit automatically?",
-    "de": "Vererben zusammenlebende Personen automatisch?",
+    "de": "Erben Zusammenwohnende automatisch?",
     "fr": "Les cohabitants héritent-ils automatiquement ?"
   },
   {
@@ -18071,105 +16209,105 @@
     "category": "CONSUMENTENRECHT",
     "en": "How do I file a complaint with the FPS Economy?",
     "fr": "Comment introduire une plainte auprès du SPF Économie ?",
-    "de": "Hoe dien ik een klacht in bij de FOD Economie? -> Wie reiche ich eine Beschwerde bei der FOD Economie ein?"
+    "de": "Wie reiche ich eine Beschwerde bei der FOD Economie ein?"
   },
   {
     "nl": "Wat zijn de regels voor tweedehandswagens?",
     "category": "CONSUMENTENRECHT",
     "en": "What are the rules for second-hand cars?",
     "fr": "Quelles sont les règles relatives aux voitures d'occasion ?",
-    "de": "Wat zijn de regels voor tweedehandswagens? -> Welche Regeln gelten für Gebrauchtwagen?"
+    "de": "Welche Regeln gelten für Gebrauchtwagen?"
   },
   {
     "nl": "Wat is een verborgen gebrek?",
     "category": "CONSUMENTENRECHT",
     "en": "What is a latent defect?",
     "fr": "Qu'est-ce qu'un vice caché ?",
-    "de": "Wat is een verborgen gebrek? -> Was ist ein verborgener Mangel?"
+    "de": "Was ist ein verborgener Mangel?"
   },
   {
     "nl": "Wat is de bedenktijd bij aankoop?",
     "category": "CONSUMENTENRECHT",
     "en": "What is the cooling-off period for a purchase?",
     "fr": "Quel est le délai de réflexion lors d'un achat ?",
-    "de": "Wat is de bedenktijd bij aankoop? -> Was ist die Widerrufsfrist beim Kauf?"
+    "de": "Was ist die Widerrufsfrist beim Kauf?"
   },
   {
     "nl": "Wanneer geldt herroepingsrecht niet?",
     "category": "CONSUMENTENRECHT",
     "en": "When does the right of withdrawal not apply?",
     "fr": "Quand le droit de rétractation ne s'applique-t-il pas ?",
-    "de": "Wanneer geldt herroepingsrecht niet? -> Wann gilt das Widerrufsrecht nicht?"
+    "de": "Wann gilt das Widerrufsrecht nicht?"
   },
   {
     "nl": "Wat is een conformiteitsgebrek?",
     "category": "CONSUMENTENRECHT",
     "en": "What is a lack of conformity?",
     "fr": "Qu'est-ce qu'un défaut de conformité ?",
-    "de": "Wat is een conformiteitsgebrek? -> Was ist ein Konformitätsmangel?"
+    "de": "Was ist ein Konformitätsmangel?"
   },
   {
     "nl": "Wat is commerciële garantie?",
     "category": "CONSUMENTENRECHT",
     "en": "What is a commercial guarantee?",
     "fr": "Qu'est-ce que la garantie commerciale ?",
-    "de": "Wat is commerciële garantie? -> Was ist eine kommerzielle Garantie?"
+    "de": "Was ist eine kommerzielle Garantie?"
   },
   {
     "nl": "Moet ik de kassabon bewaren voor garantie?",
     "category": "CONSUMENTENRECHT",
     "en": "Do I have to keep the sales receipt for guarantee purposes?",
     "fr": "Dois-je conserver le ticket de caisse pour la garantie ?",
-    "de": "Moet ik de kassabon bewaren voor garantie? -> Muss ich den Kassenbon für die Garantie aufbewahren?"
+    "de": "Muss ich den Kassenbon für die Garantie aufbewahren?"
   },
   {
     "nl": "Wat als de winkel de garantie weigert?",
     "category": "CONSUMENTENRECHT",
     "en": "What if the shop refuses to honour the guarantee?",
     "fr": "Que puis-je faire si le magasin refuse la garantie ?",
-    "de": "Wat als de winkel de garantie weigert? -> Was passiert, wenn der Händler die Garantie verweigert?"
+    "de": "Was passiert, wenn der Händler die Garantie verweigert?"
   },
   {
     "nl": "Wat zijn oneerlijke handelspraktijken?",
     "category": "CONSUMENTENRECHT",
     "en": "What are unfair commercial practices?",
     "fr": "Quelles sont les pratiques commerciales déloyales ?",
-    "de": "Wat zijn oneerlijke handelspraktijken? -> Was sind unlautere Handelspraktiken?"
+    "de": "Was sind unlautere Handelspraktiken?"
   },
   {
     "nl": "Wat is een koppelverkoop?",
     "category": "CONSUMENTENRECHT",
     "en": "What is tied selling?",
     "fr": "Qu'est-ce que la vente liée ?",
-    "de": "Wat is een koppelverkoop? -> Was ist ein Koppelverkauf?"
+    "de": "Was ist ein Koppelverkauf?"
   },
   {
     "nl": "Wat is verkoop met verlies?",
     "category": "CONSUMENTENRECHT",
     "en": "What is selling at a loss?",
     "fr": "Qu'est-ce que la vente à perte ?",
-    "de": "Wat is verkoop met verlies? -> Was ist ein Verkauf mit Verlust?"
+    "de": "Was ist ein Verkauf mit Verlust?"
   },
   {
     "nl": "Wat zijn mijn rechten bij colportage (huis-aan-huisverkoop)?",
     "category": "CONSUMENTENRECHT",
     "en": "What is door-to-door selling?",
     "fr": "Qu'est-ce que le colportage ?",
-    "de": "Wat is colportage? -> Was ist ein Haustürgeschäft?"
+    "de": "Was ist ein Haustürgeschäft?"
   },
   {
     "nl": "Wat is een koop op afstand?",
     "category": "CONSUMENTENRECHT",
     "en": "What is a distance contract?",
     "fr": "Qu'est-ce que la vente à distance ?",
-    "de": "Wat is een koop op afstand? -> Was ist ein Fernabsatzvertrag?"
+    "de": "Was ist ein Fernabsatzvertrag?"
   },
   {
     "nl": "Wat is een consumentenkrediet?",
     "category": "CONSUMENTENRECHT",
     "en": "What is consumer credit?",
     "fr": "Qu'est-ce qu'un crédit à la consommation ?",
-    "de": "Wat is een consumentenkrediet? -> Was ist ein Verbraucherkredit?"
+    "de": "Was ist ein Verbraucherkredit?"
   },
   {
     "nl": "Wat is de geschillencommissie?",
@@ -19205,7 +17343,7 @@
     "category": "BURENRECHT",
     "en": "What if branches from the neighbour overhang my property?",
     "fr": "Que se passe-t-il si des branches du voisin surplombent ?",
-    "de": "Wat is te doen als Äste des Nachbarn überhängen?"
+    "de": "Was tun, wenn Äste des Nachbarn überhängen?"
   },
   {
     "nl": "Wat is burenhinder en wat kan ik ertegen doen?",
@@ -19329,9 +17467,9 @@
   {
     "nl": "Wat is verschoonbaarheid faillissement?",
     "category": "SCHULDEN",
-    "en": "What is an excusable bankruptcy?",
-    "fr": "Qu'est-ce que l'excusabilité en cas de faillissement ?",
-    "de": "Was bedeutet Verschoonbarkeit im Insolvenzverfahren?"
+    "en": "What is excusability in bankruptcy?",
+    "fr": "Qu'est-ce que l'excusabilité en cas de faillite ?",
+    "de": "Was bedeutet die Entschuldbarkeit beim Konkurs?"
   },
   {
     "nl": "Hoelang duurt een collectieve schuldenregeling?",
@@ -19512,7 +17650,7 @@
     "nl": "Wat als iemand mijn werk kopieert?",
     "category": "INTELLECTUEEL",
     "en": "What if someone copies my work?",
-    "fr": "Que faire si quelqu'un copie mon Å“uvre ?",
+    "fr": "Que faire si quelqu'un copie mon œuvre ?",
     "de": "Was passiert, wenn jemand mein Werk kopiert?"
   },
   {
@@ -19621,7 +17759,7 @@
     "de": "Welche Regeln gelten für die Organisation einer Lotterie?"
   },
   {
-    "nl": "Hoe krijg ik een wapenwit?",
+    "nl": "Hoe krijg ik een wapenvergunning?",
     "category": "SPORT",
     "en": "How do I obtain a firearms licence?",
     "fr": "Comment obtenir une autorisation de détention d'arme ?",
@@ -21133,11 +19271,11 @@
     "de": "Was ist der Führerschein A1, A2, A?"
   },
   {
-    "nl": "Wat is een klacht indienen?",
+    "nl": "Hoe dien ik een klacht in?",
     "category": "STRAFRECHT",
-    "en": "What does it mean to file a complaint?",
-    "fr": "Qu'est-ce que déposer une plainte ?",
-    "de": "Was bedeutet es, eine Beschwerde einzureichen?"
+    "en": "How do I file a complaint?",
+    "fr": "Comment déposer plainte ?",
+    "de": "Wie erstatte ich eine Strafanzeige?"
   },
   {
     "nl": "Hoe dien ik een klacht in bij politie?",
@@ -21294,7 +19432,7 @@
     "de": "Was ist eine Gruppenklage?"
   },
   {
-    "nl": "Hoe werk een groepsvordering?",
+    "nl": "Hoe werkt een groepsvordering?",
     "category": "CONSUMENTENRECHT",
     "en": "How does a group action work?",
     "fr": "Comment fonctionne une action de groupe ?",
@@ -21599,28 +19737,28 @@
     "category": "SOCIALE ZEKERHEID",
     "en": "What is urgent medical assistance?",
     "fr": "Qu'est-ce qu'une aide médicale urgente ?",
-    "de": "Wat is dringende medische hulp? -> Was ist dringende medizinische Hilfe?"
+    "de": "Was ist dringende medizinische Hilfe?"
   },
   {
     "nl": "Wat is een installatiepremie OCMW?",
     "category": "SOCIALE ZEKERHEID",
     "en": "What is an OCMW installation grant?",
     "fr": "Qu'est-ce que la prime d'installation du CPAS ?",
-    "de": "Wat is een installatiepremie OCMW? -> Was ist eine Installationsprämie des OCMW?"
+    "de": "Was ist eine Installationsprämie des OCMW?"
   },
   {
     "nl": "Wat is een huurwaarborg OCMW?",
     "category": "SOCIALE ZEKERHEID",
     "en": "What is an OCMW rental deposit?",
     "fr": "Qu'est-ce que la caution locative du CPAS ?",
-    "de": "Wat is een huurwaarborg OCMW? -> Was ist eine Mietkaution des OCMW?"
+    "de": "Was ist eine Mietkaution des OCMW?"
   },
   {
     "nl": "Kan het OCMW mijn huurwaarborg betalen?",
     "category": "SOCIALE ZEKERHEID",
     "en": "Can the OCMW pay my rental deposit?",
     "fr": "Le CPAS peut-il payer ma caution locative ?",
-    "de": "Kan het OCMW mijn huurwaarborg betalen? -> Kann das OCMW meine Mietkaution bezahlen?"
+    "de": "Kann das OCMW meine Mietkaution bezahlen?"
   },
   {
     "nl": "Wat is schuldbemiddeling?",
@@ -21651,7 +19789,7 @@
     "de": "Kann das OCMW als Schuldenmediator fungieren?"
   },
   {
-    "nl": "Wat is de arbeidsrechtbank bevoegd voor schulden?",
+    "nl": "Waarvoor is de arbeidsrechtbank bevoegd bij schulden?",
     "category": "SOCIALE ZEKERHEID",
     "en": "What is the jurisdiction of the Labour Court with regard to debts?",
     "fr": "Quelle est la compétence du tribunal du travail en matière de dettes ?",

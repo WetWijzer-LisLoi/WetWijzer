@@ -27,6 +27,7 @@
     </ul>
 
     <h3>Limitations Connues</h3>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Élément</th>
@@ -49,6 +50,7 @@
             <td>Nous n'avons pas de contrôle sur les sites externes</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <h2>Spécifications Techniques</h2>
     <p>L'accessibilité de WetWijzer/LisLoi/GesetzGuide/LexLibera dépend des technologies suivantes :</p>

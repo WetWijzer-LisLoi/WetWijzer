@@ -145,7 +145,7 @@
   font-weight: 600;
   color: #111827;
   margin-bottom: 0.625rem;
-  text-transform: capitalize;
+  text-transform: none;
   letter-spacing: 0.025em;
 }
 
@@ -784,7 +784,7 @@
 .theme-red .bg-navy h2:not(.section-heading h2) {
   font-size: 1rem !important;
   font-weight: 600 !important;
-  text-transform: capitalize;
+  text-transform: none;
   letter-spacing: 0.025em;
 }
 
@@ -849,7 +849,7 @@
 .theme-red .toc-navigation h3 {
   font-size: 0.8125rem !important;
   font-weight: 600 !important;
-  text-transform: capitalize;
+  text-transform: none;
   letter-spacing: 0.025em;
 }
 
@@ -951,7 +951,7 @@
   font-size: 1.125rem !important;
   font-weight: 700 !important;
   letter-spacing: 0.025em !important;
-  text-transform: capitalize !important;
+  text-transform: none !important;
 }
 
 /* First heading doesn't need divider line */
@@ -1019,7 +1019,7 @@
   font-size: 1.125rem !important;
   font-weight: 700 !important;
   letter-spacing: 0.025em !important;
-  text-transform: capitalize !important;
+  text-transform: none !important;
 }
 
 /* First heading doesn't need divider line - dark mode */
@@ -2436,6 +2436,21 @@
 .dark .theme-red .bg-white .reference a:hover,
 .dark .theme-red .bg-navy .reference a:hover {
   text-decoration: underline;
+}
+
+/* An explicit law-status decoration must survive the broad document-link
+   underline above. Keep the underline as the link cue, and add the strike
+   rather than replacing it. Direct label spans need the same combination:
+   a flex item's blockified text does not inherit an ancestor's decoration,
+   and group-hover:underline must not erase the status on wrapped titles.
+   Abbreviation badges are separate metadata, not the struck-through title.
+   This named layer's important line outranks legacy unlayered table rules;
+   link colours, decoration colours and hover thickness remain unchanged. */
+@layer professional-law-status {
+  :is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) a.line-through,
+  :is(.theme-slate, .theme-indigo, .theme-sky, .theme-teal, .theme-cyan, .theme-green, .theme-purple, .theme-red) a.line-through > span:not([data-popular-law-abbreviation]) {
+    text-decoration-line: underline line-through !important;
+  }
 }
 
 /* -------------------------------------------------------------------------

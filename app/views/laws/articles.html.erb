@@ -179,7 +179,7 @@
 
         <%# Full modification history timeline %>
         <% if history[:entries].any? %>
-          <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400 capitalize tracking-wide mb-3">
+          <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400 tracking-wide mb-3">
             <%= case I18n.locale when :fr then 'Historique des modifications' when :de then 'Änderungshistorie' when :en then 'Modification history' else 'Wijzigingshistoriek' end %>
           </h3>
           <div class="relative">

@@ -9,6 +9,14 @@
     color: var(--tw-prose-body, #374151);
   }
 
+  /* Keep long headings inside the reading column; use the page language for
+     hyphenation and preserve ordinary word boundaries whenever they fit. */
+  .legal-page :is(h1, h2, h3, h4, h5) {
+    overflow-wrap: anywhere;
+    word-break: normal;
+    hyphens: auto;
+  }
+
   .legal-page h1 {
     color: var(--tw-prose-headings, #333);
     border-bottom: 2px solid var(--accent-500, #333);
@@ -151,10 +159,55 @@
   }
 
   /* ── Tables ── */
+  /* Native scrolling preserves every column on narrow screens without
+     changing table semantics or depending on the application scripts. */
+  .legal-page .legal-table-scroll {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    margin: 15px 0;
+  }
+
+  .legal-page .legal-table-scroll:focus-visible {
+    outline: 2px solid var(--accent-500, #2563eb);
+    outline-offset: 2px;
+  }
+
   .legal-page table {
     width: 100%;
     border-collapse: collapse;
     margin: 15px 0;
+  }
+
+  .legal-page .legal-table-scroll > table {
+    margin: 0;
+  }
+
+  /* Deployment-owned imprint templates contain simple two-column tables.
+     Let their values wrap on phones without altering those private files,
+     the scrollable multi-column tables, desktop sizing or printed content. */
+  @media screen and (max-width: 767px) {
+    .legal-page > table,
+    .legal-page .legal-notice > table {
+      table-layout: fixed;
+    }
+
+    .legal-page > table th,
+    .legal-page > table td,
+    .legal-page .legal-notice > table th,
+    .legal-page .legal-notice > table td {
+      overflow-wrap: anywhere;
+      hyphens: auto;
+    }
+  }
+
+  @media print {
+    .legal-page .legal-table-scroll {
+      overflow: visible;
+      max-width: none;
+    }
   }
 
   .legal-page th,
@@ -456,6 +509,17 @@
 
   .dark .legal-page .row--danger td {
     background: #450a0a;
+  }
+  /* Decorative support-page icons only: keep the original theme's emojis. */
+  .ww-support-decoration { display: inline-block; vertical-align: baseline; }
+  .ww-support-decoration .ww-support-icon { display: none; width: 1em; height: 1em; vertical-align: -0.125em; }
+  <% support_professional_themes = ThemeHelper::THEMES.select { |_key, theme| theme[:row] == 1 }.keys.map { |key| ".theme-#{key}" }.join(', ') %>
+  :is(<%= support_professional_themes %>) .ww-support-page .ww-support-emoji { display: none; }
+  :is(<%= support_professional_themes %>) .ww-support-page .ww-support-icon { display: inline-block; }
+  :is(<%= support_professional_themes %>) .ww-support-page .highlight {
+    background: var(--surface-well-bg, #f8fafc);
+    border-left-color: var(--surface-border, #e5e7eb);
+    border-radius: var(--card-radius, 4px);
   }
 </style>
 <% end %>

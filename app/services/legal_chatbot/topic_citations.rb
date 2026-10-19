@@ -75,17 +75,25 @@ module LegalChatbot
 
     def ensure_required_gdpr_processor_citations(text, question, sources)
       @required_gdpr_processor_citations = nil
-      return text unless LegalFactProvider.gdpr_processor_question?(question)
+      topics = LegalFactProvider.required_official_topic_keys(question)
+      return text if topics.empty?
 
-      required_pairs = LegalFactProvider.required_official_citations_for(
-        LegalFactProvider::GDPR_PROCESSOR_TOPIC_KEY,
-        language: @language
-      ).to_set
+      required_pairs = topics.flat_map do |topic|
+        LegalFactProvider.required_official_citations_for(topic, language: @language)
+      end.to_set
       return text if required_pairs.empty?
 
       @required_gdpr_processor_citations = {
         required_external_pairs: required_pairs.to_a,
         forbidden_internal_numacs: ['2018040581'],
+        # The Belgian cookie rule is genuinely domestic legislation, not a
+        # substitute citation for the EU GDPR. Permit only this exact pair;
+        # CitationGuard still requires its real retrieved row and matching link.
+        allowed_internal_pairs: if CommercialWebsiteIntent.topic?(question)
+                                  [['2018040581', normalize_article_number('10/2')]]
+                                else
+                                  []
+                                end,
         version: 1
       }
       allowed_pairs = sources.filter_map do |source|
@@ -119,6 +127,11 @@ module LegalChatbot
     end
 
     def gdpr_processor_citation_label(article_number)
+      unless %w[4 28].include?(article_number)
+        acronym = { 'fr' => 'RGPD', 'de' => 'DSGVO', 'en' => 'GDPR' }.fetch(@language, 'AVG')
+        return "Art. #{article_number} — #{acronym}"
+      end
+
       case @language
       when 'fr'
         article_number == '4' ? 'Art. 4, point 8 — RGPD (définition)' : 'Art. 28 — RGPD (sous-traitant)'
@@ -614,8 +627,11 @@ module LegalChatbot
       )
     end
 
-    def citation_guard_source_list_fallback_answer(sources)
-      entries = sources.filter_map do |source|
+    def citation_guard_source_list_fallback_answer(sources, verdict: nil)
+      ordered_sources = sources.sort_by do |source|
+        source_field(source, :source, 'source') == EuCorpus::SOURCE && EuCorpus.verified_record?(source) ? 0 : 1
+      end
+      entries = ordered_sources.filter_map do |source|
         label = retrieved_source_link_label(source)
         next if label.blank?
 
@@ -623,11 +639,41 @@ module LegalChatbot
       end.first(5)
       return nil if entries.empty?
 
-      append_retrieved_source_citation_list(
-        "#{localized_verified_fallback_heading}\n#{localized_guarded_source_list_fallback_intro}",
-        entries,
-        force: true
-      )
+      non_article_eu = entries.any? do |source, _label, _note|
+        source_field(source, :source, 'source') == EuCorpus::SOURCE && source_field(source, :kind, 'kind') != 'article'
+      end
+      intro = if semantic_only_rejection?(verdict)
+                localized_guarded_source_list_statement_fallback_intro
+              else
+                localized_guarded_source_list_fallback_intro(source_reference: non_article_eu)
+              end
+      append_retrieved_source_citation_list("#{localized_verified_fallback_heading}\n#{intro}", entries, force: true)
+    end
+
+    # A last rejection without any unverified reference, only fixed content
+    # condition codes, failed on a statement, not on an article reference
+    # (v4 marketplace run, Codex 20:14). Mixed verdicts keep the reference
+    # wording, which stays true for them.
+    def semantic_only_rejection?(verdict)
+      return false unless verdict.is_a?(Hash) && verdict[:passed] == false
+
+      reference_faults = %i[unsupported_references misattributed_domestic_sources missing_required_external_citations
+                            missing_required_regimes].any? { |key| Array(verdict[key]).any? }
+      conditions = verdict.any? { |key, value| key.to_s.match?(/\Amissing_\w+_conditions\z/) && Array(value).any? }
+      !reference_faults && conditions
+    end
+
+    def localized_guarded_source_list_statement_fallback_intro
+      case @language
+      when 'fr'
+        "La réponse générée contenait une affirmation que je ne pouvais pas vérifier dans les sources consultées. Je ne l'affiche donc pas comme analyse juridique. Voici les sources exactes consultées pour reprendre la question prudemment."
+      when 'de'
+        'Die generierte Antwort enthielt eine inhaltliche Aussage, die ich anhand der konsultierten Quellen nicht überprüfen konnte. Ich zeige sie deshalb nicht als Rechtsanalyse an. Hier sind die genau konsultierten Quellen für eine vorsichtige weitere Prüfung.'
+      when 'en'
+        'The generated answer contained a statement I could not verify against the consulted sources. I am therefore not showing it as legal analysis. These are the exact consulted sources to continue carefully.'
+      else
+        'Het gegenereerde antwoord bevatte een inhoudelijke bewering die ik niet aan de geraadpleegde bronnen kon toetsen. Ik toon het daarom niet als juridische analyse. Dit zijn de exact geraadpleegde bronnen om de vraag voorzichtig verder te behandelen.'
+      end
     end
 
     def localized_verified_fallback_heading
@@ -989,6 +1035,13 @@ module LegalChatbot
       valid_entries = entries.filter_map do |source, label, note|
         next unless source
 
+        if source_field(source, :source, 'source') == EuCorpus::SOURCE
+          next unless EuCorpus.verified_record?(source)
+
+          # A verified recital or judgment paragraph is not a Belgian article.
+          # Keep its exact official unit URL without inventing a NUMAC route.
+          next [note, label, source_field(source, :url, 'url')]
+        end
         numac = retrieved_source_numac(source)
         article_number = retrieved_source_article_number(source)
         next if numac.blank? || article_number.blank?
@@ -1015,6 +1068,11 @@ module LegalChatbot
     end
 
     def retrieved_source_link_label(source)
+      if source_field(source, :source, 'source') == EuCorpus::SOURCE || source_field(source, :eu_chunk_id, 'eu_chunk_id').present?
+        return nil unless EuCorpus.verified_record?(source)
+
+        return source_field(source, :title, 'title').to_s.tr('[]', '')
+      end
       article_number = retrieved_source_article_number(source)
       return nil if article_number.blank?
 
@@ -1030,17 +1088,23 @@ module LegalChatbot
       short_title.present? ? "Art. #{article_number} — #{short_title}" : "Art. #{article_number}"
     end
 
-    def localized_guarded_source_list_fallback_intro
-      case @language
-      when 'fr'
-        "La réponse générée contenait une référence d'article que je ne pouvais pas vérifier. Je ne l'affiche donc pas comme analyse juridique. Voici les sources exactes consultées pour reprendre la question prudemment."
-      when 'de'
-        'Die generierte Antwort enthielt einen nicht verifizierbaren Artikelverweis. Ich zeige sie deshalb nicht als Rechtsanalyse an. Hier sind die genau konsultierten Quellen für eine vorsichtige weitere Prüfung.'
-      when 'en'
-        'The generated answer contained an article reference I could not verify. I am therefore not showing it as legal analysis. These are the exact consulted sources to continue carefully.'
-      else
-        'Het gegenereerde antwoord bevatte een artikelverwijzing die ik niet kon verifiëren. Ik toon het daarom niet als juridische analyse. Dit zijn de exact geraadpleegde bronnen om de vraag voorzichtig verder te behandelen.'
-      end
+    def localized_guarded_source_list_fallback_intro(source_reference: false)
+      text = case @language
+             when 'fr'
+               "La réponse générée contenait une référence d'article que je ne pouvais pas vérifier. Je ne l'affiche donc pas comme analyse juridique. Voici les sources exactes consultées pour reprendre la question prudemment."
+             when 'de'
+               'Die generierte Antwort enthielt einen nicht verifizierbaren Artikelverweis. Ich zeige sie deshalb nicht als Rechtsanalyse an. Hier sind die genau konsultierten Quellen für eine vorsichtige weitere Prüfung.'
+             when 'en'
+               'The generated answer contained an article reference I could not verify. I am therefore not showing it as legal analysis. These are the exact consulted sources to continue carefully.'
+             else
+               'Het gegenereerde antwoord bevatte een artikelverwijzing die ik niet kon verifiëren. Ik toon het daarom niet als juridische analyse. Dit zijn de exact geraadpleegde bronnen om de vraag voorzichtig verder te behandelen.'
+             end
+      return text unless source_reference
+
+      text.sub("référence d'article", 'référence à une source')
+          .sub('Artikelverweis', 'Quellenverweis')
+          .sub('article reference', 'source reference')
+          .sub('artikelverwijzing', 'bronverwijzing')
     end
 
     def localized_consulted_source_note

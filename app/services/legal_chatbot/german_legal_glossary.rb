@@ -510,7 +510,17 @@ module LegalChatbot
       # coordination (2012000690) says "Zahlungsbefehl" (DE 92). Mahnung DE 98
       # in other senses, so it is not banned.
       term('payment_order', 'commandement', 'Zahlungsbefehl',
-           "#{START}commandements?#{FINISH}", 'Zahlungsbefehl')
+           "#{START}commandements?#{FINISH}", 'Zahlungsbefehl'),
+      # 2026-10-14 (docs/ops/urgent-medical-aid-2026-10-14.md): every German
+      # answer to the catalogue's "Was ist dringende medizinische Hilfe?" said
+      # "medizinische Notfallhilfe". DE "dringende medizinische Hilfe" 135 (the
+      # German coordination names the 1964 Act "Gesetz vom 8. Juli 1964 über
+      # die dringende medizinische Hilfe", 2021033230), "medizinische
+      # Notfallhilfe" 2. One German term serves both French senses: the CPAS
+      # aid of the KB of 12 December 1996 and the 112 regime of the 1964 Act.
+      term('urgent_medical_aid', 'aide médicale urgente', 'dringende medizinische Hilfe',
+           'aide\\s+m[ée]dicale\\s+urgente', 'dringende[nrms]?\\s+medizinische[nrms]?\\s+Hilfe',
+           competing_pattern: '(?i:notfallhilfe|nothilfe|notfallversorgung)')
     ].freeze
 
     # German words a reader types that no answer translation needs: shown in

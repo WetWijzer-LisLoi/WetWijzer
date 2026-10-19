@@ -24,6 +24,10 @@ module LegalChatbot
     FAISS_URL = ENV.fetch('FAISS_FISCONET_URL', 'http://localhost:8768')
     FISCONET_DB = ENV.fetch('FISCONET_DB', '/mnt/HC_Volume_104299669/embeddings/fisconet.sqlite3')
     FAISS_ENABLED = ENV.fetch('FISCONET_FAISS_ENABLED', 'false') == 'true'
+    # Metadata is deliberately separate from eligibility. In particular, a
+    # Fisconet version date is NOT the date the provision entered into force.
+    ARTICLE_METADATA_COLUMNS = %w[article_type source_type version_date publication_date end_date is_abolished region].freeze
+    EDITION_METADATA_COLUMNS = %w[base_code edition_year edition_role].freeze
 
     # Tax-related keywords for question classification
     TAX_KEYWORDS = [
@@ -32,6 +36,13 @@ module LegalChatbot
 
     FLANDERS_PATTERN = /(?<![[:alnum:]])(?:vlaanderen|vlaams(?:e)?|flandre|flamand(?:e)?|flandern|fl[aä]misch(?:e[rsnm]?)?|flanders|flemish)(?![[:alnum:]])/iu
     INHERITANCE_TAX_PATTERN = /(?<![[:alnum:]])(?:erfbelasting|successierecht(?:en)?|droits?\s+de\s+succession|erbschafts?steuer|inheritance\s+tax)(?![[:alnum:]])/iu
+    # A foreign-deceased question first needs its connecting factor, not a
+    # random succession-code neighbour that happens to mention an amount.
+    # Keep normal retrieval for an actual declaration/valuation question;
+    # asking for a percentage, rate or tariff in any language does not establish
+    # the deceased's Belgian tax jurisdiction. Named-region tariff questions
+    # and explicitly requested article numbers are admitted separately below.
+    FOREIGN_SUCCESSION_SPECIFIC_SUBJECT_PATTERN = /\b(?:aangift\w*|declar\w*|déclar\p{L}*|filing|file\s+(?:an?\s+)?(?:(?:inheritance|estate)(?:\s+tax)?|tax)\s+return|waarder\w*|waardebepal\w*|schatting\w*|estimat\w*|évalu\p{L}*|valuat\w*|apprais\w*|Bewert\w*|Wertbestimm\w*|Erklärung\w*)\b/iu
     COMPANY_CAR_TAX_PATTERN = /\A(?=.*(?:\bbedrijfswagen\b|\bvoiture\s+de\s+société\b|\bfirmenwagen\b|\bcompany\s+car\b|\bvoordeel\s+alle\s+aard\b.{0,40}\b(?:wagen|auto|voertuig)\b|\bavantage\s+de\s+toute\s+nature\b.{0,40}\b(?:véhicule|voiture)\b))(?=.*\b(?:belast\w*|belasting\w*|fisca\w*|voordeel\s+alle\s+aard|imp[oô]t\w*|fiscal\w*|avantage\s+de\s+toute\s+nature|steuer\w*|versteuer\w*|geldwerter\s+vorteil|tax\w*|benefit\s+in\s+kind)\b).*\z/im
     CRYPTO_TAX_PATTERN = /\A(?=.*\b(?:crypto|cryptomunten?|cryptovaluta|cryptowinst(?:en)?|cryptomonnaies?|cryptocurrenc(?:y|ies)|kryptowährung(?:en)?|bitcoin)\b)(?=.*(?:\b(?:belast\w*|belasting\w*|fisca\w*|diverse\s+inkomsten|meerwaard\w*|winsten?|inkomsten|imp[oô]t\w*|fiscal\w*|revenus?\s+divers|plus[-\s]?value\w*|gains?|tax\w*|income|steuer\w*|gewinn\w*)\b|\bcryptowinst(?:en)?\b)).*\z/im
     DIVERSE_INCOME_PATTERN = /\b(?:diverse\s+inkomsten|revenus\s+divers|sonstige\s+einkünfte|miscellaneous\s+income)\b/i
@@ -201,6 +212,8 @@ module LegalChatbot
     # select_per_article.
     DEVOLVED_REGIONS = %w[vlaams waals brussels].freeze
 
+    attr_reader :retrieval_degradation
+
     def initialize(embedding_service:, language: 'nl')
       @language = language
       @language_id = %w[fr de].include?(language) ? 2 : 1
@@ -215,8 +228,12 @@ module LegalChatbot
     # Returns array of article hashes with metadata (incl. legislation_id,
     # numac "FISCONET_<legislation_id>" and a working url).
     def search(question, question_embedding = nil, limit: 5)
+      @retrieval_degradation = nil
       db = fisconet_db
-      return [] unless db
+      unless db
+        @retrieval_degradation = 'database_unavailable'
+        return []
+      end
 
       # Flemish inheritance tax is codified in the Vlaamse Codex Fiscaliteit,
       # not in the federal W.Succ. copy held by Fisconet.
@@ -235,8 +252,10 @@ module LegalChatbot
         extra.each { |r| results << r unless seen.include?([r[:legislation_id], r[:article_number]]) }
       end
 
+      results.select! { |article| self.class.contextual_source_relevant?(article, question_text) }
       self.class.take_preserving_regional_groups(results, limit)
     rescue StandardError => e
+      @retrieval_degradation = 'database_unavailable'
       Rails.logger.error("[Fisconet] search failed: #{e.class}")
       []
     end
@@ -250,7 +269,8 @@ module LegalChatbot
       leg_id = art[:legislation_id]
       return nil if leg_id.blank?
 
-      base = "/laws/FISCONET_#{leg_id}?language_id=#{@language_id}"
+      source_language_id = art[:language_id].presence || @language_id
+      base = "/laws/FISCONET_#{leg_id}?language_id=#{source_language_id}"
       # A slug row has no anchor on the page: the law page renders these rows
       # under the slug itself, so a derived #art_58sexies would either miss or,
       # worse, land on a different provision (the corpus holds "Btw, KB nr. 59,
@@ -283,7 +303,14 @@ module LegalChatbot
         # jurisdiction-unstated texts read exactly as before.
         scope = region_label(art)
         scope_note = scope ? " [#{scope}]" : ''
-        parts << "[Bron #{index + 1} - #{label}]\n#{art[:document_type]} - #{ensure_utf8(art[:legislation_title])}\nArtikel #{art[:article_number]}#{section}#{scope_note}#{"\nLINK: #{link}" if link}\n\n#{ensure_utf8(art[:text])}"
+        source_details = [
+          ("Brontaal: #{art[:source_language].upcase}" if art[:source_language].present?),
+          ("Versiedatum (niet noodzakelijk inwerkingtreding): #{art[:version_date]}" if art[:version_date].present?),
+          ("Publicatiedatum: #{art[:publication_date]}" if art[:publication_date].present?),
+          ("Einddatum volgens bron: #{art[:end_date]}" if art[:end_date].present?),
+          ("Artikeltype: #{art[:article_type]}" if art[:article_type].present?)
+        ].compact.join("\n")
+        parts << "[Bron #{index + 1} - #{label}]\n#{art[:document_type]} - #{ensure_utf8(art[:legislation_title])}\nArtikel #{art[:article_number]}#{section}#{scope_note}#{"\n#{source_details}" if source_details.present?}#{"\nLINK: #{link}" if link}\n\n#{ensure_utf8(art[:text])}"
       end
 
       parts.join("\n\n---\n\n")
@@ -301,7 +328,7 @@ module LegalChatbot
           document_type: art[:document_type],
           article_number: art[:article_number],
           article_title: art[:article_title] || "Art. #{art[:article_number]}",
-          jurisdiction: art[:region],
+          jurisdiction: art[:jurisdiction].presence || art[:region],
           # Display-ready scope, kept as its OWN field rather than appended to
           # article_title. Appending was tried and was a silent no-op: the card
           # renderer rebuilds its label from a regex capture,
@@ -317,7 +344,10 @@ module LegalChatbot
           numac: art[:numac] || (art[:legislation_id] ? "FISCONET_#{art[:legislation_id]}" : nil),
           url: url,
           relevance: art[:similarity]&.round(3)
-        }
+        }.merge(art.slice(:source_kind, :authority_kind, :provider, :source_language, :language_fallback,
+                          :article_type, :source_type, :version_date, :publication_date, :end_date,
+                          :is_abolished, :base_code, :edition_year, :edition_role))
+        source[:language] = art[:source_language]&.upcase
 
         # Add article text excerpt (truncated to ~200 chars for display)
         if art[:text].present?
@@ -335,9 +365,39 @@ module LegalChatbot
     def self.tax_question?(question)
       question_text = question.to_s
       q_down = question_text.downcase
-      TAX_KEYWORDS.any? { |kw| q_down.include?(kw) } ||
+      code = /(?<![[:alnum:]])(?:wib\s*92|wib|cir\s*92|cir)(?![[:alnum:]])/iu
+      code.match?(q_down) || TAX_KEYWORDS.any? do |keyword|
+        right_boundary = %w[tax vat btw tva isoc].include?(keyword) ? '(?![[:alnum:]])' : ''
+        q_down.match?(/(?<![[:alnum:]])#{Regexp.escape(keyword)}#{right_boundary}/)
+      end ||
         question_text.match?(COMPANY_CAR_TAX_PATTERN) ||
         question_text.match?(CRYPTO_TAX_PATTERN)
+    end
+
+    # Shared with final evidence assembly: the keyword/pin/optional semantic
+    # lanes must not reintroduce unrelated W.Succ. articles after the main-law
+    # search has deliberately retained only the applicability pack. Do not tie
+    # this to a FISCONET_<id>: nightly merges can renumber legislation ids.
+    def self.contextual_source_relevant?(article, question)
+      question = question.to_s
+      return true unless question.match?(LegislationSearch::FOREIGN_DECEASED_SUCCESSION_TAX_PATTERN)
+
+      code = (article[:document_type] || article['document_type'] ||
+              article[:legislation_title] || article['legislation_title']).to_s.downcase.delete(' .')
+      return true unless code == 'wsucc'
+      return true if question.match?(LegislationSearch::FLANDERS_REGION_PATTERN) ||
+                     question.match?(LegislationSearch::BRUSSELS_WALLONIA_REGION_PATTERN)
+      return true if question.match?(FOREIGN_SUCCESSION_SPECIFIC_SUBJECT_PATTERN)
+
+      number = (article[:article_number] || article['article_number']).to_s.delete(' ').downcase
+      requested = question.to_enum(:scan, EXPLICIT_ARTICLE_PATTERN).map do
+        Regexp.last_match[:number].delete(' ').downcase
+      end
+      return true if requested.include?(number)
+
+      LegislationSearch.foreign_succession_applicability_source?(
+        { numac: '1936033102', article_title: "Art.#{number}" }, question
+      )
     end
 
     private
@@ -369,6 +429,7 @@ module LegalChatbot
       rows = db.execute(
         "SELECT a.id, a.legislation_id, a.article_number, a.text_nl, a.text_fr, #{section_path_sql(db)},
                 #{LEGISLATION_TITLE_NL_SQL}, #{LEGISLATION_TITLE_FR_SQL}, l.document_type, #{fisconet_id_sql(db)}
+                #{metadata_select(db)}
                 #{region_select(db)}
          FROM tax_articles a
          JOIN tax_legislation l ON a.legislation_id = l.id
@@ -391,7 +452,7 @@ module LegalChatbot
       end
 
       indexed = rows.each_with_index.map do |row, index|
-        article = row_to_article(row, @language == 'fr')
+        article = row_to_article(row, @language == 'fr', metadata_offset: 10)
         article[:article_number] =
           canonical.fetch(article[:article_number].to_s.downcase, article[:article_number])
         [article, index]
@@ -479,6 +540,7 @@ module LegalChatbot
                 #{LEGISLATION_TITLE_NL_SQL}, #{LEGISLATION_TITLE_FR_SQL}, l.document_type, #{fisconet_id_sql(db)},
                 #{legislation_current_sql(db)} AS legislation_current,
                 #{ARTICLE_CURRENT_SQL} AS article_current
+                #{metadata_select(db)}
                 #{region_select(db)}
          FROM tax_articles a
          JOIN tax_legislation l ON a.legislation_id = l.id
@@ -488,8 +550,10 @@ module LegalChatbot
          LIMIT 400", params
       )
 
-      scored = rows.map do |row|
-        art = row_to_article(row, is_french)
+      scored = rows.filter_map do |row|
+        art = row_to_article(row, is_french, metadata_offset: 12)
+        next unless self.class.contextual_source_relevant?(art, question)
+
         art[:similarity] = score_article(art, keywords, explicit_art)
         { article: art, integrity: [row[10].to_i, row[11].to_i] }
       end
@@ -834,6 +898,14 @@ module LegalChatbot
       region_columns?(db) ? ', a.region_nl, a.region_fr' : ', NULL, NULL'
     end
 
+    def metadata_select(db)
+      article_columns = columns_of(db, 'tax_articles')
+      legislation_columns = columns_of(db, 'tax_legislation')
+      fields = ARTICLE_METADATA_COLUMNS.map { |name| article_columns.include?(name) ? "a.#{name}" : 'NULL' }
+      fields.concat(EDITION_METADATA_COLUMNS.map { |name| legislation_columns.include?(name) ? "l.#{name}" : 'NULL' })
+      ", #{fields.join(', ')}"
+    end
+
     def region_order_sql(db)
       return '' unless region_columns?(db)
 
@@ -877,11 +949,18 @@ module LegalChatbot
        article[:region].to_s]
     end
 
-    def row_to_article(row, is_french)
+    def row_to_article(row, is_french, metadata_offset: nil)
       article_id, leg_id, art_num, text_nl, text_fr, section_path, title_nl, title_fr, doc_type, fisconet_id = row
       region_nl, region_fr = row[-2], row[-1]
-      text = is_french ? (text_fr.presence || text_nl) : (text_nl.presence || text_fr)
-      title = is_french ? (title_fr.presence || title_nl) : (title_nl.presence || title_fr)
+      # Source identity follows the text actually used, not the interface
+      # language. A fallback must not label French text as Dutch, link to an
+      # empty Dutch page, or apply the missing Dutch variant's jurisdiction.
+      use_french = is_french ? text_fr.present? : text_nl.blank? && text_fr.present?
+      text = use_french ? text_fr : text_nl
+      title = use_french ? (title_fr.presence || title_nl) : (title_nl.presence || title_fr)
+      metadata_names = ARTICLE_METADATA_COLUMNS + EDITION_METADATA_COLUMNS
+      metadata = metadata_offset ? metadata_names.zip(row[metadata_offset, metadata_names.length]).to_h.symbolize_keys.compact : {}
+      jurisdiction = metadata.delete(:region)
       # Cut the not-yet-in-force block off BEFORE the 3000-char slice below. tax_articles
       # has no variant column, so a marker in the body is the only signal there has ever
       # been that a row carries future law - and slicing first can delete the marker while
@@ -890,7 +969,12 @@ module LegalChatbot
       # ever ranks a row on words that are not in force.
       in_force, future_block = LegalChatbot::FutureLaw.split(text.to_s)
       art = {
-        region: (is_french ? region_fr : region_nl).presence,
+        region: (use_french ? region_fr : region_nl).presence || jurisdiction.presence,
+        jurisdiction: jurisdiction.presence || (use_french ? region_fr : region_nl).presence,
+        source_language: use_french ? 'fr' : 'nl',
+        language_id: use_french ? 2 : 1,
+        language_fallback: (use_french ? 'fr' : 'nl') != @language,
+        source_kind: 'legislation', authority_kind: 'tax_legislation', provider: 'fisconet',
         article_id: article_id,
         legislation_id: leg_id,
         article_number: art_num,
@@ -905,7 +989,7 @@ module LegalChatbot
         fisconet_id: fisconet_id,
         numac: leg_id ? "FISCONET_#{leg_id}" : nil,
         similarity: 0.0
-      }
+      }.merge(metadata)
       art[:url] = article_url(art)
       art
     end
@@ -924,6 +1008,7 @@ module LegalChatbot
       end
 
       unless response.is_a?(Net::HTTPSuccess)
+        @retrieval_degradation = 'semantic_unavailable'
         Rails.logger.error("[Fisconet FAISS] HTTP error: #{response.code}")
         return []
       end
@@ -938,6 +1023,7 @@ module LegalChatbot
       rows = db.execute(
         "SELECT a.id, a.legislation_id, a.article_number, a.text_nl, a.text_fr, #{section_path_sql(db)},
                 #{LEGISLATION_TITLE_NL_SQL}, #{LEGISLATION_TITLE_FR_SQL}, l.document_type, #{fisconet_id_sql(db)}
+                #{metadata_select(db)}
                 #{region_select(db)}
          FROM tax_articles a
          JOIN tax_legislation l ON a.legislation_id = l.id
@@ -946,11 +1032,12 @@ module LegalChatbot
 
       is_french = @language == 'fr'
       rows.map do |row|
-        art = row_to_article(row, is_french)
+        art = row_to_article(row, is_french, metadata_offset: 10)
         art[:similarity] = similarity_map[art[:article_id]] || 0.0
         art
       end.sort_by { |m| -m[:similarity] }
     rescue StandardError => e
+      @retrieval_degradation = 'semantic_unavailable'
       Rails.logger.error("[Fisconet] FAISS search failed: #{e.class}")
       []
     end

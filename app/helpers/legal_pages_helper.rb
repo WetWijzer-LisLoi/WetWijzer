@@ -1,30 +1,65 @@
 # frozen_string_literal: true
 
 module LegalPagesHelper
+  PRICING_ACCESS_COPY = {
+    nl: {
+      starter: 'Bij uw eerste registratie ontvangt u eenmalig %{credits} gratis startcredits. Ze komen in hetzelfde saldo als gekochte en inbegrepen Pro-credits en kunnen worden gebruikt voor beschikbare combinaties waarvan de totaalprijs binnen uw saldo past. Een gewoon account heeft modeltoegang tot en met Grondig.',
+      catalogue: '%{available} beschikbare modellen bij %{providers} providers · %{pending} modellen binnenkort · verwerking met Europees bereik',
+      base_credit: 'basiscredit', base_credits: 'basiscredits',
+      access: 'Een gewoon account kan alle beschikbare modellen en ondersteunde denkmodi van Snel, Gebalanceerd en Grondig gebruiken. Alleen Uitgebreid vereist daarnaast een actief Pro-abonnement. Elke vraag vereist voldoende credits; startcredits, gekochte credits en inbegrepen Pro-credits werken op dezelfde manier en vervallen niet.',
+      source_access: 'Pro geeft ook toegang tot rechtspraak en parlementaire documenten in de chatbot. Zelf zoeken en documenten lezen op de website blijft gratis.',
+      pending: 'Modellen met “Binnenkort” zijn nog niet beschikbaar en kunnen niet worden geselecteerd.'
+    },
+    fr: {
+      starter: 'Lors de votre première inscription, vous recevez une seule fois %{credits} crédits de bienvenue gratuits. Ils rejoignent le même solde que les crédits achetés et inclus avec Pro et permettent d’utiliser les combinaisons disponibles dont le coût total ne dépasse pas votre solde. Un compte ordinaire a accès aux modèles jusqu’à Approfondie.',
+      catalogue: '%{available} modèles disponibles chez %{providers} fournisseurs · %{pending} modèles bientôt disponibles · traitement à portée européenne',
+      base_credit: 'crédit de base', base_credits: 'crédits de base',
+      access: 'Un compte ordinaire peut utiliser tous les modèles et modes de raisonnement pris en charge disponibles dans Rapide, Équilibrée et Approfondie. Seule Étendue nécessite aussi un abonnement Pro actif. Chaque question exige suffisamment de crédits ; les crédits de bienvenue, achetés et inclus avec Pro fonctionnent de la même manière et n’expirent pas.',
+      source_access: 'Pro donne aussi accès à la jurisprudence et aux documents parlementaires dans le chatbot. La recherche et la lecture des documents sur le site restent gratuites.',
+      pending: 'Les modèles marqués « Bientôt disponible » ne sont pas encore disponibles et ne peuvent pas être sélectionnés.'
+    },
+    de: {
+      starter: 'Bei Ihrer ersten Registrierung erhalten Sie einmalig %{credits} kostenlose Startcredits. Sie kommen zum gleichen Guthaben wie gekaufte und in Pro enthaltene Credits und können für verfügbare Kombinationen genutzt werden, deren Gesamtpreis durch Ihr Guthaben gedeckt ist. Ein normales Konto hat Modellzugang bis einschließlich Gründlich.',
+      catalogue: '%{available} verfügbare Modelle von %{providers} Anbietern · %{pending} Modelle demnächst · europäisch begrenzte Verarbeitung',
+      base_credit: 'Basis-Credit', base_credits: 'Basis-Credits',
+      access: 'Ein normales Konto kann alle verfügbaren Modelle und unterstützten Denkmodi in Schnell, Ausgewogen und Gründlich nutzen. Nur Umfassend erfordert zusätzlich ein aktives Pro-Abonnement. Jede Frage benötigt ausreichend Credits; Startcredits, gekaufte und in Pro enthaltene Credits funktionieren gleich und verfallen nicht.',
+      source_access: 'Pro ermöglicht auch den Zugriff auf Rechtsprechung und parlamentarische Dokumente im Chatbot. Die Suche und das Lesen der Dokumente auf der Website bleiben kostenlos.',
+      pending: 'Mit „Demnächst verfügbar“ gekennzeichnete Modelle sind noch nicht verfügbar und können nicht ausgewählt werden.'
+    },
+    en: {
+      starter: 'On your first registration, you receive %{credits} free starter credits once. They join the same balance as purchased credits and credits included with Pro and can fund available combinations whose total price fits your balance. A regular account has model access through Thorough.',
+      catalogue: '%{available} available models from %{providers} providers · %{pending} models coming soon · European-scoped processing',
+      base_credit: 'base credit', base_credits: 'base credits',
+      access: 'A regular account can use all available models and supported reasoning modes in Quick, Balanced and Thorough. Only Extensive also requires an active Pro subscription. Every question needs sufficient credits; starter credits, purchased credits and credits included with Pro work in the same way and never expire.',
+      source_access: 'Pro also unlocks case law and parliamentary documents in the chatbot. Searching and reading documents on the website remains free.',
+      pending: 'Models marked “Coming soon” are not available yet and cannot be selected.'
+    }
+  }.freeze
+
   CHATBOT_PRICING_COPY = {
     en: {
       level: 'Level', base_credits: 'Base credits per question', models: 'Available models',
-      total_credits: 'Total with optional reasoning', providers: 'Provider(s)', locations: 'Processing location',
-      reasoning: 'Reasoning',
-      reasoning_text: 'Supported reasoning modes add %{surcharges} credits. A surcharge is charged only when the selected model supports and uses that mode; the exact total is shown before sending.'
+      total_credits: 'Total at the selected research depth', providers: 'Provider(s)', locations: 'Processing location',
+      reasoning: 'Research depth', preview: 'Preview',
+      reasoning_text: 'The bar and dropdown select the same model/reasoning combination and update each other. Each equally spaced tick is one choice, grouped by research depth and then by total cost within each group; a taller tick marks the first choice at a new total price. Combinations with the same price have separate steps. Your combination sets the research budget. Supported and used extra reasoning adds %{surcharges} credits to the model price; the exact total is always shown before sending. Source and citation checks always apply; a higher cost does not guarantee a better answer.'
     },
     nl: {
       level: 'Niveau', base_credits: 'Basiscredits per vraag', models: 'Beschikbare modellen',
-      total_credits: 'Totaal met optioneel redeneren', providers: 'Provider(s)', locations: 'Verwerkingslocatie',
-      reasoning: 'Redeneren',
-      reasoning_text: 'Ondersteunde redeneringsmodi kosten %{surcharges} credits extra. Een toeslag wordt alleen aangerekend wanneer het gekozen model die modus ondersteunt en gebruikt; het exacte totaal staat vóór verzending in beeld.'
+      total_credits: 'Totaal bij gekozen onderzoeksdiepte', providers: 'Provider(s)', locations: 'Verwerkingslocatie',
+      reasoning: 'Onderzoeksdiepte', preview: 'Testversie',
+      reasoning_text: 'De balk en keuzelijst kiezen dezelfde model-denkwerkcombinatie en houden elkaar bij. Elk streepje is één keuze, op gelijke afstand, gegroepeerd per onderzoeksdiepte en daarbinnen op totale kosten; een hoger streepje markeert de eerste keuze met een nieuwe totaalprijs. Combinaties met dezelfde prijs hebben elk een eigen stap. Uw combinatie bepaalt het onderzoeksbudget. Ondersteund en gebruikt extra denkwerk kost %{surcharges} credits bovenop de modelprijs; het exacte totaal staat altijd vóór verzending bij uw keuze. Bron- en citaatcontrole gelden altijd; een hogere prijs garandeert geen beter antwoord.'
     },
     fr: {
       level: 'Niveau', base_credits: 'Crédits de base par question', models: 'Modèles disponibles',
-      total_credits: 'Total avec raisonnement facultatif', providers: 'Fournisseur(s)', locations: 'Lieu de traitement',
-      reasoning: 'Raisonnement',
-      reasoning_text: 'Les modes de raisonnement pris en charge ajoutent %{surcharges} crédits. Un supplément est facturé uniquement si le modèle choisi prend en charge et utilise ce mode ; le total exact est affiché avant l’envoi.'
+      total_credits: 'Total selon la profondeur de recherche', providers: 'Fournisseur(s)', locations: 'Lieu de traitement',
+      reasoning: 'Profondeur de recherche', preview: 'Version préliminaire',
+      reasoning_text: 'La barre et la liste choisissent la même combinaison de modèle et de raisonnement et se mettent à jour mutuellement. Chaque trait est un choix, espacé régulièrement, regroupé par profondeur de recherche puis par coût total au sein de chaque groupe ; un trait plus haut marque le premier choix à un nouveau prix total. Les combinaisons au même prix ont des positions distinctes. Votre combinaison fixe le budget de recherche. Le raisonnement supplémentaire pris en charge et utilisé ajoute %{surcharges} crédits au prix du modèle ; le total exact est toujours affiché avant l’envoi. Les contrôles des sources et citations restent toujours applicables ; un prix supérieur ne garantit pas une meilleure réponse.'
     },
     de: {
       level: 'Stufe', base_credits: 'Basis-Credits pro Frage', models: 'Verfügbare Modelle',
-      total_credits: 'Gesamt mit optionalem Denken', providers: 'Anbieter', locations: 'Verarbeitungsort',
-      reasoning: 'Denktiefe',
-      reasoning_text: 'Unterstützte Denkmodi kosten %{surcharges} Credits zusätzlich. Ein Aufschlag wird nur berechnet, wenn das gewählte Modell diesen Modus unterstützt und verwendet; die genaue Summe wird vor dem Absenden angezeigt.'
+      total_credits: 'Gesamt beim gewählten Rechercheumfang', providers: 'Anbieter', locations: 'Verarbeitungsort',
+      reasoning: 'Rechercheumfang', preview: 'Vorschauversion',
+      reasoning_text: 'Leiste und Auswahlliste wählen dieselbe Modell-Denkaufwand-Kombination und aktualisieren sich gegenseitig. Jeder Strich ist eine Auswahl mit gleichem Abstand, nach Rechercheumfang gruppiert und innerhalb jeder Gruppe nach Gesamtkosten sortiert; ein höherer Strich markiert die erste Auswahl mit einem neuen Gesamtpreis. Gleich teure Kombinationen haben eigene Schritte. Ihre Kombination bestimmt das Recherchebudget. Unterstützter und verwendeter zusätzlicher Denkaufwand kostet %{surcharges} Credits zusätzlich zum Modellpreis; die genaue Summe wird immer vor dem Absenden angezeigt. Quellen- und Zitatprüfungen gelten immer; ein höherer Preis garantiert keine bessere Antwort.'
     }
   }.freeze
 
@@ -59,6 +94,24 @@ module LegalPagesHelper
     CHATBOT_PRICING_COPY.fetch(locale.to_sym, CHATBOT_PRICING_COPY[:en])
   end
 
+  def pricing_access_copy(locale = I18n.locale)
+    PRICING_ACCESS_COPY.fetch(locale.to_sym, PRICING_ACCESS_COPY[:en])
+  end
+
+  def chatbot_pricing_availability(rows = chatbot_pricing_rows)
+    models = rows.flat_map { |row| row.fetch(:models) }
+    available = models.reject { |model| LegalChatbotService::AVAILABLE_MODELS.fetch(model.fetch(:id))[:deployed] == false }
+    { available: available.size, providers: available.map { |model| model.fetch(:provider) }.uniq.size,
+      pending: models.size - available.size }
+  end
+
+  def chatbot_base_credit_label(values, locale = I18n.locale)
+    minimum, maximum = Array(values).map(&:to_i).minmax
+    amount = minimum == maximum ? minimum.to_s : "#{minimum}–#{maximum}"
+    unit = minimum == maximum && minimum == 1 ? :base_credit : :base_credits
+    "#{amount} #{pricing_access_copy(locale).fetch(unit)}"
+  end
+
   def chatbot_processing_location_summary(locale = I18n.locale)
     CHATBOT_PROCESSING_SUMMARIES.fetch(locale.to_sym, CHATBOT_PROCESSING_SUMMARIES[:en])
   end
@@ -77,6 +130,7 @@ module LegalPagesHelper
 
   def chatbot_pricing_rows(locale = I18n.locale)
     locale = locale.to_sym
+    locale = :en unless %i[nl fr de en].include?(locale)
 
     LegalChatbotService::INTELLIGENCE_LEVELS.map do |level_id, level|
       models = level.fetch(:models).map do |model_id, tier_model|
@@ -96,14 +150,23 @@ module LegalPagesHelper
           name: tier_model[:name] || model_config[:name],
           base_credits: base_credits,
           total_credits: totals,
-          provider: model_config.fetch(:provider)
+          provider: model_config.fetch(:provider),
+          pro: model_config.fetch(:tier) == :pro,
+          preview: model_config[:preview] == true
         }
       end
       providers = models.map { |model| model[:provider] }.uniq
+      depths = models.flat_map do |model|
+        efforts = LegalChatbotService.reasoning_levels_for_model(model[:id])
+        efforts = ['fixed'] if efforts.empty?
+        efforts.map { |effort| LegalChatbotService.research_depth_for_combination(model[:id], effort) }
+      end.uniq.sort_by { |depth| LegalChatbotService::RESEARCH_DEPTHS.keys.index(depth) }
 
       {
         id: level_id,
-        label: level.fetch(:labels).fetch(locale, level.fetch(:labels).fetch(:en)),
+        label: depths.map { |depth| I18n.t("chatbot.research_depth.options.#{depth}.label", locale: locale) }.join(' / '),
+        description: depths.map { |depth| I18n.t("chatbot.research_depth.options.#{depth}.description", locale: locale) }.join(' '),
+        pro: models.any? && models.all? { |model| model[:pro] },
         models: models,
         base_credits: models.map { |model| model[:base_credits] },
         total_credits: models.flat_map { |model| model[:total_credits] },
@@ -139,11 +202,20 @@ module LegalPagesHelper
     chatbot_credit_range(chatbot_pricing_rows(locale).flat_map { |row| row[:total_credits] }, locale)
   end
 
-  def chatbot_model_names_for_provider(provider)
+  def chatbot_model_display_name(model_id, locale = I18n.locale)
+    config = LegalChatbotService::AVAILABLE_MODELS.fetch(model_id)
+    name = config.fetch(:name)
+    return name unless config[:deployed] == false
+
+    locale = locale.to_sym
+    locale = :en unless %i[nl fr de en].include?(locale)
+    "#{name} — #{I18n.t('chatbot.model_coming_soon', locale: locale)}"
+  end
+
+  def chatbot_model_names_for_provider(provider, locale = I18n.locale)
     LegalChatbotService::AVAILABLE_MODELS
       .select { |_model_id, config| config[:provider] == provider.to_sym }
-      .values
-      .map { |config| config.fetch(:name) }
+      .map { |id, _config| chatbot_model_display_name(id, locale) }
       .join(', ')
   end
 
@@ -158,7 +230,7 @@ module LegalPagesHelper
     chatbot_pricing_rows(locale)
       .find { |row| row[:id] == level.to_s }
       .fetch(:models)
-      .map { |model| model[:name] }
+      .map { |model| chatbot_model_display_name(model[:id], locale) }
       .join(' / ')
   end
 
@@ -167,15 +239,14 @@ module LegalPagesHelper
     chatbot_credit_range(row.fetch(:base_credits), locale)
   end
 
-  def chatbot_model_names_for_access(tier)
+  def chatbot_model_names_for_access(tier, locale = I18n.locale)
     LegalChatbotService::AVAILABLE_MODELS
       .select { |_model_id, config| config[:tier] == tier.to_sym }
-      .values
-      .map { |config| config.fetch(:name) }
+      .map { |id, _config| chatbot_model_display_name(id, locale) }
       .join(', ')
   end
 
-  def chatbot_all_model_names
-    LegalChatbotService::AVAILABLE_MODELS.values.map { |config| config.fetch(:name) }.join(', ')
+  def chatbot_all_model_names(locale = I18n.locale)
+    LegalChatbotService::AVAILABLE_MODELS.keys.map { |id| chatbot_model_display_name(id, locale) }.join(', ')
   end
 end

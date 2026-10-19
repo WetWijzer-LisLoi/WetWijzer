@@ -31,6 +31,7 @@ export default class extends Controller {
   }
 
   open() {
+    this.cancelPendingClose();
     try { console.debug("jump-select: open"); } catch (_) {}
     this.menuEl?.classList.remove("hidden");
     this.buttonEl?.setAttribute("aria-expanded", "true");
@@ -56,7 +57,8 @@ export default class extends Controller {
     }
   }
 
-  close() {
+  close({ immediate = false } = {}) {
+    this.cancelPendingClose();
     try { console.debug("jump-select: close"); } catch (_) {}
     this.buttonEl?.setAttribute("aria-expanded", "false");
     document.removeEventListener("click", this.boundOutside, { capture: true });
@@ -64,16 +66,21 @@ export default class extends Controller {
     this.menuEl?.removeEventListener('click', this.boundMenuClick);
 
     const m = this.menuEl;
-    if (m && this.portaled) {
+    if (m && this.portaled && !immediate) {
       // Animate out then finalize close
       const done = () => {
-        m.removeEventListener('transitionend', done);
+        // A queued event from a superseded animation must not close a menu
+        // that has already been reopened or synchronously cached.
+        if (this._closeHandler !== done) return;
         this.finalizeClose();
       };
+      this._closeHandler = done;
       try { m.style.transition = 'opacity 120ms ease-in, transform 120ms ease-in'; } catch (_) {}
       try { m.style.willChange = 'opacity, transform'; } catch (_) {}
       // kick off animation next frame for reliability
-      requestAnimationFrame(() => {
+      this._closeRaf = requestAnimationFrame(() => {
+        if (this._closeHandler !== done) return;
+        this._closeRaf = null;
         try { m.style.opacity = '0'; m.style.transform = 'scale(0.98)'; } catch (_) {}
       });
       this._closeTimeout = setTimeout(done, 160);
@@ -83,8 +90,17 @@ export default class extends Controller {
     }
   }
 
+  cancelPendingClose() {
+    if (this._closeTimeout != null) { clearTimeout(this._closeTimeout); this._closeTimeout = null; }
+    if (this._closeRaf != null) { cancelAnimationFrame(this._closeRaf); this._closeRaf = null; }
+    if (this._closeHandler) {
+      this.menuEl?.removeEventListener('transitionend', this._closeHandler);
+      this._closeHandler = null;
+    }
+  }
+
   finalizeClose() {
-    if (this._closeTimeout) { try { clearTimeout(this._closeTimeout); } catch (_) {} this._closeTimeout = null; }
+    this.cancelPendingClose();
     try { this.menuEl?.classList.add('hidden'); } catch (_) {}
     if (this.menuEl) {
       try {

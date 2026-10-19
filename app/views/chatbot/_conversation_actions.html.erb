@@ -1,0 +1,102 @@
+<%# The conversation's own actions, above the conversation: history, save,
+    copy, export and clear. They sat in the settings toolbar while that was
+    above the messages; when the settings moved down beside the question box
+    (18a33dc1a, 2026-10-11) these went with them, and the owner wants them
+    back on top (2026-10-14). The export menu opens downwards, over the
+    messages, inside the panel's clip box. IDs here are load-bearing for JS. %>
+<div class="chat-actions-bar flex justify-end px-4 py-1.5 border-b border-gray-200 dark:border-[#1e293b]">
+  <div class="chat-topbar-actions" role="group" aria-label="<%= case I18n.locale when :fr then 'Actions de conversation' when :de then 'Gesprächsaktionen' when :en then 'Conversation actions' else 'Gespreksacties' end %>">
+  <div class="flex items-center gap-3">
+    <%# History, Copy and Export hover to the accent in dark mode. Their
+        rest colour is forced to --text-muted (gray-300) there, so the
+        former gray-200 hover was a change nobody could see, while
+        Save and Clear next to them visibly turn green and red. %>
+    <button type="button"
+            class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-[var(--accent-400)] flex items-center gap-1"
+            data-action="click->chatbot#toggleHistory"
+            title="<%= case I18n.locale when :fr then 'Conversations' when :de then 'Gespräche' when :en then 'Conversations' else 'Gesprekken' end %>">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </button>
+    <button type="button"
+            class="text-xs text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 flex items-center gap-1"
+            data-action="click->chatbot#saveChatToHistory"
+            title="<%= case I18n.locale when :fr then 'Sauvegarder le chat' when :de then 'Chat speichern' when :en then 'Save chat' else 'Chat opslaan' end %>">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+      </svg>
+    </button>
+    <%# Copy entire conversation %>
+    <button type="button"
+            class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-[var(--accent-400)] flex items-center gap-1"
+            data-action="click->chatbot#copyConversation"
+            title="<%= case I18n.locale when :fr then 'Copier le chat' when :de then 'Chat kopieren' when :en then 'Copy chat' else 'Chat kopiëren' end %>">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+      </svg>
+    </button>
+    <%# Export dropdown %>
+    <div class="relative" id="export-dropdown-wrap">
+      <% export_label = case I18n.locale when :fr then 'Exporter' when :de then 'Exportieren' when :en then 'Export' else 'Exporteren' end %>
+      <% export_text_label = case I18n.locale when :fr then 'Texte (.txt)' when :de then 'Text (.txt)' when :en then 'Text (.txt)' else 'Tekst (.txt)' end %>
+      <%# title is a mouse tooltip only. Without a name and without
+          aria-haspopup this icon-only button read as an unlabelled
+          button, so the five conversation exports behind it existed
+          for sighted users only. aria-expanded starts closed the way
+          the settings toggle above does; toggleExportMenu has to keep
+          it in step when it flips the menu's `hidden`. %>
+      <button type="button"
+              class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-[var(--accent-400)] flex items-center gap-1"
+              data-action="click->chatbot#toggleExportMenu"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-controls="export-dropdown-menu"
+              aria-label="<%= export_label %>"
+              title="<%= export_label %>">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+      </button>
+      <%# Opens DOWNWARDS. The button sits in the first row of the panel,
+          and the panel root clips everything above its top edge
+          (overflow-x-hidden makes overflow-y compute to auto), so a
+          bottom-full menu showed only a 15px sliver and all five
+          conversation exports were unreachable with the mouse. %>
+      <div id="export-dropdown-menu" class="hidden absolute right-0 top-full mt-1 w-40 bg-white dark:bg-[#0f172a] rounded-lg shadow-lg border border-gray-200 dark:border-[#1e293b] py-1 z-50">
+        <button type="button" data-action="click->chatbot#exportPDF"
+                class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+          <span>📄</span> PDF
+        </button>
+        <button type="button" data-action="click->chatbot#exportWordConversation"
+                class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+          <%# The download is an HTML-in-blob .doc, as the per-answer menu says. %>
+          <span>📝</span> Word (.doc)
+        </button>
+        <button type="button" data-action="click->chatbot#exportTXT"
+                class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+          <span>📋</span> <%= export_text_label %>
+        </button>
+        <button type="button" data-action="click->chatbot#exportTypstConversation"
+                class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+          <span>🔤</span> Typst (.typ)
+        </button>
+        <button type="button" data-action="click->chatbot#exportOdtConversation"
+                class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+          <span>📃</span> ODT (.fodt)
+        </button>
+      </div>
+    </div>
+    <button type="button"
+            class="text-xs text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 flex items-center gap-1"
+            data-action="click->chatbot#clearChat"
+            data-translate="clear"
+            title="<%= case I18n.locale when :fr then 'Effacer le chat' when :de then 'Chat löschen' when :en then 'Clear chat' else 'Chat wissen' end %>">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+      </svg>
+    </button>
+  </div>
+  </div>
+</div>

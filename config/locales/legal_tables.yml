@@ -1,0 +1,12 @@
+nl:
+  legal_pages:
+    table_scroll_label: "Tabel; schuif horizontaal om alle kolommen te bekijken"
+fr:
+  legal_pages:
+    table_scroll_label: "Tableau ; faites défiler horizontalement pour voir toutes les colonnes"
+de:
+  legal_pages:
+    table_scroll_label: "Tabelle; horizontal scrollen, um alle Spalten zu sehen"
+en:
+  legal_pages:
+    table_scroll_label: "Table; scroll horizontally to view all columns"

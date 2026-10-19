@@ -1,7 +1,7 @@
 <%= render 'legal_pages/legal_page_styles' %>
 <div class="legal-page">
 <h1>Frequently Asked Questions (FAQ)</h1>
-    <p class="last-updated">Last updated: 9 June 2026</p>
+    <p class="last-updated">Last updated: 11 October 2026</p>
 
     <div class="toc">
         <strong>Contents</strong>
@@ -46,7 +46,7 @@
 
     <details>
         <summary>In which languages is WetWijzer available?</summary>
-        <div><p>The interface is available in Dutch, French, German and English. The AI chatbot responds in the language you select. The legislation database contains texts in their original publication language.</p></div>
+        <div><p>The interface is available in Dutch, French, German and English. On NL/FR/DE, the chatbot answers in the site's language by default; on EN/INT, it follows your question's language. You can explicitly request an answer in Dutch, French, German or English. The legislation database contains texts in their original publication language.</p></div>
     </details>
 
     <h2 id="section-2">2. Account and registration</h2>
@@ -94,17 +94,18 @@
     </details>
 
     <details>
-        <summary>What are the intelligence levels?</summary>
+        <summary>How do I choose an AI model?</summary>
         <div>
             <%= render 'legal_pages/chatbot_pricing_table', locale: :en %>
-            <p>New users receive <%= RegistrationsController::STARTER_CREDITS %> free starter credits. Genius, Mastermind and Omniscient are exclusive to Pro subscribers.</p>
+            <p><%= format(pricing_access_copy(:en).fetch(:starter), credits: RegistrationsController::STARTER_CREDITS) %></p>
+            <p><%= pricing_access_copy(:en).fetch(:access) %> <%= pricing_access_copy(:en).fetch(:pending) %></p>
         </div>
     </details>
 
     <details>
-        <summary>How is reasoning depth determined?</summary>
+        <summary><%= t('chatbot.research_depth.faq_title', locale: :en) %></summary>
         <div>
-            <p>The available choices depend on the selected model. Mistral Small 4 offers Fast and Deep; models whose providers support three distinct efforts also offer Balanced. The configured surcharges are <strong><%= chatbot_reasoning_surcharge_list %> credits</strong>. A surcharge is charged only when that model supports and uses the selected mode, and the exact total is shown before you send the question.</p>
+            <%= render 'legal_pages/research_depth_explanation', locale: :en %>
         </div>
     </details>
 
@@ -118,7 +119,7 @@
                 <li>Misinterpret legal concepts</li>
                 <li>Reference non-existent laws or articles</li>
             </ul>
-            <p>Always verify responses against official sources or consult a legal professional. The brilliant level generally provides more accurate answers than the simple level.</p>
+            <p>Always verify responses against official sources or consult a legal professional. Greater research depth or a higher price does not guarantee a better answer.</p>
         </div>
     </details>
 
@@ -162,7 +163,7 @@
 
     <details>
         <summary>How many free credits do I receive?</summary>
-        <div><p>Every new user receives <strong><%= RegistrationsController::STARTER_CREDITS %> free starter credits</strong> upon registration. Additional credits can be purchased. Genius, Mastermind and Omniscient require a Pro subscription.</p></div>
+        <div><p><%= format(pricing_access_copy(:en).fetch(:starter), credits: RegistrationsController::STARTER_CREDITS) %> <%= pricing_access_copy(:en).fetch(:access) %></p></div>
     </details>
 
     <details>
@@ -177,6 +178,11 @@
     </details>
 
     <details>
+        <summary>When is a question charged?</summary>
+        <div><p>The price of a question is reserved when you ask it. As soon as AI processing of your question has started (the first request to an AI service, for example to search or to translate), that price is charged. This also applies when the answer then turns out incomplete, is stopped by the source checks or fails afterwards. A question that fails before AI processing has started is not charged: the reservation is released. Automatic retries within the same request cost no extra credits. If you send the question again, the rule above applies to that new request. When a charged question yields no usable answer, the message says so.</p></div>
+    </details>
+
+    <details>
         <summary>What payment methods are accepted?</summary>
         <div><p>Common payment methods are offered through Mollie, including Bancontact, debit and credit cards, and other European payment methods. We do not store card or bank details; payment is processed in Mollie's secure checkout.</p></div>
     </details>
@@ -186,11 +192,12 @@
     <details>
         <summary>What does WetWijzer Pro offer?</summary>
         <div>
+            <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
             <table>
                 <tr><th>Feature</th><th>Free account</th><th>WetWijzer Pro (&euro;2.99/month)</th></tr>
                 <tr><td>Legislation search</td><td>Unlimited</td><td>Unlimited</td></tr>
                 <tr><td>Chatbot credits</td><td><%= RegistrationsController::STARTER_CREDITS %> starter credits</td><td><strong><%= Subscription::PRO_MONTHLY_CREDITS %> per month</strong> + purchasable top-ups</td></tr>
-                <tr><td>Intelligence levels</td><td>Smart (select models)</td><td><strong>All 4 levels</strong> incl. Genius, Mastermind and Omniscient</td></tr>
+                <tr><td>Model groups</td><td>Quick, Balanced and Thorough</td><td><strong>Also Extensive</strong>, once its models are available</td></tr>
                 <tr><td>AI models</td><td><%= chatbot_model_names_for_access(:free) %></td><td><strong>All models</strong> (<%= chatbot_all_model_names %>)</td></tr>
                 <tr><td>Case law database</td><td>✅ 175,000+ pseudonymised judgments</td><td>✅ 175,000+ pseudonymised judgments</td></tr>
                 <tr><td>Parliamentary documents database</td><td>✅ Browsing</td><td>✅ Browsing</td></tr>
@@ -198,6 +205,7 @@
                 <tr><td>Parliamentary documents via chatbot</td><td>❌</td><td>✅</td></tr>
 
             </table>
+            <% unless classic_host? %></div><% end %>
         </div>
     </details>
 
@@ -206,8 +214,8 @@
         <div>
             <p>WetWijzer Pro is designed for anyone who regularly conducts legal research:</p>
             <ul>
-                <li><strong>Premium AI:</strong> Genius (<%= chatbot_model_names_for_level(:genius, :en) %>), Mastermind (<%= chatbot_model_names_for_level(:mastermind, :en) %>) and Omniscient (<%= chatbot_model_names_for_level(:omniscient, :en) %>) provide the higher-capability options.</li>
-                <li><strong>All AI models:</strong> Pro subscribers get access to all configured models: <%= chatbot_all_model_names %>. Compare results and choose the optimal model for your specific question.</li>
+                <li><strong>Extensive:</strong> Pro also unlocks this model group once available: <%= chatbot_model_names_for_level(:omniscient, :en) %>. Every question needs sufficient credits.</li>
+                <li><strong>Clear availability:</strong> Coming soon models remain unselectable, even with Pro. A regular account can already use Quick, Balanced and Thorough with sufficient credits.</li>
                 <li><strong>Case law via the chatbot:</strong> have the chatbot also search the case law database (175,000+ pseudonymised judgments) and cite relevant judgments in its answers. Browsing the database on the site remains free for everyone.</li>
                 <li><strong>Parliamentary documents:</strong> have the chatbot also search Chamber, Senate, Flemish Parliament and Walloon Parliament documents for the legislative history behind a law.</li>
                 <li><strong>Affordable:</strong> <%= Subscription::PRO_MONTHLY_CREDITS %> free credits per month plus purchasable top-ups.</li>
@@ -240,7 +248,7 @@
 
     <details>
         <summary>Can I try Pro before subscribing?</summary>
-        <div><p>With the <%= RegistrationsController::STARTER_CREDITS %> free starter credits, you can test the chatbot on select Smart-tier models (which ones are free is shown on the pricing page and may change). Browsing the case law database on the site is free for everyone, no account needed. Pro adds the levels Genius, Mastermind and Omniscient, plus case law and parliamentary documents via the chatbot. Since Pro is cancellable monthly with no notice period, you can try it risk-free for just &euro;2.99.</p></div>
+        <div><p>Your <%= RegistrationsController::STARTER_CREDITS %> starter credits can test available model/reasoning combinations whose total price fits your balance. A regular account has model access through Thorough. Pro adds Extensive once available, plus case law and parliamentary documents via the chatbot. Searching on the website remains free. Pro costs &euro;2.99 per month and can be cancelled monthly.</p></div>
     </details>
 
     <details>
@@ -250,7 +258,7 @@
 
     <details>
         <summary>What happens to my credits if I cancel?</summary>
-        <div><p>All credits remain available, even after cancelling your Pro subscription. You will no longer receive your monthly <%= Subscription::PRO_MONTHLY_CREDITS %> free credits, and you lose access to the Pro-only Smart models, to Genius, Mastermind and Omniscient, and to case law and parliamentary documents via the chatbot. Browsing the case law database on the site remains free for everyone.</p></div>
+        <div><p>All credits remain available after cancelling Pro. You no longer receive the <%= Subscription::PRO_MONTHLY_CREDITS %> included monthly credits and lose access to Extensive, case law and parliamentary documents via the chatbot. Quick, Balanced and Thorough remain usable with sufficient credits. Searching on the website remains free for everyone.</p></div>
     </details>
 
     <details>
@@ -394,10 +402,10 @@
     <details>
         <summary>Which options are available?</summary>
         <div>
-            <p><strong>Everyday use:</strong> Smart (<%= chatbot_base_credit_range_for(:smart, :en) %> base) &mdash; the lowest credit cost.</p>
-            <p><strong>Deep analysis:</strong> Genius (<%= chatbot_base_credit_range_for(:genius, :en) %> base) &mdash; <%= chatbot_model_names_for_level(:genius, :en) %>.</p>
-            <p><strong>Extended analysis:</strong> Mastermind (<%= chatbot_base_credit_range_for(:mastermind, :en) %> base) &mdash; <%= chatbot_model_names_for_level(:mastermind, :en) %>.</p>
-            <p><strong>Alternative model perspective:</strong> Omniscient (<%= chatbot_base_credit_range_for(:omniscient, :en) %> base) &mdash; <%= chatbot_model_names_for_level(:omniscient, :en) %>.</p>
+            <p><strong>Quick:</strong> <%= chatbot_base_credit_range_for(:smart, :en) %> base &mdash; <%= chatbot_model_names_for_level(:smart, :en) %>.</p>
+            <p><strong>Balanced:</strong> <%= chatbot_base_credit_range_for(:genius, :en) %> base &mdash; <%= chatbot_model_names_for_level(:genius, :en) %>.</p>
+            <p><strong>Thorough:</strong> <%= chatbot_base_credit_range_for(:mastermind, :en) %> base &mdash; <%= chatbot_model_names_for_level(:mastermind, :en) %>.</p>
+            <p><strong>Extensive (Pro):</strong> <%= chatbot_base_credit_range_for(:omniscient, :en) %> base &mdash; <%= chatbot_model_names_for_level(:omniscient, :en) %>.</p>
         </div>
     </details>
 

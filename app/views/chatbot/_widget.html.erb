@@ -25,9 +25,10 @@
          full-screen block on mobile. The dedicated /chatbot page (index.html.erb)
          keeps open=true; the floating widget does not. %>
      data-chatbot-open-value="false"
+     data-chatbot-intelligence-value="<%= LegalChatbotService.ui_default_selection[:intelligence] %>"
      data-chatbot-has-credits-value="<%= current_user && current_user.credits.to_i > 0 ? 'true' : 'false' %>"
      data-chatbot-praxis-linked-value="<%= current_user&.praxis_linked_at.present? ? 'true' : 'false' %>"
-     data-chatbot-pro-value="<%= current_user&.advanced_intelligence_access? ? 'true' : 'false' %>">
+     data-chatbot-pro-value="<%= current_user&.pro? ? 'true' : 'false' %>">
 
   <%# Auth state for JS - enables server-side conversation/bookmark persistence in widget %>
   <div id="chatbot-auth-state" class="hidden"
@@ -100,6 +101,14 @@
       opacity: 1;
       transform: translateY(0) scale(1);
     }
+    /* An unsolicited prompt must never cover a menu action or a modal.
+       Keep its existing session/dismissal behavior, but remove both its
+       painted box and hit target while the reader uses those controls. */
+    body:has([data-dropdown-target="button"][aria-expanded="true"]) #chatbot-context-toast,
+    body:has(#shared-copy-menu:not(.hidden)) #chatbot-context-toast,
+    body:has(dialog[open]) #chatbot-context-toast {
+      display: none !important;
+    }
     /* With a docked bottom bar, position the toast above the bar.
        767px, not 640px: the bar is `md:hidden` on laws/show and the Fisconet
        page, so it is on screen up to 767px, and that is also where the FAB it
@@ -108,8 +117,11 @@
        bar with its pointer aimed at a button that is not there. */
     @media (max-width: 767px) {
       body:has(#mobile-bottom-bar) #chatbot-context-toast {
+        display: none !important;
+      }
+      body:has(#mobile-bottom-bar:not([data-keyboard-active])) #chatbot-context-toast {
         position: fixed;
-        bottom: 56px;
+        bottom: calc(var(--mobile-dock-clearance, 64px) + 8px);
         right: 0.75rem;
         left: auto;
         margin-bottom: 0;
@@ -117,13 +129,19 @@
       body:has(#mobile-bottom-bar) #chatbot-context-toast::after {
         display: none;
       }
-      /* Hide the floating FAB when the page has a docked bottom bar. Was
-         640px, which left iPad mini portrait (744px) and a phone in landscape
-         showing both: the 56px circle straddled the top-right of the 55px bar
-         and covered part of its own Chat cell. */
+      body:has(#mobile-bottom-bar[data-keyboard-active]) #chatbot-context-toast {
+        display: none !important;
+      }
+      /* Modern mobile chat belongs to the dock, not a second floating button.
+         A collapsed dock still has its native reopen handle. Keep this rule
+         independent of open/keyboard state so the FAB never flashes back. */
       body:has(#mobile-bottom-bar) #chatbot-fab {
         display: none !important;
       }
+      /* This shared dock owns the mobile clearance above an install banner;
+         do not also apply pwa.js's independent FAB/toast lift. */
+      body:has(#mobile-bottom-bar) #chatbot-fab,
+      body:has(#mobile-bottom-bar) #chatbot-context-toast { translate: none !important; }
     }
     #chatbot-context-toast.toast-exit {
       opacity: 0;
@@ -197,11 +215,19 @@
     #chatbot-widget-panel [data-chatbot-target="messages"] {
       resize: none;
       overflow-y: auto;
-      min-height: 120px;
+      min-height: 0;
     }
-    /* Default panel size - max-height in CSS so JS can safely clear inline styles */
+    /*
+       Start with the whole useful desktop height, rather than a short
+       conversation-sized card. The panel is anchored 96px above the viewport
+       bottom (the FAB plus its footer clearance), so this leaves a calm 24px
+       margin above it while making the transcript the part that can actually
+       use the available window. Inline sizes still win for a deliberate
+       resize, and expanded mode remains the wider, near-fullscreen choice.
+    */
     #chatbot-widget-panel {
-      max-height: min(520px, calc(100dvh - 120px));
+      height: calc(100dvh - 120px);
+      max-height: calc(100dvh - 120px);
       transition: max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
                   width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
                   height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -212,8 +238,14 @@
       height: calc(100dvh - 100px) !important;
       width: min(800px, calc(100vw - 2rem)) !important;
     }
-    #chatbot-widget-panel.widget-expanded [data-chatbot-target="messages"] {
-      min-height: 400px;
+    /* Keep the composer and close button in view when settings/help grow. */
+    #chatbot-widget-panel [data-research-depth-shell] > [data-research-depth-control] {
+      max-height: min(172px, 30dvh);
+      overflow-y: auto;
+    }
+    #chatbot-widget-panel #widget-options-panel {
+      min-height: 0;
+      flex-shrink: 1;
     }
     /* Drag handle cursor on header */
     .widget-drag-handle {
@@ -250,14 +282,14 @@
       right: auto !important;
     }
     /* Mobile: full-width widget - override drag/resize */
-    @media (max-width: 640px) {
+    @media (max-width: 767px) {
       /* Default mobile FAB position - close to bottom edge */
       #chatbot-widget-container:not(.widget-custom-pos) {
-        bottom: 1rem !important;
+        bottom: calc(var(--mobile-dock-clearance, 0px) + 1rem) !important;
         right: 1rem !important;
       }
       /* Push chatbot panel above the bottom bar */
-      body:has(#mobile-bottom-bar) #chatbot-widget-container:not(.widget-custom-pos) {
+      body:has(#mobile-bottom-bar[open]) #chatbot-widget-container:not(.widget-custom-pos) {
         bottom: 0 !important;
         right: 0 !important;
       }
@@ -269,12 +301,14 @@
         width: 1.5rem !important;
         height: 1.5rem !important;
       }
-      #chatbot-widget-panel {
-        /* Full-screen chat on mobile so the page underneath is fully covered.
-           It was a card with margins (100vw-1.5rem wide, bottom:70px, top gap),
-           which left the homepage visible around it -> a confusing "double view". */
+      #chatbot-widget-panel,
+      #chatbot-widget-panel.widget-expanded {
+        /* Cover the visible page, but leave the shared navigation (or its
+           compact reopen handle) available below chat, even above a keyboard. */
         position: fixed !important;
         inset: 0 !important;
+        top: var(--mobile-chat-viewport-top, 0px) !important;
+        bottom: auto !important;
         /* NOT width: 100vw. The vw unit measures the layout viewport INCLUDING
            the scrollbar (and, in an edge-to-edge PWA, system insets), so it
            resolves WIDER than the visible area - measured live: 100vw = 500px
@@ -284,7 +318,7 @@
            auto !important is needed because the resize feature writes an
            inline width that would otherwise win. */
         width: auto !important;
-        height: 100dvh !important;
+        height: calc(var(--mobile-chat-viewport-height, 100dvh) - var(--mobile-chat-dock-clearance, 0px)) !important;
         max-width: none !important;
         max-height: none !important;
         border-radius: 0 !important;
@@ -365,7 +399,7 @@
   <button type="button"
           id="chatbot-fab"
           data-chatbot-target="toggleButton"
-          data-action="keydown->chatbot#handleFabKeydown mousedown->chatbot#startFabDrag touchstart->chatbot#startFabDrag"
+          data-action="click->chatbot#handleFabClick keydown->chatbot#handleFabKeydown mousedown->chatbot#startFabDrag touchstart->chatbot#startFabDrag"
           aria-label="<%= open_label %>"
           aria-expanded="false"
           aria-controls="chatbot-widget-panel"
@@ -385,7 +419,7 @@
     <%# Notification badge %>
     <span class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-sm"
           data-chatbot-target="badge"
-          aria-label="1 nieuw bericht">1</span>
+          aria-label="<%= t('chatbot.one_new_message') %>">1</span>
     <%# Tooltip - hidden from screen readers (redundant with aria-label) %>
     <span class="absolute right-full mr-3 px-3 py-1.5 bg-gray-900 dark:bg-gray-700 text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg"
           aria-hidden="true"
@@ -469,8 +503,7 @@
          aria-live="polite"
          aria-label="<%= messages_label %>"
          aria-relevant="additions"
-         tabindex="0"
-         style="min-height: 200px;"></div>
+         tabindex="0"></div>
 
     <%# Typing indicator %>
     <div class="hidden px-3 py-2 bg-gray-50 dark:bg-[#080d19]"
@@ -488,7 +521,7 @@
     </div>
 
     <%# Compact progress bar %>
-    <div data-chatbot-target="loading" class="hidden px-3 py-2 bg-gray-50 dark:bg-[#080d19]" role="status">
+    <div data-chatbot-target="loading" class="hidden px-3 py-2 bg-gray-50 dark:bg-[#080d19]">
       <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
         <div data-chatbot-target="progressBar"
              class="h-1.5 rounded-full transition-[width] duration-300"
@@ -498,10 +531,10 @@
              aria-valuemin="0"
              aria-valuemax="100"></div>
       </div>
-      <div data-chatbot-target="progressText" class="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-1" aria-live="polite"></div>
+      <div data-chatbot-target="progressText" class="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-1" role="status" aria-live="polite"></div>
+      <%= render 'chatbot/long_wait_notice' %>
     </div>
 
-    <%# ── Collapsible Options Panel - ALL settings, compact ── %>
     <%
       intelligence_levels_widget = LegalChatbotService::INTELLIGENCE_LEVELS
       user_is_pro_widget = defined?(current_user) && current_user&.pro?
@@ -510,44 +543,50 @@
       widget_model_tier = user_logged_in_widget ? current_user.current_tier : :free
 
     %>
+    <%# Depth and exact cost remain visible when advanced settings are closed. %>
+    <div data-research-depth-shell class="shrink-0 px-3 pt-2 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f172a]">
+      <%= render 'chatbot/research_depth', prefix: 'widget', controller_name: 'chatbot', compact: true %>
+      <%# Advanced settings toggle and remaining balance stay beside the depth control. %>
+      <div class="flex items-center justify-between min-h-9">
+        <button type="button"
+                id="widget-options-toggle"
+                data-action="click->chatbot#toggleWidgetOptions"
+                aria-expanded="false"
+                aria-controls="widget-options-panel"
+                class="flex items-center gap-1.5 min-h-9 pl-0 pr-1.5 rounded text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-(--accent-400) transition-colors cursor-pointer group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-(--accent-500)"
+                title="<%= case I18n.locale when :fr then 'Paramètres' when :de then 'Einstellungen' when :en then 'Settings' else 'Instellingen' end %>">
+          <svg class="w-3 h-3 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span><%= case I18n.locale when :fr then 'Paramètres' when :de then 'Einstellungen' when :en then 'Settings' else 'Instellingen' end %></span>
+          <span class="chatbot-settings-caret group-aria-expanded:rotate-90" aria-hidden="true">›</span>
+          <span id="widget-level-indicator" class="hidden" aria-hidden="true"></span>
+        </button>
+        <% if user_logged_in_widget %>
+          <%
+            credits_count = current_user.credits.to_i
+            cr_label = case I18n.locale when :fr then 'crédits' when :de then 'Credits' when :en then 'credits' else 'credits' end
+          %>
+          <span class="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums" id="widget-credit-breakdown"
+                title="<%= case I18n.locale when :fr then 'Crédits' when :de then 'Credits' when :en then 'Credits' else 'Credits' end %>">
+            <span id="widget-credits-value"><%= credits_count %></span> <%= cr_label %>
+          </span>
+        <% else %>
+          <span class="text-[10px] text-gray-300 dark:text-gray-600" aria-hidden="true">
+            <%= site_name %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+
+    <p id="widget-model-availability-notice" role="status" hidden data-preferences-loading-message="<%= t('chatbot.model_preferences_loading_notice') %>" class="shrink-0 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300"></p>
     <div id="widget-options-panel"
-         class="hidden shrink-0 border-t border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-[#0f172a]/90"
+         class="hidden shrink-0 max-h-48 overflow-y-auto border-t border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-[#0f172a]/90"
          data-chatbot-target="widgetOptionsPanel">
       <div class="px-3 py-2 space-y-1.5">
 
-        <%# ROW 1: Intelligence pills (label + cost) %>
-        <div class="flex items-center justify-between gap-1">
-          <div class="flex items-center gap-0.5" id="widget-intelligence-pills">
-            <% roman_numerals_w = %w[I II III IV] %>
-            <% intelligence_levels_widget.each_with_index do |(level_id, config), widx| %>
-              <% tier_locked = !LegalChatbotService.intelligence_tier_accessible?(
-                   config[:tier], pro: user_is_pro_widget, purchased: user_has_purchased_widget
-                 )
-                 locked = tier_locked || config[:models].keys.none? { |model_id| LegalChatbotService.model_allowed?(model_id, widget_model_tier) } %>
-              <% label = config[:labels][I18n.locale] || config[:labels][:nl] %>
-              <% roman = roman_numerals_w[widx] || (widx + 1).to_s %>
-              <button type="button"
-                      class="widget-intel-pill relative flex items-center gap-0.5 px-1.5 py-1 rounded-md text-[10px] font-medium whitespace-nowrap transition-all duration-150 cursor-pointer
-                             <%= locked ? 'opacity-50 hover:opacity-70' : '' %> hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm
-                             <%= level_id == 'smart' ? 'bg-white dark:bg-gray-700 shadow-sm ring-1 ring-gray-200 dark:ring-gray-600 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' %>"
-                      data-widget-level="<%= level_id %>"
-                      data-widget-credits="<%= config[:credits] %>"
-                      data-widget-locked="<%= locked %>"
-                      data-widget-locked-tier="<%= config[:tier] %>"
-                      data-widget-label="<%= label %>"
-                      data-widget-roman="<%= roman %>"
-                      data-widget-desc="<%= config[:descriptions][I18n.locale] || config[:descriptions][:nl] %>"
-                      data-widget-model="<%= config[:default_model] %>"
-                      data-widget-default-reasoning="<%= config[:reasoning_effort] || 'low' %>"
-                      data-action="click->chatbot#selectWidgetIntelligence"
-                      title="<%= label %><%= ' - PRO' if locked %>">
-                <span><%= label %></span>
-                <% if locked %>
-                  <span class="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 text-[6px] text-white rounded-full flex items-center justify-center font-bold leading-none">P</span>
-                <% end %>
-              </button>
-            <% end %>
-          </div>
+        <div class="flex items-center justify-end gap-1">
           <%# Credit balance %>
           <% if user_logged_in_widget %>
             <span class="text-[10px] font-semibold tabular-nums shrink-0" style="color: var(--accent-500);" id="widget-credits-display"
@@ -558,41 +597,19 @@
                                         delimiter: I18n.locale == :en ? ',' : '.') %>cr
             </span>
           <% else %>
-            <a href="<%= login_path %>" class="text-[10px] text-gray-400 hover:underline shrink-0">Login</a>
+            <a href="<%= login_path %>" class="text-[10px] text-gray-400 hover:underline shrink-0"><%= t('auth.login') %></a>
           <% end %>
         </div>
 
         <%# ROW 2: Model + Category dropdowns side by side %>
         <div class="flex items-center gap-1.5">
           <select id="widget-model-select"
+                  aria-label="<%= case I18n.locale when :fr then 'Modèle IA' when :de then 'KI-Modell' when :en then 'AI model' else 'AI-model' end %>"
+                  aria-describedby="widget-model-availability-notice"
                   data-chatbot-target="widgetModelSelect"
                   data-action="change->chatbot#updateWidgetModel"
                   class="text-[10px] rounded border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 px-1 py-0.5 flex-1 min-w-0 truncate">
-            <% intelligence_levels_widget.each do |level_id, config| %>
-              <% tier_accessible = LegalChatbotService.intelligence_tier_accessible?(
-                   config[:tier], pro: user_is_pro_widget, purchased: user_has_purchased_widget
-                 ) %>
-              <% config[:models].sort_by { |mid, mc| [(mc[:credits] || config[:credits]), LegalChatbot::ModelsConfig::AVAILABLE_MODELS.dig(mid, :cost_per_query_eur) || 0] }.each do |model_id, model_config| %>
-                <% is_default = model_id == config[:default_model]
-                   model_locked = !tier_accessible || !LegalChatbotService.model_allowed?(model_id, widget_model_tier)
-                   model_reasoning_levels = LegalChatbotService.reasoning_levels_for_model(model_id)
-                   model_supports_reasoning = model_reasoning_levels.any?
-                   model_reasoning_surcharges = model_reasoning_levels.map { |rid| "#{rid}:#{LegalChatbotService.reasoning_surcharge_for_model(model_id, rid)}" }.join(',')
-                   model_base_label = case I18n.locale when :fr then 'base' when :de then 'Basis' when :en then 'base' else 'basis' end %>
-                <option value="<%= model_id %>"
-                        data-intelligence="<%= level_id %>"
-                        data-default="<%= is_default %>"
-                        data-supports-reasoning="<%= model_supports_reasoning ? 'true' : 'false' %>"
-                        data-reasoning-levels="<%= model_reasoning_levels.join(',') %>"
-                        data-reasoning-surcharges="<%= model_reasoning_surcharges %>"
-                        data-default-reasoning="<%= config[:reasoning_effort] || 'low' %>"
-                        data-credits="<%= model_config[:credits] || config[:credits] %>"
-                        class="widget-model-opt"
-                        <%= 'disabled' if model_locked %>
-                        <%= 'selected' if level_id == 'smart' && is_default %>><%= model_config[:name] %> (<%= model_config[:credits] || config[:credits] %> cr <%= model_base_label %>)<%= ' (PRO)' if model_locked %>
-                </option>
-              <% end %>
-            <% end %>
+            <%= render 'chatbot/model_options', user_is_pro: user_is_pro_widget, user_has_purchased: user_has_purchased_widget, user_model_tier: widget_model_tier, option_class: 'widget-model-opt' %>
           </select>
           <select id="widget-profile-select"
                   data-chatbot-target="widgetProfileSelect"
@@ -604,8 +621,6 @@
             <% end %>
           </select>
         </div>
-        <div id="widget-reasoning-credit-breakdown" class="text-[9px] text-gray-500 tabular-nums"><%= LegalChatbotService.credits_for_model('smart', LegalChatbotService.model_for_intelligence('smart')) %> <%= case I18n.locale when :fr then 'base' when :de then 'Basis' when :en then 'base' else 'basis' end %> + 0 <%= case I18n.locale when :fr then 'raisonnement' when :de then 'Denken' when :en then 'reasoning' else 'redeneren' end %> = <%= LegalChatbotService.credits_for_model('smart', LegalChatbotService.model_for_intelligence('smart')) %> cr/<%= case I18n.locale when :fr then 'question' when :de then 'Frage' when :en then 'question' else 'vraag' end %></div>
-
         <%# ROW 3: Sources (abbreviated) + actions %>
         <% widget_sources_locked = !current_user&.pro? %>
         <div class="flex items-center justify-between gap-1">
@@ -699,6 +714,7 @@
           class="flex-1 resize-none rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-(--accent-500) focus:border-transparent transition-all"
           rows="1"
           autocomplete="off"
+          aria-describedby="chatbot-widget-question-count"
           placeholder="<%= t('chatbot.placeholder', default: 'Stel een vraag...') %>"></textarea>
 
         <button type="button"
@@ -715,36 +731,7 @@
           </svg>
         </button>
       </div>
-      <%# Footer: gear toggle + active level indicator + credit breakdown %>
-      <div class="flex items-center justify-between mt-2">
-        <button type="button"
-                id="widget-options-toggle"
-                data-action="click->chatbot#toggleWidgetOptions"
-                aria-expanded="false"
-                aria-controls="widget-options-panel"
-                class="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-(--accent-400) transition-colors cursor-pointer group"
-                title="<%= case I18n.locale when :fr then 'Options' when :de then 'Optionen' when :en then 'Options' else 'Opties' end %>">
-          <svg class="w-3 h-3 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
-          <span id="widget-level-indicator" aria-live="polite"><span data-widget-active-label><%= case I18n.locale when :fr then 'Intelligence IA' when :de then 'KI-Intelligenz' when :en then 'AI Intelligence' else 'AI-Intelligentie' end %>: <%= LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :labels, I18n.locale) || LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :labels, :nl) %></span> <span data-widget-active-desc class="text-gray-500 dark:text-gray-400">- <%= LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :descriptions, I18n.locale) || LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :descriptions, :nl) %></span></span>
-        </button>
-        <% if user_logged_in_widget %>
-          <%
-            credits_count = current_user.credits.to_i
-            cr_label = case I18n.locale when :fr then 'crédits' when :de then 'Credits' when :en then 'credits' else 'credits' end
-          %>
-          <span class="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums" id="widget-credit-breakdown"
-                title="<%= case I18n.locale when :fr then 'Crédits' when :de then 'Credits' when :en then 'Credits' else 'Credits' end %>">
-            <span id="widget-credits-value"><%= credits_count %></span> <%= cr_label %>
-          </span>
-        <% else %>
-          <span class="text-[10px] text-gray-300 dark:text-gray-600" aria-hidden="true">
-            <%= site_name %>
-          </span>
-        <% end %>
-      </div>
+      <%= render 'chatbot/question_count', id: 'chatbot-widget-question-count', controller: 'chatbot', size_class: 'text-[10px]' %>
     <%# Legal disclaimer - small print (matches main chatbot page) %>
       <p class="mt-1.5 text-[9px] leading-[1.4] text-gray-400 dark:text-gray-500 px-0.5">
         <%= case I18n.locale
@@ -854,7 +841,7 @@
       // content on a small screen, an accidental tap opened the full chat panel:
       // "keeps popping up and blocks everything". The FAB / bottom-bar Chat
       // button is enough on mobile.
-      if (window.matchMedia && window.matchMedia('(max-width: 640px)').matches) return;
+      if (window.matchMedia && window.matchMedia('(max-width: 767px)').matches) return;
       // Desktop: show at most once per session (was re-showing every navigation).
       if (window._chatbotToastShown) return;
       window._chatbotToastShown = true;
@@ -919,6 +906,14 @@
       if (toast.contains(document.activeElement)) {
         var fab = document.getElementById('chatbot-fab');
         if (fab && fab.offsetParent) fab.focus();
+        else {
+          var dockChat = document.querySelector('#mobile-bottom-bar[open] #mobile-chat-btn');
+          if (dockChat && dockChat.offsetParent) dockChat.focus();
+          else {
+            var dockHandle = document.querySelector('#mobile-bottom-bar > summary');
+            if (dockHandle && dockHandle.getClientRects().length) dockHandle.focus();
+          }
+        }
       }
       toast.classList.remove('toast-visible');
       toast.classList.add('toast-exit');
@@ -962,7 +957,7 @@
 <script nonce="<%= content_security_policy_nonce %>">
 /* ww-visual-viewport-pin:start */
 (function () {
-  var MOBILE = '(max-width: 640px)';
+  var MOBILE = '(max-width: 767px)';
 
   // Pixels of the layout viewport hidden beyond the visible right edge, plus
   // the inset the design asks for. null means "nothing hidden, use the CSS".
@@ -983,7 +978,10 @@
       return;
     }
     // A docked bottom bar pins the widget flush right (right: 0).
-    var base = document.getElementById('mobile-bottom-bar') ? 0 : 16;
+    var dock = document.getElementById('mobile-bottom-bar');
+    var dockVisible = dock && dock.open &&
+      window.getComputedStyle(dock).display !== 'none' && dock.getBoundingClientRect().height > 0;
+    var base = dockVisible ? 0 : 16;
     var inset = computeInset(window.innerWidth, vv.offsetLeft, vv.width, base);
     if (inset === null) { box.style.removeProperty('right'); }
     else { box.style.setProperty('right', inset + 'px', 'important'); }
@@ -995,6 +993,7 @@
     window.visualViewport.addEventListener('scroll', pin);
   }
   window.addEventListener('orientationchange', pin);
+  document.addEventListener('mobile-dock:change', pin);
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', pin);
   } else { pin(); }

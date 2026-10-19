@@ -1,0 +1,262 @@
+{
+  "artifact": "eu-corpus-34b8fce9510386c400f4dfb9378983cdfd4d086be42f22971270800b6c592153.sqlite3",
+  "bytes": 128241664,
+  "chunks": 6612,
+  "chunks_by_kind": {
+    "article": 2738,
+    "final": 170,
+    "paragraph": 1140,
+    "recital": 2564
+  },
+  "chunks_by_language": {
+    "de": 1700,
+    "en": 1606,
+    "fr": 1700,
+    "nl": 1606
+  },
+  "coverage": {
+    "catalogue_complete": false,
+    "catalogue_invalidated_observations": 0,
+    "catalogue_partition_count": 2,
+    "catalogue_partition_details_truncated": false,
+    "catalogue_partitions": {
+      "3/2024": {
+        "cursor": "32024A07439",
+        "exhausted": false,
+        "pages": 1,
+        "records": 5
+      },
+      "6/2018": {
+        "cursor": "62018CA0009",
+        "exhausted": false,
+        "pages": 1,
+        "records": 5
+      }
+    },
+    "catalogue_records_observed": 10,
+    "complete": false,
+    "full_ledger_location": "artifact:coverage_ledger",
+    "full_ledger_sha256": "2f33b7c3d34365503785abf26d23e74b9e6f7ddb47a14b783aa98babb0c24326",
+    "limitations": [
+      "Bounded explicit-source generation, not the entire EUR-Lex archive.",
+      "Unrequested works, missing languages and PDF-only sources are not implicitly covered.",
+      "Recitals with unresolved corrigenda are retained but excluded from general/current retrieval.",
+      "Default-graph metadata is retained; annotations and inferred status are not fully resolved."
+    ],
+    "quarantines": 0,
+    "recital_correction_coverage": {
+      "editions": [
+        {
+          "celex": "32022R2065",
+          "correction_observed_at": "2026-10-17T04:09:15.923944Z",
+          "language": "fr",
+          "retained_recitals": 156,
+          "verified_unchanged_recitals": 0
+        },
+        {
+          "celex": "32024R1689",
+          "correction_observed_at": "2026-10-17T04:09:24.005266Z",
+          "language": "en",
+          "retained_recitals": 180,
+          "verified_unchanged_recitals": 180
+        },
+        {
+          "celex": "32011L0083",
+          "correction_observed_at": "2026-10-17T04:09:32.937342Z",
+          "language": "nl",
+          "retained_recitals": 67,
+          "verified_unchanged_recitals": 0
+        },
+        {
+          "celex": "32016R0679",
+          "correction_observed_at": null,
+          "language": "nl",
+          "retained_recitals": 173,
+          "verified_unchanged_recitals": 0
+        },
+        {
+          "celex": "32016R0679",
+          "correction_observed_at": null,
+          "language": "en",
+          "retained_recitals": 173,
+          "verified_unchanged_recitals": 0
+        },
+        {
+          "celex": "32011L0083",
+          "correction_observed_at": "2026-10-17T04:09:32.937342Z",
+          "language": "de",
+          "retained_recitals": 67,
+          "verified_unchanged_recitals": 67
+        },
+        {
+          "celex": "32016R0679",
+          "correction_observed_at": null,
+          "language": "fr",
+          "retained_recitals": 173,
+          "verified_unchanged_recitals": 0
+        },
+        {
+          "celex": "32016R0679",
+          "correction_observed_at": null,
+          "language": "de",
+          "retained_recitals": 173,
+          "verified_unchanged_recitals": 0
+        },
+        {
+          "celex": "32022R2065",
+          "correction_observed_at": "2026-10-17T04:09:15.923944Z",
+          "language": "de",
+          "retained_recitals": 156,
+          "verified_unchanged_recitals": 0
+        },
+        {
+          "celex": "32011L0083",
+          "correction_observed_at": "2026-10-17T04:09:32.937342Z",
+          "language": "en",
+          "retained_recitals": 67,
+          "verified_unchanged_recitals": 67
+        },
+        {
+          "celex": "32000L0031",
+          "correction_observed_at": "2026-10-17T04:09:53.194370Z",
+          "language": "fr",
+          "retained_recitals": 65,
+          "verified_unchanged_recitals": 65
+        },
+        {
+          "celex": "32000L0031",
+          "correction_observed_at": "2026-10-17T04:09:53.194370Z",
+          "language": "nl",
+          "retained_recitals": 65,
+          "verified_unchanged_recitals": 0
+        },
+        {
+          "celex": "32011L0083",
+          "correction_observed_at": "2026-10-17T04:09:32.937342Z",
+          "language": "fr",
+          "retained_recitals": 67,
+          "verified_unchanged_recitals": 67
+        },
+        {
+          "celex": "32024R1689",
+          "correction_observed_at": "2026-10-17T04:09:24.005266Z",
+          "language": "nl",
+          "retained_recitals": 180,
+          "verified_unchanged_recitals": 0
+        },
+        {
+          "celex": "32024R1689",
+          "correction_observed_at": "2026-10-17T04:09:24.005266Z",
+          "language": "fr",
+          "retained_recitals": 180,
+          "verified_unchanged_recitals": 0
+        },
+        {
+          "celex": "32022R2065",
+          "correction_observed_at": "2026-10-17T04:09:15.923944Z",
+          "language": "en",
+          "retained_recitals": 156,
+          "verified_unchanged_recitals": 156
+        },
+        {
+          "celex": "32022R2065",
+          "correction_observed_at": "2026-10-17T04:09:15.923944Z",
+          "language": "nl",
+          "retained_recitals": 156,
+          "verified_unchanged_recitals": 156
+        },
+        {
+          "celex": "32024R1689",
+          "correction_observed_at": "2026-10-17T04:09:24.005266Z",
+          "language": "de",
+          "retained_recitals": 180,
+          "verified_unchanged_recitals": 0
+        },
+        {
+          "celex": "32000L0031",
+          "correction_observed_at": "2026-10-17T04:09:53.194370Z",
+          "language": "de",
+          "retained_recitals": 65,
+          "verified_unchanged_recitals": 65
+        },
+        {
+          "celex": "32000L0031",
+          "correction_observed_at": "2026-10-17T04:09:53.194370Z",
+          "language": "en",
+          "retained_recitals": 65,
+          "verified_unchanged_recitals": 65
+        }
+      ],
+      "method": "explicit_other_language_correction_closure",
+      "partial": true,
+      "retained_recitals": 2564,
+      "verified_unchanged_recitals": 888
+    },
+    "requested_languages": [
+      "nl",
+      "fr",
+      "de",
+      "en"
+    ],
+    "scope_sectors": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "6"
+    ],
+    "source_documents_cached": 46,
+    "text_complete": false
+  },
+  "documents": 46,
+  "documents_by_language": {
+    "de": 12,
+    "en": 11,
+    "fr": 12,
+    "nl": 11
+  },
+  "eligible_chunks": 3396,
+  "embeddings_created": false,
+  "parser_versions": [
+    "eurlex-source-units-v1.2"
+  ],
+  "quarantined_documents": 0,
+  "schema_version": 1,
+  "sha256": "34b8fce9510386c400f4dfb9378983cdfd4d086be42f22971270800b6c592153",
+  "source_fetched_at": [
+    "2026-10-12T12:39:39.285902Z",
+    "2026-10-12T12:39:39.466284Z",
+    "2026-10-12T12:39:39.648522Z",
+    "2026-10-12T12:39:40.119862Z",
+    "2026-10-12T13:00:40.755821Z",
+    "2026-10-12T13:00:41.339672Z",
+    "2026-10-12T13:00:41.580247Z",
+    "2026-10-12T13:00:41.828809Z",
+    "2026-10-12T15:16:37.512319Z",
+    "2026-10-12T15:16:37.745146Z",
+    "2026-10-12T15:16:38.052737Z",
+    "2026-10-12T15:16:38.363694Z",
+    "2026-10-12T15:16:44.049888Z",
+    "2026-10-12T15:16:44.367780Z",
+    "2026-10-12T15:16:44.652706Z",
+    "2026-10-12T15:16:44.975632Z",
+    "2026-10-12T15:16:47.993343Z",
+    "2026-10-12T15:16:48.276450Z",
+    "2026-10-12T15:16:48.566804Z",
+    "2026-10-12T15:16:48.895566Z",
+    "2026-10-12T15:19:48.028803Z",
+    "2026-10-12T15:19:48.620820Z",
+    "2026-10-12T15:19:49.260504Z",
+    "2026-10-12T15:19:49.931177Z",
+    "2026-10-12T15:19:52.751550Z",
+    "2026-10-12T15:19:53.374961Z",
+    "2026-10-12T15:19:54.050292Z",
+    "2026-10-12T15:19:54.709862Z",
+    "2026-10-12T15:19:57.777119Z",
+    "2026-10-12T15:19:58.442450Z",
+    "2026-10-12T15:19:59.129963Z",
+    "2026-10-12T15:19:59.794496Z"
+  ],
+  "source_fetched_at_total_unique": 46
+}

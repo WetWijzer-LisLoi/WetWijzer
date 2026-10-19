@@ -150,9 +150,11 @@ module LegalChatbot
         answer: message,
         sources: [],
         language: @language,
-        # The controller treats an explicit error as non-billable and refunds
-        # any up-front credit reservation. A source-unavailable refusal must
-        # never look like a successfully grounded paid answer.
+        # An explicit error delivers no answer: the controller settles the
+        # reservation from its dispatch evidence (a paid request that was sent
+        # keeps the single charge, otherwise the credits return; owner policy
+        # 2026-10-18). A source-unavailable refusal must never look like a
+        # successfully grounded answer.
         # Keep `error` user-safe: both JSON and SSE clients render this field
         # directly. The stable machine identifier remains separate.
         error: message,

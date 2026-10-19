@@ -1,0 +1,140 @@
+
+/* A shared, touch-friendly research control. Available categories follow
+ * their real choice spans; unavailable categories remain visible alongside
+ * the ruler as disabled segments without selectable ticks. */
+.research-depth-control {
+  min-width: 0;
+  position: relative;
+  container-type: inline-size;
+  .research-depth-heading { display: flex; align-items: center; min-height: 32px; padding-right: 36px; }
+  .research-depth-scale { position: relative; margin-top: 4px; }
+  .research-depth-unavailable-track { display: none; position: absolute; top: 13px; left: calc(11px + (100% - 22px) * var(--available-track-scale, 1)); right: 11px; height: 6px; border-radius: 999px; background: repeating-linear-gradient(135deg, var(--border-color, #cbd5e1) 0 2px, transparent 2px 4px); pointer-events: none; }
+  &--has-empty .research-depth-unavailable-track { display: block; }
+  .research-depth-credit-ruler { position: relative; width: calc((100% - 22px) * var(--available-track-scale, 1)); margin-inline: 11px; min-height: 12px; margin-top: -7px; pointer-events: none; }
+  .research-depth-step-tick, .research-depth-credit-tick { position: absolute; top: 0; left: var(--tick-position, 0%); transform: translateX(-50%); display: block; width: 1px; height: 5px; background: currentColor; opacity: .65; }
+  .research-depth-credit-tick { width: 2px; height: 12px; opacity: 1; }
+  .research-depth-credit-tick--active { color: var(--accent-500, #2563eb); opacity: 1; }
+  .research-depth-preview { margin-top: 6px; line-height: 1.4; overflow-wrap: anywhere; }
+  .research-depth-help { margin: 0; font-size: 11px; }
+  .research-depth-help > summary { position: absolute; top: 0; right: 0; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: 1px solid transparent; border-radius: 6px; cursor: pointer; color: var(--text-muted, #64748b); list-style: none; }
+  .research-depth-help > summary::-webkit-details-marker { display: none; }
+  .research-depth-help[open] > summary { border-color: var(--border-color, #cbd5e1); color: inherit; }
+  .research-depth-help > summary:focus-visible { outline: 2px solid var(--accent-500, #2563eb); outline-offset: 3px; }
+  .research-depth-help-body { max-height: 9rem; overflow-y: auto; font-size: 11px; line-height: 1.5; padding: 10px; margin: 4px 0 8px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 6px; }
+  .research-depth-help-body p + p { margin-top: 6px; }
+  .research-depth-help-body p:empty { display: none; }
+  &--compact .research-depth-preview { font-size: 11px; }
+  // Separate from legacy full-page intelligence slider rules. Its 32px hit
+  // area stays transparent; only the 6px track receives the accent fill.
+  .research-depth-range {
+    appearance: none;
+    display: block;
+    height: 32px;
+    width: calc((100% - 22px) * var(--available-track-scale, 1) + 22px);
+    margin-top: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    &:disabled { cursor: not-allowed; opacity: .55; }
+    &:focus-visible { outline: 2px solid var(--accent-500, #2563eb); outline-offset: 3px; }
+    &::-webkit-slider-runnable-track {
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(to right, var(--accent-500, #2563eb) var(--slider-pct), var(--border-color, #cbd5e1) var(--slider-pct));
+    }
+    &::-moz-range-track { height: 6px; border-radius: 999px; background: var(--border-color, #cbd5e1); }
+    &::-moz-range-progress { height: 6px; border-radius: 999px; background: var(--accent-500, #2563eb); }
+    &::-webkit-slider-thumb {
+      appearance: none; width: 22px; height: 22px; margin-top: -8px;
+      border-radius: 50%; border: 2px solid var(--accent-500, #2563eb);
+      background: var(--bg-card, #fff); box-shadow: none;
+    }
+    &::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--accent-500, #2563eb); background: var(--bg-card, #fff); }
+  }
+  // Manual-only models remain selected in Settings, without inventing a
+  // recommended tick. The neutral range stays usable to choose a bar option.
+  &--manual .research-depth-range {
+    &::-webkit-slider-runnable-track, &::-moz-range-track { background: var(--border-color, #cbd5e1); }
+    &::-moz-range-progress { background: transparent; }
+    &::-webkit-slider-thumb, &::-moz-range-thumb { opacity: 0; }
+  }
+  // These labels mirror the ruler's 11px thumb inset. Categories with more
+  // real choices receive proportionally more space. A disabled tail reserves
+  // room for empty categories without adding a selectable range position.
+  .research-depth-stops { position: relative; width: calc(100% - 22px); min-height: 36px; margin: 4px 11px 0; }
+  .research-depth-stop {
+    position: absolute; left: var(--category-start, 0%); width: var(--category-width, 25%);
+    min-width: 0; min-height: 36px; padding: 4px 2px; box-sizing: border-box;
+    border: 1px solid transparent; border-radius: 5px;
+    background: transparent; color: var(--text-muted, #64748b);
+    font-size: 11px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    // Inherit the actual surface text colour: not every theme defines
+    // --text-primary, whose dark fallback made this label unreadable.
+    // Labels can extend beyond a one-choice span on mobile. A bottom line
+    // highlights its real range without a neighbor's vertical border cutting
+    // through that complete label.
+    &[aria-pressed="true"] { color: inherit; border-bottom: 2px solid var(--accent-500, #2563eb); border-radius: 0; font-weight: 600; }
+    &:disabled { cursor: not-allowed; opacity: .5; }
+    &:focus-visible { outline: 2px solid var(--accent-500, #2563eb); outline-offset: 2px; }
+  }
+  .research-depth-stop-label { pointer-events: none; }
+  .research-depth-stop--empty {
+    border-color: transparent; border-bottom-color: var(--border-color, #cbd5e1); border-style: dashed; border-radius: 0; background: transparent;
+    // The theme already supplies a muted colour; extra opacity loses contrast.
+    &:disabled { opacity: 1; }
+  }
+  .research-depth-stop:nth-child(1) { --category-start: 0%; }
+  .research-depth-stop:nth-child(2) { --category-start: 25%; }
+  .research-depth-stop:nth-child(3) { --category-start: 50%; }
+  .research-depth-stop:nth-child(4) { --category-start: 75%; }
+}
+// A one-choice endpoint can be less than one word wide on mobile.  Keep the
+// actual button and its proportional range untouched, while allowing its full
+// label to use the safe edge of that range.  This keeps normal mobile layouts
+// compact instead of adding a second label row for every narrow control.
+@container (max-width: 420px) {
+  // Match the nested base rules' specificity so these dimensions and visible
+  // labels win the cascade on narrow controls.
+  .research-depth-control {
+    .research-depth-stops { min-height: 36px; }
+    .research-depth-stop { min-height: 36px; overflow: visible; text-overflow: clip; }
+    // A full endpoint label may extend beyond its proportional button. Keep
+    // that text clickable above adjacent button hitboxes; its click still
+    // bubbles to its own category button, not the neighbor underneath it.
+    .research-depth-stop-label { position: absolute; top: 4px; white-space: nowrap; pointer-events: auto; z-index: 1; }
+    .research-depth-stop:nth-child(1) .research-depth-stop-label { left: 0; text-align: left; }
+    .research-depth-stop:nth-child(2) .research-depth-stop-label { left: 50%; transform: translateX(-50%); text-align: center; }
+    .research-depth-stop:nth-child(3) .research-depth-stop-label { right: 6px; text-align: right; }
+    .research-depth-stop:nth-child(4) .research-depth-stop-label { right: 0; text-align: right; }
+    // A single locked tail is an endpoint: keep its full word against the
+    // safe right edge. Removing a fixed left edge avoids splitting it just
+    // because its proportional span is narrower than the translated label.
+    .research-depth-stop.research-depth-stop--empty .research-depth-stop-label { left: auto; right: 0; transform: none; text-align: right; white-space: nowrap; overflow-wrap: normal; hyphens: none; }
+    // With several locked groups, wrapping within each separate segment is
+    // still necessary so complete translated labels do not overlap.
+    .research-depth-stops:has(> .research-depth-stop--empty ~ .research-depth-stop--empty) .research-depth-stop.research-depth-stop--empty .research-depth-stop-label { left: 2px; right: 2px; text-align: center; white-space: normal; overflow-wrap: anywhere; hyphens: auto; }
+  }
+}
+// At about 280px or less there is genuinely not enough horizontal room for
+// full translated labels.  Only then use two lanes; the clickable spans and
+// ruler ticks remain exactly where their model/reasoning choices place them.
+@container (max-width: 280px) {
+  .research-depth-control {
+    .research-depth-stops { min-height: 58px; }
+    .research-depth-stop { min-height: 58px; }
+    .research-depth-stop:nth-child(2) .research-depth-stop-label,
+    .research-depth-stop:nth-child(4) .research-depth-stop-label { top: 26px; }
+    .research-depth-stop.research-depth-stop--empty:nth-child(4) .research-depth-stop-label { top: 26px; }
+  }
+}
+@media (max-width: 767px) {
+  .research-depth-control .research-depth-stop { font-size: 10px; }
+}
+@media (max-width: 360px) {
+  .research-depth-control .research-depth-stop { font-size: 9px; padding-inline: 0; letter-spacing: -.1px; white-space: nowrap; }
+}
+#model-select, #hero-model-select, #widget-model-select { max-width: 100%; }
+#model-controls { min-width: 0; }
+#model-controls > div { min-width: 0; flex: 1 1 250px; }
+#model-select { min-width: 0; flex: 1 1 auto; }

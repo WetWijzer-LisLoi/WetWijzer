@@ -16,12 +16,12 @@
             <%= t('account.2fa_instructions') %>
           </p>
           
-          <div class="inline-block p-4 bg-white rounded-lg shadow">
+          <div class="mx-auto w-full max-w-[260px] p-4 bg-white rounded-lg shadow [&>svg]:h-auto [&>svg]:w-full">
             <%= @qr_code.html_safe %>
           </div>
           
           <p class="text-xs text-gray-500 mt-3">
-            <%= t('account.manual_entry') %>: <code class="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded"><%= @otp_secret %></code>
+            <%= t('account.manual_entry') %>: <code class="inline-block max-w-full break-all bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded"><%= @otp_secret %></code>
           </p>
         </div>
 

@@ -7,6 +7,17 @@
 details > summary { list-style: none; }
 details > summary::-webkit-details-marker { display: none; }
 
+/* A popular-law title can be a blockified flex item. Ancestor decorations
+   do not reach that text, so paint the status on its title/range labels too.
+   Hover adds the ordinary link underline without removing the status. */
+#popular-laws-panel-0 a.line-through > span:not([data-popular-law-abbreviation]) {
+  text-decoration-line: line-through;
+}
+
+#popular-laws-panel-0 a.line-through:hover > span.group-hover\:underline {
+  text-decoration-line: underline line-through;
+}
+
 /* ============================================================================
  * CARD RADIUS -- Professional themes use rectangular (sharp) cards
  * --card-radius: 1rem (vibrant/fun) | 0 (professional)

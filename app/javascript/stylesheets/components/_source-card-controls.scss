@@ -1,0 +1,81 @@
+/* Modern source detail pages share one mobile control rhythm. The scope and
+ * screen query deliberately leave Classic, desktop and printed legal text alone. */
+@media screen and (max-width: 767px) {
+  .source-detail-page {
+    [data-collapse-target="button"] {
+      min-height: 44px;
+      gap: 12px;
+    }
+
+    [data-collapse-target="icon"] {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    /* Law cards previously inset their arrow/text by 24px while case cards
+     * used 16px. Use the same reading edge as the header and related controls. */
+    :is(#external-links-card, #document-info-card, #title-card, #main-toc-card,
+        #updated-laws-card, #exdecs-card) > [data-controller~="collapse"] {
+      padding: 16px;
+    }
+
+    #external-links-card [data-collapse-target="content"] {
+      display: grid;
+      gap: 4px;
+
+      > li { margin: 0; }
+
+      a {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 44px;
+        overflow-wrap: anywhere;
+
+        svg { flex-shrink: 0; margin-left: 0; }
+      }
+    }
+
+    /* Equal-width source disclosures keep their icons on the same left edge,
+     * including long French/German labels that need two lines on a phone. */
+    #related-sources-card form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+
+      [data-related-sources-target="button"] {
+        width: 100%;
+        min-height: 44px;
+        min-width: 0;
+        text-align: left;
+        justify-content: flex-start;
+
+        svg { flex-shrink: 0; }
+      }
+    }
+
+    #shared-copy-menu > button,
+    [data-jump-select-target="menu"] [role="menuitem"] {
+      min-height: 44px;
+    }
+
+    [data-toc-search-target="input"] {
+      min-height: 44px;
+      min-width: 0;
+      font-size: 16px;
+      padding-right: 52px;
+    }
+
+    [data-toc-search-target="clearBtn"] {
+      width: 44px;
+      height: 44px;
+      right: 4px;
+
+      &:not(.hidden) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+  }
+}

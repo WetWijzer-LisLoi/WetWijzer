@@ -19,7 +19,7 @@
              data-controller="article-exdecs-loader"
              data-article-exdecs-loader-url-value="<%= article_exdecs_law_path(params[:numac], language_id: @language_id) %>">
           <%# Left side: view toggles %>
-          <div class="flex flex-wrap items-center gap-2">
+          <div class="source-detail-toolbar source-detail-toolbar--article flex flex-wrap items-center gap-2">
             <%# Toggle colored references %>
             <% show_colors = defined?(@show_colors) ? @show_colors : true %>
             <% show_exdecs = defined?(@show_exdecs) ? @show_exdecs : true %>
@@ -36,7 +36,7 @@
             <%# Toggle colored references (only show if articles have references) %>
             <% if has_references %>
               <button type="button"
-                    class="btn-toggle-active"
+                    class="source-detail-action btn-toggle-active"
                     data-action="click->article-preferences#toggleColors"
                     data-colors-toggle
                     title="<%= t('articles.hide_colors_tooltip') %>">
@@ -49,7 +49,7 @@
               
               <%# Toggle reference highlighting (client-side, persisted via prefsStore) %>
               <button type="button"
-                    class="btn-toggle-active"
+                    class="source-detail-action btn-toggle-active"
                     data-action="click->article-preferences#toggleHighlight"
                     data-highlight-toggle
                     title="<%= t('articles.hide_highlight_tooltip') %>">
@@ -62,7 +62,7 @@
               
               <%# Toggle references visibility (hides all reference markup) %>
               <button type="button"
-                    class="btn-toggle-active"
+                    class="source-detail-action btn-toggle-active"
                     data-action="click->article-preferences#toggleReferences"
                     data-references-toggle
                     title="<%= t('articles.hide_references_tooltip') %>">
@@ -78,7 +78,7 @@
             <% if defined?(@article_exdecs_disabled) && @article_exdecs_disabled && exdec_count > 0 %>
               <%# Hidden toggle button for AJAX-loaded exdecs (will be shown by JS after load) %>
               <button type="button"
-                    class="hidden btn-toggle-active btn-toggle-exdecs"
+                    class="hidden source-detail-action btn-toggle-active btn-toggle-exdecs"
                     data-action="click->article-exdecs-loader#toggleExdecs"
                     data-exdec-toggle
                     data-article-exdecs-loader-target="toggleButton"
@@ -102,7 +102,7 @@
                 <span><%= t('articles.exdecs_disabled') %></span>
                 <span class="mx-2 text-yellow-400 dark:text-yellow-600">|</span>
                 <button type="button"
-                        class="underline hover:no-underline cursor-pointer"
+                        class="source-detail-action underline hover:no-underline cursor-pointer"
                         data-action="click->article-exdecs-loader#load"
                         data-article-exdecs-loader-target="button">
                   <%= t('articles.load_anyway') %> (<%= load_time_text %>)
@@ -127,11 +127,11 @@
           </div>
           
           <%# Right side: copy & export dropdowns %>
-          <div class="flex flex-wrap items-center gap-2">
+          <div class="source-detail-toolbar source-detail-toolbar--article flex flex-wrap items-center gap-2">
             <%# Copy dropdown %>
-            <div class="relative" data-controller="dropdown">
+            <div class="relative" data-controller="dropdown" data-dropdown-viewport-fit-value="true">
               <button type="button"
-                    class="btn-toggle-inactive"
+                    class="source-detail-action btn-toggle-inactive"
                     data-action="click->dropdown#toggle"
                     data-dropdown-target="button"
                     aria-haspopup="true"
@@ -149,7 +149,7 @@
               <div data-dropdown-target="menu"
                    class="hidden absolute right-0 top-full mt-1 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
                 <button type="button"
-                      class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                       data-controller="clipboard"
                       data-action="click->clipboard#copyAllArticles click->dropdown#close"
                       data-clipboard-copied-label-value="<%= t('articles.all_copied') %>">
@@ -160,7 +160,7 @@
                   <%= t('articles.copy_all') %>
                 </button>
                 <button type="button"
-                      class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                       data-controller="clipboard"
                       data-action="click->clipboard#copyAllArticlesCitation click->dropdown#close"
                       data-clipboard-copied-label-value="<%= t('articles.all_citation_copied') %>">
@@ -173,9 +173,9 @@
             </div>
 
             <%# Export dropdown %>
-            <div class="relative" data-controller="dropdown">
+            <div class="relative" data-controller="dropdown" data-dropdown-viewport-fit-value="true">
               <button type="button"
-                    class="btn-toggle-inactive"
+                    class="source-detail-action btn-toggle-inactive"
                     data-action="click->dropdown#toggle"
                     data-dropdown-target="button"
                     aria-haspopup="true"
@@ -194,7 +194,7 @@
                 <%# Word exports %>
                 <div class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Word</div>
                 <button type="button"
-                      class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                       data-controller="export-feedback"
                       data-action="click->export-feedback#download click->dropdown#close"
                       data-export-feedback-url-value="<%= export_word_law_path(params[:numac], language_id: @language_id) %>"
@@ -209,7 +209,7 @@
                   <span data-export-feedback-target="label"><%= t('articles.export_word') %></span>
                 </button>
                 <button type="button"
-                      class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                       data-controller="export-feedback"
                       data-action="click->export-feedback#download click->dropdown#close"
                       data-export-feedback-url-value="<%= export_word_law_path(params[:numac], language_id: @language_id, citation: true) %>"
@@ -227,7 +227,7 @@
                 <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
                 <div class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Typst</div>
                 <button type="button"
-                      class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                       data-controller="export-feedback"
                       data-action="click->export-feedback#download click->dropdown#close"
                       data-export-feedback-url-value="<%= export_typst_law_path(params[:numac], language_id: @language_id) %>"
@@ -242,7 +242,7 @@
                   <span data-export-feedback-target="label"><%= t('articles.export_typst') %></span>
                 </button>
                 <button type="button"
-                      class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                       data-controller="export-feedback"
                       data-action="click->export-feedback#download click->dropdown#close"
                       data-export-feedback-url-value="<%= export_typst_law_path(params[:numac], language_id: @language_id, citation: true) %>"
@@ -260,7 +260,7 @@
                 <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
                 <div class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">ODT</div>
                 <button type="button"
-                      class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                       data-controller="export-feedback"
                       data-action="click->export-feedback#download click->dropdown#close"
                       data-export-feedback-url-value="<%= export_odt_law_path(params[:numac], language_id: @language_id) %>"
@@ -275,7 +275,7 @@
                   <span data-export-feedback-target="label"><%= t('articles.export_odt') %></span>
                 </button>
                 <button type="button"
-                      class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                       data-controller="export-feedback"
                       data-action="click->export-feedback#download click->dropdown#close"
                       data-export-feedback-url-value="<%= export_odt_law_path(params[:numac], language_id: @language_id, citation: true) %>"
@@ -396,6 +396,11 @@
             <% base_permalink = permalink.sub(LawsHelper::ARTICLE_VARIANT_SUFFIX, '') %>
             <% if base_permalink != permalink && !real_article_ids.include?(base_permalink) && emitted_article_ids.add?(base_permalink) %>
               <span id="<%= base_permalink %>" class="block h-0 overflow-hidden scroll-mt-24 mt-0!" aria-hidden="true"></span>
+            <% end %>
+            <%# A tax-code row's anchor from before its retitling (#art-1222 for Art.122/2). %>
+            <% fused_anchor = fused_title_anchor(article, real_article_ids) %>
+            <% if fused_anchor && emitted_article_ids.add?(fused_anchor) %>
+              <span id="<%= fused_anchor %>" class="block h-0 overflow-hidden scroll-mt-24 mt-0!" aria-hidden="true"></span>
             <% end %>
             <% top_pad = prev_was_heading ? 'pt-2' : 'pt-4' %>
             <% bottom_pad = next_is_heading ? 'pb-2' : 'pb-4' %>

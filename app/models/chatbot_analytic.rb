@@ -429,6 +429,11 @@ class ChatbotAnalytic < AnalyticsRecord
     period_from = since || period_start(period)
 
     total_cost = scope.where.not(estimated_cost_eur: nil).sum(:estimated_cost_eur)
+    # What the cost total does not cover (12:21): rows without an estimate,
+    # and credits settled for questions that have no analytics row here at
+    # all. Both are reported beside the total, never folded in as zero.
+    missing_cost_rows = scope.where(estimated_cost_eur: nil).count
+    unrecorded_credits = request_source == :partner ? 0 : unrecorded_settled_credits(scope, from: period_from)
     total_input = scope.sum(:input_tokens)
     total_output = scope.sum(:output_tokens)
     total_credits_deducted = authoritative_credit_total(
@@ -490,6 +495,8 @@ class ChatbotAnalytic < AnalyticsRecord
       total_profit_eur: total_profit.round(2),
       profit_margin_pct: total_revenue.positive? ? ((total_profit / total_revenue) * 100).round(1) : 0,
       total_credits_deducted: total_credits_deducted,
+      missing_cost_rows: missing_cost_rows,
+      unrecorded_credits: unrecorded_credits,
       total_input_tokens: total_input,
       total_output_tokens: total_output,
       avg_cost_per_query: scope.any? ? (total_cost / scope.count).round(6) : 0,
@@ -564,6 +571,25 @@ class ChatbotAnalytic < AnalyticsRecord
     totals
   end
 
+  # Settled browser credits of the window whose question has no analytics
+  # row in `scope`: a projection not written yet, which the cost estimate
+  # cannot cover. Analytics and the ledger are different databases (12:34):
+  # the recorded tokens are read once from the analytics lane into a set,
+  # and the ledger rows are read from the accounts lane in bounded batches
+  # and compared here; no subquery, no IN list, no join across lanes.
+  def self.unrecorded_settled_credits(scope, from: nil)
+    recorded = scope.where.not(billing_reservation_token: nil).distinct.pluck(:billing_reservation_token).to_set
+    ledger = BillingReservation.settled_credits.browser_chat
+    ledger = ledger.where(settled_at: from...) if from
+    total = 0
+    ledger.in_batches(of: 1_000) do |batch|
+      batch.pluck(:reservation_token, :amount).each do |token, amount|
+        total += amount.to_i unless recorded.include?(token)
+      end
+    end
+    total
+  end
+
   def self.period_start(period)
     case period
     when :today then Time.current.beginning_of_day
@@ -620,8 +646,11 @@ class ChatbotAnalytic < AnalyticsRecord
   def self.cost_by_provider(scope = this_month)
     # Map model names → provider symbols
     provider_map = begin
-      LegalChatbot::ModelsConfig::AVAILABLE_MODELS.each_with_object({}) do |(model, cfg), h|
+      active_provider_map = LegalChatbot::ModelsConfig::AVAILABLE_MODELS.each_with_object({}) do |(model, cfg), h|
         h[model] = cfg[:provider].to_s
+      end
+      LegalChatbot::ModelsConfig::RETIRED_MODEL_PROVIDERS.each_with_object(active_provider_map) do |(model, provider), h|
+        h[model] = provider.to_s
       end
     rescue StandardError => e
       Rails.logger.warn("[ChatbotAnalytic] Operation failed: #{e.message}")

@@ -1,5 +1,5 @@
-<tr class="<%= local_assigns[:law_counter]&.odd? ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900' %> hover:bg-(--accent-active-bg) transition-colors duration-200">
-            <td class="w-28 px-2 py-3 align-top text-sm leading-5 font-medium text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">
+<tr role="row" class="<%= local_assigns[:law_counter]&.odd? ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900' %> hover:bg-(--accent-active-bg) transition-colors duration-200">
+            <td role="cell" class="result-date w-28 px-2 py-3 align-top text-sm leading-5 font-medium text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">
     <%# Fun themes (original, blue, rose, etc.) get colored badges %>
     <%# Professional themes (slate, indigo, etc.) get plain text %>
     <span class="badge-date">
@@ -8,7 +8,7 @@
     </span>
   </td>
 
-            <td class="law-result-title w-full px-4 py-3 whitespace-normal text-sm leading-5 text-gray-900 dark:text-gray-300" <%= tag.attributes(lang: legal_text_lang(law.language_id)) %>>
+            <td role="cell" class="result-content law-result-title w-full px-4 py-3 whitespace-normal text-sm leading-5 text-gray-900 dark:text-gray-300" <%= tag.attributes(lang: legal_text_lang(law.language_id)) %>>
      <%# The German site lists German texts beside French ones: each row says which %>
      <% if german_site? && (row_language = law.respond_to?(:language_id) && law_language_label(law.language_id)) %>
        <span class="badge-language" data-law-row-language="<%= row_language %>"><%= row_language %></span>
@@ -38,7 +38,7 @@
     <% rescue JSON::ParserError %>
     <% end %>
     </td>
-        <td class="w-14 px-1 py-3 align-top text-sm leading-5 font-medium text-center">
+        <td role="cell" class="result-action w-14 px-1 py-3 align-top text-sm leading-5 font-medium text-center">
       <% if law.respond_to?(:fisconet?) && law.fisconet? %>
         <%# Fisconet: link to FisconetPlus directly %>
         <%= link_to law.fisconet_url, class: %w[inline-flex items-center justify-center w-6 h-6 mx-auto border border-transparent text-xs font-medium rounded-md text-white bg-(--accent-600-solid) hover:bg-(--accent-700-solid) focus:outline-hidden focus:ring-1 focus:ring-offset-1 focus:ring-(--accent-500) transition-colors duration-200].join(" "), title: t(:details).capitalize(), target: "_blank" do %>
@@ -55,7 +55,7 @@
         <% end %>
       <% end %>
     </td>
-    <td class="w-14 px-1 py-3 align-top whitespace-nowrap text-sm leading-5 font-medium text-center">
+    <td role="cell" class="result-action w-14 px-1 py-3 align-top whitespace-nowrap text-sm leading-5 font-medium text-center">
       <% if law.respond_to?(:fisconet?) && law.fisconet? %>
         <%# FisconetPlus source - show F badge with link %>
         <%= link_to law.fisconet_url, class: %w[inline-flex items-center justify-center w-6 h-6 mx-auto border border-amber-400 dark:border-amber-600 text-xs font-medium rounded-md text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-800/40 focus:outline-hidden focus:ring-1 focus:ring-offset-1 focus:ring-amber-500 transition-colors duration-200].join(" "), target: "_blank", rel: "nofollow", title: 'FisconetPlus' do %>
@@ -69,7 +69,7 @@
         <% end %>
       <% end %>
     </td>
-    <td class="w-14 px-1 py-3 align-top whitespace-nowrap text-sm leading-5 font-medium text-center">
+    <td role="cell" class="result-action w-14 px-1 py-3 align-top whitespace-nowrap text-sm leading-5 font-medium text-center">
       <% if law.reflex != "N/A" %>
         <%= link_to law.reflex, class: %w[inline-flex items-center justify-center w-6 h-6 mx-auto border border-gray-300 dark:border-navy text-xs font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-(--accent-500)/10 focus:outline-hidden focus:ring-1 focus:ring-offset-1 focus:ring-(--accent-500) transition-colors duration-200].join(" "), target: "_blank", rel: "nofollow", title: 'Reflex' do %>
           <span class="sr-only">Reflex</span>
@@ -77,7 +77,7 @@
         <% end %>
       <% end %>
     </td>
-    <td class="w-10 px-1 py-3 align-top whitespace-nowrap text-sm leading-5 font-medium text-center no-print">
+    <td role="cell" class="result-action w-10 px-1 py-3 align-top whitespace-nowrap text-sm leading-5 font-medium text-center no-print">
       <% unless law.respond_to?(:fisconet?) && law.fisconet? %>
         <button type="button"
                 class="bookmark-btn inline-flex items-center justify-center w-6 h-6 mx-auto text-gray-400 hover:text-(--accent-500) dark:text-gray-500 dark:hover:text-(--accent-400) transition-colors duration-200"

@@ -33,12 +33,14 @@ class PreferencesStore {
   constructor() {
     this._cache = {}
     this._initialized = false
+    this._hydrated = false
     this._saveTimer = null
     this._dirty = {}
     this._revisions = {}
     this._nextRevision = 0
     this._preInitChanges = {}
     this._loggedIn = null
+    this._initGeneration = 0
   }
 
   /**
@@ -46,16 +48,38 @@ class PreferencesStore {
    * Call once on page load (e.g., in application.js or the first Stimulus controller).
    */
   async init() {
+    const loggedIn = this._checkLoggedIn()
+    if (this._loggedIn !== null && loggedIn !== this._loggedIn) {
+      // Turbo sign-in/sign-out keeps this singleton alive. Neither the previous
+      // auth state's cache nor a late GET may become the new visitor's choices.
+      this._initGeneration += 1
+      clearTimeout(this._saveTimer)
+      this._saveTimer = null
+      this._cache = {}
+      this._dirty = {}
+      this._revisions = {}
+      this._preInitChanges = {}
+      this._initialized = false
+      this._hydrated = false
+      this._initPromise = null
+    }
+    this._loggedIn = loggedIn
     if (this._initialized) return this._cache
     // Deduplicate concurrent init() calls: cache the in-flight promise
     if (this._initPromise) return this._initPromise
-    this._initPromise = this._doInit()
+    this._initPromise = this._doInit(loggedIn, this._initGeneration)
     return this._initPromise
   }
 
-  async _doInit() {
-    // Check if user is logged in via DOM metadata
-    this._loggedIn = this._checkLoggedIn()
+  // Finishing initialization is not proof that an authenticated read worked.
+  // Consumers that must preserve a saved choice can fail closed without making
+  // optional theme/preferences callers handle a rejected initialization promise.
+  get hydrated() {
+    return this._hydrated
+  }
+
+  async _doInit(loggedIn, generation) {
+    this._hydrated = !loggedIn
     this._seedServerThemes()
 
     // Bind navigation/unload flushing as soon as auth is known, before the
@@ -70,7 +94,7 @@ class PreferencesStore {
       document.addEventListener('turbo:before-visit', () => this._flushSync())
     }
 
-    if (this._loggedIn) {
+    if (loggedIn) {
       try {
         const response = await fetch('/api/preferences', {
           credentials: 'same-origin',
@@ -78,15 +102,23 @@ class PreferencesStore {
         })
         if (response.ok) {
           const data = await response.json()
+          if (!data || typeof data !== 'object' || Array.isArray(data) ||
+              !data.preferences || typeof data.preferences !== 'object' || Array.isArray(data.preferences)) {
+            throw new Error('Invalid preferences response')
+          }
+          if (generation !== this._initGeneration) return this._cache
           // A controller may have written a choice while this GET was in
           // flight. Keep those local values authoritative; otherwise the
           // late response would visibly undo the user's choice.
-          this._cache = { ...(data.preferences || {}) }
+          this._cache = { ...data.preferences }
+          this._hydrated = true
         }
       } catch (e) {
         console.warn('[PreferencesStore] Failed to load preferences:', e.message)
       }
     }
+
+    if (generation !== this._initGeneration) return this._cache
 
     // Apply local edits after either a successful or failed GET. This keeps a
     // choice made during hydration authoritative, including over server-seeded

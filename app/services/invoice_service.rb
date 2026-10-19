@@ -77,8 +77,7 @@ class InvoiceService
     payment_provider: nil,
     provider_payment_id: nil
   )
-    pkg = CreditPurchase::PACKAGES[purchase.package]
-    return unless pkg
+    return unless CreditPurchase::PACKAGES[purchase.package]
     if payment &&
        (
          payment.credit_purchase_id != purchase.id ||
@@ -90,9 +89,13 @@ class InvoiceService
     payment_provider ||= purchase.payment_method
     provider_payment_id ||= purchase.mollie_payment_id
     charged_amount_cents = payment&.amount_cents || purchase.amount_cents
+    locale = invoice_locale(user)
+    saved_credit_label = credit_purchase_invoice_quantity_label(purchase.credits_granted, locale)
 
     lines = [{
-      description: credit_purchase_invoice_description(pkg.fetch(:label), invoice_locale(user)),
+      # Package quantities can change after checkout. The saved purchase is
+      # the commercial snapshot, not the current catalog's display label.
+      description: credit_purchase_invoice_description(saved_credit_label, locale),
       quantity: 1,
       unit: 'pakket',
       unit_price: (charged_amount_cents.to_f / 100).round(2)
@@ -873,6 +876,15 @@ class InvoiceService
     "#{prefix} #{label}"
   end
   private_class_method :credit_purchase_invoice_description
+
+  def self.credit_purchase_invoice_quantity_label(quantity, locale)
+    words = {
+      'fr' => %w[crédit crédits],
+      'de' => %w[Credit Credits]
+    }.fetch(normalized_invoice_locale(locale), %w[credit credits])
+    "#{quantity} #{words.fetch(quantity == 1 ? 0 : 1)}"
+  end
+  private_class_method :credit_purchase_invoice_quantity_label
 
   def self.normalized_invoice_locale(locale)
     locale.to_s if VALID_INVOICE_LOCALES.include?(locale.to_s)

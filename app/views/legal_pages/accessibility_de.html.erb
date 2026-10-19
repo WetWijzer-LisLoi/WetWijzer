@@ -27,6 +27,7 @@
     </ul>
 
     <h3>Bekannte Einschränkungen</h3>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Komponente</th>
@@ -49,6 +50,7 @@
             <td>Wir haben keine Kontrolle über externe Websites</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <h2>Technische Spezifikationen</h2>
     <p>Die Barrierefreiheit von WetWijzer/LisLoi/GesetzGuide/LexLibera basiert auf folgenden Technologien:</p>

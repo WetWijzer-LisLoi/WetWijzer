@@ -1,7 +1,7 @@
 <%= render 'legal_pages/legal_page_styles' %>
 <div class="legal-page">
 <h1>H&auml;ufig gestellte Fragen (FAQ)</h1>
-    <p class="last-updated">Letzte Aktualisierung: 9. Juni 2026</p>
+    <p class="last-updated">Letzte Aktualisierung: 11. Oktober 2026</p>
 
     <div class="toc">
         <strong>Inhalt</strong>
@@ -46,7 +46,7 @@
 
     <details>
         <summary>In welchen Sprachen ist GesetzGuide verf&uuml;gbar?</summary>
-        <div><p>Die Oberfl&auml;che ist auf Niederl&auml;ndisch, Franz&ouml;sisch, Deutsch und Englisch verf&uuml;gbar. Der KI-Chatbot antwortet in der von Ihnen gew&auml;hlten Sprache. Die Gesetzesdatenbank enth&auml;lt die Texte in ihrer urspr&uuml;nglichen Publikationssprache und, wo vorhanden, deutsche Texte. Diese sind &Uuml;bersetzungen, Koordinierungen oder konsolidierte Fassungen, sofern sie nicht als Originaltext gekennzeichnet sind; jede deutsche Seite gibt an, um welche Art von Text es sich handelt und woher er stammt. Gibt es keinen deutschen Text, wird der franz&ouml;sische Text angezeigt.</p></div>
+        <div><p>Die Oberfl&auml;che ist auf Niederl&auml;ndisch, Franz&ouml;sisch, Deutsch und Englisch verf&uuml;gbar. Auf NL/FR/DE antwortet der Chatbot standardmäßig in der Sprache der Website; auf EN/INT folgt er der Sprache Ihrer Frage. Sie können ausdrücklich eine Antwort auf Niederländisch, Französisch, Deutsch oder Englisch anfordern. Die Gesetzesdatenbank enth&auml;lt die Texte in ihrer urspr&uuml;nglichen Publikationssprache und, wo vorhanden, deutsche Texte. Diese sind &Uuml;bersetzungen, Koordinierungen oder konsolidierte Fassungen, sofern sie nicht als Originaltext gekennzeichnet sind; jede deutsche Seite gibt an, um welche Art von Text es sich handelt und woher er stammt. Gibt es keinen deutschen Text, wird der franz&ouml;sische Text angezeigt.</p></div>
     </details>
 
     <h2 id="section-2">2. Konto und Registrierung</h2>
@@ -95,10 +95,18 @@
     </details>
 
     <details>
-        <summary>Was sind die Intelligenzstufen?</summary>
+        <summary>Wie wähle ich ein KI-Modell?</summary>
         <div>
             <%= render 'legal_pages/chatbot_pricing_table', locale: :de %>
-            <p>Kostenlose Benutzer erhalten <%= RegistrationsController::STARTER_CREDITS %> Startcredits f&uuml;r ausgew&auml;hlte Modelle der Stufe Schlau (welche, steht auf der Preisseite und kann sich &auml;ndern). Die &uuml;brigen Schlau-Modelle sowie Genial, Meisterhirn und Allwissend sind exklusiv f&uuml;r Pro-Abonnenten. <%= chatbot_processing_location_summary(:de) %></p>
+            <p><%= format(pricing_access_copy(:de).fetch(:starter), credits: RegistrationsController::STARTER_CREDITS) %></p>
+            <p><%= pricing_access_copy(:de).fetch(:access) %> <%= pricing_access_copy(:de).fetch(:pending) %> <%= chatbot_processing_location_summary(:de) %></p>
+        </div>
+    </details>
+
+    <details>
+        <summary><%= t('chatbot.research_depth.faq_title', locale: :de) %></summary>
+        <div>
+            <%= render 'legal_pages/research_depth_explanation', locale: :de %>
         </div>
     </details>
 
@@ -156,7 +164,7 @@
 
     <details>
         <summary>Wie viele Gratis-Credits erhalte ich?</summary>
-        <div><p>Jeder registrierte Benutzer erh&auml;lt <%= RegistrationsController::STARTER_CREDITS %> kostenlose Startcredits. Diese werden automatisch gutgeschrieben. Gratis-Credits funktionieren mit ausgew&auml;hlten Modellen der Stufe Schlau. Die &uuml;brigen Schlau-Modelle sowie Genial, Meisterhirn und Allwissend erfordern ein Pro-Abonnement.</p></div>
+        <div><p><%= format(pricing_access_copy(:de).fetch(:starter), credits: RegistrationsController::STARTER_CREDITS) %> <%= pricing_access_copy(:de).fetch(:access) %></p></div>
     </details>
 
     <details>
@@ -172,6 +180,11 @@
     </details>
 
     <details>
+        <summary>Wann wird eine Frage abgebucht?</summary>
+        <div><p>Der Preis einer Frage wird reserviert, wenn Sie sie stellen. Sobald die KI-Verarbeitung Ihrer Frage begonnen hat (die erste Anfrage an einen KI-Dienst, zum Beispiel zum Suchen oder zum &Uuml;bersetzen), wird dieser Preis abgebucht. Das gilt auch, wenn die Antwort danach unvollst&auml;ndig ausf&auml;llt, von der Quellenpr&uuml;fung gestoppt wird oder anschlie&szlig;end fehlschl&auml;gt. Eine Frage, die fehlschl&auml;gt, bevor die KI-Verarbeitung begonnen hat, wird nicht abgebucht: Die Reservierung wird freigegeben. Automatische Wiederholungen innerhalb derselben Anfrage kosten keine zus&auml;tzlichen Credits. Senden Sie die Frage erneut, gilt daf&uuml;r die obige Regel erneut. Liefert eine abgebuchte Frage keine brauchbare Antwort, steht das in der Meldung.</p></div>
+    </details>
+
+    <details>
         <summary>Welche Zahlungsmethoden werden akzeptiert?</summary>
         <div><p>&Uuml;ber Mollie werden g&auml;ngige Zahlungsmethoden angeboten, darunter Bancontact, Debit- und Kreditkarten sowie weitere europ&auml;ische Zahlungsmethoden. Wir speichern keine Karten- oder Bankdaten; die Zahlung wird in der sicheren Mollie-Checkout-Umgebung verarbeitet.</p></div>
     </details>
@@ -181,11 +194,12 @@
     <details>
         <summary>Was bietet WetWijzer Pro?</summary>
         <div>
+            <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
             <table>
                 <tr><th>Funktion</th><th>Gratis-Konto</th><th>WetWijzer Pro (&euro;2,99/Monat)</th></tr>
                 <tr><td>Gesetzgebung durchsuchen</td><td>Unbegrenzt</td><td>Unbegrenzt</td></tr>
                 <tr><td>Chatbot-Credits</td><td><%= RegistrationsController::STARTER_CREDITS %> Startcredits + kaufbar</td><td><strong><%= Subscription::PRO_MONTHLY_CREDITS %> pro Monat</strong> + kaufbar</td></tr>
-                <tr><td>Intelligenzstufen</td><td>Schlau (ausgew&auml;hlte Modelle)</td><td><strong>Alle 4 Stufen</strong></td></tr>
+                <tr><td>Modellgruppen</td><td>Schnell, Ausgewogen und Gründlich</td><td><strong>Auch Umfassend</strong>, sobald die Modelle verfügbar sind</td></tr>
                 <tr><td>KI-Modelle</td><td><%= chatbot_model_names_for_access(:free) %></td><td><strong>Alle Modelle</strong> (<%= chatbot_all_model_names %>)</td></tr>
                 <tr><td>Rechtsprechungsdatenbank</td><td>✅ 175.000+ pseudonymisierte Urteile</td><td>✅ 175.000+ pseudonymisierte Urteile</td></tr>
                 <tr><td>Parlamentsdatenbank</td><td>✅ Durchsuchen</td><td>✅ Durchsuchen</td></tr>
@@ -193,6 +207,7 @@
                 <tr><td>Parlamentarische Dokumente via Chatbot</td><td>Nicht verf&uuml;gbar</td><td><strong>Verf&uuml;gbar</strong></td></tr>
 
             </table>
+            <% unless classic_host? %></div><% end %>
         </div>
     </details>
 
@@ -201,8 +216,8 @@
         <div>
             <p>WetWijzer Pro ist f&uuml;r alle konzipiert, die regelm&auml;&szlig;ig juristische Recherchen durchf&uuml;hren:</p>
             <ul>
-                <li><strong>Intelligentere KI:</strong> Genial (<%= chatbot_model_names_for_level(:genius, :de) %>), Meisterhirn (<%= chatbot_model_names_for_level(:mastermind, :de) %>) und Allwissend (<%= chatbot_model_names_for_level(:omniscient, :de) %>) bieten die leistungsfähigeren Optionen.</li>
-                <li><strong>Alle KI-Modelle:</strong> Pro-Abonnenten erhalten Zugang zu allen KI-Modellen im erweiterten Dropdown-Men&uuml;, einschlie&szlig;lich GPT-5.6 Luna, GPT-5.6 Terra und mehr.</li>
+                <li><strong>Umfassend:</strong> Pro eröffnet auch diese Modellgruppe, sobald verfügbar: <%= chatbot_model_names_for_level(:omniscient, :de) %>. Jede Frage benötigt ausreichend Credits.</li>
+                <li><strong>Klare Verfügbarkeit:</strong> Demnächst verfügbare Modelle bleiben auch mit Pro nicht auswählbar. Ein normales Konto kann Schnell, Ausgewogen und Gründlich bereits mit ausreichend Credits nutzen.</li>
                 <li><strong>Rechtsprechung via Chatbot:</strong> Lassen Sie den Chatbot auch in der Rechtsprechungsdatenbank (175.000+ pseudonymisierte Urteile) suchen. Das Durchsuchen der Datenbank auf der Website bleibt f&uuml;r alle kostenlos, ohne Konto.</li>
                 <li><strong>Parlamentarische Dokumente:</strong> Lassen Sie den Chatbot auch in Kammer- und Senatsdokumenten suchen.</li>
                 <li><strong>Ausreichendes Budget:</strong> <%= Subscription::PRO_MONTHLY_CREDITS %> gratis Credits pro Monat f&uuml;r regelm&auml;&szlig;ige Nutzung.</li>
@@ -235,7 +250,7 @@
 
     <details>
         <summary>Kann ich Pro erst ausprobieren?</summary>
-        <div><p>Mit den <%= RegistrationsController::STARTER_CREDITS %> kostenlosen Startcredits k&ouml;nnen Sie den Chatbot bereits auf den ausgew&auml;hlten Schlau-Modellen testen. Die Rechtsprechungsdatenbank ist auf der Website f&uuml;r alle frei zug&auml;nglich, ohne Konto. Pro f&uuml;gt die Stufen Genial, Meisterhirn und Allwissend sowie Rechtsprechung und parlamentarische Dokumente via Chatbot hinzu. Da Pro monatlich ohne K&uuml;ndigungsfrist k&uuml;ndbar ist, k&ouml;nnen Sie es risikofrei einen Monat lang ausprobieren.</p></div>
+        <div><p>Mit Ihren <%= RegistrationsController::STARTER_CREDITS %> Startcredits testen Sie verfügbare Modell-Denkmodus-Kombinationen, deren Gesamtpreis durch Ihr Guthaben gedeckt ist. Ein normales Konto hat Modellzugang bis einschließlich Gründlich. Pro ergänzt Umfassend, sobald verfügbar, sowie Rechtsprechung und parlamentarische Dokumente im Chatbot. Die Suche auf der Website bleibt kostenlos. Pro kostet &euro;2,99 pro Monat und ist monatlich kündbar.</p></div>
     </details>
 
     <details>
@@ -245,7 +260,7 @@
 
     <details>
         <summary>Was passiert mit meinen Credits, wenn ich k&uuml;ndige?</summary>
-        <div><p>Alle Credits bleiben verf&uuml;gbar, auch nach K&uuml;ndigung Ihres Pro-Abonnements. Sie erhalten nicht mehr Ihre monatlichen <%= Subscription::PRO_MONTHLY_CREDITS %> gratis Credits und verlieren den Zugang zu den Pro-Modellen der Stufe Schlau, zu den h&ouml;heren Intelligenzstufen (Genial, Meisterhirn, Allwissend) sowie zu Rechtsprechung und parlamentarischen Dokumenten via Chatbot. Das Durchsuchen der Rechtsprechungsdatenbank auf der Website bleibt f&uuml;r alle kostenlos.</p></div>
+        <div><p>Alle Credits bleiben nach Kündigung von Pro verfügbar. Sie erhalten keine <%= Subscription::PRO_MONTHLY_CREDITS %> enthaltenen Monatscredits mehr und verlieren den Zugang zu Umfassend sowie zu Rechtsprechung und parlamentarischen Dokumenten im Chatbot. Schnell, Ausgewogen und Gründlich bleiben mit ausreichend Credits nutzbar. Die Suche auf der Website bleibt für alle kostenlos.</p></div>
     </details>
 
     <details>
@@ -389,10 +404,10 @@
     <details>
         <summary>Welche Optionen stehen zur Verfügung?</summary>
         <div>
-            <p><strong>Alltagsfragen:</strong> Schlau (<%= chatbot_base_credit_range_for(:smart, :de) %> Basis) &mdash; die niedrigsten Credit-Kosten.</p>
-            <p><strong>Tiefgehende Analyse:</strong> Genial (<%= chatbot_base_credit_range_for(:genius, :de) %> Basis) &mdash; <%= chatbot_model_names_for_level(:genius, :de) %>.</p>
-            <p><strong>Umfassende Analyse:</strong> Meisterhirn (<%= chatbot_base_credit_range_for(:mastermind, :de) %> Basis) &mdash; <%= chatbot_model_names_for_level(:mastermind, :de) %>.</p>
-            <p><strong>Andere Modellperspektive:</strong> Allwissend (<%= chatbot_base_credit_range_for(:omniscient, :de) %> Basis) &mdash; <%= chatbot_model_names_for_level(:omniscient, :de) %>.</p>
+            <p><strong>Schnell:</strong> <%= chatbot_base_credit_range_for(:smart, :de) %> Basis &mdash; <%= chatbot_model_names_for_level(:smart, :de) %>.</p>
+            <p><strong>Ausgewogen:</strong> <%= chatbot_base_credit_range_for(:genius, :de) %> Basis &mdash; <%= chatbot_model_names_for_level(:genius, :de) %>.</p>
+            <p><strong>Gründlich:</strong> <%= chatbot_base_credit_range_for(:mastermind, :de) %> Basis &mdash; <%= chatbot_model_names_for_level(:mastermind, :de) %>.</p>
+            <p><strong>Umfassend (Pro):</strong> <%= chatbot_base_credit_range_for(:omniscient, :de) %> Basis &mdash; <%= chatbot_model_names_for_level(:omniscient, :de) %>.</p>
         </div>
     </details>
 

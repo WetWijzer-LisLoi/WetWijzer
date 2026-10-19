@@ -2,6 +2,13 @@
 # Recurring background jobs for WetWijzer
 # These are dispatched by Solid Queue's scheduler.
 
+# Refresh a bounded batch of already cached EU sources before their evidence
+# lease expires. No full-archive ingestion, embeddings or model calls.
+eu_verified_cache_refresh:
+  class: EuCorpusRefreshJob
+  schedule: every 4 hours
+  queue: eu_corpus
+
 # Check PEPPOL delivery status for invoices sent via Octopus
 peppol_status_check:
   class: PeppolStatusJob

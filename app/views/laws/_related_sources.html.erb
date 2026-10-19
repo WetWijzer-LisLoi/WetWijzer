@@ -24,7 +24,7 @@
                     <%= doc[:title]&.truncate(60) || doc[:document_number] %>
                   </span>
                   <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                    <span class="capitalize"><%= doc[:parliament] %></span>
+                    <span><%= t(doc[:parliament], scope: 'related_sources.parliamentary', default: doc[:parliament].to_s.upcase_first) if doc[:parliament].present? %></span>
                     <span><%= doc[:dossier_number] %></span>
                     <% if doc[:document_type].present? %>
                       <span class="px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded">

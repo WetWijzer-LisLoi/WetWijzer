@@ -246,7 +246,7 @@ class User < AccountRecord
   end
 
   def current_tier
-    subscription&.pro? ? 'pro' : 'free'
+    pro? ? 'pro' : 'free'
   end
 
   # Returns true if user has Pro access (paid subscription or admin)

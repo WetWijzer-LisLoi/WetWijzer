@@ -1,4 +1,26 @@
 <%= content_for :title, t('pricing.title') %>
+<% pricing_currency_options = { locale: I18n.locale, unit: '€', format: '%u%n', precision: 2,
+                                separator: I18n.locale == :en ? '.' : ',',
+                                delimiter: I18n.locale == :en ? ',' : '.' } %>
+<% pricing_starter_summary, pricing_depth_summary, pricing_depth_details_label, pricing_provider_details_label =
+     case I18n.locale
+     when :fr
+       ['Une fois à l’inscription. Choisissez ensuite une combinaison disponible dans votre solde.',
+        'Prix du modèle + 0 / + 1 / + 2 crédits pour le raisonnement pris en charge. La barre et la liste sont liées ; le total exact est affiché avant Envoyer.',
+        'Comprendre les choix et les coûts', 'Traitement et modifications']
+     when :de
+       ['Einmal bei der Registrierung. Wählen Sie danach eine verfügbare Kombination innerhalb Ihres Guthabens.',
+        'Modellpreis + 0 / + 1 / + 2 Credits für unterstützten Denkaufwand. Leiste und Auswahlliste sind gekoppelt; die genaue Summe steht vor Senden.',
+        'Auswahl und Kosten erklärt', 'Verarbeitung und Änderungen']
+     when :en
+       ['Once when you register. Then choose an available combination within your balance.',
+        'Model price + 0 / + 1 / + 2 credits for supported reasoning. The bar and dropdown are linked; the exact total is shown before Send.',
+        'About choices and costs', 'Processing and changes']
+     else
+       ['Eenmalig bij registratie. Kies daarna een beschikbare combinatie binnen uw saldo.',
+        'Modelprijs + 0 / + 1 / + 2 credits voor ondersteund denkwerk. Balk en keuzelijst zijn gekoppeld; het exacte totaal staat vóór Verzenden.',
+        'Uitleg over keuzes en kosten', 'Verwerking en wijzigingen']
+     end %>
 
 <div class="ww-pricing-page min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
   <div class="max-w-5xl mx-auto">
@@ -20,8 +42,8 @@
       </h1>
       <p class="text-xl text-gray-600 dark:text-gray-400">
         <%= case I18n.locale
-            when :fr then 'Commencez gratuitement. Achetez des credits ou abonnez-vous pour plus.'
-            when :de then 'Starten Sie kostenlos. Kaufen Sie Credits oder abonnieren Sie fur mehr.'
+            when :fr then 'Commencez gratuitement. Achetez des crédits ou choisissez Pro.'
+            when :de then 'Starten Sie kostenlos. Kaufen Sie Credits oder wählen Sie Pro.'
             when :en then 'Start free. Buy credits or subscribe for more.'
             else 'Start gratis. Koop credits of neem een abonnement voor meer.'
             end %>
@@ -41,13 +63,8 @@
               end %>
         </h2>
       </div>
-      <p class="text-green-700 dark:text-green-300">
-        <%= case I18n.locale
-             when :fr then "Commencez avec #{RegistrationsController::STARTER_CREDITS} crédits gratuits. Achetez des crédits supplémentaires ou passez à Pro. Inscrivez-vous !"
-             when :de then "Starten Sie mit #{RegistrationsController::STARTER_CREDITS} kostenlosen Credits. Kaufen Sie zusätzliche Credits oder upgraden Sie auf Pro. Registrieren!"
-             when :en then "Start with #{RegistrationsController::STARTER_CREDITS} free credits. Purchase additional credits or upgrade to Pro. Register now!"
-             else "Begin met #{RegistrationsController::STARTER_CREDITS} gratis credits. Koop extra credits of upgrade naar Pro. Registreer nu!"
-            end %>
+      <p data-testid="pricing-starter-explanation" class="text-green-700 dark:text-green-300">
+        <%= pricing_starter_summary %>
       </p>
       <% unless logged_in? %>
         <%= link_to signup_path, class: "ww-pricing-cta inline-block mt-4 px-6 py-3 bg-green-700 text-white font-semibold rounded-lg hover:bg-green-800 transition" do %>
@@ -68,7 +85,7 @@
       <div class="flex flex-col">
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
           <%= case I18n.locale
-              when :fr then 'Packs de credits'
+              when :fr then 'Packs de crédits'
               when :de then 'Credit-Pakete'
               when :en then 'Credit packs'
               else 'Creditpakketten'
@@ -76,7 +93,7 @@
         </h2>
         <p class="text-gray-600 dark:text-gray-400 mb-6 text-sm">
           <%= case I18n.locale
-              when :fr then 'Achetez des credits et utilisez-les quand vous voulez.'
+              when :fr then 'Achetez des crédits et utilisez-les quand vous voulez.'
               when :de then 'Kaufen Sie Credits und nutzen Sie sie wann Sie wollen.'
               when :en then 'Buy credits and use them whenever you want.'
               else 'Koop credits en gebruik wanneer u wilt.'
@@ -85,25 +102,25 @@
         
         <div class="flex flex-col justify-between gap-4 flex-1">
           <% CreditPurchase::PACKAGES.each do |key, info| %>
-            <div data-testid="pricing-credit-package" class="ww-pricing-card bg-white dark:bg-gray-800 rounded-xl shadow p-5 border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-lg transition">
+            <div data-testid="pricing-credit-package" data-package="<%= key %>" class="ww-pricing-card bg-white dark:bg-gray-800 rounded-xl shadow p-5 border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-lg transition">
               <div>
                 <h3 class="font-bold text-gray-900 dark:text-white">
                   <%= t("credits.packages.#{key}.name") %>
                 </h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                  <%= info[:credits] %> credits
-                  <span class="text-xs text-gray-500">
-                    (&euro;<%= format('%.2f', info[:price_cents].to_f / info[:credits] / 100) %>/cr)
+                  <span data-testid="pricing-package-credits"><%= chatbot_credit_range(info[:credits]) %></span>
+                  <span data-testid="pricing-per-credit" class="text-xs text-gray-500">
+                    (<%= number_to_currency(info[:price_cents].to_d / info[:credits] / 100, **pricing_currency_options) %>/cr)
                   </span>
                 </p>
               </div>
               <div data-testid="pricing-credit-action" class="pricing-credit-action">
-                <div class="text-2xl font-bold text-(--accent-600) mb-0.5">
-                  &euro;<%= format('%.2f', info[:price_cents] / 100.0) %>
+                <div data-testid="pricing-package-price" class="text-2xl font-bold text-(--accent-600) mb-0.5">
+                  <%= number_to_currency(info[:price_cents].to_d / 100, **pricing_currency_options) %>
                 </div>
                 <% if info[:pro_price_cents] && info[:pro_price_cents] < info[:price_cents] %>
-                  <div class="ww-pricing-discount text-xs text-green-700 dark:text-green-400 font-semibold">
-                    Pro: &euro;<%= format('%.2f', info[:pro_price_cents] / 100.0) %>
+                  <div data-testid="pricing-package-pro-price" class="ww-pricing-discount text-xs text-green-700 dark:text-green-400 font-semibold">
+                    Pro: <%= number_to_currency(info[:pro_price_cents].to_d / 100, **pricing_currency_options) %>
                   </div>
                 <% end %>
                 <% if logged_in? %>
@@ -147,7 +164,7 @@
           <div class="mb-4">
             <!-- Pricing -->
             <div class="flex items-baseline gap-1">
-              <span class="text-4xl font-bold text-(--accent-600)">&euro;2,99</span>
+              <span data-testid="pricing-pro-monthly-price" class="text-4xl font-bold text-(--accent-600)"><%= number_to_currency(Subscription::TIER_CONFIG.fetch('pro').fetch(:price_monthly).to_d / 100, **pricing_currency_options) %></span>
               <span class="text-gray-500 dark:text-gray-400">/<%= case I18n.locale when :fr then 'mois' when :de then 'Monat' when :en then 'month' else 'maand' end %></span>
             </div>
           </div>
@@ -155,11 +172,11 @@
           <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-3 mb-6">
             <li class="ww-pricing-benefit flex items-center gap-2">
               <svg class="w-4 h-4 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-              <span><strong><%= case I18n.locale when :fr then "#{Subscription::PRO_MONTHLY_CREDITS} crédits gratuits/mois" when :de then "#{Subscription::PRO_MONTHLY_CREDITS} gratis Credits/Monat" when :en then "#{Subscription::PRO_MONTHLY_CREDITS} free credits/month" else "#{Subscription::PRO_MONTHLY_CREDITS} gratis credits/maand" end %></strong> <%= case I18n.locale when :fr then 'inclus' when :de then 'inklusive' when :en then 'included' else 'inbegrepen' end %></span>
+              <span><strong><%= case I18n.locale when :fr then "#{Subscription::PRO_MONTHLY_CREDITS} crédits/mois" when :de then "#{Subscription::PRO_MONTHLY_CREDITS} Credits/Monat" when :en then "#{Subscription::PRO_MONTHLY_CREDITS} credits/month" else "#{Subscription::PRO_MONTHLY_CREDITS} credits/maand" end %></strong> <%= case I18n.locale when :fr then 'inclus' when :de then 'inklusive' when :en then 'included' else 'inbegrepen' end %></span>
             </li>
             <li class="ww-pricing-benefit flex items-center gap-2">
               <svg class="w-4 h-4 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-              <span><strong><%= case I18n.locale when :fr then 'Tous les modèles AI' when :de then 'Alle AI-Modelle' when :en then 'All AI models' else 'Alle AI-modellen' end %></strong> - <%= case I18n.locale when :fr then 'chaque niveau de raisonnement pris en charge' when :de then 'jede unterstützte Denkstufe' when :en then 'every supported reasoning level' else 'elk ondersteund redeneerniveau' end %></span>
+              <span data-testid="pricing-pro-model-access"><strong><%= t('chatbot.research_depth.options.extensive.label') %></strong> - <%= case I18n.locale when :fr then 'groupe de modèles Pro, selon disponibilité' when :de then 'Pro-Modellgruppe, nach Verfügbarkeit' when :en then 'Pro model group, subject to availability' else 'Pro-modelgroep, volgens beschikbaarheid' end %></span>
             </li>
 
             <li class="ww-pricing-benefit flex items-center gap-2">
@@ -178,8 +195,8 @@
               <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
               <p class="text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed">
                 <%= case I18n.locale
-                    when :fr then 'Les fonctionnalités AI dépendent de fournisseurs tiers (OpenAI, Anthropic, Mistral). La disponibilité et les prix peuvent changer sans préavis. Voir nos conditions d\'utilisation (§8.1b).'
-                    when :de then 'AI-Funktionen hängen von Drittanbietern ab (OpenAI, Anthropic, Mistral). Verfügbarkeit und Preise können sich ohne Vorankündigung ändern. Siehe unsere Nutzungsbedingungen (§8.1b).'
+                    when :fr then 'Les fonctionnalités IA dépendent de fournisseurs tiers (OpenAI, Anthropic, Mistral). La disponibilité et les prix peuvent changer sans préavis. Voir nos conditions d\'utilisation (§8.1b).'
+                    when :de then 'KI-Funktionen hängen von Drittanbietern ab (OpenAI, Anthropic, Mistral). Verfügbarkeit und Preise können sich ohne Vorankündigung ändern. Siehe unsere Nutzungsbedingungen (§8.1b).'
                     when :en then 'AI features depend on third-party providers (OpenAI, Anthropic, Mistral). Availability and pricing may change without notice. See our terms of service (§8.1b).'
                     else 'AI-functies zijn afhankelijk van externe providers (OpenAI, Anthropic, Mistral). Beschikbaarheid en prijzen kunnen zonder voorafgaande kennisgeving wijzigen. Zie onze gebruiksvoorwaarden (§8.1b).'
                     end %>
@@ -218,360 +235,93 @@
 
     <!-- AI Models & Tiers - Comprehensive Overview -->
     <% pricing_rows = chatbot_pricing_rows(I18n.locale)
-       offered_model_count = pricing_rows.sum { |row| row.fetch(:models).size }
-       provider_count = pricing_rows.flat_map { |row| row.fetch(:models).map { |model| model.fetch(:provider) } }.uniq.size %>
+       pricing_availability = chatbot_pricing_availability(pricing_rows) %>
     <div class="mb-16">
       <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2 text-center">
-        <%= case I18n.locale when :fr then 'Modèles AI par niveau' when :de then 'AI-Modelle pro Stufe' when :en then 'AI models per level' else 'AI-modellen per niveau' end %>
+        <%= case I18n.locale when :fr then 'Modèles IA par niveau' when :de then 'KI-Modelle pro Stufe' when :en then 'AI models per level' else 'AI-modellen per niveau' end %>
       </h2>
-      <p class="text-center text-sm text-gray-500 dark:text-gray-400 mb-8">
-        <%= case I18n.locale
-            when :fr then "#{offered_model_count} modèles, #{provider_count} fournisseurs, traitement à portée européenne"
-            when :de then "#{offered_model_count} Modelle, #{provider_count} Anbieter, EU-begrenzte Verarbeitung"
-            when :en then "#{offered_model_count} models, #{provider_count} providers, EU-scoped processing"
-            else "#{offered_model_count} modellen, #{provider_count} providers, verwerking met EU-bereik"
-            end %>
+      <p data-testid="pricing-model-availability-summary" class="text-center text-sm text-gray-500 dark:text-gray-400 mb-4">
+        <%= pricing_access_copy.fetch(:catalogue) % pricing_availability %>
+      </p>
+      <p data-testid="pricing-reasoning-explanation" class="text-center text-sm text-gray-500 dark:text-gray-400 mb-8">
+        <%= pricing_depth_summary %>
       </p>
 
       <div class="grid md:grid-cols-2 gap-6">
-        <%# ── LEVEL I ── %>
-        <div class="ww-pricing-tier-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div class="ww-pricing-tier-header px-6 py-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-b border-gray-200 dark:border-gray-700">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <span class="text-2xl"></span>
-                <div>
-                  <h3 class="font-bold text-gray-900 dark:text-white text-lg">
-                    <%= case I18n.locale when :fr then 'Malin' when :de then 'Schlau' when :en then 'Smart' else 'Slim' end %>
-                  </h3>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    <%= case I18n.locale when :fr then 'Rapide & fiable' when :de then 'Schnell & zuverlässig' when :en then 'Fast & reliable' else 'Snel & betrouwbaar' end %>
-                  </p>
+        <% pricing_rows.each do |row| %>
+          <div class="ww-pricing-tier-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden" data-intelligence="<%= row.fetch(:id) %>">
+            <div class="ww-pricing-tier-header px-6 py-4 bg-gray-50 dark:bg-gray-900/30 border-b border-gray-200 dark:border-gray-700">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div>
+                    <h3 class="font-bold text-gray-900 dark:text-white text-lg"><%= row.fetch(:label) %></h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400"><%= row.fetch(:description) %></p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-sm font-bold text-gray-700 dark:text-gray-300"><%= chatbot_base_credit_label(row.fetch(:base_credits)) %></div>
+                  <% if row.fetch(:pro) %>
+                    <span class="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">PRO</span>
+                  <% end %>
                 </div>
               </div>
-              <div class="text-right">
-                <div class="text-sm font-bold text-emerald-700 dark:text-emerald-300"><%= chatbot_base_credit_range_for(:smart) %></div>
-              </div>
+            </div>
+            <div class="px-6 py-4 space-y-3">
+              <% row.fetch(:models).each_with_index do |model, index| %>
+                <% model_pending = LegalChatbotService::AVAILABLE_MODELS.dig(model.fetch(:id), :deployed) == false %>
+                <div data-testid="pricing-model" data-model-id="<%= model.fetch(:id) %>" data-model-available="<%= !model_pending %>" class="flex items-center justify-between py-2 <%= 'border-t border-gray-100 dark:border-gray-700/50' if index.positive? %>">
+                  <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-bold text-gray-700 dark:text-gray-200" aria-hidden="true"><%= model.fetch(:name)[0] %></span>
+                    <div>
+                      <div class="font-semibold text-sm text-gray-900 dark:text-white"><%= model.fetch(:name) %><% if model.fetch(:preview) %>
+                        <span data-testid="pricing-preview-badge" class="block text-[10px] font-normal text-gray-500 dark:text-gray-400"><%= chatbot_pricing_copy.fetch(:preview) %></span>
+                      <% end %></div>
+                      <% if model_pending %>
+                        <span data-testid="pricing-coming-soon-badge" class="block text-[10px] text-gray-500 dark:text-gray-400"><%= t('chatbot.model_coming_soon') %></span>
+                      <% end %>
+                      <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <span class="inline-block w-3 h-2 rounded-sm bg-gray-500" aria-hidden="true"></span> <%= chatbot_provider_scope_badge(model.fetch(:provider)) %>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span data-testid="pricing-model-credits" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200"><%= chatbot_base_credit_label(model.fetch(:base_credits)) %></span>
+                    <% if model.fetch(:pro) %>
+                      <span data-testid="pricing-pro-badge" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">PRO</span>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
             </div>
           </div>
-          <div class="px-6 py-4 space-y-3">
-            <%# Mistral Small 4 - FREE %>
-            <div data-testid="pricing-model" data-model-id="mistral-small" class="flex items-center justify-between py-2">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-sm font-bold text-emerald-700 dark:text-emerald-300">M</span>
-                <div>
-                  <div class="font-semibold text-sm text-gray-900 dark:text-white">Mistral Small 4</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <span class="inline-block w-3 h-2 rounded-sm bg-blue-600"></span> <%= chatbot_provider_scope_badge(:mistral) %>
-                  </div>
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-                  <%= chatbot_credit_range(LegalChatbotService.credits_for_model('smart', 'mistral-small')) %>
-                </span>
-                <% if LegalChatbotService::AVAILABLE_MODELS.dig('mistral-small', :tier) == :pro %>
-                <span class="inline-flex items-center gap-1 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                  PRO
-                </span>
-                <% end %>
-              </div>
-            </div>
-            <%# Mistral Large 3 - Pro (2cr) %>
-            <div data-testid="pricing-model" data-model-id="mistral-large-3" class="flex items-center justify-between py-2 border-t border-gray-100 dark:border-gray-700/50">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-900/40 text-sm font-bold text-teal-700 dark:text-teal-300">M</span>
-                <div>
-                  <div class="font-semibold text-sm text-gray-900 dark:text-white">Mistral Large 3</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <span class="inline-block w-3 h-2 rounded-sm bg-blue-600"></span> <%= chatbot_provider_scope_badge(:mistral) %>
-                  </div>
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
-                  <%= chatbot_credit_range(LegalChatbotService.credits_for_model('smart', 'mistral-large-3')) %>
-                </span>
-                <% if LegalChatbotService::AVAILABLE_MODELS.dig('mistral-large-3', :tier) == :pro %>
-                <span class="inline-flex items-center gap-1 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                  PRO
-                </span>
-                <% end %>
-              </div>
-            </div>
-            <%# GPT-5 Mini - Pro (2cr) %>
-            <div data-testid="pricing-model" data-model-id="gpt-5-mini" class="flex items-center justify-between py-2 border-t border-gray-100 dark:border-gray-700/50">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-sm font-bold text-blue-700 dark:text-blue-300">G</span>
-                <div>
-                  <div class="font-semibold text-sm text-gray-900 dark:text-white">GPT-5 Mini</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <span class="inline-block w-3 h-2 rounded-sm bg-blue-600"></span> <%= chatbot_provider_scope_badge(:openai) %>
-                  </div>
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                  <%= chatbot_credit_range(LegalChatbotService.credits_for_model('smart', 'gpt-5-mini')) %>
-                </span>
-                <% if LegalChatbotService::AVAILABLE_MODELS.dig('gpt-5-mini', :tier) == :pro %>
-                <span class="inline-flex items-center gap-1 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                  PRO
-                </span>
-                <% end %>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <%# ── LEVEL II ── %>
-        <div class="ww-pricing-tier-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-(--accent-500) overflow-hidden relative">
-          <div class="ww-pricing-tier-header px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-gray-200 dark:border-gray-700">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <span class="text-2xl"></span>
-                <div>
-                  <h3 class="font-bold text-gray-900 dark:text-white text-lg">
-                    <%= case I18n.locale when :fr then 'Génial' when :de then 'Genial' when :en then 'Genius' else 'Geniaal' end %>
-                  </h3>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    <%= case I18n.locale when :fr then 'Analyse approfondie' when :de then 'Tiefgehende Analyse' when :en then 'Deep analysis' else 'Diepgaande analyse' end %>
-                  </p>
-                </div>
-              </div>
-              <div class="text-right">
-                <div class="text-sm font-bold text-(--accent-600)"><%= chatbot_base_credit_range_for(:genius) %></div>
-                <% if LegalChatbotService::INTELLIGENCE_LEVELS.dig('genius', :tier) == :pro %>
-                  <span class="text-xs font-semibold text-blue-600 dark:text-blue-400">PRO</span>
-                <% end %>
-              </div>
-            </div>
-          </div>
-          <div class="px-6 py-4 space-y-3">
-            <%# Claude Haiku 4.5 %>
-            <div data-testid="pricing-model" data-model-id="claude-4.5-haiku" class="flex items-center justify-between py-2">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/40 text-sm font-bold text-orange-700 dark:text-orange-300">C</span>
-                <div>
-                  <div class="font-semibold text-sm text-gray-900 dark:text-white">Claude Haiku 4.5</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <span class="inline-block w-3 h-2 rounded-sm bg-blue-600"></span> <%= chatbot_provider_scope_badge(:bedrock) %>
-                  </div>
-                </div>
-              </div>
-              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                <%= chatbot_credit_range(LegalChatbotService.credits_for_model('genius', 'claude-4.5-haiku')) %>
-                <% if LegalChatbotService::AVAILABLE_MODELS.dig('claude-4.5-haiku', :tier) == :pro %>
-                  <span data-testid="pricing-pro-badge">· PRO</span>
-                <% end %>
-              </span>
-            </div>
-            <%# GPT-5.6 Luna %>
-            <div data-testid="pricing-model" data-model-id="gpt-5.6-luna" class="flex items-center justify-between py-2 border-t border-gray-100 dark:border-gray-700/50">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/40 text-sm font-bold text-violet-700 dark:text-violet-300">L</span>
-                <div>
-                  <div class="font-semibold text-sm text-gray-900 dark:text-white">GPT-5.6 Luna <span class="text-[10px] text-gray-500">(Reasoning)</span></div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <span class="inline-block w-3 h-2 rounded-sm bg-blue-600"></span> <%= chatbot_provider_scope_badge(:openai) %>
-                  </div>
-                </div>
-              </div>
-              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                <%= chatbot_credit_range(LegalChatbotService.credits_for_model('genius', 'gpt-5.6-luna')) %>
-                <% if LegalChatbotService::AVAILABLE_MODELS.dig('gpt-5.6-luna', :tier) == :pro %>
-                  <span data-testid="pricing-pro-badge">· PRO</span>
-                <% end %>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <%# ── LEVEL III ── %>
-        <div class="ww-pricing-tier-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden relative" style="border: 2px solid transparent; background-clip: padding-box; box-shadow: 0 0 0 2px var(--accent-600-solid, #9333ea), 0 10px 15px -3px rgba(0,0,0,0.1);">
-          <div class="ww-pricing-tier-header px-6 py-4 bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-900/20 dark:to-fuchsia-900/20 border-b border-gray-200 dark:border-gray-700">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <span class="text-2xl"></span>
-                <div>
-                  <h3 class="font-bold text-gray-900 dark:text-white text-lg">
-                    <%= case I18n.locale when :fr then 'Maitre' when :de then 'Meisterhirn' when :en then 'Mastermind' else 'Meesterbrein' end %>
-                  </h3>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    <%= case I18n.locale when :fr then 'Analyse étendue' when :de then 'Umfassende Analyse' when :en then 'Extended analysis' else 'Uitgebreide analyse' end %>
-                  </p>
-                </div>
-              </div>
-              <div class="text-right flex items-start gap-2">
-                <div>
-                  <div class="text-sm font-bold text-purple-700 dark:text-purple-300"><%= chatbot_base_credit_range_for(:mastermind) %></div>
-                </div>
-                <span class="inline-flex items-center gap-1 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                  PRO
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="px-6 py-4 space-y-3">
-            <%# Claude Sonnet 4.6 - 6cr %>
-            <div data-testid="pricing-model" data-model-id="claude-sonnet-4-6" class="flex items-center justify-between py-2">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/40 text-sm font-bold text-orange-700 dark:text-orange-300">C</span>
-                <div>
-                  <div class="font-semibold text-sm text-gray-900 dark:text-white">Claude Sonnet 4.6</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <span class="inline-block w-3 h-2 rounded-sm bg-blue-600"></span> <%= chatbot_provider_scope_badge(:bedrock) %>
-                  </div>
-                </div>
-              </div>
-              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
-                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                <%= LegalChatbotService.credits_for_model('mastermind', 'claude-sonnet-4-6') %> cr · PRO
-              </span>
-            </div>
-            <%# GPT-5.6 Terra - 6cr %>
-            <div data-testid="pricing-model" data-model-id="gpt-5.6-terra" class="flex items-center justify-between py-2 border-t border-gray-100 dark:border-gray-700/50">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/40 text-sm font-bold text-violet-700 dark:text-violet-300">G</span>
-                <div>
-                  <div class="font-semibold text-sm text-gray-900 dark:text-white">GPT-5.6 Terra</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <span class="inline-block w-3 h-2 rounded-sm bg-blue-600"></span> <%= chatbot_provider_scope_badge(:openai) %>
-                  </div>
-                </div>
-              </div>
-              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
-                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                <%= LegalChatbotService.credits_for_model('mastermind', 'gpt-5.6-terra') %> cr · PRO
-              </span>
-            </div>
-            <%# GPT-5 - 6cr %>
-            <div data-testid="pricing-model" data-model-id="gpt-5" class="flex items-center justify-between py-2 border-t border-gray-100 dark:border-gray-700/50">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/40 text-sm font-bold text-violet-700 dark:text-violet-300">G</span>
-                <div>
-                  <div class="font-semibold text-sm text-gray-900 dark:text-white">GPT-5</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <span class="inline-block w-3 h-2 rounded-sm bg-blue-600"></span> <%= chatbot_provider_scope_badge(:openai) %>
-                  </div>
-                </div>
-              </div>
-              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
-                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                <%= LegalChatbotService.credits_for_model('mastermind', 'gpt-5') %> cr · PRO
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <%# ── LEVEL IV ── %>
-        <div class="ww-pricing-tier-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden relative" style="border: 2px solid transparent; background-clip: padding-box; box-shadow: 0 0 0 2px var(--accent-600-solid, #d97706), 0 10px 15px -3px rgba(0,0,0,0.1);">
-          <div class="ww-pricing-tier-header px-6 py-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border-b border-gray-200 dark:border-gray-700">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <span class="text-2xl"></span>
-                <div>
-                  <h3 class="font-bold text-gray-900 dark:text-white text-lg">
-                    <%= case I18n.locale when :fr then 'Omniscient' when :de then 'Allwissend' when :en then 'Omniscient' else 'Alwetend' end %>
-                  </h3>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    <%= case I18n.locale when :fr then 'Options de modèles avancées' when :de then 'Fortgeschrittene Modelloptionen' when :en then 'Advanced model options' else 'Geavanceerde modelopties' end %>
-                  </p>
-                </div>
-              </div>
-              <div class="text-right flex items-start gap-2">
-                <div>
-                  <div class="text-sm font-bold text-amber-700 dark:text-amber-300"><%= chatbot_base_credit_range_for(:omniscient) %></div>
-                </div>
-                <span class="inline-flex items-center gap-1 bg-amber-500 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                  PRO
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="px-6 py-4 space-y-3">
-            <%# Claude Opus 4.6 %>
-            <div data-testid="pricing-model" data-model-id="claude-opus-4-6" class="flex items-center justify-between py-2">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-sm font-bold text-amber-700 dark:text-amber-300">C</span>
-                <div>
-                  <div class="font-semibold text-sm text-gray-900 dark:text-white">Claude Opus 4.6</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <span class="inline-block w-3 h-2 rounded-sm bg-blue-600"></span> <%= chatbot_provider_scope_badge(:bedrock) %>
-                  </div>
-                </div>
-              </div>
-              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                <%= LegalChatbotService.credits_for_model('omniscient', 'claude-opus-4-6') %> cr · PRO
-              </span>
-            </div>
-            <%# GPT-5.6 Sol %>
-            <div data-testid="pricing-model" data-model-id="gpt-5.6-sol" class="flex items-center justify-between py-2 border-t border-gray-100 dark:border-gray-700/50">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-sm font-bold text-amber-700 dark:text-amber-300">G</span>
-                <div>
-                  <div class="font-semibold text-sm text-gray-900 dark:text-white">GPT-5.6 Sol</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <span class="inline-block w-3 h-2 rounded-sm bg-blue-600"></span> <%= chatbot_provider_scope_badge(:openai) %>
-                  </div>
-                </div>
-              </div>
-              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                <%= LegalChatbotService.credits_for_model('omniscient', 'gpt-5.6-sol') %> cr · PRO
-              </span>
-            </div>
-          </div>
-        </div>
+        <% end %>
       </div>
 
-      <!-- Access legend -->
-      <div class="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-        <div class="flex items-center gap-1.5">
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 font-bold text-[10px]">
-            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-            <%= case I18n.locale when :fr then 'Gratuit' when :de then 'Kostenlos' when :en then 'Free' else 'Gratis' end %>
-          </span>
-          = <%= case I18n.locale when :fr then "#{RegistrationsController::STARTER_CREDITS} crédits de départ" when :de then "#{RegistrationsController::STARTER_CREDITS} Startcredits" when :en then "#{RegistrationsController::STARTER_CREDITS} starter credits" else "#{RegistrationsController::STARTER_CREDITS} startcredits" end %>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <span class="inline-flex px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 font-bold text-[10px]">
-            <%= case I18n.locale when :fr then 'Crédits' when :de then 'Credits' when :en then 'Credits' else 'Credits' end %>
-          </span>
-          = <%= case I18n.locale when :fr then 'crédits requis' when :de then 'Credits erforderlich' when :en then 'credits required' else 'credits vereist' end %>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 font-bold text-[10px]">
-            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-            PRO
-          </span>
-          = <%= case I18n.locale when :fr then 'abonnement Pro requis + crédits' when :de then 'Pro-Abo erforderlich + Credits' when :en then 'Pro subscription required + credits' else 'Pro-abonnement vereist + credits' end %>
-        </div>
-      </div>
-
-      <!-- Footnote -->
-      <p class="mt-4 text-center text-[11px] text-gray-500">
-        <%= case I18n.locale
-            when :fr then "* Les crédits de démarrage fonctionnent avec une sélection de modèles du niveau Malin (voir les badges ci-dessus) ; tous les autres modèles nécessitent Pro. Tous les crédits sont permanents et n’expirent jamais."
-            when :de then "* Startcredits funktionieren mit ausgewählten Modellen der Stufe Schlau (siehe Kennzeichnung oben); alle anderen Modelle erfordern Pro. Alle Credits sind permanent und verfallen nie."
-            when :en then "* Starter credits work with select models of the Smart tier (see the badges above); all other models require Pro. All credits are permanent and never expire."
-            else "* Startcredits werken met geselecteerde modellen van het Slim-niveau (zie de markeringen hierboven); alle andere modellen vereisen Pro. Alle credits zijn permanent en vervallen nooit."
-            end %>
+      <p data-testid="pricing-credit-access-explanation" class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+        <%= pricing_access_copy.fetch(:access) %>
       </p>
-      <p class="mt-2 text-center text-[11px] text-gray-500">
-        <%= case I18n.locale
-            when :fr then '** Les modèles AI, fournisseurs et coûts en crédits indiqués sont indicatifs et peuvent être modifiés sans préavis. Voir nos conditions d\'utilisation (§8.1b) pour plus de détails.'
+      <p data-testid="pricing-source-access-explanation" class="mt-3 text-center text-sm text-gray-500 dark:text-gray-400">
+        <%= pricing_access_copy.fetch(:source_access) %>
+      </p>
+      <% if pricing_availability.fetch(:pending).positive? %>
+        <p data-testid="pricing-pending-explanation" class="mt-3 text-center text-sm text-gray-500 dark:text-gray-400">
+          <%= pricing_access_copy.fetch(:pending) %>
+        </p>
+      <% end %>
+      <details data-testid="pricing-depth-details" class="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">
+        <summary class="cursor-pointer font-medium"><%= pricing_depth_details_label %></summary>
+        <p class="mt-2"><%= chatbot_pricing_copy.fetch(:base_credits) %>. <%= chatbot_pricing_copy.fetch(:reasoning_text) % { surcharges: chatbot_reasoning_surcharge_list } %></p>
+      </details>
+      <details data-testid="pricing-provider-details" class="mt-3 text-center text-[11px] text-gray-500">
+        <summary class="cursor-pointer font-medium"><%= pricing_provider_details_label %></summary>
+        <p class="mt-2"><%= chatbot_processing_location_summary %></p>
+        <p class="mt-2"><%= case I18n.locale
+            when :fr then '** Les modèles IA, fournisseurs et coûts en crédits indiqués sont indicatifs et peuvent être modifiés sans préavis. Voir nos conditions d\'utilisation (§8.1b) pour plus de détails.'
             when :de then '** Die angegebenen KI-Modelle, Anbieter und Creditkosten sind indikativ und können ohne vorherige Ankündigung geändert werden. Siehe unsere Nutzungsbedingungen (§8.1b) für Details.'
             when :en then '** The AI models, providers, and credit costs shown are indicative and may be changed without prior notice. See our terms of service (§8.1b) for details.'
             else '** De vermelde AI-modellen, providers en creditkosten zijn indicatief en kunnen zonder voorafgaande kennisgeving worden gewijzigd. Zie onze gebruiksvoorwaarden (§8.1b) voor details.'
-            end %>
-      </p>
+            end %></p>
+      </details>
     </div>
 
     <!-- How it works -->
@@ -592,13 +342,13 @@
             <svg class="w-10 h-10 text-(--accent-600)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
           </div>
           <h3 class="font-bold text-gray-900 dark:text-white mb-2">2. <%= case I18n.locale when :fr then 'Posez des questions' when :de then 'Fragen stellen' when :en then 'Ask questions' else 'Stel vragen' end %></h3>
-          <p class="text-gray-600 dark:text-gray-400"><%= case I18n.locale when :fr then 'Réponses AI sur la législation belge avec sources' when :de then 'KI-Antworten zu belgischer Gesetzgebung mit Quellenangabe' when :en then 'AI answers on Belgian law with source citations' else 'AI-antwoorden over Belgische wetgeving met bronvermelding' end %></p>
+          <p class="text-gray-600 dark:text-gray-400"><%= case I18n.locale when :fr then 'Réponses IA sur la législation belge avec sources' when :de then 'KI-Antworten zu belgischer Gesetzgebung mit Quellenangabe' when :en then 'AI answers on Belgian law with source citations' else 'AI-antwoorden over Belgische wetgeving met bronvermelding' end %></p>
         </div>
         <div class="text-center">
           <div class="flex justify-center mb-4">
             <svg class="w-10 h-10 text-(--accent-600)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
           </div>
-          <h3 class="font-bold text-gray-900 dark:text-white mb-2">3. <%= case I18n.locale when :fr then 'Achetez des credits' when :de then 'Credits kaufen' when :en then 'Buy credits' else 'Koop credits' end %></h3>
+          <h3 class="font-bold text-gray-900 dark:text-white mb-2">3. <%= case I18n.locale when :fr then 'Achetez des crédits' when :de then 'Credits kaufen' when :en then 'Buy credits' else 'Koop credits' end %></h3>
           <p class="text-gray-600 dark:text-gray-400"><%= case I18n.locale when :fr then 'Besoin de plus ? Achetez des crédits supplémentaires' when :de then 'Mehr benötigt? Kaufen Sie zusätzliche Credits' when :en then 'Need more? Buy additional credits' else 'Meer nodig? Koop extra credits' end %></p>
         </div>
       </div>

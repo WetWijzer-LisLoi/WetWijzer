@@ -1,0 +1,61 @@
+// Detail actions need touch-sized targets and visible format/language labels.
+// These classes occur only in the modern source views; screen-only rules leave
+// their desktop presentation, Classic templates and printed documents unchanged.
+@media screen and (max-width: 767px) {
+  .source-detail-toolbar {
+    position: relative;
+    min-width: 0;
+    max-width: 100%;
+    gap: 8px;
+  }
+
+  .source-detail-action {
+    min-width: 44px;
+    min-height: 44px;
+    max-width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+
+    // An article preference can remain hidden until its content has loaded.
+    // Do not override that state, or the hidden export-feedback spinner.
+    &:not(.hidden) {
+      display: inline-flex;
+    }
+
+    > svg {
+      flex-shrink: 0;
+    }
+  }
+
+  .source-detail-toolbar .source-detail-label {
+    display: inline;
+  }
+
+  .source-detail-toolbar--article .source-detail-action,
+  .source-detail-menu-action {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .source-detail-menu-action {
+    justify-content: flex-start;
+    text-align: start;
+  }
+
+  // A trigger can wrap to the left of a new row. Anchor its menu to the whole
+  // toolbar instead of its small trigger, so right: 0 cannot put it offscreen.
+  .source-detail-toolbar > [data-controller~="copy-reference"],
+  .source-detail-toolbar > [data-controller~="dropdown"] {
+    position: static;
+    max-width: 100%;
+  }
+
+  .source-detail-toolbar [data-copy-reference-target="menu"],
+  .source-detail-toolbar [data-dropdown-target="menu"] {
+    top: 100%;
+    right: 0;
+    max-width: 100%;
+  }
+}

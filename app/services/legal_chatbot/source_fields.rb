@@ -11,6 +11,10 @@ module LegalChatbot
     extend ActiveSupport::Concern
 
     def retrieved_source_numac(source)
+      # EU works have CELEX identities, never a Belgian NUMAC. Do not let a
+      # copied NUMAC on a forged/modified corpus record enter the domestic lane.
+      return if eurlex_corpus_source?(source)
+
       value = source_field(source, :numac, 'numac', :content_numac, 'content_numac')
       legislation_id = source_field(source, :legislation_id, 'legislation_id')
       value ||= "FISCONET_#{legislation_id}" if legislation_id
@@ -18,6 +22,13 @@ module LegalChatbot
     end
 
     def retrieved_source_article_number(source)
+      if eurlex_corpus_source?(source)
+        record = verified_eurlex_corpus_record(source)
+        return unless record && source_field(record, :kind, 'kind') == 'article'
+
+        return normalize_article_number(source_field(record, :unit_number, 'unit_number')).presence
+      end
+
       raw = source_field(source, :article_number, 'article_number', :article, 'article')
       metadata = source_field(source, :metadata, 'metadata')
       raw ||= source_field(metadata, :article_number, 'article_number') if metadata
@@ -25,6 +36,38 @@ module LegalChatbot
       raw ||= title.to_s.match(%r{\bArt(?:ikel|icle)?\.?\s*([[:alnum:]][\w/.:-]*)}i)&.[](1)
       raw ||= link_article_number(source_field(source, :url, 'url'))
       normalize_article_number(strip_article_prefix(raw)).presence
+    end
+
+    # The source tag is a routing marker, NOT evidence. An EU id remains in
+    # this lane even if someone changes its tag to impersonate a domestic or
+    # regional source. Its identity/body must match the immutable generation.
+    def eurlex_corpus_source?(source)
+      source_field(source, :source, 'source') == 'eurlex_corpus' ||
+        source_field(source, :eu_chunk_id, 'eu_chunk_id').present?
+    end
+
+    def verified_eurlex_corpus_record(source)
+      return unless eurlex_corpus_source?(source)
+      return unless LegalChatbot::EuCorpus.verified_record?(source)
+
+      # Verification above bound EVERY canonical field to the exact core/live
+      # snapshot. Looking up the ID a second time could instead return the
+      # older pinned core metadata for a freshly verified cache record. Keep
+      # that bound snapshot, stripping all unverified extra source attributes.
+      keys = LegalChatbot::EuCorpus::IDENTITY_FIELDS + %i[source article_number]
+      keys += [:history_seal] if source_field(source, :historical, 'historical') == true
+      keys.select! { |key| source.key?(key) || source.key?(key.to_s) }
+      keys.to_h { |key| [key, source_field(source, key, key.to_s)] }
+    rescue StandardError => e
+      Rails.logger.warn("[EuCorpusGuard] source verification unavailable: #{e.class}")
+      nil
+    end
+
+    def eurlex_record_names(record)
+      (Array(source_field(record, :aliases, 'aliases')) +
+        %i[law_title title article_title celex ecli case_number].filter_map do |key|
+          source_field(record, key, key.to_s).to_s.presence
+        end).uniq
     end
 
     # A German row (language_id 3) is evidence only as a binding German
@@ -46,6 +89,8 @@ module LegalChatbot
     end
 
     def german_row_source?(source)
+      return false if eurlex_corpus_source?(source)
+
       source_field(source, :language_id, 'language_id').to_i == LegalChatbot::GermanArticleSearch::GERMAN_LANGUAGE_ID
     end
 

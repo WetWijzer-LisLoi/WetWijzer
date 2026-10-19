@@ -18,7 +18,7 @@ module LegalChatbot
   #  4. models_config.rb  → REASONING_CAPABLE_MODELS (auto-derived - no manual edit needed)
   #  5. llm_client.rb     → AZURE_DEPLOYMENT_NAMES   (if Azure deployment name ≠ model ID)
   #  6. models_config.rb  → :api_model               (if Mistral: pin the API model ID)
-  #  7. llm_client.rb     → bedrock_model_id case    (if Bedrock: map to Bedrock ARN)
+  #  7. models_config.rb  → :bedrock_inference_profile (if Bedrock: exact EU profile)
   #  8. index.html.erb    → data-supports-reasoning   (auto-derived via REASONING_CAPABLE_MODELS)
   #  9. chatbot_controller.js → deep-think model names (line ~2326, display-name map)
   # 10. api/chatbot_controller.rb → DEEP_ANALYSIS_MODELS (auto-derived - no manual edit)
@@ -35,18 +35,24 @@ module LegalChatbot
 
     class IncompleteProviderResponse < StandardError; end
 
-    attr_reader :last_evidence_context, :last_provider_model, :generation_trace, :provider_call_count
+    attr_reader :last_evidence_context, :last_provider_model, :generation_trace, :provider_call_count,
+                :last_provider_duration_seconds
+    # The browser question's dispatch receipt (owner policy 2026-10-18) and
+    # what this client's requests are for it. Assigned explicitly by whoever
+    # builds the client for a billed question; nil sends untracked (service
+    # traffic, rake tasks).
+    attr_accessor :provider_work_receipt, :provider_work_kind
 
     def self.incomplete_response_message(language)
       case language.to_s
       when 'fr'
-        "Le fournisseur d'IA n'a pas renvoyé de réponse complète. Aucun crédit n'a été facturé. Veuillez réessayer."
+        "Le fournisseur d'IA n'a pas renvoyé de réponse complète. Veuillez réessayer."
       when 'de'
-        'Der KI-Anbieter hat keine vollständige Antwort geliefert. Es wurden keine Credits berechnet. Bitte versuchen Sie es erneut.'
+        'Der KI-Anbieter hat keine vollständige Antwort geliefert. Bitte versuchen Sie es erneut.'
       when 'en'
-        'The AI provider did not return a complete answer. No credits were charged. Please try again.'
+        'The AI provider did not return a complete answer. Please try again.'
       else
-        'De AI-provider gaf geen volledig antwoord. Er zijn geen credits aangerekend. Probeer opnieuw.'
+        'De AI-provider gaf geen volledig antwoord. Probeer opnieuw.'
       end
     end
 
@@ -57,14 +63,16 @@ module LegalChatbot
       @provider_response_incomplete == true
     end
 
-    def initialize(model_override: nil, language: 'nl', concise: false,
-                   case_context: nil, reasoning_effort: nil, profile: 'general',
+    def initialize(model_override: nil, language: 'nl', concise: false, international_mode: false,
+                   case_context: nil, reasoning_effort: nil, research_depth: nil, profile: 'general',
                    embedding_service: nil, mistral_api_key_env: 'MISTRAL_API_KEY')
       @model_override = model_override
       @language = language
       @concise = concise
+      @international_mode = international_mode == true
       @case_context = case_context
       @reasoning_effort = reasoning_effort || 'low'
+      @research_depth = self.class.normalize_research_depth(research_depth)
       @profile = profile
       # RAT-003. Lives on the client, which the orchestrator memoizes, so the
       # controller can read it after thread.join. Deliberately NOT a
@@ -82,7 +90,7 @@ module LegalChatbot
       # This keeps Mistral usage/caps separate while provider calls remain
       # centralised in WetWijzer.
       @mistral_api_key_env = mistral_api_key_env
-      @prompt_builder = SystemPromptBuilder.new(language: language, concise: concise, case_context: case_context, profile: profile)
+      @prompt_builder = SystemPromptBuilder.new(language: language, concise: concise, case_context: case_context, profile: profile, international_mode: @international_mode)
       @reference_sheets = ReferenceSheets.new(
         language: language,
         embedding_service: embedding_service
@@ -109,11 +117,33 @@ module LegalChatbot
       sources_label = detected_lang == :fr ? 'Sources juridiques' : 'Sources'
       question_label = 'Question' # identical in NL/FR/EN/DE
 
-      user_sections = ["#{sources_label}:\n#{context}", lang_instruction]
+      user_sections = ["#{sources_label}:\n#{context}"]
+      # Topic-local instructions are grounded in this exact rendered context,
+      # not a canned fact sheet or a law the search failed to supply.
+      childcare_guidance = ChildcareExpenseGrounding.guidance(question, context)
+      user_sections << childcare_guidance if childcare_guidance.present?
+      telephone_guidance = telephone_marketing_privacy_guidance(question, context)
+      user_sections << telephone_guidance if telephone_guidance.present?
+      municipal_guidance = municipal_sidewalk_fine_guidance(question, context)
+      user_sections << municipal_guidance if municipal_guidance.present?
+      headlight_guidance = VehicleHeadlightGlareGuidance.guidance(question, context)
+      user_sections << headlight_guidance if headlight_guidance.present?
+      # Put practical-task constraints after the full evidence block and its
+      # topic-local guidance. Smaller models otherwise follow the older generic
+      # quote/citation policy more readily than the scoped fact ledger.
+      practical_guidance = @prompt_builder.practical_generation_guidance(question)
+      user_sections << practical_guidance if practical_guidance.present?
+      user_sections << @prompt_builder.practical_quick_scope_guidance if practical_guidance.present? && @research_depth == 'quick'
+      citable_units = citable_unit_guidance(context) if practical_guidance.present?
+      user_sections << citable_units if citable_units.present?
       # A guard-rejection retry carries the rejected references back to the
       # model. Placed before the question so the correction reads as part of
       # the task constraints, not as an answer suffix to be echoed.
       user_sections << corrective_feedback.to_s.strip if corrective_feedback.present?
+      # Repeat the resolved language after topic/repair guidance too. Those
+      # instructions may be written in another language, but they never select
+      # the language of this generation or its verified literal source quotes.
+      user_sections << lang_instruction
       user_sections << "#{question_label}: #{question}"
       messages = [
         { role: 'system', content: system_prompt },
@@ -142,8 +172,10 @@ module LegalChatbot
     # Providers: :openai (Azure), :mistral (La Plateforme), :bedrock (AWS Claude)
     def call_llm(messages, temperature: nil, max_tokens: 2000, provider_max_tokens: nil)
       model = @model_override || CHAT_MODEL
-      model_config = AVAILABLE_MODELS[model]
-      provider = model_config&.dig(:provider) || :openai
+      model_config = AVAILABLE_MODELS.fetch(model)
+      raise ArgumentError, 'The requested AI model is not available for WetWijzer' if model_config[:deployed] == false
+
+      provider = model_config.fetch(:provider)
       # Puma reuses threads. Never reconcile this request against stale usage
       # left by an earlier provider call on the same worker.
       Thread.current[:last_chat_tokens] = nil
@@ -154,17 +186,21 @@ module LegalChatbot
       @provider_call_count += 1
       @follow_up_request = messages.any? { |message| message[:role].to_s == 'assistant' }
       @provider_response_incomplete = false
-      provider_max_tokens ||= provider_output_token_ceiling(model, max_tokens)
+      provider_max_tokens ||= provider_output_token_ceiling(model, max_tokens, messages: messages)
       reservation = nil
       unless Thread.current[:chatbot_benchmark_cap_bypass]
         reservation = LegalChatbotService.reserve_model_budget!(
           model,
-          reasoning_effort: self.class.effective_reasoning_effort_for_model(model, @reasoning_effort),
+          reasoning_effort: effective_request_reasoning_effort(model, messages: messages),
           max_output_tokens: provider_max_tokens,
           messages: messages
         )
       end
       @provider_request_started = false
+      @provider_dispatch_written = false
+      @last_provider_duration_seconds = nil
+      provider_started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      provider_error_class = nil
 
       answer = case provider
                when :mistral
@@ -184,10 +220,30 @@ module LegalChatbot
 
       LegalChatbotService.reconcile_model_budget!(reservation, Thread.current[:last_chat_tokens]) if reservation
       answer
-    rescue StandardError
-      LegalChatbotService.release_model_budget!(reservation) if reservation && !@provider_request_started
+    rescue StandardError => e
+      provider_error_class = e.class.name
+      # A refusal at the dispatch receipt wrote nothing in this call, even where
+      # @provider_request_started was already set before connecting.
+      refused_unsent = e.is_a?(ProviderWorkReceipt::PreDispatchRefused) && !@provider_dispatch_written
+      LegalChatbotService.release_model_budget!(reservation) if reservation && (!@provider_request_started || refused_unsent)
       raise
     ensure
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - provider_started_at) * 1000).round if provider_started_at
+      @last_provider_duration_seconds = duration_ms.to_f / 1000 if duration_ms
+      status = if provider_started_at.nil?
+                 'skip'
+               elsif Thread.current[:chatbot_cancelled]
+                 'cancelled'
+               elsif provider_error_class
+                 'error'
+               else
+                 'ok'
+               end
+      error_suffix = provider_error_class ? " error_class=#{provider_error_class}" : nil
+      Rails.logger.info(
+        "[LLMProvider] provider=#{provider} model=#{model} effort=#{@reasoning_effort} " \
+        "attempt=#{@provider_call_count} duration_ms=#{duration_ms || 0} status=#{status}#{error_suffix}"
+      )
       @provider_request_started = nil
     end
 
@@ -197,9 +253,8 @@ module LegalChatbot
     # Only the API URL uses the deployment name; billing and analytics retain
     # the internal model ID.
     AZURE_DEPLOYMENT_NAMES = {
-      'gpt-5.6-luna' => 'gpt-5-6-luna',
-      'gpt-5.6-terra' => 'gpt-5-6-terra',
-      'gpt-5.6-sol' => 'gpt-5-6-sol'
+      'gpt-6-luna' => 'gpt-6-luna',
+      'gpt-6.1-sol' => 'gpt-6.1-sol'
     }.freeze
 
     def azure_openai_completion(messages, model, model_config, temperature: nil, max_tokens: 2000, provider_max_tokens: nil)
@@ -260,7 +315,7 @@ module LegalChatbot
       @provider_request_started = true
       transient_attempts = 0
       response = loop do
-        candidate = http.request(request)
+        candidate = send_provider_request(http, request)
         # A 429 is known not to have executed the completion and is safe to
         # retry. A 5xx, read timeout, or reset can happen after the provider
         # accepted/billed the request, so retrying those risks duplicate spend.
@@ -346,22 +401,23 @@ module LegalChatbot
       body = {
         model: mistral_model_id,
         messages: messages.map { |m| { role: m[:role].to_s, content: m[:content].to_s } },
-        max_tokens: max_tokens,
-        temperature: temperature || 0.3
+        max_tokens: max_tokens
       }
+      body[:temperature] = temperature || 0.3 unless model == 'mistral-large-4'
+
+      # A preview can be fixed to the documented minimal-thinking mode without
+      # exposing an adjustable selector or charging a reasoning surcharge.
+      body[:reasoning_effort] = model_config[:fixed_reasoning_effort] if model_config&.dig(:fixed_reasoning_effort)
 
       # Mistral Small exposes exactly two documented efforts: none and high.
-      # Large 3 does not document adjustable reasoning, so it must receive no
-      # reasoning_effort field at all.
       if self.class.reasoning_support_type(model) == :mistral_effort
-        effort = self.class.effective_reasoning_effort_for_model(model, @reasoning_effort) || 'low'
-        if effort == 'high' && (messages.length > 2 || messages.any? { |message| message[:role].to_s == 'assistant' })
+        effort = effective_request_reasoning_effort(model, messages: messages) || 'low'
+        if effort == 'low' && self.class.effective_reasoning_effort_for_model(model, @reasoning_effort) == 'high'
           # Mistral high-reasoning follow-ups require replaying provider-private
           # ThinkChunk state. WetWijzer intentionally never stores or sends that
           # state, so force documented non-reasoning mode instead of submitting
           # an invalid or semantically incomplete high-reasoning continuation.
           Rails.logger.warn('[MISTRAL] High reasoning disabled for follow-up without preserved ThinkChunk state')
-          effort = 'low'
         end
         body[:reasoning_effort] = effort == 'high' ? 'high' : 'none'
         body.delete(:temperature) if effort == 'high' # reasoning mode doesn't use temperature
@@ -384,7 +440,7 @@ module LegalChatbot
       Rails.logger.info("[MISTRAL] Sending #{messages.length} messages to #{model}")
 
       @provider_request_started = true
-      response = http.request(request)
+      response = send_provider_request(http, request)
       unless response.code == '200'
         Rails.logger.error("[MISTRAL] Error #{response.code}")
         raise "Mistral API error #{response.code}"
@@ -425,16 +481,15 @@ module LegalChatbot
 
       raise 'AWS Bedrock credentials not configured (BEDROCK_ACCESS_KEY / BEDROCK_SECRET_KEY)' if access_key.blank? || secret_key.blank?
 
-      # Map friendly model names to Bedrock EU inference profile IDs.
-      # IMPORTANT: Newer Claude models require inference profile IDs (eu. prefix),
-      # not raw model IDs. Raw IDs return 400 "on-demand throughput isn't supported".
-      # Use EU profiles for GDPR compliance (data stays in EU regions).
-      bedrock_model_id = case model
-                         when 'claude-4.5-haiku' then 'eu.anthropic.claude-haiku-4-5-20251001-v1:0'
-                         when 'claude-sonnet-4-6' then 'eu.anthropic.claude-sonnet-4-6'
-                         when 'claude-opus-4-6' then 'eu.anthropic.claude-opus-4-6-v1'
-                         else model
-                         end
+      # Exact geographic profiles live in the active registry. Retired IDs,
+      # raw model IDs and global profiles cannot become a fallback route.
+      config = AVAILABLE_MODELS.fetch(model)
+      raise ArgumentError, 'The requested AI model is not available for WetWijzer' if config[:deployed] == false
+
+      bedrock_model_id = config.fetch(:bedrock_inference_profile)
+      unless config[:provider] == :bedrock && bedrock_model_id.start_with?('eu.anthropic.') && region == 'eu-central-1'
+        raise ArgumentError, 'WetWijzer Bedrock requires its approved EU profile from Frankfurt'
+      end
 
       host = "bedrock-runtime.#{region}.amazonaws.com"
       # Two paths needed for SigV4:
@@ -458,10 +513,9 @@ module LegalChatbot
       }
       body[:system] = system_content if system_content.present?
 
-      # Claude reasoning is model-specific. Haiku 4.5 supports fixed-budget
-      # extended thinking. Sonnet 4.6 and Opus 4.6 support adaptive thinking
-      # with output_config effort. Sending the wrong shape is rejected by
-      # Bedrock, so dispatch from the capability declared in ModelsConfig.
+      # Pending Claude 5.5 accepts adaptive thinking plus output_config effort.
+      # Keep the capability dispatch explicit; do not send it manual budgets.
+      # No sampling parameters, forced tools or private thinking replay are sent.
       effort = self.class.effective_reasoning_effort_for_model(model, @reasoning_effort) || 'low'
       reasoning_type = self.class.reasoning_support_type(model)
       if reasoning_type == :bedrock_budgeted
@@ -546,7 +600,7 @@ module LegalChatbot
       Rails.logger.info("[BEDROCK] Sending #{user_messages.length} messages to #{bedrock_model_id} (#{region})")
 
       @provider_request_started = true
-      response = http.request(request)
+      response = send_provider_request(http, request)
       unless response.code == '200'
         Rails.logger.error("[BEDROCK] Error #{response.code}")
         raise "Bedrock API error #{response.code}"
@@ -567,7 +621,9 @@ module LegalChatbot
       text_blocks = content_blocks.select { |b| b['type'] == 'text' }
       answer = text_blocks.map { |b| b['text'] }.join("\n")
       stop_reason = result['stop_reason'].to_s
-      @provider_response_incomplete = answer.strip.empty? || stop_reason == 'max_tokens'
+      # A 5.5 safeguard refusal may be HTTP 200 with nonempty text. It is not
+      # a completed legal answer and must enter the existing no-charge path.
+      @provider_response_incomplete = answer.strip.empty? || %w[max_tokens refusal].include?(stop_reason)
       if @provider_response_incomplete
         Rails.logger.warn(
           "[BEDROCK] Empty/truncated response from #{model}: " \
@@ -578,6 +634,23 @@ module LegalChatbot
     end
 
     private
+
+    # One attempt's write to the provider. The connection is opened first, so
+    # a Net::OpenTimeout stays a request that was never sent (Azure keeps
+    # retrying it in its own loop, exactly as before). Then the question's
+    # receipt records the dispatch durably or refuses; only after that is the
+    # request written. Each attempt still uses a fresh connection, as
+    # Net::HTTP#request on an unstarted session did. (Transport doubles that
+    # implement only #request are written to directly.)
+    def send_provider_request(http, request)
+      manages_session = http.respond_to?(:started?)
+      http.start if manages_session && !http.started?
+      @provider_work_receipt&.before_provider_dispatch!(@provider_work_kind || 'generation')
+      @provider_dispatch_written = true
+      http.request(request)
+    ensure
+      http.finish if manages_session && http.started?
+    end
 
     # Mistral reasoning responses use an array of typed chunks (thinking +
     # text), while non-reasoning responses use a plain string. Only user-visible
@@ -613,7 +686,7 @@ module LegalChatbot
         concise_mode: @concise,
         follow_up: @follow_up_request,
         prompt_version: SystemPromptBuilder::PROMPT_VERSION,
-        retrieval_version: LegalChatbot::Orchestrator::RETRIEVAL_VERSION
+        retrieval_version: LegalChatbot::Orchestrator.retrieval_version_for(@research_depth)
       )
     rescue StandardError => e
       Rails.logger.warn("[GenerationTrace] request capture skipped: #{e.class}")
@@ -657,11 +730,18 @@ module LegalChatbot
 
     # Provider output ceilings must stay identical to request-body limits so
     # the pre-I/O spend reservation includes every billable reasoning token.
-    def provider_output_token_ceiling(model, requested_max_tokens)
+    def provider_output_token_ceiling(model, requested_max_tokens, messages: nil)
       requested = Integer(requested_max_tokens)
-      effort = self.class.effective_reasoning_effort_for_model(model, @reasoning_effort) || 'low'
+      effort = effective_request_reasoning_effort(model, messages: messages) || 'low'
 
       case self.class.reasoning_support_type(model)
+      when :mistral_effort
+        # Mistral's max_tokens covers the whole completion: thinking chunks
+        # and the visible answer. A 4K answer target previously exhausted
+        # that shared cap before high reasoning could finish. Add at most
+        # 4K thinking headroom (double smaller targets), reserved before I/O.
+        # A privacy-clamped follow-up uses none and needs no extra allowance.
+        effort == 'high' ? requested + [requested, 4096].min : requested
       when :openai_effort
         # Azure reasoning tokens share max_completion_tokens with visible
         # output. A bounded ladder leaves ample room for reasoning while
@@ -680,13 +760,24 @@ module LegalChatbot
       end
     end
 
+    # Resolve the request's actual mode before both spend reservation and
+    # payload construction. We never retain/replay Mistral ThinkChunk state,
+    # so history-bearing requests keep the existing non-reasoning safeguard.
+    def effective_request_reasoning_effort(model, messages: nil)
+      effort = self.class.effective_reasoning_effort_for_model(model, @reasoning_effort)
+      return effort unless self.class.reasoning_support_type(model) == :mistral_effort && effort == 'high' && messages
+
+      history_present = messages.length > 2 || messages.any? { |message| message[:role].to_s == 'assistant' }
+      history_present ? 'low' : effort
+    end
+
     def detect_prompt_language(question)
+      # LegalChatbotService resolves the original question once, including
+      # short follow-ups. Use that same language on every corrective retry.
       case @language
       when 'fr' then :fr
       when 'de' then :de
       when 'en'
-        # For EN/INT mode, detect the question language and match it
-        # Delegate to LanguageDetection concern if available on the orchestrator
         :en
       when 'nl' then :nl
       else :nl
@@ -694,20 +785,187 @@ module LegalChatbot
     end
 
     def build_language_instruction(question, prompt_lang)
-      if @concise
-        'Antwoord KORT en BONDIG (max 5 zinnen). Geef alleen het directe juridische antwoord op basis van de bronnen. GEEN caveats, GEEN "raadpleeg een advocaat", GEEN herhalingen.'
-      else
-        # No third "legal basis/sources" header: the UI source cards carry the
-        # citations (commits 95a3c34e/c0151db4), and sanitize_answer strips the
-        # section server-side as a safety net, so asking for it only wasted
-        # tokens on content that was deleted before display.
-        case prompt_lang
-        when :de then 'KRITISCH: Antworten Sie VOLLSTÄNDIG auf DEUTSCH. Verwenden Sie: HAUPTREGEL, AUSNAHMEN.'
-        when :en then 'CRITICAL: Respond ENTIRELY in ENGLISH. Use headers: MAIN RULE, EXCEPTIONS. NO Dutch or French.'
-        when :fr then 'CRITIQUE ABSOLUE: Répondez ENTIÈREMENT et UNIQUEMENT en FRANÇAIS. Utilisez: RÈGLE PRINCIPALE, EXCEPTIONS.'
-        else 'BELANGRIJK: Antwoord in het NEDERLANDS. Gebruik: HOOFDREGEL, UITZONDERINGEN.'
+      language = { nl: 'Dutch', fr: 'French', de: 'German', en: 'English' }.fetch(prompt_lang, 'Dutch')
+      instruction = if @concise
+                      "Respond in #{language}, briefly (maximum 5 sentences), with the direct legal answer from the provided sources. Avoid repetition. Preserve literal source quotations in their original language."
+                    else
+                      # No third "legal basis/sources" header: the UI source cards carry the
+                      # citations (commits 95a3c34e/c0151db4), and sanitize_answer strips the
+                      # section server-side as a safety net, so asking for it only wasted
+                      # tokens on content that was deleted before display.
+                      direction = case prompt_lang
+                                  when :de then 'KRITISCH: Antworten Sie VOLLSTÄNDIG auf DEUTSCH. Verwenden Sie: HAUPTREGEL, AUSNAHMEN.'
+                                  when :en then 'CRITICAL: Write your analysis, headings and closing guidance in ENGLISH. Use headers: MAIN RULE, EXCEPTIONS.'
+                                  when :fr then 'CRITIQUE ABSOLUE: Répondez ENTIÈREMENT et UNIQUEMENT en FRANÇAIS. Utilisez: RÈGLE PRINCIPALE, EXCEPTIONS.'
+                                  else 'BELANGRIJK: Antwoord in het NEDERLANDS. Gebruik: HOOFDREGEL, UITZONDERINGEN.'
+                                  end
+                      "#{direction} Preserve exact source quotations and citation labels in their original language; never translate them as verified literal quotes."
+                    end
+      @international_mode ? "#{instruction}\n#{LanguageDetection::INTERNATIONAL_LANGUAGE_EXCEPTION}" : instruction
+    end
+
+    # The exact citable units of THIS evidence block, read from its own
+    # LINK lines, repeated after it for the practical tasks. On 2026-10-17 the
+    # short model's refused drafts named supplied articles with malformed
+    # labels or links ("(Art. 732 en 733)", "https://laws/...", "sub b") and
+    # articles it was never given (Art. 2262 BW, DSA Art. 33). This lists only
+    # what was admitted; it adds no source and loosens no check.
+    CITABLE_UNIT_LIMIT = 40
+    def citable_unit_guidance(context)
+      units = context.to_s.split(/\n(?=\[Bron \d+ - )/).filter_map do |block|
+        link = block[/^LINK: (\S+)/, 1]
+        next unless link
+
+        lines = block.lines.map(&:strip)
+        unit = if lines.first.to_s.include?('OFFICIAL GUIDANCE')
+                 block[/^Title: (.+)$/, 1].to_s.strip[0, 120]
+               elsif (wet = lines.index { |line| line.start_with?('Wet: ') })
+                 lines[wet + 1].to_s.sub(/\AArt\.\s*/, 'art. ')
+               elsif (title = lines.index { |line| line.start_with?('Title: ') })
+                 kind = lines[title + 1].to_s
+                 ecli = block[/^ECLI: (\S+)/, 1]
+                 kind == 'Dictum' && ecli ? ecli : kind
+               elsif (dossier = block[/^Dossier: (\S+)/, 1])
+                 "dossier #{dossier} (parliamentary preparation)"
+               elsif (ecli = block[/^ECLI: (\S+)/, 1])
+                 ecli
+               end
+        next if unit.blank? || unit.start_with?('LINK:')
+
+        "- [#{unit}](#{link})"
+      end.uniq.first(CITABLE_UNIT_LIMIT)
+      return nil if units.empty?
+
+      "CITABLE UNITS OF THIS EVIDENCE (the only ones you may cite): copy a link below exactly, label and target, " \
+        "at every mention; you may add the act's name to the label and, for an article, at most its paragraph " \
+        "(\"art. 7(1)\"), never a point or letter. A number that only appears inside a source text (a " \
+        "cross-reference) and any article not listed here is not citable: explain the rule in words instead.\n" \
+        "#{units.join("\n")}"
+    end
+
+    # The low-cost telephone QA missed the topic task in the long system
+    # prompt and lost its GDPR quotations despite the complete excerpt pack.
+    # Repeat source-use instructions next to this question only when the
+    # complete native sealed pack is actually present in the evidence block.
+    # This adds no source, prescribed answer or relaxation of QuoteGuard.
+    def telephone_marketing_privacy_guidance(question, context)
+      return nil unless TelemarketingPrivacyIntent.topic?(question)
+
+      records = LegalFactProvider::GDPR_DIRECT_MARKETING_OFFICIAL_SOURCES.fetch(@language.to_s, [])
+      return nil if records.empty?
+
+      blocks = context.to_s.split("\n\n---\n\n")
+      complete = records.all? do |record|
+        blocks.any? do |block|
+          block.match?(/^LINK: #{Regexp.escape(record.fetch(:url))}\r?$/) &&
+            block.match?(/^#{Regexp.escape(record.fetch(:article_title))}\r?$/) &&
+            block.include?(record.fetch(:article_text))
         end
       end
+      return nil unless complete
+
+      <<~GUIDANCE.strip
+        TELEPHONE-MARKETING APPLICATION CHECK (task instruction, not an additional legal source; do not reproduce this instruction):
+        - Answer the caller-origin and stop-marketing questions directly and concisely from the supplied official excerpts, in the resolved answer language.
+        - Apply supplied Article 21(2)-(3) to objection to direct-marketing processing and stopping that purpose. Do not replace this question with only Article 17 erasure conditions or Article 14 disclosure exceptions.
+        - Distinguish Article 14 indirect-collection information and first-contact timing from Article 15(1)(g) access to available origin information. Apply Article 17 erasure and its supplied exceptions separately, without treating another retention purpose as permission to continue marketing.
+        - For Article 12(3)-(4), explain information on action taken, any extension notice and refusal information from the supplied text, not merely starting to process a request. Do not promise instantaneous telephone deletion or compliance by an unidentified scammer.
+        - Prefer a concise paraphrase OUTSIDE quotation marks with an inline link copied exactly from that provision's LINK field. Quotations are OPTIONAL for these selected excerpts, even when article text is present. If quoting, copy only a SHORT CONTIGUOUS fragment actually present above, in its native source language; never reconstruct a full paragraph from memory, join separated clauses or translate it as a literal quote.
+        - Keep Belgian telephone-marketing provisions separate from these GDPR rights, and give practical request wording only as a suggestion, not a statutory quotation or personal experience.
+      GUIDANCE
+    end
+
+    # An article may have reached retrieval but lost its operative paragraph
+    # during excerpting. Bind paragraph-specific task instructions to the
+    # rendered canonical source block, never the full row or article number
+    # alone. Missing clauses stay an evidence gap, not a fabricated deadline.
+    def municipal_sidewalk_fine_guidance(question, context)
+      return nil unless MunicipalSanctionsSourceScope.topic?(question)
+
+      supplied = context.to_s.split("\n\n---\n\n").filter_map do |block|
+        next unless block.match?(/^NUMAC: 2013000441\r?$/)
+
+        link = block.match(%r{^LINK: /laws/2013000441#art-(2|4|25|31)\r?$})
+        next unless link && block.match?(/^Art\.?\s*#{link[1]}\.?\r?$/i)
+
+        body = block[link.end(0)..].to_s.strip
+        [link[1], body] if body.present?
+      end
+      return nil unless %w[2 4 25 31].all? { |number| supplied.any? { |entry| entry.first == number } }
+
+      # Differing native copies of the same article cannot be combined into
+      # one apparently complete paragraph. Leave ambiguous contexts alone.
+      return nil unless supplied.group_by(&:first).values.all? { |copies| copies.map(&:last).uniq.one? }
+
+      bodies = supplied.to_h
+      defense = municipal_source_paragraph(bodies.fetch('25'), '2')
+      defense_present = defense&.match?(/vijftien dagen|quinze jours/i) &&
+                        defense.match?(/kennisgeving|notification/i) &&
+                        defense.match?(/verweermiddelen|moyens de d[ée]fense/i) &&
+                        defense.match?(/aangetekende brief|lettre recommand[ée]e/i)
+      defense_rights_present = defense&.match?(/raadsman|par un conseil/i) &&
+                               defense.match?(/dossier/i) &&
+                               defense.match?(/kopie van het proces-verbaal|copie du proc[èe]s-verbal/i)
+      hearing = municipal_source_paragraph(bodies.fetch('25'), '4')
+      hearing_present = hearing&.match?(/70\s+euros?/i) &&
+                        hearing.match?(/meerderjarige|majeur/i) &&
+                        hearing.match?(/niet hoger|n['’]exc[ée]dant pas/i) &&
+                        hearing.match?(/recht niet|n['’]a pas le droit/i) &&
+                        hearing.match?(/mondeling|oralement/i)
+      penal = municipal_source_paragraph(bodies.fetch('4'), '3')
+      penal_present = penal&.match?(/politiestraffen|peines de police/i)
+      appeal = bodies.fetch('31')
+      adult_appeal_present = appeal.match?(/politierechtbank|tribunal de police/i) &&
+                             appeal.match?(/geschreven verzoekschrift|requ[êe]te [ée]crite/i) &&
+                             appeal.match?(/binnen een maand|dans le mois/i) &&
+                             appeal.match?(/kennisgeving|notification/i)
+      youth_present = appeal.match?(/minderjarigen|mineurs/i) &&
+                      appeal.match?(/jeugdrechtbank|tribunal de la jeunesse/i) &&
+                      appeal.match?(/kosteloos verzoekschrift|requ[êe]te gratuite/i)
+
+      lines = [
+        'MUNICIPAL-SIDEWALK APPLICATION CHECK (task instruction, not an additional legal source; do not reproduce this instruction):',
+        '- Answer in the resolved answer language from the supplied canonical Articles 2, 4, 25 and 31. Establish the municipality, applicable local rule, age and notification/decision stage without assuming them or declaring the fine valid.',
+        '- Keep the initial administrative defense stage separate from court appeal against a final sanctioning-officer decision. Prefer concise paraphrase with the exact corresponding LINK; quotations are optional and must be short contiguous native fragments actually supplied above.'
+      ]
+      lines << if defense_present
+                 '- Apply the actually supplied Article 25 § 2 written-defense provision: explain its registered-letter procedure and fifteen-day notification-based window. Do not attribute this defense provision to § 1 register access or replace it with the later court-appeal period.'
+               else
+                 '- The operative written-defense deadline clause is not fully supplied in rendered Article 25. Do not invent a deadline, procedure or paragraph label from the article number or register-access text; identify the missing source detail and cite only what is actually supplied.'
+               end
+      if defense_rights_present
+        label = defense_present ? 'Article 25 § 2' : 'Article 25'
+        lines << "- Explain the actual dossier/counsel/report rights supplied in #{label}; do not invent additional missing procedural rights."
+      end
+      lines << if hearing_present
+                 '- Apply the supplied Article 25 § 4 adult/not-higher-than-70-euro limitation only to the request for oral defense. Keep it separate from written defense, and do not assume adulthood or apply that threshold to a 100-euro allegation.'
+               else
+                 '- Do not assert an oral-hearing threshold or paragraph number that is absent from the rendered source.'
+               end
+      lines << if youth_present && adult_appeal_present
+                 '- Apply Article 31 only at the final-decision appeal stage, using the actually supplied notification-based period and written-petition requirements. Distinguish the supplied police-court route from the free youth-court petition for a decision concerning a minor; do not assume the user is an adult.'
+               else
+                 '- Use only the appeal conditions and court route actually supplied in Article 31. Do not infer an age-specific route or paragraph label from an incomplete excerpt; acknowledge missing detail.'
+               end
+      lines << if penal_present
+                 '- The supplied Article 4 § 3 concerns criminal police penalties, not the administrative-fine ceiling. Use the actual administrative-fine clause in Article 4 for that separate question; never turn the police-penalty limit into a general GAS administrative maximum.'
+               else
+                 '- Do not infer an administrative-fine ceiling from an unverified criminal-penalty paragraph. Read the actual administrative-fine clause supplied in Article 4.'
+               end
+      lines.join("\n")
+    end
+
+    def municipal_source_paragraph(body, number)
+      headings = body.to_s.to_enum(:scan, %r{(?:\A|\n)[[:blank:]]*(?:Art(?:ikel|icle)?\.?[[:blank:]]*\d+\.?[[:blank:]]*)?(?:\[\d+\]?[[:blank:]]*)?§[[:blank:]]*(\d+(?:/\d+)?)(?:er)?\.[[:blank:]]*}i).map do
+        match = Regexp.last_match
+        [match[1], match.begin(0)]
+      end
+      return nil unless headings.one? { |heading| heading.first == number }
+
+      index = headings.index { |heading| heading.first == number }
+      return nil unless index
+
+      body[headings[index].last...(headings[index + 1]&.last || body.length)]
     end
 
     def inject_reference_corrections(question, context)

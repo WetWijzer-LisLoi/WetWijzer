@@ -594,12 +594,45 @@ export const exportMethods = {
     })
   },
 
+  // Display the exact requested model from server-rendered catalogue metadata.
+  // Matching by ID also works when the requested model is not the selected one.
+  _modelDisplayNameForExport(modelId) {
+    const displayName = value => {
+      if (typeof value !== 'string') return null
+      const name = value.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim()
+      // Names reach both HTML status text and a Markdown answer heading. Keep
+      // model-label punctuation, but never accept markup or formatting syntax.
+      return /^[\p{L}\p{N}][\p{L}\p{N} .:+'’–—/-]{0,119}$/u.test(name) ? name : null
+    }
+    const selects = []
+    if (this.hasModelSelectTarget) selects.push(this.modelSelectTarget)
+    if (this.hasWidgetModelSelectTarget) selects.push(this.widgetModelSelectTarget)
+    for (const select of selects) {
+      const option = Array.from(select.options || []).find(candidate => candidate.value === modelId)
+      if (!option) continue
+      const metadataName = displayName(option.dataset?.modelName)
+      if (metadataName) return metadataName
+      const optionName = (option.textContent || '')
+        .replace(/^\s*\[Pro\]\s*/i, '')
+        .replace(/\s*\(PRO\)\s*$/i, '')
+        .replace(/\s*\(\d+\s+cr(?:\s+[^)]*)?\)\s*$/i, '')
+      const textName = displayName(optionName)
+      if (textName) return textName
+    }
+    // Preserve the safe default when no dropdown exists (e.g. old messages),
+    // without maintaining a second catalogue that goes stale at each release.
+    return modelId === 'gpt-6-luna' ? 'GPT-6 Luna' : (displayName(modelId) || 'GPT-6 Luna')
+  },
+
   // Deep Analysis - re-query with any model (deep prompt) for deeper legal reasoning
 
   async deepAnalysis(event) {
     const button = event.currentTarget
     if (this.loadingValue || this._sendInProgress || this._deepAnalysisInProgress ||
         this._conversationResetInFlight) return
+
+    const deepModel = (this.hasModelSelectTarget ? this.modelSelectTarget.value : null) || button.dataset.deepModel || 'gpt-6-luna'
+    if (this._blockUnavailableModelRequest?.(deepModel)) return
 
     // Match normal send's privacy preflight. A paid answer must never be
     // requested while this tab cannot encrypt the account's ZK history.
@@ -634,23 +667,12 @@ export const exportMethods = {
     // Use model from the top model dropdown (or fallback to data attribute set at render time).
     // hasModelSelectTarget guard: the Stimulus target getter throws when the
     // target is absent (widget context), and ?. does not protect against that.
-    const deepModel = (this.hasModelSelectTarget ? this.modelSelectTarget.value : null) || button.dataset.deepModel || 'gpt-5-mini'
     this._trackEvent('chatbot-deep-analysis', { model: deepModel })
 
     const feedbackDiv = button.closest(".feedback-buttons")
 
-    // Model display names for deep-think feature
-    // ⚠️ HARDCODED - update when models change in models_config.rb
-    // (See models_config.rb checklist item #10)
-    const modelNames = {
-      'mistral-small': 'Mistral Small 4', 'mistral-large-3': 'Mistral Large 3',
-      'gpt-5-mini': 'GPT-5 Mini', 'gpt-5.6-luna': 'GPT-5.6 Luna',
-      'claude-4.5-haiku': 'Claude Haiku 4.5', 'claude-sonnet-4-6': 'Claude Sonnet 4.6',
-      'gpt-5': 'GPT-5', 'gpt-5.6-terra': 'GPT-5.6 Terra',
-      'claude-opus-4-6': 'Claude Opus 4.6', 'gpt-5.6-sol': 'GPT-5.6 Sol'
-    }
-    const modelName = modelNames[deepModel] || deepModel
-    const accentColor = ['gpt-5', 'gpt-5.6-sol'].includes(deepModel) ? 'indigo' : 'purple'
+    const modelName = this._modelDisplayNameForExport(deepModel)
+    const accentColor = deepModel.startsWith('gpt-') ? 'indigo' : 'purple'
 
     // Find the answer message this button belongs to
     const messageDiv = button.closest("[data-message-id]")?.parentElement?.parentElement
@@ -733,7 +755,7 @@ export const exportMethods = {
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
       </svg>
-      <span>${loadingText}</span>
+      <span>${this._escapeHtml(loadingText)}</span>
     `
     this.messagesTarget.appendChild(thinkingDiv)
     this.scrollToBottom()
@@ -1181,6 +1203,21 @@ export const exportMethods = {
     setTimeout(() => button.classList.remove("text-green-500"), 2000)
   },
 
+  // A question the server answered with an error (a refusal, a timeout, the
+  // verified-sources fallback of a rejected citation) gets an error bubble
+  // and no assistant turn in conversationHistory: the history is also the
+  // next question's context and the encrypted snapshot, and that text
+  // belongs in neither. The exports read only the history, so "Copy chat"
+  // pasted "Antwoord:" with nothing under it while the reader had the
+  // fallback's sources on screen. The text shown is kept here instead,
+  // keyed by the user turn it answered, for the exports alone.
+  _rememberShownReply(userTurn, text) {
+    if (!userTurn || typeof userTurn !== 'object') return
+    if (typeof text !== 'string' || text.trim() === '') return
+    if (!this._shownReplies) this._shownReplies = new WeakMap()
+    this._shownReplies.set(userTurn, text)
+  },
+
   // Build structured conversation data from history
 
   _getExportConversation() {
@@ -1189,7 +1226,7 @@ export const exportMethods = {
     for (let i = 0; i < hist.length; i++) {
       if (hist[i].role === 'user') {
         const answer = (i + 1 < hist.length && hist[i + 1].role === 'assistant')
-          ? hist[i + 1].content : ''
+          ? hist[i + 1].content : (this._shownReplies?.get(hist[i]) || '')
         pairs.push({ question: hist[i].content, answer })
       }
     }

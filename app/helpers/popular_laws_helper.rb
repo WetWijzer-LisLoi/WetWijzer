@@ -197,6 +197,42 @@ module PopularLawsHelper
     )
   end
 
+  # The importer flags article-body repeals, but a whole-law repeal can be
+  # recorded only in Justel's document title while historical articles remain
+  # available (the old Strafwetboek is one such case). Only a standalone,
+  # dated whole-document notice supplements the flag: an article amendment,
+  # an undated mention, or a future repeal must not strike a current law.
+  def popular_law_status(numac, language_id:, as_of: Date.current)
+    law = Legislation.where(numac: numac, language_id: language_id)
+                     .pick(:is_abolished, :is_empty_content, :title)
+    return nil unless law
+
+    abolished, empty, title = law
+    repeal_date = popular_law_repeal_date(title)
+    return :repealed if repeal_date ? repeal_date <= as_of : abolished == 1
+    return :unavailable if empty == 1
+
+    nil
+  rescue ActiveRecord::ActiveRecordError
+    nil
+  end
+
+  def popular_law_repeal_date(title)
+    plain_title = ActionView::Base.full_sanitizer.sanitize(CGI.unescapeHTML(title.to_s))
+                                  .gsub(/&nbsp;|&#(?:160|xA0);/i, ' ').tr("\u00A0\u202F", '  ')
+    plain_title.scan(/\(\s*(?:Opgeheven door|Abrogé par)\b([^()]*)\)/i) do
+      notice = Regexp.last_match
+      prefix = plain_title[0...notice.begin(0)]
+      next unless prefix.count('(') == prefix.count(')') # Not inside an article-specific NOTA/NOTE.
+
+      date = notice[1].match(/\b(?:Inwerkingtreding|En vigueur)\s*:\s*(\d{2}-\d{2}-\d{4})\b(?![\d-])/i)
+      return Date.strptime(date[1], '%d-%m-%Y') if date
+    end
+    nil
+  rescue Date::Error
+    nil
+  end
+
   # Fetch a small, deterministic window of the newest parliamentary rows.
   #
   # The documents table contains multi-megabyte bodies. Grouping every row by

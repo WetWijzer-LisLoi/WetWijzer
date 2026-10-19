@@ -213,6 +213,10 @@ class JurisprudenceController < ApplicationController
     body_html = "<p>#{body_html}</p>"
 
     subject = @case[:subject_matter].to_s.presence
+    # An advice says what it is (WW-RVSADV-01): no judgment, no rule in force.
+    kind = @case[:decision_type].to_s.presence if @case[:case_number].to_s.start_with?('RVSADV:')
+    type_label = case I18n.locale when :fr then 'Type de document' when :de then 'Dokumentart' when :en then 'Document type' else 'Documentsoort' end
+    kind_row = kind ? %(<tr><td class="label">#{type_label}:</td><td>#{ERB::Util.html_escape(kind)}</td></tr>) : ''
     outcome = @case[:outcome].to_s.presence
 
     html_content = <<~HTML
@@ -248,6 +252,7 @@ class JurisprudenceController < ApplicationController
           <table>
             <tr><td class="label">#{case I18n.locale when :fr then 'Juridiction' when :de then 'Gericht' when :en then 'Court' else 'Rechtsinstantie' end}:</td><td>#{ERB::Util.html_escape(court)}</td></tr>
             <tr><td class="label">#{case I18n.locale when :fr, :en then 'Date' else 'Datum' end}:</td><td>#{ERB::Util.html_escape(date)}</td></tr>
+            #{kind_row}
             #{"<tr><td class=\"label\">#{case I18n.locale when :fr then 'Domaine' when :de then 'Rechtsgebiet' when :en then 'Subject' else 'Rechtsdomein' end}:</td><td>#{ERB::Util.html_escape(subject)}</td></tr>" if subject}
             #{"<tr><td class=\"label\">#{case I18n.locale when :fr then 'Décision' when :de then 'Urteil' when :en then 'Ruling' else 'Uitspraak' end}:</td><td>#{ERB::Util.html_escape(outcome)}</td></tr>" if outcome}
           </table>

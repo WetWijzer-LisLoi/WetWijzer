@@ -199,6 +199,7 @@ export const historyMethods = {
       // decryption/sanitization. Until this point the prior conversation stays
       // intact and cannot accidentally be saved under the selected token.
       this.conversationHistory = restoredMessages
+      this._refreshResearchDepthState?.()
       // Archived rows are immutable history. They remain useful as context,
       // but the next question must create a fresh active branch instead of
       // silently writing back into the archived row.
@@ -285,6 +286,7 @@ export const historyMethods = {
   async newConversation() {
     return this._resetConversationAfterArchive(async () => {
       this.conversationHistory = []
+    this._refreshResearchDepthState?.()
       this.conversationId = null
       this.messageCount = 0
       if (this.hasMessagesTarget) {
@@ -351,6 +353,7 @@ export const historyMethods = {
       if (this.conversationId === id) {
         this._conversationContextEpoch = (this._conversationContextEpoch || 0) + 1
         this.conversationHistory = []
+    this._refreshResearchDepthState?.()
         this.conversationId = null
         this.messageCount = 0
         this._clearSavedConversation?.()
@@ -534,6 +537,7 @@ export const historyMethods = {
     this._setConsentState(false)
 
     this.conversationHistory = []
+    this._refreshResearchDepthState?.()
     this.conversationId = null
     this.messageCount = 0
     this._currentLawNumac = null

@@ -50,8 +50,9 @@ module UiPreferenceSchema
     },
     'chatbot' => lambda { |value|
       value.is_a?(Hash) &&
-        (value.keys - %w[intelligence model source reasoningLevel profile]).empty? &&
-        value.values.all? { |v| v.nil? || BOUNDED_STRING.call(v) }
+        (value.keys - %w[intelligence model source reasoningLevel researchDepth profile]).empty? &&
+        value.values.all? { |v| v.nil? || BOUNDED_STRING.call(v) } &&
+        (value['researchDepth'].nil? || %w[quick balanced thorough extensive].include?(value['researchDepth']))
     },
     'chatbot_widget' => lambda { |value|
       value.is_a?(Hash) &&

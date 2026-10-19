@@ -1,5 +1,15 @@
 import { Controller } from "@hotwired/stimulus"
 import { proTooltipCopy } from "../services/chatbot_locked_tier"
+import { prefs as prefsStore } from "../services/preferences_store"
+import { migrateChatbotModelPreference } from "../services/chatbot_model_preference_migration"
+import { researchDepthMethods } from "./chatbot/settings_mixin"
+import {
+  announceQuestionCount,
+  questionCharsLeft,
+  questionMaxFrom,
+  questionTooLongMessage,
+  renderQuestionCount
+} from "../services/chatbot_question_length"
 
 /**
  * Hero Chatbot Controller
@@ -7,9 +17,11 @@ import { proTooltipCopy } from "../services/chatbot_locked_tier"
  * Handles settings panel, intelligence pills, and submits via POST form
  * to /chatbot (question never appears in URL or client storage).
  */
-export default class extends Controller {
+class HeroChatbotController extends Controller {
   static targets = [
     "input",
+    "questionCount",
+    "questionCountStatus",
     "settingsPanel",
     "modelSelect",
     "profileSelect",
@@ -19,16 +31,37 @@ export default class extends Controller {
   ]
 
   static values = {
-    intelligence: { type: String, default: "smart" },
-    language: { type: String, default: "nl" }
+    intelligence: { type: String, default: "genius" },
+    language: { type: String, default: "nl" },
+    researchDepth: { type: String, default: "balanced" },
+    pro: { type: Boolean, default: false }
   }
 
   connect() {
+    this._isHeroResearchDepth = true
+    this._submissionPending = false
+    this._heroConnected = true
+    this._heroModelChoiceTouched = false
+    this._preferenceLoadToken = {}
     this._syncPills()
     this._filterModelDropdown(this.intelligenceValue)
+    this._restorePendingModelPreference()
+    this._refreshResearchDepthState()
+    this._preferencesReady = this._initPendingModelPreference(this._preferenceLoadToken)
 
     if (this.hasInputTarget && this.inputTarget.tagName === 'TEXTAREA') {
-      this.inputTarget.addEventListener('input', () => this._autoResize())
+      // One handler for the box's input and the window's resize, so the two
+      // listeners always pair on disconnect; it also keeps the count under
+      // the box (cheap on a resize, where nothing changes).
+      this._inputResizeHandler = () => {
+        this._autoResize()
+        this._updateQuestionLength()
+      }
+      this._resizeInput = this.inputTarget
+      this._resizeInput.addEventListener('input', this._inputResizeHandler)
+      window.addEventListener('resize', this._inputResizeHandler)
+      this._autoResize()
+      this._updateQuestionLength()
     }
 
     // Load sample question pills (survives Turbo navigation)
@@ -40,6 +73,16 @@ export default class extends Controller {
   }
 
   disconnect() {
+    this._heroConnected = false
+    this._cancelPreferenceWait?.()
+    this._preferenceLoadToken = null
+    this._preferencesReady = null
+    if (this._inputResizeHandler) {
+      this._resizeInput.removeEventListener('input', this._inputResizeHandler)
+      window.removeEventListener('resize', this._inputResizeHandler)
+      this._inputResizeHandler = null
+      this._resizeInput = null
+    }
     if (this._pillsInterval) {
       clearInterval(this._pillsInterval)
       this._pillsInterval = null
@@ -51,84 +94,49 @@ export default class extends Controller {
   }
 
   // ═══════════════════════════════════════════════
-  // SUBMIT - open widget + inject question (inline with credit animations)
-  // Falls back to POST redirect if widget is unavailable
+  // SUBMIT - the explicit Send/Enter action opens the full chatbot.
+  // POST keeps the question out of query URLs and browser storage.
   // ═══════════════════════════════════════════════
 
-  submit() {
-    if (!this.hasInputTarget) return
+  async submit(event) {
+    event?.preventDefault()
+    if (!this.hasInputTarget || this._submissionPending || this._preferenceSubmissionWaiting) return
+    // Before any wait: a question too long for the server is not handed over.
+    if (this._blockOverlongQuestion()) return
+    // A saved Claude choice may arrive after the default option renders. Wait
+    // before an untouched-default Send, so it cannot silently use a cheap model.
+    if (this._preferencesReady && !this._heroModelChoiceTouched) {
+      const token = this._preferenceLoadToken
+      let ready
+      this._preferenceSubmissionWaiting = true
+      try {
+        ready = await this._waitForPreferenceHydration()
+      } finally {
+        this._preferenceSubmissionWaiting = false
+      }
+      if (this._heroConnected === false || token !== this._preferenceLoadToken) return
+      if (!ready && !this._heroModelChoiceTouched) {
+        const notice = this.element.querySelector('#hero-model-availability-notice')
+        if (notice) {
+          notice.textContent = notice.dataset.preferencesLoadingMessage
+          notice.hidden = false
+        }
+        return
+      }
+    }
     const question = this.inputTarget.value.trim()
     if (!question) return
+    if (this.updateModelAvailability()) return
 
-    // Get widget controller via Stimulus
-    const widgetCtrl = this._getWidgetController()
-
-    if (widgetCtrl) {
-      // ── Widget available → send inline ──
-      // 1. Apply hero settings to widget (intelligence, profile, sources)
-      this._applySettingsToWidget(widgetCtrl)
-
-      // 2. Open widget if closed
-      if (!widgetCtrl.openValue) {
-        widgetCtrl.toggle()
-      }
-
-      // 3. Inject question into widget input and fire send()
-      if (widgetCtrl.hasInputTarget) {
-        widgetCtrl.inputTarget.value = question
-        if (typeof widgetCtrl._autoResize === 'function') {
-          widgetCtrl._autoResize()
-        }
-      }
-
-      // 4. Clear hero input + reset mapped profile (avoid stale profile on next manual question)
-      this.inputTarget.value = ''
-      this._mappedProfile = null
-      this._autoResize()
-
-      // 5. Send with slight delay (let widget open animation complete)
-      setTimeout(() => {
-        widgetCtrl.send()
-      }, 150)
-
-      return
+    // A rapid second click must not create another handoff/request while the
+    // browser is leaving. Reconnect resets this guard after back navigation.
+    this._submissionPending = true
+    try {
+      this._submitViaForm(question)
+    } catch (error) {
+      this._submissionPending = false
+      throw error
     }
-
-    // ── Fallback: POST form redirect to /chatbot ──
-    this._submitViaForm(question)
-  }
-
-  // Apply hero chatbot settings to the widget controller before sending
-  _applySettingsToWidget(widgetCtrl) {
-    // Intelligence level: set override flag to prevent async loadPreferences() race
-    widgetCtrl._heroOverrideActive = true
-    widgetCtrl.intelligenceValue = this.intelligenceValue
-
-    // Profile - sample question category mapping takes priority over dropdown default
-    // (_mappedProfile is set when user clicks a categorized sample pill)
-    const profileValue = this._mappedProfile
-      || (this.hasProfileSelectTarget && this.profileSelectTarget.value)
-      || null
-    if (profileValue) {
-      widgetCtrl.profileValue = profileValue
-    }
-
-    // Sources
-    const sources = this._getSelectedSources()
-    widgetCtrl.sourceValue = sources.join(',')
-
-    // Model override
-    if (this.hasModelSelectTarget && this.modelSelectTarget.value) {
-      widgetCtrl.modelOverrideValue = this.modelSelectTarget.value
-    }
-    // Reconcile all request controls in one transition, including the hidden
-    // widget dropdown and the send-time entitlement gate. A value alone left
-    // the selected option/reasoning/cost at the previous (cheapest) model.
-    const selectedOption = widgetCtrl._syncModelDropdowns(this.intelligenceValue, widgetCtrl.modelOverrideValue)
-    widgetCtrl._applyModelReasoningCapabilities(selectedOption, widgetCtrl.reasoningLevelValue)
-    widgetCtrl._syncSlidersFromPreferences()
-    widgetCtrl._syncWidgetPills()
-    widgetCtrl._syncSourceCheckboxes()
   }
 
   // Get the widget chatbot controller via Stimulus
@@ -136,13 +144,16 @@ export default class extends Controller {
     const ctrlEl = document.querySelector('[data-controller~="chatbot"]')
     if (!ctrlEl) return null
 
-    const app = window.Stimulus || (window.Application && window.Application.application)
+    // Use the application's own controller reference. The window.Stimulus
+    // debug handle is deliberately absent from production bundles.
+    const app = this.application
     if (!app) return null
 
     return app.getControllerForElementAndIdentifier(ctrlEl, 'chatbot') || null
   }
 
-  // Fallback: POST form to /chatbot page
+  // POST form to /chatbot; its response transports settings in a transient
+  // hash fragment, consumed once by the full-page controller before sending.
   _submitViaForm(question) {
     const form = document.createElement('form')
     form.method = 'POST'
@@ -173,6 +184,22 @@ export default class extends Controller {
     intInput.value = this.intelligenceValue
     form.appendChild(intInput)
 
+    const depthInput = document.createElement('input')
+    depthInput.type = 'hidden'
+    depthInput.name = 'research_depth'
+    depthInput.value = this._normalizedResearchDepth()
+    form.appendChild(depthInput)
+
+    if (this._hasLinkedResearchCombinations?.()) {
+      for (const [name, value] of [['linked_research', 'true'], ['reasoning_effort', this.reasoningLevelValue]]) {
+        const setting = document.createElement('input')
+        setting.type = 'hidden'
+        setting.name = name
+        setting.value = value
+        form.appendChild(setting)
+      }
+    }
+
     // Model
     if (this.hasModelSelectTarget && this.modelSelectTarget.value) {
       const mInput = document.createElement('input')
@@ -182,9 +209,8 @@ export default class extends Controller {
       form.appendChild(mInput)
     }
 
-    // Profile - sample question mapping takes priority
-    const profileValue = this._mappedProfile
-      || (this.hasProfileSelectTarget && this.profileSelectTarget.value)
+    // Only the reader's selected profile travels with the explicit Send.
+    const profileValue = (this.hasProfileSelectTarget && this.profileSelectTarget.value)
       || null
     if (profileValue) {
       const pInput = document.createElement('input')
@@ -208,7 +234,7 @@ export default class extends Controller {
 
   // Handle Enter key in textarea
   handleKeydown(event) {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
       event.preventDefault()
       this.submit()
     }
@@ -244,6 +270,7 @@ export default class extends Controller {
   // ═══════════════════════════════════════════════
 
   selectIntelligence(event) {
+    this._heroModelChoiceTouched = true
     const pill = event.currentTarget
     const level = pill.dataset.heroLevel
     const locked = pill.dataset.heroLocked === 'true'
@@ -257,16 +284,6 @@ export default class extends Controller {
     this._syncPills()
     this._filterModelDropdown(level)
 
-    // Update the level indicator with subtitle
-    const indicator = this.element.querySelector('#hero-level-indicator')
-    if (indicator) {
-      const label = pill.dataset.heroLabel || level
-      const desc = pill.dataset.heroDesc || ''
-      const lang = this.languageValue || 'nl'
-      const prefixes = { nl: 'AI-Intelligentie', fr: 'Intelligence IA', de: 'KI-Intelligenz', en: 'AI Intelligence' }
-      const prefix = prefixes[lang] || prefixes.nl
-      indicator.innerHTML = `${prefix}: <span data-hero-active-label>${label}</span> <span data-hero-active-desc class="text-gray-600 dark:text-gray-300">| ${desc}</span>`
-    }
   }
 
   // Sync pill visual states
@@ -283,6 +300,15 @@ export default class extends Controller {
         p.classList.add('text-gray-500', 'dark:text-gray-400')
       }
     })
+    const active = Array.from(pills).find(pill => pill.dataset.heroLevel === level)
+    const indicator = this.element.querySelector('#hero-level-indicator')
+    if (indicator && active) {
+      const label = active.dataset.heroLabel || level
+      const desc = active.dataset.heroDesc || ''
+      const prefixes = { nl: 'AI-Intelligentie', fr: 'Intelligence IA', de: 'KI-Intelligenz', en: 'AI Intelligence' }
+      const prefix = prefixes[this.languageValue || 'nl'] || prefixes.nl
+      indicator.innerHTML = `${prefix}: <span data-hero-active-label>${label}</span> <span data-hero-active-desc class="text-gray-600 dark:text-gray-300">| ${desc}</span>`
+    }
   }
 
   // ═══════════════════════════════════════════════
@@ -291,7 +317,7 @@ export default class extends Controller {
   // attribute in Chrome/Safari/Edge. We must physically remove and re-insert them.
   // ═══════════════════════════════════════════════
 
-  _filterModelDropdown(level) {
+  _filterModelDropdown(level, preferredModel = null) {
     if (!this.hasModelSelectTarget) return
     const select = this.modelSelectTarget
 
@@ -304,17 +330,116 @@ export default class extends Controller {
     select.innerHTML = ''
     let firstVisible = null
     let defaultForTier = null
+    let preferredForTier = null
 
     for (const opt of this._allHeroModelOptions) {
-      if (opt.dataset.intelligence === level) {
+      {
         select.appendChild(opt)
-        if (!firstVisible) firstVisible = opt
-        if (opt.dataset.default === 'true' && !opt.disabled) defaultForTier = opt
+        if (!firstVisible && !opt.disabled) firstVisible = opt
+        if (opt.dataset.intelligence === level && opt.dataset.default === 'true' && !opt.disabled) defaultForTier = opt
+        if (opt.value === preferredModel && (!opt.disabled || opt.dataset.modelAvailable === 'false')
+          && (!preferredForTier || opt.dataset.reasoningOption === this.reasoningLevelValue)) preferredForTier = opt
       }
     }
 
-    const toSelect = defaultForTier || firstVisible
-    if (toSelect) toSelect.selected = true
+    const toSelect = preferredForTier || defaultForTier || this._freshDefaultOption?.(this._allHeroModelOptions) || firstVisible
+    if (toSelect) { toSelect.selected = true; this.intelligenceValue = toSelect.dataset.intelligence || level }
+    this.updateModelAvailability()
+  }
+
+  updateModelAvailability(event) {
+    if (event) this._heroModelChoiceTouched = true
+    this._refreshResearchDepthState()
+    const select = this.hasModelSelectTarget ? this.modelSelectTarget : null
+    const option = select?.options?.[select.selectedIndex]
+    const pending = option?.dataset.modelAvailable === 'false'
+    const notice = this.element?.querySelector?.('#hero-model-availability-notice')
+    if (notice) {
+      notice.hidden = !pending
+      notice.textContent = pending ? option.dataset.comingSoonMessage : ''
+    }
+    return pending
+  }
+
+  _restorePendingModelPreference() {
+    if (this._heroModelChoiceTouched || !this.hasModelSelectTarget) return
+    const migration = migrateChatbotModelPreference(prefsStore.get('chatbot', null))
+    const preference = migration.preferences
+    if (!this._heroModelChoiceTouched && preference?.reasoningLevel) this.reasoningLevelValue = preference.reasoningLevel
+    const option = this._allHeroModelOptions?.find(candidate =>
+      candidate.value === preference?.model && (!candidate.disabled || candidate.dataset.modelAvailable === 'false'))
+    if (!this._researchDepthTouched) this.researchDepthValue = preference?.researchDepth
+      ? this._normalizedResearchDepth(preference.researchDepth)
+      : (preference?.reasoningLevel ? this._depthFromLegacyReasoning(preference.reasoningLevel) : 'balanced')
+    if (!option) { this._refreshResearchDepthState(); return }
+    this.intelligenceValue = option.dataset.intelligence
+    this._syncPills()
+    this._filterModelDropdown(this.intelligenceValue, option.value)
+    if (migration.migrated) prefsStore.set('chatbot', preference)
+  }
+
+  async _initPendingModelPreference(token) {
+    try {
+      await prefsStore.init()
+      if (prefsStore.hydrated !== true || !this._heroConnected || token !== this._preferenceLoadToken) return false
+      this._heroPreferencesHydrated = true
+      this._restorePendingModelPreference()
+      this._refreshResearchDepthState()
+      if (this._researchDepthTouched) this._saveHeroPreferences()
+      return true
+    } catch (_) {
+      // An untouched default is unsafe when the reader's saved choice is unknown.
+      // Deliberate manual choices still bypass the hydration wait in submit().
+      return false
+    }
+  }
+
+  _waitForPreferenceHydration() {
+    let timer
+    let cancel
+    const stopped = new Promise(resolve => {
+      cancel = () => resolve(false)
+      this._cancelPreferenceWait = cancel
+      timer = setTimeout(cancel, 5000)
+    })
+    return Promise.race([this._preferencesReady.then(ready => ready === true, () => false), stopped]).finally(() => {
+      clearTimeout(timer)
+      if (this._cancelPreferenceWait === cancel) this._cancelPreferenceWait = null
+    })
+  }
+
+
+  updateModel(event) {
+    this._heroModelChoiceTouched = true
+    const option = event.currentTarget.options[event.currentTarget.selectedIndex]
+    this._adoptResearchCombination(option)
+    if (option) this.intelligenceValue = option.dataset.intelligence || this.intelligenceValue
+    this.updateModelAvailability()
+    this._saveHeroPreferences()
+  }
+
+  _heroTotalCredits() {
+    const option = this.hasModelSelectTarget ? this.modelSelectTarget.options?.[this.modelSelectTarget.selectedIndex] : null
+    const surcharges = Object.fromEntries((option?.dataset.reasoningSurcharges || '').split(',').filter(Boolean).map(pair => {
+      const [level, value] = pair.split(':'); return [level, Number(value) || 0]
+    }))
+    return (Number(option?.dataset.credits) || 1) + (surcharges[this.reasoningLevelValue] || 0)
+  }
+
+  _refreshHeroCreditDisplay() {
+    const total = this._heroTotalCredits()
+    const badge = this.element?.querySelector('#hero-send-credit-badge')
+    if (badge) badge.textContent = '−' + total + 'cr'
+    const send = this.element?.querySelector('#hero-chat-send')
+    if (send) send.setAttribute?.('title', total + ' credits')
+  }
+
+  _saveHeroPreferences() {
+    if (!this._heroPreferencesHydrated && !this._heroModelChoiceTouched) return
+    const current = prefsStore.get('chatbot', {}) || {}
+    prefsStore.set('chatbot', { ...current, intelligence: this.intelligenceValue,
+      model: this.modelSelectTarget?.value, reasoningLevel: this.reasoningLevelValue,
+      researchDepth: this._normalizedResearchDepth() })
   }
 
   // ═══════════════════════════════════════════════
@@ -333,140 +458,35 @@ export default class extends Controller {
   // SAMPLE QUESTION CLICKS
   // ═══════════════════════════════════════════════
 
-  // JSON-category (from chatbot_questions.json) → profile dropdown ID
-  // Categories like "ARBEIDSRECHT - INDIVIDUEEL" map to profile "labor"
-  static CATEGORY_TO_PROFILE = {
-    // Labor law (all sub-categories)
-    'ARBEIDSRECHT': 'labor',
-    'ARBEIDSRECHT - INDIVIDUEEL': 'labor',
-    'ARBEIDSRECHT - COLLECTIEF': 'labor',
-    'ARBEIDSRECHT - ONTSLAG': 'labor',
-    'ARBEIDSRECHT - LOON': 'labor',
-    'ARBEIDSRECHT - VAKANTIE': 'labor',
-    'ARBEIDSRECHT - ZIEKTE': 'labor',
-    // Social security
-    'SOCIALE ZEKERHEID': 'social',
-    // Housing / real estate
-    'HUURRECHT': 'real_estate',
-    'VASTGOEDRECHT': 'real_estate',
-    'BOUWEN': 'real_estate',
-    'BURENRECHT': 'real_estate',
-    'ZAKENRECHT': 'real_estate',
-    // Family / inheritance
-    'FAMILIERECHT': 'family',
-    'ERFRECHT': 'family',
-    // Criminal
-    'STRAFRECHT': 'criminal',
-    'DRUGS': 'criminal',
-    'VERKEERSRECHT': 'criminal',
-    // Tax (all sub-categories)
-    'FISCAAL': 'tax',
-    'FISCAAL - BTW': 'tax',
-    'FISCAAL - PERSONENBELASTING': 'tax',
-    'FISCAAL - REGISTRATIE': 'tax',
-    // Corporate / commercial
-    'VENNOOTSCHAPSRECHT': 'corporate',
-    'SCHULDEN': 'corporate',
-    // Consumer
-    'CONSUMENTENRECHT': 'consumer',
-    'INTERNET': 'consumer',
-    // Migration
-    'VREEMDELINGENRECHT': 'migration',
-    // Administrative / government
-    'BESTUURSRECHT': 'administrative',
-    'OVERHEID': 'administrative',
-    'MILIEU': 'administrative',
-    'GRONDWET': 'administrative',
-    // Privacy
-    'PRIVACY': 'privacy',
-    // General catch-alls
-    'ALGEMEEN': 'general',
-    'DIVERSE': 'general',
-    'INTELLECTUEEL': 'general',
-    'MEDISCH': 'general',
-    'PROCEDURERECHT': 'general',
-    'VERZEKERINGEN': 'general',
-    'SPORT': 'general',
-    'DIEREN': 'general'
-  }
-
   clickSample(event) {
     event.preventDefault()
     const question = event.currentTarget.dataset.heroQuestion
     if (!question || !this.hasInputTarget) return
 
-    // Read category from the button and map to profile
-    const rawCategory = (event.currentTarget.dataset.heroCategory || '').toUpperCase().trim()
-    if (rawCategory) {
-      // Try exact match first, then prefix match (e.g. "ARBEIDSRECHT - INDIVIDUEEL" → "ARBEIDSRECHT")
-      let profileId = this.constructor.CATEGORY_TO_PROFILE[rawCategory]
-      if (!profileId) {
-        const prefix = rawCategory.split(' - ')[0].trim()
-        profileId = this.constructor.CATEGORY_TO_PROFILE[prefix]
-      }
-      // Store on instance so submit() can include it in the POST form
-      this._mappedProfile = profileId || null
-    }
-
+    // A suggestion is an editable draft, not permission to spend credits or
+    // change the reader's chosen model, tier, profile or sources.
     this.inputTarget.value = question
     this._autoResize()
-    this.submit()
+    this._updateQuestionLength()
+    this.inputTarget.focus()
   }
 
   // ═══════════════════════════════════════════════
-  // HIGHLIGHT FAB - draws attention to bottom-right chatbot widget
+  // OPEN CHAT - the hero icon is a direct launcher, including on mobile
   // ═══════════════════════════════════════════════
 
-  highlightFab(event) {
+  openChatbot(event) {
     event.preventDefault()
     event.stopPropagation()
-
-    // Track clicks - on the 3rd click, open the widget instead of pulsing
-    this._fabClickCount = (this._fabClickCount || 0) + 1
-
-    if (this._fabClickCount >= 3) {
-      this._fabClickCount = 0
-      // Open the chat widget panel via Stimulus controller
-      const ctrlEl = document.querySelector('[data-controller~="chatbot"]')
-      if (ctrlEl) {
-        const app = window.Stimulus || (window.Application && window.Application.application)
-        if (app) {
-          const ctrl = app.getControllerForElementAndIdentifier(ctrlEl, 'chatbot')
-          if (ctrl && typeof ctrl.toggle === 'function') {
-            ctrl.toggle()
-            return
-          }
-        }
-      }
-      // Fallback: just click the FAB
-      const fab = document.getElementById('chatbot-fab')
-      if (fab) fab.click()
-      return
+    const widget = this._getWidgetController()
+    if (widget) {
+      if (!widget.openValue) widget.toggle()
+      else if (widget.hasInputTarget) widget.inputTarget.focus()
+    } else {
+      // The adjacent full-page link remains usable if widget enhancement
+      // is unavailable; never target an absent/hidden floating button.
+      this.element.querySelector('#hero-chatbot-icon-btn + a')?.click()
     }
-
-    const fab = document.getElementById('chatbot-fab')
-    if (!fab) return
-    if (this._fabHighlightActive) return
-    this._fabHighlightActive = true
-
-    const rect = fab.getBoundingClientRect()
-    const cx = rect.left + rect.width / 2
-    const cy = rect.top + rect.height / 2
-
-    // Pulsing beacon centered on FAB
-    const beacon = document.createElement('div')
-    beacon.className = 'fab-beacon'
-    beacon.style.top = cy + 'px'
-    beacon.style.left = cx + 'px'
-    document.body.appendChild(beacon)
-
-    // Auto-dismiss after 3s
-    setTimeout(() => {
-      beacon.style.transition = 'opacity 0.3s ease'
-      beacon.style.opacity = '0'
-      setTimeout(() => beacon.remove(), 350)
-      this._fabHighlightActive = false
-    }, 3000)
   }
 
   // ═══════════════════════════════════════════════
@@ -525,8 +545,43 @@ export default class extends Controller {
 
   _autoResize() {
     if (!this.hasInputTarget || this.inputTarget.tagName !== 'TEXTAREA') return
+    // Remove the old scrollbar before measuring the new value. Otherwise a
+    // cleared question measures its placeholder in the scrollbar's narrower
+    // width and can unnecessarily keep that same scrollbar alive.
+    this.inputTarget.style.overflowY = 'hidden'
     this.inputTarget.style.height = 'auto'
     this.inputTarget.style.height = Math.min(this.inputTarget.scrollHeight, 80) + 'px'
+    // Only a genuinely long question needs a scrollbar. An empty one-line
+    // box previously showed the native arrows because its line-height did
+    // not fit its rows=1 height; mobile now has a full-width reading area.
+    this.inputTarget.style.overflowY = this.inputTarget.scrollHeight > this.inputTarget.clientHeight ? 'auto' : 'hidden'
+  }
+
+  // The characters the question may still take before the server refuses it
+  // (LegalChatbotService::MAX_QUESTION_LENGTH, carried by the counter as
+  // data-max), written under the box and said once typing pauses.
+  _updateQuestionLength({ announceNow = false } = {}) {
+    if (!this.hasInputTarget || !this.hasQuestionCountTarget) return null
+    const count = renderQuestionCount(this.inputTarget, this.questionCountTarget, this.languageValue)
+    if (this.hasQuestionCountStatusTarget) {
+      announceQuestionCount(this.questionCountStatusTarget, count.text, announceNow ? 0 : undefined)
+    }
+    return count
+  }
+
+  // A question too long for the server stays in the box: the count turns red
+  // and says by how much, and a screen reader hears what to do. The handoff
+  // would otherwise cut it on the server.
+  _blockOverlongQuestion() {
+    const max = questionMaxFrom(this.hasQuestionCountTarget ? this.questionCountTarget : null)
+    if (questionCharsLeft(this.inputTarget.value, max) >= 0) return false
+    this._updateQuestionLength()
+    if (this.hasQuestionCountStatusTarget) {
+      announceQuestionCount(this.questionCountStatusTarget,
+        questionTooLongMessage(this.inputTarget.value, this.languageValue, max), 0)
+    }
+    this.inputTarget.focus()
+    return true
   }
 
   _showProTooltip(el) {
@@ -628,3 +683,6 @@ export default class extends Controller {
     }, 250)
   }
 }
+
+Object.defineProperties(HeroChatbotController.prototype, Object.getOwnPropertyDescriptors(researchDepthMethods))
+export default HeroChatbotController

@@ -267,6 +267,7 @@
     <p>Provider contracts, order forms, and data-processing terms govern these safeguards. Their scope must be verified for the configured WetWijzer accounts; provider documentation and certifications do not make WetWijzer itself certified.</p>
 
     <h3>2.2 Encryption Standards</h3>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Protection Layer</th>
@@ -299,6 +300,7 @@
             <td>European-scoped provider configurations: Azure DataZoneStandard in the EU Data Zone for all offered Azure models, Mistral's EU/EFTA regional API endpoint (not EU-member-state-only), and AWS EU geographic inference profiles</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <h3>2.3 Abuse Monitoring</h3>
     <p>Provider safety monitoring and operational retention are not the same as model training. For the configured services:</p>
@@ -316,7 +318,7 @@
     <p><%= chatbot_processing_location_summary(:en) %></p>
     <ul>
         <li><strong>Mistral AI:</strong> Operates from France - a European company subject to French and EU law</li>
-        <li><strong>Azure OpenAI:</strong> all offered GPT-5-family models use <code>DataZoneStandard</code> in the Azure EU Data Zone and may route within Microsoft's documented EU Data Boundary. We do <strong>not</strong> use regional Standard, Global Standard, or Global Provisioned deployments for the offered models</li>
+        <li><strong>Azure OpenAI:</strong> all offered GPT models use <code>DataZoneStandard</code> in the Azure EU Data Zone and may route within Microsoft's documented EU Data Boundary. We do <strong>not</strong> use regional Standard, Global Standard, or Global Provisioned deployments for the offered models</li>
         <li><strong>AWS Bedrock:</strong> Geography-prefixed <code>eu.</code> profiles invoked from eu-central-1; prompts may route within the profile's documented EU geography</li>
         <li>The selected provider routes are EU-scoped; their precise boundaries and disclosed transfer caveats are stated above</li>
     </ul>
@@ -330,6 +332,7 @@
         <span class="cert-badge">Verify the selected service</span>
     </div>
 
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Evidence source</th>
@@ -352,12 +355,14 @@
             <td>Uses these provider services but does not inherit their certifications; WetWijzer's own controls and legal obligations remain separate</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
     <p class="small">Check the current, service-specific evidence in the <a href="https://servicetrust.microsoft.com/" target="_blank" rel="noopener">Microsoft Service Trust Portal</a>, <a href="https://aws.amazon.com/compliance/" target="_blank" rel="noopener">AWS Compliance Center</a>, and the applicable Mistral contractual and security documentation.</p>
 
     <!-- WHAT WE STORE -->
     <h2>4. What We Store (and What We Don't)</h2>
 
     <h3>4.1 What We Store</h3>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Data</th>
@@ -402,11 +407,13 @@
             <td>Enable follow-up questions and optional saved history</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <h3>4.2 What We Do Not Put in Analytics or Routine Application Logs</h3>
     <div class="highlight--success">
         <p><strong>How it works in practice:</strong> We do not store readable question text or a deterministic question fingerprint in chatbot analytics or routine application logs. The raw question is processed in memory for Azure retrieval, optional Mistral Small HyDE expansion in Deep search, and the selected answer provider, and is not intentionally persisted by WetWijzer after request processing; application memory is not cryptographically zeroized. Explicit saved answers, consented history, and user-submitted reports are separate storage choices described below. Abuse prevention uses a salted IP hash; because it remains a pseudonymous identifier during its seven-day lifetime, we do not describe it as anonymous.</p>
     </div>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Data</th>
@@ -439,11 +446,13 @@
             <td>By default we do <strong>not</strong> store your conversation on our server; recent messages are sent along with each question for context only and discarded afterwards. We store <strong>no unencrypted conversation content</strong> in localStorage or sessionStorage. If a zero-knowledge save is interrupted, a ciphertext-only retry envelope may remain in localStorage. It can only be retried while its associated server claim is valid (five minutes after issue and usually less from receipt of the answer). The app removes it after server acknowledgement, consent revocation, or &mdash; while the app is active &mdash; claim expiry; if the browser was closed, cleanup occurs the next time WetWijzer opens. The server rejects an expired envelope. If you opt in to storage with a storage password, the conversation is stored zero-knowledge encrypted (AES-256-GCM) &mdash; we cannot decrypt its content. If you opt in to storage without a storage password, the conversation is stored encrypted on our server but we can read its content to answer follow-up questions. Saved conversations are kept until you delete them or close your account. Which conversation is active is tracked on our server; the encrypted retry envelope is the only browser-persistence exception for <em>conversation data</em>.</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
     <p class="small">* Explicit storage choices: "Save answer" stores the selected question and answer in your account; "Report" (🚩) sends the question and answer to the administrator for quality review after confirmation. These records are encrypted at rest on the server but are readable by WetWijzer.</p>
 
     <!-- OUR OWN INFRASTRUCTURE -->
     <h2>5. Our Own Server Security</h2>
     <p>Your data isn't just safe at our AI providers - our own infrastructure is hardened too:</p>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Measure</th>
@@ -482,9 +491,11 @@
             <td>Self-hosted Umami for cookieless, first-party aggregate analytics - no Google Analytics or cross-site advertising trackers</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <!-- DATA FLOW SUMMARY -->
     <h2>6. Complete Data Flow Summary</h2>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>From</th>
@@ -529,10 +540,12 @@
             <td>Browser working memory only for plaintext. No unencrypted conversation data is stored in localStorage or sessionStorage. An interrupted zero-knowledge save may keep a ciphertext-only retry envelope in localStorage. It becomes unusable when the server claim expires five minutes after issue and is cleaned up at expiry or on the next open.</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <!-- COMPARISON -->
     <h2>7. How We Compare</h2>
     <p>Unlike consumer AI chatbots, WetWijzer uses enterprise-grade AI providers with EU-scoped configurations and the provider-disclosed transfer caveats described above:</p>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Feature</th>
@@ -570,6 +583,7 @@
             <td><strong>The live question and relevant context are readable during answer processing. Afterward, history saved with a storage password is not directly decryptable by us; standard saved history, saved answers, and reports are readable by WetWijzer. Question text and deterministic question fingerprints are not stored in routine application logs.</strong></td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <!-- WARNING -->
     <h2>8. A Note of Common Sense</h2>
@@ -594,6 +608,7 @@
         <li><strong>Corporate proxies:</strong> Some corporate proxy chains route traffic through non-EU gateways.</li>
     </ul>
     <h4>What this means in practice:</h4>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Scenario</th>
@@ -621,6 +636,7 @@
             <td>✅ Yes, after verification</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
     <div class="legal-notice">
         <p><strong>Privacy note for Tor users:</strong> We respect your right to browse anonymously. The geo-security check does not identify you; it verifies proof of work between your browser and our self-hosted server without sending the challenge to a third-party CAPTCHA provider. However, be aware that when using Tor, your traffic exits through a <strong>third-party relay node</strong> that you do not control. While TLS encryption protects the content of your chatbot questions from the exit node operator, the exit node can see which website you are visiting (wetwijzer.be). This is a property of Tor itself, not of our platform.</p>
     </div>

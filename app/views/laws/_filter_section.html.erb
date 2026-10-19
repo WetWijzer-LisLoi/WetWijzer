@@ -16,7 +16,7 @@
   <%= form.hidden_field :lang_de, value: '1' if german_site? && !explicit_lang %>
 
     <!-- Wetgevingsfilters heading -->
-    <h3 class="text-base font-semibold capitalize tracking-wider text-gray-800 dark:text-white/90 mb-4 flex items-center gap-2">
+    <h3 class="text-base font-semibold tracking-wider text-gray-800 dark:text-white/90 mb-4 flex items-center gap-2">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
       </svg>
@@ -181,20 +181,23 @@
           <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
             <%= t(:date_range) %>
           </label>
-          <div class="flex items-center gap-2">
+          <div class="filter-date-range">
+            <label class="block min-w-0 text-xs text-gray-700 dark:text-gray-300"><span class="block mb-1"><%= t(:date_from) %></span>
             <%= form.text_field :date_from,
               value: params[:date_from],
               data: { controller: "flatpickr", flatpickr_locale_value: I18n.locale },
-              class: "flex-1 min-w-0 text-xs rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200 focus:border-(--accent-500) focus:ring-(--accent-500)",
+              class: "w-full min-w-0 text-xs rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200 focus:border-(--accent-500) focus:ring-(--accent-500)",
               placeholder: case I18n.locale when :fr then 'jj/mm/aaaa' when :de then 'TT/MM/JJJJ' when :en then 'dd/mm/yyyy' else 'dd/mm/jjjj' end
             %>
-            <span class="text-gray-500 dark:text-gray-400 shrink-0">-</span>
+            </label>
+            <label class="block min-w-0 text-xs text-gray-700 dark:text-gray-300"><span class="block mb-1"><%= t(:date_to) %></span>
             <%= form.text_field :date_to,
               value: params[:date_to],
               data: { controller: "flatpickr", flatpickr_locale_value: I18n.locale },
-              class: "flex-1 min-w-0 text-xs rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200 focus:border-(--accent-500) focus:ring-(--accent-500)",
+              class: "w-full min-w-0 text-xs rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200 focus:border-(--accent-500) focus:ring-(--accent-500)",
               placeholder: case I18n.locale when :fr then 'jj/mm/aaaa' when :de then 'TT/MM/JJJJ' when :en then 'dd/mm/yyyy' else 'dd/mm/jjjj' end
             %>
+            </label>
           </div>
         </div>
       </div>
@@ -264,7 +267,7 @@
   
   <!-- Jurisprudence Filters (shown when jurisprudence source is selected) -->
   <div id="jurisprudence-filters" class="<%= params[:source_jurisprudence] != '0' ? '' : 'hidden' %> mt-6" data-source-filters-target="jurisprudenceFilters">
-    <h3 class="text-base font-semibold capitalize tracking-wider text-gray-800 dark:text-white/90 mb-4 flex items-center gap-2">
+    <h3 class="text-base font-semibold tracking-wider text-gray-800 dark:text-white/90 mb-4 flex items-center gap-2">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
       </svg>
@@ -354,20 +357,23 @@
             <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
               <%= t(:date_range) %>
             </label>
-            <div class="flex items-center gap-2">
+            <div class="filter-date-range">
+          <label class="block min-w-0 text-xs text-gray-700 dark:text-gray-300"><span class="block mb-1"><%= t(:date_from) %></span>
           <%= form.text_field :juris_date_from,
             value: params[:juris_date_from],
             data: { controller: "flatpickr", flatpickr_locale_value: I18n.locale },
-            class: "flex-1 min-w-0 text-xs rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200 focus:border-(--accent-500) focus:ring-(--accent-500)",
+            class: "w-full min-w-0 text-xs rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200 focus:border-(--accent-500) focus:ring-(--accent-500)",
             placeholder: (case I18n.locale when :fr then 'jj/mm/aaaa' when :de then 'TT/MM/JJJJ' when :en then 'dd/mm/yyyy' else 'dd/mm/jjjj' end)
           %>
-              <span class="text-gray-500 dark:text-gray-400 shrink-0">-</span>
+          </label>
+          <label class="block min-w-0 text-xs text-gray-700 dark:text-gray-300"><span class="block mb-1"><%= t(:date_to) %></span>
           <%= form.text_field :juris_date_to,
             value: params[:juris_date_to],
             data: { controller: "flatpickr", flatpickr_locale_value: I18n.locale },
-            class: "flex-1 min-w-0 text-xs rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200 focus:border-(--accent-500) focus:ring-(--accent-500)",
+            class: "w-full min-w-0 text-xs rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200 focus:border-(--accent-500) focus:ring-(--accent-500)",
             placeholder: (case I18n.locale when :fr then 'jj/mm/aaaa' when :de then 'TT/MM/JJJJ' when :en then 'dd/mm/yyyy' else 'dd/mm/jjjj' end)
           %>
+          </label>
             </div>
           </div>
         </div>
@@ -396,7 +402,7 @@
   
   <!-- Parliamentary Filters (shown when parliamentary source is selected) -->
   <div id="parliamentary-filters" class="<%= params[:source_parliamentary] != '0' ? '' : 'hidden' %> mt-6" data-source-filters-target="parliamentaryFilters">
-    <h3 class="text-base font-semibold capitalize tracking-wider text-gray-800 dark:text-white/90 mb-4 flex items-center gap-2">
+    <h3 class="text-base font-semibold tracking-wider text-gray-800 dark:text-white/90 mb-4 flex items-center gap-2">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
       </svg>
@@ -486,20 +492,23 @@
             <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
               <%= t(:date_range) %>
             </label>
-            <div class="flex items-center gap-2">
+            <div class="filter-date-range">
+          <label class="block min-w-0 text-xs text-gray-700 dark:text-gray-300"><span class="block mb-1"><%= t(:date_from) %></span>
           <%= form.text_field :parl_date_from,
             value: params[:parl_date_from],
             data: { controller: "flatpickr", flatpickr_locale_value: I18n.locale },
-            class: "flex-1 min-w-0 text-xs rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200 focus:border-(--accent-500) focus:ring-(--accent-500)",
+            class: "w-full min-w-0 text-xs rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200 focus:border-(--accent-500) focus:ring-(--accent-500)",
             placeholder: (case I18n.locale when :fr then 'jj/mm/aaaa' when :de then 'TT/MM/JJJJ' when :en then 'dd/mm/yyyy' else 'dd/mm/jjjj' end)
           %>
-              <span class="text-gray-500 dark:text-gray-400 shrink-0">-</span>
+          </label>
+          <label class="block min-w-0 text-xs text-gray-700 dark:text-gray-300"><span class="block mb-1"><%= t(:date_to) %></span>
           <%= form.text_field :parl_date_to,
             value: params[:parl_date_to],
             data: { controller: "flatpickr", flatpickr_locale_value: I18n.locale },
-            class: "flex-1 min-w-0 text-xs rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200 focus:border-(--accent-500) focus:ring-(--accent-500)",
+            class: "w-full min-w-0 text-xs rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200 focus:border-(--accent-500) focus:ring-(--accent-500)",
             placeholder: (case I18n.locale when :fr then 'jj/mm/aaaa' when :de then 'TT/MM/JJJJ' when :en then 'dd/mm/yyyy' else 'dd/mm/jjjj' end)
           %>
+          </label>
             </div>
           </div>
         </div>

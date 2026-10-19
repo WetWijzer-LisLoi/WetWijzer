@@ -1,12 +1,21 @@
 // Pure progress-display logic for the chatbot (FBL-062, extracted from
 // chatbot_controller.js). Data and decisions only - the controller keeps the
-// timers and the two target writes. The monotonic clamp exists because
+// timers and DOM writes. The monotonic clamp exists because
 // simulated phases, server progress events and heartbeats write the same bar
 // and can arrive out of order; a bar that jumps backwards (or to 0 when an
 // event omits `percent`) reads as "stuck at zero".
 
 const PROCESSING_LABELS = { nl: "Verwerken...", fr: "Traitement...", de: "Verarbeitung...", en: "Processing..." }
 const DONE_LABELS = { nl: "Voltooid", fr: "Terminé", de: "Fertig", en: "Done" }
+
+// Informational only: this threshold never changes the request deadline.
+export const LONG_WAIT_NOTICE_DELAY_MS = 50_000
+const LONG_WAIT_LABELS = {
+  nl: "Dit kan even duren. Neem gerust een kopje koffie; uw antwoord verschijnt hier zodra het klaar is.",
+  fr: "Cela peut prendre un moment. Prenez tranquillement une tasse de café ; votre réponse apparaîtra ici dès qu’elle sera prête.",
+  de: "Das kann etwas dauern. Gönnen Sie sich eine Tasse Kaffee; Ihre Antwort erscheint hier, sobald sie fertig ist.",
+  en: "This may take a little while. Feel free to grab a cup of coffee; your answer will appear here as soon as it is ready."
+}
 
 const PHASES = {
   fr: [
@@ -75,6 +84,10 @@ export function processingLabel(language) {
 
 export function doneLabel(language) {
   return DONE_LABELS[language] || DONE_LABELS.nl
+}
+
+export function longWaitNoticeLabel(language) {
+  return LONG_WAIT_LABELS[language] || LONG_WAIT_LABELS.nl
 }
 
 export function progressPhases(language) {

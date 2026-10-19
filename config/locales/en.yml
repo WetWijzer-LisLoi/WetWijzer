@@ -187,8 +187,8 @@ en:
   title_details: "title"
   toc: "table of contents"
   toc_summary:
-    text: "This law has a long table of contents of %{count} entries. All of it, with a search, is in the sidebar."
-    open: "Open the table of contents"
+    text: "The table of contents above has %{count} entries. Scroll through it or search in the sidebar."
+    open: "Search in the sidebar"
     to_text: "Go to the text"
     print: "The full table of contents (%{count} entries) is on the web page."
   updates: "This text has amended the following text(s)"
@@ -403,6 +403,7 @@ en:
     tagline: "Open-source search engine for Belgian legislation and case law"
     contact_us: "Contact us:"
     github_tooltip: "View source code on GitHub"
+    version_tooltip: "Application version"
     support_tooltip: "Support this project"
     support_us: "Support Us"
     terms: "Terms of Service"
@@ -436,6 +437,9 @@ en:
   switch_to_dutch: "NL"
 
   chatbot:
+    model_coming_soon: "Coming soon"
+    model_preferences_loading_notice: "Your model preference could not be loaded yet. Choose a model before sending your question."
+    model_unavailable_notice: "This model is coming soon. Choose an available model to send your question."
     noscript: "The legal assistant builds its answers live and works only with JavaScript. Enable JavaScript to ask a question."
     messages: "Chat messages"
     title: "%{brand} Legal Chatbot"
@@ -458,6 +462,7 @@ en:
     feedback_negative: "Not helpful"
     error_connection: "Connection error. Please try again."
     error_required: "Question is required"
+    error_too_long: "Question is too long (%{count} characters, maximum %{max})"
     limit_exceeded: "You have no credits left. Buy credits or upgrade to Pro."
     capacity_limit: "The chatbot has temporarily reached its capacity limit. Please try again later."
     upgrade_required: "Upgrade to Pro or buy credits to continue."

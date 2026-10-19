@@ -579,6 +579,57 @@
   }
 }
 
+/* The full main-column contents of long laws is a native disclosure. Its
+   chevron follows the same closed-right/open-down convention as other cards. */
+.law-main-toc-disclosure > summary > .law-main-toc-chevron {
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+}
+
+.law-main-toc-disclosure[open] > summary > .law-main-toc-chevron {
+  transform: rotate(0deg);
+}
+
+.law-main-toc-disclosure [data-main-toc-list] > div {
+  padding: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .law-main-toc-chevron { transition: none !important; }
+}
+
+@media print {
+  /* Closed details normally uses content-visibility:hidden. Printing must
+     show every entry without a script that mutates the visitor's open state. */
+  .law-main-toc-disclosure::details-content {
+    content-visibility: visible !important;
+    display: block !important;
+  }
+
+  .law-main-toc-disclosure [data-main-toc-list] {
+    display: block !important;
+  }
+
+  .law-main-toc-disclosure .toc-navigation {
+    display: block !important;
+    visibility: visible !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Global print rules hide navigation and scripted controls. These anchors
+     also carry a click action, but their labels are legal contents, not UI. */
+  .law-main-toc-disclosure .toc-navigation .toc-link {
+    display: block !important;
+    visibility: visible !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
+
 /* Mobile floating buttons - enhanced shadow */
 .md\:hidden .fixed.bottom-5 button {
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1);

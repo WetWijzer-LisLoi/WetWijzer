@@ -5,13 +5,14 @@
 // transport copy. The controller keeps fetch, abort wiring and all DOM.
 // Pinned by test/javascript/chatbot_send_request_test.mjs.
 import { isProviderReasoningPayload } from './chatbot_message_safety.js'
+import { sseErrorMessage, withChargeNotice } from './chatbot_stream_events.js'
 
 // Assemble the POST /api/chatbot/ask body. The conditional keys are the
 // contract: key_generation only when the ZK key is unlocked, and
 // conversation_revision only for a conversation known to be zero-knowledge
 // (a plaintext conversation must not send a revision).
 export function buildAskPayload({
-  question, language, source, sources, intelligence, reasoningEffort,
+  question, language, source, sources, intelligence, reasoningEffort, researchDepth, linkedResearch,
   modelOverride, profile, lawNumac, conversationId, zkReady, zkKeyGeneration,
   zkConversation, conversationRevision, contextMessages
 }) {
@@ -22,6 +23,8 @@ export function buildAskPayload({
     sources,
     intelligence,
     reasoning_effort: reasoningEffort,
+    ...(researchDepth ? { research_depth: researchDepth } : {}),
+    ...(linkedResearch === true ? { linked_research: true } : {}),
     model_override: modelOverride || null,
     profile,
     law_numac: lawNumac || null,
@@ -112,6 +115,10 @@ const ZK_CONFLICT_MESSAGES = {
   en: 'The secure conversation state changed or is still in use. Reload it and try again.'
 }
 
+// The server's budget codes (render_chatbot_budget_limit); the stream path
+// maps them to one capacity sentence that names no model or provider.
+const BUDGET_CODES = new Set(['model_daily_cap', 'provider_monthly_cap', 'provider_budget_unavailable'])
+
 const UPSELL_HEADER = { nl: '🔓 Blijf juridische vragen stellen:', fr: '🔓 Continuez à poser des questions juridiques :', de: '🔓 Stellen Sie weiterhin juristische Fragen:', en: '🔓 Keep asking legal questions:' }
 const UPSELL_BUY_LABEL = { nl: '💳 Credits Kopen', fr: '💳 Acheter des Crédits', de: '💳 Credits Kaufen', en: '💳 Buy Credits' }
 const UPSELL_PRO_LABEL = { nl: '⚡ Ontdek Praxis Pro', fr: '⚡ Découvrez Praxis Pro', de: '⚡ Entdecken Sie Praxis Pro', en: '⚡ Discover Praxis Pro' }
@@ -119,22 +126,35 @@ const UPSELL_PRO_DESC = { nl: 'Onbeperkt vragen met Praxis', fr: 'Questions illi
 
 // Resolve the non-stream (JSON) error path into a render descriptor:
 // { message } always; { upsell } additionally on 402 so the controller can
-// build the buy-credits card without owning any copy.
+// build the buy-credits card without owning any copy. A body that reports a
+// retained charge (charge_notice, sent once by the server) shows it under
+// the sentence, exactly as the stream path does; the branches that cannot
+// follow a paid request (rate limit, login) append nothing.
 export function jsonErrorDescriptor(status, data, language) {
   const lang = language || 'nl'
   if (status === 409 && data.error === 'zero_knowledge_state_conflict') {
-    return { message: ZK_CONFLICT_MESSAGES[language] || ZK_CONFLICT_MESSAGES.nl }
+    return { message: withChargeNotice(ZK_CONFLICT_MESSAGES[language] || ZK_CONFLICT_MESSAGES.nl, data, lang) }
   }
   if (status === 429) {
+    // A budget stop is a machine code, and it can follow a paid request
+    // (the embedding was sent, then the generation's budget was refused):
+    // the stream's capacity sentence, with the charge notice when there is
+    // one. An ordinary rate limit keeps its text and retry hint.
+    if (BUDGET_CODES.has(data.error)) return { message: sseErrorMessage(data, lang) }
     const retryAfter = data.retry_after ? ` (${Math.ceil(data.retry_after / 60)} min)` : ""
-    return { message: data.error + retryAfter }
+    return { message: withChargeNotice(data.error + retryAfter, data, lang) }
   }
   if (status === 401 && data.login_required) {
     return { message: LOGIN_REQUIRED_MESSAGES[language] || LOGIN_REQUIRED_MESSAGES.nl }
   }
+  if (status === 403 && data.error === 'account_inactive') {
+    // The account fence is a machine code in JSON too: the stream sentence,
+    // with the charge notice or the truthful "nothing charged" suffix.
+    return { message: sseErrorMessage(data, lang) }
+  }
   if (status === 402) {
     return {
-      message: data.error,
+      message: withChargeNotice(data.error, data, lang),
       upsell: {
         buyUrl: data.buy_credits_url || '/pricing',
         praxisUrl: data.praxis_url || 'https://praxislegal.be',
@@ -147,7 +167,7 @@ export function jsonErrorDescriptor(status, data, language) {
       }
     }
   }
-  return { message: data.error }
+  return { message: withChargeNotice(data.error, data, lang) }
 }
 
 const SEND_MESSAGES = {

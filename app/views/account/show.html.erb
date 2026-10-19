@@ -18,7 +18,7 @@
             <p class="text-sm text-white/80"><%= @user.name.present? ? @user.name : @user.email %></p>
           </div>
         </div>
-        <span class="px-3 py-1 text-xs font-bold capitalize tracking-wider rounded-full bg-white/20 text-white border border-white/30">
+        <span class="px-3 py-1 text-xs font-bold tracking-wider rounded-full bg-white/20 text-white border border-white/30">
           Pro
         </span>
       </div>
@@ -135,16 +135,16 @@
       <div class="space-y-3">
         <!-- PEPPOL Billing Info -->
         <%= link_to billing_info_path, class: "flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition" do %>
-          <div class="flex items-center">
-            <svg class="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            <div>
+          <div class="flex items-center min-w-0">
+            <svg class="w-5 h-5 text-gray-500 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <div class="min-w-0 hyphens-auto [overflow-wrap:anywhere]">
               <span class="text-gray-700 dark:text-gray-300"><%= t('account.billing_info') %></span>
               <% if @subscription&.try(:vat_number).present? %>
                 <span class="ml-2 text-xs text-gray-500 dark:text-gray-400"><%= t('billing_profile.vat_saved') %></span>
               <% end %>
             </div>
           </div>
-          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          <svg class="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         <% end %>
 
         <%= link_to subscription_path, class: "flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition" do %>
@@ -185,7 +185,7 @@
           </div>
           <div class="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <div class="text-2xl font-bold text-gray-700 dark:text-gray-300"><%= @usage_stats[:total_queries] %></div>
-            <div class="text-xs text-gray-500 dark:text-gray-400"><%= t('account.total_queries') %></div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 hyphens-auto [overflow-wrap:anywhere]"><%= t('account.total_queries') %></div>
           </div>
         </div>
       </div>
@@ -243,7 +243,7 @@
       <div class="absolute -bottom-8 -left-8 w-32 h-32 bg-[#c9a962]/8 dark:bg-[#c9a962]/10 rounded-full blur-2xl"></div>
       
       <div class="relative p-6">
-        <div class="flex items-start gap-5">
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
           <!-- Praxis Logo (horizontal) -->
           <div class="shrink-0 flex items-center justify-center">
             <img src="/images/logo-praxis-light.png" alt="Praxis" class="h-10 w-auto object-contain dark:hidden" loading="lazy">

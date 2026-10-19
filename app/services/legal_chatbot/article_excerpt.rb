@@ -40,6 +40,65 @@ module LegalChatbot
     MIN_STEM_LENGTH = 5
     STEM_TRIM = 2
     SPECIFIC_STEM_LENGTH = 8
+    # Only source whitespace is replaced when a collapsed article is split:
+    # a sentence ending before a capital, or an explicit statutory item.
+    # A collapsed EU paragraph marker ("… Nutzers. (2) Absatz", "… service.
+    # 2. Le paragraphe") starts a new unit, so the last list item does not
+    # carry the next paragraph's number (DSA Art. 17, Codex 2026-10-18).
+    SINGLE_LINE_BOUNDARY = /(?<=[.!?])[[:space:]]+(?=[[:upper:]])|[[:space:]]+(?=§[[:space:]]*\d|(?:\d+|[a-z])[°)][[:space:]])|(?<=[[:lower:]]{3}[.;:])[[:space:]]+(?=(?:\(\d{1,2}\)|\d{1,2}\.)[[:space:]])/
+    # Selection aliases, never translated evidence. EN and DE questions can
+    # be answered from binding NL/FR text: matching only the question's raw
+    # words head-cut Art.47bis before its minors provision. Keep the source
+    # literal while recognising these specific, equivalent legal concepts.
+    CROSS_LANGUAGE_CONCEPTS = [
+      %w[minderjarig minderjarige minderjarigen mineur mineurs minor minors minderjährig minderjährige minderjähriger minderjährigen],
+      %w[advocaat advocaten avocat avocats lawyer lawyers anwalt anwälte anwalts anwältin],
+      # A Dutch question about a blocked account must find the DE/FR scope
+      # limbs of a platform article ("Aussetzung oder Schließung des Kontos",
+      # "suspension ou suppression du compte"; DSA Art. 17, 2026-10-18).
+      %w[account accounts gebruikersaccount konto kontos benutzerkonto compte comptes],
+      %w[geblokkeerd geblokkeerde blokkering blokkeren geschorst schorsing opgeschort opschorting blocked suspended
+         suspension suspendu suspendre suppression aussetzung ausgesetzt sperrung gesperrt schließung geschlossen
+         closure fermeture],
+      %w[motivering motiveren motivatie redenen reasons begründung begründen motifs motivation]
+    ].map(&:freeze).freeze
+
+    # Consumer remedies occur late in Art. 1649quinquies. An English question
+    # about a warranty repair, exchange or refund must select those literal
+    # NL/FR units too. These are selection hints, not translations or a rule
+    # that refund, termination and replacement are interchangeable remedies.
+    # Require consumer/conformity context: a tax refund or a contract quoted
+    # in an unrelated question must not pull in the warranty remedy ladder.
+    CONSUMER_REMEDY_CONTEXT = /\b(?:consumer\p{L}*|consument\p{L}*|consommateur\p{L}*|verbraucher\p{L}*|warrant\p{L}*|garanti\p{L}*|gewährleist\p{L}*|conformit\p{L}*)\b/
+    CONSUMER_REMEDY_CONCEPTS = [
+      %w[repair repairs repaired repairing reparatie reparaties herstel herstelling herstellingen réparation réparations réparer reparatur reparaturen nachbesserung],
+      %w[replacement replacements replace replacing exchange exchanges vervanging vervangen omruiling omruilen remplacement remplacer échange échanger austausch ersatzlieferung ersetzen],
+      %w[refund refunds refunded terugbetaling terugbetalen terugbetaald remboursement rembourser rückerstattung rückzahlung erstattung ontbinding ontbinden résolution rücktritt],
+      %w[prijsvermindering prijskorting réduction reduction preisminderung minderung]
+    ].map(&:freeze).freeze
+    STATUTORY_PARAGRAPH = %r{\A(?:\[\d+\]?[[:space:]]*)?§[[:space:]]*\d+(?:/\d+)?\.}
+    PRICE_REDUCTION = /prijsvermindering|réduction|preisminderung|price reduction/i
+    CONTRACT_TERMINATION = /ontbinding|résolution|rücktritt|termination/i
+    REMEDY_CASES = /volgende gevallen|cas suivants|folgenden fällen|following cases/i
+    # An instrument's explicit applicability lead introduces the following
+    # list as a unit. A later procedural "paragraph 1 applies provided ..."
+    # is not such a lead. Some imported sources put numbering on its own
+    # line and omit the colon, so the immediately linked item is the guard.
+    APPLICABILITY_LEAD = %r{
+      \A(?:(?:\[\d+\]?[[:space:]]*)?(?:§[[:space:]]*)?\d+(?:/\d+)?\.[[:space:]]*)?
+      (?:
+        (?:deze|dit)[[:space:]]+(?:wet|verordening|richtlijn|besluit|regeling|hoofdstuk|afdeling|artikel|titel)
+          [[:space:]]+(?:is|zijn)[[:space:]]+van[[:space:]]+toepassing\b
+        |(?:le|la)[[:space:]]+présente?[[:space:]]+(?:règlement|loi|directive|décision|chapitre|section|article|titre)
+          [[:space:]]+s['’]applique\b
+        |this[[:space:]]+(?:regulation|act|directive|decision|chapter|section|article|title)
+          [[:space:]]+(?:shall[[:space:]]+apply|applies)\b
+        |diese[rsnm]?[[:space:]]+(?:verordnung|gesetz|richtlinie|entscheidung|kapitel|abschnitt|artikel|titel)
+          [[:space:]]+gilt\b
+      )
+    }ix
+    APPLICABILITY_ITEM = /\A(?:[a-z]\)|\([a-z]\)|\d+[°)])(?:[[:space:]]|\z)/i
+    NUMBERED_PARAGRAPH = %r{\A(?:\[\d+\]?[[:space:]]*)?(?:§[[:space:]]*)?\d+(?:/\d+)?\.(?:[[:space:]]|\z)}
 
     # Function words in the four languages the chatbot answers in. A question
     # is short, so one of these counted as a term would outvote its subject.
@@ -66,15 +125,48 @@ module LegalChatbot
       text = text.to_s
       return text if max_chars.nil? || max_chars <= 0 || text.length <= max_chars
 
-      units = split_units(text)
+      units = split_units(text).flat_map do |unit|
+        # A Justel paragraph can itself exceed the context budget. Split it
+        # only at the same safe source boundaries used for collapsed text;
+        # otherwise a late matching remedy is skipped as an oversized unit.
+        unit.length > max_chars ? unit.split(SINGLE_LINE_BOUNDARY) : [unit]
+      end
       terms = question_terms(question)
-      return text[0, max_chars] if units.size < 2 || terms.empty?
+      return text[0, max_chars] if terms.empty?
+
+      if units.size < 2
+        units = text.split(SINGLE_LINE_BOUNDARY).map(&:strip).reject(&:empty?)
+        return single_line_window(text, terms, max_chars) if units.size < 2
+      end
 
       matches = scored_matches(units, terms, head_indexes(units))
       return text[0, max_chars] if matches.empty?
 
       selected = matched_head_indexes(units)
       budget = max_chars - joined_length(units, selected) - ELISION.length
+      remedy_groups = consumer_remedy_groups(units, question)
+      remedy_groups.each do |group|
+        candidates = group - selected
+        cost = candidates.sum { |index| units[index].length + ELISION.length }
+        next if cost > budget
+
+        selected.concat(candidates)
+        budget -= cost
+      end
+      # Ancillary remedy paragraphs are also selected whole. Do not spend a
+      # small remainder on a heading and its first numbered item while
+      # dropping its remaining limitations, even if the cases do not fit.
+      return render(units, selected.sort, {}, max_chars) unless remedy_groups.empty?
+
+      applicability_groups(units).each do |group|
+        candidates = group - selected
+        cost = candidates.sum { |index| units[index].length + ELISION.length }
+        next if cost > budget
+
+        selected.concat(candidates)
+        budget -= cost
+      end
+
       matched = matches.map(&:last)
       budget = add_units(units, selected, budget, matched, reserve: ELISION.length)
       budget = add_units(units, selected, budget, neighbours(units, matched & selected), reserve: ELISION.length)
@@ -90,19 +182,81 @@ module LegalChatbot
     # The question's content words as stems with a weight: a long word names
     # its subject more specifically than a short one.
     def question_terms(question)
-      words = question.to_s.downcase.scan(/[[:alpha:]][[:alpha:]'-]*/)
-                      .flat_map { |word| word.split(/['-]/) }
-                      .reject { |word| word.length < MIN_TERM_LENGTH || STOPWORDS.include?(word) }
-                      .uniq
-      words.map do |word|
+      prose = question_prose(question).downcase
+      words = prose.scan(/[[:alpha:]][[:alpha:]'-]*/)
+                   .flat_map { |word| word.split(/['-]/) }
+                   .reject { |word| word.length < MIN_TERM_LENGTH || STOPWORDS.include?(word) }
+                   .uniq
+      aliases = CROSS_LANGUAGE_CONCEPTS.select { |concept| concept.intersect?(words) }.flatten
+      aliases += CONSUMER_REMEDY_CONCEPTS.select { |concept| concept.intersect?(words) }.flatten if prose.match?(CONSUMER_REMEDY_CONTEXT)
+      (words + aliases).uniq.map do |word|
         stem = word[0, [word.length - STEM_TRIM, MIN_STEM_LENGTH].max]
         { stem: stem, weight: stem.length >= SPECIFIC_STEM_LENGTH ? 2 : 1 }
       end
     end
 
+    def question_prose(question)
+      question.to_s.gsub(/```.*?```/m, ' ')
+              .gsub(/^\s*>.*$/, ' ')
+              .gsub(/`[^`\n]*`/, ' ')
+              .gsub(/"(?:\\.|[^"\\])*"|“[^”]*”|«[^»]*»/m, ' ')
+              .gsub(%r{https?://\S+}, ' ')
+    end
+
+    # A refund/reduction question needs the grounds AND their exception, not
+    # just a high-scoring entitlement heading. Keep a complete remedy-cases
+    # paragraph as one selection group when it fits. The adjacent reduction
+    # formula is another group. No article number or paragraph number is
+    # assumed, and no partial group can displace its limiting conditions.
+    def consumer_remedy_groups(units, question)
+      prose = question_prose(question).downcase
+      return [] unless prose.match?(CONSUMER_REMEDY_CONTEXT)
+
+      words = prose.scan(/[[:alpha:]]+/)
+      return [] unless CONSUMER_REMEDY_CONCEPTS.last(2).any? { |concept| concept.intersect?(words) }
+
+      start = units.index do |unit|
+        unit.match?(STATUTORY_PARAGRAPH) && unit.match?(PRICE_REDUCTION) &&
+          unit.match?(CONTRACT_TERMINATION) && unit.match?(REMEDY_CASES)
+      end
+      return [] unless start
+
+      finish = ((start + 1)...units.size).find { |index| units[index].match?(STATUTORY_PARAGRAPH) } || units.size
+      groups = [(start...finish).to_a]
+      groups << [finish] if finish < units.size && units[finish].match?(PRICE_REDUCTION)
+      paragraph_starts = units.each_index.select { |index| units[index].match?(STATUTORY_PARAGRAPH) }
+      terms = question_terms(question)
+      other_groups = paragraph_starts.filter_map do |paragraph_start|
+        next if groups.any? { |group| group.include?(paragraph_start) }
+
+        paragraph_finish = paragraph_starts.find { |index| index > paragraph_start } || units.size
+        group = (paragraph_start...paragraph_finish).to_a
+        relevance = group.sum { |index| score(units[index], terms) }
+        [relevance, paragraph_start, group] if relevance.positive?
+      end
+      groups.concat(other_groups.sort_by { |relevance, index, _group| [-relevance, index] }.map(&:last))
+      groups
+    end
+
     def score(unit, terms)
       haystack = unit.downcase
       terms.sum { |term| haystack.include?(term[:stem]) ? term[:weight] : 0 }
+    end
+
+    # Reserve a complete opening applicability list before its procedural
+    # matches can consume the budget. Only explicit leads already inside
+    # the ordinary head qualify: this must not become another global head
+    # expansion that displaces a late, question-specific provision. The
+    # next numbered paragraph bounds the list, including unnumbered closing
+    # qualifications. Oversized groups leave ordinary selection unchanged.
+    def applicability_groups(units)
+      head_indexes(units).filter_map do |index|
+        next unless units[index].match?(APPLICABILITY_LEAD) && units[index + 1]&.match?(APPLICABILITY_ITEM)
+
+        start = index.positive? && units[index - 1].match?(/\A(?:§[[:space:]]*)?\d+\.\z/) ? index - 1 : index
+        finish = ((index + 1)...units.size).find { |candidate| units[candidate].match?(NUMBERED_PARAGRAPH) } || units.size
+        (start...finish).to_a
+      end
     end
 
     # The head of the old head cut: the opening units up to HEAD_CHARS.
@@ -126,11 +280,41 @@ module LegalChatbot
       units.each_with_index do |unit, index|
         next if index.zero?
         break if used >= MATCHED_HEAD_CHARS
+        break if used + unit.length + 1 > MATCHED_HEAD_CHARS
 
         indexes << index
         used += unit.length + 1
       end
       indexes
+    end
+
+    # A collapsed line without any safe sentence/item boundary still has
+    # exact source spans. Keep a small opening and a bounded word-boundary
+    # window around a late match, explicitly marking both omitted intervals.
+    # No words or punctuation are reconstructed, and an unmatched question
+    # retains the ordinary head cut.
+    def single_line_window(text, terms, max_chars)
+      head_length = [MATCHED_HEAD_CHARS, max_chars / 4].min
+      window_length = max_chars - head_length - (ELISION.length * 2)
+      return text[0, max_chars] unless window_length.positive?
+
+      haystack = text.downcase
+      positions = terms.filter_map { |term| haystack.index(term[:stem], max_chars) }
+      return text[0, max_chars] if positions.empty?
+
+      position = positions.max_by do |candidate|
+        score(text[[candidate - (window_length / 3), head_length].max, window_length], terms)
+      end
+      start = [position - (window_length / 3), head_length].max
+      start += 1 while start < position && !text[start - 1].match?(/[[:space:]]/)
+      finish = [start + window_length, text.length].min
+      finish -= 1 while finish > position && finish < text.length && !text[finish].match?(/[[:space:]]/)
+      return text[0, max_chars] unless finish > position
+
+      head = text[0, head_length].rstrip
+      window = text[start...finish].strip
+      tail = finish < text.length ? ELISION : ''
+      "#{head}#{ELISION}#{window}#{tail}"
     end
 
     def joined_length(units, indexes)

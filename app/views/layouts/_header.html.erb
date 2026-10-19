@@ -1,13 +1,13 @@
 <header class="bg-(--surface-header-bg) no-print" data-controller="dark-mode mobile-menu">
   <div class="container mx-auto px-4 py-2">
-    <div class="flex justify-between items-center gap-y-1">
+    <div class="flex justify-between items-center gap-x-4 gap-y-1">
       <%# Left: always-visible items %>
       <div class="flex items-center gap-1 sm:gap-2 text-sm">
         <%# Dark mode toggle - shown once scripts run (js-only: without them it
             could not work). A 32px target around the 20px icon (the negative
             margin keeps the row's layout) and a visible keyboard focus ring
             (WW-A11Y-02). %>
-        <button type="button" hidden data-controller="js-only"
+        <button type="button" hidden data-controller="js-only" data-tour="dark-mode"
                 data-action="click->dark-mode#toggle"
                 class="inline-flex items-center justify-center w-8 h-8 -m-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors duration-150 ease-out motion-reduce:transition-none focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--accent-500)"
                 aria-label="<%= t('theme.toggle_dark_mode', default: 'Toggle dark mode') %>">
@@ -16,7 +16,7 @@
         </button>
 
         <%# Theme selector - hidden on mobile, visible on sm+ %>
-        <div class="relative hidden sm:block" data-controller="theme-selector">
+        <div class="relative hidden sm:block" data-controller="theme-selector" data-tour="appearance">
           <button type="button"
                   class="flex items-center justify-center w-6 h-6 rounded-full text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors duration-150 ease-out motion-reduce:transition-none"
                   aria-label="<%= t('theme.choose_accent') %>"
@@ -55,7 +55,7 @@
 
         <%# Desktop nav items - hidden on mobile %>
         <div class="hidden sm:flex sm:items-center sm:gap-1 sm:gap-2">
-          <%= link_to bookmarks_path, class: %w[text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors duration-150 ease-out motion-reduce:transition-none].join(" "), title: t('bookmarks.title') do %>
+          <%= link_to bookmarks_path, class: %w[text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors duration-150 ease-out motion-reduce:transition-none].join(" "), title: t('bookmarks.title'), data: { tour: 'bookmarks' } do %>
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
             </svg>
@@ -100,25 +100,29 @@
             <span class="text-[7px] font-bold leading-none text-amber-600 dark:text-amber-400 -ml-0.5 -mt-2 self-start">α</span>
           <% end %>
 
+          <%# Keep tablet navigation compact; full domains return on wide desktop. %>
+          <span class="inline-flex items-center gap-1 sm:gap-2 whitespace-nowrap" data-tour="languages">
           <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to language_switch_url(:nl), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>NL<span class="hidden sm:inline"> (wetwijzer.be)</span><% end %>
+          <%= link_to language_switch_url(:nl), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>NL<span class="hidden xl:inline"> (wetwijzer.be)</span><% end %>
           <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to language_switch_url(:fr), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>FR<span class="hidden sm:inline"> (lisloi.be)</span><% end %>
+          <%= link_to language_switch_url(:fr), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>FR<span class="hidden xl:inline"> (lisloi.be)</span><% end %>
           <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to language_switch_url(:de), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>DE<span class="hidden sm:inline"> (gesetzguide.be)</span><% end %>
+          <%= link_to language_switch_url(:de), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>DE<span class="hidden xl:inline"> (gesetzguide.be)</span><% end %>
           <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to language_switch_url(:en), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>EN/INT<span class="hidden sm:inline"> (lexlibera.be)</span><% end %>
+          <%= link_to language_switch_url(:en), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>EN/INT<span class="hidden xl:inline"> (lexlibera.be)</span><% end %>
+          </span>
         </div>
       </div>
 
       <%# Right: profile + hamburger %>
-      <div class="flex items-center gap-2">
+      <div class="flex shrink-0 items-center gap-2 sm:border-l sm:border-gray-300 sm:pl-4 dark:sm:border-gray-600">
         <%# Hamburger button - mobile only %>
         <button type="button"
                 class="sm:hidden p-1.5 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 data-action="click->mobile-menu#toggle"
                 data-mobile-menu-target="button"
-                aria-label="Menu"
+                data-tour="<%= logged_in? ? 'mobile-menu' : 'account' %>"
+                aria-label="<%= t('public_navigation.menu') %>"
                 aria-expanded="false">
           <%# Hamburger icon %>
           <svg data-mobile-menu-target="openIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,7 +136,7 @@
 
         <%# Profile / Login - always visible %>
         <% if logged_in? %>
-          <div class="relative" data-controller="dropdown">
+          <div class="relative" data-controller="dropdown" data-tour="account">
             <button type="button" 
                     class="relative flex items-center justify-center w-8 h-8 rounded-full bg-(--accent-600-solid) text-white font-semibold text-sm hover:bg-(--accent-700-solid) transition-colors"
                     data-dropdown-target="button"
@@ -172,11 +176,11 @@
             </div>
           </div>
         <% else %>
-          <div class="hidden sm:flex sm:items-center">
-            <%= link_to login_path, class: "px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors" do %>
+          <div class="hidden sm:flex sm:items-center sm:gap-2 whitespace-nowrap" data-tour="account">
+            <%= link_to login_path, class: "inline-flex min-h-8 items-center rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-600 dark:border-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-500)" do %>
               <%= t('auth.login', default: 'Login') %>
             <% end %>
-            <%= link_to signup_path, class: "ml-2 px-3 py-1.5 text-sm font-medium bg-(--accent-600-solid) text-white rounded-md hover:bg-(--accent-700-solid) dark:bg-transparent dark:text-(--accent-400) dark:border dark:border-(--accent-400) dark:hover:bg-(--accent-400)/10 transition-colors" do %>
+            <%= link_to signup_path, class: "px-3 py-1.5 text-sm font-medium bg-(--accent-600-solid) text-white rounded-md hover:bg-(--accent-700-solid) dark:bg-transparent dark:text-(--accent-400) dark:border dark:border-(--accent-400) dark:hover:bg-(--accent-400)/10 transition-colors" do %>
               <%= t('auth.signup', default: 'Sign up') %>
             <% end %>
           </div>
@@ -189,7 +193,7 @@
          data-mobile-menu-target="panel">
       <div class="flex flex-col gap-2">
         <%# Theme selector (mobile) %>
-        <div class="relative" data-controller="theme-selector">
+        <div class="relative" data-controller="theme-selector" data-tour="appearance">
           <button type="button"
                   class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors"
                   data-action="click->theme-selector#toggle">
@@ -227,7 +231,7 @@
 
         <%# Navigation links %>
         <div class="flex flex-col gap-2">
-          <%= link_to bookmarks_path, class: "flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors" do %>
+          <%= link_to bookmarks_path, class: "flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors", data: { tour: 'bookmarks' } do %>
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
             </svg>
@@ -241,7 +245,7 @@
         </div>
 
         <%# Domain links %>
-        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700" data-tour="languages">
           <%= link_to language_switch_url(:nl), class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>NL<% end %>
           <span class="text-gray-300 dark:text-navy">|</span>
           <%= link_to language_switch_url(:fr), class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>FR<% end %>

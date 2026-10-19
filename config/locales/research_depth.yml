@@ -1,0 +1,164 @@
+nl:
+  chatbot:
+    research_depth:
+      label: "Onderzoeksdiepte"
+      help_label: "Uitleg over diepte en kosten"
+      credit_tick_unit: "Elk streepje = één keuze · Hoger streepje = nieuwe totaalprijs"
+      credit_tick_explanation: "Elk streepje is een model-denkwerkcombinatie op de balk. De stappen staan op gelijke afstand, gegroepeerd per onderzoeksdiepte en daarbinnen op totale creditkosten. Ook keuzes met dezelfde prijs hebben een eigen stap. Een hoger streepje markeert een nieuwe totaalprijs. Alle ondersteunde combinaties staan in Instellingen."
+      faq_title: "Hoe werkt de Onderzoeksdiepte?"
+      explanation: "Kies een combinatie van AI-model en ondersteund denkwerk. Uw combinatie bepaalt het onderzoeksbudget en het extra denkwerk."
+      model_explanation: "Met de balk kiest u een AI-model en denkmodus. In Instellingen kunt u ook andere keuzes maken. Staat uw keuze niet op de balk? Dan ziet u ‘Handmatig gekozen’."
+      selection_linked_explanation: "De balk biedt een selectie van model-denkwerkcombinaties. In Instellingen vindt u alle ondersteunde combinaties. De gekozen combinatie en exacte totale creditkosten worden vóór Verzenden getoond."
+      manual_selection: "Handmatig gekozen"
+      variant_label: "%{profile} — %{model} · %{reasoning} · Creditkosten: %{credits}"
+      fixed_reasoning_label: "Vaste denkmodus"
+      variant_reasoning_low: "Denkwerk: laag"
+      variant_reasoning_medium: "Denkwerk: gemiddeld"
+      variant_reasoning_high: "Denkwerk: hoog"
+      access_note: "Een gewoon account kan alle beschikbare modellen en denkmodi tot en met Grondig gebruiken, met voldoende credits. Alleen Uitgebreid vereist Pro; rechtspraak en parlementaire bronnen in de chatbot blijven ook Pro."
+      verification_note: "Bron- en citaatcontrole gelden bij elke instelling. Meer diepte garandeert geen juist of volledig antwoord."
+      cost_note: "De totaalprijs bestaat uit de modelprijs en eventueel ondersteund extra denkwerk. Controleer uw combinatie en het exacte aantal credits vóór Verzenden. Tijden zijn indicatief; meer credits garanderen geen beter antwoord."
+      preview: "%{model} · %{reasoning} · %{credits} cr"
+      model_fixed_reasoning: "Dit model gebruikt een vaste denkmodus, zonder afzonderlijke denktoeslag."
+      model_limited_reasoning: "Extra denkwerk wordt alleen gebruikt als uw gekozen model en account het ondersteunen."
+      followup_limited_reasoning: "Bij vervolgvragen gebruikt Mistral Small geen extra denkwerk, zodat privédenkprocessen niet hoeven te worden bewaard. De getoonde prijs volgt de daadwerkelijk gebruikte modus."
+      options:
+        quick:
+          label: "Snel"
+          description: "Een gericht onderzoeksbudget voor de belangrijkste relevante bronnen. De denkmodus kiest u bij het model."
+          time: "15–45 seconden"
+        balanced:
+          label: "Gebalanceerd"
+          description: "Een breder onderzoeksbudget voor relevante bronnen. De denkmodus kiest u bij het model."
+          time: "20–75 seconden"
+        thorough:
+          label: "Grondig"
+          description: "Een groter onderzoeksbudget voor relevante bepalingen, uitzonderingen en geselecteerde broncategorieën. De denkmodus kiest u bij het model."
+          time: "30–120 seconden"
+        extensive:
+          label: "Uitgebreid"
+          description: "Het ruimste onderzoeksbudget voor relevante bronnen en samenhangende juridische aspecten. Deze categorie vereist Pro; de denkmodus kiest u bij het model."
+          time: "45–180 seconden"
+fr:
+  chatbot:
+    research_depth:
+      label: "Profondeur de recherche"
+      help_label: "Comprendre la profondeur et le coût"
+      credit_tick_unit: "Chaque trait = un choix · Trait plus haut = nouveau prix total"
+      credit_tick_explanation: "Chaque trait est une combinaison de modèle et de raisonnement proposée sur la barre. Les choix sont espacés régulièrement, regroupés par profondeur de recherche puis par coût total en crédits au sein de chaque groupe. Même à prix égal, chaque choix a sa propre position. Un trait plus haut marque un nouveau prix total. Toutes les combinaisons prises en charge figurent dans les Paramètres."
+      faq_title: "Comment fonctionne la Profondeur de recherche ?"
+      explanation: "Choisissez une combinaison de modèle IA et de raisonnement pris en charge. Votre combinaison détermine le budget de recherche et le raisonnement supplémentaire."
+      model_explanation: "Avec la barre, vous choisissez un modèle d’IA et un mode de raisonnement. Dans les Paramètres, vous pouvez aussi faire d’autres choix. Votre choix n’est pas sur la barre ? Vous voyez alors « Choix manuel »."
+      selection_linked_explanation: "La barre propose une sélection de combinaisons de modèle et de raisonnement. Les Paramètres contiennent toutes les combinaisons prises en charge. La combinaison choisie et son coût total exact sont affichés avant Envoyer."
+      manual_selection: "Choix manuel"
+      variant_label: "%{profile} — %{model} · %{reasoning} · Coût en crédits : %{credits}"
+      fixed_reasoning_label: "Raisonnement fixe"
+      variant_reasoning_low: "Raisonnement : faible"
+      variant_reasoning_medium: "Raisonnement : équilibré"
+      variant_reasoning_high: "Raisonnement : élevé"
+      access_note: "Un compte ordinaire peut utiliser tous les modèles et modes disponibles jusqu’à Approfondie, avec suffisamment de crédits. Seule Étendue nécessite Pro ; la jurisprudence et les sources parlementaires du chatbot restent aussi réservées à Pro."
+      verification_note: "Les contrôles des sources et citations s’appliquent à chaque réglage. Une recherche plus approfondie ne garantit ni l’exactitude ni l’exhaustivité."
+      cost_note: "Le total comprend le prix du modèle et, éventuellement, le raisonnement supplémentaire pris en charge. Vérifiez votre combinaison et le total exact en crédits avant Envoyer. Les durées sont indicatives ; plus de crédits ne garantissent pas une meilleure réponse."
+      preview: "%{model} · %{reasoning} · %{credits} cr"
+      model_fixed_reasoning: "Ce modèle utilise un raisonnement fixe, sans supplément distinct pour le raisonnement."
+      model_limited_reasoning: "Le raisonnement supplémentaire est utilisé uniquement si votre modèle et votre compte le prennent en charge."
+      followup_limited_reasoning: "Pour les questions complémentaires, Mistral Small n’utilise pas de raisonnement supplémentaire, afin de ne pas devoir conserver ses processus de réflexion privés. Le prix affiché correspond au mode réellement utilisé."
+      options:
+        quick:
+          label: "Rapide"
+          description: "Un budget de recherche ciblé pour les principales sources pertinentes. Choisissez le mode de raisonnement avec le modèle."
+          time: "15–45 secondes"
+        balanced:
+          label: "Équilibrée"
+          description: "Un budget de recherche plus large pour les sources pertinentes. Choisissez le mode de raisonnement avec le modèle."
+          time: "20–75 secondes"
+        thorough:
+          label: "Approfondie"
+          description: "Un budget de recherche plus important pour les dispositions, exceptions et catégories de sources sélectionnées pertinentes. Choisissez le mode de raisonnement avec le modèle."
+          time: "30–120 secondes"
+        extensive:
+          label: "Étendue"
+          description: "Le budget de recherche le plus large pour les sources pertinentes et les aspects juridiques liés. Cette catégorie nécessite Pro ; choisissez le mode de raisonnement avec le modèle."
+          time: "45–180 secondes"
+de:
+  chatbot:
+    research_depth:
+      label: "Rechercheumfang"
+      help_label: "Umfang und Kosten erklärt"
+      credit_tick_unit: "Jeder Strich = eine Auswahl · Höherer Strich = neuer Gesamtpreis"
+      credit_tick_explanation: "Jeder Strich ist eine Kombination aus Modell und Denkaufwand auf der Leiste. Die Schritte haben gleiche Abstände, sind nach Rechercheumfang gruppiert und innerhalb jeder Gruppe nach gesamten Creditkosten sortiert. Auch gleich teure Kombinationen haben einen eigenen Schritt. Ein höherer Strich markiert einen neuen Gesamtpreis. Alle unterstützten Kombinationen stehen in den Einstellungen."
+      faq_title: "Wie funktioniert der Rechercheumfang?"
+      explanation: "Wählen Sie eine Kombination aus KI-Modell und unterstütztem Denkaufwand. Ihre Kombination bestimmt das Recherchebudget und den zusätzlichen Denkaufwand."
+      model_explanation: "Mit der Leiste wählen Sie ein KI-Modell und einen Denkmodus. In den Einstellungen können Sie auch andere Auswahlen treffen. Steht Ihre Auswahl nicht auf der Leiste? Dann sehen Sie ‚Manuell gewählt‘."
+      selection_linked_explanation: "Die Leiste bietet eine Auswahl an Modell-Denkaufwand-Kombinationen. Alle unterstützten Kombinationen stehen in den Einstellungen. Die gewählte Kombination und ihre genauen gesamten Creditkosten werden vor Senden angezeigt."
+      manual_selection: "Manuell gewählt"
+      variant_label: "%{profile} — %{model} · %{reasoning} · Creditkosten: %{credits}"
+      fixed_reasoning_label: "Fester Denkmodus"
+      variant_reasoning_low: "Denkaufwand: gering"
+      variant_reasoning_medium: "Denkaufwand: mittel"
+      variant_reasoning_high: "Denkaufwand: hoch"
+      access_note: "Ein normales Konto kann mit ausreichend Credits alle verfügbaren Modelle und Denkmodi bis einschließlich Gründlich nutzen. Nur Umfassend erfordert Pro; Rechtsprechung und parlamentarische Quellen im Chatbot bleiben ebenfalls Pro vorbehalten."
+      verification_note: "Quellen- und Zitatprüfungen gelten bei jeder Einstellung. Mehr Recherche garantiert weder Richtigkeit noch Vollständigkeit."
+      cost_note: "Der Gesamtpreis besteht aus dem Modellpreis und gegebenenfalls unterstütztem zusätzlichen Denkaufwand. Prüfen Sie Kombination und genaue Creditanzahl vor Senden. Zeitangaben sind Richtwerte; mehr Credits garantieren keine bessere Antwort."
+      preview: "%{model} · %{reasoning} · %{credits} cr"
+      model_fixed_reasoning: "Dieses Modell verwendet einen festen Denkmodus ohne gesonderten Denkaufschlag."
+      model_limited_reasoning: "Zusätzlicher Denkaufwand wird nur verwendet, wenn Ihr gewähltes Modell und Ihr Konto ihn unterstützen."
+      followup_limited_reasoning: "Bei Folgefragen verwendet Mistral Small keinen zusätzlichen Denkaufwand, damit private Denkprozesse nicht gespeichert werden müssen. Der angezeigte Preis entspricht dem tatsächlich verwendeten Modus."
+      options:
+        quick:
+          label: "Schnell"
+          description: "Ein gezieltes Recherchebudget für die wichtigsten relevanten Quellen. Wählen Sie den Denkmodus beim Modell."
+          time: "15–45 Sekunden"
+        balanced:
+          label: "Ausgewogen"
+          description: "Ein breiteres Recherchebudget für relevante Quellen. Wählen Sie den Denkmodus beim Modell."
+          time: "20–75 Sekunden"
+        thorough:
+          label: "Gründlich"
+          description: "Ein größeres Recherchebudget für relevante Vorschriften, Ausnahmen und gewählte Quellenkategorien. Wählen Sie den Denkmodus beim Modell."
+          time: "30–120 Sekunden"
+        extensive:
+          label: "Umfassend"
+          description: "Das größte Recherchebudget für relevante Quellen und zusammenhängende Rechtsfragen. Diese Kategorie erfordert Pro; wählen Sie den Denkmodus beim Modell."
+          time: "45–180 Sekunden"
+en:
+  chatbot:
+    research_depth:
+      label: "Research depth"
+      help_label: "About depth and cost"
+      credit_tick_unit: "Each tick = one choice · Taller tick = new total price"
+      credit_tick_explanation: "Each tick is a model and reasoning combination on the bar. Steps are equally spaced, grouped by research depth and then by total credit cost within each group. Combinations with the same price still have separate steps. A taller tick marks a new total price. Settings contains all supported combinations."
+      faq_title: "How does Research depth work?"
+      explanation: "Choose an AI model and supported reasoning combination. Your combination determines the research budget and additional thinking."
+      model_explanation: "With the bar you choose an AI model and reasoning mode. In Settings you can also make other choices. Is your choice not on the bar? Then you will see ‘Manually selected’."
+      selection_linked_explanation: "The bar offers a selection of model and reasoning combinations. Settings contains all supported combinations. Your chosen combination and exact total credits are shown before Send."
+      manual_selection: "Manually selected"
+      variant_label: "%{profile} — %{model} · %{reasoning} · Credit cost: %{credits}"
+      fixed_reasoning_label: "Fixed reasoning"
+      variant_reasoning_low: "Reasoning: low"
+      variant_reasoning_medium: "Reasoning: medium"
+      variant_reasoning_high: "Reasoning: high"
+      access_note: "A regular account can use all available models and reasoning modes through Thorough with sufficient credits. Only Extensive requires Pro; case law and parliamentary sources in the chatbot also remain Pro-only."
+      verification_note: "Source and citation checks apply at every setting. Greater depth does not guarantee a correct or complete answer."
+      cost_note: "The total includes the model price and any supported extra reasoning. Check your combination and exact credits before Send. Times are indicative; more credits do not guarantee a better answer."
+      preview: "%{model} · %{reasoning} · %{credits} cr"
+      model_fixed_reasoning: "This model uses fixed reasoning with no separate reasoning surcharge."
+      model_limited_reasoning: "Additional reasoning is used only if your chosen model and account support it."
+      followup_limited_reasoning: "For follow-up questions, Mistral Small uses no extra reasoning so private reasoning processes do not need to be stored. The displayed price reflects the mode actually used."
+      options:
+        quick:
+          label: "Quick"
+          description: "A focused research budget for the most relevant essential sources. Choose the reasoning mode with the model."
+          time: "15–45 seconds"
+        balanced:
+          label: "Balanced"
+          description: "A broader research budget for relevant sources. Choose the reasoning mode with the model."
+          time: "20–75 seconds"
+        thorough:
+          label: "Thorough"
+          description: "A larger research budget for relevant provisions, exceptions and selected source categories. Choose the reasoning mode with the model."
+          time: "30–120 seconds"
+        extensive:
+          label: "Extensive"
+          description: "The widest research budget for relevant sources and related legal issues. This category requires Pro; choose the reasoning mode with the model."
+          time: "45–180 seconds"

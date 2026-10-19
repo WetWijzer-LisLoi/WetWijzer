@@ -1,7 +1,7 @@
 <%= render 'legal_pages/legal_page_styles' %>
 <div class="legal-page">
 <h1>Veelgestelde vragen (FAQ)</h1>
-    <p class="last-updated">Laatst bijgewerkt: 9 juni 2026</p>
+    <p class="last-updated">Laatst bijgewerkt: 11 oktober 2026</p>
 
     <div class="toc">
         <strong>Inhoud</strong>
@@ -56,7 +56,7 @@
     <details>
         <summary>In welke talen is WetWijzer beschikbaar?</summary>
         <div>
-            <p>De interface is beschikbaar in het Nederlands, Frans, Duits en Engels. De AI-chatbot beantwoordt vragen in de taal die u selecteert. De wetgevingsdatabank bevat teksten in hun oorspronkelijke publicatietaal.</p>
+            <p>De interface is beschikbaar in het Nederlands, Frans, Duits en Engels. Op NL/FR/DE antwoordt de chatbot standaard in de taal van de website; op EN/INT volgt het antwoord de taal van uw vraag. U kunt expliciet om een antwoord in het Nederlands, Frans, Duits of Engels vragen. De wetgevingsdatabank bevat teksten in hun oorspronkelijke publicatietaal.</p>
         </div>
     </details>
 
@@ -115,17 +115,18 @@
     </details>
 
     <details>
-        <summary>Wat zijn de intelligentieniveaus?</summary>
+        <summary>Hoe kies ik een AI-model?</summary>
         <div>
             <%= render 'legal_pages/chatbot_pricing_table', locale: :nl %>
-            <p>Geselecteerde modellen van het Slim-niveau zijn beschikbaar voor elke gebruiker met een account; bij registratie ontvangt u <%= RegistrationsController::STARTER_CREDITS %> gratis startcredits om de chatbot te testen. Welke Slim-modellen gratis zijn, staat op de prijzenpagina en kan wijzigen. De overige Slim-modellen en de niveaus Geniaal, Meesterbrein en Alwetend zijn exclusief voor Pro-abonnees.</p>
+            <p><%= format(pricing_access_copy(:nl).fetch(:starter), credits: RegistrationsController::STARTER_CREDITS) %></p>
+            <p><%= pricing_access_copy(:nl).fetch(:access) %> <%= pricing_access_copy(:nl).fetch(:pending) %></p>
         </div>
     </details>
 
     <details>
-        <summary>Hoe wordt de redeneringsdiepte bepaald?</summary>
+        <summary><%= t('chatbot.research_depth.faq_title', locale: :nl) %></summary>
         <div>
-            <p>De beschikbare keuzes hangen af van het gekozen model. Mistral Small 4 biedt Snel en Diepgaand; modellen waarvan de provider drie inspanningsniveaus ondersteunt bieden ook Gebalanceerd. De ingestelde toeslagen zijn <strong><%= chatbot_reasoning_surcharge_list %> credits</strong>. Een toeslag wordt alleen aangerekend wanneer het model de gekozen modus ondersteunt en gebruikt; het exacte totaal staat vóór verzending in beeld.</p>
+            <%= render 'legal_pages/research_depth_explanation', locale: :nl %>
         </div>
     </details>
 
@@ -139,7 +140,7 @@
                 <li>Juridische concepten verkeerd interpreteren</li>
                 <li>Niet-bestaande wetten of artikelen noemen</li>
             </ul>
-            <p>Controleer antwoorden altijd met de offici&euml;le bronnen of raadpleeg een juridisch professional. Het geniale niveau levert doorgaans nauwkeurigere antwoorden dan het eenvoudige niveau.</p>
+            <p>Controleer antwoorden altijd met de offici&euml;le bronnen of raadpleeg een juridisch professional. Een hogere onderzoeksdiepte of prijs garandeert geen beter antwoord.</p>
         </div>
     </details>
 
@@ -189,7 +190,7 @@
     <details>
         <summary>Hoeveel gratis credits krijg ik?</summary>
         <div>
-            <p>Bij registratie ontvangt elke gebruiker <strong><%= RegistrationsController::STARTER_CREDITS %> gratis startcredits</strong>. Aanvullende credits kunnen worden gekocht. Geniaal, Meesterbrein en Alwetend vereisen een Pro-abonnement.</p>
+            <p><%= format(pricing_access_copy(:nl).fetch(:starter), credits: RegistrationsController::STARTER_CREDITS) %> <%= pricing_access_copy(:nl).fetch(:access) %></p>
         </div>
     </details>
 
@@ -208,6 +209,13 @@
     </details>
 
     <details>
+        <summary>Wanneer wordt een vraag aangerekend?</summary>
+        <div>
+            <p>De prijs van een vraag wordt gereserveerd wanneer u ze stelt. Zodra de AI-verwerking van uw vraag is gestart (het eerste verzoek aan een AI-dienst, bijvoorbeeld om te zoeken of te vertalen), wordt die prijs aangerekend. Dat geldt ook wanneer het antwoord daarna onvolledig blijkt, door de bronnencontrole wordt tegengehouden of alsnog mislukt. Een vraag die mislukt voordat de AI-verwerking is begonnen, wordt niet aangerekend: de reservering wordt dan vrijgegeven. Automatische herpogingen binnen hetzelfde verzoek kosten geen extra credits. Verstuurt u de vraag opnieuw, dan geldt daarvoor opnieuw de bovenstaande regel. Levert een aangerekende vraag geen bruikbaar antwoord op, dan staat dat in het bericht.</p>
+        </div>
+    </details>
+
+    <details>
         <summary>Welke betaalmethoden worden aanvaard?</summary>
         <div>
             <p>Via Mollie worden gangbare betaalmethoden aangeboden, waaronder Bancontact, debet- en kredietkaarten en andere Europese betaalmethoden. Wij slaan geen kaart- of bankgegevens op; de betaling wordt via de beveiligde Mollie-checkout verwerkt.</p>
@@ -222,6 +230,7 @@
     <details>
         <summary>Wat biedt WetWijzer Pro?</summary>
         <div>
+            <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
             <table>
                 <tr>
                     <th>Kenmerk</th>
@@ -239,9 +248,9 @@
                     <td><strong><%= Subscription::PRO_MONTHLY_CREDITS %> per maand</strong> + bijkoopbaar</td>
                 </tr>
                 <tr>
-                    <td>Intelligentieniveaus</td>
-                    <td>Slim (geselecteerde modellen)</td>
-                    <td><strong>Alle 4 niveaus</strong> incl. Geniaal, Meesterbrein en Alwetend</td>
+                    <td>Modelgroepen</td>
+                    <td>Snel, Gebalanceerd en Grondig</td>
+                    <td><strong>Ook Uitgebreid</strong>, zodra de modellen beschikbaar zijn</td>
                 </tr>
                 <tr>
                     <td>AI-modellen</td>
@@ -270,6 +279,7 @@
                 </tr>
 
             </table>
+            <% unless classic_host? %></div><% end %>
         </div>
     </details>
 
@@ -278,8 +288,8 @@
         <div>
             <p>WetWijzer Pro is ontworpen voor iedereen die regelmatig juridisch onderzoek doet. De belangrijkste redenen om te upgraden:</p>
             <ul>
-                <li><strong>Premium AI:</strong> Geniaal (<%= chatbot_model_names_for_level(:genius, :nl) %>), Meesterbrein (<%= chatbot_model_names_for_level(:mastermind, :nl) %>) en Alwetend (<%= chatbot_model_names_for_level(:omniscient, :nl) %>) bieden de krachtigere opties.</li>
-                <li><strong>Alle AI-modellen:</strong> Pro-abonnees krijgen toegang tot alle geconfigureerde modellen: <%= chatbot_all_model_names %>. Vergelijk resultaten en kies het model dat het beste werkt voor uw specifieke vraag.</li>
+                <li><strong>Uitgebreid:</strong> Pro geeft ook toegang tot deze modelgroep, zodra beschikbaar: <%= chatbot_model_names_for_level(:omniscient, :nl) %>. Elke vraag vereist voldoende credits.</li>
+                <li><strong>Duidelijke beschikbaarheid:</strong> modellen met Binnenkort blijven niet-selecteerbaar, ook met Pro. Snel, Gebalanceerd en Grondig zijn met voldoende credits al beschikbaar voor een gewoon account.</li>
                 <li><strong>Rechtspraak via de chatbot:</strong> laat de chatbot ook zoeken in de rechtspraakdatabank (175.000+ gepseudonimiseerde arresten) en relevante arresten aanhalen in zijn antwoord. De databank zelf blijft op de site gratis te doorzoeken voor iedereen.</li>
                 <li><strong>Parlementaire stukken:</strong> laat de chatbot ook zoeken in Kamer-, Senaat-, Vlaams Parlement- en Waals Parlement-documenten voor de wetgevingsgeschiedenis achter een wet.</li>
                 <li><strong>Betaalbaar:</strong> <%= Subscription::PRO_MONTHLY_CREDITS %> gratis credits per maand plus bijkoopmogelijkheid.</li>
@@ -313,7 +323,7 @@
     <details>
         <summary>Kan ik Pro eerst uitproberen?</summary>
         <div>
-            <p>Met de <%= RegistrationsController::STARTER_CREDITS %> startcredits bij registratie kunt u de chatbot al direct testen op de geselecteerde Slim-modellen. De rechtspraakdatabank en de parlementaire stukken kunt u op de site gratis doorzoeken. Pro voegt daar de niveaus Geniaal, Meesterbrein en Alwetend aan toe, plus rechtspraak en parlementaire stukken via de chatbot. Aangezien Pro maandelijks opzegbaar is zonder opzegtermijn, kunt u het risicovrij &eacute;&eacute;n maand uitproberen voor slechts &euro;2,99.</p>
+            <p>Met de <%= RegistrationsController::STARTER_CREDITS %> startcredits kunt u beschikbare model-denkwerkcombinaties testen waarvan de totaalprijs binnen uw saldo past. Een gewoon account heeft modeltoegang tot en met Grondig. Pro voegt Uitgebreid toe zodra beschikbaar, plus rechtspraak en parlementaire stukken via de chatbot. Zelf zoeken op de site blijft gratis. Pro kost &euro;2,99 per maand en is maandelijks opzegbaar.</p>
         </div>
     </details>
 
@@ -327,7 +337,7 @@
     <details>
         <summary>Wat gebeurt er met mijn credits als ik opzeg?</summary>
         <div>
-            <p>Alle credits blijven beschikbaar, ook na opzegging van uw Pro-abonnement. U ontvangt niet langer uw maandelijkse <%= Subscription::PRO_MONTHLY_CREDITS %> gratis credits en u verliest de toegang tot de Pro-modellen van het Slim-niveau, tot de niveaus Geniaal, Meesterbrein en Alwetend en tot rechtspraak en parlementaire stukken via de chatbot. De rechtspraakdatabank zelf blijft op de site gratis te doorzoeken voor iedereen.</p>
+            <p>Alle credits blijven beschikbaar, ook na opzegging van uw Pro-abonnement. U ontvangt niet langer uw maandelijkse <%= Subscription::PRO_MONTHLY_CREDITS %> inbegrepen credits en verliest de toegang tot Uitgebreid, rechtspraak en parlementaire stukken via de chatbot. Snel, Gebalanceerd en Grondig blijven bruikbaar met voldoende credits. Zelf zoeken op de site blijft gratis voor iedereen.</p>
         </div>
     </details>
 
@@ -484,12 +494,12 @@
     <details>
         <summary>Welke opties zijn beschikbaar?</summary>
         <div>
-            <p><strong>Dagelijks gebruik:</strong> Slim (<%= chatbot_base_credit_range_for(:smart, :nl) %> basis) - de laagste creditkost.</p>
-            <p><strong>Diepgaande analyse:</strong> Geniaal (<%= chatbot_base_credit_range_for(:genius, :nl) %> basis) - <%= chatbot_model_names_for_level(:genius, :nl) %>.</p>
-            <p><strong>Uitgebreide analyse:</strong> Meesterbrein (<%= chatbot_base_credit_range_for(:mastermind, :nl) %> basis) - <%= chatbot_model_names_for_level(:mastermind, :nl) %>.</p>
-            <p><strong>Alternatief modelperspectief:</strong> Alwetend (<%= chatbot_base_credit_range_for(:omniscient, :nl) %> basis) - <%= chatbot_model_names_for_level(:omniscient, :nl) %>.</p>
+            <p><strong>Snel:</strong> <%= chatbot_base_credit_range_for(:smart, :nl) %> basis - <%= chatbot_model_names_for_level(:smart, :nl) %>.</p>
+            <p><strong>Gebalanceerd:</strong> <%= chatbot_base_credit_range_for(:genius, :nl) %> basis - <%= chatbot_model_names_for_level(:genius, :nl) %>.</p>
+            <p><strong>Grondig:</strong> <%= chatbot_base_credit_range_for(:mastermind, :nl) %> basis - <%= chatbot_model_names_for_level(:mastermind, :nl) %>.</p>
+            <p><strong>Uitgebreid (Pro):</strong> <%= chatbot_base_credit_range_for(:omniscient, :nl) %> basis - <%= chatbot_model_names_for_level(:omniscient, :nl) %>.</p>
             <div class="highlight">
-                <strong>Tip:</strong> De beschikbare redeneringsopties hangen af van het gekozen model. Ondersteunde modi kosten <%= chatbot_reasoning_surcharge_list %> credits extra; het exacte totaal staat vóór verzending in beeld.
+                <strong>Tip:</strong> De balk en keuzelijst houden uw model-denkwerkcombinatie samen bij. Kies bij gelijke prijzen de precieze combinatie in de keuzelijst; het exacte totaal staat vóór verzending in beeld.
             </div>
         </div>
     </details>

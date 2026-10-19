@@ -152,7 +152,10 @@ module Api
 
       return render json: { error: 'Conversation not found' }, status: :not_found unless conv && conv.user_id.to_s == current_user.id.to_s
 
-      conv.destroy
+      # Same lock as the explicit clear above: a deleted conversation fences
+      # a running ask's claim, and the ask's first paid request is admitted
+      # under this lock after re-reading it.
+      change_under_storage_boundary { conv.destroy }
       render json: { success: true }
     end
 
@@ -174,25 +177,38 @@ module Api
       # fresh revision guarantees any newly-published token is cleared instead
       # of archiving a row that remains lease-locked for five minutes.
       if params[:archived] == true && params[:cancel_active_claim] == true
-        8.times do
-          cancelled = ChatbotConversation.where(
-            id: conv.id,
-            lock_version: conv.lock_version
-          ).update_all(
-            lock_version: conv.lock_version.to_i + 1,
-            zk_claim_token: nil,
-            zk_claimed_at: nil,
-            archived: true,
-            updated_at: Time.current
-          )
-          if cancelled == 1
-            conv.reload
-            return render json: { success: true, conversation: conversation_summary(conv) }
-          end
+        # Under the account's row lock (owner policy 2026-10-18): the first
+        # paid AI request of a running ask is admitted under the same lock,
+        # after re-reading this claim. So either this clear commits first and
+        # that ask sends nothing and refunds, or the ask was admitted first
+        # and its answer is discarded against the fenced claim while its
+        # single charge stands. The lock covers only this CAS loop.
+        cancelled = 0
+        missing = false
+        change_under_storage_boundary do
+          8.times do
+            cancelled = ChatbotConversation.where(
+              id: conv.id,
+              lock_version: conv.lock_version
+            ).update_all(
+              lock_version: conv.lock_version.to_i + 1,
+              zk_claim_token: nil,
+              zk_claimed_at: nil,
+              archived: true,
+              updated_at: Time.current
+            )
+            break if cancelled == 1
 
-          conv.reload
+            conv.reload
+          end
         rescue ActiveRecord::RecordNotFound
-          return render json: { error: 'Conversation not found' }, status: :not_found
+          missing = true
+        end
+        return render json: { error: 'Conversation not found' }, status: :not_found if missing
+
+        if cancelled == 1
+          conv.reload
+          return render json: { success: true, conversation: conversation_summary(conv) }
         end
 
         return render json: { error: 'conflict, please retry' }, status: :conflict
@@ -262,7 +278,18 @@ module Api
           # revocation goes first, under the same lock; a grant never adopts it.
           raise HistoryCleanupPending unless ConversationHistoryCleanup.finish!(account)
 
-          persist_conversation_storage_consent!(zk_attrs)
+          generation_before = ConversationStorageBoundary.generation(account)
+          granted = persist_conversation_storage_consent!(zk_attrs)
+          # Root review 2026-10-18 (12:22): a successful grant renews the
+          # storage generation (its consent time), even for the identical key
+          # pair. A conversation claim taken under the old generation must
+          # neither deliver its answer nor accept an encrypted snapshot
+          # afterwards, so the account's active claims are cancelled here,
+          # under the same gate and before it is released, with the revision
+          # protocol; messages, titles and archive flags stay. A cancellation
+          # that cannot be made fails the grant instead of reporting success.
+          fence_active_conversation_claims!(current_user) if ConversationStorageBoundary.generation(current_user) != generation_before
+          granted
         end
       rescue HistoryCleanupPending
         schedule_history_cleanup_retry
@@ -502,6 +529,35 @@ module Api
     # The snapshot's fields, or nil when any is the wrong type, malformed or
     # out of bounds. A real snapshot is canonical Base64 of IV, ciphertext and
     # tag, so even an empty history is at least 40 characters.
+    # Cancels every active claim of the account's conversations, each with the
+    # same compare-and-set as an explicit clear (lock_version advanced, token
+    # and time cleared), so a request that still holds the old claim sees it
+    # gone and an encrypted PATCH with the old revision is refused. Called
+    # under the account gate, accounts before chatbot, the order every
+    # writer uses. A claim that cannot be cancelled is a state conflict.
+    def fence_active_conversation_claims!(account)
+      ChatbotConversation.ensure_table_and_columns_exist
+      ChatbotConversation.where(user_id: account.id).where.not(zk_claim_token: nil).find_each do |conv|
+        cancelled = 0
+        8.times do
+          cancelled = ChatbotConversation.where(id: conv.id, lock_version: conv.lock_version).update_all(
+            lock_version: conv.lock_version.to_i + 1,
+            zk_claim_token: nil,
+            zk_claimed_at: nil,
+            updated_at: Time.current
+          )
+          break if cancelled == 1
+
+          conv.reload
+          break if conv.zk_claim_token.nil?
+        rescue ActiveRecord::RecordNotFound
+          cancelled = 1 # deleted meanwhile: nothing left to fence
+          break
+        end
+        raise ZeroKnowledgeStateConflict unless cancelled == 1 || conv.zk_claim_token.nil?
+      end
+    end
+
     def encrypted_payload_fields
       messages = params[:encrypted_messages]
       title = params[:encrypted_title]

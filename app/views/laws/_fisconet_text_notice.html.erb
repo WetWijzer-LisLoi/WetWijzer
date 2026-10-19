@@ -1,0 +1,19 @@
+<%# Where the article text of the three tax codes filled from Fisconet comes
+    from (LawsHelper#fisconet_text_source_note): above the text, so a reader
+    does not take it for the Justel consolidation the page links to. Their
+    rows keep the text in force; the sentence after it links the Fisconet
+    version, which keeps the amendment history and the older versions.
+    Renders nothing for any other law. Locals: law, classic (plain markup,
+    no Tailwind). %>
+<% note = fisconet_text_source_note(law.numac) %>
+<% if note %>
+  <% fisconet_numac = FisconetSearchService.fisconet_numac_for_justel(law.numac) %>
+  <% lead, link_text = fisconet_history_pointer %>
+  <% if local_assigns.fetch(:classic, false) %>
+    <p id="fisconet-text-notice" role="note" style="border:1px solid #d1d5db;padding:10px 12px;margin-bottom:20px;font-size:14px;line-height:1.5"><%= note %><% if fisconet_numac.present? %> <%= lead %> <%= link_to link_text, law_path(fisconet_numac) %>.<% end %></p>
+  <% else %>
+    <div id="fisconet-text-notice" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm scroll-mt-24" role="note">
+      <p class="p-4 md:p-6 text-sm text-gray-700 dark:text-gray-300"><%= note %><% if fisconet_numac.present? %> <%= lead %> <%= link_to link_text, law_path(fisconet_numac), class: 'text-(--link-color) hover:text-(--link-hover-color) hover:underline' %>.<% end %></p>
+    </div>
+  <% end %>
+<% end %>

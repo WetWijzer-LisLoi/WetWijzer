@@ -1,0 +1,47 @@
+/* The native details element works before/without Stimulus. This component
+   is mounted only by the public Modern layout; Classic/admin stay unchanged. */
+.ww-mobile-dock { display: none; }
+@media (max-width: 767px) {
+  body:has(.ww-mobile-dock) { padding-bottom: var(--mobile-dock-clearance, calc(64px + env(safe-area-inset-bottom))); }
+  .ww-mobile-dock {
+    display: block; position: fixed; bottom: 0; right: var(--mobile-dock-handle-right, 8px); z-index: 60;
+    padding-bottom: env(safe-area-inset-bottom); color: #475569; background: #fff;
+    border: 1px solid #cbd5e1; border-radius: 10px 10px 0 0;
+    box-shadow: 0 -2px 12px rgb(0 0 0 / 0.1);
+  }
+  .dark .ww-mobile-dock { color: #cbd5e1; background: #111827; border-color: #475569; }
+  .ww-mobile-dock[open] { left: var(--mobile-dock-viewport-left, 0); right: 0; width: var(--mobile-dock-viewport-width, auto); border-radius: 0; }
+  .ww-mobile-dock > summary {
+    list-style: none; min-height: 44px; min-width: 44px; padding: 4px 10px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    font-size: 12px; font-weight: 600;
+  }
+  .ww-mobile-dock > summary::-webkit-details-marker { display: none; }
+  .ww-mobile-dock > summary span { display: flex; align-items: center; justify-content: center; gap: 4px; }
+  .ww-mobile-dock > summary [aria-hidden] { font-size: 20px; }
+  .ww-mobile-dock [data-mobile-dock-hide] { display: none; }
+  .ww-mobile-dock[open] > summary { position: absolute; top: 0; right: 0; width: 64px; height: 60px; padding: 4px; font-size: 10px; }
+  .ww-mobile-dock[open] [data-mobile-dock-hide] { display: flex; flex-direction: column; gap: 0; }
+  .ww-mobile-dock[open] [data-mobile-dock-show] { display: none; }
+  .ww-mobile-dock:not([open]) > nav { display: none; }
+  /* Long translated labels get their intrinsic minimum instead of being
+     split inside a word. Short labels share the remaining room; the hide
+     handle still owns its separate 64px touch target. */
+  .ww-mobile-dock-links { display: grid; grid-template-columns: repeat(5, minmax(min-content, 1fr)); min-height: 60px; padding-right: 64px; }
+  .ww-mobile-dock-links > a, .ww-mobile-dock-links > button, .ww-mobile-dock-links > div > button {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; width: 100%; min-height: 60px; min-width: 44px; padding: 4px 2px;
+    font-size: 10px; line-height: 1.2; color: inherit; background: transparent;
+    border: 0; text-decoration: none; overflow-wrap: normal;
+  }
+  .ww-mobile-dock-links > a > span { white-space: nowrap; }
+  .ww-mobile-dock-links > a svg, .ww-mobile-dock-links > button svg, .ww-mobile-dock-links > div > button svg { width: 20px; height: 20px; flex-shrink: 0; }
+  .ww-mobile-dock-links > a:hover, .ww-mobile-dock-links > button:hover, .ww-mobile-dock-links > div > button:hover { color: var(--accent-600-solid, #2563eb); }
+  .ww-mobile-dock :focus-visible { outline: 2px solid var(--accent-600-solid, #2563eb); outline-offset: -2px; }
+  /* Chat and the on-screen keyboard do not remove navigation. The controller
+     pins it above the keyboard; only the native hide/show control folds it. */
+}
+@media print {
+  .ww-mobile-dock { display: none !important; }
+  body:has(.ww-mobile-dock) { padding-bottom: 0 !important; }
+}

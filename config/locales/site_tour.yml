@@ -1,43 +1,111 @@
 nl:
   site_tour:
-    entry: "Eerste keer dat u deze website bezoekt? Probeer onze tovenaar!"
-    entry_button: "Start de tovenaar"
+    entry: "Eerste keer dat u deze website bezoekt? Probeer onze wizard!"
+    entry_button: "Start de wizard"
+    launcher: "Wizard"
     title: "Wegwijs in %{site_name}"
-    close: "Tovenaar sluiten"
-    open: "Open de tovenaar"
+    close: "Wizard sluiten"
+    open: "Open de wizard"
     previous: "Vorige"
     next: "Volgende"
     finish: "Klaar"
     contents: "Inhoud"
     step_counter: "Stap %{current} van %{total}"
+    target_unavailable: "Dit onderdeel is op deze pagina niet beschikbaar; de uitleg blijft hieronder beschikbaar."
     fallback_intro: "Lees deze gids in uw eigen tempo. Open een onderdeel voor de uitleg."
     steps:
-      - title: "Kies uw weg"
-        body: "Zoek zelf rechtstreeks in de bronnen, of stel de juridische chatbot uw vraag in gewone taal. De tovenaar voert niets uit en verandert geen instellingen."
-      - title: "Zoeken in alle bronnen"
-        body: "Gebruik Zoeken voor directe/verenigde zoekresultaten in wetgeving, rechtspraak en parlementaire stukken. Kies Bronnen, open Filters en gebruik sortering en paginering bij de resultaten."
-      - title: "Wetten lezen en gebruiken"
-        body: "Open een wet voor de inhoudsopgave, zijbalk, artikelen en verwijzingen. U kunt artikelen kopiëren, een wet exporteren, versies vergelijken en Verwante documenten of bronnen bekijken wanneer die voor het document bestaan."
-      - title: "Rechtspraak en parlement"
-        body: "De aparte pagina's Rechtspraak en Parlementaire werkzaamheden helpen u arresten, dossiers en documenten verder verkennen. Gebruik de zoek- en filterbesturing op die pagina's."
-      - title: "De juridische chatbot"
-        body: "De chatbot kan antwoorden met bronverwijzingen. Kies alleen een intelligentieniveau dat voor uw account beschikbaar is en beoordeel antwoorden. Geschiedenis is opt-in: zonder die keuze wordt geen ruwe gespreksinhoud opgeslagen. Versleutelde geschiedenis vereist een opslagwachtwoord. AI-antwoorden zijn geen officieel juridisch advies en kunnen fouten bevatten."
-      - title: "Bladwijzers en mappen"
+      - id: route
+        title: "Kies uw weg"
+        body: "Zoek zelf rechtstreeks in de bronnen, of stel de juridische chatbot uw vraag in gewone taal. De wizard opent de besproken opties tijdelijk, maar verstuurt niets, kiest geen model en verandert geen voorkeuren. U kunt de wizard altijd opnieuw openen via de knop ‘Wizard’ in de footer, helemaal onderaan de pagina."
+      - id: search
+        title: "Zoeken in alle bronnen"
+        body: "Hier staan de zoekfilters. Kies eerst welke bronnen u wilt doorzoeken en beperk daarna bijvoorbeeld taal, documenttype en datum. Zoeken in de titel is gericht; zoeken in de volledige tekst vindt ook vermeldingen in artikelen. Gebruik vervolgens sortering en paginering bij de resultaten. De wizard past deze keuzes niet aan."
+      - id: legislation
+        title: "Wetgeving: welke regel geldt?"
+        body: "Wetgeving bevat de rechtsregels. Kijk bij elke tekst naar de bevoegde overheid, het toepassingsgebied en de datum die voor uw situatie telt. Open een wet voor artikelen, verwijzingen en beschikbare versies."
+        guidance:
+          - "Federale wetten en besluiten, en decreten, ordonnanties en besluiten van gewesten en gemeenschappen, regelen verschillende bevoegdheden. Een regionale regel geldt niet automatisch in heel België."
+          - "EU-recht heeft eigen rechtsinstrumenten: verordeningen zijn rechtstreeks toepasselijk; richtlijnen vragen in beginsel omzetting. Controleer ook de relevante Belgische uitvoering en toepassingsvoorwaarden."
+          - "Publicatiedatum en inwerkingtreding zijn niet hetzelfde. Controleer wijzigingen, opheffing en overgangsregels; voor oudere feiten kan een eerdere versie gelden."
+          - "Kopieer of exporteer waar beschikbaar en vergelijk versies of Verwante documenten. Controleer de oorspronkelijke officiële bron; een ontbrekende tekst betekent niet dat de wet is opgeheven."
+      - id: case_law
+        title: "Rechtspraak: uitleg in een concrete zaak"
+        body: "Rechtspraak laat zien hoe een rechter regels toepast en uitlegt in een concrete zaak. Verken arresten via Rechtspraak en de zoekfilters."
+        guidance:
+          - "Lees de feiten, rechtsvraag, motivering en beslissing samen. Controleer rechtbank, datum en eventueel beroep of latere rechtspraak."
+          - "De betekenis van een uitspraak hangt af van de rechter, de procedure en de context. Een gevonden arrest is niet automatisch een algemene regel voor elke vergelijkbare situatie."
+      - id: parliamentary
+        title: "Parlementaire stukken: ontstaan en context"
+        body: "Parlementaire werkzaamheden bevatten onder meer wetsontwerpen, voorstellen, toelichtingen en verslagen. Ze helpen de bedoeling en totstandkoming van wetgeving te begrijpen."
+        guidance:
+          - "Een voorstel of ontwerp is niet automatisch aangenomen wetgeving. Controleer de stand van het dossier en de uiteindelijk aangenomen en gepubliceerde tekst."
+          - "Voorbereidingen en verslagen bieden context bij interpretatie. Lees ze naast de geldende regel; uitspraken in een debat zijn niet op zichzelf de toepasselijke wet."
+      - id: chatbot_draft
+        title: "De chatbot: eerst uw vraag opstellen"
+        body: "Beschrijf uw juridische vraag in gewone taal, met relevante feiten, plaats en datum. Een voorbeeldvraag vult alleen een bewerkbaar concept in; u kunt het aanpassen voordat u verstuurt."
+        guidance:
+          - "NL/FR/DE antwoorden standaard in de taal van de website; EN/INT volgt de taal van uw vraag. U kunt expliciet om een antwoord in het Nederlands, Frans, Duits of Engels vragen."
+          - "Verzenden, of Enter zonder Shift, draagt uw vraag en gekozen instellingen over naar de volledige chatbot en start de beantwoording. Shift+Enter maakt een nieuwe regel."
+          - "Het chatpictogram opent het kleine chatvenster; Volledige versie opent de aparte chatbotpagina. Alleen openen of een voorbeeld kiezen verstuurt geen vraag. Sluit de wizard om zelf verder te gaan."
+      - id: chatbot_depth
+        title: "Onderzoeksdiepte en denkwerk"
+        body: "De balk Onderzoeksdiepte kiest een combinatie van AI-model en ondersteund denkwerk. Uw combinatie bepaalt het onderzoeksbudget; de categorieën zijn geen bewezen kwaliteitsranglijst van modellen."
+        guidance:
+          - "Elk selecteerbaar streepje is één beschikbare model-denkwerkkeuze. De stappen staan op gelijke afstand in het beschikbare deel, gegroepeerd op onderzoeksdiepte en daarna totale kosten. Ook keuzes met dezelfde prijs hebben een eigen stap."
+          - "Snel, Gebalanceerd en Grondig zijn toegankelijk met een gewoon account en voldoende credits; Uitgebreid vereist Pro. Een gearceerd, niet beschikbaar deel voegt geen selecteerbaar model toe."
+          - "Meer onderzoek, denkwerk of modelkracht kan meer tijd en credits kosten. Dat garandeert geen juist, beter of volledig antwoord; de gekozen broncategorieën blijven bepalend."
+      - id: chatbot_model
+        title: "Het precieze model en de totale kosten"
+        body: "Onder Instellingen staat de volledige modelkeuzelijst. Die is gekoppeld aan de onderzoeksdieptebalk: een keuze in de lijst verplaatst de balk en een keuze op de balk werkt de lijst bij."
+        guidance:
+          - "Kies de precieze combinatie van model en denkmodus. Niet elk model ondersteunt dezelfde modi; opties met Binnenkort zijn nog niet selecteerbaar."
+          - "Controleer de getoonde totale creditkosten bij uw keuze en Verzenden. U hebt een account en voldoende credits nodig. Het openen van instellingen of de wizard kost geen credits."
+      - id: chatbot_sources
+        title: "Categorie en bronnen voor uw antwoord"
+        body: "Het juridisch profiel of de Categorie richt het antwoord op een rechtsdomein. De bronvakjes bepalen welke databanken de chatbot mag doorzoeken; ze staan los van model en denkmodus."
+        guidance:
+          - "Wetgeving zoekt regels; Rechtspraak zoekt uitspraken; Parlementair zoekt voorbereidende stukken. De laatste twee chatbotbronnen vereisen Pro. Een categorie kiezen schakelt geen bron automatisch in."
+          - "Vermeld zelf bijvoorbeeld Vlaanderen, Brussel of Wallonië en de relevante datum. Een ruimere bronkeuze maakt een regionale regel, uitspraak of voorstel niet vanzelf toepasselijk op uw zaak."
+      - id: chatbot_answers
+        title: "Antwoorden en verwijzingen controleren"
+        body: "De chatbot combineert gevonden bronnen tot een antwoord. Open de geciteerde documenten en controleer of ze de bewering ondersteunen en bij uw feiten, plaats en datum passen."
+        guidance:
+          - "Vraag door of verduidelijk ontbrekende feiten. Een vervolgvraag is opnieuw een vraag: controleer de geselecteerde instellingen en kosten voordat u verstuurt."
+          - "Een verwijzing of uitvoerig antwoord bewijst geen volledigheid. Ook een duurder model kan fouten maken; AI-antwoorden zijn geen officieel juridisch advies. Vraag professioneel advies wanneer uw situatie dat vraagt."
+      - id: chatbot_privacy
+        title: "Gespreksgeschiedenis en privacy"
+        body: "Geschiedenis bewaren is een afzonderlijke, vrijwillige keuze. Vraagtekst wordt standaard niet opgeslagen, maar accountgebonden metadata zoals taal, responstijd en kosten wordt bijgehouden. Lees het privacybeleid vóór gebruik."
+        guidance:
+          - "Met een opslagwachtwoord wordt bewaarde geschiedenis in uw browser versleuteld; zonder wachtwoord wordt ze op de server versleuteld maar blijft ze voor ons leesbaar."
+          - "Uw actuele vraag en relevante context worden tijdelijk in leesbare vorm verwerkt om te antwoorden. Deel alleen benodigde persoonsgegevens; opgeslagen versleuteling maakt die verwerking niet onleesbaar."
+      - id: bookmarks
+        title: "Bladwijzers en mappen"
         body: "Met een account kunt u wetten en andere ondersteunde resultaten bladwijzeren, ze in mappen ordenen en ze later openen via Bladwijzers."
-      - title: "Profiel, facturatie en facturen"
+      - id: account
+        title: "Profiel, facturatie en facturen"
         body: "Via Account beheert u uw profiel en facturatiegegevens. Daar vindt u ook betalingen en facturen die voor uw account beschikbaar zijn."
-      - title: "Credits en Pro"
+      - id: pricing
+        title: "Credits en Pro"
         body: "De pagina's Credits en Abonnement tonen beschikbare credits en Pro-opties. Betaling of een Pro-functie wordt pas gestart nadat u daarvoor zelf de passende knop kiest; beschikbaarheid en prijs kunnen per account verschillen."
-      - title: "Beveiliging en gegevens"
+      - id: security
+        title: "Beveiliging en gegevens"
         body: "In Account kunt u twee-factor-authenticatie en activiteitenoverzicht beheren waar beschikbaar. U kunt uw gegevens exporteren of accountverwijdering aanvragen; lees privacy en bevestigingen zorgvuldig."
-      - title: "Uw voorkeuren en toegang"
-        body: "Kies taal en thema, gebruik de website op mobiel of als PWA en gebruik zo nodig de Classic-presentatie. Beschikbare opties verschillen per apparaat, browser en account."
-      - title: "Hulp en vertrouwen"
+      - id: appearance
+        title: "Uw voorkeuren en toegang"
+        body: "Via het kleurenpalet in de header kiest u een thema; op mobiel vindt u dit in het menu. De kleur en licht/donker zijn twee afzonderlijke keuzes. Sluit de wizard om zelf een kleur of de maan-/zonknop te kiezen: deze rondleiding wijzigt uw thema niet."
+        guidance:
+          - "De bovenste rij bevat de professionele thema's: rustige accenten en soberdere kaarten, knoppen en pictogrammen. De onderste rij bevat Original en de kleurrijkere thema's."
+          - "De maan-/zonknop wisselt tussen licht en donker zonder uw accentkleur te veranderen. Zonder eigen keuze volgt de weergave de systeemvoorkeur van uw apparaat."
+          - "Ingelogd worden uw kleur en licht/donker in uw profiel bewaard voor volgende bezoeken. Zonder account zijn keuzes tijdelijk en worden ze niet blijvend in uw browser opgeslagen."
+          - "Op mobiel kunt u de navigatiedock onderaan inklappen en weer openen. Classic blijft de eenvoudige presentatie; installeren als PWA hangt af van uw browser en apparaat."
+      - id: help
+        title: "Hulp en vertrouwen"
         body: "In de footer vindt u contact, ondersteuning, privacy, voorwaarden, toegankelijkheid en andere openbare beleidsinformatie. Raadpleeg de oorspronkelijke bronnen en vraag professioneel advies wanneer dat nodig is."
 fr:
   site_tour:
     entry: "Première visite sur ce site ? Essayez notre assistant !"
     entry_button: "Démarrer l’assistant"
+    launcher: "Assistant"
     title: "Découvrir %{site_name}"
     close: "Fermer l’assistant"
     open: "Ouvrir l’assistant"
@@ -46,34 +114,101 @@ fr:
     finish: "Terminer"
     contents: "Sommaire"
     step_counter: "Étape %{current} sur %{total}"
+    target_unavailable: "Cet élément n’est pas disponible sur cette page ; l’explication reste disponible ci-dessous."
     fallback_intro: "Consultez ce guide à votre rythme. Ouvrez une rubrique pour son explication."
     steps:
-      - title: "Choisissez votre parcours"
-        body: "Recherchez directement dans les sources ou posez votre question en langage courant au chatbot juridique. L’assistant n’effectue aucune action et ne modifie aucun réglage."
-      - title: "Rechercher toutes les sources"
-        body: "Utilisez Rechercher pour des résultats directs/unifiés dans législation, jurisprudence et travaux parlementaires. Choisissez Sources, ouvrez Filtres et utilisez tri et pagination."
-      - title: "Lire et utiliser les lois"
-        body: "Ouvrez une loi pour la table des matières, la barre latérale, les articles et références. Vous pouvez copier un article, exporter une loi, comparer des versions et consulter documents ou sources liés lorsqu’ils existent."
-      - title: "Jurisprudence et parlement"
-        body: "Les pages Jurisprudence et Travaux parlementaires permettent d’explorer arrêts, dossiers et documents. Utilisez les commandes de recherche et filtre de ces pages."
-      - title: "Le chatbot juridique"
-        body: "Le chatbot peut répondre avec des citations de sources. Choisissez seulement un niveau disponible pour votre compte et évaluez les réponses. L’historique est facultatif : sans ce choix, aucun contenu brut de conversation n’est stocké. L’historique chiffré requiert un mot de passe de stockage. Les réponses IA ne sont pas un avis juridique officiel et peuvent comporter des erreurs."
-      - title: "Favoris et dossiers"
+      - id: route
+        title: "Choisissez votre parcours"
+        body: "Recherchez directement dans les sources ou posez votre question en langage courant au chatbot juridique. L’assistant ouvre temporairement les options présentées, mais n’envoie rien, ne choisit aucun modèle et ne modifie aucune préférence. Vous pouvez toujours rouvrir l’assistant avec le bouton « Assistant » dans le pied de page, tout en bas."
+      - id: search
+        title: "Rechercher toutes les sources"
+        body: "Voici les filtres de recherche. Choisissez d’abord les sources, puis précisez notamment la langue, le type de document et les dates. Une recherche dans le titre est ciblée ; le texte intégral trouve aussi les mentions dans les articles. Utilisez ensuite le tri et la pagination. L’assistant ne modifie pas ces choix."
+      - id: legislation
+        title: "Législation : quelle règle s’applique ?"
+        body: "La législation contient les règles de droit. Pour chaque texte, vérifiez l’autorité compétente, le champ d’application et la date pertinente pour votre situation. Ouvrez une loi pour ses articles, références et versions disponibles."
+        guidance:
+          - "Les lois et arrêtés fédéraux, ainsi que les décrets, ordonnances et arrêtés des régions et communautés, régissent des compétences différentes. Une règle régionale ne s’applique pas automatiquement dans toute la Belgique."
+          - "Le droit de l’UE utilise ses propres actes : les règlements sont directement applicables ; les directives nécessitent en principe une transposition. Vérifiez aussi les mesures belges pertinentes et les conditions d’application."
+          - "La publication et l’entrée en vigueur sont deux dates distinctes. Vérifiez modifications, abrogation et règles transitoires ; des faits anciens peuvent relever d’une version antérieure."
+          - "Copiez ou exportez si possible et comparez les versions ou documents liés. Vérifiez la source officielle originale ; un texte manquant ne signifie pas que la loi est abrogée."
+      - id: case_law
+        title: "Jurisprudence : interpréter un cas concret"
+        body: "La jurisprudence montre comment un juge applique et interprète les règles dans une affaire concrète. Explorez les décisions via Jurisprudence et les filtres de recherche."
+        guidance:
+          - "Lisez ensemble les faits, la question juridique, les motifs et la décision. Vérifiez juridiction, date, éventuel recours et jurisprudence ultérieure."
+          - "La portée d’une décision dépend du juge, de la procédure et du contexte. Un arrêt trouvé n’est pas automatiquement une règle générale pour toute situation comparable."
+      - id: parliamentary
+        title: "Documents parlementaires : origine et contexte"
+        body: "Les travaux parlementaires comprennent notamment projets, propositions, exposés des motifs et rapports. Ils aident à comprendre l’intention et l’élaboration de la législation."
+        guidance:
+          - "Une proposition ou un projet n’est pas automatiquement une loi adoptée. Vérifiez l’état du dossier et le texte finalement adopté et publié."
+          - "Les préparatoires et rapports éclairent l’interprétation. Lisez-les avec la règle en vigueur ; les propos d’un débat ne constituent pas à eux seuls la loi applicable."
+      - id: chatbot_draft
+        title: "Le chatbot : rédiger d’abord votre question"
+        body: "Décrivez votre question juridique en langage courant, avec les faits, le lieu et la date pertinents. Un exemple remplit seulement un brouillon modifiable ; adaptez-le avant l’envoi."
+        guidance:
+          - "NL/FR/DE répondent par défaut dans la langue du site ; EN/INT suit la langue de votre question. Vous pouvez demander explicitement une réponse en néerlandais, français, allemand ou anglais."
+          - "Envoyer, ou Entrée sans Maj, transmet votre question et les paramètres choisis au chatbot complet et lance la réponse. Maj+Entrée ajoute une ligne."
+          - "L’icône de chat ouvre la petite fenêtre ; Version complète ouvre la page du chatbot. Ouvrir ou choisir un exemple n’envoie aucune question. Fermez l’assistant pour poursuivre vous-même."
+      - id: chatbot_depth
+        title: "Profondeur de recherche et raisonnement"
+        body: "La barre Profondeur de recherche choisit une combinaison de modèle IA et de raisonnement pris en charge. Votre combinaison détermine le budget de recherche ; les catégories ne sont pas un classement prouvé de la qualité des modèles."
+        guidance:
+          - "Chaque trait sélectionnable est une combinaison disponible de modèle et de raisonnement. Les choix sont espacés régulièrement dans la partie disponible, groupés par profondeur puis coût total. Même les choix au même prix ont leur propre position."
+          - "Rapide, Équilibrée et Approfondie sont accessibles avec un compte ordinaire et suffisamment de crédits ; Étendue nécessite Pro. Une partie hachurée indisponible n’ajoute aucun modèle sélectionnable."
+          - "Plus de recherche, de raisonnement ou de puissance peut demander plus de temps et de crédits. Cela ne garantit pas une réponse correcte, meilleure ou complète ; les catégories de sources choisies restent déterminantes."
+      - id: chatbot_model
+        title: "Le modèle précis et le coût total"
+        body: "Paramètres contient la liste complète des modèles. Elle est liée à la barre Profondeur de recherche : un choix dans la liste déplace la barre et un choix sur la barre met la liste à jour."
+        guidance:
+          - "Choisissez la combinaison précise de modèle et de raisonnement. Tous les modèles ne prennent pas en charge les mêmes modes ; les options Bientôt disponibles ne sont pas encore sélectionnables."
+          - "Vérifiez le coût total en crédits affiché pour votre choix et Envoyer. Il faut un compte et suffisamment de crédits. Ouvrir les paramètres ou l’assistant ne coûte aucun crédit."
+      - id: chatbot_sources
+        title: "Catégorie et sources de votre réponse"
+        body: "Le profil juridique ou la Catégorie oriente la réponse vers un domaine de droit. Les cases des sources déterminent les bases consultables par le chatbot ; elles sont indépendantes du modèle et du raisonnement."
+        guidance:
+          - "Législation recherche les règles ; Jurisprudence les décisions ; Parlementaire les préparatoires. Les deux dernières sources du chatbot nécessitent Pro. Choisir une catégorie n’active pas automatiquement une source."
+          - "Précisez par exemple la Flandre, Bruxelles ou la Wallonie et la date pertinente. Un choix de sources plus large ne rend pas automatiquement une règle régionale, une décision ou une proposition applicable à votre affaire."
+      - id: chatbot_answers
+        title: "Vérifier les réponses et références"
+        body: "Le chatbot compose une réponse à partir des sources trouvées. Ouvrez les documents cités et vérifiez qu’ils étayent l’affirmation et correspondent à vos faits, lieu et date."
+        guidance:
+          - "Posez une question complémentaire ou précisez les faits manquants. C’est une nouvelle question : vérifiez paramètres et coût avant l’envoi."
+          - "Une référence ou une réponse détaillée ne prouve pas l’exhaustivité. Même un modèle plus coûteux peut se tromper ; les réponses IA ne sont pas un avis juridique officiel. Consultez un professionnel si votre situation le nécessite."
+      - id: chatbot_privacy
+        title: "Historique et confidentialité"
+        body: "Sauvegarder l’historique est un choix distinct et facultatif. Le texte des questions n’est pas conservé par défaut, mais des métadonnées liées au compte, comme langue, durée et coût, sont enregistrées. Lisez la politique de confidentialité avant utilisation."
+        guidance:
+          - "Avec un mot de passe de stockage, l’historique sauvegardé est chiffré dans votre navigateur ; sans mot de passe, il est chiffré sur le serveur mais reste lisible par nous."
+          - "Votre question actuelle et le contexte pertinent sont temporairement traités en clair pour répondre. Ne partagez que les données personnelles nécessaires ; le chiffrement du stockage ne rend pas ce traitement illisible."
+      - id: bookmarks
+        title: "Favoris et dossiers"
         body: "Avec un compte, vous pouvez ajouter aux favoris les lois et autres résultats pris en charge, les classer dans des dossiers et les rouvrir via Favoris."
-      - title: "Profil, facturation et factures"
+      - id: account
+        title: "Profil, facturation et factures"
         body: "Dans Compte, gérez votre profil et vos données de facturation. Vous y trouvez aussi les paiements et factures disponibles pour votre compte."
-      - title: "Crédits et Pro"
+      - id: pricing
+        title: "Crédits et Pro"
         body: "Les pages Crédits et Abonnement présentent les crédits et options Pro disponibles. Un paiement ou une fonction Pro ne commence qu’après votre choix explicite du bouton approprié; disponibilité et prix dépendent du compte."
-      - title: "Sécurité et données"
+      - id: security
+        title: "Sécurité et données"
         body: "Dans Compte, gérez l’authentification à deux facteurs et le journal d’activité lorsqu’ils sont disponibles. Vous pouvez exporter vos données ou demander la suppression du compte; lisez attentivement confidentialité et confirmations."
-      - title: "Préférences et accès"
-        body: "Choisissez langue et thème, utilisez le site sur mobile ou comme PWA, et utilisez la présentation Classic si nécessaire. Les options disponibles dépendent de l’appareil, du navigateur et du compte."
-      - title: "Aide et confiance"
+      - id: appearance
+        title: "Préférences et accès"
+        body: "Choisissez un thème dans la palette de l’en-tête ; sur mobile, elle se trouve dans le menu. La couleur et le mode clair/sombre sont deux choix distincts. Fermez l’assistant pour choisir vous-même une couleur ou le bouton lune/soleil : cette visite ne change pas votre thème."
+        guidance:
+          - "La rangée supérieure contient les thèmes professionnels : accents discrets, cartes, boutons et icônes plus sobres. La rangée inférieure contient Original et les thèmes plus colorés."
+          - "Le bouton lune/soleil alterne entre clair et sombre sans changer la couleur d’accent. Sans choix personnel, l’affichage suit la préférence système de votre appareil."
+          - "Avec une connexion, couleur et mode clair/sombre sont enregistrés dans votre profil pour les prochaines visites. Sans compte, les choix sont temporaires et ne sont pas stockés durablement dans votre navigateur."
+          - "Sur mobile, le dock de navigation en bas peut être replié puis rouvert. Classic reste la présentation simple ; l’installation comme PWA dépend du navigateur et de l’appareil."
+      - id: help
+        title: "Aide et confiance"
         body: "Le pied de page contient contact, assistance, confidentialité, conditions, accessibilité et autres informations publiques. Consultez les sources originales et demandez un avis professionnel si nécessaire."
 de:
   site_tour:
     entry: "Zum ersten Mal auf dieser Website? Probieren Sie unseren Assistenten!"
     entry_button: "Assistent starten"
+    launcher: "Assistent"
     title: "%{site_name} kennenlernen"
     close: "Assistent schließen"
     open: "Assistent öffnen"
@@ -82,34 +217,101 @@ de:
     finish: "Fertig"
     contents: "Inhalt"
     step_counter: "Schritt %{current} von %{total}"
+    target_unavailable: "Dieses Element ist auf dieser Seite nicht verfügbar; die Erklärung bleibt unten verfügbar."
     fallback_intro: "Lesen Sie diesen Leitfaden in Ihrem Tempo. Öffnen Sie einen Abschnitt für die Erklärung."
     steps:
-      - title: "Ihren Weg wählen"
-        body: "Durchsuchen Sie die Quellen direkt oder stellen Sie dem juristischen Chatbot Ihre Frage in Alltagssprache. Der Assistent führt nichts aus und ändert keine Einstellungen."
-      - title: "Alle Quellen durchsuchen"
-        body: "Nutzen Sie Suchen für direkte/vereinte Ergebnisse aus Gesetzgebung, Rechtsprechung und Parlamentsdokumenten. Wählen Sie Quellen, öffnen Sie Filter und nutzen Sie Sortierung und Seitennavigation."
-      - title: "Gesetze lesen und nutzen"
-        body: "Öffnen Sie ein Gesetz für Inhaltsverzeichnis, Seitenleiste, Artikel und Verweise. Sie können Artikel kopieren, Gesetze exportieren, Fassungen vergleichen und verwandte Dokumente oder Quellen ansehen, wenn sie existieren."
-      - title: "Rechtsprechung und Parlament"
-        body: "Die Seiten Rechtsprechung und Parlamentarische Arbeiten helfen bei Urteilen, Dossiers und Dokumenten. Nutzen Sie dort Suche und Filter."
-      - title: "Der juristische Chatbot"
-        body: "Der Chatbot kann mit Quellenangaben antworten. Wählen Sie nur eine verfügbare Intelligenzstufe und bewerten Sie Antworten. Verlauf ist optional: ohne Wahl wird kein roher Gesprächsinhalt gespeichert. Verschlüsselter Verlauf erfordert ein Speicherpasswort. KI-Antworten sind keine offizielle Rechtsberatung und können Fehler enthalten."
-      - title: "Lesezeichen und Ordner"
+      - id: route
+        title: "Ihren Weg wählen"
+        body: "Durchsuchen Sie die Quellen direkt oder stellen Sie dem juristischen Chatbot Ihre Frage in Alltagssprache. Der Assistent öffnet besprochene Optionen vorübergehend, sendet aber nichts, wählt kein Modell und ändert keine Einstellungen. Sie können den Assistenten jederzeit über die Schaltfläche „Assistent“ im Footer ganz unten wieder öffnen."
+      - id: search
+        title: "Alle Quellen durchsuchen"
+        body: "Hier sind die Suchfilter. Wählen Sie zuerst die Quellen und grenzen Sie dann etwa Sprache, Dokumenttyp und Datum ein. Eine Titelsuche ist gezielt; die Volltextsuche findet auch Erwähnungen in Artikeln. Nutzen Sie anschließend Sortierung und Seitennavigation. Der Assistent ändert diese Auswahl nicht."
+      - id: legislation
+        title: "Gesetzgebung: Welche Regel gilt?"
+        body: "Die Gesetzgebung enthält die Rechtsregeln. Prüfen Sie bei jedem Text die zuständige Behörde, den Anwendungsbereich und das für Ihren Fall relevante Datum. Öffnen Sie ein Gesetz für Artikel, Verweise und verfügbare Fassungen."
+        guidance:
+          - "Föderale Gesetze und Erlasse sowie Dekrete, Ordonnanzen und Erlasse der Regionen und Gemeinschaften regeln unterschiedliche Zuständigkeiten. Eine regionale Regel gilt nicht automatisch in ganz Belgien."
+          - "Das EU-Recht hat eigene Rechtsakte: Verordnungen gelten unmittelbar; Richtlinien erfordern grundsätzlich eine Umsetzung. Prüfen Sie auch relevante belgische Maßnahmen und Anwendungsvoraussetzungen."
+          - "Veröffentlichung und Inkrafttreten sind unterschiedliche Daten. Prüfen Sie Änderungen, Aufhebung und Übergangsregeln; bei älteren Sachverhalten kann eine frühere Fassung gelten."
+          - "Kopieren oder exportieren Sie, soweit verfügbar, und vergleichen Sie Fassungen oder verwandte Dokumente. Prüfen Sie die amtliche Originalquelle; ein fehlender Text bedeutet nicht, dass das Gesetz aufgehoben ist."
+      - id: case_law
+        title: "Rechtsprechung: Auslegung im konkreten Fall"
+        body: "Die Rechtsprechung zeigt, wie ein Gericht Regeln in einem konkreten Fall anwendet und auslegt. Erkunden Sie Entscheidungen über Rechtsprechung und Suchfilter."
+        guidance:
+          - "Lesen Sie Sachverhalt, Rechtsfrage, Begründung und Entscheidung zusammen. Prüfen Sie Gericht, Datum, mögliche Rechtsmittel und spätere Rechtsprechung."
+          - "Die Bedeutung einer Entscheidung hängt vom Gericht, Verfahren und Kontext ab. Ein gefundenes Urteil ist nicht automatisch eine allgemeine Regel für jeden vergleichbaren Fall."
+      - id: parliamentary
+        title: "Parlamentarische Dokumente: Entstehung und Kontext"
+        body: "Parlamentarische Arbeiten umfassen etwa Gesetzentwürfe, Vorschläge, Begründungen und Berichte. Sie helfen, Absicht und Entstehung der Gesetzgebung zu verstehen."
+        guidance:
+          - "Ein Vorschlag oder Entwurf ist nicht automatisch verabschiedetes Recht. Prüfen Sie den Verfahrensstand und den schließlich verabschiedeten und veröffentlichten Text."
+          - "Vorarbeiten und Berichte bieten Auslegungskontext. Lesen Sie sie neben der geltenden Regel; Aussagen in einer Debatte sind für sich allein nicht das anwendbare Gesetz."
+      - id: chatbot_draft
+        title: "Der Chatbot: zuerst die Frage entwerfen"
+        body: "Beschreiben Sie Ihre Rechtsfrage in Alltagssprache mit relevanten Fakten, Ort und Datum. Eine Beispielfrage füllt nur einen bearbeitbaren Entwurf aus; passen Sie ihn vor dem Senden an."
+        guidance:
+          - "NL/FR/DE antworten standardmäßig in der Sprache der Website; EN/INT folgt der Sprache Ihrer Frage. Sie können ausdrücklich eine Antwort auf Niederländisch, Französisch, Deutsch oder Englisch anfordern."
+          - "Senden oder Enter ohne Umschalt überträgt Ihre Frage und gewählten Einstellungen an den vollständigen Chatbot und startet die Antwort. Umschalt+Enter fügt eine neue Zeile ein."
+          - "Das Chatsymbol öffnet das kleine Fenster; Vollversion öffnet die eigene Chatbot-Seite. Öffnen oder ein Beispiel wählen sendet keine Frage. Schließen Sie den Assistenten, um selbst fortzufahren."
+      - id: chatbot_depth
+        title: "Rechercheumfang und Denkaufwand"
+        body: "Die Leiste Rechercheumfang wählt eine Kombination aus KI-Modell und unterstütztem Denkaufwand. Ihre Kombination bestimmt das Recherchebudget; die Kategorien sind keine belegte Qualitätsrangfolge der Modelle."
+        guidance:
+          - "Jeder auswählbare Strich ist eine verfügbare Kombination aus Modell und Denkmodus. Die Schritte haben im verfügbaren Bereich gleiche Abstände, gruppiert nach Rechercheumfang und dann Gesamtkosten. Auch gleich teure Auswahlen haben eigene Schritte."
+          - "Schnell, Ausgewogen und Gründlich sind mit normalem Konto und ausreichend Credits zugänglich; Umfassend erfordert Pro. Ein schraffierter, nicht verfügbarer Bereich fügt kein auswählbares Modell hinzu."
+          - "Mehr Recherche, Denkaufwand oder Modellleistung kann mehr Zeit und Credits kosten. Das garantiert keine richtige, bessere oder vollständige Antwort; die gewählten Quellenkategorien bleiben maßgeblich."
+      - id: chatbot_model
+        title: "Das genaue Modell und die Gesamtkosten"
+        body: "Unter Einstellungen steht die vollständige Modellauswahlliste. Sie ist mit der Leiste Rechercheumfang gekoppelt: Eine Listenauswahl verschiebt die Leiste, und eine Auswahl auf der Leiste aktualisiert die Liste."
+        guidance:
+          - "Wählen Sie die genaue Kombination aus Modell und Denkmodus. Nicht jedes Modell unterstützt dieselben Modi; Optionen mit Demnächst sind noch nicht auswählbar."
+          - "Prüfen Sie die angezeigten gesamten Creditkosten bei Ihrer Auswahl und Senden. Sie benötigen ein Konto und ausreichend Credits. Das Öffnen von Einstellungen oder Assistent kostet keine Credits."
+      - id: chatbot_sources
+        title: "Kategorie und Quellen für Ihre Antwort"
+        body: "Rechtsprofil oder Kategorie richtet die Antwort auf ein Rechtsgebiet aus. Die Quellenfelder bestimmen die durchsuchbaren Datenbanken; sie sind unabhängig von Modell und Denkmodus."
+        guidance:
+          - "Gesetzgebung sucht Regeln; Rechtsprechung sucht Entscheidungen; Parlamentarisch sucht Vorarbeiten. Die letzten beiden Chatbot-Quellen erfordern Pro. Eine Kategorie aktiviert nicht automatisch eine Quelle."
+          - "Nennen Sie etwa Flandern, Brüssel oder Wallonien und das relevante Datum. Eine breitere Quellenauswahl macht eine regionale Regel, Entscheidung oder einen Vorschlag nicht automatisch auf Ihren Fall anwendbar."
+      - id: chatbot_answers
+        title: "Antworten und Verweise prüfen"
+        body: "Der Chatbot erstellt aus gefundenen Quellen eine Antwort. Öffnen Sie die zitierten Dokumente und prüfen Sie, ob sie die Aussage belegen und zu Ihren Fakten, Ort und Datum passen."
+        guidance:
+          - "Fragen Sie nach oder ergänzen Sie fehlende Fakten. Eine Folgefrage ist eine neue Frage: Prüfen Sie Einstellungen und Kosten vor dem Senden."
+          - "Ein Verweis oder eine ausführliche Antwort beweist keine Vollständigkeit. Auch ein teureres Modell kann Fehler machen; KI-Antworten sind keine offizielle Rechtsberatung. Holen Sie bei Bedarf professionellen Rat ein."
+      - id: chatbot_privacy
+        title: "Gesprächsverlauf und Datenschutz"
+        body: "Den Verlauf zu speichern ist eine getrennte, freiwillige Entscheidung. Fragetext wird standardmäßig nicht gespeichert, kontobezogene Metadaten wie Sprache, Antwortzeit und Kosten jedoch schon. Lesen Sie vor der Nutzung die Datenschutzerklärung."
+        guidance:
+          - "Mit einem Speicherpasswort wird der gespeicherte Verlauf im Browser verschlüsselt; ohne Passwort wird er auf dem Server verschlüsselt, bleibt aber für uns lesbar."
+          - "Ihre aktuelle Frage und der relevante Kontext werden zur Antwort vorübergehend lesbar verarbeitet. Teilen Sie nur benötigte personenbezogene Daten; Speicherverschlüsselung macht diese Verarbeitung nicht unlesbar."
+      - id: bookmarks
+        title: "Lesezeichen und Ordner"
         body: "Mit einem Konto können Sie Gesetze und andere unterstützte Ergebnisse als Lesezeichen speichern, in Ordnern ordnen und über Lesezeichen wieder öffnen."
-      - title: "Profil, Abrechnung und Rechnungen"
+      - id: account
+        title: "Profil, Abrechnung und Rechnungen"
         body: "Unter Konto verwalten Sie Profil und Abrechnungsdaten. Dort finden Sie auch die für Ihr Konto verfügbaren Zahlungen und Rechnungen."
-      - title: "Credits und Pro"
+      - id: pricing
+        title: "Credits und Pro"
         body: "Credits und Abonnement zeigen verfügbare Credits und Pro-Optionen. Eine Zahlung oder Pro-Funktion startet erst nach Ihrer ausdrücklichen Wahl der passenden Schaltfläche; Verfügbarkeit und Preis hängen vom Konto ab."
-      - title: "Sicherheit und Daten"
+      - id: security
+        title: "Sicherheit und Daten"
         body: "Unter Konto verwalten Sie Zwei-Faktor-Authentifizierung und Aktivitätenübersicht, soweit verfügbar. Sie können Daten exportieren oder Kontolöschung anfordern; lesen Sie Datenschutz und Bestätigungen sorgfältig."
-      - title: "Einstellungen und Zugang"
-        body: "Wählen Sie Sprache und Thema, nutzen Sie die Website mobil oder als PWA und verwenden Sie bei Bedarf die Classic-Darstellung. Verfügbare Optionen hängen von Gerät, Browser und Konto ab."
-      - title: "Hilfe und Vertrauen"
+      - id: appearance
+        title: "Einstellungen und Zugang"
+        body: "Wählen Sie ein Thema in der Farbpalette im Seitenkopf; auf Mobilgeräten finden Sie diese im Menü. Farbe und Hell/Dunkel sind getrennte Entscheidungen. Schließen Sie den Assistenten, um selbst eine Farbe oder die Mond-/Sonnentaste zu wählen: Diese Tour ändert Ihr Thema nicht."
+        guidance:
+          - "Die obere Reihe enthält professionelle Themen: ruhige Akzente und schlichtere Karten, Schaltflächen und Symbole. Die untere Reihe enthält Original und die farbenfroheren Themen."
+          - "Die Mond-/Sonnentaste wechselt zwischen Hell und Dunkel, ohne die Akzentfarbe zu ändern. Ohne eigene Auswahl folgt die Darstellung der Systemeinstellung Ihres Geräts."
+          - "Angemeldet werden Farbe und Hell/Dunkel im Profil für spätere Besuche gespeichert. Ohne Konto sind Entscheidungen vorübergehend und werden nicht dauerhaft im Browser gespeichert."
+          - "Auf Mobilgeräten können Sie das Navigationsdock unten einklappen und wieder öffnen. Classic bleibt die einfache Darstellung; die PWA-Installation hängt von Browser und Gerät ab."
+      - id: help
+        title: "Hilfe und Vertrauen"
         body: "Im Footer finden Sie Kontakt, Support, Datenschutz, Bedingungen, Barrierefreiheit und weitere öffentliche Informationen. Prüfen Sie Originalquellen und holen Sie bei Bedarf professionellen Rat ein."
 en:
   site_tour:
     entry: "First time visiting this website? Try our wizard!"
     entry_button: "Start the wizard"
+    launcher: "Wizard"
     title: "Getting to know %{site_name}"
     close: "Close wizard"
     open: "Open wizard"
@@ -118,27 +320,93 @@ en:
     finish: "Done"
     contents: "Contents"
     step_counter: "Step %{current} of %{total}"
+    target_unavailable: "This item is not available on this page; the explanation remains available below."
     fallback_intro: "Read this guide at your own pace. Open a section for its explanation."
     steps:
-      - title: "Choose your route"
-        body: "Search the sources directly, or ask the legal chatbot your question in plain language. The wizard takes no action and changes no settings."
-      - title: "Search every source"
-        body: "Use Search for direct/unified results across legislation, case law and parliamentary documents. Choose Sources, open Filters, and use result sorting and pagination."
-      - title: "Read and use legislation"
-        body: "Open a law for its table of contents, sidebar, articles and references. Copy an article, export a law, compare versions, and view Related documents or sources when they exist for that document."
-      - title: "Case law and parliament"
-        body: "Dedicated Case law and Parliamentary work pages let you explore rulings, dossiers and documents. Use those pages’ search and filter controls."
-      - title: "The legal chatbot"
-        body: "The chatbot can answer with source citations. Select only an intelligence level available to your account and rate answers. History is opt-in: without that choice, no raw conversation content is stored. Encrypted history requires a storage password. AI answers are not official legal advice and can be wrong."
-      - title: "Bookmarks and folders"
+      - id: route
+        title: "Choose your route"
+        body: "Search the sources directly, or ask the legal chatbot your question in plain language. The wizard temporarily opens the options it explains, but sends nothing, selects no model and changes no preferences. You can always reopen the wizard using the “Wizard” button in the footer at the bottom of the page."
+      - id: search
+        title: "Search every source"
+        body: "Here are the search filters. Choose your sources first, then narrow language, document type or dates. A title search is focused; full-text search also finds mentions inside articles. Use result sorting and pagination afterwards. The wizard does not change these choices."
+      - id: legislation
+        title: "Legislation: which rule applies?"
+        body: "Legislation contains legal rules. For each text, check the competent authority, scope and date relevant to your situation. Open a law for its articles, references and available versions."
+        guidance:
+          - "Federal laws and orders, and regional and community decrees, ordinances and orders, cover different powers. A regional rule does not automatically apply throughout Belgium."
+          - "EU law has its own instruments: regulations apply directly; directives generally require transposition. Also check relevant Belgian implementing measures and conditions of application."
+          - "Publication and entry into force are different dates. Check amendments, repeal and transitional rules; earlier events may be governed by an earlier version."
+          - "Copy or export where available and compare versions or Related documents. Check the original official source; a missing text does not mean the law is repealed."
+      - id: case_law
+        title: "Case law: interpretation in a specific case"
+        body: "Case law shows how a court applies and interprets rules in a specific case. Explore rulings through Case law and the search filters."
+        guidance:
+          - "Read the facts, legal question, reasoning and decision together. Check the court, date, any appeal and later case law."
+          - "A ruling’s significance depends on the court, procedure and context. A ruling you find is not automatically a general rule for every similar situation."
+      - id: parliamentary
+        title: "Parliamentary documents: origins and context"
+        body: "Parliamentary work includes bills, proposals, explanatory memoranda and reports. These help explain the purpose and development of legislation."
+        guidance:
+          - "A proposal or bill is not automatically enacted law. Check the dossier’s status and the text eventually adopted and published."
+          - "Preparatory work and reports provide interpretive context. Read them alongside the current rule; statements in a debate are not themselves the applicable law."
+      - id: chatbot_draft
+        title: "The chatbot: draft your question first"
+        body: "Describe your legal question in plain language, with relevant facts, place and date. A sample question only fills an editable draft; adapt it before sending."
+        guidance:
+          - "NL/FR/DE answer in the site's language by default; EN/INT follows your question's language. You can explicitly request an answer in Dutch, French, German or English."
+          - "Send, or Enter without Shift, transfers your question and selected settings to the full chatbot and starts the answer. Shift+Enter adds a new line."
+          - "The chat icon opens the small chat window; Full version opens the separate chatbot page. Opening or choosing a sample sends no question. Close the wizard to continue yourself."
+      - id: chatbot_depth
+        title: "Research depth and reasoning"
+        body: "The Research depth bar chooses an AI model and supported reasoning combination. Your combination determines the research budget; categories are not a proven ranking of model quality."
+        guidance:
+          - "Each selectable tick is one available model and reasoning combination. Steps are equally spaced in the available part, grouped by research depth and then total cost. Choices with the same price still have their own step."
+          - "Quick, Balanced and Thorough are accessible with a regular account and sufficient credits; Extensive requires Pro. An unavailable hatched section adds no selectable model."
+          - "More research, reasoning or model power can take more time and credits. It does not guarantee a correct, better or complete answer; your selected source categories still matter."
+      - id: chatbot_model
+        title: "The exact model and total cost"
+        body: "Settings contains the full model dropdown. It is linked to the Research depth bar: choosing in the dropdown moves the bar, and choosing on the bar updates the dropdown."
+        guidance:
+          - "Choose the exact model and reasoning combination. Models do not all support the same modes; Coming soon options cannot yet be selected."
+          - "Check the total credit cost shown with your choice and Send. You need an account and sufficient credits. Opening settings or the wizard costs no credits."
+      - id: chatbot_sources
+        title: "Category and sources for your answer"
+        body: "The legal profile or Category focuses the answer on a legal field. Source checkboxes determine which databases the chatbot may search; they are separate from model and reasoning mode."
+        guidance:
+          - "Legislation searches rules; Case law searches rulings; Parliamentary searches preparatory work. The last two chatbot sources require Pro. Choosing a category does not automatically enable a source."
+          - "Specify, for example, Flanders, Brussels or Wallonia and the relevant date. A broader source selection does not automatically make a regional rule, ruling or proposal applicable to your case."
+      - id: chatbot_answers
+        title: "Check answers and references"
+        body: "The chatbot combines retrieved sources into an answer. Open the cited documents and check whether they support the claim and match your facts, place and date."
+        guidance:
+          - "Ask a follow-up or clarify missing facts. A follow-up is another question: check the selected settings and cost before sending."
+          - "A reference or detailed answer does not prove completeness. Even a more expensive model can be wrong; AI answers are not official legal advice. Seek professional advice when your situation needs it."
+      - id: chatbot_privacy
+        title: "Conversation history and privacy"
+        body: "Saving history is a separate, optional choice. Question text is not stored by default, but account-linked metadata such as language, response time and cost is logged. Read the privacy policy before use."
+        guidance:
+          - "With a storage password, saved history is encrypted in your browser; without a password, it is encrypted on the server but remains readable by us."
+          - "Your current question and relevant context are processed temporarily in readable form to answer. Share only necessary personal data; storage encryption does not make that processing unreadable."
+      - id: bookmarks
+        title: "Bookmarks and folders"
         body: "With an account, bookmark laws and other supported results, organise them in folders, and reopen them from Bookmarks."
-      - title: "Profile, billing and invoices"
+      - id: account
+        title: "Profile, billing and invoices"
         body: "Use Account to manage your profile and billing details. It also shows payments and invoices available for your account."
-      - title: "Credits and Pro"
+      - id: pricing
+        title: "Credits and Pro"
         body: "Credits and Subscription show available credits and Pro options. A payment or Pro feature starts only after you deliberately choose its button; availability and price can differ by account."
-      - title: "Security and data"
+      - id: security
+        title: "Security and data"
         body: "Use Account to manage two-factor authentication and activity history where available. You can export your data or request account deletion; read privacy information and confirmations carefully."
-      - title: "Preferences and access"
-        body: "Choose language and theme, use the website on mobile or as a PWA, and use the Classic presentation when needed. Available options depend on device, browser and account."
-      - title: "Help and trust"
+      - id: appearance
+        title: "Preferences and access"
+        body: "Choose a theme from the colour palette in the header; on mobile, it is in the menu. Colour and light/dark mode are separate choices. Close the wizard to choose a colour or the moon/sun button yourself: this tour does not change your theme."
+        guidance:
+          - "The top row contains professional themes: restrained accents and plainer cards, buttons and icons. The bottom row contains Original and the more colourful themes."
+          - "The moon/sun button switches light and dark without changing your accent colour. Without a personal choice, the display follows your device’s system preference."
+          - "When signed in, colour and light/dark mode are saved in your profile for later visits. Without an account, choices are temporary and are not persistently stored in your browser."
+          - "On mobile, the navigation dock at the bottom can be collapsed and reopened. Classic remains the simple presentation; PWA installation depends on your browser and device."
+      - id: help
+        title: "Help and trust"
         body: "The footer contains contact, support, privacy, terms, accessibility and other public-policy information. Check original sources and seek professional advice when needed."

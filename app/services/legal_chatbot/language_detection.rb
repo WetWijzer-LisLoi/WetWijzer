@@ -6,23 +6,111 @@ module LegalChatbot
   module LanguageDetection
     extend ActiveSupport::Concern
 
+    ANSWER_LANGUAGE_NAMES = {
+      'nl' => %w[dutch nederlands néerlandais neerlandais niederländisch niederlandisch],
+      'fr' => %w[french frans français francais französisch franzosisch],
+      'de' => %w[german duits allemand deutsch],
+      'en' => %w[english engels anglais englisch]
+    }.freeze
+    ANSWER_LANGUAGE_NAME_PATTERN = ANSWER_LANGUAGE_NAMES.values.flatten.sort_by { |name| -name.length }.map { |name| Regexp.escape(name) }.join('|').freeze
+    ANSWER_LANGUAGE_REQUEST = /(?:\A|[.!?;,\n])\s*
+      (?:(?:please|graag|bitte|veuillez|merci\s+de|svp)\s+)*
+      (?:(?:(?:can|could|would|will)\s+you|kun(?:t)?\s+(?:u|je)|kan\s+(?:u|je)|pouvez-vous|peux-tu|können\s+Sie|kannst\s+du)\s+)?
+      (?:(?:please|graag|bitte)\s+)*
+      (?:answer|respond|reply|write|explain|antwoord(?:t|en)?|reageer|schrijf|geef\s+(?:een\s+)?antwoord|leg\s+(?:dit|het)\s+uit|répond(?:ez|s|re)|rédig(?:ez|e|er)|expliquez|écrivez|antwort(?:e|en|et)|schreib(?:e|en)|erklär(?:e|en))\b
+      (?<modifiers>[^.!?;,\n]{0,48}?)\b(?:in|en|auf)\s+(?:het\s+)?(?<language>#{ANSWER_LANGUAGE_NAME_PATTERN})\b
+    /ix
+    ANSWER_LANGUAGE_SHORT_REQUEST = /(?:\A|[.!?;\n])\s*(?:in\s+(?:het\s+)?|en\s+|auf\s+)?
+      (?<language>#{ANSWER_LANGUAGE_NAME_PATTERN})\s*,?\s*(?:please|graag|bitte|svp|s['’]il\s+vous\s+plaît)\b/ix
+    INTERNATIONAL_LANGUAGE_EXCEPTION = "EN/INT INPUT-LANGUAGE EXCEPTION: If the user's own question prose is genuinely written outside Dutch, French, German and English, respond in that prose language, including headings and closing guidance. This exception does not apply to source quotations, pasted evidence, or a request for an unsupported answer language. For supported languages and ambiguous short follow-ups, keep the resolved answer language. Preserve exact source quotations and citation labels in their original language."
+
+    # Only a direct request in the user's prose overrides the configured site.
+    # Pasted evidence and quoted instructions never select an answer language.
+    def self.requested_answer_language(question)
+      prose = detection_prose(question)
+      requests = [ANSWER_LANGUAGE_REQUEST, ANSWER_LANGUAGE_SHORT_REQUEST].flat_map do |pattern|
+        prose.to_enum(:scan, pattern).filter_map do
+          match = Regexp.last_match
+          next if match.names.include?('modifiers') && match[:modifiers].match?(/\b(?:not|niet|pas|nicht|why|whether|waarom|pourquoi|warum)\b/i)
+
+          code = ANSWER_LANGUAGE_NAMES.find { |_language, names| names.include?(match[:language].downcase) }&.first
+          [match.begin(0), code] if code
+        end
+      end
+      requests.max_by(&:first)&.last
+    end
+
+    def self.detection_prose(question)
+      question.to_s.gsub(/```.*?```/m, ' ')
+              .gsub(/~~~.*?~~~/m, ' ')
+              .gsub(/^\s*>.*$/, ' ')
+              .gsub(/`[^`\n]*`/, ' ')
+              .gsub(/"(?:\\.|[^"\\])*"|“[^”]*”|„[^“]*“|«[^»]*»|‘[^’]*’/m, ' ')
+              .gsub(/(?<!\p{L})'(?:\\.|[^'\\])*'(?!\p{L})/m, ' ')
+              .gsub(%r{https?://\S+}, ' ')
+    end
+
+    FOLLOW_UP_RENTAL_PATTERNS = {
+      'huur' => /\b(?:huur\p{L}*|verhuur\p{L}*)\b/,
+      'locataire' => /\blocataires?\b/,
+      'bail' => /\b(?:bail|baux|bailleurs?|loyers?)\b/,
+      'rent' => /\b(?:rent(?:s|ed|ing|al|als)?|tenants?|landlords?|leas(?:e[ds]?|ing)|miet\p{L}*|vermiet\p{L}*)\b/
+    }.freeze
+    FOLLOW_UP_EMPLOYMENT_CONTEXT = /\b(?:employment|employers?|employees?|arbeid\p{L}*|werkgevers?|werknemers?|employeurs?|salarié\p{L}*|travailleurs?|contrats?\s+de\s+travail|arbeits\p{L}*|arbeitgeber\p{L}*|arbeitnehmer\p{L}*)\b/
+    FOLLOW_UP_EMPLOYMENT_CONTRACT = /\b(?:contract\p{L}*|arbeidscontract\p{L}*|arbeidsovereenkomst\p{L}*|contrats?\s+de\s+travail|arbeitsvertr\p{L}*)\b/
+
+    # Share topic selection with the German delivery path. Explicit rental
+    # context must win over ambiguous notice/contract keywords, and "parent"
+    # must not match the English rental keyword. Keep the established topic
+    # lists; rent supplies their existing EN/DE equivalent when needed.
+    def self.follow_up_suggestion_topic(question, suggestions_map, language: nil)
+      text = question.to_s.downcase.gsub(/\s+/, ' ')
+      rental_topic = FOLLOW_UP_RENTAL_PATTERNS.find { |keyword, pattern| suggestions_map.key?(keyword) && text.match?(pattern) }&.first
+      if rental_topic
+        return 'rent' if language && !suggestions_map.fetch(rental_topic).key?(language) && suggestions_map['rent']&.key?(language)
+
+        return rental_topic
+      end
+
+      suggestions_map.each_key do |keyword|
+        next if keyword == '_default'
+
+        matched = case keyword
+                  when 'contract'
+                    text.match?(FOLLOW_UP_EMPLOYMENT_CONTEXT) && text.match?(FOLLOW_UP_EMPLOYMENT_CONTRACT)
+                  when 'rent', 'huur', 'locataire', 'bail'
+                    false # Rental keywords were checked with word boundaries above.
+                  when 'vol'
+                    text.match?(/\bvol\b/)
+                  else
+                    text.include?(keyword)
+                  end
+        return keyword if matched
+      end
+
+      '_default'
+    end
+
     # Detect question language (en, fr, nl, de) based on common words
-    def detect_question_language(question)
+    def detect_question_language(question, fallback: @language, previous_question: nil)
+      # Detect the user's prose, not a pasted contract, source quote or code.
+      # The original question/evidence is never changed by this normalization.
+      question = language_detection_prose(question)
       # English indicators - expanded list
       en_words = %w[what how when where why which who can may must should would could have has been the and for with from is an a are do does
-                    did will about my your their this that these those it if or but not any all some]
+                    did will about my your their this that these those it if or but not any all some i we you]
       # French indicators
       fr_words = %w[quel quelle quand comment pourquoi combien est-ce que puis-je ai-je le la les des une un pour avec dans sur je suis mon
-                    ma mes]
+                    ma mes et ce cette ces vous votre nos qui sont dois peut faut ou]
       # Dutch indicators - expanded with common Dutch words
       nl_words = %w[wat hoe wanneer waar waarom welke wie kan mag moet zou heb heeft zijn mijn het de een van voor met bij ik ben dit dat
-                    deze die bepaalde tijd werk contract dagen jaren maanden hoeveel welk]
+                    deze die bepaalde tijd werk dagen jaren maanden hoeveel welk en wij u onze]
       # German indicators - EXPANDED with German-exclusive words not shared with Dutch
       de_words = %w[wann warum kann darf muss soll würde könnte habe hat mein das der eine für dies dieser ist und auch nicht aber wenn dann
                     oder noch sehr ich bin wir sie ihr uns euch ihm ihr ihnen nach bei aus zu von dem den des seiner ihrer zwischen
-                    viele bezahlte pro jahr woche stunden tage arbeiten wohnung recht anspruch]
+                    viele bezahlte pro jahr woche stunden tage arbeiten wohnung recht anspruch was wie]
 
-      words = question.downcase.gsub(/[?!.,]/, '').split(/\s+/)
+      words = question.downcase.scan(/\p{L}+(?:[-'’]\p{L}+)*/)
 
       en_count = words.count { |w| en_words.include?(w) }
       fr_count = words.count { |w| fr_words.include?(w) }
@@ -30,7 +118,7 @@ module LegalChatbot
       de_count = words.count { |w| de_words.include?(w) }
 
       # English boosters - legal terms and common patterns
-      if question.downcase =~ /\b(employment|contract|dismissal|vacation|salary|employer|employee|rights|entitled|allowed|notice|period|leave|maternity|paternity|pension|insurance|tax|rent|tenant|landlord|divorce|custody|inheritance|company|director|shareholder|consumer|warranty|criminal|fine|prison|privacy|gdpr)\b/
+      if question.downcase =~ /\b(employment|dismissal|vacation|salary|employer|employee|rights|entitled|allowed|notice|period|leave|maternity|paternity|pension|insurance|tax|rent|tenant|landlord|divorce|custody|inheritance|company|director|shareholder|consumer|warranty|criminal|fine|prison|privacy)\b/
         en_count += 2
       end
       if question.downcase =~ /\b(i am|i'm|i have|i need|i want|my rights|at home|how long|how much|how many|am i|can i|may i|do i|does the|is it|is there|are there)\b/
@@ -49,12 +137,12 @@ module LegalChatbot
       end
       nl_count += 1 if question.downcase =~ /\b(ik ben|ik heb|ik wil|mijn rechten|hoeveel dagen|hoe lang|mag ik|kan ik|moet ik|heb ik recht)\b/
 
-      # German boosters - STRENGTHENED
-      # Umlauts are STRONG German indicators (+4 instead of +3)
-      de_count += 4 if question =~ /[äöüÄÖÜß]/
+      # Umlauts also occur in names quoted in non-German questions. Treat
+      # them as supporting evidence, not stronger than the user's prose.
+      de_count += 1 if question =~ /[äöüÄÖÜß]/
 
       # German legal terms
-      if question.downcase =~ /\b(arbeitsvertrag|kündigung|kündigungsfrist|urlaub|urlaubstage|gehalt|arbeitgeber|arbeitnehmer|rechte|anspruch|frist|mutterschutz|elternzeit|rente|versicherung|steuer|miete|mieter|vermieter|scheidung|sorgerecht|erbschaft|gesellschaft|geschäftsführer|verbraucher|garantie|strafe|gefängnis|mindestlohn|gmbh|belgien)\b/
+      if question.downcase =~ /\b(arbeitsvertrag|kündigung|kündigungsfrist|urlaub|urlaubstage|gehalt|arbeitgeber|arbeitnehmer|rechte|anspruch|frist|mutterschutz|elternzeit|rente|versicherung|steuer|miete|mieter|vermieter|scheidung|sorgerecht|erbschaft|gesellschaft|geschäftsführer|verbraucher|strafe|gefängnis|mindestlohn|gmbh|belgien)\b/
         de_count += 3
       end
 
@@ -66,18 +154,34 @@ module LegalChatbot
       # German question starters - strong indicators
       de_count += 2 if question.downcase =~ /^(was |wie |wann |warum |kann |darf |muss |bin ich|habe ich)/
 
-      # Return detected language - Dutch/French are primary (Belgian law app)
-      # German detection LOWERED threshold: now requires 2+ and more than Dutch (not 2x)
-      if fr_count > nl_count && fr_count >= 2
-        :fr
-      elsif en_count > fr_count && en_count > nl_count && en_count >= 2
-        :en
-      elsif de_count >= 2 && de_count > nl_count && de_count > fr_count
-        :de # German if clear evidence (2+ German indicators and more than Dutch/French)
-      else
-        # Default to Dutch for Belgian law context
-        @language == 'fr' ? :fr : :nl
+      # A one-word follow-up such as "Why?" or "Waarom?" is a deliberate
+      # language signal. Shared tokens ("Wie?", "Contract?", "BV?") remain
+      # ambiguous and inherit the preceding user turn instead.
+      single_word = words.one? ? words.first : nil
+      en_count += 2 if %w[what how why when where which who].include?(single_word)
+      nl_count += 2 if %w[wat hoe waarom wanneer waar welke hoeveel].include?(single_word)
+      fr_count += 2 if %w[quoi pourquoi quand combien].include?(single_word)
+      de_count += 2 if %w[was wann warum].include?(single_word)
+
+      # Compare all four scores. The previous French-first branch could win
+      # even when English evidence was much stronger; ambiguous shared words
+      # must not force a switch away from the conversation/interface language.
+      scores = { en: en_count, fr: fr_count, nl: nl_count, de: de_count }
+      ranked = scores.sort_by { |_language, score| -score }
+      return ranked.first.first if ranked.first.last >= 2 && ranked.first.last > ranked[1].last
+
+      if previous_question.present?
+        requested = LanguageDetection.requested_answer_language(previous_question)
+        return requested.to_sym if requested
+
+        return detect_question_language(previous_question, fallback: fallback)
       end
+
+      %w[nl fr de en].include?(fallback.to_s) ? fallback.to_sym : :nl
+    end
+
+    def language_detection_prose(question)
+      LanguageDetection.detection_prose(question)
     end
 
     # Detect if question is a vague follow-up that needs context
@@ -133,22 +237,14 @@ module LegalChatbot
       question_lower = question.downcase
 
       # Detect question language for suggestions
-      lang_key = detect_question_language(question_lower)
+      lang_key = @resolved_answer_language&.to_sym || detect_question_language(question_lower)
 
       # FOLLOW_UP_SUGGESTIONS is defined in CoreLawMappings (peer module)
       suggestions_map = self.class::FOLLOW_UP_SUGGESTIONS
 
-      # Find matching topic based on keywords
-      suggestions_map.each do |keyword, suggestions|
-        next if keyword == '_default'
-        if question_lower.include?(keyword)
-          # Fall back to nl if language not available for this topic
-          return suggestions[lang_key] || suggestions[:nl]
-        end
-      end
-
-      # Return default suggestions if no topic matched
-      suggestions_map['_default'][lang_key] || suggestions_map['_default'][:nl]
+      topic = LanguageDetection.follow_up_suggestion_topic(question_lower, suggestions_map, language: lang_key)
+      suggestions = suggestions_map.fetch(topic)
+      suggestions[lang_key] || suggestions[:nl]
     end
   end
 end

@@ -9,22 +9,24 @@
      data-logged-in="<%= current_user ? 'true' : 'false' %>"
      data-consent="<%= current_user&.conversation_storage_consented? ? 'true' : 'false' %>"></div>
 
-<div class="max-w-7xl mx-auto lg:flex lg:gap-6 animate-entrance-stagger">
+<div class="max-w-7xl mx-auto animate-entrance-stagger">
+  <div class="max-w-4xl"><%= render 'chatbot/header' %></div>
+  <div class="lg:flex lg:gap-6 chatbot-page-panels">
   <%# Main chat column %>
   <div class="flex-1 min-w-0 max-w-4xl">
-    <%= render 'chatbot/header' %>
-
     <div class="relative bg-white dark:bg-[#0f172a] rounded-xl shadow-lg overflow-x-hidden"
          data-controller="chatbot"
          data-chatbot-language-value="<%= @language || I18n.locale %>"
          data-chatbot-source-value="<%= current_user&.pro? ? 'legislation,jurisprudence,parliamentary' : 'legislation' %>"
          data-chatbot-has-credits-value="<%= current_user && current_user.credits.to_i > 0 ? 'true' : 'false' %>"
          data-chatbot-praxis-linked-value="<%= current_user&.praxis_linked_at.present? ? 'true' : 'false' %>"
-         data-chatbot-pro-value="<%= current_user&.advanced_intelligence_access? ? 'true' : 'false' %>"
+         data-chatbot-pro-value="<%= current_user&.pro? ? 'true' : 'false' %>"
          data-chatbot-open-value="true"
+         data-chatbot-intelligence-value="<%= LegalChatbotService.ui_default_selection[:intelligence] %>"
          >
-      <%= render 'chatbot/settings_panel' %>
+      <%= render 'chatbot/conversation_actions' %>
       <%= render 'chatbot/messages_area' %>
+      <%= render 'chatbot/settings_panel' %>
       <%= render 'chatbot/input_area' %>
 
       <%# Consent modal uses fixed positioning - safe inside controller.
@@ -35,6 +37,7 @@
   </div>
 
   <%= render 'chatbot/sidebar' %>
+  </div>
 
   <%= render 'chatbot/translations_script' %>
 

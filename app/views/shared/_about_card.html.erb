@@ -61,16 +61,20 @@
     <div class="about-bio <%= is_hero ? 'max-w-2xl mx-auto' : '' %> mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 text-left text-sm leading-relaxed text-gray-600 dark:text-gray-300 space-y-2">
       <% case I18n.locale %>
       <% when :fr %>
-        <p>J'ai créé <%= site_name %> pour rendre le droit belge accessible à tous. Le site contient <strong>+350.000 articles de loi</strong>, <strong>+175.000 arrêts</strong> et <strong>+100.000 documents parlementaires</strong> - consultables gratuitement et complétés par un chatbot IA qui répond dans <strong>toutes les langues</strong>.</p>
+        <p>J'ai créé <%= site_name %> pour rendre le droit belge accessible à tous. Le site contient <strong>+350.000 articles de loi</strong>, <strong>+175.000 arrêts</strong> et <strong>+100.000 documents parlementaires</strong> - consultables gratuitement et complétés par un chatbot IA.</p>
+        <p>Sur NL/FR/DE, le chatbot répond par défaut dans la langue du site ; sur EN/INT, il suit la langue de votre question. Vous pouvez demander explicitement une réponse en néerlandais, français, allemand ou anglais.</p>
         <p><strong>Pour qui?</strong> Citoyens, étudiants en droit, journalistes, entrepreneurs et professionnels juridiques.</p>
       <% when :de %>
-        <p>Ich habe <%= site_name %> entwickelt, um belgisches Recht für alle zugänglich zu machen. Die Website enthält <strong>+350.000 Gesetzesartikel</strong>, <strong>+175.000 Urteile</strong> und <strong>+100.000 parlamentarische Dokumente</strong> - kostenlos durchsuchbar und ergänzt durch einen KI-Chatbot, der in <strong>allen Sprachen</strong> antwortet.</p>
+        <p>Ich habe <%= site_name %> entwickelt, um belgisches Recht für alle zugänglich zu machen. Die Website enthält <strong>+350.000 Gesetzesartikel</strong>, <strong>+175.000 Urteile</strong> und <strong>+100.000 parlamentarische Dokumente</strong> - kostenlos durchsuchbar und ergänzt durch einen KI-Chatbot.</p>
+        <p>Auf NL/FR/DE antwortet der Chatbot standardmäßig in der Sprache der Website; auf EN/INT folgt er der Sprache Ihrer Frage. Sie können ausdrücklich eine Antwort auf Niederländisch, Französisch, Deutsch oder Englisch anfordern.</p>
         <p><strong>Für wen?</strong> Bürger, Jurastudenten, Journalisten, Unternehmer und juristische Fachkräfte.</p>
       <% when :en %>
-        <p>I created <%= site_name %> to make Belgian law accessible to everyone. The site contains <strong>+350,000 legal articles</strong>, <strong>+175,000 court decisions</strong> and <strong>+100,000 parliamentary documents</strong> - searchable for free and complemented by an AI chatbot that responds in <strong>any language</strong>.</p>
+        <p>I created <%= site_name %> to make Belgian law accessible to everyone. The site contains <strong>+350,000 legal articles</strong>, <strong>+175,000 court decisions</strong> and <strong>+100,000 parliamentary documents</strong> - searchable for free and complemented by an AI chatbot.</p>
+        <p>On NL/FR/DE, the chatbot answers in the site's language by default; on EN/INT, it follows your question's language. You can explicitly request an answer in Dutch, French, German or English.</p>
         <p><strong>Who is it for?</strong> Citizens, law students, journalists, entrepreneurs and legal professionals.</p>
       <% else %>
-        <p>Ik heb <%= site_name %> gebouwd om het Belgisch recht toegankelijk te maken voor iedereen. De website bevat <strong>+350.000 wetsartikelen</strong>, <strong>+175.000 rechterlijke uitspraken</strong> en <strong>+100.000 parlementaire documenten</strong> - gratis doorzoekbaar en aangevuld met een AI-chatbot die in <strong>elke taal</strong> antwoordt.</p>
+        <p>Ik heb <%= site_name %> gebouwd om het Belgisch recht toegankelijk te maken voor iedereen. De website bevat <strong>+350.000 wetsartikelen</strong>, <strong>+175.000 rechterlijke uitspraken</strong> en <strong>+100.000 parlementaire documenten</strong> - gratis doorzoekbaar en aangevuld met een AI-chatbot.</p>
+        <p>Op NL/FR/DE antwoordt de chatbot standaard in de taal van de website; op EN/INT volgt het antwoord de taal van uw vraag. U kunt expliciet om een antwoord in het Nederlands, Frans, Duits of Engels vragen.</p>
         <p><strong>Voor wie?</strong> Burgers, rechtenstudenten, journalisten, ondernemers en juridische professionals.</p>
       <% end %>
       <div class="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1 text-xs">

@@ -1,0 +1,33 @@
+<% context_controls = local_assigns[:context_controls] %>
+<details id="mobile-bottom-bar" class="ww-mobile-dock no-print" open data-controller="mobile-dock">
+  <summary data-mobile-dock-target="toggle" aria-controls="mobile-dock-links">
+    <span data-mobile-dock-hide><span aria-hidden="true">⌄</span><%= t('mobile_dock.hide') %></span>
+    <span data-mobile-dock-show><span aria-hidden="true">⌃</span><%= t('mobile_dock.show') %></span>
+  </summary>
+  <nav id="mobile-dock-links" class="ww-mobile-dock-links" aria-label="<%= t('mobile_dock.navigation') %>" data-action="click->mobile-dock#navigate">
+    <%= link_to root_path(locale: I18n.locale), data: { mobile_dock_link: 'home' } do %>
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m3 10 9-7 9 7v10H3V10Zm6 10v-7h6v7"/></svg>
+      <span><%= t('mobile_dock.home') %></span>
+    <% end %>
+    <%= link_to laws_path(locale: I18n.locale), data: { mobile_dock_link: 'search' } do %>
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.5" cy="10.5" r="6.5"/><path stroke-linecap="round" d="m16 16 5 5"/></svg>
+      <span><%= t('mobile_dock.search') %></span>
+    <% end %>
+    <%= link_to chatbot_path(locale: I18n.locale), id: 'mobile-chat-btn', data: { mobile_dock_link: 'chat', action: 'mobile-dock#chat' } do %>
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16v12h-7l-5 4v-4H4V4Z"/></svg>
+      <span><%= t('mobile_dock.chat') %></span>
+    <% end %>
+    <% if context_controls.present? %>
+      <%= context_controls %>
+    <% else %>
+      <%= link_to bookmarks_path(locale: I18n.locale), data: { mobile_dock_link: 'bookmarks' } do %>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 3h12v18l-6-4-6 4V3Z"/></svg>
+        <span><%= t('mobile_dock.bookmarks') %></span>
+      <% end %>
+      <%= link_to (logged_in? ? account_path(locale: I18n.locale) : login_path(locale: I18n.locale)), data: { mobile_dock_link: 'account' } do %>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path stroke-linecap="round" d="M4 21v-3a8 8 0 0 1 16 0v3"/></svg>
+        <span><%= t('mobile_dock.account') %></span>
+      <% end %>
+    <% end %>
+  </nav>
+</details>

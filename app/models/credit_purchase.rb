@@ -8,14 +8,15 @@ class CreditPurchase < AccountRecord
   before_validation { self.currency = currency.to_s.upcase if has_attribute?(:currency) && currency.present? }
 
   PACKAGES = {
-    'starter' => { price_cents: 299, pro_price_cents: 209, credits: 10, label: '10 credits' },  # €0.30/cr → Pro: €0.21/cr (30% off)
-    'medium' => { price_cents: 499, pro_price_cents: 349, credits: 20, label: '20 credits' },   # €0.25/cr → Pro: €0.17/cr (30% off)
-    'large' => { price_cents: 899, pro_price_cents: 629, credits: 50, label: '50 credits' }     # €0.18/cr → Pro: €0.13/cr (30% off)
+    'starter' => { price_cents: 299, pro_price_cents: 209, credits: 20, label: '20 credits' },
+    'medium' => { price_cents: 499, pro_price_cents: 349, credits: 50, label: '50 credits' },
+    'large' => { price_cents: 899, pro_price_cents: 629, credits: 100, label: '100 credits' }
   }.freeze
 
-  # Pro subscribers get 15cr/month with their €2.99 plan (~€0.20/cr before other Pro benefits)
-  # The 'starter' pack at €2.99 is a deliberate upsell anchor:
-  # "10 credits for €2.99 vs 40 free credits/month with Pro"
+  # Included monthly credits and subscription pricing live in Subscription;
+  # starter, purchased and included credits share the user's single balance.
+  # These quantities apply to new purchases. Completion/refunds always use the
+  # purchase's saved credits_granted, including orders made before this update.
 
   STATUSES = %w[pending completed failed refunded].freeze
   PAYMENT_METHODS = %w[mollie crypto stripe].freeze

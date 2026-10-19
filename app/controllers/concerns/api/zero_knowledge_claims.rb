@@ -236,14 +236,23 @@ module Api
 
     # Fresh ownership check immediately before answer delivery. This defines
     # the ordering between a provider completion and a concurrent explicit
-    # clear: if clear already fenced the tuple, this request loses and refunds.
+    # clear: if clear already fenced the tuple, this request loses and its
+    # answer is discarded. It is refunded unless paid AI work was already
+    # dispatched (owner policy 2026-10-18); then the single charge stands.
     def conversation_claim_owned?(claim)
       return true unless claim
 
       current_user.reload
-      return false unless current_user.conversation_storage_consented?
+      claim_owned_by?(current_user, claim)
+    end
 
-      current_generation = zero_knowledge_key_generation(current_user)
+    # The same ownership test for an explicitly loaded user (the paid-dispatch
+    # fence runs in the query thread and must not reload current_user).
+    def claim_owned_by?(user, claim)
+      return true unless claim
+      return false unless user&.conversation_storage_consented?
+
+      current_generation = zero_knowledge_key_generation(user)
       return false if claim[:zero_knowledge] ? current_generation != claim[:key_generation] : current_generation.present?
 
       relation = ChatbotConversation.where(

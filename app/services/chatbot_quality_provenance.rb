@@ -27,6 +27,9 @@ class ChatbotQualityProvenance
   JURISPRUDENCE_GENERATION_PATTERN = /\Ajuris-faiss-sha256-[0-9a-f]{64}\z/
   JURISPRUDENCE_INDEX_FILENAME = 'jurisprudence.faiss'
   JURISPRUDENCE_IDS_FILENAME = 'jurisprudence_ids.npy'
+  JURISPRUDENCE_MANIFEST_FILENAME = 'jurisprudence_manifest.json'
+  JURISPRUDENCE_POINTER_FILENAME = 'juris_current.json'
+  JURISPRUDENCE_CONTENT_DIGEST_DOMAIN = "wetwijzer-juris-indexed-source-v1\x00".b.freeze
   JURISPRUDENCE_IDENTITY_FIELDS = %w[index_sha256 ids_sha256 index_size ids_size
                                      vector_count stamped_at].freeze
   REGIONAL_MANIFEST_SCHEMA_VERSION = 3
@@ -74,38 +77,52 @@ class ChatbotQualityProvenance
       }
     end
 
-    # Jurisprudence corpus generation: stamped into the compact DB by
-    # jurisprudence_bridge.py after each successful index write (deliberately
-    # a table, not a manifest file - faiss_serve exits on unknown manifest
-    # files next to the index). Fail-closed like the others: the stamp must
-    # re-derive from its own identity JSON, both FAISS artifacts must match
-    # the stamped digests, and the serving process must report exactly the
-    # stamped vector count. Double-read so a bridge run mid-observation
-    # rejects the capture instead of mixing generations.
+    # The historical compact-DB stamp remains an independent artifact/count
+    # certificate. Published juris_current.json deployments additionally bind
+    # the immutable manifest, exact loaded service generation and current
+    # indexed compact content. Only deployments without a pointer use the
+    # backwards-compatible count-only health contract. Double observation
+    # rejects bridge/pointer changes rather than mixing generations.
     def jurisprudence_generation(service_health: nil)
       first = jurisprudence_deployment
       health = service_health || fetch_service_health(
         ENV.fetch('QUALITY_JURISPRUDENCE_FAISS_HEALTH_URL',
                   ENV.fetch('FAISS_JURISPRUDENCE_URL', 'http://127.0.0.1:8765'))
       )
-      %w[index_size ids_count].each do |key|
-        unless health[key] == first.fetch(:identity).fetch('vector_count')
-          raise Unavailable,
-                "jurisprudence FAISS service #{key} does not match the stamped generation"
-        end
-      end
+      service = if first[:expected_health]
+                  validated_jurisprudence_health(health, first.fetch(:expected_health))
+                else
+                  # A missing pointer cannot silently downgrade a running
+                  # immutable-generation process to the legacy count check.
+                  if health['manifest_sha256'].present? || health['source_identity'].present?
+                    raise Unavailable, 'jurisprudence service reports an immutable generation without its current pointer'
+                  end
+                  %w[index_size ids_count].each do |key|
+                    unless health[key] == first.fetch(:identity).fetch('vector_count')
+                      raise Unavailable,
+                            "jurisprudence FAISS service #{key} does not match the stamped generation"
+                    end
+                  end
+                  { index_size: health['index_size'], ids_count: health['ids_count'] }
+                end
       confirmed = jurisprudence_deployment
       unless confirmed == first
         raise Unavailable, 'jurisprudence generation changed during provenance observation'
       end
 
-      {
+      result = {
         generation: first.fetch(:generation),
         stamped_at: first.fetch(:identity).fetch('stamped_at'),
         vector_count: first.fetch(:identity).fetch('vector_count'),
         files: first.fetch(:files),
-        service: { index_size: health['index_size'], ids_count: health['ids_count'] }
+        service: service
       }
+      if first[:manifest_sha256]
+        result[:manifest_sha256] = first.fetch(:manifest_sha256)
+        result[:legacy_stamp_generation] = first.fetch(:legacy_stamp_generation)
+        result[:source_identity] = first.fetch(:source_identity)
+      end
+      result
     rescue Unavailable
       raise
     rescue StandardError => e
@@ -137,14 +154,21 @@ class ChatbotQualityProvenance
       unless generation.to_s.match?(JURISPRUDENCE_GENERATION_PATTERN) && generation == expected
         raise Unavailable, 'jurisprudence generation does not match its identity'
       end
+      unless %w[index_size ids_size vector_count].all? { |key| identity[key].is_a?(Integer) && identity[key].positive? } &&
+             %w[index_sha256 ids_sha256].all? { |key| identity[key].to_s.match?(SHA256_PATTERN) } &&
+             identity['ids_size'] >= 128 && ((identity['ids_size'] - 128) % 8).zero?
+        raise Unavailable, 'jurisprudence stamped artifact contract is invalid'
+      end
 
       root = Pathname.new(ENV.fetch('JURISPRUDENCE_EMBEDDINGS_DIR',
                                     DEFAULT_EMBEDDINGS_ROOT)).expand_path
+      pointer_path = root.join(JURISPRUDENCE_POINTER_FILENAME)
+      publication = immutable_jurisprudence_deployment(root) if pointer_path.exist? || pointer_path.symlink?
       files = {
         JURISPRUDENCE_INDEX_FILENAME => %w[index_sha256 index_size],
         JURISPRUDENCE_IDS_FILENAME => %w[ids_sha256 ids_size]
       }.map do |basename, (sha_key, size_key)|
-        path = root.join(basename)
+        path = publication ? publication.fetch(:paths).fetch(basename) : root.join(basename)
         unless path.file? && path.size == identity.fetch(size_key) &&
                verified_artifact_sha256(path, identity.fetch(sha_key),
                                         label: 'jurisprudence FAISS')
@@ -157,7 +181,185 @@ class ChatbotQualityProvenance
         raise Unavailable, 'jurisprudence stamped vector count is inconsistent'
       end
 
-      { generation: generation, identity: identity, files: files }
+      deployment = { generation: generation, identity: identity, files: files }
+      if publication
+        unless publication.fetch(:expected_health).fetch('index_size') == identity.fetch('vector_count')
+          raise Unavailable, 'jurisprudence immutable manifest does not match the legacy artifact stamp'
+        end
+        verified_indexed_jurisprudence_content(
+          Pathname.new(compact_path), ids_path: publication.fetch(:paths).fetch(JURISPRUDENCE_IDS_FILENAME),
+                                      expected_identity: publication.fetch(:source_identity)
+        )
+        deployment.merge!(publication.except(:paths))
+        deployment[:legacy_stamp_generation] = generation
+      end
+      deployment
+    end
+
+    # Mirrors jurisprudence_generation.py, not the three-file regional
+    # contract. The pointer is optional ONLY for a genuine legacy deployment.
+    def immutable_jurisprudence_deployment(root)
+      root = root.realpath
+      pointer_path = root.join(JURISPRUDENCE_POINTER_FILENAME)
+      unless pointer_path.file? && !pointer_path.symlink?
+        raise Unavailable, 'jurisprudence current pointer is not a regular file'
+      end
+      pointer = JSON.parse(File.binread(pointer_path))
+      unless pointer.is_a?(Hash) && pointer['schema_version'] == 1 &&
+             pointer['generation'].to_s.match?(JURISPRUDENCE_GENERATION_PATTERN) &&
+             pointer['manifest_sha256'].to_s.match?(SHA256_PATTERN)
+        raise Unavailable, 'jurisprudence current pointer is invalid'
+      end
+      generations_root = root.join('juris_generations')
+      generation_root = generations_root.join(pointer.fetch('generation'))
+      unless generations_root.directory? && !generations_root.symlink? && generations_root.realpath.dirname == root &&
+             generation_root.directory? && !generation_root.symlink? && generation_root.realpath.dirname == generations_root.realpath
+        raise Unavailable, 'jurisprudence immutable generation escapes its publication root'
+      end
+      manifest_path = generation_root.join(JURISPRUDENCE_MANIFEST_FILENAME)
+      unless manifest_path.file? && !manifest_path.symlink?
+        raise Unavailable, 'jurisprudence immutable manifest is not a regular file'
+      end
+      manifest_bytes = File.binread(manifest_path)
+      manifest_sha256 = Digest::SHA256.hexdigest(manifest_bytes)
+      unless manifest_sha256 == pointer.fetch('manifest_sha256')
+        raise Unavailable, 'jurisprudence pointer manifest digest mismatch'
+      end
+      manifest = JSON.parse(manifest_bytes)
+      unless manifest.is_a?(Hash) && manifest['schema_version'] == 1 && manifest['generation'] == pointer['generation'] &&
+             manifest['generation'] == 'juris-faiss-sha256-' + Digest::SHA256.hexdigest(
+               JSON.generate(canonical_digest_value(manifest.except('generation')))
+             )
+        raise Unavailable, 'jurisprudence immutable manifest generation is invalid'
+      end
+      artifacts = manifest['artifacts']
+      unless artifacts.is_a?(Hash) && artifacts.keys.sort == %w[ids index]
+        raise Unavailable, 'jurisprudence immutable manifest artifacts are invalid'
+      end
+      paths = {}
+      { 'index' => JURISPRUDENCE_INDEX_FILENAME, 'ids' => JURISPRUDENCE_IDS_FILENAME }.each do |role, basename|
+        record = artifacts[role]
+        path = generation_root.join(basename)
+        unless record.is_a?(Hash) && record['filename'] == basename && record['size'].is_a?(Integer) && record['size'].positive? &&
+               record['sha256'].to_s.match?(SHA256_PATTERN) && path.file? && !path.symlink? &&
+               path.size == record['size'] && verified_artifact_sha256(path, record['sha256'], label: 'jurisprudence FAISS')
+          raise Unavailable, "jurisprudence immutable #{role} does not match its manifest"
+        end
+        paths[basename] = path
+      end
+      index = manifest['index']
+      embedding = manifest['embedding']
+      source = manifest['source_identity']
+      unless index.is_a?(Hash) && index['vector_count'].is_a?(Integer) && index['vector_count'].positive? &&
+             index['dimension'].is_a?(Integer) && index['dimension'].positive? && [0, 1].include?(index['metric_type']) &&
+             embedding.is_a?(Hash) && embedding['dimension'] == index['dimension'] && embedding['model'].is_a?(String) &&
+             embedding['model'].present? && source.is_a?(Hash) && source['indexed_content_sha256'].to_s.match?(SHA256_PATTERN) &&
+             source['document_count'].is_a?(Integer) && source['document_count'] == index['vector_count']
+        raise Unavailable, 'jurisprudence immutable manifest runtime/source contract is invalid'
+      end
+      expected_health = {
+        'status' => 'ok', 'ready' => true, 'generation' => manifest['generation'], 'manifest_schema_version' => 1,
+        'manifest_sha256' => manifest_sha256, 'index_sha256' => artifacts.dig('index', 'sha256'),
+        'ids_sha256' => artifacts.dig('ids', 'sha256'), 'index_size' => index['vector_count'],
+        'ids_count' => index['vector_count'], 'dimension' => index['dimension'], 'metric_type' => index['metric_type'],
+        'embedding_model' => embedding['model'], 'source_identity' => source
+      }
+      { generation: manifest.fetch('generation'), manifest_sha256: manifest_sha256,
+        source_identity: source, expected_health: expected_health, paths: paths }
+    rescue Errno::ENOENT, Errno::EACCES => e
+      raise Unavailable, "jurisprudence immutable generation is unavailable: #{e.class}"
+    rescue JSON::ParserError
+      raise Unavailable, 'jurisprudence pointer/manifest is not valid JSON'
+    end
+
+    def validated_jurisprudence_health(health, expected)
+      unless health.is_a?(Hash) && expected.all? { |field, value| health[field] == value }
+        raise Unavailable, 'jurisprudence FAISS health does not match its exact immutable generation'
+      end
+      expected.transform_keys(&:to_sym)
+    end
+
+    # As with main-law provenance, certify the indexed CONTENT, not the DB's
+    # full-file digest (the bridge stamp is bookkeeping in that same file).
+    # Cache successes and failures against DB+WAL and IDs file identities, so
+    # unchanged 4+ GB compact text is scanned once, never on every request.
+    def verified_indexed_jurisprudence_content(path, ids_path:, expected_identity:)
+      path = path.realpath # SQLite sidecars live beside the target of a DB-file symlink.
+      journal = Pathname.new("#{path}-journal")
+      raise Unavailable, 'jurisprudence compact database has a hot -journal sidecar' if journal.exist? && journal.size.positive?
+
+      before = laws_file_identity(path)
+      ids_identity = [ids_path.to_s, *stable_file_identity(ids_path.stat)]
+      identity = [path.to_s, *before, *ids_identity, expected_identity]
+      key = 'quality-jurisprudence-content-v1:' + Digest::SHA256.hexdigest(JSON.generate(canonical_digest_value(identity)))
+      @jurisprudence_content_cache_mutex ||= Mutex.new
+      @jurisprudence_content_cache ||= {}
+      cached = @jurisprudence_content_cache_mutex.synchronize { @jurisprudence_content_cache[key] }
+      cached = rails_cache&.read(key) if cached.nil?
+      unless cached.nil?
+        return true if cached
+
+        raise Unavailable, 'jurisprudence compact indexed content does not match its immutable source identity'
+      end
+
+      content_error = nil
+      begin
+        digest, count = indexed_jurisprudence_content_digest(path, ids_path)
+        verdict = digest == expected_identity.fetch('indexed_content_sha256') && count == expected_identity.fetch('document_count')
+      rescue Unavailable, SQLite3::Exception => e
+        # A missing/withdrawn row must not make every request rescan the
+        # complete preceding corpus only to discover the same absence.
+        content_error = e
+        verdict = false
+      end
+      unless laws_file_identity(path) == before && ids_identity == [ids_path.to_s, *stable_file_identity(ids_path.stat)]
+        raise Unavailable, 'jurisprudence compact source changed during provenance observation'
+      end
+      @jurisprudence_content_cache_mutex.synchronize do
+        @jurisprudence_content_cache.clear if @jurisprudence_content_cache.length >= 8
+        @jurisprudence_content_cache[key] = verdict
+      end
+      rails_cache&.write(key, verdict, expires_in: 14.days)
+      raise content_error if content_error
+      raise Unavailable, 'jurisprudence compact indexed content does not match its immutable source identity' unless verdict
+
+      true
+    rescue SQLite3::Exception => e
+      raise Unavailable, "jurisprudence compact content validation failed: #{e.class}"
+    end
+
+    def indexed_jurisprudence_content_digest(path, ids_path)
+      ids = read_npy_int64_ids(ids_path)
+      unless ids.any? && ids.all?(&:positive?) && ids.uniq.length == ids.length
+        raise Unavailable, 'jurisprudence generation ids must be unique and positive'
+      end
+      digest = Digest::SHA256.new << JURISPRUDENCE_CONTENT_DIGEST_DOMAIN
+      connection = SQLite3::Database.new(path.to_s, readonly: true)
+      insert = nil
+      select = nil
+      seen = 0
+      begin
+        connection.execute('CREATE TEMP TABLE _jurisprudence_expected_ids (id INTEGER PRIMARY KEY)')
+        insert = connection.prepare('INSERT INTO _jurisprudence_expected_ids VALUES (?)')
+        connection.transaction { ids.each { |id| insert.execute(id) } }
+        select = connection.prepare(
+          'SELECT source.id, source.case_number, source.full_text, source.summary, source.court, source.language_id, source.decision_date ' \
+          'FROM _jurisprudence_expected_ids expected LEFT JOIN cases source ON source.id = expected.id ORDER BY expected.id'
+        )
+        select.execute.each do |row|
+          unless row[0].is_a?(Integer) && row[2].is_a?(String) && row[2].length > 50
+            raise Unavailable, 'jurisprudence generation refers to a missing or ineligible compact case'
+          end
+          encoded = JSON.generate(row)
+          digest << [encoded.bytesize].pack('Q>') << encoded.b
+          seen += 1
+        end
+      ensure
+        insert&.close unless insert&.closed?
+        select&.close unless select&.closed?
+        connection.close
+      end
+      [digest.hexdigest, seen]
     end
 
     def embedding_runtime(embedding_service: LegalChatbot::EmbeddingService.new, reference_sheets: nil)

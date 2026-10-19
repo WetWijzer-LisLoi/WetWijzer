@@ -18,6 +18,24 @@ button[data-collapse-target="button"][aria-expanded="true"] svg[data-collapse-ta
   transition: transform 0.2s ease;
 }
 
+/* Search cards share the same stroked glyph and state convention as Bronnen:
+   closed points right, open points down. Native details works without scripts;
+   scope to direct card summaries so nested accordions/dropdowns are untouched. */
+.search-results-disclosure > summary > .search-section-chevron {
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+}
+
+.search-results-disclosure[open] > summary > .search-section-chevron {
+  transform: rotate(0deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-section-chevron {
+    transition: none !important;
+  }
+}
+
 /* Generic collapse content - applies to ALL collapse controllers */
 [data-controller~="collapse"] [data-collapse-target="content"] {
   transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;

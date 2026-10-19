@@ -20,20 +20,42 @@ class LegalChatbotService
 
   MAX_QUESTION_LENGTH = 2000
   DEEP_ANALYSIS_MAX_LENGTH = 5000
+  RETRY_RESERVE_SECONDS = 60.0
+  LEGAL_DISCLAIMERS = {
+    'nl' => 'Dit is geen officieel juridisch advies.',
+    'fr' => "Ceci n'est pas un avis juridique officiel.",
+    'de' => 'Dies ist keine offizielle Rechtsberatung.',
+    'en' => 'This is not official legal advice.'
+  }.freeze
+  OFFICIAL_SOURCE_REMINDERS = {
+    'nl' => 'Controleer altijd de officiële bronnen.',
+    'fr' => 'Vérifiez toujours avec les sources officielles.',
+    'de' => 'Prüfen Sie immer die offiziellen Quellen.',
+    'en' => 'Always verify with official sources.'
+  }.freeze
+
+  # A bare legal-form reply can safely inherit only the immediately preceding
+  # generic formation-deed question. It must remain a single form token so a
+  # typed multi-form comparison can never be silently rewritten.
+  FORMATION_DEED_FORM_FOLLOWUP_REPLY = /\A(?:(?:de|het|la|le|the|een|un|une)\s+)?(?:bv(?:ba)?|cv(?:ba)?|nv|srl|vzw|asbl|ivzw|aisbl|stichting|fondation|(?-i:SC)|(?-i:SA))\.?\z/i
 
   # This legacy path is used only by the offline article backfill below. Live
   # chatbot questions use LegalChatbot::EmbeddingService, which deliberately
   # never writes question text, hashes, or vectors to a shared cache.
   ARTICLE_EMBEDDING_CACHE_TTL = 1.hour
 
-  def initialize(language: 'nl', conversation: nil, model: nil, domain: nil, concise: false, case_context: nil, reasoning_effort: nil, profile: 'general', context_messages_override: nil, law_numac: nil, include_quality_evidence: false, mistral_api_key_env: 'MISTRAL_API_KEY', german_lane: false)
+  def initialize(language: 'nl', conversation: nil, model: nil, domain: nil, concise: false, case_context: nil, reasoning_effort: nil, research_depth: nil, profile: 'general', context_messages_override: nil, law_numac: nil, include_quality_evidence: false, mistral_api_key_env: 'MISTRAL_API_KEY', german_lane: false, request_deadline_at: nil, answer_language_override: nil, site_language_policy: true)
     @language = language
+    @configured_language = language
+    @answer_language_override = answer_language_override.to_s.downcase.presence
+    @answer_language_override = nil unless LEGAL_DISCLAIMERS.key?(@answer_language_override)
+    @site_language_policy = site_language_policy != false
     # The German pointer lane (D6 of docs/ops/german-corpus-plan-2026-09-27.md).
     # Only Api::ChatbotController sets it, from request.host through SiteBrand
     # and never for signed service traffic; every other constructor keeps the
     # default. It is still inert unless GERMAN_LANE_MODE is set (german_lane?).
     @german_lane = german_lane == true
-    @domain = domain # Store domain for default language fallback (wetwijzer→nl, lisloi→fr, gesetzguide→de)
+    @domain = domain # Exact configured product host, never a browser locale.
     @language_id = %w[fr de].include?(language) ? 2 : 1 # Search is bilingual; this only affects context enrichment
     @conversation = conversation
     @context_numacs = conversation&.context_numacs_array || []
@@ -42,14 +64,68 @@ class LegalChatbotService
     @model_override = model # Allow testing different models
     @concise = concise # WhatsApp/API: brief strict answers, no hedging
     @case_context = case_context # firm-specific case context injection (no live producer)
-    @reasoning_effort = reasoning_effort || 'low' # low/medium/high – maps from intelligence tier
+    @research_depth = self.class.normalize_research_depth(research_depth)
+    # Admission resolves access/billing first. An explicit effective effort
+    # must not be upgraded here (notably free users and Mistral follow-ups).
+    @reasoning_effort = reasoning_effort ||
+                        self.class.reasoning_effort_for_research_depth(@research_depth, model: model || self.class::CHAT_MODEL) || 'low'
     @profile = profile # Category profile for domain-specific law boosting
     @context_messages_override = context_messages_override # ZK mode: client provides context
     @include_quality_evidence = include_quality_evidence == true
     @mistral_api_key_env = mistral_api_key_env
+    # Monotonic request deadline supplied by the streaming controller. It is
+    # deliberately optional for service callers and never persisted or sent
+    # to a provider.
+    @request_deadline_at = request_deadline_at&.to_f
   end
 
   private
+
+  # One language decision for the complete answer pipeline, made from the
+  # original typed question before retrieval adds context or legal-form names.
+  # Generation, repair, notices, guarded fallbacks and suggestions must not
+  # each make a different decision. NL/FR/DE sites keep their configured
+  # default; EN/INT follows input. An explicit supported language request wins.
+  # GesetzGuide's default/explicit DE still reasons in FR before translation.
+  def resolve_answer_language!(question)
+    requested = @answer_language_override || LegalChatbot::LanguageDetection.requested_answer_language(question)
+    @resolved_language_override = requested
+    german_pipeline = @german_lane || (@site_language_policy && SiteBrand.resolve_host(@domain) == 'gesetzguide')
+    resolved = if german_pipeline && (requested.nil? || requested == 'de')
+                 'fr'
+               elsif requested
+                 requested
+               elsif configured_answer_language == 'en'
+                 previous = begin
+                   conversation_messages.rfind { |message| message[:role].to_s == 'user' }&.fetch(:content, nil)
+                 rescue StandardError
+                   nil
+                 end
+                 detect_question_language(question, fallback: 'en', previous_question: previous).to_s
+               else
+                 configured_answer_language
+               end
+    international = configured_answer_language == 'en' && requested.nil?
+    if resolved != @language.to_s || @international_input_language != international
+      # Instances are normally per request, but supported reuse must not keep
+      # a previous language in a memoized prompt/search/source collaborator.
+      %i[embedding_svc llm_svc context_builder_svc source_formatter_svc
+         reference_sheets_svc legislation_search_svc jurisprudence_search_svc
+         parliamentary_search_svc fisconet_search_svc regional_search_svc eu_search_svc].each do |name|
+        remove_instance_variable(:"@#{name}") if instance_variable_defined?(:"@#{name}")
+      end
+    end
+    @resolved_answer_language = @language = resolved
+    @international_input_language = international
+    @language_id = %w[fr de].include?(resolved) ? 2 : 1
+    resolved
+  end
+
+  def configured_answer_language
+    brand = SiteBrand.resolve_host(@domain) if @site_language_policy
+    configured = SiteBrand.locale_for(brand) || @configured_language.to_s.downcase
+    LEGAL_DISCLAIMERS.key?(configured) ? configured : 'nl'
+  end
 
   # Build conversation history messages for LLM context (follow-up questions)
   # Returns array of {role:, content:} hashes from previous exchanges
@@ -74,6 +150,32 @@ class LegalChatbotService
     strip_retrieval_notice_from_history(
       msgs.last(6).map { |m| history_message(m) }
     )
+  end
+
+  def expand_formation_deed_followup(question)
+    original = question.to_s
+    reply = original.strip
+    return question unless reply.match?(FORMATION_DEED_FORM_FOLLOWUP_REPLY)
+
+    history = begin
+      conversation_messages
+    rescue StandardError
+      []
+    end
+    previous = Array(history).rfind do |message|
+      message.is_a?(Hash) && message[:role].to_s == 'user'
+    end
+    return question unless previous && previous[:content].is_a?(String)
+
+    previous_question = previous && previous[:content].strip
+    return question if previous_question.blank? || previous_question.length > MAX_QUESTION_LENGTH
+
+    intent = previous_question.gsub(/[[:space:]]+/, ' ')
+    return question unless intent.match?(LegalChatbot::LegislationSearch::FORMATION_DEED_PATTERN)
+    return question unless intent.match?(LegalChatbot::LegislationSearch::FORMATION_DEED_GENERIC_PATTERN)
+    return question unless LegalChatbot::LegislationSearch.formation_deed_entity_context?(intent)
+
+    "#{previous_question}\n#{reply}"
   end
 
   # One history entry as the model is shown it. An assistant turn that
@@ -129,10 +231,11 @@ class LegalChatbotService
   # Main method to answer a question
   def ask(question, source: :all, max_length: MAX_QUESTION_LENGTH)
     start_time = Time.current
+    resolve_answer_language!(question)
 
     # Timeout wrapper to prevent hanging requests
     # Reasoning models need more time for chain-of-thought, and some
-    # non-reasoning models (mistral-large-3) are simply slow completers:
+    # non-reasoning models (mistral-large-4) are simply slow completers:
     # both classes get the long budget. Reasoning-capability alone handed
     # the slowest model the shortest timeout (17/40 deterministic timeouts
     # on the 2026-08-13 capture).
@@ -152,13 +255,17 @@ class LegalChatbotService
               else
                 90 # Bilingual translations + FAISS + LLM can take 60-80s
               end
-    Timeout.timeout(timeout) do
+    return timeout_result(start_time) if request_deadline_expired?
+
+    with_request_deadline(timeout) do
       ask_internal(question, source: source, max_length: max_length)
     end
   rescue Timeout::Error
+    Rails.logger.warn("[ChatbotTimeout] kind=service model=#{@model_override || 'default'} duration_ms=#{((Time.current - start_time) * 1000).round}")
     {
       answer: timeout_answer,
       sources: [],
+      language: @language,
       response_time: (Time.current - start_time).round(2),
       error: 'timeout'
     }
@@ -168,18 +275,23 @@ class LegalChatbotService
   # sources: array of symbols like [:legislation, :jurisprudence, :parliamentary]
   def ask_with_sources(question, sources: [:legislation])
     start_time = Time.current
+    resolve_answer_language!(question)
     # Reasoning-aware timeout (matches ask() method logic, incl. the
     # slow-completion class - see SLOW_COMPLETION_MODELS).
     reasoning_model = REASONING_CAPABLE_MODELS.include?(@model_override) ||
                       LegalChatbot::ModelsConfig::SLOW_COMPLETION_MODELS.include?(@model_override)
     timeout = reasoning_model ? 180 : 120
-    Timeout.timeout(timeout) do
+    return timeout_result(start_time) if request_deadline_expired?
+
+    with_request_deadline(timeout) do
       ask_internal_multi(question, sources: sources)
     end
   rescue Timeout::Error
+    Rails.logger.warn("[ChatbotTimeout] kind=service model=#{@model_override || 'default'} duration_ms=#{((Time.current - start_time) * 1000).round}")
     {
       answer: timeout_answer,
       sources: [],
+      language: @language,
       response_time: (Time.current - start_time).round(2),
       error: 'timeout'
     }
@@ -188,11 +300,59 @@ class LegalChatbotService
   # Localized timeout message (previously NL/FR only - DE/EN users got Dutch)
   def timeout_answer
     case @language
-    when 'fr' then 'Désolé, la requête a pris trop de temps. Essayez une question plus simple.'
-    when 'de' then 'Entschuldigung, die Anfrage hat zu lange gedauert. Versuchen Sie eine einfachere Frage.'
-    when 'en' then 'Sorry, the request took too long. Try a simpler question.'
-    else 'Sorry, de vraag duurde te lang. Probeer een eenvoudigere vraag.'
+    when 'fr' then "Le traitement a pris trop de temps. Veuillez réessayer."
+    when 'de' then 'Die Verarbeitung hat zu lange gedauert. Bitte versuchen Sie es erneut.'
+    when 'en' then 'The processing took too long. Please try again.'
+    else 'De verwerking duurde te lang. Probeer opnieuw.'
     end
+  end
+
+  def remaining_request_seconds(fallback)
+    return fallback unless @request_deadline_at
+
+    remaining = @request_deadline_at - Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    remaining.positive? ? remaining : 0.001
+  end
+
+  def request_deadline_expired?
+    @request_deadline_at && @request_deadline_at <= Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  end
+
+  def with_request_deadline(timeout, &)
+    previous = @request_deadline_at
+    own_deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
+    @request_deadline_at = previous ? [previous, own_deadline].min : own_deadline
+    Timeout.timeout([timeout, remaining_request_seconds(timeout)].min, &)
+  ensure
+    @request_deadline_at = previous
+  end
+
+  def timeout_result(start_time)
+    Rails.logger.warn("[ChatbotTimeout] kind=deadline model=#{@model_override || 'default'} duration_ms=#{((Time.current - start_time) * 1000).round}")
+    {
+      answer: timeout_answer,
+      sources: [],
+      language: @language,
+      response_time: (Time.current - start_time).round(2),
+      error: 'timeout'
+    }
+  end
+
+  def enough_request_time?(minimum_seconds = nil)
+    return true unless @request_deadline_at
+
+    minimum = minimum_seconds || minimum_retry_seconds
+    (@request_deadline_at - Process.clock_gettime(Process::CLOCK_MONOTONIC)) >= minimum
+  end
+
+  def minimum_retry_seconds
+    observed = @llm_svc&.last_provider_duration_seconds.to_f
+    # A retry must have room for a call comparable to the previous one, plus
+    # verification and delivery. With no observation, use a conservative
+    # code-owned reserve; never enlarge the hard request deadline.
+    return RETRY_RESERVE_SECONDS unless observed.positive?
+
+    [20.0, observed + 15.0].max
   end
 
   # Internal method for multi-source search
@@ -236,7 +396,7 @@ class LegalChatbotService
   # Simple tax-topic detection used by orchestrator to decide whether
   # to spawn the Fisconet search thread.
   def is_tax_question?(question_lower)
-    LegalChatbot::FisconetSearch::TAX_KEYWORDS.any? { |kw| question_lower.include?(kw) }
+    LegalChatbot::FisconetSearch.tax_question?(question_lower)
   end
 
   # A source flagged by retrieval as carrying a not-yet-in-force amendment. The text in the
@@ -288,12 +448,33 @@ class LegalChatbotService
 
     articles.each_with_index do |article, index|
       if german_row_source?(article)
-        parts << german_original_block(article, index + 1, max_article_chars)
+        parts << german_original_block(article, index + 1, article_budget(index, max_article_chars), question: question)
         next
       end
 
       lang_label = article[:language_id] == 1 ? 'NL' : 'FR'
-      text = article_context_text(ensure_utf8(article[:article_text]), question, article_budget(index, max_article_chars))
+      source_text = ensure_utf8(article[:article_text])
+      text = if formation_deed_context_article?(article, question)
+               # These formation checklists run past the ordinary low-tier
+               # cut. Preserve the already-retrieved article, including its
+               # qualifications/NOTA, under a strict per-source ceiling.
+               LegalChatbot::ArticleExcerpt.excerpt(source_text, question, max_chars: FORMATION_DEED_MAX_ARTICLE_CHARS)
+             else
+               article_context_text(source_text, question, article_budget(index, max_article_chars), article: article)
+             end
+      # Article 1 of the extraordinary-childcare-expenses decree is long:
+      # ordinary truncation can retain the childcare item but lose the
+      # agreement/order qualifications. Keep the exact decisive clauses
+      # from this already-retrieved article together, within the same budget.
+      if LegalChatbot::ChildcareExpenseGrounding.topic?(question) &&
+         (grounding_excerpt = LegalChatbot::ChildcareExpenseGrounding.verified_excerpt(article))
+        budget = article_budget(index, max_article_chars)
+        if grounding_excerpt.length <= budget
+          remainder = [budget - grounding_excerpt.length - 2, 0].max
+          text = remainder.positive? ? "#{grounding_excerpt}\n\n#{text[0, remainder]}" : grounding_excerpt.dup
+        end
+        text = text[0, budget]
+      end
       numac = article[:numac]
       law_title = ensure_utf8(article[:law_title])
       article_title = ensure_utf8(article[:article_title])
@@ -311,11 +492,39 @@ class LegalChatbotService
     end
 
     cases.each_with_index do |c, index|
-      lang_label = c[:language_id] == 1 ? 'NL' : 'FR'
-      text = c[:full_text].to_s[0..max_article_chars]
+      lang_label = source_context_language(c)
+      text = LegalChatbot::SourcePassageExcerpt.excerpt(
+        ensure_utf8(c[:full_text]), question, max_chars: max_article_chars, summary: ensure_utf8(c[:summary])
+      )
+      judicial_kind = if LegalChatbot::AdvisoryOpinions.advisory?(c[:case_number])
+                        'legislative_opinion'
+                      else
+                        c[:judicial_kind].presence ||
+                          LegalChatbot::JurisprudenceSearch.source_metadata(case_number: c[:case_number])[:judicial_kind].presence ||
+                          'case_law_collection'
+                      end
+      metadata = source_context_metadata(c, kind: judicial_kind)
       ecli = c[:case_number]
       link = ecli ? "/jurisprudence/#{ecli}" : nil
-      parts << "[Bron #{articles.size + index + 1} - #{juris_label} (#{lang_label})]\nECLI: #{ecli}\nHof: #{c[:court]}\nDatum: #{c[:decision_date]}#{"\nLINK: #{link}" if link}\n#{text}"
+      if LegalChatbot::AdvisoryOpinions.advisory?(ecli)
+        advisory_label = { 'en' => 'COUNCIL OF STATE LEGISLATIVE OPINION',
+                           'de' => 'GUTACHTEN DES STAATSRATS (GESETZGEBUNG)' }[@language] ||
+                         LegalChatbot::AdvisoryOpinions.source_label(@language)
+        identity = if %w[en de].include?(@language)
+                     ["Opinion: #{LegalChatbot::AdvisoryOpinions.number(ecli)}", "Authority: #{c[:court]}",
+                      'SOURCE KIND: legislative advice on draft rules, not a court judgment or binding legislation.']
+                   else
+                     LegalChatbot::AdvisoryOpinions.context_header(ecli, c[:court], @language)
+                   end
+        parts << "[Bron #{articles.size + index + 1} - #{advisory_label} (#{lang_label})]\n#{identity.join("\n")}\nDatum: #{c[:decision_date]}\n#{metadata}#{"\nLINK: #{link}" if link}\n#{text}"
+      else
+        label = if judicial_kind.to_s.include?('opinion')
+                  { 'fr' => 'AVIS CONSULTATIF', 'de' => 'GUTACHTEN', 'en' => 'ADVISORY OPINION' }.fetch(@language, 'ADVIES')
+                else
+                  juris_label
+                end
+        parts << "[Bron #{articles.size + index + 1} - #{label} (#{lang_label})]\nECLI: #{ecli}\nHof: #{c[:court]}\nDatum: #{c[:decision_date]}\n#{metadata}#{"\nLINK: #{link}" if link}\n#{text}"
+      end
     end
 
     parl_docs.each_with_index do |doc, index|
@@ -324,9 +533,13 @@ class LegalChatbotService
                         when 'senate' then 'Senaat'
                         else doc[:parliament]&.capitalize
                         end
-      text = doc[:content].to_s[0..max_article_chars]
-      link = doc[:url]
-      parts << "[Bron #{articles.size + cases.size + index + 1} - #{parl_label}]\nParlement: #{parliament_name}\nDossier: #{doc[:dossier]}/#{doc[:document_number]}#{"\nLINK: #{link}" if link}\n#{text}"
+      text = LegalChatbot::SourcePassageExcerpt.excerpt(
+        ensure_utf8(doc[:content]), question, max_chars: max_article_chars, summary: ensure_utf8(doc[:summary])
+      )
+      metadata = source_context_metadata(doc, kind: 'parliamentary_preparation')
+      link = parliamentary_search_svc.source_url(doc)
+      resolution_note = parliamentary_search_svc.resolution_context_note(doc)
+      parts << "[Bron #{articles.size + cases.size + index + 1} - #{parl_label}]\nParlement: #{parliament_name}\nDossier: #{doc[:dossier]}/#{doc[:document_number]}\n#{metadata}#{"\n#{resolution_note}" if resolution_note}#{"\nLINK: #{link}" if link}\n#{text}"
     end
 
     tax_articles.each_with_index do |art, index|
@@ -343,7 +556,8 @@ class LegalChatbotService
       # to attach a figure to.
       scope = LegalChatbot::FisconetSearch.context_region_label(art[:region], language: @language)
       pending = future_amendment_note(art)
-      parts << "[Bron #{articles.size + cases.size + parl_docs.size + index + 1} - #{tax_label}]\n#{art[:document_type]} - #{art[:legislation_title]}\nArtikel #{art[:article_number]}#{section}#{scope ? " [#{scope}]" : ''}#{pending}#{"\nLINK: #{link}" if link}\n\n#{text}"
+      metadata = source_context_metadata(art, kind: 'tax_code')
+      parts << "[Bron #{articles.size + cases.size + parl_docs.size + index + 1} - #{tax_label}]\n#{art[:document_type]} - #{art[:legislation_title]}\nArtikel #{art[:article_number]}#{section}#{scope ? " [#{scope}]" : ''}#{pending}\n#{metadata}#{"\nLINK: #{link}" if link}\n\n#{text}"
     end
 
     # Regional legislation (Vlaamse Codex, Wallex, Brussels)
@@ -365,11 +579,67 @@ class LegalChatbotService
     # duties even on the low-cost tier; the provider rejects malformed URLs or
     # incomplete source sets before records reach this method.
     authoritative_docs.each_with_index do |doc, index|
+      if doc[:source] == LegalChatbot::EuCorpus::SOURCE
+        next unless LegalChatbot::EuCorpus.verified_record?(doc)
+
+        offset = articles.size + cases.size + parl_docs.size + tax_articles.size + regional_docs.size
+        source_text = ensure_utf8(doc[:article_text])
+        text = if complete_erasure_context_article?(doc, question, source_text) ||
+                  complete_platform_redress_context_article?(doc, question, source_text) ||
+                  complete_flight_disruption_context_article?(doc, question, source_text)
+                 source_text
+               else
+                 LegalChatbot::EuArticleDependencies.excerpt(doc, source_text, question, max_chars: max_article_chars) ||
+                   LegalChatbot::ArticleExcerpt.excerpt(source_text, question, max_chars: max_article_chars)
+               end
+        kind_notice = case doc[:kind]
+                      when 'recital' then 'INTERPRETATIVE RECITAL: explain its literal content and recorded edition status only; it does not create independent obligations or override operative provisions. Do not introduce numbered operative provisions absent from supplied evidence.'
+                      when 'paragraph'
+                        doc[:judicial_kind] == 'advocate_general_opinion' ? 'ADVOCATE GENERAL OPINION: not a court judgment.' : 'EU CASE-LAW PARAGRAPH: identify court, procedure and edition from metadata; report what this paragraph establishes, not an invented holding. Statutory references inside it are reported court reasoning, not separately retrieved statutory provisions.'
+                      when 'final'
+                        if doc[:source_kind] == 'jurisprudence'
+                          label = doc[:judicial_kind] == 'advocate_general_opinion' ? 'ADVOCATE GENERAL OPINION CONCLUSIONS: not a court judgment.' : 'EU COURT OPERATIVE HOLDING.'
+                          "#{label} UNNUMBERED CASE-LAW UNIT: copy the exact LINK; do not invent paragraph numbers or paragraph anchors. Statutory references inside this unit are reported source text, not separately retrieved statutory provisions."
+                        else
+                          'OPERATIVE EU LEGAL TEXT: assess scope, legal status and application dates; this edition is not automatically the latest applicable text.'
+                        end
+                      else 'OPERATIVE EU LEGAL TEXT: assess scope, legal status and application dates; this edition is not automatically the latest applicable text.'
+                      end
+        if doc[:historical]
+          coverage = doc[:correction_status].to_s.match?(/unresolved/i) ? 'correction overlays are unresolved' : 'correction coverage has not been verified'
+          kind_notice += " HISTORICAL ORIGINAL EDITION: #{coverage}; do not present this wording as current or corrected EU law."
+        end
+        if doc[:document_type].to_s.match?(/directive|richtlijn|directiva/i) || doc[:celex].to_s.match?(/\A[03]\d{4}L/)
+          kind_notice += ' DIRECTIVE: assess national transposition and applicability; do not treat every provision as directly enforceable Belgian legislation.'
+        end
+        parts << "[Bron #{offset + index + 1} - EUR-LEX (#{doc[:language].upcase})]\n" \
+                 "CELEX: #{doc[:celex]}#{"\nECLI: #{doc[:ecli]}" if doc[:ecli].present?}\n" \
+                 "Title: #{doc[:law_title]}\n#{doc[:article_title]}\nSOURCE KIND: #{doc[:document_type]} / #{doc[:kind]}\n" \
+                 "#{kind_notice}\nDocument date: #{doc[:document_date]}\nEdition date: #{doc[:edition_date]}\n" \
+                 "Authentic language metadata: #{doc[:authentic_language].present? ? doc[:authentic_language].to_json : 'unknown'}; literal source language: #{doc[:language]}\n" \
+                 "Legal status: #{doc[:legal_status]}\nCorrection coverage: #{doc[:correction_status]}\n" \
+                 "Correction evidence observed at: #{doc[:correction_observed_at].presence || 'not recorded'}\n" \
+                 "Correction verification: #{doc[:correction_verification].presence || 'not certified'}. A verified unchanged original recital is not a certificate of current legal force.\n" \
+                 "CITATION RULE: copy this exact LINK for the article/recital/paragraph. Use a Markdown link, name the correct source kind and unit; never relabel a recital as an article or an opinion as a judgment.\n" \
+                 "OFFICIAL METADATA (identity, not a substitute for literal source text): #{eu_context_metadata(doc[:metadata])}\n" \
+                 "LINK: #{doc[:url]}\nLITERAL SOURCE TEXT (excerpt):\n#{text}"
+        next
+      end
       text = ensure_utf8(doc[:article_text].to_s)[0..6000]
       offset = articles.size + cases.size + parl_docs.size + tax_articles.size + regional_docs.size
-      parts << "[Bron #{offset + index + 1} - #{official_label} (#{doc[:language]})]\n" \
-               "Bron: #{doc[:authority]}\nWet: #{doc[:law_title]}\n#{doc[:article_title]}\n" \
-               "LINK: #{doc[:url]}\n#{text}"
+      parts << if doc[:source] == 'official_guidance'
+                 # A reviewed lender/supervisor FAQ is not an EU or Belgian statute.
+                 # Only article_text is literal quote evidence; the separate summary
+                 # is editorial source-use context and may not be quoted as native text.
+                 "[Bron #{offset + index + 1} - OFFICIAL GUIDANCE (#{doc[:language]})]\n" \
+                   "Authority: #{doc[:authority]}\nTitle: #{doc[:title]}\nVerified: #{doc[:verified_on]}\n" \
+                   "LINK: #{doc[:url]}\nLITERAL SOURCE EXCERPT:\n#{text}\n" \
+                   "REVIEWED SUMMARY (not a literal quotation or statute):\n#{doc[:reviewed_summary]}"
+               else
+                 "[Bron #{offset + index + 1} - #{official_label} (#{doc[:language]})]\n" \
+                   "Bron: #{doc[:authority]}\nWet: #{doc[:law_title]}\n#{doc[:article_title]}\n" \
+                   "LINK: #{doc[:url]}\n#{text}"
+               end
     end
 
     # Last, so it sits closest to where generation begins. Measured on production
@@ -379,6 +649,9 @@ class LegalChatbotService
     # long; a rule buried in it loses to one standing next to the evidence.
     competence = regional_tax_competence_notice(articles)
     parts << competence if competence
+
+    formation_notice = formation_deed_context_notice(articles, question)
+    parts << formation_notice if formation_notice
 
     parts.join("\n\n---\n\n")
   end
@@ -445,15 +718,146 @@ class LegalChatbotService
                                 'ausgeschlossen.'
   GERMAN_AMENDER_KINDS = { 'dekret' => 'Dekret', 'erlass' => 'Erlass der Regierung' }.freeze
 
+  # Source language describes the actual retrieved text, never the answer
+  # language or an inferred translation. Unknown metadata stays unknown.
+  def source_context_language(source)
+    explicit = source[:source_language].to_s.downcase
+    return explicit.upcase if %w[nl fr de en].include?(explicit)
+
+    { 1 => 'NL', 2 => 'FR', 3 => 'DE' }[source[:language_id].to_i] || 'unknown'
+  end
+
+  # Preserve retrieval provenance at the last evidence boundary. In
+  # particular, an edition/version date is NOT an effective date, and a
+  # parliamentary report/advice is NOT enacted legislation. These fields
+  # describe identity/status only; they are not literal quotation evidence.
+  def source_context_metadata(source, kind:)
+    rows = ["SOURCE KIND: #{source[:source_kind].presence || kind}", "Literal source language: #{source_context_language(source)}"]
+    fields = {
+      judicial_kind: 'Judicial kind', authority_kind: 'Authority kind',
+      article_type: 'Article subtype', source_type: 'Source subtype',
+      source_language: 'Recorded source language',
+      document_type: 'Document type', status: 'Recorded document status',
+      document_status: 'Recorded document status', document_date: 'Document date',
+      publication_date: 'Publication date', version_date: 'Version date (not an effective date)',
+      end_date: 'Recorded end date', edition_role: 'Edition role', edition_year: 'Edition year',
+      jurisdiction: 'Territorial jurisdiction', region: 'Territorial region'
+    }
+    fields.each do |key, label|
+      value = source[key]
+      rows << "#{label}: #{value}" if value.present?
+    end
+    rows << "Recorded repealed flag: #{source[:is_abolished]}" if source.key?(:is_abolished)
+    if kind == 'judgment'
+      rows << 'STATUS RULE: a judgment is not legislation; applicability and precedential weight depend on its court, issue and procedural context.'
+    end
+    rows << 'STATUS RULE: an advisory opinion is advice, not a judgment or enacted legislation.' if kind.to_s.include?('opinion')
+    if kind == 'parliamentary_preparation'
+      rows << 'STATUS RULE: parliamentary preparation is interpretative/history material, not proof that a proposal was enacted or is currently applicable.'
+    end
+    rows.join("\n")
+  end
+
   # A statute's text within the context budget. With the question known, the
   # cut keeps the provisions the question is about (LegalChatbot::ArticleExcerpt);
-  # without it, the head of the article, as before. Statutes only: a judgment
-  # or a parliamentary document has its summary, and its head is its summary.
-  def article_context_text(text, question, max_article_chars)
+  # without it, the head of the article, as before. Judgments and reports use
+  # SourcePassageExcerpt instead: their decisive reasoning may be far beyond
+  # the introduction and a catalogue summary is not literal source text.
+  def article_context_text(text, question, max_article_chars, article: nil)
+    text = text_from_context_anchor(text, article)
+    if article && (commercial_excerpt = LegalChatbot::CommercialWebsiteContext.excerpt(article, text: text, question: question))
+      return commercial_excerpt
+    end
+    if article && (procedural_excerpt = LegalChatbot::MunicipalSanctionsContext.excerpt(article, text: text, question: question, max_chars: max_article_chars))
+      return procedural_excerpt
+    end
+
     return text[0..max_article_chars] if question.blank?
 
     LegalChatbot::ArticleExcerpt.excerpt(text, question, max_chars: max_article_chars + 1)
   end
+
+  # LegislationSearch#pinned_articles marks a pin whose governing provision
+  # sits deep in a long article (road code Art. 8.3., OCMW Act Art. 57 § 2.)
+  # with :context_excerpt_anchor; the model's text starts there, while the
+  # source card and the stored text stay whole. Until 2026-10-14 only
+  # LegislationSearch#build_context read the mark, and the answer path does
+  # not call it: the excerpt kept "§ 1." and "1° het verlenen van dringende
+  # medische hulp" but dropped the "(§ 2. (In afwijking" line between them,
+  # and the model cited the clause as "§ 1, 1°".
+  def text_from_context_anchor(text, article)
+    anchor = article.is_a?(Hash) ? article[:context_excerpt_anchor].to_s : ''
+    return text if anchor.empty?
+
+    offset = text.index(/(?<![\d.])#{Regexp.escape(anchor)}(?!\d)/)
+    offset ? text[offset..] : text
+  end
+
+  # The verified Article17 unit contains both erasure grounds AND necessity
+  # exceptions. A relevance-window cut silently dropped most grounds in the
+  # live customer-retention test. Preserve this one finite admitted unit, not
+  # arbitrary EU acts, metadata, translations or unverified source text.
+  def complete_erasure_context_article?(doc, question, text)
+    return false unless doc[:kind] == 'article' && doc[:unit_number].to_s == '17'
+    return false unless doc[:celex].to_s.match?(/\A(?:32016R0679|02016R0679-\d{8})\z/)
+    return false unless %w[nl fr de en].include?(doc[:language])
+    return false if text.blank? || text.length > 6000
+
+    LegalChatbot::EuTopicIntent.plan(question)&.fetch(:topic) == :data_erasure
+  end
+
+  # Only after corpus verification above: these finite operative units carry
+  # linked complaint/restoration safeguards and dispute-cost qualifications.
+  # Keep their literal tails with their grounds, without selecting invented
+  # paragraphs or expanding the budget of other articles or source editions.
+  def complete_platform_redress_context_article?(doc, question, text)
+    return false unless doc[:kind] == 'article' && doc[:source_kind] == 'legislation'
+    return false unless doc[:celex].to_s.match?(/\A(?:32022R2065|02022R2065-\d{8})\z/)
+    return false unless %w[nl fr de en].include?(doc[:language])
+    return false if doc[:historical] || doc[:retrieval_scope] != 'eligible_source_edition'
+
+    number = doc[:unit_number].to_s
+    ceiling = { '20' => 4000, '21' => 10_000 }[number]
+    return false unless ceiling && doc[:article_number].to_s == number && doc[:unit_identity_number].to_s == number
+    return false if text.blank? || text.length > ceiling
+
+    LegalChatbot::EuTopicIntent.plan(question)&.fetch(:topic) == :platform_redress
+  end
+  private :complete_platform_redress_context_article?
+
+  # The identity fields of an EU unit's official metadata, for the generation
+  # context. The raw record (cellar relation graphs, up to 1,800 characters
+  # per unit: about 15 KB of a 44 KB short-model context on 2026-10-17)
+  # stays in storage and on the cards; currentness, edition and correction
+  # limits are printed separately above it and are not affected.
+  EU_CONTEXT_METADATA_KEYS = %w[aliases edition_selection expression].freeze
+  def eu_context_metadata(metadata)
+    return 'none recorded' unless metadata.is_a?(Hash)
+
+    compact = metadata.slice(*EU_CONTEXT_METADATA_KEYS).reject { |_key, value| value.blank? }
+    title = metadata.dig('expression_title', 'literal', 'value')
+    compact['expression_title'] = title if title.present?
+    compact.empty? ? 'none recorded' : compact.to_json[0, 600]
+  end
+  private :eu_context_metadata
+
+  # Verified flight units keep territorial conditions, exceptions and remedy
+  # qualifications together, including collapsed source layouts whose list
+  # boundaries are not safe excerpt boundaries. Other units keep their budget.
+  def complete_flight_disruption_context_article?(doc, question, text)
+    return false unless doc[:kind] == 'article' && doc[:source_kind] == 'legislation'
+    return false unless doc[:celex].to_s.match?(/\A(?:32004R0261|02004R0261-\d{8})\z/)
+    return false unless %w[nl fr de en].include?(doc[:language])
+    return false if doc[:historical] || doc[:retrieval_scope] != 'eligible_source_edition'
+
+    number = doc[:unit_number].to_s
+    ceiling = { '3' => 5000, '5' => 6500, '6' => 6500, '7' => 4500, '8' => 4500, '9' => 3500 }[number]
+    return false unless ceiling && doc[:article_number].to_s == number && doc[:unit_identity_number].to_s == number
+    return false if text.blank? || text.length > ceiling
+
+    LegalChatbot::EuTopicIntent.plan(question)&.fetch(:topic) == :flight_disruption
+  end
+  private :complete_flight_disruption_context_article?
 
   # The best-ranked statute gets half as much room again. It is the article
   # the question is most likely about, and on the Smart tier's 2,500
@@ -462,17 +866,78 @@ class LegalChatbotService
   # article costs a fraction of a cent on every model.
   FIRST_ARTICLE_BUDGET_FACTOR = 1.5
 
+  # Measured current NL/FR formation targets are 123-7,657 characters.
+  # Never apply the first-article multiplier to this bounded exception.
+  FORMATION_DEED_MAX_ARTICLE_CHARS = 8000
+  FORMATION_DEED_MAX_NOTE_CHARS = 1000
+  FORMATION_DEED_ARTICLE_ANCHORS = %w[
+    #art-2-5 #art-2-8 #art-2-9 #art-2-10 #art-2-11
+    #art-5-12 #art-6-13 #art-7-14 #art-9-2 #art-10-2 #art-11-2
+  ].freeze
+
+  def formation_deed_context_article?(article, question)
+    question = question.to_s.gsub(/[[:space:]]+/, ' ')
+    article[:numac].to_s == '2019A40586' &&
+      FORMATION_DEED_ARTICLE_ANCHORS.include?(extract_article_anchor(article[:article_title])) &&
+      question.match?(LegalChatbot::LegislationSearch::FORMATION_DEED_PATTERN) &&
+      LegalChatbot::LegislationSearch.formation_deed_entity_context?(question)
+  end
+
+  # Instructions adjacent to the evidence, not a new source. The small model
+  # ignored the distant system-prompt qualification in the production smoke.
+  def formation_deed_context_notice(articles, question)
+    targets = articles.select { |article| formation_deed_context_article?(article, question) }
+    return nil if targets.empty?
+
+    notices = []
+    normalized_question = question.to_s.gsub(/[[:space:]]+/, ' ')
+    if normalized_question.match?(LegalChatbot::LegislationSearch::FORMATION_DEED_GENERIC_PATTERN)
+      notices << if @language == 'fr'
+                   "INSTRUCTION DE PORTÉE (pas une source): La forme juridique manque. Commencez par demander quelle forme est visée " \
+                     "(SRL, SC, SA, ASBL, AISBL ou fondation). Donnez au plus une brève orientation non exhaustive. " \
+                     "Ne présentez pas une liste complète commune: les exigences supplémentaires de chaque forme ne sont pas toutes dans ce contexte."
+                 else
+                   "SCOPE-INSTRUCTIE (geen bron): De rechtsvorm ontbreekt. Begin met de vraag welke rechtsvorm bedoeld is " \
+                     "(BV, CV, NV, VZW, IVZW of stichting). Geef hoogstens een korte, niet-uitputtende oriëntatie. " \
+                     "Presenteer geen volledige algemene checklist: de aanvullende eisen per rechtsvorm staan niet allemaal in deze context."
+                 end
+    end
+    classification_notice = LegalChatbot::FormationDeedClassification.context_notice(question, articles, language: @language)
+    notices << classification_notice if classification_notice.present?
+    targets.each do |article|
+      next unless extract_article_anchor(article[:article_title]) == '#art-6-13'
+
+      text = ensure_utf8(article[:article_text])
+      note = text[/\((?:NOTA|NOTE)\s*:.*\)\s*\z/m]
+      # Repeat complete short notes only. Never bypass the article ceiling
+      # by copying an arbitrarily long raw note into the instruction block.
+      next unless note && note.length <= FORMATION_DEED_MAX_NOTE_CHARS
+      next unless note&.match?(/eerste\s+lid,\s*4°.*vernietigd|annulé\s+l['’]alinéa\s+1er,\s*4°/im)
+
+      notices << if @language == 'fr'
+                   "INSTRUCTION SUR LA NOTE DE LA SOURCE (pas une nouvelle source): La NOTE de l'article 6:13 consulté dit: #{note.strip}\n" \
+                     "Mentionnez expressément cette annulation si vous utilisez cet article. Ne présentez ni ne citez son alinéa 1er, 4°, " \
+                     "comme une exigence actuellement applicable. Une citation littérale vérifiable ne rend pas la disposition annulée applicable."
+                 else
+                   "INSTRUCTIE BIJ DE BRONNOTA (geen nieuwe bron): De NOTA bij het geraadpleegde artikel 6:13 zegt: #{note.strip}\n" \
+                     "Benoem deze vernietiging uitdrukkelijk als u dit artikel gebruikt. Presenteer of citeer het eerste lid, 4°, " \
+                     "niet als nog geldende eis. Een verifieerbaar letterlijk citaat maakt een vernietigde bepaling niet toepasselijk."
+                 end
+    end
+    notices.join("\n\n").presence
+  end
+
   def article_budget(index, max_article_chars)
     index.zero? ? (max_article_chars * FIRST_ARTICLE_BUDGET_FACTOR).to_i : max_article_chars
   end
 
-  def german_original_block(article, number, max_article_chars)
+  def german_original_block(article, number, max_article_chars, question: nil)
     original = article[:german_original]
     numac = article[:numac]
     article_title = ensure_utf8(article[:article_title])
     link = "/laws/#{numac}?language_id=#{LegalChatbot::GermanArticleSearch::GERMAN_LANGUAGE_ID}" \
            "#{extract_article_anchor(article_title)}"
-    text = ensure_utf8(article[:article_text])[0..max_article_chars]
+    text = article_context_text(ensure_utf8(article[:article_text]), question, max_article_chars)
     header = GERMAN_ORIGINAL_HEADERS.fetch(original[:kind].to_s, 'RECHTSAKT')
     "[Bron #{number} - #{header} (DE)]\nNUMAC: #{numac}\nWet: #{ensure_utf8(article[:law_title])}\n" \
       "#{article_title}\nSTAND: #{german_original_stand(original)}\n#{GERMAN_ORIGINAL_INSTRUCTION}\n" \
@@ -669,21 +1134,179 @@ class LegalChatbotService
     text
   end
 
+  # The BV/SRL capital override (621efa125, January 2026) opened every system
+  # prompt with the exact sentence to say. mistral-small at effort low then
+  # sometimes answered an unrelated question with that sentence alone, and
+  # an answer that cites nothing gives the guards nothing to reject
+  # (2026-10-14: 2 of 5 answers to "Mag dringende medische hulp voor mensen
+  # zonder papieren ook preventieve zorg zijn?",
+  # docs/ops/urgent-medical-aid-2026-10-14.md). The override now opens the
+  # prompt only for a question about a company's capital; the short BV/SRL
+  # line among the anti-hallucination hints stays in every prompt. The
+  # default prompt's lines carry six spaces of indentation (its heredoc's
+  # CASE CONTEXT line sets the margin), so the override keeps them and a
+  # capital question gets the prompt byte for byte as before.
+  BV_CAPITAL_OVERRIDE = <<~OVERRIDE.gsub(/^(?=.)/, ' ' * 6)
+    MANDATORY OVERRIDE - READ FIRST:
+    BV (besloten vennootschap) has NO MINIMUM CAPITAL since WVV 2019. Answer: "geen minimumkapitaal".
+    If asked about BV capital: say "Een BV heeft geen minimumkapitaal sinds het WVV van 2019."
+    NEVER say a BV requires €18.550 or €61.500 - those are WRONG. Only NV requires €61.500.
+
+  OVERRIDE
+  SRL_CAPITAL_OVERRIDE = <<~OVERRIDE
+    [RAPPEL] RAPPEL OBLIGATOIRE - LIRE EN PREMIER:
+    La SRL (société à responsabilité limitée) n'a PAS de capital minimum depuis le CSA 2019. Réponse: "pas de capital minimum".
+    Si on demande le capital d'une SRL: dire "Une SRL n'a pas de capital minimum depuis le CSA de 2019."
+    NE JAMAIS dire qu'une SRL nécessite 18.550€ ou 61.500€ - c'est FAUX. Seule la SA nécessite 61.500€.
+
+  OVERRIDE
+  # A capital word and a company word, in the four languages. The French
+  # possessive "sa" is not the SA: an abbreviated form must be capitalised.
+  COMPANY_CAPITAL_QUESTION_PATTERN = /
+    \A
+    (?=.*(?<![[:alnum:]])(?:[[:alpha:]]*kapita(?:al|l)|capital|capitaux\s+propres|fonds\s+propres|aanvangsvermogen|eigen\s+vermogen)(?![[:alnum:]]))
+    (?=.*(?:(?<![[:alnum:]])(?:bv|bvba|besloten\s+vennootschap|[[:alpha:]]*vennootschap(?:pen)?|nv|naamloze|srl|sprl|soci[ée]t[ée]s?|gmbh|[[:alpha:]]*gesellschaft(?:en)?|compan(?:y|ies)|onderneming(?:en)?|oprichten|oprichting|constituer|constitution|gr[üu]nden|gr[üu]ndung|incorporat[[:alpha:]]*)(?![[:alnum:]])|(?-i:(?<![[:alnum:]])SA(?![[:alnum:]]))))
+  /imx
+
+  def company_capital_question?(question)
+    question.to_s.gsub(/[[:space:]]+/, ' ').match?(COMPANY_CAPITAL_QUESTION_PATTERN)
+  end
+
+  # Practical questions need a single consistent policy, not a mandatory
+  # quote rule followed by a contradictory exception later in the prompt.
+  def source_quotation_policy(question, language:)
+    practical = LegalChatbot::SystemPromptBuilder.practical_topic(question).present?
+    if practical
+      return <<~POLICY if language == :fr
+        RÈGLE DE CITATION — PARAPHRASE LIMITÉE AUX SOURCES PAR DÉFAUT:
+        Pour cette question pratique, privilégiez des paraphrases concises avec le lien exact, sans bloc de citation. Si l'utilisateur demande expressément le texte exact, reproduisez uniquement le texte littéral fourni. Sinon, utilisez au plus une courte citation contiguë lorsque sa formulation exacte est essentielle.
+        N'inventez, ne reconstituez, ne traduisez et n'assemblez jamais une citation légale. Copiez exactement le texte du corps de la source et conservez sa langue; un résumé éditorial n'est pas une citation légale.
+        Toute affirmation juridique doit rester étayée par les sources fournies. Signalez les limites au lieu de les combler de mémoire.
+      POLICY
+
+      return <<~POLICY
+        QUOTING RULE — SOURCE-BOUND PARAPHRASE BY DEFAULT:
+        Use concise, source-linked paraphrases, without blockquotes, for this practical task. If the user explicitly asks for exact source text, provide the requested literal text within the supplied evidence. Otherwise use at most one short contiguous literal quotation, only when its exact wording is essential.
+        Never invent, reconstruct, translate or stitch a statutory quotation. Copy quoted text exactly from the actual source body and retain its source language; do not quote an editorial summary as legislation.
+        Every legal claim still requires support in the supplied sources. If that support is missing, state the limit; do not fill it from memory.
+      POLICY
+    end
+
+    return <<~POLICY if language == :fr
+      RÈGLE DE CITATION — CITER UNIQUEMENT LE TEXTE PRÉSENT DANS LE CONTEXTE:
+      Lorsqu'un article cité contient son texte EFFECTIF dans le contexte ci-dessous, incluez un blockquote (>) de la PHRASE PERTINENTE UNIQUEMENT.
+      IMPORTANT: Citez UNIQUEMENT les 1-3 phrases les plus pertinentes, PAS le texte intégral de l'article.
+      MAUVAIS: Copier tout le texte de l'Art. 37/2 avec ses 10+ sous-points
+      BON: > "Le délai de préavis est de trois semaines" — [Art. 37/2 LCT](/lien) (expliquez ensuite la condition d'ancienneté avec vos propres mots, en dehors de la citation)
+      NE JAMAIS omettre des mots au milieu d'une citation, ni écrire [...] ou ... dans un blockquote: une citation doit être une SUITE ININTERROMPUE de mots, exactement comme dans la source. Si le passage est long, citez un fragment plus court d'un seul tenant.
+      Si l'article contient une longue liste, résumez en prose et ne citez que la plage pertinente.
+      CRITIQUE — l'interdiction de fabrication PRIME sur le souhait de citer: si le texte effectif d'un article n'est PAS dans le contexte, n'inventez JAMAIS de blockquote. Citez l'article par un lien simple ou omettez-le. Une citation sans blockquote est préférable à une fausse citation.
+      Les fiches sources sont affichées séparément par l'interface — votre seul rôle est de citer en ligne et de blockquoter uniquement le texte présent dans le contexte.
+      - NE JAMAIS afficher "NUMAC XXXXXXX" dans le texte visible – utilisez le TITRE de la loi.
+
+      CITATION VERBATIM — TOLÉRANCE ZÉRO POUR LA FABRICATION:
+      - Avant de créer un blockquote, trouvez la phrase exacte dans le contexte et copiez-la caractère par caractère. Ne l'écrivez pas de mémoire et ne la reformulez pas.
+      - Un blockquote ne peut contenir que du texte exact provenant du contexte. Pour expliquer ou paraphraser, utilisez vos propres mots HORS des guillemets.
+      - Si les sources ne permettent pas de soutenir une affirmation par une citation verbatim, dites-le explicitement au lieu d'en fabriquer une.
+    POLICY
+
+    <<~POLICY
+      QUOTING RULE — QUOTE ONLY WHAT THE CONTEXT ACTUALLY CONTAINS:
+      When you cite an article whose text IS present in the source context below, include a blockquote (>) of the RELEVANT SENTENCE ONLY.
+      IMPORTANT: Quote ONLY the 1-3 most relevant sentences from the article, NOT the entire article text.
+      WRONG: Dumping the full text of Art. 37/2 with all 10+ sub-points
+      RIGHT: > "De opzeggingstermijn bedraagt drie weken" — [Art. 37/2 AOW](/link) (then explain the anciënniteitsvoorwaarde in your own words outside the quotation)
+      If the article has a long list (e.g., termijntabel), summarize it in prose and quote only the relevant range.
+      CRITICAL — the ban on fabrication OVERRIDES the wish to quote: if an article's ACTUAL TEXT is NOT in the source context below, DO NOT invent a blockquote for it. Either (a) cite it as a plain linked reference without a quote, or (b) omit it. A missing quote is ALWAYS better than a fabricated one. NEVER manufacture a verbatim-looking quote to satisfy a formatting preference.
+      The source cards are displayed separately by the interface — your only job is to cite inline, using blockquotes only for verbatim source text.
+
+      VERBATIM QUOTING — ZERO TOLERANCE FOR FABRICATION:
+      - COPY-PASTE RULE: When creating a blockquote, LOCATE the exact sentence in the provided source context, then COPY it character-for-character into your response. Do NOT type it from memory or rephrase it.
+      - Blockquotes MUST contain EXACT text copied from the provided source context. Do NOT paraphrase, rewrite, or invent text inside quotation marks.
+      - NEVER omit words from the middle of a quotation, and never write [...] or ... inside a blockquote. A quotation must be ONE UNBROKEN run of words exactly as the source has them.
+      - If the relevant passage is long, quote a SHORTER unbroken fragment of it, or describe the rest in your own words outside the quotation. Do not stitch pieces together.
+      - NEVER put text in quotation marks and attribute it to an article if those exact words do not appear in the provided context.
+      - If you want to explain or paraphrase a provision, do so in your OWN words OUTSIDE quotation marks. Use the blockquote ONLY for the literal text.
+      - WRONG: > "De werkgever moet de werknemer in de gelegenheid stellen om zich te verdedigen." — Art. 35 AOW (this text is NOT in Art. 35)
+      - RIGHT: Summarize in your own words, then quote an UNBROKEN fragment of the actual text: > "Onder dringende reden wordt verstaan de ernstige tekortkoming" — [Art. 35 AOW](/link)
+      - If a specific claim cannot be supported by a verbatim quote from the sources, say so explicitly: "De bronnen vermelden dit niet letterlijk."
+    POLICY
+  end
+
+  private :source_quotation_policy
+
+  # Practical questions need a single consistent policy, not a mandatory
+  # quote rule followed by a contradictory exception later in the prompt.
+  def source_hyperlink_policy(question, language:)
+    practical = LegalChatbot::SystemPromptBuilder.practical_topic(question).present?
+    if practical
+      return <<~POLICY if language == :fr
+        RÈGLE DES LIENS — COPIER LE LIEN EXACT FOURNI:
+        Chaque source contient une valeur LINK exacte: chemin belge relatif /laws/… ou /jurisprudence/…, autre chemin officiel fourni, ou URL HTTPS complète EUR-Lex.
+        Reliez séparément chaque article, considérant ou arrêt mentionné à son LINK exact en conservant domaine, langue, CELEX, paramètres et fragment. Ne transformez jamais un lien EUR-Lex en chemin belge /laws/ et ne changez pas son édition ou sa langue.
+        Le libellé doit correspondre à l'unité réellement fournie. N'inventez ni article, ni ancre, ni identifiant, ni URL. Si le lien exact n'est pas fourni, signalez cette limite.
+      POLICY
+
+      return <<~POLICY
+        HYPERLINK RULE — COPY THE EXACT PROVIDED LINK:
+        Each source has an exact LINK value. It may be a relative Belgian /laws/… or /jurisprudence/… path, another provided official path, or a full HTTPS EUR-Lex URL.
+        Link each article, recital or judgment that you mention separately to its provided exact LINK, preserving host, source language, CELEX, query string and fragment. Do not convert an EUR-Lex URL to a Belgian /laws/ path or change its edition/language.
+        Use the label for the actual supplied legal unit; never invent an article, fragment, law ID, title slug or URL. If no exact link supports the unit, state that the source was not supplied instead of fabricating one.
+      POLICY
+    end
+
+    return <<~POLICY if language == :fr
+      RÈGLE DES LIENS — OBLIGATOIRE POUR CHAQUE CITATION D'ARTICLE:
+      - Chaque source dans le contexte inclut un champ "LINK: /laws/..." ou "LINK: /jurisprudence/...".
+      - CHAQUE référence d'article dans votre réponse DOIT être un lien markdown cliquable.
+      - COPIEZ la valeur LINK exactement telle que fournie. NE construisez, modifiez ou inventez JAMAIS d'URLs.
+      - Format: [Art. X Titre de la loi](VALEUR_LINK) — utilisez le LINK de la source.
+      - EXEMPLE: Source a "LINK: /laws/1978070303#art-37-2" → écrivez: [Art. 37/2 LCT](/laws/1978070303#art-37-2)
+      - Après un blockquote: > "texte cité" — [Art. 37/2 LCT](/laws/1978070303#art-37-2)
+      - FAUX: "Art. 37/2 LCT" (texte brut, pas de lien)
+      - CORRECT: "[Art. 37/2 LCT](/laws/1978070303#art-37-2)" (lien cliquable)
+      - Si une source n'a pas de champ LINK:, citez-la en texte brut sans lien.
+      - NE JAMAIS fabriquer un NUMAC, ECLI ou identifiant. S'il n'est pas dans le contexte, pas de lien.
+      - Les SEULES URLs /laws/ valides sont les valeurs LINK exactes fournies dans les sources du contexte.
+      - Les URLs construites à partir du NOM d'une loi (ex: /laws/code-tva, /laws/code-civil) N'EXISTENT PAS et produisent un lien mort. Les pages de lois sont indexées par NUMAC (10 chiffres) ou FISCONET_<id> uniquement — ne jamais transformer un titre de loi en URL.
+    POLICY
+
+    <<~POLICY
+      HYPERLINK RULE — MANDATORY FOR EVERY ARTICLE CITATION:
+      - Each source in the context includes a "LINK: /laws/..." or "LINK: /jurisprudence/..." field.
+      - EVERY article reference in your answer MUST be a clickable markdown link.
+      - COPY the LINK value exactly as provided. Do NOT construct, modify, or invent URLs.
+      - Format: [Art. X Wet Title](LINK_VALUE) — use the LINK from the source, not your own URL.
+      - EXAMPLE: Source has "LINK: /laws/1978070303#art-37-2" → write: [Art. 37/2 AOW](/laws/1978070303#art-37-2)
+      - After a blockquote, attribute with a linked reference: > "quoted text" — [Art. 37/2 AOW](/laws/1978070303#art-37-2)
+      - WRONG: "Art. 37/2 AOW" (plain text, no link)
+      - RIGHT: "[Art. 37/2 AOW](/laws/1978070303#art-37-2)" (clickable link)
+      - If a source has no LINK: field, cite it in plain text without a hyperlink.
+      - NEVER fabricate a NUMAC, ECLI, or any identifier. If it's not in the context, don't link it.
+      - CITE ONLY FROM THE SOURCES: never write an article NUMBER that does not appear in the context sources above — not even if you are confident it exists. Any plain "Art. X" without a matching source causes the ENTIRE answer to be rejected. Describe such rules in words instead and say the specific provision is not among the consulted sources.
+      - The ONLY valid /laws/ URLs are the exact LINK values given in the context sources above.
+      - URLs built from a law's NAME (e.g. /laws/btw-wetboek, /laws/burgerlijk-wetboek) DO NOT EXIST and produce a dead link. Law pages are keyed by NUMAC (10 digits) or FISCONET_<id> only — never slugify a law title into a URL.
+    POLICY
+  end
+
+  private :source_hyperlink_policy
+
   # Build strict anti-hallucination system prompt
   # Enhanced with quality improvements based on 500-question test analysis (Jan 2026)
   # Now supports language-specific prompts (especially French for lisloi.be)
-  def build_system_prompt(source_type, detected_lang: nil, question: nil)
+  def build_system_prompt(source_type, detected_lang: nil, question: nil, international_mode: false)
     # Use French system prompt for French-detected questions (lisloi.be)
-    return build_french_system_prompt(source_type) if detected_lang == :fr
+    if detected_lang == :fr
+      french = build_french_system_prompt(source_type, question: question)
+      return international_mode ? "#{french}\n\n#{LegalChatbot::LanguageDetection::INTERNATIONAL_LANGUAGE_EXCEPTION}" : french
+    end
 
     # Default: Optimized prompt with enhanced structure and mandatory citations
-    lang_name = { 'nl' => 'Dutch', 'fr' => 'French', 'de' => 'German', 'en' => 'English' }[@language] || 'Dutch'
+    prompt_language = detected_lang&.to_s || @language.to_s
+    disclaimer_text = LEGAL_DISCLAIMERS.fetch(prompt_language, LEGAL_DISCLAIMERS.fetch('nl'))
+    source_reminder = OFFICIAL_SOURCE_REMINDERS.fetch(prompt_language, OFFICIAL_SOURCE_REMINDERS.fetch('nl'))
+    lang_name = { 'nl' => 'Dutch', 'fr' => 'French', 'de' => 'German', 'en' => 'English' }[prompt_language] || 'Dutch'
     base_rules = <<~RULES
-            MANDATORY OVERRIDE - READ FIRST:
-            BV (besloten vennootschap) has NO MINIMUM CAPITAL since WVV 2019. Answer: "geen minimumkapitaal".
-            If asked about BV capital: say "Een BV heeft geen minimumkapitaal sinds het WVV van 2019."
-            NEVER say a BV requires €18.550 or €61.500 - those are WRONG. Only NV requires €61.500.
-
             You are the WetWijzer Juridische Chatbot – a Belgian law information chatbot.
             CURRENT DATE (Europe/Brussels): #{Date.current.iso8601}.
             TEMPORAL PRIORITY: Compare every effective date with CURRENT DATE. A rule or
@@ -694,13 +1317,15 @@ class LegalChatbotService
       #{"\n      CASE CONTEXT: #{@case_context}\n      When answering, consider the context of this specific case. Tailor your legal analysis to the facts described above.\n" if @case_context}
 
             **LANGUAGE RULE**: Respond STRICTLY in #{lang_name}.
-            - The user has selected #{lang_name} as their interface language. ALWAYS respond in #{lang_name}.
+            - #{lang_name} is the resolved answer language for this question, not necessarily the website interface language. ALWAYS write your analysis, headings and closing guidance in #{lang_name}.
+            - Source language, quoted contracts, retrieval context and corrective feedback MUST NOT change this answer language.
+            - Preserve exact literal source quotations and citation labels in their original language. Do not translate a quotation and present it as an exact source quote.
             - Dutch headers: HOOFDREGEL, UITZONDERINGEN
             - French headers: RÈGLE PRINCIPALE, EXCEPTIONS
             - English headers: MAIN RULE, EXCEPTIONS
             - German headers: HAUPTREGEL, AUSNAHMEN
-            EXCEPTION: If the interface language is English (EN/INT mode), respond in the SAME language as the user's question (e.g. Russian question → Russian response, Spanish question → Spanish response).
-            IMPORTANT: Dutch and German look similar but are DIFFERENT. Belgian law app - assume Dutch unless German umlauts (ä, ö, ü, ß) present.
+            #{LegalChatbot::LanguageDetection::INTERNATIONAL_LANGUAGE_EXCEPTION if international_mode}
+            IMPORTANT: Dutch and German are different languages. Follow the resolved answer language; never infer the answer language from the legal sources or the presence/absence of umlauts.
 
             ANSWERING FROM SOURCES:
             - Your PRIMARY job is to EXTRACT and PRESENT legal information from the provided sources.
@@ -759,45 +1384,15 @@ class LegalChatbotService
             - OMIT the header entirely when the sources supply none. An empty or invented exception is worse than no section: never manufacture one to fill the structure, and never recycle the main rule as its own exception.
             - Keep brief – list only genuinely different exceptions
 
-            QUOTING RULE — QUOTE ONLY WHAT THE CONTEXT ACTUALLY CONTAINS:
-            When you cite an article whose text IS present in the source context below, include a blockquote (>) of the RELEVANT SENTENCE ONLY.
-            IMPORTANT: Quote ONLY the 1-3 most relevant sentences from the article, NOT the entire article text.
-            WRONG: Dumping the full text of Art. 37/2 with all 10+ sub-points
-            RIGHT: > "De opzeggingstermijn bedraagt drie weken" — [Art. 37/2 AOW](/link) (then explain the anciënniteitsvoorwaarde in your own words outside the quotation)
-            If the article has a long list (e.g., termijntabel), summarize it in prose and quote only the relevant range.
-            CRITICAL — the ban on fabrication OVERRIDES the wish to quote: if an article's ACTUAL TEXT is NOT in the source context below, DO NOT invent a blockquote for it. Either (a) cite it as a plain linked reference without a quote, or (b) omit it. A missing quote is ALWAYS better than a fabricated one. NEVER manufacture a verbatim-looking quote to satisfy a formatting preference.
-            The source cards are displayed separately by the interface — your only job is to cite inline, using blockquotes only for verbatim source text.
+            #{source_quotation_policy(question, language: :en)}
 
-            VERBATIM QUOTING — ZERO TOLERANCE FOR FABRICATION:
-            - COPY-PASTE RULE: When creating a blockquote, LOCATE the exact sentence in the provided source context, then COPY it character-for-character into your response. Do NOT type it from memory or rephrase it.
-            - Blockquotes MUST contain EXACT text copied from the provided source context. Do NOT paraphrase, rewrite, or invent text inside quotation marks.
-            - NEVER omit words from the middle of a quotation, and never write [...] or ... inside a blockquote. A quotation must be ONE UNBROKEN run of words exactly as the source has them.
-            - If the relevant passage is long, quote a SHORTER unbroken fragment of it, or describe the rest in your own words outside the quotation. Do not stitch pieces together.
-            - NEVER put text in quotation marks and attribute it to an article if those exact words do not appear in the provided context.
-            - If you want to explain or paraphrase a provision, do so in your OWN words OUTSIDE quotation marks. Use the blockquote ONLY for the literal text.
-            - WRONG: > "De werkgever moet de werknemer in de gelegenheid stellen om zich te verdedigen." — Art. 35 AOW (this text is NOT in Art. 35)
-            - RIGHT: Summarize in your own words, then quote an UNBROKEN fragment of the actual text: > "Onder dringende reden wordt verstaan de ernstige tekortkoming" — [Art. 35 AOW](/link)
-            - If a specific claim cannot be supported by a verbatim quote from the sources, say so explicitly: "De bronnen vermelden dit niet letterlijk."
-
-            HYPERLINK RULE — MANDATORY FOR EVERY ARTICLE CITATION:
-            - Each source in the context includes a "LINK: /laws/..." or "LINK: /jurisprudence/..." field.
-            - EVERY article reference in your answer MUST be a clickable markdown link.
-            - COPY the LINK value exactly as provided. Do NOT construct, modify, or invent URLs.
-            - Format: [Art. X Wet Title](LINK_VALUE) — use the LINK from the source, not your own URL.
-            - EXAMPLE: Source has "LINK: /laws/1978070303#art-37-2" → write: [Art. 37/2 AOW](/laws/1978070303#art-37-2)
-            - After a blockquote, attribute with a linked reference: > "quoted text" — [Art. 37/2 AOW](/laws/1978070303#art-37-2)
-            - WRONG: "Art. 37/2 AOW" (plain text, no link)
-            - RIGHT: "[Art. 37/2 AOW](/laws/1978070303#art-37-2)" (clickable link)
-            - If a source has no LINK: field, cite it in plain text without a hyperlink.
-            - NEVER fabricate a NUMAC, ECLI, or any identifier. If it's not in the context, don't link it.
-            - CITE ONLY FROM THE SOURCES: never write an article NUMBER that does not appear in the context sources above — not even if you are confident it exists. Any plain "Art. X" without a matching source causes the ENTIRE answer to be rejected. Describe such rules in words instead and say the specific provision is not among the consulted sources.
-            - The ONLY valid /laws/ URLs are the exact LINK values given in the context sources above.
-            - URLs built from a law's NAME (e.g. /laws/btw-wetboek, /laws/burgerlijk-wetboek) DO NOT EXIST and produce a dead link. Law pages are keyed by NUMAC (10 digits) or FISCONET_<id> only — never slugify a law title into a URL.
+            #{source_hyperlink_policy(question, language: :en)}
 
             DOMAIN-SPECIFIC GUIDANCE (use only when the named law is actually among the sources above — NEVER cite article numbers from memory):
             - Arbeidsrecht: Cite AOW (Arbeidsovereenkomstenwet 1978), Arbeidswet 1971
             - Consumentenrecht: wettelijke conformiteitsgarantie = Oud BW art. 1649bis-1649octies; verborgen gebreken = Oud BW art. 1641-1649; herroeping en handelspraktijken = Boek VI WER. Verwissel deze regimes niet.
             - Vennootschapsrecht: Cite WVV 2019 (Wetboek Vennootschappen Verenigingen)
+            - OPRICHTINGSAKTE: Als de vraag geen rechtsvorm noemt, vraag welke vorm bedoeld is of onderscheid uitdrukkelijk BV, CV, NV, VZW, IVZW en stichting. Presenteer vormspecifieke vereisten nooit als algemene regel. Houd de aktevereisten (art. 2:5 en de vormbepalingen) gescheiden van de neerlegging/openbaarmaking en de in art. 2:8-2:11 bedoelde uittreksels; citeer alleen artikelen die in de bronnen staan. Art. 6:13 kan bronnotities bevatten over een vernietigde bepaling: behandel zo'n NOTA niet als nog geldend recht.
             - Gezondheidsrecht: Cite Patiëntenrechtenwet 2002, Gezondheidswet
             - Huurrecht: Cite Vlaams Woninghuurdecreet 2018, Woninghuurwet
             - Sociaal recht: Cite specifieke wet (ZIV-wet, Leefloonwet, Werkloosheidsbesluit)
@@ -922,13 +1517,14 @@ class LegalChatbotService
 
             FOLLOW-UP HINT (add at the very end, before the disclaimer):
             After your answer, add a brief line in the response language suggesting follow-up:
-            NL: "💡 Stel gerust een vervolgvraag voor meer detail, of probeer een hoger intelligentieniveau en/of hoger redeneringsniveau (indien mogelijk) via de instellingen ⚙."
-            FR: "💡 N'hésitez pas à poser une question complémentaire, ou essayez un niveau d'intelligence et/ou de raisonnement supérieur (si possible) via les paramètres ⚙."
-            EN: "💡 Feel free to ask a follow-up question for more detail, or try a higher intelligence and/or reasoning level (if possible) via the settings ⚙."
-            DE: "💡 Stellen Sie gerne eine Folgefrage für mehr Details, oder probieren Sie ein höheres Intelligenz- und/oder Denkniveau (falls möglich) über die Einstellungen ⚙."
+            NL: "💡 Stel gerust een vervolgvraag voor meer detail. Via de instellingen ⚙ kiest u uw model-denkwerkcombinatie met de gekoppelde balk of keuzelijst; controleer het getoonde aantal credits vóór Verzenden."
+            FR: "💡 Posez une question complémentaire pour plus de détails. Dans les paramètres ⚙, choisissez votre combinaison de modèle et de raisonnement avec la barre ou la liste liées ; vérifiez les crédits affichés avant Envoyer."
+            EN: "💡 Ask a follow-up question for more detail. In settings ⚙, choose your model/reasoning combination with the linked bar or dropdown; check the displayed credits before Send."
+            DE: "💡 Stellen Sie eine Folgefrage für mehr Details. Unter Einstellungen ⚙ wählen Sie Ihre Modell-Denkmodus-Kombination mit der gekoppelten Leiste oder Liste; prüfen Sie die angezeigten Credits vor Senden."
             Keep this short – ONE line only, matching the response language.
 
-            End with disclaimer: "Dit is geen officieel juridisch advies."
+            End with disclaimer: "#{disclaimer_text}"
+            The disclaimer MUST match the response language. If the response follows a question in a different language, translate the disclaimer into that language; never append a Dutch or English disclaimer to an answer in another language.
 
             PRIVACY & PERSONAL DATA:
             - Users may include personal details (names, addresses, case numbers, medical info) in their questions.
@@ -945,7 +1541,7 @@ class LegalChatbotService
     source_specific = case source_type
                       when :jurisprudence
                         "\n\nYou are citing JURISPRUDENCE (court decisions / rechtspraak).\n" \
-                        "MANDATORY: You MUST cite at least one court case in your answer with its ECLI number.\n" \
+                        "Cite a supplied decision only when its actual passages support a relevant proposition; retrieval alone never requires citation. Identify legislative opinions as advice, not judgments.\n" \
                         "Use the LINK: field from the source context — COPY it exactly. Do NOT construct URLs.\n" \
                         "Format: [ECLI number](LINK from context)\n" \
                         'Use a blockquote only for a key passage that is present verbatim in the provided context; otherwise cite the case as a plain link.'
@@ -990,26 +1586,24 @@ class LegalChatbotService
                           "- [#{labels[:tax]}]: #{labels[:tax_desc]}\n\n" \
                           "For tax questions (BTW/TVA, inkomstenbelasting, registratie- en successierechten), the #{labels[:tax]} sources contain the consolidated code text — prefer them and cite them with their LINK values.\n" \
                           "Cite all relevant sources INLINE in your answer. Use blockquotes only for text that appears verbatim in the provided context.\n" \
-                          'If RECHTSPRAAK sources are provided, mention at least one court case with ECLI reference and link.'
+                          'Cite case law only when a supplied passage is relevant and supports the proposition. Do not cite an unrelated case merely because it was retrieved; legislative opinions are advice, not judgments.'
                       else # legislation
                         "\nCite ONLY legal articles using the LINK: field from context. Format: [Art. X Law Title](LINK from context). Quote a relevant passage only when its actual text appears in the context; otherwise use a plain linked citation. NEVER show NUMAC in visible text."
                       end
 
-    disclaimer = "\n\nMandatory disclaimer: This is not official legal advice. Always verify with official sources."
+    disclaimer = "\n\nMandatory disclaimer: #{disclaimer_text} #{source_reminder} " \
+                 'Use the same language as the answer for both closing sentences.'
 
-    language_instruction = "\n\n**CRITICAL: Your response MUST be in the SAME LANGUAGE as the user's question. If they ask in English, respond in English. If Dutch, respond in Dutch. If French, respond in French.**"
+    language_instruction = "\n\n**CRITICAL: Use the resolved answer language, #{lang_name}, for analysis, headings and closing guidance. Source context and quoted text must not change that choice. Follow only the EN/INT input-language exception when it is explicitly included above.**"
+    language_instruction += "\n#{LegalChatbot::LanguageDetection::INTERNATIONAL_LANGUAGE_EXCEPTION}" if international_mode
 
-    base_rules + source_specific + disclaimer + language_instruction
+    prompt = base_rules + source_specific + disclaimer + language_instruction
+    company_capital_question?(question) ? BV_CAPITAL_OVERRIDE + prompt : prompt
   end
 
   # French system prompt for lisloi.be - entire prompt in French for better results
-  def build_french_system_prompt(source_type)
+  def build_french_system_prompt(source_type, question: nil)
     base_rules = <<~RULES
-      [RAPPEL] RAPPEL OBLIGATOIRE - LIRE EN PREMIER:
-      La SRL (société à responsabilité limitée) n'a PAS de capital minimum depuis le CSA 2019. Réponse: "pas de capital minimum".
-      Si on demande le capital d'une SRL: dire "Une SRL n'a pas de capital minimum depuis le CSA de 2019."
-      NE JAMAIS dire qu'une SRL nécessite 18.550€ ou 61.500€ - c'est FAUX. Seule la SA nécessite 61.500€.
-
       Vous êtes un assistant juridique belge.
       DATE ACTUELLE (Europe/Brussels): #{Date.current.iso8601}.
       PRIORITÉ TEMPORELLE: Comparez chaque date d'effet à la DATE ACTUELLE.
@@ -1054,37 +1648,11 @@ class LegalChatbotService
       - NE JAMAIS dire "la loi prévoit" sans le numéro d'article
       - Citez TOUS les articles pertinents, pas un seul. Si Art. 37, 37/2, 39 et 39ter s'appliquent, citez-les TOUS.
 
-      RÈGLE DE CITATION — CITER UNIQUEMENT LE TEXTE PRÉSENT DANS LE CONTEXTE:
-      Lorsqu'un article cité contient son texte EFFECTIF dans le contexte ci-dessous, incluez un blockquote (>) de la PHRASE PERTINENTE UNIQUEMENT.
-      IMPORTANT: Citez UNIQUEMENT les 1-3 phrases les plus pertinentes, PAS le texte intégral de l'article.
-      MAUVAIS: Copier tout le texte de l'Art. 37/2 avec ses 10+ sous-points
-      BON: > "Le délai de préavis est de trois semaines" — [Art. 37/2 LCT](/lien) (expliquez ensuite la condition d'ancienneté avec vos propres mots, en dehors de la citation)
-      NE JAMAIS omettre des mots au milieu d'une citation, ni écrire [...] ou ... dans un blockquote: une citation doit être une SUITE ININTERROMPUE de mots, exactement comme dans la source. Si le passage est long, citez un fragment plus court d'un seul tenant.
-      Si l'article contient une longue liste, résumez en prose et ne citez que la plage pertinente.
-      CRITIQUE — l'interdiction de fabrication PRIME sur le souhait de citer: si le texte effectif d'un article n'est PAS dans le contexte, n'inventez JAMAIS de blockquote. Citez l'article par un lien simple ou omettez-le. Une citation sans blockquote est préférable à une fausse citation.
-      Les fiches sources sont affichées séparément par l'interface — votre seul rôle est de citer en ligne et de blockquoter uniquement le texte présent dans le contexte.
-      - NE JAMAIS afficher "NUMAC XXXXXXX" dans le texte visible – utilisez le TITRE de la loi.
-
-      CITATION VERBATIM — TOLÉRANCE ZÉRO POUR LA FABRICATION:
-      - Avant de créer un blockquote, trouvez la phrase exacte dans le contexte et copiez-la caractère par caractère. Ne l'écrivez pas de mémoire et ne la reformulez pas.
-      - Un blockquote ne peut contenir que du texte exact provenant du contexte. Pour expliquer ou paraphraser, utilisez vos propres mots HORS des guillemets.
-      - Si les sources ne permettent pas de soutenir une affirmation par une citation verbatim, dites-le explicitement au lieu d'en fabriquer une.
+      #{source_quotation_policy(question, language: :fr)}
 
       **EXCEPTIONS:** [Exceptions principales - uniquement si pertinent, ex: licenciement pour motif grave, travailleurs protégés]
 
-      RÈGLE DES LIENS — OBLIGATOIRE POUR CHAQUE CITATION D'ARTICLE:
-      - Chaque source dans le contexte inclut un champ "LINK: /laws/..." ou "LINK: /jurisprudence/...".
-      - CHAQUE référence d'article dans votre réponse DOIT être un lien markdown cliquable.
-      - COPIEZ la valeur LINK exactement telle que fournie. NE construisez, modifiez ou inventez JAMAIS d'URLs.
-      - Format: [Art. X Titre de la loi](VALEUR_LINK) — utilisez le LINK de la source.
-      - EXEMPLE: Source a "LINK: /laws/1978070303#art-37-2" → écrivez: [Art. 37/2 LCT](/laws/1978070303#art-37-2)
-      - Après un blockquote: > "texte cité" — [Art. 37/2 LCT](/laws/1978070303#art-37-2)
-      - FAUX: "Art. 37/2 LCT" (texte brut, pas de lien)
-      - CORRECT: "[Art. 37/2 LCT](/laws/1978070303#art-37-2)" (lien cliquable)
-      - Si une source n'a pas de champ LINK:, citez-la en texte brut sans lien.
-      - NE JAMAIS fabriquer un NUMAC, ECLI ou identifiant. S'il n'est pas dans le contexte, pas de lien.
-      - Les SEULES URLs /laws/ valides sont les valeurs LINK exactes fournies dans les sources du contexte.
-      - Les URLs construites à partir du NOM d'une loi (ex: /laws/code-tva, /laws/code-civil) N'EXISTENT PAS et produisent un lien mort. Les pages de lois sont indexées par NUMAC (10 chiffres) ou FISCONET_<id> uniquement — ne jamais transformer un titre de loi en URL.
+      #{source_hyperlink_policy(question, language: :fr)}
 
       Amendes: x8 décimes additionnels en Belgique (€100 dans la loi = €800 réel)
 
@@ -1092,6 +1660,7 @@ class LegalChatbotService
       - Période d'essai: SUPPRIMÉE depuis le 1er janvier 2014 (seuls intérim/étudiants: 3 jours)
       - Jour de carence: SUPPRIMÉ depuis le 1er janvier 2014 (salaire garanti dès le jour 1)
       - SRL capital minimum: PAS DE CAPITAL MINIMUM depuis le CSA 2019. Seule la SA nécessite €61.500.
+      - ACTE CONSTITUTIF: Si la question ne précise pas la forme juridique, demandez-la ou distinguez explicitement SRL, SC, SA, ASBL, AISBL et fondation. Ne présentez jamais les exigences d'une forme comme une règle générale. Séparez le contenu de l'acte (art. 2:5 et la disposition propre à la forme) du dépôt/publicité et des extraits visés aux art. 2:8-2:11; ne citez que les articles présents dans les sources. L'art. 6:13 peut contenir une NOTE relative à une disposition annulée: ne la présentez pas comme du droit actuellement applicable.
       - Ouvriers/employés: statut unique depuis 2014
       - Permis à points: N'EXISTE PAS en Belgique
       - Réserve héréditaire: 1/2 quel que soit le nombre d'enfants (réforme 2018)
@@ -1150,7 +1719,7 @@ class LegalChatbotService
 
       SUGGESTION DE SUIVI (ajoutez à la toute fin, avant l'avertissement):
       Après votre réponse, ajoutez une brève ligne suggérant un suivi:
-      "💡 N'hésitez pas à poser une question complémentaire, ou essayez un niveau d'intelligence et/ou de raisonnement supérieur (si possible) via le curseur ci-dessus."
+      "💡 Posez une question complémentaire pour plus de détails. Dans les paramètres ⚙, choisissez votre combinaison de modèle et de raisonnement avec la barre ou la liste liées ; vérifiez les crédits affichés avant Envoyer."
       Gardez cette ligne COURTE – UNE seule ligne.
 
       Terminez par l'avertissement: "Ceci n'est pas un avis juridique officiel."
@@ -1165,7 +1734,7 @@ class LegalChatbotService
     source_specific = case source_type
                       when :jurisprudence
                         "\n\nVous citez de la JURISPRUDENCE (décisions de justice).\n" \
-                        "OBLIGATOIRE: Vous DEVEZ citer au moins un arrêt avec son numéro ECLI.\n" \
+                        "Ne citez une décision fournie que si ses passages étayent une proposition pertinente ; sa seule présence dans les résultats n’impose aucune citation. Distinguez les avis législatifs des arrêts.\n" \
                         'Utilisez un blockquote pour un passage clé seulement s’il apparaît textuellement dans le contexte; sinon, citez l’arrêt par un lien simple.'
                       when :parliamentary
                         "\n\nVous citez des TRAVAUX PRÉPARATOIRES.\n" \
@@ -1177,6 +1746,7 @@ class LegalChatbotService
 
     disclaimer = "\n\nAvertissement obligatoire: Ceci n'est pas un avis juridique officiel. Vérifiez toujours avec les sources officielles."
 
-    base_rules + source_specific + disclaimer
+    prompt = base_rules + source_specific + disclaimer
+    company_capital_question?(question) ? SRL_CAPITAL_OVERRIDE + prompt : prompt
   end
 end

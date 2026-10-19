@@ -24,10 +24,10 @@ module LegalChatbot
     end
 
     # Build context from jurisprudence results (external DB format)
-    def build_jurisprudence_context(cases)
+    def build_jurisprudence_context(cases, question: nil, max_chars: 2000)
       cases.map.with_index do |c, index|
-        lang_label = c[:language_id] == 1 ? 'NL' : 'FR'
-        text = c[:summary].present? ? c[:summary] : c[:full_text].to_s[0, 2000]
+        lang_label = actual_source_language(c)
+        text = source_passages(c, question, max_chars)
 
         <<~CONTEXT
           [Bron #{index + 1} - #{case_source_label(c[:case_number])} (#{lang_label})]
@@ -40,7 +40,7 @@ module LegalChatbot
     end
 
     # Build combined context from multiple source types
-    def build_combined(articles, cases, offset: 0)
+    def build_combined(articles, cases, offset: 0, question: nil, max_chars: 2000)
       parts = []
       law_label = @language == 'fr' ? 'LOI' : 'WET'
       juris_label = @language == 'fr' ? 'JURISPRUDENCE' : 'RECHTSPRAAK'
@@ -60,11 +60,7 @@ module LegalChatbot
       end
 
       cases.each_with_index do |c, index|
-        lang_label = if (c.respond_to?(:language_id) ? c.language_id : c[:language_id]) == 1
-                       'NL'
-                     else
-                       'FR'
-                     end
+        lang_label = actual_source_language(c)
         case_number = c.respond_to?(:case_number) ? c.case_number : c[:case_number]
         court = c.respond_to?(:court) ? c.court : c[:court]
         parts << <<~CONTEXT
@@ -72,7 +68,7 @@ module LegalChatbot
           #{case_identity_lines(case_number, court).join("\n")}
           Datum: #{c.respond_to?(:decision_date) ? c.decision_date : c[:decision_date]}
 
-          #{c.respond_to?(:chunk_text) ? c.chunk_text : c[:summary] || c[:full_text].to_s[0, 2000]}
+          #{source_passages(c, question, max_chars)}
         CONTEXT
       end
 
@@ -80,6 +76,26 @@ module LegalChatbot
     end
 
     private
+
+    def source_record_field(record, key)
+      return record.public_send(key) if record.respond_to?(key)
+      return record[key] || record[key.to_s] if record.is_a?(Hash)
+
+      nil
+    end
+
+    def actual_source_language(record)
+      explicit = source_record_field(record, :source_language).to_s.downcase
+      return explicit.upcase if %w[nl fr de en].include?(explicit)
+
+      { 1 => 'NL', 2 => 'FR', 3 => 'DE' }[source_record_field(record, :language_id).to_i] || 'unknown'
+    end
+
+    def source_passages(record, question, max_chars)
+      text = source_record_field(record, :full_text).presence || source_record_field(record, :chunk_text)
+      SourcePassageExcerpt.excerpt(ensure_utf8(text), question, max_chars: max_chars,
+                                                                summary: ensure_utf8(source_record_field(record, :summary)))
+    end
 
     # An advisory opinion of the Council's Legislation section is not case law,
     # and must not reach the model under a case-law label with an "ECLI" and a

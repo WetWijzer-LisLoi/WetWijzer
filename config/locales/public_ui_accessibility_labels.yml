@@ -1,0 +1,32 @@
+nl:
+  public_navigation:
+    menu: "Menu"
+    breadcrumb: "Kruimelpad"
+    dossier: "Dossier"
+  chatbot:
+    open_chatbot: "Chatbot openen"
+    one_new_message: "1 nieuw bericht"
+fr:
+  public_navigation:
+    menu: "Menu"
+    breadcrumb: "Fil d’Ariane"
+    dossier: "Dossier"
+  chatbot:
+    open_chatbot: "Ouvrir le chatbot"
+    one_new_message: "1 nouveau message"
+de:
+  public_navigation:
+    menu: "Menü"
+    breadcrumb: "Brotkrumennavigation"
+    dossier: "Akte"
+  chatbot:
+    open_chatbot: "Chatbot öffnen"
+    one_new_message: "1 neue Nachricht"
+en:
+  public_navigation:
+    menu: "Menu"
+    breadcrumb: "Breadcrumb"
+    dossier: "Dossier"
+  chatbot:
+    open_chatbot: "Open chatbot"
+    one_new_message: "1 new message"

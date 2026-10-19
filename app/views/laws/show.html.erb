@@ -56,7 +56,7 @@
           <span class="print-loading-warning"><%= case I18n.locale when :fr then "ATTENTION: Les articles sont encore en cours de chargement. Veuillez attendre que tous les articles soient chargés avant d'imprimer." when :de then 'ACHTUNG: Artikel werden noch geladen. Bitte warten Sie, bis alle Artikel geladen sind, bevor Sie drucken.' when :en then 'WARNING: Articles are still loading. Please wait until all articles are loaded before printing.' else 'LET OP: Artikelen worden nog geladen. Wacht tot alle artikelen geladen zijn voordat u afdrukt.' end %></span>
         </div>
       </div>
-      <div class="flex flex-wrap items-center gap-2 no-print">
+      <div class="source-detail-toolbar flex flex-wrap items-center gap-2 no-print">
         <% if german_site? %>
         <%# Language versions: on the German site one pill per other language
             the law is served in (German, French, Dutch), as on the case-law
@@ -64,44 +64,44 @@
         <% Array(@language_versions).reject { |id| id == @language_id }.each do |version_id| %>
           <% version_label = law_language_label(version_id) %>
           <%= link_to law_path(@law, language_id: version_id),
-                      class: "inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
+                      class: "source-detail-action inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
                       data: { law_language_version: version_label },
                       title: t('german_text.show_version', language: version_label) do %>
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
             </svg>
-            <span class="hidden sm:inline"><%= version_label %></span>
+            <span class="source-detail-label hidden sm:inline"><%= version_label %></span>
           <% end %>
         <% end %>
         <% else %>
         <%# Language switch link %>
         <% other_language_id = @language_id == 1 ? 2 : 1 %>
         <%= link_to law_path(@law, language_id: other_language_id),
-                    class: "inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
+                    class: "source-detail-action inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
                     title: case I18n.locale when :fr then (@language_id == 1 ? "Voir la version française" : "Voir la version néerlandaise") when :de then (@language_id == 1 ? "Französische Version anzeigen" : "Niederländische Version anzeigen") when :en then (@language_id == 1 ? "View French version" : "View Dutch version") else (@language_id == 1 ? "Bekijk de Franstalige versie" : "Bekijk de Nederlandstalige versie") end do %>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
           </svg>
-          <span class="hidden sm:inline"><%= @language_id == 1 ? 'FR' : 'NL' %></span>
+          <span class="source-detail-label hidden sm:inline"><%= @language_id == 1 ? 'FR' : 'NL' %></span>
         <% end %>
         <% end %>
         <%# Side by side comparison link: NL against FR, so not for a law the
             German site holds in German only %>
         <% if !german_site? || Array(@language_versions).intersect?(HasLanguage::SITE_LANGUAGE_IDS) %>
         <%= link_to compare_law_path(@law),
-                    class: "inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
+                    class: "source-detail-action inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
                     title: case I18n.locale when :fr then "Comparer NL et FR côte à côte" when :de then "NL und FR nebeneinander vergleichen" when :en then "Compare NL and FR side by side" else "NL en FR naast elkaar vergelijken" end do %>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
           </svg>
-          <span class="hidden sm:inline"><%= case I18n.locale when :fr then 'Comparer' when :de then 'Vergleichen' when :en then 'Compare' else 'Vergelijk' end %></span>
+          <span class="source-detail-label hidden sm:inline"><%= case I18n.locale when :fr then 'Comparer' when :de then 'Vergleichen' when :en then 'Compare' else 'Vergelijk' end %></span>
         <% end %>
         <% end %>
         <%# Print button %>
         <button type="button"
                 id="print-law-btn"
                 data-controller="print" data-action="print#fire"
-                class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
+                class="source-detail-action inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
                 title="<%= case I18n.locale when :fr then 'Imprimer' when :de then 'Drucken' when :en then 'Print' else 'Afdrukken' end %>">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd"/>
@@ -109,7 +109,7 @@
         </button>
         <%# Bookmark button %>
         <button type="button"
-                class="bookmark-btn inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
+                class="source-detail-action bookmark-btn inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
                 data-controller="bookmark"
                 data-bookmark-numac-value="<%= @law.numac %>"
                 data-bookmark-title-value="<%= escape_once(@law.title.to_s.truncate(200)) %>"
@@ -126,7 +126,7 @@
              data-copy-reference-title-value="<%= escape_once(@law.title.to_s) %>"
              data-copy-reference-date-value="<%= @law.content&.publication_date %>">
           <button type="button"
-                  class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
+                  class="source-detail-action inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150"
                   data-copy-reference-target="button"
                   data-action="click->copy-reference#toggle"
                   aria-haspopup="true"
@@ -139,9 +139,9 @@
           <div data-copy-reference-target="menu"
                class="hidden absolute right-0 mt-1 w-48 rounded-md shadow-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-50">
             <div class="py-1">
-              <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-(--accent-active-bg)" data-action="click->copy-reference#copyFull"><%= t('copy_reference.full') %></button>
-              <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-(--accent-active-bg)" data-action="click->copy-reference#copyNumac"><%= t('copy_reference.numac') %></button>
-              <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-(--accent-active-bg)" data-action="click->copy-reference#copyUrl"><%= t('copy_reference.url') %></button>
+              <button type="button" class="source-detail-action source-detail-menu-action w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-(--accent-active-bg)" data-action="click->copy-reference#copyFull"><%= t('copy_reference.full') %></button>
+              <button type="button" class="source-detail-action source-detail-menu-action w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-(--accent-active-bg)" data-action="click->copy-reference#copyNumac"><%= t('copy_reference.numac') %></button>
+              <button type="button" class="source-detail-action source-detail-menu-action w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-(--accent-active-bg)" data-action="click->copy-reference#copyUrl"><%= t('copy_reference.url') %></button>
             </div>
           </div>
         </div>
@@ -152,14 +152,13 @@
 </div>
 
 <!-- Main Content Layout -->
-<div data-controller="sidebar-toggle toc-anchor" class="w-full pb-24 md:pb-0">
+<div data-controller="sidebar-toggle toc-anchor" class="w-full">
   <!-- Shelf handle is used for all sizes; mobile floating buttons are available -->
   <!-- Mobile backdrop for sidebar -->
   <div data-sidebar-toggle-target="backdrop" class="hidden fixed inset-0 bg-black/30 z-30 md:hidden"></div>
   
-  <!-- Mobile-only fixed bottom bar with 3 equal buttons [Go to, Inhoud, Chat] -->
-  <div class="md:hidden fixed bottom-0 inset-x-0 z-50 no-print" id="mobile-bottom-bar">
-    <div class="flex items-stretch bg-white/95 dark:bg-gray-900/95 backdrop-blur border-t border-gray-200 dark:border-gray-700 shadow-[0_-2px_10px_rgba(0,0,0,0.08)]">
+  <%# Keep specialized actions inside their real sidebar/jump controller scope. %>
+  <% mobile_dock_context = capture do %>
       <!-- Go to… jump menu (opens upward) -->
       <div id="mobile-jump" data-controller="jump-select" data-jump-select-fallback-value="true" class="relative flex-1 overflow-visible">
         <button type="button"
@@ -206,21 +205,16 @@
           </svg>
           <span class="text-[10px] font-medium leading-none"><%= t(:toc, default: 'Inhoud') %></span>
         </button>
+      <% else %>
+        <%= link_to bookmarks_path(locale: I18n.locale), data: { mobile_dock_link: 'bookmarks' } do %>
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 3h12v18l-6-4-6 4V3Z"/></svg>
+          <span><%= t('mobile_dock.bookmarks') %></span>
+        <% end %>
       <% end %>
 
-      <!-- Chatbot trigger (replaces the floating FAB on mobile) -->
-        <button type="button" id="mobile-chat-btn"
-                class="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-(--accent-600) dark:text-(--accent-400) hover:text-(--accent-700) dark:hover:text-(--accent-600) hover:bg-(--accent-500)/10 dark:hover:bg-(--accent-400)/10 transition-colors duration-150"
-                data-chatbot-toggle
-                aria-label="<%= case I18n.locale when :fr then 'Ouvrir le chatbot' when :de then 'Chatbot öffnen' when :en then 'Open chatbot' else 'Chatbot openen' end %>">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-          </svg>
-          <span class="text-[10px] font-medium leading-none">Chat</span>
-        </button>
-    </div>
-  </div>
+  <% end %>
+  <% content_for :mobile_dock_rendered, 'true' %>
+  <%= render 'layouts/mobile_dock', context_controls: mobile_dock_context %>
 
   <div class="flex flex-col md:flex-row gap-8 w-full">
   <!-- Sidebar with TOC (left) -->
@@ -257,6 +251,8 @@
       <%= render 'german_text_notice', law: @law, notice: @german_notice, versions: @language_versions %>
     <% end %>
 
+    <%= render 'fisconet_text_notice', law: @law %>
+
     <!-- External Links -->
     <div id="external-links-card" class="no-print bg-white dark:bg-gray-800 rounded-xl shadow-sm scroll-mt-24">
       <%= render 'external_links', law: @law %>
@@ -276,12 +272,12 @@
     </div>
  
     <!-- Static TOC section under Title (always visible, collapsible) -->
-    <%# WW-WER-01: a very long table of contents is summarised here rather
-        than repeated before the text; the sidebar holds all of it. %>
+    <%# Long contents stay here in an open, bounded disclosure; the
+        searchable sidebar remains an additional way to browse them. %>
     <% if @content.present? && @content.toc.present? %>
     <div id="main-toc-card" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm scroll-mt-24">
       <% if large_law_toc?(@content) %>
-        <%= render 'toc_summary', count: law_toc_entries(@content).size %>
+        <%= render 'toc_summary', content: @content, count: law_toc_entries(@content).size %>
       <% else %>
         <%= render 'toc', content: @content, articles: @articles, hide_header: false, scrollable: false, track: false, variant: :main %>
       <% end %>

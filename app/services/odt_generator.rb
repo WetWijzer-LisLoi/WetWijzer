@@ -131,6 +131,8 @@ class OdtGenerator
       ecli = case_data[:case_number].to_s
       subject = case_data[:subject_matter].to_s.presence
       outcome = case_data[:outcome].to_s.presence
+      # An advice says what it is (WW-RVSADV-01): no judgment, no rule in force.
+      kind = case_data[:decision_type].to_s.presence if case_data[:case_number].to_s.start_with?('RVSADV:')
       accessed_label = accessed_label_for(locale)
       labels = jurisprudence_labels(locale)
 
@@ -142,7 +144,9 @@ class OdtGenerator
       body_xml << '<table:table-column table:style-name="MetaColLabel"/>'
       body_xml << '<table:table-column table:style-name="MetaColValue"/>'
 
-      [[labels[:court], court], [labels[:date], date]].each do |label, value|
+      rows = [[labels[:court], court], [labels[:date], date]]
+      rows << [labels[:type], kind] if kind
+      rows.each do |label, value|
         body_xml << '<table:table-row>'
         body_xml << table_cell("<text:p text:style-name=\"TableContent\"><text:span text:style-name=\"Bold\">#{esc(label)}:</text:span></text:p>")
         body_xml << table_cell("<text:p text:style-name=\"TableContent\">#{esc(value)}</text:p>")
@@ -572,10 +576,10 @@ class OdtGenerator
 
     def jurisprudence_labels(locale)
       case locale
-      when :fr then { court: 'Juridiction', date: 'Date', subject: 'Domaine', ruling: 'Décision' }
-      when :de then { court: 'Gericht', date: 'Datum', subject: 'Rechtsgebiet', ruling: 'Urteil' }
-      when :en then { court: 'Court', date: 'Date', subject: 'Subject', ruling: 'Ruling' }
-      else { court: 'Rechtsinstantie', date: 'Datum', subject: 'Rechtsdomein', ruling: 'Uitspraak' }
+      when :fr then { court: 'Juridiction', date: 'Date', subject: 'Domaine', ruling: 'Décision', type: 'Type de document' }
+      when :de then { court: 'Gericht', date: 'Datum', subject: 'Rechtsgebiet', ruling: 'Urteil', type: 'Dokumentart' }
+      when :en then { court: 'Court', date: 'Date', subject: 'Subject', ruling: 'Ruling', type: 'Document type' }
+      else { court: 'Rechtsinstantie', date: 'Datum', subject: 'Rechtsdomein', ruling: 'Uitspraak', type: 'Documentsoort' }
       end
     end
 

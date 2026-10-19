@@ -1,7 +1,7 @@
 <%= render 'legal_pages/legal_page_styles' %>
 <div class="legal-page">
 <h1>Foire aux questions (FAQ)</h1>
-    <p class="last-updated">Derni&egrave;re mise &agrave; jour : 9 juin 2026</p>
+    <p class="last-updated">Derni&egrave;re mise &agrave; jour : 11 octobre 2026</p>
 
     <div class="toc">
         <strong>Sommaire</strong>
@@ -54,7 +54,7 @@
     <details>
         <summary>En quelles langues LisLoi est-il disponible ?</summary>
         <div>
-            <p>L'interface est disponible en n&eacute;erlandais, fran&ccedil;ais, allemand et anglais. Le chatbot IA r&eacute;pond dans la langue que vous s&eacute;lectionnez. La base de donn&eacute;es l&eacute;gislative contient les textes dans leur langue de publication originale.</p>
+            <p>L'interface est disponible en n&eacute;erlandais, fran&ccedil;ais, allemand et anglais. Sur NL/FR/DE, le chatbot répond par défaut dans la langue du site ; sur EN/INT, il suit la langue de votre question. Vous pouvez demander explicitement une réponse en néerlandais, français, allemand ou anglais. La base de donn&eacute;es l&eacute;gislative contient les textes dans leur langue de publication originale.</p>
         </div>
     </details>
 
@@ -109,17 +109,18 @@
     </details>
 
     <details>
-        <summary>Quels sont les niveaux d'intelligence ?</summary>
+        <summary>Comment choisir un modèle IA ?</summary>
         <div>
             <%= render 'legal_pages/chatbot_pricing_table', locale: :fr %>
-            <p>Les utilisateurs gratuits re&ccedil;oivent <%= RegistrationsController::STARTER_CREDITS %> cr&eacute;dits de d&eacute;marrage pour une s&eacute;lection de mod&egrave;les du niveau Malin (la liste figure sur la page des tarifs et peut &eacute;voluer). Les autres mod&egrave;les Malin ainsi que Génial, Cerveau et Omniscient sont exclusifs aux abonn&eacute;s Pro.</p>
+            <p><%= format(pricing_access_copy(:fr).fetch(:starter), credits: RegistrationsController::STARTER_CREDITS) %></p>
+            <p><%= pricing_access_copy(:fr).fetch(:access) %> <%= pricing_access_copy(:fr).fetch(:pending) %></p>
         </div>
     </details>
 
     <details>
-        <summary>Comment la profondeur de raisonnement est-elle d&eacute;termin&eacute;e ?</summary>
+        <summary><%= t('chatbot.research_depth.faq_title', locale: :fr) %></summary>
         <div>
-            <p>Les choix disponibles dépendent du modèle sélectionné. Mistral Small 4 propose Rapide et Approfondi ; les modèles dont le fournisseur prend en charge trois niveaux d’effort proposent aussi Équilibré. Les suppléments configurés sont de <strong><%= chatbot_reasoning_surcharge_list %> crédits</strong>. Un supplément est facturé uniquement si le modèle prend en charge et utilise le mode choisi ; le total exact est affiché avant l’envoi.</p>
+            <%= render 'legal_pages/research_depth_explanation', locale: :fr %>
         </div>
     </details>
 
@@ -133,7 +134,7 @@
                 <li>Mal interpr&eacute;ter des concepts juridiques</li>
                 <li>Mentionner des lois ou articles inexistants</li>
             </ul>
-            <p>V&eacute;rifiez toujours les r&eacute;ponses aupr&egrave;s des sources officielles ou consultez un professionnel du droit. Les niveaux sup&eacute;rieurs fournissent g&eacute;n&eacute;ralement des r&eacute;ponses plus pr&eacute;cises.</p>
+            <p>V&eacute;rifiez toujours les r&eacute;ponses aupr&egrave;s des sources officielles ou consultez un professionnel du droit. Un coût supérieur ne garantit pas une réponse plus exacte.</p>
         </div>
     </details>
 
@@ -181,7 +182,7 @@
     <details>
         <summary>Combien de cr&eacute;dits gratuits est-ce que je re&ccedil;ois ?</summary>
         <div>
-            <p>Lors de l'inscription, chaque utilisateur re&ccedil;oit <strong><%= RegistrationsController::STARTER_CREDITS %> cr&eacute;dits de d&eacute;part gratuits</strong>. Des cr&eacute;dits suppl&eacute;mentaires peuvent &ecirc;tre achet&eacute;s. G&eacute;nial, Ma&icirc;tre et Omniscient n&eacute;cessitent un abonnement Pro.</p>
+            <p><%= format(pricing_access_copy(:fr).fetch(:starter), credits: RegistrationsController::STARTER_CREDITS) %> <%= pricing_access_copy(:fr).fetch(:access) %></p>
         </div>
     </details>
 
@@ -200,6 +201,13 @@
     </details>
 
     <details>
+        <summary>Quand une question est-elle d&eacute;bit&eacute;e ?</summary>
+        <div>
+            <p>Le prix d'une question est r&eacute;serv&eacute; au moment o&ugrave; vous la posez. D&egrave;s que le traitement par l'IA de votre question a commenc&eacute; (la premi&egrave;re requ&ecirc;te adress&eacute;e &agrave; un service d'IA, par exemple pour chercher ou pour traduire), ce prix est d&eacute;bit&eacute;. C'est aussi le cas lorsque la r&eacute;ponse s'av&egrave;re ensuite incompl&egrave;te, est arr&ecirc;t&eacute;e par le contr&ocirc;le des sources ou &eacute;choue par la suite. Une question qui &eacute;choue avant le d&eacute;but du traitement par l'IA n'est pas d&eacute;bit&eacute;e : la r&eacute;servation est lib&eacute;r&eacute;e. Les nouvelles tentatives automatiques au sein d'une m&ecirc;me demande ne co&ucirc;tent pas de cr&eacute;dits suppl&eacute;mentaires. Si vous renvoyez la question, la r&egrave;gle ci-dessus s'applique &agrave; nouveau &agrave; cette nouvelle demande. Si une question d&eacute;bit&eacute;e ne donne pas de r&eacute;ponse utilisable, le message l'indique.</p>
+        </div>
+    </details>
+
+    <details>
         <summary>Quels moyens de paiement sont accept&eacute;s ?</summary>
         <div>
             <p>Via Mollie, des moyens de paiement courants sont propos&eacute;s, notamment Bancontact, les cartes de d&eacute;bit et de cr&eacute;dit et d'autres moyens de paiement europ&eacute;ens. Nous ne stockons aucune donn&eacute;e de carte ou de compte bancaire ; le paiement est trait&eacute; dans l'environnement s&eacute;curis&eacute; de Mollie.</p>
@@ -212,6 +220,7 @@
     <details>
         <summary>Que propose WetWijzer Pro ?</summary>
         <div>
+            <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
             <table>
                 <tr>
                     <th>Fonctionnalit&eacute;</th>
@@ -229,9 +238,9 @@
                     <td><strong><%= Subscription::PRO_MONTHLY_CREDITS %> par mois</strong> + achat suppl&eacute;mentaire possible</td>
                 </tr>
                 <tr>
-                    <td>Niveaux d'intelligence</td>
-                    <td>Malin (mod&egrave;les s&eacute;lectionn&eacute;s)</td>
-                    <td><strong>Les 4 niveaux</strong> incl. Génial, Cerveau et Omniscient</td>
+                    <td>Groupes de modèles</td>
+                    <td>Rapide, Équilibrée et Approfondie</td>
+                    <td><strong>Aussi Étendue</strong>, dès que les modèles sont disponibles</td>
                 </tr>
                 <tr>
                     <td>Mod&egrave;les IA</td>
@@ -260,6 +269,7 @@
                 </tr>
 
             </table>
+            <% unless classic_host? %></div><% end %>
         </div>
     </details>
 
@@ -268,8 +278,8 @@
         <div>
             <p>WetWijzer Pro est con&ccedil;u pour tous ceux qui effectuent r&eacute;guli&egrave;rement des recherches juridiques :</p>
             <ul>
-                <li><strong>IA plus intelligente :</strong> Génial (<%= chatbot_model_names_for_level(:genius, :fr) %>), Cerveau (<%= chatbot_model_names_for_level(:mastermind, :fr) %>) et Omniscient (<%= chatbot_model_names_for_level(:omniscient, :fr) %>) proposent les options les plus puissantes.</li>
-                <li><strong>Tous les mod&egrave;les IA :</strong> les abonn&eacute;s Pro acc&egrave;dent à tous les modèles configurés : <%= chatbot_all_model_names %>. Comparez les r&eacute;sultats et choisissez le mod&egrave;le optimal pour votre question.</li>
+                <li><strong>Étendue :</strong> Pro ajoute ce groupe de modèles, dès que disponibles : <%= chatbot_model_names_for_level(:omniscient, :fr) %>. Chaque question exige suffisamment de crédits.</li>
+                <li><strong>Disponibilité claire :</strong> les modèles Bientôt disponibles restent non sélectionnables, même avec Pro. Un compte ordinaire peut déjà utiliser Rapide, Équilibrée et Approfondie avec suffisamment de crédits.</li>
                 <li><strong>Jurisprudence via le chatbot :</strong> interrogez le chatbot sur les 175 000+ arr&ecirc;ts pseudonymis&eacute;s de la base de jurisprudence. La consultation de la base elle-m&ecirc;me reste gratuite pour tous, sans compte.</li>
                 <li><strong>Documents parlementaires :</strong> interrogez le chatbot sur les travaux pr&eacute;paratoires d'une loi.</li>
                 <li><strong>Abordable :</strong> <%= Subscription::PRO_MONTHLY_CREDITS %> cr&eacute;dits gratuits par mois avec possibilit&eacute; d'achat suppl&eacute;mentaire.</li>
@@ -303,7 +313,7 @@
     <details>
         <summary>Puis-je essayer Pro avant de m'abonner ?</summary>
         <div>
-            <p>Avec les <%= RegistrationsController::STARTER_CREDITS %> cr&eacute;dits de d&eacute;marrage, vous pouvez d&eacute;j&agrave; tester le chatbot sur les mod&egrave;les Malin s&eacute;lectionn&eacute;s. La base de jurisprudence est librement consultable par tous, sans compte. Pro y ajoute les niveaux Génial, Cerveau et Omniscient, plus la jurisprudence et les documents parlementaires via le chatbot. Comme Pro est r&eacute;siliable mensuellement sans pr&eacute;avis, vous pouvez l'essayer sans risque pour seulement &euro;2,99.</p>
+            <p>Vos <%= RegistrationsController::STARTER_CREDITS %> crédits de bienvenue permettent de tester les combinaisons disponibles dont le coût total ne dépasse pas votre solde. Un compte ordinaire a accès aux modèles jusqu’à Approfondie. Pro ajoute Étendue dès que disponible, ainsi que la jurisprudence et les documents parlementaires via le chatbot. La recherche sur le site reste gratuite. Pro coûte &euro;2,99 par mois et est résiliable mensuellement.</p>
         </div>
     </details>
 
@@ -317,7 +327,7 @@
     <details>
         <summary>Que deviennent mes cr&eacute;dits si je r&eacute;silie ?</summary>
         <div>
-            <p>Tous les cr&eacute;dits restent disponibles, m&ecirc;me apr&egrave;s la r&eacute;siliation de votre abonnement Pro. Vous ne recevrez plus vos <%= Subscription::PRO_MONTHLY_CREDITS %> cr&eacute;dits gratuits mensuels et vous perdez l'acc&egrave;s aux mod&egrave;les Malin r&eacute;serv&eacute;s &agrave; Pro, &agrave; G&eacute;nial, Ma&icirc;tre et Omniscient, ainsi qu'&agrave; la jurisprudence et aux documents parlementaires via le chatbot. La consultation de la base de jurisprudence sur le site reste gratuite pour tous.</p>
+            <p>Tous vos crédits restent disponibles après la résiliation de Pro. Vous ne recevez plus les <%= Subscription::PRO_MONTHLY_CREDITS %> crédits mensuels inclus et perdez l’accès à Étendue, à la jurisprudence et aux documents parlementaires via le chatbot. Rapide, Équilibrée et Approfondie restent utilisables avec suffisamment de crédits. La recherche sur le site reste gratuite pour tous.</p>
         </div>
     </details>
 
@@ -469,10 +479,10 @@
     <details>
         <summary>Quelles options sont disponibles ?</summary>
         <div>
-            <p><strong>Usage quotidien :</strong> Malin (<%= chatbot_base_credit_range_for(:smart, :fr) %> de base) &mdash; le coût en crédits le plus bas.</p>
-            <p><strong>Analyse approfondie :</strong> Génial (<%= chatbot_base_credit_range_for(:genius, :fr) %> de base) &mdash; <%= chatbot_model_names_for_level(:genius, :fr) %>.</p>
-            <p><strong>Analyse étendue :</strong> Cerveau (<%= chatbot_base_credit_range_for(:mastermind, :fr) %> de base) &mdash; <%= chatbot_model_names_for_level(:mastermind, :fr) %>.</p>
-            <p><strong>Autre perspective de modèle :</strong> Omniscient (<%= chatbot_base_credit_range_for(:omniscient, :fr) %> de base) &mdash; <%= chatbot_model_names_for_level(:omniscient, :fr) %>.</p>
+            <p><strong>Rapide :</strong> <%= chatbot_base_credit_range_for(:smart, :fr) %> de base &mdash; <%= chatbot_model_names_for_level(:smart, :fr) %>.</p>
+            <p><strong>Équilibrée :</strong> <%= chatbot_base_credit_range_for(:genius, :fr) %> de base &mdash; <%= chatbot_model_names_for_level(:genius, :fr) %>.</p>
+            <p><strong>Approfondie :</strong> <%= chatbot_base_credit_range_for(:mastermind, :fr) %> de base &mdash; <%= chatbot_model_names_for_level(:mastermind, :fr) %>.</p>
+            <p><strong>Étendue (Pro) :</strong> <%= chatbot_base_credit_range_for(:omniscient, :fr) %> de base &mdash; <%= chatbot_model_names_for_level(:omniscient, :fr) %>.</p>
         </div>
     </details>
 

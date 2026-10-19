@@ -17,6 +17,11 @@ module LegalChatbot
     CACHE_NAMESPACE_VERSION = 3
     DEFAULT_API_VERSION = '2024-02-15-preview'
 
+    # The browser question's dispatch receipt (owner policy 2026-10-18),
+    # assigned explicitly by the orchestrator; HyDE's own client receives it
+    # too. nil sends untracked (service traffic, rake tasks).
+    attr_accessor :provider_work_receipt
+
     def initialize(language: 'nl', endpoint: nil, deployment: nil, model: nil, dimensions: nil, api_version: nil,
                    mistral_api_key_env: 'MISTRAL_API_KEY')
       @language = language
@@ -128,13 +133,18 @@ module LegalChatbot
       # requested three-sentence search variant directly, faster and cheaper,
       # through the dedicated EU endpoint.
       model = 'mistral-small'
-      hyde_text = LlmClient.new(
+      hyde_client = LlmClient.new(
         model_override: model,
         language: @language,
         reasoning_effort: 'low',
         concise: true,
         mistral_api_key_env: @mistral_api_key_env
-      ).call_llm(
+      )
+      if hyde_client.respond_to?(:provider_work_receipt=)
+        hyde_client.provider_work_receipt = provider_work_receipt
+        hyde_client.provider_work_kind = 'hyde'
+      end
+      hyde_text = hyde_client.call_llm(
         [{ role: 'user', content: hyde_prompt }],
         max_tokens: 500
       )
@@ -184,6 +194,7 @@ module LegalChatbot
         reserved_units: LegalChatbotService.embedding_budget_reservation_units(text)
       )
       provider_request_started = false
+      dispatch_written = false
 
       uri = URI("#{@endpoint}/openai/deployments/#{@deployment}/embeddings?api-version=#{@api_version}")
       http = Net::HTTP.new(uri.host, uri.port)
@@ -201,7 +212,19 @@ module LegalChatbot
       request.body = { input: text, dimensions: @dimensions }.to_json
 
       provider_request_started = true
-      response = http.request(request)
+      # Same boundary as LlmClient#send_provider_request: open the connection,
+      # record or refuse the question's dispatch, then write. A fresh
+      # connection per attempt, as before, under the caller's 20-second
+      # Timeout and retry policy.
+      manages_session = http.respond_to?(:started?)
+      response = begin
+        http.start if manages_session && !http.started?
+        provider_work_receipt&.before_provider_dispatch!('question_embedding')
+        dispatch_written = true
+        http.request(request)
+      ensure
+        http.finish if manages_session && http.started?
+      end
 
       raise "Azure OpenAI error #{response.code}" unless response.code == '200'
 
@@ -215,8 +238,9 @@ module LegalChatbot
                      end
       LegalChatbotService.reconcile_auxiliary_provider_budget!(reservation, actual_units: actual_units)
       result.dig('data', 0, 'embedding')
-    rescue StandardError
-      LegalChatbotService.release_model_budget!(reservation) if reservation && !provider_request_started
+    rescue StandardError => e
+      refused_unsent = e.is_a?(ProviderWorkReceipt::PreDispatchRefused) && !dispatch_written
+      LegalChatbotService.release_model_budget!(reservation) if reservation && (!provider_request_started || refused_unsent)
       raise
     end
   end

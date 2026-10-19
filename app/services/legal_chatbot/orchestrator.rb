@@ -30,7 +30,15 @@ module LegalChatbot
     # chunk selection, the citation-repair chain - so ratings gathered under
     # different retrieval are not silently averaged together as one
     # configuration. A version label, never a hash of retrieved content.
-    RETRIEVAL_VERSION = 'retrieval_2026_08'
+    RETRIEVAL_VERSION = 'retrieval_2026_10_18_r44'
+
+    # Content-free configuration key. Different research budgets must not be
+    # averaged as one retrieval configuration in generation/rating telemetry.
+    # There is deliberately no shared question/answer cache.
+    def self.retrieval_version_for(depth)
+      normalized = LegalChatbotService.normalize_research_depth(depth)
+      normalized ? "#{RETRIEVAL_VERSION}_#{normalized}" : RETRIEVAL_VERSION
+    end
 
     included do
       # The phase this request is currently in, for the progress bar.
@@ -64,6 +72,15 @@ module LegalChatbot
         @llm_svc&.provider_call_count
       end
 
+      # The browser question's paid-AI dispatch receipt (owner policy
+      # 2026-10-18). Passed explicitly to every client this service builds,
+      # including ones already built, never through a thread-local.
+      def provider_work_receipt=(receipt)
+        @provider_work_receipt = receipt
+        @embedding_svc&.provider_work_receipt = receipt
+        @llm_svc&.provider_work_receipt = receipt
+      end
+
       # Lazy-initialized service instances (thread-safe via instance vars)
 
       private
@@ -72,7 +89,7 @@ module LegalChatbot
         @embedding_svc ||= LegalChatbot::EmbeddingService.new(
           language: @language,
           mistral_api_key_env: @mistral_api_key_env
-        )
+        ).tap { |service| service.provider_work_receipt = @provider_work_receipt }
       end
 
       def llm_svc
@@ -80,12 +97,17 @@ module LegalChatbot
           model_override: @model_override,
           language: @language,
           concise: @concise,
+          international_mode: @international_input_language == true,
           case_context: @case_context,
           reasoning_effort: @reasoning_effort,
+          research_depth: @research_depth,
           profile: @profile || 'general',
           embedding_service: embedding_svc,
           mistral_api_key_env: @mistral_api_key_env
-        )
+        ).tap do |client|
+          client.provider_work_receipt = @provider_work_receipt
+          client.provider_work_kind = 'generation'
+        end
       end
 
       def context_builder_svc
@@ -101,6 +123,10 @@ module LegalChatbot
           language: @language,
           embedding_service: embedding_svc
         )
+      end
+
+      def eu_search_svc
+        @eu_search_svc ||= LegalChatbot::EuSearch.new(language: @language, depth: @research_depth, history: -> { conversation_messages })
       end
 
       def legislation_search_svc
@@ -149,7 +175,8 @@ module LegalChatbot
       def regional_search_svc
         @regional_search_svc ||= LegalChatbot::RegionalSearch.new(
           language: @language,
-          embedding_service: embedding_svc
+          embedding_service: embedding_svc,
+          context_numacs: @context_numacs
         )
       end
     end
@@ -160,6 +187,10 @@ module LegalChatbot
     # Returns the same hash format as ask_internal_multi:
     #   { answer:, sources:, suggestions:, language:, response_time: }
     def orchestrated_multi_search(question, sources: [:legislation])
+      # Retrieval-only repair for a bare form reply (e.g. "BV") to the
+      # immediately preceding generic formation-deed question. The displayed
+      # question, analytics and conversation history remain the typed values.
+      question = expand_formation_deed_followup(question)
       start_time = Time.current
       phase_start = Time.current
 
@@ -173,8 +204,10 @@ module LegalChatbot
       t_embed = ((Time.current - phase_start) * 1000).round
       phase_start = Time.current
 
-      # HyDE (Hypothetical Document Embedding) - skip for smart tier to save ~3s
-      # Only beneficial for premium tiers where answer quality matters more than speed
+      # Keep the existing HyDE path for an actually supported medium/high
+      # effort; quick, free-reasoning and fixed-mode requests stay on the raw
+      # embedding. Deeper research adds local lexical passes, not extra paid
+      # generated-query calls beyond this existing medium/high path.
       hyde_embedding = if @reasoning_effort == 'low'
                          question_embedding # Skip HyDE - saves ~3s LLM call + embed
                        else
@@ -207,22 +240,42 @@ module LegalChatbot
       tax_articles = all_results[:fisconet] || []
       regional_docs = all_results[:regional] || []
 
+      # EU units share the user's selected legislation/jurisprudence job and
+      # telemetry keys, but never pass through Belgian NUMAC/title filters.
+      # This exact evidence pool is carried into context, guards, source cards
+      # and corrective generations; EU-only retrieval is a valid result.
+      eu_docs = (leg_articles + jur_cases).select { |row| row[:source] == LegalChatbot::EuCorpus::SOURCE }
+      leg_articles = leg_articles.reject { |row| row[:source] == LegalChatbot::EuCorpus::SOURCE }
+      jur_cases = jur_cases.reject { |row| row[:source] == LegalChatbot::EuCorpus::SOURCE }
+
       # Apply quality filters to legislation. Hybrid FAISS/FTS retrieval now
       # happens inside LegislationSearch#search, so this remains safe even
       # when FAISS had no hits and FTS supplied the fallback results.
       leg_articles = apply_legislation_quality_filters(leg_articles, question)
+      # Regional search uses a different result shape but must obey the same
+      # narrowly scoped subject relevance gate. Otherwise unrelated disaster
+      # compensation/social-integration rows still reach a consumer repair
+      # answer even after the Belgian legislation candidates were filtered.
+      regional_docs = regional_docs.select do |document|
+        LegalChatbot::LegislationSearch.contextual_source_relevant?(
+          { numac: document[:numac], law_title: document[:title], article_title: document.dig(:metadata, 'article_number') }, question
+        )
+      end
       t_filter = ((Time.current - phase_start) * 1000).round
       phase_start = Time.current
 
       # Bound evidence volume separately from reasoning effort. Azure's high
       # reasoning mode otherwise received ~19K input tokens and exhausted a
       # 16K completion envelope entirely on hidden reasoning. The best-ranked
-      # five statutes plus two cases and two preparatory works retain source
-      # diversity while giving the model room to produce a visible answer.
-      context_policy = reasoning_context_policy
+      # legacy five-statute policy and the new monotonic, bounded depth
+      # profiles retain diversity while leaving room for a visible answer.
+      context_policy = research_context_policy(question: question, articles: leg_articles)
       max_article_chars = context_policy.fetch(:max_article_chars)
       if context_policy[:bounded]
-        leg_articles = leg_articles.take(context_policy.fetch(:legislation))
+        leg_articles = retain_final_hybrid_quota(
+          leg_articles, limit: context_policy.fetch(:legislation),
+                        lexical_quota: context_policy.fetch(:lexical_quota, 2), diversify_injected: true
+        )
         jur_cases = jur_cases.take(context_policy.fetch(:jurisprudence))
         parl_docs = parl_docs.take(context_policy.fetch(:parliamentary))
         # Tax codes live ONLY in fisconet (BTW/WIB92 are empty in the main
@@ -242,6 +295,20 @@ module LegalChatbot
         regional_docs = regional_docs.take(context_policy.fetch(:regional))
       end
 
+      # The regional index contains a small overlap with the primary Belgian
+      # legislation index. Keeping both copies of the very same provision
+      # spends context and produces two source cards without adding evidence.
+      # This must run after the final primary quota: a candidate that was
+      # evicted from that quota cannot justify removing its regional copy.
+      # RegionalSearch has already made its region-coverage selection before
+      # this point, so that gate still sees every available region.
+      #
+      # This is intentionally a strict identity check. A matching NUMAC and
+      # normalized article number alone are not enough: Dutch and French
+      # versions are independently useful evidence, and an incomplete legacy
+      # sidecar must fail open rather than silently lose a regional source.
+      regional_docs = without_primary_legislation_duplicates(regional_docs, leg_articles)
+
       # EU legislation is not part of the Belgian NUMAC corpus. Admit only
       # deterministic, topic-gated source records sealed by LegalFactProvider;
       # these flow through the same context, quote, link, and citation guards
@@ -251,11 +318,22 @@ module LegalChatbot
                            else
                              []
                            end
+      authoritative_docs += eu_docs
 
       # A processor question may only proceed when the sealed, locale-specific
       # EUR-Lex source set is complete. Never let unrelated Belgian retrieval
       # turn a missing official translation into an apparently grounded answer.
-      return authoritative_source_unavailable_response if LegalFactProvider.gdpr_processor_question?(question) && authoritative_docs.empty?
+      unless required_official_sources_available?(question, authoritative_docs)
+        return authoritative_source_unavailable_response
+      end
+
+      # The general GDPR retention rule is EU law. These Belgian 2018 rows
+      # concern specialised regimes (including police and intelligence), not
+      # the recruiter's/general controller's universal retention policy.
+      # Keep domestic retrieval intact for questions about those regimes.
+      if LegalFactProvider.gdpr_retention_question?(question)
+        leg_articles = leg_articles.reject { |article| domestic_gdpr_retention_substitute?(article, question) }
+      end
 
       if leg_articles.empty? && jur_cases.empty? && parl_docs.empty? && tax_articles.empty? && regional_docs.empty? && authoritative_docs.empty?
         result = no_answer_response
@@ -305,13 +383,14 @@ module LegalChatbot
       total_ms = ((Time.current - start_time) * 1000).round
 
       # Performance instrumentation - grep for [Perf] to diagnose latency
-      Rails.logger.info("[Perf] Pipeline: embed=#{t_embed}ms hyde=#{t_hyde}ms search=#{t_search}ms filter=#{t_filter}ms context=#{t_context}ms llm=#{t_llm}ms total=#{total_ms}ms | sources=#{sources.join(',')} effort=#{@reasoning_effort} model=#{@model_override || 'default'} results=L#{leg_articles.size}/J#{jur_cases.size}/P#{parl_docs.size}/T#{tax_articles.size}/R#{regional_docs.size}")
+      Rails.logger.info("[Perf] Pipeline: embed=#{t_embed}ms hyde=#{t_hyde}ms search=#{t_search}ms filter=#{t_filter}ms context=#{t_context}ms llm=#{t_llm}ms total=#{total_ms}ms | sources=#{sources.join(',')} effort=#{@reasoning_effort} depth=#{@research_depth || 'legacy'} model=#{@model_override || 'default'} results=L#{leg_articles.size}/J#{jur_cases.size}/P#{parl_docs.size}/T#{tax_articles.size}/R#{regional_docs.size}")
 
       # Per-answer guard telemetry, reset explicitly: one service instance can
       # serve more than one ask (ask_with_sources, retries).
       @citation_guard_outcome = nil
       @citation_guard_rejection = nil
       @citation_guard_retries = 0
+      citation_guard_source_list_only = false
       statutory_sources = leg_articles + tax_articles + regional_docs + authoritative_docs
       guard_sources = {
         statutory_sources: statutory_sources,
@@ -326,12 +405,16 @@ module LegalChatbot
       # (31 July, "Moet contract schriftelijk zijn?"). Deepening the evidence
       # first costs one indexed lookup and no provider call, and cannot rescue
       # a false quote: the words must still occur verbatim in the fetched text.
-      quote_repairs = repair_quote_sources(answer, leg_articles)
+      quote_repairs = scope_repair_sources_for_question(repair_quote_sources(answer, leg_articles), question)
       if quote_repairs.any?
         leg_articles += quote_repairs
+        # A repair can introduce the primary copy of a provision that was not
+        # in the initial bounded pool. Keep the final source cards and any
+        # regenerated context to one copy of that exact evidence.
+        regional_docs = without_primary_legislation_duplicates(regional_docs, leg_articles)
         statutory_sources = leg_articles + tax_articles + regional_docs + authoritative_docs
         guard_sources = guard_sources.merge(
-          statutory_sources: statutory_sources, leg_articles: leg_articles
+          statutory_sources: statutory_sources, leg_articles: leg_articles, regional_docs: regional_docs
         )
         context = ensure_utf8(
           build_combined_context_from_db(
@@ -373,12 +456,13 @@ module LegalChatbot
       # rejected. The regenerated answer goes through the identical guard
       # chain, so nothing is trusted that was not verified.
       unless citation_guard_passed?
-        repaired = repair_cited_articles(@last_citation_guard_result, leg_articles)
-        if repaired.any?
+        repaired = scope_repair_sources_for_question(repair_cited_articles(@last_citation_guard_result, leg_articles), question)
+        if repaired.any? && enough_request_time?
           leg_articles += repaired
+          regional_docs = without_primary_legislation_duplicates(regional_docs, leg_articles)
           statutory_sources = leg_articles + tax_articles + regional_docs + authoritative_docs
           guard_sources = guard_sources.merge(
-            statutory_sources: statutory_sources, leg_articles: leg_articles
+            statutory_sources: statutory_sources, leg_articles: leg_articles, regional_docs: regional_docs
           )
           repaired_context = ensure_utf8(
             build_combined_context_from_db(
@@ -402,6 +486,8 @@ module LegalChatbot
               "[CitationRepair] regenerated with #{repaired.length} added article(s); " \
               "verified=#{citation_guard_passed?}"
             )
+          rescue Timeout::Error
+            raise
           rescue StandardError => e
             Rails.logger.warn("[CitationRepair] regeneration skipped: #{e.class}")
           end
@@ -413,7 +499,7 @@ module LegalChatbot
         first_citation_result = @last_citation_guard_result
         first_quote_result = @last_quote_guard_result
         attempts = 0
-        while attempts < CITATION_GUARD_MAX_RETRIES && !citation_guard_passed?
+        while attempts < CITATION_GUARD_MAX_RETRIES && !citation_guard_passed? && enough_request_time?
           corrective = citation_guard_corrective_feedback(@last_citation_guard_result)
           break if corrective.blank?
 
@@ -434,6 +520,8 @@ module LegalChatbot
                 "[CitationGuard] corrective retry #{attempts} produced a verified answer"
               )
             end
+          rescue Timeout::Error
+            raise
           rescue StandardError => e
             Rails.logger.warn("[CitationGuard] corrective retry #{attempts} failed: #{e.class}")
             break
@@ -471,14 +559,50 @@ module LegalChatbot
         # see. The full history and the shelved implementation are on branch
         # salvage-pass-shelved-20260804. Do not resurrect it without a
         # mechanism that cannot make a claim the guard has not established.
-        verified_fallback = high_confidence_topic_fallback_answer(question, statutory_sources)
-        verified_fallback = citation_guard_source_list_fallback_answer(statutory_sources) if verified_fallback.blank?
+        house_conditions = @citation_guard_rejection&.fetch(:missing_house_practical_conditions, nil)
+        house_fallback = if Array(house_conditions).intersect?(HouseHiddenDefectPracticalGrounding::CONDITION_CODES)
+                           HouseHiddenDefectPracticalGrounding.fallback(question, statutory_sources, language: @language)
+                         end
+        commute_conditions = @citation_guard_rejection&.fetch(:missing_office_commute_conditions, nil)
+        commute_fallback = if Array(commute_conditions).any?
+                             OfficeCommuteGrounding.fallback(question, statutory_sources, language: @language)
+                           end
+        childcare_fallback = ChildcareExpenseGrounding.fallback(question, statutory_sources, language: @language)
+        minor_fallback = SalduzMinorGrounding.fallback(question, statutory_sources, language: @language)
+        payment_fallback = PaymentAcceptanceGrounding.fallback(question, statutory_sources, language: @language)
+        formation_fallback = FormationDeedGrounding.fallback(question, statutory_sources, language: @language)
+        # A broad BV contents question can be answered directly from complete
+        # retrieved clauses, not merely their allocation/selection sentences.
+        # This is still a recovery from rejected generation, and it must pass
+        # exactly the same full guard chain below; keep that outcome honest.
+        bv_checklist = FormationBvChecklist.fallback(question, statutory_sources, language: @language)
+        classification_fallback = FormationDeedClassification.fallback(question, statutory_sources, language: @language)
+        capital_conditions = @citation_guard_rejection&.fetch(:missing_formation_bv_capital_conditions, nil)
+        capital_fallback = if Array(capital_conditions).any?
+                             FormationBvCapitalGrounding.fallback(question, statutory_sources, language: @language)
+                           end
+        classification_fallback = [classification_fallback, capital_fallback].compact_blank.join("\n\n").presence
+        grounded_fallback = house_fallback.presence || commute_fallback.presence ||
+                            childcare_fallback.presence || minor_fallback.presence || payment_fallback.presence ||
+                            bv_checklist.presence || classification_fallback.presence || formation_fallback.presence
+        verified_fallback = grounded_fallback || high_confidence_topic_fallback_answer(question, statutory_sources)
+        if verified_fallback.blank?
+          verified_fallback = citation_guard_source_list_fallback_answer(statutory_sources, verdict: @last_citation_guard_result)
+          # Its links may verify, but a list of consulted sources does not
+          # replace the withheld legal answer. Keep this exact delivery
+          # distinct from substantive source-grounded recovery for billing.
+          citation_guard_source_list_only = verified_fallback.present?
+        end
         if verified_fallback.present?
           verified_fallback = validate_answer_links(
             verified_fallback, leg_articles, tax_articles, jur_cases, parl_docs, regional_docs, authoritative_docs
           )
-          clean_answer = validate_unlinked_article_citations(verified_fallback, statutory_sources)
-          @citation_guard_outcome = 'verified_sources_fallback'
+          clean_answer = if grounded_fallback.present?
+                           apply_answer_guard_chain(verified_fallback, question, guard_sources)
+                         else
+                           validate_unlinked_article_citations(verified_fallback, statutory_sources)
+                         end
+          @citation_guard_outcome = grounded_fallback.present? && !citation_guard_passed? ? 'refusal' : 'verified_sources_fallback'
         else
           @citation_guard_outcome = 'refusal'
         end
@@ -495,12 +619,9 @@ module LegalChatbot
         )
       end
 
-      # TODO: If users complain about irrelevant sources in the UI list (not the answer),
-      # consider adding a cheap Mistral Small pre-filter here to semantically filter
-      # jur_cases/parl_docs before formatting. Cost: ~€0.001/query, +1.5-3s latency.
-      # The LLM prompt already silently ignores irrelevant sources in the answer text,
-      # but the UI source list (format_all) still shows everything retrieved.
-      # See: implementation_plan.md "Option 2: Cheap LLM Pre-Filter"
+      # The source workers apply topic evidence checks before context building.
+      # Format that same final evidence pool (including verified citation-repair
+      # additions), rather than hiding unrelated cards after generation.
       result = {
         answer: clean_answer,
         # Fisconet and regional results have their own shapes (no numac/law_title),
@@ -523,20 +644,26 @@ module LegalChatbot
         citations_verified: @last_citation_guard_result&.fetch(:passed, false) == true,
         citation_guard: @last_citation_guard_result,
         # Present only when the generated analysis was withheld. `analysis`
-        # says a real analysis was delivered; anything else means the user got
-        # verified sources or a refusal instead, and `citation_guard_rejection`
+        # says generated analysis was delivered; a recovery may contain a
+        # substantive source-derived checklist, verified sources, or a refusal.
+        # `citation_guard_rejection`
         # carries the original verdict that caused it.
         citation_guard_outcome: @citation_guard_outcome || 'analysis',
+        citation_guard_source_list_only: citation_guard_source_list_only,
         citation_guard_rejection: @citation_guard_rejection,
         citation_guard_retries: @citation_guard_retries || 0,
         response_time: (Time.current - start_time).round(2)
       }
       # Before the guard-failure marker below, which copies :answer into
-      # :error: a refusal must keep showing exactly the text it refunds.
+      # :error: a refusal must keep showing exactly the text it was ended with.
       apply_retrieval_notice!(result, degraded_sources)
-      # CitationGuard rejection means no verified legal answer was delivered.
-      # Mark it as an error so every controller path refunds/skips the charge;
-      # the localized message remains the user-facing explanation.
+      # Failed final verification or a source-list-only recovery means no
+      # verified legal answer was delivered. Mark either as an error so the
+      # controller delivers no answer and settles the reservation from its
+      # dispatch evidence (a paid request that was sent keeps the single
+      # charge, otherwise the credits return; owner policy 2026-10-18);
+      # substantive verified recovery stays a delivered answer and the
+      # displayed text stays unchanged.
       mark_citation_guard_failure!(result)
       if @include_quality_evidence
         # NO degradation field here, and that is a measurement gap, not an
@@ -557,8 +684,8 @@ module LegalChatbot
           context: evidence_context,
           provider_model: llm_svc.last_provider_model,
           source_counts: {
-            legislation: leg_articles.length + authoritative_docs.length,
-            jurisprudence: jur_cases.length,
+            legislation: leg_articles.length + authoritative_docs.count { |doc| doc[:source_kind] != 'jurisprudence' },
+            jurisprudence: jur_cases.length + authoritative_docs.count { |doc| doc[:source_kind] == 'jurisprudence' },
             parliamentary: parl_docs.length,
             fisconet: tax_articles.length,
             regional: regional_docs.length
@@ -569,8 +696,11 @@ module LegalChatbot
       result
     rescue LegalChatbot::LlmClient::IncompleteProviderResponse
       # A provider can return HTTP 200 while supplying no visible text or while
-      # exhausting its output budget mid-answer. Treat that as a non-billable
-      # terminal error; a polite fallback must never be mistaken for a paid
+      # exhausting its output budget mid-answer. Treat that as a terminal
+      # error: the controller delivers no answer and settles the reservation
+      # from its dispatch evidence (the request was sent, so the single charge
+      # stands; owner policy 2026-10-18), never from this copy, which promises
+      # nothing about credits. A polite fallback must never be mistaken for a
       # legal answer.
       Rails.logger.error(
         "[AnswerSafety] Blocked incomplete provider response " \
@@ -591,8 +721,9 @@ module LegalChatbot
     rescue ChatbotAnswerSafety::UnsafeProviderReasoningPayload
       # Never attempt to salvage a stringified typed response: visible text and
       # private reasoning can be interleaved. Returning an error makes the
-      # controller refund the reservation, while the localized replacement is
-      # safe for every response and history path.
+      # controller discard the answer and settle the reservation from its
+      # dispatch evidence (never from this copy), while the localized
+      # replacement is safe for every response and history path.
       Rails.logger.error(
         "[AnswerSafety] Blocked provider reasoning payload " \
         "(model=#{@model_override || 'default'}, language=#{@language})"
@@ -614,6 +745,8 @@ module LegalChatbot
       # maps an authoritative post-advisory rejection to 429/SSE and refunds
       # the already-reserved user credits exactly once. Converting this into a
       # generic result would hide the cap behind HTTP 200 and bypass that path.
+      raise
+    rescue Timeout::Error
       raise
     rescue StandardError => e
       # Provider and retrieval exceptions can contain echoed request material.
@@ -663,15 +796,20 @@ module LegalChatbot
     # this placement fixes a live defect rather than merely avoiding a new one.
     LINKIFY_ARTICLE_PREFIX_SOURCE = '(?:Artikel|Article|Artt?\.?)'.freeze
     ARTICLE_NUMBER_TOKEN_SOURCE =
-      '(?:[0-9]+[[:alpha:]]*|[IVXLCDM]+\.[0-9]+[[:alpha:]]*)(?:(?:[[:space:]\u00A0\u2007\u202F]*[\/:\-][[:space:]\u00A0\u2007\u202F]*[0-9]+[[:alpha:]]*)|(?:[[:space:]\u00A0\u2007\u202F]*\.[[:space:]\u00A0\u2007\u202F]*[0-9]+[[:alpha:]]*))*'.freeze
+      '(?:[0-9]+[[:alpha:]]*|[IVXLCDM]+\.[0-9]+[[:alpha:]]*)(?:(?:[[:space:]\u00A0\u2007\u202F]*[\/:\-][[:space:]\u00A0\u2007\u202F]*[0-9]+[[:alpha:]]*)|(?:[[:space:]\u00A0\u2007\u202F]*\.[[:space:]\u00A0\u2007\u202F]*(?![0-9]+[[:space:]\u00A0\u2007\u202F]*°)[0-9]+[[:alpha:]]*))*'.freeze
     ARTICLE_NUMBER_TOKEN_PATTERN = Regexp.new(ARTICLE_NUMBER_TOKEN_SOURCE).freeze
     SINGLE_ARTICLE_CITATION_PATTERN = Regexp.new(
       "\\b#{ARTICLE_PREFIX_SOURCE}#{ARTICLE_SPACE_SOURCE}*(?:(?i:(?:nrs?|nos?)\\.)|n[°º])?#{ARTICLE_SPACE_SOURCE}*(?<number>#{ARTICLE_NUMBER_TOKEN_SOURCE})"
     ).freeze
     ARTICLE_LIST_SEPARATOR_SOURCE =
       "(?:#{ARTICLE_SPACE_SOURCE}*(?:,|;|[&+])#{ARTICLE_SPACE_SOURCE}*(?:(?i:en|et|and|und|of|ou)#{ARTICLE_SPACE_SOURCE}+)?|#{ARTICLE_SPACE_SOURCE}+(?i:en|et|and|und|of|ou)#{ARTICLE_SPACE_SOURCE}+)".freeze
+    # Explicit ° marks a statutory enumeration, not a deeper dotted article.
+    # Keep those items in the scanned sequence so a real article following
+    # them cannot be hidden; the gate distinguishes their numeric tokens.
+    ARTICLE_CITATION_ITEM_SOURCE =
+      "#{ARTICLE_NUMBER_TOKEN_SOURCE}(?:#{ARTICLE_SPACE_SOURCE}*(?:\\.#{ARTICLE_SPACE_SOURCE}*[0-9]+#{ARTICLE_SPACE_SOURCE}*)?°)?".freeze
     ARTICLE_CITATION_SEQUENCE_PATTERN = Regexp.new(
-      "\\b#{ARTICLE_PREFIX_SOURCE}#{ARTICLE_SPACE_SOURCE}*(?:(?i:(?:nrs?|nos?)\\.)|n[°º])?#{ARTICLE_SPACE_SOURCE}*(?<numbers>#{ARTICLE_NUMBER_TOKEN_SOURCE}(?:#{ARTICLE_LIST_SEPARATOR_SOURCE}(?:#{ARTICLE_PREFIX_SOURCE}#{ARTICLE_SPACE_SOURCE}*)?#{ARTICLE_NUMBER_TOKEN_SOURCE})*)"
+      "\\b#{ARTICLE_PREFIX_SOURCE}#{ARTICLE_SPACE_SOURCE}*(?:(?i:(?:nrs?|nos?)\\.)|n[°º])?#{ARTICLE_SPACE_SOURCE}*(?<numbers>#{ARTICLE_CITATION_ITEM_SOURCE}(?:#{ARTICLE_LIST_SEPARATOR_SOURCE}(?:#{ARTICLE_PREFIX_SOURCE}#{ARTICLE_SPACE_SOURCE}*)?#{ARTICLE_CITATION_ITEM_SOURCE})*)"
     ).freeze
     PLAIN_QUOTE_ARTICLE_ATTRIBUTION_PATTERN =
       /(?:\s+[—–]\s+|\s+-\s+)\[?Art(?:ikel|icle)?\.?\s*([[:alnum:]]+(?:\s*[\/.:-]\s*[[:alnum:]]+)*)(?=[\s§,;\]]|\.?(?:\s|\z))/i.freeze
@@ -683,49 +821,137 @@ module LegalChatbot
       '2017031231' => %w[6 61]
     }.freeze
 
-    def reasoning_context_policy
+    # Remove only a regional card whose provision is already in the primary
+    # legislation evidence. RegionalSearch has already made the coverage
+    # decision by the time this runs; the retained primary provision remains
+    # available to context, quote and citation guards. Do not coalesce regional
+    # results with one another: their jurisdiction labels can be material even
+    # when a legacy feed happens to reuse an identifier.
+    def without_primary_legislation_duplicates(regional_docs, leg_articles)
+      primary_identities = Array(leg_articles).filter_map do |article|
+        primary_legislation_evidence_identity(article)
+      end.to_set
+      return regional_docs if primary_identities.empty?
+
+      Array(regional_docs).reject do |document|
+        identity = regional_evidence_identity(document)
+        identity.present? && primary_identities.include?(identity)
+      end
+    end
+
+    def primary_legislation_evidence_identity(article)
+      evidence_identity_for(
+        numac: retrieved_source_numac(article),
+        article_number: retrieved_source_article_number(article),
+        language_id: source_field(article, :language_id, 'language_id')
+      )
+    end
+
+    def regional_evidence_identity(document)
+      metadata = source_field(document, :metadata, 'metadata')
+      language_id = source_field(document, :language_id, 'language_id') ||
+                    source_field(metadata, :language_id, 'language_id') ||
+                    language_id_from_regional_url(source_field(document, :url, 'url'))
+      evidence_identity_for(
+        numac: retrieved_source_numac(document),
+        article_number: retrieved_source_article_number(document),
+        language_id: language_id
+      )
+    end
+
+    # A language marker in the canonical regional URL is usable identity, but
+    # only in its unambiguous query-parameter form. Anything malformed remains
+    # a source card (fail open) rather than risking the loss of evidence.
+    def language_id_from_regional_url(url)
+      values = url.to_s.scan(/[?&]language_id=([^&#]*)(?=[&#]|\z)/).flatten
+      values.sole if values.one? && values.first.match?(/\A[1-9]\d*\z/)
+    end
+
+    def evidence_identity_for(numac:, article_number:, language_id:)
+      numac = numac.to_s.strip.presence
+      article_number = normalize_article_number(article_number).presence
+      language_id = language_id.to_s.strip
+      return nil if numac.blank? || article_number.blank? || !language_id.match?(/\A[1-9]\d*\z/)
+
+      [numac, article_number, language_id]
+    end
+
+    def research_context_policy(question:, articles:)
+      policy = reasoning_context_policy(question: question)
+      return policy unless @research_depth
+
+      # Pins are mandatory legal evidence, not optional breadth. The quality
+      # filter already bounds each mandatory pack; the quick stop must not
+      # remove a governing exception just to meet its ordinary five-row cap.
+      policy.merge(legislation: [policy.fetch(:legislation), articles.count { |article| article[:pinned] }].max)
+    end
+
+    def domestic_gdpr_retention_substitute?(article, question)
+      return false unless retrieved_source_numac(article) == '2018040581'
+
+      # A mixed website/retention question still needs the real Belgian cookie
+      # rule. This exact slash-number exception does not admit the domestic
+      # police/intelligence chapters as generic EU retention obligations.
+      raw_title = source_field(article, :article_title, 'article_title').to_s
+      cookie_title = raw_title.sub(/\A\s*Art(?:ikel|icle)?\.?\s*/i, '').delete(' ').strip
+      !(CommercialWebsiteIntent.topic?(question) && cookie_title == '10/2')
+    end
+
+    def reasoning_context_policy(question: nil)
+      if @research_depth
+        policy = LegalChatbotService::RESEARCH_DEPTHS.fetch(@research_depth).merge(bounded: true)
+        commercial_size = CommercialWebsiteIntent.article_targets(question).length
+        policy = policy.merge(legislation: [policy.fetch(:legislation), commercial_size].max) if commercial_size.positive?
+        marketplace_size = MarketplaceCivilClaimIntent.article_targets(question).length
+        policy = policy.merge(legislation: [policy.fetch(:legislation), marketplace_size].max) if marketplace_size.positive?
+        pack_size = LegislationSearch.formation_deed_pack_size(question.to_s)
+        return pack_size ? policy.merge(legislation: [policy.fetch(:legislation), pack_size].max) : policy
+      end
+
       provider = LegalChatbotService::AVAILABLE_MODELS.dig(@model_override, :provider)
       high_azure_reasoning = @reasoning_effort == 'high' && provider == :openai
 
-      if @reasoning_effort == 'low'
-        {
-          bounded: true,
-          max_article_chars: 2500,
-          legislation: 5,
-          jurisprudence: 2,
-          parliamentary: 2,
-          fisconet: 3,
-          regional: 3
-        }
-      elsif high_azure_reasoning
-        if @model_override == 'gpt-5'
-          # The older GPT-5 deployment needs materially more wall time at high
-          # effort than the 5.6 family. Keep one result from each non-statutory
-          # source and the four best statutes so it can finish inside the
-          # browser/proxy deadline without collapsing to legislation-only RAG.
-          {
-            bounded: true,
-            max_article_chars: 2500,
-            legislation: 4,
-            jurisprudence: 1,
-            parliamentary: 1,
-            fisconet: 3,
-            regional: 3
-          }
-        else
-          {
-            bounded: true,
-            max_article_chars: 3000,
-            legislation: 5,
-            jurisprudence: 2,
-            parliamentary: 2,
-            fisconet: 3,
-            regional: 3
-          }
-        end
-      else
-        { bounded: false, max_article_chars: 4000 }
+      policy = if @reasoning_effort == 'low'
+                 {
+                   bounded: true,
+                   max_article_chars: 2500,
+                   legislation: 5,
+                   jurisprudence: 2,
+                   parliamentary: 2,
+                   fisconet: 3,
+                   regional: 3
+                 }
+               elsif high_azure_reasoning
+                 {
+                   bounded: true,
+                   max_article_chars: 3000,
+                   legislation: 5,
+                   jurisprudence: 2,
+                   parliamentary: 2,
+                   fisconet: 3,
+                   regional: 3
+                 }
+               else
+                 { bounded: false, max_article_chars: 4000 }
+               end
+
+      # A named company formation pack is a bounded unit: dropping its
+      # cross-references here made the model cite provisions it never saw.
+      # Keep at most eight statutes; ordinary/generic questions retain their
+      # existing budget, and no model or reasoning setting is changed.
+      pack_size = LegislationSearch.formation_deed_pack_size(question.to_s)
+      if policy[:bounded] && pack_size
+        policy = policy.merge(legislation: [policy.fetch(:legislation), pack_size].max)
       end
+      commercial_size = CommercialWebsiteIntent.article_targets(question).length
+      if policy[:bounded] && commercial_size.positive?
+        policy = policy.merge(legislation: [policy.fetch(:legislation), commercial_size].max)
+      end
+      marketplace_size = MarketplaceCivilClaimIntent.article_targets(question).length
+      if policy[:bounded] && marketplace_size.positive?
+        policy = policy.merge(legislation: [policy.fetch(:legislation), marketplace_size].max)
+      end
+      policy
     end
 
     # Bind a quote to the source named in its attribution. Previously a quote
@@ -766,7 +992,22 @@ module LegalChatbot
       clean_answer = ensure_required_gdpr_processor_citations(clean_answer, question, statutory_sources)
       clean_answer = ensure_high_confidence_topic_citations(clean_answer, question, statutory_sources)
       clean_answer = validate_answer_links(clean_answer, *link_guard_args)
-      validate_unlinked_article_citations(clean_answer, statutory_sources)
+      cited_answer = validate_unlinked_article_citations(clean_answer, statutory_sources)
+      grounded_answer = validate_childcare_expense_answer(cited_answer, question, statutory_sources)
+      grounded_answer = validate_salduz_minor_answer(grounded_answer, question, statutory_sources)
+      grounded_answer = validate_payment_acceptance_answer(grounded_answer, question, statutory_sources)
+      grounded_answer = validate_formation_deed_answer(grounded_answer, question, statutory_sources)
+      grounded_answer = validate_formation_deed_classification(grounded_answer, question, statutory_sources)
+      grounded_answer = validate_formation_bv_capital_answer(grounded_answer, question, statutory_sources)
+      grounded_answer = validate_formation_bv_checklist_answer(grounded_answer, question, statutory_sources)
+      all_sources = statutory_sources + guard_sources.fetch(:jur_cases) + guard_sources.fetch(:parl_docs)
+      # A citation rejection replaces displayed prose; retain the candidate
+      # for this narrow substantive check so its actionable flags survive.
+      grounded_answer = validate_house_hidden_defect_practical_answer(grounded_answer, question, all_sources, candidate: clean_answer)
+      grounded_answer = validate_marketplace_civil_claim_answer(grounded_answer, question, all_sources, candidate: clean_answer)
+      grounded_answer = validate_platform_redress_answer(grounded_answer, question, all_sources, candidate: clean_answer)
+      grounded_answer = validate_flight_disruption_answer(grounded_answer, question, all_sources, candidate: clean_answer)
+      validate_office_commute_answer(grounded_answer, question, statutory_sources)
     end
 
     # Bounded corrective regenerations after a CitationGuard rejection. Two,
@@ -774,6 +1015,17 @@ module LegalChatbot
     # 50%: attempt one converts most rejections, attempt two roughly half of
     # the remainder, and each costs a provider call.
     CITATION_GUARD_MAX_RETRIES = 2
+
+    # Each requested sealed topic must be complete. A mixed retention /
+    # processor question cannot use one available pack to conceal another
+    # pack that is unavailable in the answer language.
+    def required_official_sources_available?(question, documents)
+      available = Array(documents).to_set { |source| [source[:url], source[:article_number].to_s] }
+      LegalFactProvider.required_official_topic_keys(question).all? do |topic|
+        required = LegalFactProvider.required_official_citations_for(topic, language: @language)
+        required.any? && required.all? { |pair| available.include?(pair) }
+      end
+    end
 
     # The repair calculators live in LegalChatbot::CitationRepair (FBL-061);
     # this alias keeps the measured-budget constant reachable at its
@@ -804,8 +1056,8 @@ module LegalChatbot
     #
     # Hard signals only (SearchFanOut fills @last_retrieval_degradation): a
     # low similarity, few hits or an empty result never counts, so a healthy
-    # search cannot fire it. It also cannot fire for a silently failed
-    # :fisconet search - see the COVERAGE GAP note in search_fan_out.rb.
+    # search cannot fire it. Fisconet also reports internal database and
+    # optional semantic failures through its per-search degradation state.
     #
     # It names no cause: the fan-out establishes only THAT a source was not
     # searched through, never why. The first draft said "door een tijdelijke
@@ -823,12 +1075,11 @@ module LegalChatbot
     # api/conversation_persistence.rb stores no context NUMACs for a degraded
     # ask (see apply_retrieval_notice! below).
     #
-    # The degraded answer itself costs no credit (owner default, 2026-09-27,
-    # to-do 6.7): api/chatbot_controller.rb releases the reservation of any
-    # result that carries :retrieval_degraded, whatever the reason, and adds
-    # RETRIEVAL_FREE_ANSWER_NOTES to the notice through with_free_answer_note.
-    # Billing stays in the controller, which alone knows whether anything was
-    # reserved; this module only owns the copy.
+    # The degraded answer is charged like any other once a paid AI request
+    # was sent for it (owner policy 2026-10-18, which retired the free
+    # incomplete-search default of 2026-09-27, to-do 6.7). Billing stays in
+    # the controller, which alone knows whether anything was reserved and
+    # sent; this module only owns the notice copy.
     RETRIEVAL_RETRY_REASONS = %w[timeout semantic_unavailable].freeze
 
     RETRIEVAL_NOTICE_SOURCE_LABELS = {
@@ -930,7 +1181,9 @@ module LegalChatbot
       return result if degraded.blank?
 
       retry_later = degraded.values.any? { |reason| RETRIEVAL_RETRY_REASONS.include?(reason.to_s) }
-      result[:answer] = with_retrieval_notice(result[:answer], degraded.keys, lead: lead, retry_later: retry_later)
+      eu_pending = degraded.values.any? { |reason| reason.to_s == 'eu_live_acquisition_pending' }
+      result[:answer] = with_retrieval_notice(result[:answer], degraded.keys, lead: lead, retry_later: retry_later,
+                                                                              eu_pending: eu_pending)
       result[:retrieval_degraded] = degraded.keys.map(&:to_s)
       result
     end
@@ -954,8 +1207,9 @@ module LegalChatbot
     # is examined, so nothing in the body can match; with no footers (every
     # code-built message) this is a plain append. `lead:` puts it on top
     # instead, for a message that already claims to have searched everything.
-    def with_retrieval_notice(answer, sources, lead: false, retry_later: false)
+    def with_retrieval_notice(answer, sources, lead: false, retry_later: false, eu_pending: false)
       notice = retrieval_notice_text(sources, retry_later: retry_later)
+      notice += " #{EU_ACQUISITION_PENDING_NOTES.fetch(@language.to_s, EU_ACQUISITION_PENDING_NOTES.fetch('nl'))}" if eu_pending
       text = answer.to_s
       return text if text.include?(notice)
       return [notice, text].reject(&:blank?).join("\n\n") if lead
@@ -980,10 +1234,19 @@ module LegalChatbot
       'de' => 'Sie können Ihre Frage in einem Moment erneut stellen.'
     }.freeze
 
-    # Added by the controller once it has released the credit reservation of
-    # a degraded answer (to-do 6.7). Same paragraph as the notice, for the
-    # same reason as the invitation: history replay strips the paragraph, so
-    # the model can never echo "this answer was free" into a charged one.
+    EU_ACQUISITION_PENDING_NOTES = {
+      'nl' => 'Aanvullende EU-bronnen worden op de achtergrond opgehaald en gecontroleerd. Dit antwoord gebruikt alleen de al geverifieerde bronnen; u kunt uw vraag later opnieuw stellen.',
+      'fr' => 'Des sources européennes supplémentaires sont récupérées et vérifiées en arrière-plan. Cette réponse utilise uniquement les sources déjà vérifiées ; vous pouvez reposer votre question plus tard.',
+      'de' => 'Zusätzliche EU-Quellen werden im Hintergrund abgerufen und überprüft. Diese Antwort verwendet nur bereits überprüfte Quellen; Sie können Ihre Frage später erneut stellen.',
+      'en' => 'Additional EU sources are being fetched and checked in the background. This answer uses only sources already verified; you can ask your question again later.'
+    }.freeze
+
+    # Added by the controller once it had released the credit reservation of
+    # a degraded answer (to-do 6.7). No longer reachable from the ask path:
+    # owner policy 2026-10-18 charges a degraded answer whose paid request was
+    # sent. Kept for the retired deep-analysis code and for replayed history,
+    # which still strips it with the notice paragraph it rides in, so the
+    # model can never echo "this answer was free" into a charged one.
     # No model or provider name, no cause.
     RETRIEVAL_FREE_ANSWER_NOTES = {
       'nl' => 'Dit antwoord kostte u geen credit, omdat de zoekopdracht onvolledig was.',

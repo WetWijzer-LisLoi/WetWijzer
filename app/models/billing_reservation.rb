@@ -6,8 +6,16 @@
 # transaction, so settlement/refund transitions can be retried after exceptions.
 class BillingReservation < AccountRecord
   # Renamed from PartnerBillingReservation on 2026-08-08: this was never partner-specific -
-  # it backs WetWijzer\'s own billing. The TABLE keeps its original name so the
-  # rename needs no migration and touches no data.
+  # it backs WetWijzer\'s own billing. Migration 20260808120000 renamed the
+  # table (partner_billing_reservations -> billing_reservations) and its indexes.
+  #
+  # Owner policy 2026-10-18: a browser question is charged once a paid AI
+  # request for it was sent. work_dispatched_at records that durably, BEFORE the
+  # request is written (see LegalChatbot::ProviderWorkReceipt). Once it is set,
+  # no inverse transition returns the credits: refund!, abort_delivery! and the
+  # stale reconcilers settle the work instead, while delivery_state keeps
+  # saying truthfully whether an answer was delivered, aborted or never begun.
+  # Rows written before the column existed keep NULL and their old semantics.
 
   class ReservationUnavailable < StandardError; end
   class RefundFailed < StandardError; end
@@ -63,11 +71,7 @@ class BillingReservation < AccountRecord
 
     reconciled = reservation_ids.count do |reservation_id|
       reservation = find(reservation_id)
-      if reservation.included_quota? || reservation.delivery_pending?
-        reservation.settle!
-      else
-        reservation.refund!(reason: 'stale_unsettled_reconciliation')
-      end
+      reservation.reconcile_stale_row!(reason: 'stale_unsettled_reconciliation')
     end
 
     # Never let a user start more provider work while an older unresolved
@@ -99,12 +103,7 @@ class BillingReservation < AccountRecord
       reservation = find_by(id: reservation_id)
       next unless reservation&.reserved?
 
-      outcome = if reservation.included_quota? || reservation.delivery_pending?
-                  reservation.settle!
-                else
-                  reservation.refund!(reason: 'global_stale_reconciliation')
-                end
-      reconciled += 1 if outcome
+      reconciled += 1 if reservation.reconcile_stale_row!(reason: 'global_stale_reconciliation')
     rescue StandardError => e
       failed += 1
       Rails.logger.error(
@@ -119,6 +118,23 @@ class BillingReservation < AccountRecord
       failed: failed,
       backlog: relation.exists?
     }
+  end
+
+  # One stale row's terminal transition, reported truthfully: an admitted
+  # included attempt and a pending delivery settle; dispatched paid browser
+  # work is retained as a work-only settlement (owner policy 2026-10-18, no
+  # delivery is invented); anything else is refunded. True when the row
+  # reached its terminal state now (or already had), so the reconcilers count
+  # retained work as reconciled rather than as a refund that did not happen.
+  def reconcile_stale_row!(reason:)
+    if included_quota? || delivery_pending?
+      settle!
+    elsif browser_work_tracked? && work_dispatched?
+      Rails.logger.info("Stale browser reservation retained after provider dispatch (reason=#{reason})")
+      retain_work!
+    else
+      refund!(reason: reason)
+    end
   end
 
   # Deterministically rebuild the analytics projection from the accounts
@@ -382,6 +398,109 @@ class BillingReservation < AccountRecord
       ActiveSupport::SecurityUtils.secure_compare(persisted_token.to_s, token)
   end
 
+  # Owner policy 2026-10-18. Admits the FIRST paid AI request of this browser
+  # question and records it durably, in one accounts transaction that holds
+  # this row's lock and then the account's row lock: the lock every history
+  # writer, consent or key change (ConversationStorageBoundary) and explicit
+  # clear takes. The block sees the locked account and says whether the
+  # request may still start paid work (the conversation claim). A clear that
+  # committed first is therefore seen here, and a clear that is waiting sees
+  # the marker. Lock order is reservation, then account, the order of
+  # refund! and abort_delivery! (this row, then the balance), so the two
+  # cannot deadlock. Nothing here touches a provider; the lock is released
+  # before any request is written. Only browser credit reservations carry
+  # the marker; partner, quota and service rows keep their own semantics.
+  #
+  # Returns :admitted, or :refused when the row is no longer reserved (a
+  # refund won the race), the account is gone or inactive, the block refuses,
+  # the abandoned callable says the question was cancelled meanwhile, or an
+  # asynchronous interruption deferred by the caller (the supervisor's kill,
+  # a Timeout) is already pending: then nothing is recorded and no request
+  # may be written.
+  def admit_work_dispatch!(kind:, abandoned: nil, now: Time.current)
+    raise ArgumentError, 'only browser credit reservations record provider work' unless browser_work_tracked?
+
+    kind = kind.to_s.first(40)
+    admitted = false
+    # requires_new: the Rollback below must undo the marker even when a caller
+    # (a transactional test, a wrapping job) already holds a transaction.
+    self.class.transaction(requires_new: true) do
+      self.class.bound_lock_wait!
+      persisted_status, persisted_work_at = self.class.where(id: id).lock.pick(:status, :work_dispatched_at)
+      next unless persisted_status == RESERVED_STATUS
+
+      account = User.lock.find_by(id: user_id)
+      next unless account&.active?
+
+      # The same gate every history writer, consent or key change and
+      # explicit clear holds (a real write lock on SQLite as well).
+      ConversationStorageBoundary.hold_write_gate!(account)
+      next if block_given? && yield(account) != true
+
+      if persisted_work_at.nil?
+        updated = self.class.where(id: id, status: RESERVED_STATUS, work_dispatched_at: nil)
+                      .update_all(work_dispatched_at: now, work_dispatch_kind: kind, updated_at: now)
+        next unless updated == 1
+      end
+      # The caller defers interruptions while it records the dispatch. One
+      # that arrived meanwhile fires right after this transaction, before the
+      # request is written: nothing was sent, so nothing may stay recorded.
+      # A cancellation that arrived during the (possibly slow) block is the
+      # same case without a kill.
+      raise ActiveRecord::Rollback if Thread.pending_interrupt? || abandoned&.call == true
+
+      self.work_dispatched_at = persisted_work_at || now
+      self.work_dispatch_kind ||= kind
+      self.updated_at = now if persisted_work_at.nil?
+      admitted = true
+    end
+    admitted ? :admitted : :refused
+  end
+
+  # The longest an admission waits for its two row locks on PostgreSQL (the
+  # accounts lane in production); SET LOCAL ends with the transaction. The
+  # streaming supervisor kills a query thread and joins it for one second,
+  # so a thread blocked here must come back on its own, soon, and refuse.
+  LOCK_WAIT_LIMIT_MS = 5_000
+
+  def self.bound_lock_wait!
+    return unless connection.adapter_name.casecmp?('postgresql')
+
+    connection.execute("SET LOCAL lock_timeout = #{LOCK_WAIT_LIMIT_MS}")
+  end
+
+  # The durable answer, never the in-memory object: the marker may have been
+  # written by the request's query thread.
+  def reload_work_dispatch!
+    persisted_at, persisted_kind = self.class.where(id: id).pick(:work_dispatched_at, :work_dispatch_kind)
+    self.work_dispatched_at = persisted_at
+    self.work_dispatch_kind = persisted_kind
+    persisted_at.present?
+  end
+
+  # Work-only settlement: the question's paid work was dispatched but no
+  # answer delivery was begun (an error result, a fenced or cleared request).
+  # Settles without minting a delivery token, so delivery_state stays NULL and
+  # never claims a delivery that did not happen. A row with a pending delivery
+  # must resolve that delivery first (complete_delivery! or abort_delivery!).
+  def retain_work!(now: Time.current)
+    raise ArgumentError, 'only browser credit reservations retain provider work' unless browser_work_tracked?
+
+    transitioned = self.class.where(id: id, status: RESERVED_STATUS, delivery_state: nil, delivery_token: nil)
+                       .where.not(work_dispatched_at: nil)
+                       .update_all(status: SETTLED_STATUS, settled_at: now, updated_at: now)
+    if transitioned == 1
+      self.status = SETTLED_STATUS
+      self.settled_at = now
+      self.updated_at = now
+      return true
+    end
+
+    persisted_status = self.class.where(id: id).pick(:status)
+    self.status = persisted_status if persisted_status
+    persisted_status == SETTLED_STATUS
+  end
+
   # The caller chooses its delivery boundary (the browser flow settles only
   # after render/write succeeds). Calling settle! again is harmless; a
   # reservation already refunded cannot settle.
@@ -425,13 +544,16 @@ class BillingReservation < AccountRecord
     persisted_status = nil
     persisted_delivery_state = nil
     persisted_delivery_token = nil
+    persisted_work_at = nil
     retained_delivery = false
+    retained_work = false
     retained_settled_at = nil
     outcome = self.class.transaction do
-      persisted_status, persisted_delivery_state, persisted_delivery_token = self.class.where(id: id).lock.pick(
+      persisted_status, persisted_delivery_state, persisted_delivery_token, persisted_work_at = self.class.where(id: id).lock.pick(
         :status,
         :delivery_state,
-        :delivery_token
+        :delivery_token,
+        :work_dispatched_at
       )
 
       case persisted_status
@@ -462,6 +584,22 @@ class BillingReservation < AccountRecord
 
         unless persisted_delivery_state.nil? && persisted_delivery_token.nil?
           raise RefundFailed, "invalid reserved delivery state: #{persisted_delivery_state.inspect}"
+        end
+
+        # Paid browser work was already dispatched for this question: no
+        # caller (error branch, fence, outer rescue, stale reconciler) may
+        # return the credits. Settle the work without inventing a delivery.
+        if persisted_work_at.present? && browser_work_tracked?
+          settled_time = Time.current
+          transitioned = self.class.where(id: id, status: RESERVED_STATUS, delivery_state: nil, delivery_token: nil)
+                             .where.not(work_dispatched_at: nil)
+                             .update_all(status: SETTLED_STATUS, settled_at: settled_time, updated_at: settled_time)
+          raise RefundFailed, 'reservation state changed during work retention' unless transitioned == 1
+
+          Rails.logger.info("Browser chatbot refund refused after provider dispatch (reason=#{reason.to_s.first(100)})")
+          retained_work = true
+          retained_settled_at = settled_time
+          next false
         end
 
         refunded_time = Time.current
@@ -496,6 +634,10 @@ class BillingReservation < AccountRecord
       self.status = SETTLED_STATUS
       self.delivery_state = DELIVERY_COMPLETED_STATE
       self.settled_at = retained_settled_at
+    elsif retained_work
+      self.status = SETTLED_STATUS
+      self.work_dispatched_at ||= persisted_work_at
+      self.settled_at = retained_settled_at
     end
     outcome
   end
@@ -508,12 +650,15 @@ class BillingReservation < AccountRecord
     raise RefundFailed, 'delivery token is required' if token.blank?
 
     refunded_time = nil
+    retained_time = nil
     persisted_status = nil
+    persisted_state = nil
     outcome = self.class.transaction do
-      persisted_status, persisted_state, persisted_token = self.class.where(id: id).lock.pick(
+      persisted_status, persisted_state, persisted_token, persisted_work_at = self.class.where(id: id).lock.pick(
         :status,
         :delivery_state,
-        :delivery_token
+        :delivery_token,
+        :work_dispatched_at
       )
 
       case persisted_status
@@ -521,11 +666,34 @@ class BillingReservation < AccountRecord
         persisted_state == DELIVERY_ABORTED_STATE &&
           ActiveSupport::SecurityUtils.secure_compare(persisted_token.to_s, token)
       when SETTLED_STATUS
-        false
+        # An owner abort that kept dispatched work charged is idempotent too.
+        persisted_state == DELIVERY_ABORTED_STATE &&
+          ActiveSupport::SecurityUtils.secure_compare(persisted_token.to_s, token)
       when RESERVED_STATUS
         unless persisted_state == DELIVERY_PENDING_STATE &&
                ActiveSupport::SecurityUtils.secure_compare(persisted_token.to_s, token)
           raise RefundFailed, 'delivery intent is not owned by this abort token'
+        end
+
+        # Proven non-delivery of the answer, but the question's paid work was
+        # already dispatched: the delivery is aborted (truthfully not
+        # completed) while the single work charge stands. No credit mutation.
+        if persisted_work_at.present? && browser_work_tracked?
+          retained_time = Time.current
+          transitioned = self.class.where(
+            id: id,
+            status: RESERVED_STATUS,
+            delivery_state: DELIVERY_PENDING_STATE,
+            delivery_token: token
+          ).where.not(work_dispatched_at: nil).update_all(
+            status: SETTLED_STATUS,
+            delivery_state: DELIVERY_ABORTED_STATE,
+            settled_at: retained_time,
+            updated_at: retained_time
+          )
+          raise RefundFailed, 'delivery state changed during failed-delivery settlement' unless transitioned == 1
+
+          next true
         end
 
         refunded_time = Time.current
@@ -550,7 +718,13 @@ class BillingReservation < AccountRecord
       end
     end
 
-    if outcome
+    if outcome && (retained_time || persisted_status == SETTLED_STATUS)
+      self.status = SETTLED_STATUS
+      self.delivery_state = DELIVERY_ABORTED_STATE
+      self.delivery_token = token
+      self.settled_at = retained_time if retained_time
+      self.updated_at = retained_time if retained_time
+    elsif outcome
       self.status = REFUNDED_STATUS
       self.delivery_state = DELIVERY_ABORTED_STATE
       self.delivery_token = token
@@ -559,6 +733,7 @@ class BillingReservation < AccountRecord
       self.updated_at = refunded_time if refunded_time
     elsif persisted_status == SETTLED_STATUS
       self.status = SETTLED_STATUS
+      self.delivery_state = persisted_state
     end
     outcome
   end
@@ -606,6 +781,15 @@ class BillingReservation < AccountRecord
 
   def included_quota?
     reservation_kind == INCLUDED_QUOTA_KIND
+  end
+
+  # Only authenticated browser credit questions carry dispatch evidence.
+  def browser_work_tracked?
+    credit? && app.to_s.start_with?(BROWSER_APP_PREFIX)
+  end
+
+  def work_dispatched?
+    work_dispatched_at.present?
   end
 
   def delivery_accepted?

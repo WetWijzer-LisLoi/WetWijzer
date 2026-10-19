@@ -1,6 +1,7 @@
 <% locale = local_assigns.fetch(:locale, I18n.locale).to_sym %>
 <% privacy_columns = local_assigns.fetch(:privacy_columns, false) %>
 <% copy = chatbot_pricing_copy(locale) %>
+<% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label', locale: locale) %>"><% end %>
 <table data-chatbot-pricing-source="models-config">
     <tr>
         <th><%= copy[:level] %></th>
@@ -16,7 +17,7 @@
         <tr data-chatbot-level="<%= row[:id] %>">
             <td><strong><%= row[:label] %></strong></td>
             <td><%= chatbot_credit_range(row[:base_credits], locale) %></td>
-            <td><%= row[:models].map { |model| "#{model[:name]} (#{model[:base_credits]} cr)" }.join(', ') %></td>
+            <td><%= row[:models].map { |model| "#{chatbot_model_display_name(model[:id], locale)} (#{model[:base_credits]} cr)" }.join(', ') %></td>
             <td><%= chatbot_credit_range(row[:total_credits], locale) %></td>
             <% if privacy_columns %>
                 <td><%= row[:providers].join(' / ') %></td>
@@ -25,6 +26,7 @@
         </tr>
     <% end %>
 </table>
+<% unless classic_host? %></div><% end %>
 <p class="small" data-chatbot-reasoning-pricing="models-config">
     <strong><%= copy[:reasoning] %>:</strong>
     <%= format(copy[:reasoning_text], surcharges: chatbot_reasoning_surcharge_list) %>

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'uri'
+require_relative 'commercial_website_gdpr_sources'
 
 module LegalChatbot
   # Provides verified legal facts by querying the articles table directly,
@@ -64,7 +65,168 @@ module LegalChatbot
     GDPR_PROCESSOR_CONTEXTUAL_QUESTION_PATTERN =
       /(?<![[:alpha:]])(?:processor(?:s)?|sous-traitant(?:s)?)(?![[:alpha:]])/iu
     GDPR_DATA_PROTECTION_CONTEXT_PATTERN =
-      /(?<![[:alpha:]])(?:avg|gdpr|rgpd|dsgvo|privacy|persoonsgegevens|personal data|donn[eé]es? (?:à caractère )?personnelles?|datenschutz|controller|responsable du traitement|verwerkingsverantwoordelijke)(?![[:alpha:]])/iu
+      /(?<![[:alpha:]])(?:avg|gdpr|rgpd|dsgvo|privacy|persoonsgegevens|personal (?:data|information)|donn[eé]es? (?:à caractère )?personnelles?|personenbezogen(?:e|en) daten|datenschutz|controller|responsable du traitement|verwerkingsverantwoordelijke)(?![[:alpha:]])/iu
+    GDPR_RETENTION_TOPIC_KEY = 'gdpr_retention'
+    GDPR_RETENTION_REQUIRED_ARTICLES = %w[5 6 13].freeze
+    GDPR_RETENTION_QUESTION_PATTERN =
+      /(?<![[:alpha:]])(?:bewaar[[:alpha:]]*|bewaren|bewaard|bewaring|bijhouden|opslagtermijn|opslagbeperking|retain[[:alpha:]]*|retention|keep|kept|keeping|stor(?:e|ed|ing|age)|conserv[[:alpha:]]*|gard[[:alpha:]]*|aufbewahr[[:alpha:]]*|(?:ge)?speicher[[:alpha:]]*)(?![[:alpha:]])/iu
+    GDPR_RECRUITMENT_DATA_PATTERN =
+      /(?<![[:alpha:]])(?:sollicitatie(?:gegevens|[- ]?cv(?:s|['’]s)?)|sollicitant(?:en)?|kandida(?:at|ten)|applicants?|candidats?|candidatures?|bewerber[[:alpha:]]*|bewerbung[[:alpha:]]*|curriculum vitae|r[eé]sum[eé]s?)(?![[:alpha:]])/iu
+    GDPR_CV_PATTERN = /(?<![[:alpha:]])cv(?:s|['’]s)?(?![[:alpha:]])/iu
+    GDPR_EMPLOYER_CONTEXT_PATTERN =
+      /(?<![[:alpha:]])(?:bedrijf|bedrijven|onderneming|werkgever|recruiter|recruitment|company|companies|employer|entreprise|employeur|recruteur|recrutement|unternehmen|arbeitgeber)(?![[:alpha:]])/iu
+    GDPR_CORPORATE_CV_PATTERN =
+      /(?<![[:alpha:]])(?:commanditaire|co[oö]peratieve|vennootschap|soci[eé]t[eé]|gesellschaft)(?![[:alpha:]])/iu
+    GDPR_SPECIAL_SECURITY_CONTEXT_PATTERN =
+      /(?<![[:alpha:]])(?:politie[[:alpha:]]*|police|polizei[[:alpha:]]*|inlichting[[:alpha:]]*|intelligence (?:services?|agenc(?:y|ies)|records?|data|gathering)|(?:national|military) intelligence|staatsveiligheid|state security|national security|nationale veiligheid|s[eé]curit[eé] nationale|nationale sicherheit|s[uû]ret[eé] de l['’][eé]tat|services? de renseignement[[:alpha:]]*|nachrichtendienst[[:alpha:]]*|strafrechtelijke vervolging|law enforcement|strafverfolgung)(?![[:alpha:]])/iu
+    GDPR_SECURITY_PROCESSING_PURPOSE_PATTERN =
+      /(?<![[:alpha:]])(?:strafrechtelijk(?:e)? (?:vervolging|onderzoek[[:alpha:]]*)|onderzoek naar strafbare feiten|criminal (?:investigation[[:alpha:]]*|prosecution)|for law enforcement|intelligence gathering|enqu[eê]tes? (?:criminelles?|p[eé]nales?)|poursuites? p[eé]nales?|strafverfolgung|strafrechtlich[[:alpha:]]* ermittlung[[:alpha:]]*|nachrichtendienstlich[[:alpha:]]* (?:verarbeitung|ermittlung[[:alpha:]]*))(?![[:alpha:]])/iu
+
+    GDPR_RETENTION_SOURCE_LABELS = {
+      'nl' => 'AVG — opslagbeperking, rechtsgrond en bewaartermijn',
+      'fr' => 'RGPD — limitation de conservation, licéité et durée',
+      'de' => 'DSGVO — Speicherbegrenzung, Rechtsgrundlage und Speicherdauer',
+      'en' => 'GDPR — storage limitation, legal basis and retention period'
+    }.freeze
+    GDPR_RETENTION_LAW_TITLES = {
+      'nl' => 'Algemene verordening gegevensbescherming (EU) 2016/679',
+      'fr' => 'Règlement général sur la protection des données (UE) 2016/679',
+      'de' => 'Datenschutz-Grundverordnung (EU) 2016/679',
+      'en' => 'General Data Protection Regulation (EU) 2016/679'
+    }.freeze
+
+    # Sealed extracts, verified against the official EUR-Lex language editions
+    # on 2026-10-10. These are the named paragraphs, not complete articles.
+    # In particular, there is no invented universal number of months for CVs.
+    GDPR_RETENTION_OFFICIAL_TEXTS = {
+      'nl' => {
+        '5' => <<~TEXT.strip.freeze,
+          e) worden bewaard in een vorm die het mogelijk maakt de betrokkenen niet langer te identificeren dan voor de doeleinden waarvoor de persoonsgegevens worden verwerkt noodzakelijk is; persoonsgegevens mogen voor langere perioden worden opgeslagen voor zover de persoonsgegevens louter met het oog op archivering in het algemeen belang, wetenschappelijk of historisch onderzoek of statistische doeleinden worden verwerkt overeenkomstig artikel 89, lid 1, mits de bij deze verordening vereiste passende technische en organisatorische maatregelen worden getroffen om de rechten en vrijheden van de betrokkene te beschermen („opslagbeperking”);
+        TEXT
+        '6' => <<~TEXT.strip.freeze,
+          1. De verwerking is alleen rechtmatig indien en voor zover aan ten minste een van de onderstaande voorwaarden is voldaan:
+          a) de betrokkene heeft toestemming gegeven voor de verwerking van zijn persoonsgegevens voor een of meer specifieke doeleinden;
+          b) de verwerking is noodzakelijk voor de uitvoering van een overeenkomst waarbij de betrokkene partij is, of om op verzoek van de betrokkene vóór de sluiting van een overeenkomst maatregelen te nemen;
+          c) de verwerking is noodzakelijk om te voldoen aan een wettelijke verplichting die op de verwerkingsverantwoordelijke rust;
+          d) de verwerking is noodzakelijk om de vitale belangen van de betrokkene of van een andere natuurlijke persoon te beschermen;
+          e) de verwerking is noodzakelijk voor de vervulling van een taak van algemeen belang of van een taak in het kader van de uitoefening van het openbaar gezag dat aan de verwerkingsverantwoordelijke is opgedragen;
+          f) de verwerking is noodzakelijk voor de behartiging van de gerechtvaardigde belangen van de verwerkingsverantwoordelijke of van een derde, behalve wanneer de belangen of de grondrechten en de fundamentele vrijheden van de betrokkene die tot bescherming van persoonsgegevens nopen, zwaarder wegen dan die belangen, met name wanneer de betrokkene een kind is.
+          De eerste alinea, punt f), geldt niet voor de verwerking door overheidsinstanties in het kader van de uitoefening van hun taken.
+        TEXT
+        '13' => <<~TEXT.strip.freeze
+          2. Naast de in lid 1 bedoelde informatie verstrekt de verwerkingsverantwoordelijke de betrokkene bij de verkrijging van de persoonsgegevens de volgende aanvullende informatie om een behoorlijke en transparante verwerking te waarborgen:
+          a) de periode gedurende welke de persoonsgegevens zullen worden opgeslagen, of indien dat niet mogelijk is, de criteria ter bepaling van die termijn;
+        TEXT
+      }.freeze,
+      'fr' => {
+        '5' => <<~TEXT.strip.freeze,
+          e) conservées sous une forme permettant l'identification des personnes concernées pendant une durée n'excédant pas celle nécessaire au regard des finalités pour lesquelles elles sont traitées; les données à caractère personnel peuvent être conservées pour des durées plus longues dans la mesure où elles seront traitées exclusivement à des fins archivistiques dans l'intérêt public, à des fins de recherche scientifique ou historique ou à des fins statistiques conformément à l'article 89, paragraphe 1, pour autant que soient mises en œuvre les mesures techniques et organisationnelles appropriées requises par le présent règlement afin de garantir les droits et libertés de la personne concernée (limitation de la conservation);
+        TEXT
+        '6' => <<~TEXT.strip.freeze,
+          1. Le traitement n'est licite que si, et dans la mesure où, au moins une des conditions suivantes est remplie:
+          a) la personne concernée a consenti au traitement de ses données à caractère personnel pour une ou plusieurs finalités spécifiques;
+          b) le traitement est nécessaire à l'exécution d'un contrat auquel la personne concernée est partie ou à l'exécution de mesures précontractuelles prises à la demande de celle-ci;
+          c) le traitement est nécessaire au respect d'une obligation légale à laquelle le responsable du traitement est soumis;
+          d) le traitement est nécessaire à la sauvegarde des intérêts vitaux de la personne concernée ou d'une autre personne physique;
+          e) le traitement est nécessaire à l'exécution d'une mission d'intérêt public ou relevant de l'exercice de l'autorité publique dont est investi le responsable du traitement;
+          f) le traitement est nécessaire aux fins des intérêts légitimes poursuivis par le responsable du traitement ou par un tiers, à moins que ne prévalent les intérêts ou les libertés et droits fondamentaux de la personne concernée qui exigent une protection des données à caractère personnel, notamment lorsque la personne concernée est un enfant.
+          Le point f) du premier alinéa ne s'applique pas au traitement effectué par les autorités publiques dans l'exécution de leurs missions.
+        TEXT
+        '13' => <<~TEXT.strip.freeze
+          2. En plus des informations visées au paragraphe 1, le responsable du traitement fournit à la personne concernée, au moment où les données à caractère personnel sont obtenues, les informations complémentaires suivantes qui sont nécessaires pour garantir un traitement équitable et transparent:
+          a) la durée de conservation des données à caractère personnel ou, lorsque ce n'est pas possible, les critères utilisés pour déterminer cette durée;
+        TEXT
+      }.freeze,
+      'de' => {
+        '5' => <<~TEXT.strip.freeze,
+          e) in einer Form gespeichert werden, die die Identifizierung der betroffenen Personen nur so lange ermöglicht, wie es für die Zwecke, für die sie verarbeitet werden, erforderlich ist; personenbezogene Daten dürfen länger gespeichert werden, soweit die personenbezogenen Daten vorbehaltlich der Durchführung geeigneter technischer und organisatorischer Maßnahmen, die von dieser Verordnung zum Schutz der Rechte und Freiheiten der betroffenen Person gefordert werden, ausschließlich für im öffentlichen Interesse liegende Archivzwecke oder für wissenschaftliche und historische Forschungszwecke oder für statistische Zwecke gemäß Artikel 89 Absatz 1 verarbeitet werden („Speicherbegrenzung“);
+        TEXT
+        '6' => <<~TEXT.strip.freeze,
+          (1) Die Verarbeitung ist nur rechtmäßig, wenn mindestens eine der nachstehenden Bedingungen erfüllt ist:
+          a) Die betroffene Person hat ihre Einwilligung zu der Verarbeitung der sie betreffenden personenbezogenen Daten für einen oder mehrere bestimmte Zwecke gegeben;
+          b) die Verarbeitung ist für die Erfüllung eines Vertrags, dessen Vertragspartei die betroffene Person ist, oder zur Durchführung vorvertraglicher Maßnahmen erforderlich, die auf Anfrage der betroffenen Person erfolgen;
+          c) die Verarbeitung ist zur Erfüllung einer rechtlichen Verpflichtung erforderlich, der der Verantwortliche unterliegt;
+          d) die Verarbeitung ist erforderlich, um lebenswichtige Interessen der betroffenen Person oder einer anderen natürlichen Person zu schützen;
+          e) die Verarbeitung ist für die Wahrnehmung einer Aufgabe erforderlich, die im öffentlichen Interesse liegt oder in Ausübung öffentlicher Gewalt erfolgt, die dem Verantwortlichen übertragen wurde;
+          f) die Verarbeitung ist zur Wahrung der berechtigten Interessen des Verantwortlichen oder eines Dritten erforderlich, sofern nicht die Interessen oder Grundrechte und Grundfreiheiten der betroffenen Person, die den Schutz personenbezogener Daten erfordern, überwiegen, insbesondere dann, wenn es sich bei der betroffenen Person um ein Kind handelt.
+          Unterabsatz 1 Buchstabe f gilt nicht für die von Behörden in Erfüllung ihrer Aufgaben vorgenommene Verarbeitung.
+        TEXT
+        '13' => <<~TEXT.strip.freeze
+          (2) Zusätzlich zu den Informationen gemäß Absatz 1 stellt der Verantwortliche der betroffenen Person zum Zeitpunkt der Erhebung dieser Daten folgende weitere Informationen zur Verfügung, die notwendig sind, um eine faire und transparente Verarbeitung zu gewährleisten:
+          a) die Dauer, für die die personenbezogenen Daten gespeichert werden oder, falls dies nicht möglich ist, die Kriterien für die Festlegung dieser Dauer;
+        TEXT
+      }.freeze,
+      'en' => {
+        '5' => <<~TEXT.strip.freeze,
+          (e) kept in a form which permits identification of data subjects for no longer than is necessary for the purposes for which the personal data are processed; personal data may be stored for longer periods insofar as the personal data will be processed solely for archiving purposes in the public interest, scientific or historical research purposes or statistical purposes in accordance with Article 89(1) subject to implementation of the appropriate technical and organisational measures required by this Regulation in order to safeguard the rights and freedoms of the data subject (‘storage limitation’);
+        TEXT
+        '6' => <<~TEXT.strip.freeze,
+          1. Processing shall be lawful only if and to the extent that at least one of the following applies:
+          (a) the data subject has given consent to the processing of his or her personal data for one or more specific purposes;
+          (b) processing is necessary for the performance of a contract to which the data subject is party or in order to take steps at the request of the data subject prior to entering into a contract;
+          (c) processing is necessary for compliance with a legal obligation to which the controller is subject;
+          (d) processing is necessary in order to protect the vital interests of the data subject or of another natural person;
+          (e) processing is necessary for the performance of a task carried out in the public interest or in the exercise of official authority vested in the controller;
+          (f) processing is necessary for the purposes of the legitimate interests pursued by the controller or by a third party, except where such interests are overridden by the interests or fundamental rights and freedoms of the data subject which require protection of personal data, in particular where the data subject is a child.
+          Point (f) of the first subparagraph shall not apply to processing carried out by public authorities in the performance of their tasks.
+        TEXT
+        '13' => <<~TEXT.strip.freeze
+          2. In addition to the information referred to in paragraph 1, the controller shall, at the time when personal data are obtained, provide the data subject with the following further information necessary to ensure fair and transparent processing:
+          (a) the period for which the personal data will be stored, or if that is not possible, the criteria used to determine that period;
+        TEXT
+      }.freeze
+    }.freeze
+
+    GDPR_RETENTION_ARTICLE_TITLES = {
+      'nl' => { '5' => 'Artikel 5, lid 1, punt e', '6' => 'Artikel 6, lid 1', '13' => 'Artikel 13, lid 2, punt a' }.freeze,
+      'fr' => { '5' => 'Article 5, paragraphe 1, point e', '6' => 'Article 6, paragraphe 1', '13' => 'Article 13, paragraphe 2, point a' }.freeze,
+      'de' => { '5' => 'Artikel 5 Absatz 1 Buchstabe e', '6' => 'Artikel 6 Absatz 1', '13' => 'Artikel 13 Absatz 2 Buchstabe a' }.freeze,
+      'en' => { '5' => 'Article 5(1)(e)', '6' => 'Article 6(1)', '13' => 'Article 13(2)(a)' }.freeze
+    }.freeze
+
+    GDPR_RETENTION_OFFICIAL_SOURCES = GDPR_RETENTION_OFFICIAL_TEXTS.to_h do |language, articles|
+      records = GDPR_RETENTION_REQUIRED_ARTICLES.map do |article_number|
+        title = GDPR_RETENTION_ARTICLE_TITLES.fetch(language).fetch(article_number)
+        record = {
+          source: 'eur_lex', official_source_id: GDPR_PROCESSOR_OFFICIAL_SOURCE_ID, authority: 'EUR-Lex',
+          law_title: GDPR_RETENTION_LAW_TITLES.fetch(language),
+          title: "#{GDPR_RETENTION_SOURCE_LABELS.fetch(language)} — #{title}".freeze,
+          article_title: title, article_number: article_number, language: language.upcase.freeze,
+          url: "https://eur-lex.europa.eu/legal-content/#{language.upcase}/TXT/HTML/?uri=CELEX:32016R0679#art_#{article_number}".freeze,
+          aliases: %w[avg gdpr rgpd dsgvo].freeze, article_text: articles.fetch(article_number)
+        }
+        # EN/DE are original EU language editions, not translated Justel rows.
+        record[:language_id] = { 'nl' => 1, 'fr' => 2 }[language] if %w[nl fr].include?(language)
+        record.freeze
+      end.freeze
+      [language, records]
+    end.freeze
+
+    GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY = 'gdpr_commercial_website'
+    GDPR_COMMERCIAL_WEBSITE_OFFICIAL_EDITION = CommercialWebsiteGdprSources::OFFICIAL_EDITION
+    GDPR_COMMERCIAL_WEBSITE_REQUIRED_ARTICLES = CommercialWebsiteGdprSources::REQUIRED_ARTICLES
+    GDPR_COMMERCIAL_WEBSITE_SOURCE_LABELS = CommercialWebsiteGdprSources::SOURCE_LABELS
+    GDPR_COMMERCIAL_WEBSITE_OFFICIAL_TEXTS = CommercialWebsiteGdprSources::ARTICLE_TEXTS.to_h do |language, articles|
+      [language, { '6' => GDPR_RETENTION_OFFICIAL_TEXTS.fetch(language).fetch('6') }.merge(articles).freeze]
+    end.freeze
+    GDPR_COMMERCIAL_WEBSITE_OFFICIAL_SOURCES = GDPR_COMMERCIAL_WEBSITE_OFFICIAL_TEXTS.to_h do |language, articles|
+      records = GDPR_COMMERCIAL_WEBSITE_REQUIRED_ARTICLES.map do |article_number|
+        title = CommercialWebsiteGdprSources::ARTICLE_TITLES.fetch(language).fetch(article_number)
+        record = {
+          source: 'eur_lex', official_source_id: GDPR_PROCESSOR_OFFICIAL_SOURCE_ID, authority: 'EUR-Lex',
+          official_source_topic: GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY,
+          official_edition: GDPR_COMMERCIAL_WEBSITE_OFFICIAL_EDITION, verified_on: '2026-10-12',
+          law_title: GDPR_RETENTION_LAW_TITLES.fetch(language),
+          title: "#{GDPR_COMMERCIAL_WEBSITE_SOURCE_LABELS.fetch(language)} — #{title}".freeze,
+          article_title: title, article_number: article_number, language: language.upcase.freeze,
+          url: "https://eur-lex.europa.eu/legal-content/#{language.upcase}/TXT/HTML/?uri=CELEX:#{GDPR_COMMERCIAL_WEBSITE_OFFICIAL_EDITION}#art_#{article_number}".freeze,
+          aliases: %w[avg gdpr rgpd dsgvo].freeze, article_text: articles.fetch(article_number)
+        }
+        record[:language_id] = { 'nl' => 1, 'fr' => 2 }[language] if %w[nl fr].include?(language)
+        record.freeze
+      end.freeze
+      [language, records]
+    end.freeze
 
     GDPR_PROCESSOR_SOURCE_LABELS = {
       'nl' => 'AVG — definitie en verplichtingen van de verwerker',
@@ -121,6 +283,180 @@ module LegalChatbot
       ].freeze
     }.freeze
 
+    GDPR_DIRECT_MARKETING_TOPIC_KEY = 'gdpr_direct_marketing'
+    GDPR_DIRECT_MARKETING_REQUIRED_ARTICLES = %w[12 14 15 17 21].freeze
+    GDPR_DIRECT_MARKETING_OFFICIAL_EDITION = '02016R0679-20160504'
+    GDPR_DIRECT_MARKETING_SOURCE_LABELS = {
+      'nl' => 'AVG — herkomst, inzage, wissing en bezwaar tegen direct marketing',
+      'fr' => 'RGPD — origine, accès, effacement et opposition à la prospection',
+      'de' => 'DSGVO — Herkunft, Auskunft, Löschung und Widerspruch gegen Direktwerbung',
+      'en' => 'GDPR — source, access, erasure and direct-marketing objection'
+    }.freeze
+
+    # Selected provisions, individually checked in all four official language
+    # editions on 2026-10-12; no synthetic Belgian article or canonical answer.
+    # Edition: CELEX 02016R0679-20160504 (including its corrigenda).
+    # EU Publications Office's original XHTML, same edition as the URLs below:
+    # NL: https://publications.europa.eu/resource/cellar/5f2552c2-cc45-11e6-ad7c-01aa75ed71a1.0024.03/DOC_2
+    # FR: https://publications.europa.eu/resource/cellar/5f2552c2-cc45-11e6-ad7c-01aa75ed71a1.0021.03/DOC_1
+    # DE: https://publications.europa.eu/resource/cellar/5f2552c2-cc45-11e6-ad7c-01aa75ed71a1.0001.02/DOC_3
+    # EN: https://publications.europa.eu/resource/cellar/5f2552c2-cc45-11e6-ad7c-01aa75ed71a1.0022.03/DOC_1
+    # In particular NL Art.12(3)/(4) uses corrigendum 32016R0679R(03),
+    # OJ L 74, 4.3.2021, p.35, not the uncorrected 2016 text.
+    # Whitespace is normalized only; the named extracts preserve the legal
+    # conditions, exceptions and controller's burden in Art.12(5).
+    GDPR_DIRECT_MARKETING_OFFICIAL_TEXTS = {
+      'nl' => {
+        '12' => <<~TEXT.strip.freeze,
+          1. De verwerkingsverantwoordelijke neemt passende maatregelen opdat de betrokkene de in de artikelen 13 en 14 bedoelde informatie en de in de artikelen 15 tot en met 22 en artikel 34 bedoelde communicatie in verband met de verwerking in een beknopte, transparante, begrijpelijke en gemakkelijk toegankelijke vorm en in duidelijke en eenvoudige taal ontvangt, in het bijzonder wanneer de informatie specifiek voor een kind bestemd is. De informatie wordt schriftelijk of met andere middelen, met inbegrip van, indien dit passend is, elektronische middelen, verstrekt. Indien de betrokkene daarom verzoekt, kan de informatie mondeling worden meegedeeld, op voorwaarde dat de identiteit van de betrokkene met andere middelen bewezen is.
+          3. De verwerkingsverantwoordelijke verstrekt de betrokkene onverwijld en in ieder geval binnen één maand na ontvangst van het verzoek krachtens de artikelen 15 tot en met 22 informatie over het gevolg dat aan het verzoek is gegeven. Afhankelijk van de complexiteit van de verzoeken en van het aantal verzoeken kan die termijn indien nodig met nog eens twee maanden worden verlengd. De verwerkingsverantwoordelijke stelt de betrokkene binnen één maand na ontvangst van het verzoek in kennis van een dergelijke verlenging, met vermelding van de redenen voor de vertraging. Wanneer de betrokkene zijn verzoek elektronisch indient, wordt de informatie indien mogelijk elektronisch verstrekt, tenzij de betrokkene anderszins verzoekt.
+          4. Wanneer de verwerkingsverantwoordelijke geen gevolg geeft aan het verzoek van de betrokkene, deelt hij deze laatste onverwijld en uiterlijk binnen één maand na ontvangst van het verzoek mee waarom het verzoek zonder gevolg is gebleven, en informeert hij hem over de mogelijkheid om een klacht in te dienen bij een toezichthoudende autoriteit en beroep bij de rechter in te stellen.
+          5. Het verstrekken van de in de artikelen 13 en 14 bedoelde informatie, en het verstrekken van de communicatie en het treffen van de maatregelen bedoeld in de artikelen 15 tot en met 22 en artikel 34 geschieden kosteloos. Wanneer verzoeken van een betrokkene kennelijk ongegrond of buitensporig zijn, met name vanwege hun repetitieve karakter, mag de verwerkingsverantwoordelijke ofwel: a) een redelijke vergoeding aanrekenen in het licht van de administratieve kosten waarmee het verstrekken van de gevraagde informatie of communicatie en het treffen van de gevraagde maatregelen gepaard gaan; ofwel b) weigeren gevolg te geven aan het verzoek.
+          Het is aan de verwerkingsverantwoordelijke om de kennelijk ongegronde of buitensporige aard van het verzoek aan te tonen.
+          6. Onverminderd artikel 11 kan de verwerkingsverantwoordelijke, wanneer hij redenen heeft om te twijfelen aan de identiteit van de natuurlijke persoon die het verzoek indient als bedoeld in de artikelen 15 tot en met 21, om aanvullende informatie vragen die nodig is ter bevestiging van de identiteit van de betrokkene.
+        TEXT
+        '14' => <<~TEXT.strip.freeze,
+          1. Wanneer persoonsgegevens niet van de betrokkene zijn verkregen, verstrekt de verwerkingsverantwoordelijke de betrokkene de volgende informatie:
+          a) de identiteit en de contactgegevens van de verwerkingsverantwoordelijke en, in voorkomend geval, van de vertegenwoordiger van de verwerkingsverantwoordelijke;
+          2. Naast de in lid 1 bedoelde informatie verstrekt de verwerkingsverantwoordelijke de betrokkene de volgende informatie om ten overstaan van de betrokkene een behoorlijke en transparante verwerking te waarborgen:
+          f) de bron waar de persoonsgegevens vandaan komen, en in voorkomend geval, of zij afkomstig zijn van openbare bronnen;
+          3. De verwerkingsverantwoordelijke verstrekt de in de leden 1 en 2 bedoelde informatie: a) binnen een redelijke termijn, maar uiterlijk binnen één maand na de verkrijging van de persoonsgegevens, afhankelijk van de concrete omstandigheden waarin de persoonsgegevens worden verwerkt; b) indien de persoonsgegevens zullen worden gebruikt voor communicatie met de betrokkene, uiterlijk op het moment van het eerste contact met de betrokkene; of c) indien verstrekking van de gegevens aan een andere ontvanger wordt overwogen, uiterlijk op het tijdstip waarop de persoonsgegevens voor het eerst worden verstrekt.
+          5. De leden 1 tot en met 4 zijn niet van toepassing indien en voor zover: a) de betrokkene reeds over de informatie beschikt; b) het verstrekken van die informatie onmogelijk blijkt of onevenredig veel inspanning zou vergen, in het bijzonder bij verwerking met het oog op archivering in het algemeen belang, wetenschappelijk of historisch onderzoek of statistische doeleinden, behoudens de in artikel 89, lid 1, bedoelde voorwaarden en waarborgen, of voor zover de in lid 1 van dit artikel bedoelde verplichting de verwezenlijking van de doeleinden van die verwerking onmogelijk dreigt te maken of ernstig in het gedrang dreigt te brengen. In dergelijke gevallen neemt de verwerkingsverantwoordelijke passende maatregelen om de rechten, de vrijheden en de gerechtvaardigde belangen van de betrokkene te beschermen, waaronder het openbaar maken van de informatie; c) het verkrijgen of verstrekken van de gegevens uitdrukkelijk is voorgeschreven bij Unie- of lidstatelijk recht dat op de verwerkingsverantwoordelijke van toepassing is en dat recht voorziet in passende maatregelen om de gerechtvaardigde belangen van de betrokkene te beschermen; of d) de persoonsgegevens vertrouwelijk moeten blijven uit hoofde van een beroepsgeheim in het kader van Unierecht of lidstatelijk recht, waaronder een wettelijke geheimhoudingsplicht.
+        TEXT
+        '15' => <<~TEXT.strip.freeze,
+          1. De betrokkene heeft het recht om van de verwerkingsverantwoordelijke uitsluitsel te verkrijgen over het al dan niet verwerken van hem betreffende persoonsgegevens en, wanneer dat het geval is, om inzage te verkrijgen van die persoonsgegevens en van de volgende informatie:
+          g) wanneer de persoonsgegevens niet bij de betrokkene worden verzameld, alle beschikbare informatie over de bron van die gegevens;
+        TEXT
+        '17' => <<~TEXT.strip.freeze,
+          1. De betrokkene heeft het recht van de verwerkingsverantwoordelijke zonder onredelijke vertraging wissing van hem betreffende persoonsgegevens te verkrijgen en de verwerkingsverantwoordelijke is verplicht persoonsgegevens zonder onredelijke vertraging te wissen wanneer een van de volgende gevallen van toepassing is: a) de persoonsgegevens zijn niet langer nodig voor de doeleinden waarvoor zij zijn verzameld of anderszins verwerkt; b) de betrokkene trekt de toestemming waarop de verwerking overeenkomstig artikel 6, lid 1, punt a), of artikel 9, lid 2, punt a), berust, in, en er is geen andere rechtsgrond voor de verwerking; c) de betrokkene maakt overeenkomstig artikel 21, lid 1, bezwaar tegen de verwerking, en er zijn geen prevalerende dwingende gerechtvaardigde gronden voor de verwerking, of de betrokkene maakt bezwaar tegen de verwerking overeenkomstig artikel 21, lid 2; d) de persoonsgegevens zijn onrechtmatig verwerkt; e) de persoonsgegevens moeten worden gewist om te voldoen aan een in het Unierecht of het lidstatelijke recht neergelegde wettelijke verplichting die op de verwerkingsverantwoordelijke rust; f) de persoonsgegevens zijn verzameld in verband met een aanbod van diensten van de informatiemaatschappij als bedoeld in artikel 8, lid 1.
+          3. De leden 1 en 2 zijn niet van toepassing voor zover verwerking nodig is: a) voor het uitoefenen van het recht op vrijheid van meningsuiting en informatie; b) voor het nakomen van een in het Unierecht of het lidstatelijke recht neergelegde wettelijke verwerkingsverplichting die op de verwerkingsverantwoordelijke rust, of voor het vervullen van een taak van algemeen belang of het uitoefenen van het openbaar gezag dat aan de verwerkingsverantwoordelijke is verleend; c) om redenen van algemeen belang op het gebied van volksgezondheid overeenkomstig artikel 9, lid 2, punten h) en i), en artikel 9, lid 3; d) met het oog op archivering in het algemeen belang, wetenschappelijk of historisch onderzoek of statistische doeleinden overeenkomstig artikel 89, lid 1, voor zover het in lid 1 bedoelde recht de verwezenlijking van de doeleinden van die verwerking onmogelijk dreigt te maken of ernstig in het gedrang dreigt te brengen; e) voor de instelling, uitoefening of onderbouwing van een rechtsvordering.
+        TEXT
+        '21' => <<~TEXT.strip.freeze
+          2. Wanneer persoonsgegevens ten behoeve van direct marketing worden verwerkt, heeft de betrokkene te allen tijde het recht bezwaar te maken tegen de verwerking van hem betreffende persoonsgegevens voor dergelijke marketing, met inbegrip van profilering die betrekking heeft op direct marketing.
+          3. Wanneer de betrokkene bezwaar maakt tegen verwerking ten behoeve van direct marketing, worden de persoonsgegevens niet meer voor deze doeleinden verwerkt.
+          4. Het in de leden 1 en 2 bedoelde recht wordt uiterlijk op het moment van het eerste contact met de betrokkene uitdrukkelijk onder de aandacht van de betrokkene gebracht en duidelijk en gescheiden van enige andere informatie weergegeven.
+        TEXT
+      }.freeze,
+      'fr' => {
+        '12' => <<~TEXT.strip.freeze,
+          1. Le responsable du traitement prend des mesures appropriées pour fournir toute information visée aux articles 13 et 14 ainsi que pour procéder à toute communication au titre des articles 15 à 22 et de l'article 34 en ce qui concerne le traitement à la personne concernée d'une façon concise, transparente, compréhensible et aisément accessible, en des termes clairs et simples, en particulier pour toute information destinée spécifiquement à un enfant. Les informations sont fournies par écrit ou par d'autres moyens y compris, lorsque c'est approprié, par voie électronique. Lorsque la personne concernée en fait la demande, les informations peuvent être fournies oralement, à condition que l'identité de la personne concernée soit démontrée par d'autres moyens.
+          3. Le responsable du traitement fournit à la personne concernée des informations sur les mesures prises à la suite d'une demande formulée en application des articles 15 à 22, dans les meilleurs délais et en tout état de cause dans un délai d'un mois à compter de la réception de la demande. Au besoin, ce délai peut être prolongé de deux mois, compte tenu de la complexité et du nombre de demandes. Le responsable du traitement informe la personne concernée de cette prolongation et des motifs du report dans un délai d'un mois à compter de la réception de la demande. Lorsque la personne concernée présente sa demande sous une forme électronique, les informations sont fournies par voie électronique lorsque cela est possible, à moins que la personne concernée ne demande qu'il en soit autrement.
+          4. Si le responsable du traitement ne donne pas suite à la demande formulée par la personne concernée, il informe celle-ci sans tarder et au plus tard dans un délai d'un mois à compter de la réception de la demande des motifs de son inaction et de la possibilité d'introduire une réclamation auprès d'une autorité de contrôle et de former un recours juridictionnel.
+          5. Aucun paiement n'est exigé pour fournir les informations au titre des articles 13 et 14 et pour procéder à toute communication et prendre toute mesure au titre des articles 15 à 22 et de l'article 34. Lorsque les demandes d'une personne concernée sont manifestement infondées ou excessives, notamment en raison de leur caractère répétitif, le responsable du traitement peut: a) exiger le paiement de frais raisonnables qui tiennent compte des coûts administratifs supportés pour fournir les informations, procéder aux communications ou prendre les mesures demandées; ou b) refuser de donner suite à ces demandes.
+          Il incombe au responsable du traitement de démontrer le caractère manifestement infondé ou excessif de la demande.
+          6. Sans préjudice de l'article 11, lorsque le responsable du traitement a des doutes raisonnables quant à l'identité de la personne physique présentant la demande visée aux articles 15 à 21, il peut demander que lui soient fournies des informations supplémentaires nécessaires pour confirmer l'identité de la personne concernée.
+        TEXT
+        '14' => <<~TEXT.strip.freeze,
+          1. Lorsque les données à caractère personnel n'ont pas été collectées auprès de la personne concernée, le responsable du traitement fournit à celle-ci toutes les informations suivantes:
+          a) l'identité et les coordonnées du responsable du traitement et, le cas échéant, du représentant du responsable du traitement;
+          2. En plus des informations visées au paragraphe 1, le responsable du traitement fournit à la personne concernée les informations suivantes nécessaires pour garantir un traitement équitable et transparent à l'égard de la personne concernée:
+          f) la source d'où proviennent les données à caractère personnel et, le cas échéant, une mention indiquant qu'elles sont issues ou non de sources accessibles au public;
+          3. Le responsable du traitement fournit les informations visées aux paragraphes 1 et 2: a) dans un délai raisonnable après avoir obtenu les données à caractère personnel, mais ne dépassant pas un mois, eu égard aux circonstances particulières dans lesquelles les données à caractère personnel sont traitées; b) si les données à caractère personnel doivent être utilisées aux fins de la communication avec la personne concernée, au plus tard au moment de la première communication à ladite personne; ou c) s'il est envisagé de communiquer les informations à un autre destinataire, au plus tard lorsque les données à caractère personnel sont communiquées pour la première fois.
+          5. Les paragraphes 1 à 4 ne s'appliquent pas lorsque et dans la mesure où: a) la personne concernée dispose déjà de ces informations; b) la fourniture de telles informations se révèle impossible ou exigerait des efforts disproportionnés, en particulier pour le traitement à des fins archivistiques dans l'intérêt public, à des fins de recherche scientifique ou historique ou à des fins statistiques sous réserve des conditions et garanties visées à l'article 89, paragraphe 1, ou dans la mesure où l'obligation visée au paragraphe 1 du présent article est susceptible de rendre impossible ou de compromettre gravement la réalisation des objectifs dudit traitement. En pareils cas, le responsable du traitement prend des mesures appropriées pour protéger les droits et libertés ainsi que les intérêts légitimes de la personne concernée, y compris en rendant les informations publiquement disponibles; c) l'obtention ou la communication des informations sont expressément prévues par le droit de l'Union ou le droit de l'État membre auquel le responsable du traitement est soumis et qui prévoit des mesures appropriées visant à protéger les intérêts légitimes de la personne concernée; ou d) les données à caractère personnel doivent rester confidentielles en vertu d'une obligation de secret professionnel réglementée par le droit de l'Union ou le droit des États membre, y compris une obligation légale de secret professionnel.
+        TEXT
+        '15' => <<~TEXT.strip.freeze,
+          1. La personne concernée a le droit d'obtenir du responsable du traitement la confirmation que des données à caractère personnel la concernant sont ou ne sont pas traitées et, lorsqu'elles le sont, l'accès auxdites données à caractère personnel ainsi que les informations suivantes:
+          g) lorsque les données à caractère personnel ne sont pas collectées auprès de la personne concernée, toute information disponible quant à leur source;
+        TEXT
+        '17' => <<~TEXT.strip.freeze,
+          1. La personne concernée a le droit d'obtenir du responsable du traitement l'effacement, dans les meilleurs délais, de données à caractère personnel la concernant et le responsable du traitement a l'obligation d'effacer ces données à caractère personnel dans les meilleurs délais, lorsque l'un des motifs suivants s'applique: a) les données à caractère personnel ne sont plus nécessaires au regard des finalités pour lesquelles elles ont été collectées ou traitées d'une autre manière; b) la personne concernée retire le consentement sur lequel est fondé le traitement, conformément à l'article 6, paragraphe 1, point a), ou à l'article 9, paragraphe 2, point a), et il n'existe pas d'autre fondement juridique au traitement; c) la personne concernée s'oppose au traitement en vertu de l'article 21, paragraphe 1, et il n'existe pas de motif légitime impérieux pour le traitement, ou la personne concernée s'oppose au traitement en vertu de l'article 21, paragraphe 2; d) les données à caractère personnel ont fait l'objet d'un traitement illicite; e) les données à caractère personnel doivent être effacées pour respecter une obligation légale qui est prévue par le droit de l'Union ou par le droit de l'État membre auquel le responsable du traitement est soumis; f) les données à caractère personnel ont été collectées dans le cadre de l'offre de services de la société de l'information visée à l'article 8, paragraphe 1.
+          3. Les paragraphes 1 et 2 ne s'appliquent pas dans la mesure où ce traitement est nécessaire: a) à l'exercice du droit à la liberté d'expression et d'information; b) pour respecter une obligation légale qui requiert le traitement prévue par le droit de l'Union ou par le droit de l'État membre auquel le responsable du traitement est soumis, ou pour exécuter une mission d'intérêt public ou relevant de l'exercice de l'autorité publique dont est investi le responsable du traitement; c) pour des motifs d'intérêt public dans le domaine de la santé publique, conformément à l'article 9, paragraphe 2, points h) et i), ainsi qu'à l'article 9, paragraphe 3; d) à des fins archivistiques dans l'intérêt public, à des fins de recherche scientifique ou historique ou à des fins statistiques conformément à l'article 89, paragraphe 1, dans la mesure où le droit visé au paragraphe 1 est susceptible de rendre impossible ou de compromettre gravement la réalisation des objectifs dudit traitement; ou e) à la constatation, à l'exercice ou à la défense de droits en justice.
+        TEXT
+        '21' => <<~TEXT.strip.freeze
+          2. Lorsque les données à caractère personnel sont traitées à des fins de prospection, la personne concernée a le droit de s'opposer à tout moment au traitement des données à caractère personnel la concernant à de telles fins de prospection, y compris au profilage dans la mesure où il est lié à une telle prospection.
+          3. Lorsque la personne concernée s'oppose au traitement à des fins de prospection, les données à caractère personnel ne sont plus traitées à ces fins.
+          4. Au plus tard au moment de la première communication avec la personne concernée, le droit visé aux paragraphes 1 et 2 est explicitement porté à l'attention de la personne concernée et est présenté clairement et séparément de toute autre information.
+        TEXT
+      }.freeze,
+      'de' => {
+        '12' => <<~TEXT.strip.freeze,
+          (1) Der Verantwortliche trifft geeignete Maßnahmen, um der betroffenen Person alle Informationen gemäß den Artikeln 13 und 14 und alle Mitteilungen gemäß den Artikeln 15 bis 22 und Artikel 34, die sich auf die Verarbeitung beziehen, in präziser, transparenter, verständlicher und leicht zugänglicher Form in einer klaren und einfachen Sprache zu übermitteln; dies gilt insbesondere für Informationen, die sich speziell an Kinder richten. Die Übermittlung der Informationen erfolgt schriftlich oder in anderer Form, gegebenenfalls auch elektronisch. Falls von der betroffenen Person verlangt, kann die Information mündlich erteilt werden, sofern die Identität der betroffenen Person in anderer Form nachgewiesen wurde.
+          (3) Der Verantwortliche stellt der betroffenen Person Informationen über die auf Antrag gemäß den Artikeln 15 bis 22 ergriffenen Maßnahmen unverzüglich, in jedem Fall aber innerhalb eines Monats nach Eingang des Antrags zur Verfügung. Diese Frist kann um weitere zwei Monate verlängert werden, wenn dies unter Berücksichtigung der Komplexität und der Anzahl von Anträgen erforderlich ist. Der Verantwortliche unterrichtet die betroffene Person innerhalb eines Monats nach Eingang des Antrags über eine Fristverlängerung, zusammen mit den Gründen für die Verzögerung. Stellt die betroffene Person den Antrag elektronisch, so ist sie nach Möglichkeit auf elektronischem Weg zu unterrichten, sofern sie nichts anderes angibt.
+          (4) Wird der Verantwortliche auf den Antrag der betroffenen Person hin nicht tätig, so unterrichtet er die betroffene Person ohne Verzögerung, spätestens aber innerhalb eines Monats nach Eingang des Antrags über die Gründe hierfür und über die Möglichkeit, bei einer Aufsichtsbehörde Beschwerde einzulegen oder einen gerichtlichen Rechtsbehelf einzulegen.
+          (5) Informationen gemäß den Artikeln 13 und 14 sowie alle Mitteilungen und Maßnahmen gemäß den Artikeln 15 bis 22 und Artikel 34 werden unentgeltlich zur Verfügung gestellt. Bei offenkundig unbegründeten oder — insbesondere im Fall von häufiger Wiederholung — exzessiven Anträgen einer betroffenen Person kann der Verantwortliche entweder a) ein angemessenes Entgelt verlangen, bei dem die Verwaltungskosten für die Unterrichtung oder die Mitteilung oder die Durchführung der beantragten Maßnahme berücksichtigt werden, oder b) sich weigern, aufgrund des Antrags tätig zu werden.
+          Der Verantwortliche hat den Nachweis für den offenkundig unbegründeten oder exzessiven Charakter des Antrags zu erbringen.
+          (6) Hat der Verantwortliche begründete Zweifel an der Identität der natürlichen Person, die den Antrag gemäß den Artikeln 15 bis 21 stellt, so kann er unbeschadet des Artikels 11 zusätzliche Informationen anfordern, die zur Bestätigung der Identität der betroffenen Person erforderlich sind.
+        TEXT
+        '14' => <<~TEXT.strip.freeze,
+          (1) Werden personenbezogene Daten nicht bei der betroffenen Person erhoben, so teilt der Verantwortliche der betroffenen Person Folgendes mit:
+          a) den Namen und die Kontaktdaten des Verantwortlichen sowie gegebenenfalls seines Vertreters;
+          (2) Zusätzlich zu den Informationen gemäß Absatz 1 stellt der Verantwortliche der betroffenen Person die folgenden Informationen zur Verfügung, die erforderlich sind, um der betroffenen Person gegenüber eine faire und transparente Verarbeitung zu gewährleisten:
+          f) aus welcher Quelle die personenbezogenen Daten stammen und gegebenenfalls ob sie aus öffentlich zugänglichen Quellen stammen;
+          (3) Der Verantwortliche erteilt die Informationen gemäß den Absätzen 1 und 2 a) unter Berücksichtigung der spezifischen Umstände der Verarbeitung der personenbezogenen Daten innerhalb einer angemessenen Frist nach Erlangung der personenbezogenen Daten, längstens jedoch innerhalb eines Monats, b) falls die personenbezogenen Daten zur Kommunikation mit der betroffenen Person verwendet werden sollen, spätestens zum Zeitpunkt der ersten Mitteilung an sie, oder, c) falls die Offenlegung an einen anderen Empfänger beabsichtigt ist, spätestens zum Zeitpunkt der ersten Offenlegung.
+          (5) Die Absätze 1 bis 4 finden keine Anwendung, wenn und soweit a) die betroffene Person bereits über die Informationen verfügt, b) die Erteilung dieser Informationen sich als unmöglich erweist oder einen unverhältnismäßigen Aufwand erfordern würde; dies gilt insbesondere für die Verarbeitung für im öffentlichen Interesse liegende Archivzwecke, für wissenschaftliche oder historische Forschungszwecke oder für statistische Zwecke vorbehaltlich der in Artikel 89 Absatz 1 genannten Bedingungen und Garantien oder soweit die in Absatz 1 des vorliegenden Artikels genannte Pflicht voraussichtlich die Verwirklichung der Ziele dieser Verarbeitung unmöglich macht oder ernsthaft beeinträchtigt In diesen Fällen ergreift der Verantwortliche geeignete Maßnahmen zum Schutz der Rechte und Freiheiten sowie der berechtigten Interessen der betroffenen Person, einschließlich der Bereitstellung dieser Informationen für die Öffentlichkeit, c) die Erlangung oder Offenlegung durch Rechtsvorschriften der Union oder der Mitgliedstaaten, denen der Verantwortliche unterliegt und die geeignete Maßnahmen zum Schutz der berechtigten Interessen der betroffenen Person vorsehen, ausdrücklich geregelt ist oder d) die personenbezogenen Daten gemäß dem Unionsrecht oder dem Recht der Mitgliedstaaten dem Berufsgeheimnis, einschließlich einer satzungsmäßigen Geheimhaltungspflicht, unterliegen und daher vertraulich behandelt werden müssen.
+        TEXT
+        '15' => <<~TEXT.strip.freeze,
+          (1) Die betroffene Person hat das Recht, von dem Verantwortlichen eine Bestätigung darüber zu verlangen, ob sie betreffende personenbezogene Daten verarbeitet werden; ist dies der Fall, so hat sie ein Recht auf Auskunft über diese personenbezogenen Daten und auf folgende Informationen:
+          g) wenn die personenbezogenen Daten nicht bei der betroffenen Person erhoben werden, alle verfügbaren Informationen über die Herkunft der Daten;
+        TEXT
+        '17' => <<~TEXT.strip.freeze,
+          (1) Die betroffene Person hat das Recht, von dem Verantwortlichen zu verlangen, dass sie betreffende personenbezogene Daten unverzüglich gelöscht werden, und der Verantwortliche ist verpflichtet, personenbezogene Daten unverzüglich zu löschen, sofern einer der folgenden Gründe zutrifft: a) Die personenbezogenen Daten sind für die Zwecke, für die sie erhoben oder auf sonstige Weise verarbeitet wurden, nicht mehr notwendig. b) Die betroffene Person widerruft ihre Einwilligung, auf die sich die Verarbeitung gemäß Artikel 6 Absatz 1 Buchstabe a oder Artikel 9 Absatz 2 Buchstabe a stützte, und es fehlt an einer anderweitigen Rechtsgrundlage für die Verarbeitung. c) Die betroffene Person legt gemäß Artikel 21 Absatz 1 Widerspruch gegen die Verarbeitung ein und es liegen keine vorrangigen berechtigten Gründe für die Verarbeitung vor, oder die betroffene Person legt gemäß Artikel 21 Absatz 2 Widerspruch gegen die Verarbeitung ein. d) Die personenbezogenen Daten wurden unrechtmäßig verarbeitet. e) Die Löschung der personenbezogenen Daten ist zur Erfüllung einer rechtlichen Verpflichtung nach dem Unionsrecht oder dem Recht der Mitgliedstaaten erforderlich, dem der Verantwortliche unterliegt. f) Die personenbezogenen Daten wurden in Bezug auf angebotene Dienste der Informationsgesellschaft gemäß Artikel 8 Absatz 1 erhoben.
+          (3) Die Absätze 1 und 2 gelten nicht, soweit die Verarbeitung erforderlich ist a) zur Ausübung des Rechts auf freie Meinungsäußerung und Information; b) zur Erfüllung einer rechtlichen Verpflichtung, die die Verarbeitung nach dem Recht der Union oder der Mitgliedstaaten, dem der Verantwortliche unterliegt, erfordert, oder zur Wahrnehmung einer Aufgabe, die im öffentlichen Interesse liegt oder in Ausübung öffentlicher Gewalt erfolgt, die dem Verantwortlichen übertragen wurde; c) aus Gründen des öffentlichen Interesses im Bereich der öffentlichen Gesundheit gemäß Artikel 9 Absatz 2 Buchstaben h und i sowie Artikel 9 Absatz 3; d) für im öffentlichen Interesse liegende Archivzwecke, wissenschaftliche oder historische Forschungszwecke oder für statistische Zwecke gemäß Artikel 89 Absatz 1, soweit das in Absatz 1 genannte Recht voraussichtlich die Verwirklichung der Ziele dieser Verarbeitung unmöglich macht oder ernsthaft beeinträchtigt, oder e) zur Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen.
+        TEXT
+        '21' => <<~TEXT.strip.freeze
+          (2) Werden personenbezogene Daten verarbeitet, um Direktwerbung zu betreiben, so hat die betroffene Person das Recht, jederzeit Widerspruch gegen die Verarbeitung sie betreffender personenbezogener Daten zum Zwecke derartiger Werbung einzulegen; dies gilt auch für das Profiling, soweit es mit solcher Direktwerbung in Verbindung steht.
+          (3) Widerspricht die betroffene Person der Verarbeitung für Zwecke der Direktwerbung, so werden die personenbezogenen Daten nicht mehr für diese Zwecke verarbeitet.
+          (4) Die betroffene Person muss spätestens zum Zeitpunkt der ersten Kommunikation mit ihr ausdrücklich auf das in den Absätzen 1 und 2 genannte Recht hingewiesen werden; dieser Hinweis hat in einer verständlichen und von anderen Informationen getrennten Form zu erfolgen.
+        TEXT
+      }.freeze,
+      'en' => {
+        '12' => <<~TEXT.strip.freeze,
+          1. The controller shall take appropriate measures to provide any information referred to in Articles 13 and 14 and any communication under Articles 15 to 22 and 34 relating to processing to the data subject in a concise, transparent, intelligible and easily accessible form, using clear and plain language, in particular for any information addressed specifically to a child. The information shall be provided in writing, or by other means, including, where appropriate, by electronic means. When requested by the data subject, the information may be provided orally, provided that the identity of the data subject is proven by other means.
+          3. The controller shall provide information on action taken on a request under Articles 15 to 22 to the data subject without undue delay and in any event within one month of receipt of the request. That period may be extended by two further months where necessary, taking into account the complexity and number of the requests. The controller shall inform the data subject of any such extension within one month of receipt of the request, together with the reasons for the delay. Where the data subject makes the request by electronic form means, the information shall be provided by electronic means where possible, unless otherwise requested by the data subject.
+          4. If the controller does not take action on the request of the data subject, the controller shall inform the data subject without delay and at the latest within one month of receipt of the request of the reasons for not taking action and on the possibility of lodging a complaint with a supervisory authority and seeking a judicial remedy.
+          5. Information provided under Articles 13 and 14 and any communication and any actions taken under Articles 15 to 22 and 34 shall be provided free of charge. Where requests from a data subject are manifestly unfounded or excessive, in particular because of their repetitive character, the controller may either: (a) charge a reasonable fee taking into account the administrative costs of providing the information or communication or taking the action requested; or (b) refuse to act on the request.
+          The controller shall bear the burden of demonstrating the manifestly unfounded or excessive character of the request.
+          6. Without prejudice to Article 11, where the controller has reasonable doubts concerning the identity of the natural person making the request referred to in Articles 15 to 21, the controller may request the provision of additional information necessary to confirm the identity of the data subject.
+        TEXT
+        '14' => <<~TEXT.strip.freeze,
+          1. Where personal data have not been obtained from the data subject, the controller shall provide the data subject with the following information:
+          (a) the identity and the contact details of the controller and, where applicable, of the controller's representative;
+          2. In addition to the information referred to in paragraph 1, the controller shall provide the data subject with the following information necessary to ensure fair and transparent processing in respect of the data subject:
+          (f) from which source the personal data originate, and if applicable, whether it came from publicly accessible sources;
+          3. The controller shall provide the information referred to in paragraphs 1 and 2: (a) within a reasonable period after obtaining the personal data, but at the latest within one month, having regard to the specific circumstances in which the personal data are processed; (b) if the personal data are to be used for communication with the data subject, at the latest at the time of the first communication to that data subject; or (c) if a disclosure to another recipient is envisaged, at the latest when the personal data are first disclosed.
+          5. Paragraphs 1 to 4 shall not apply where and insofar as: (a) the data subject already has the information; (b) the provision of such information proves impossible or would involve a disproportionate effort, in particular for processing for archiving purposes in the public interest, scientific or historical research purposes or statistical purposes, subject to the conditions and safeguards referred to in Article 89(1) or in so far as the obligation referred to in paragraph 1 of this Article is likely to render impossible or seriously impair the achievement of the objectives of that processing. In such cases the controller shall take appropriate measures to protect the data subject's rights and freedoms and legitimate interests, including making the information publicly available; (c) obtaining or disclosure is expressly laid down by Union or Member State law to which the controller is subject and which provides appropriate measures to protect the data subject's legitimate interests; or (d) where the personal data must remain confidential subject to an obligation of professional secrecy regulated by Union or Member State law, including a statutory obligation of secrecy.
+        TEXT
+        '15' => <<~TEXT.strip.freeze,
+          1. The data subject shall have the right to obtain from the controller confirmation as to whether or not personal data concerning him or her are being processed, and, where that is the case, access to the personal data and the following information:
+          (g) where the personal data are not collected from the data subject, any available information as to their source;
+        TEXT
+        '17' => <<~TEXT.strip.freeze,
+          1. The data subject shall have the right to obtain from the controller the erasure of personal data concerning him or her without undue delay and the controller shall have the obligation to erase personal data without undue delay where one of the following grounds applies: (a) the personal data are no longer necessary in relation to the purposes for which they were collected or otherwise processed; (b) the data subject withdraws consent on which the processing is based according to point (a) of Article 6(1), or point (a) of Article 9(2), and where there is no other legal ground for the processing; (c) the data subject objects to the processing pursuant to Article 21(1) and there are no overriding legitimate grounds for the processing, or the data subject objects to the processing pursuant to Article 21(2); (d) the personal data have been unlawfully processed; (e) the personal data have to be erased for compliance with a legal obligation in Union or Member State law to which the controller is subject; (f) the personal data have been collected in relation to the offer of information society services referred to in Article 8(1).
+          3. Paragraphs 1 and 2 shall not apply to the extent that processing is necessary: (a) for exercising the right of freedom of expression and information; (b) for compliance with a legal obligation which requires processing by Union or Member State law to which the controller is subject or for the performance of a task carried out in the public interest or in the exercise of official authority vested in the controller; (c) for reasons of public interest in the area of public health in accordance with points (h) and (i) of Article 9(2) as well as Article 9(3); (d) for archiving purposes in the public interest, scientific or historical research purposes or statistical purposes in accordance with Article 89(1) in so far as the right referred to in paragraph 1 is likely to render impossible or seriously impair the achievement of the objectives of that processing; or (e) for the establishment, exercise or defence of legal claims.
+        TEXT
+        '21' => <<~TEXT.strip.freeze
+          2. Where personal data are processed for direct marketing purposes, the data subject shall have the right to object at any time to processing of personal data concerning him or her for such marketing, which includes profiling to the extent that it is related to such direct marketing.
+          3. Where the data subject objects to processing for direct marketing purposes, the personal data shall no longer be processed for such purposes.
+          4. At the latest at the time of the first communication with the data subject, the right referred to in paragraphs 1 and 2 shall be explicitly brought to the attention of the data subject and shall be presented clearly and separately from any other information.
+        TEXT
+      }.freeze
+    }.freeze
+
+    GDPR_DIRECT_MARKETING_ARTICLE_TITLES = {
+      'nl' => { '12' => 'Artikel 12, leden 1 en 3–6', '14' => 'Artikel 14, lid 1, punt a, lid 2, punt f, en leden 3 en 5', '15' => 'Artikel 15, lid 1, punt g', '17' => 'Artikel 17, leden 1 en 3', '21' => 'Artikel 21, leden 2–4' }.freeze,
+      'fr' => { '12' => 'Article 12, paragraphes 1 et 3–6', '14' => 'Article 14, paragraphe 1, point a, paragraphe 2, point f, et paragraphes 3 et 5', '15' => 'Article 15, paragraphe 1, point g', '17' => 'Article 17, paragraphes 1 et 3', '21' => 'Article 21, paragraphes 2–4' }.freeze,
+      'de' => { '12' => 'Artikel 12 Absätze 1 und 3–6', '14' => 'Artikel 14 Absatz 1 Buchstabe a, Absatz 2 Buchstabe f und Absätze 3 und 5', '15' => 'Artikel 15 Absatz 1 Buchstabe g', '17' => 'Artikel 17 Absätze 1 und 3', '21' => 'Artikel 21 Absätze 2–4' }.freeze,
+      'en' => { '12' => 'Article 12(1) and (3)–(6)', '14' => 'Article 14(1)(a), (2)(f), (3) and (5)', '15' => 'Article 15(1)(g)', '17' => 'Article 17(1) and (3)', '21' => 'Article 21(2)–(4)' }.freeze
+    }.freeze
+
+    GDPR_DIRECT_MARKETING_OFFICIAL_SOURCES = GDPR_DIRECT_MARKETING_OFFICIAL_TEXTS.to_h do |language, articles|
+      records = GDPR_DIRECT_MARKETING_REQUIRED_ARTICLES.map do |article_number|
+        title = GDPR_DIRECT_MARKETING_ARTICLE_TITLES.fetch(language).fetch(article_number)
+        record = {
+          source: 'eur_lex', official_source_id: GDPR_PROCESSOR_OFFICIAL_SOURCE_ID, authority: 'EUR-Lex',
+          official_edition: GDPR_DIRECT_MARKETING_OFFICIAL_EDITION, verified_on: '2026-10-12',
+          law_title: GDPR_RETENTION_LAW_TITLES.fetch(language),
+          title: "#{GDPR_DIRECT_MARKETING_SOURCE_LABELS.fetch(language)} — #{title}".freeze,
+          article_title: title, article_number: article_number, language: language.upcase.freeze,
+          url: "https://eur-lex.europa.eu/legal-content/#{language.upcase}/TXT/HTML/?uri=CELEX:#{GDPR_DIRECT_MARKETING_OFFICIAL_EDITION}#art_#{article_number}".freeze,
+          aliases: %w[avg gdpr rgpd dsgvo].freeze, article_text: articles.fetch(article_number)
+        }
+        record[:language_id] = { 'nl' => 1, 'fr' => 2 }[language] if %w[nl fr].include?(language)
+        record.freeze
+      end.freeze
+      [language, records]
+    end.freeze
+
     def self.gdpr_processor_question?(question)
       value = question.to_s
       return true if value.match?(GDPR_PROCESSOR_QUESTION_PATTERN)
@@ -129,11 +465,58 @@ module LegalChatbot
         value.match?(GDPR_DATA_PROTECTION_CONTEXT_PATTERN)
     end
 
-    def self.official_sources_for(topic_key, language:)
-      return [] unless topic_key.to_s == GDPR_PROCESSOR_TOPIC_KEY
+    def self.gdpr_retention_question?(question)
+      value = question.to_s
+      return false unless value.match?(GDPR_RETENTION_QUESTION_PATTERN)
+      return false if value.match?(GDPR_SECURITY_PROCESSING_PURPOSE_PATTERN)
+      # A police/intelligence organisation can also be an ordinary employer.
+      # Its recruitment CVs are not investigative records simply because of
+      # who employs the recruiter; explicit investigative purposes above remain
+      # excluded. "Artificial intelligence company" is not a security service.
+      return true if value.match?(GDPR_RECRUITMENT_DATA_PATTERN)
+      return false if value.match?(GDPR_SPECIAL_SECURITY_CONTEXT_PATTERN)
+      return true if value.match?(GDPR_DATA_PROTECTION_CONTEXT_PATTERN)
 
-      sources = GDPR_PROCESSOR_OFFICIAL_SOURCES.fetch(language.to_s, [])
-      return [] unless sources.map { |source| source.fetch(:article_number) }.sort == GDPR_PROCESSOR_REQUIRED_ARTICLES.sort
+      value.match?(GDPR_CV_PATTERN) && value.match?(GDPR_EMPLOYER_CONTEXT_PATTERN) &&
+        !value.match?(GDPR_CORPORATE_CV_PATTERN)
+    end
+
+    def self.required_official_topic_keys(question)
+      keys = []
+      keys << GDPR_PROCESSOR_TOPIC_KEY if gdpr_processor_question?(question)
+      keys << GDPR_RETENTION_TOPIC_KEY if gdpr_retention_question?(question)
+      keys << GDPR_DIRECT_MARKETING_TOPIC_KEY if gdpr_direct_marketing_question?(question)
+      keys << GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY if gdpr_commercial_website_question?(question)
+      keys
+    end
+
+    def self.gdpr_direct_marketing_question?(question)
+      TelemarketingPrivacyIntent.topic?(question)
+    end
+
+    def self.gdpr_commercial_website_question?(question)
+      CommercialWebsiteIntent.topic?(question)
+    end
+
+    def self.official_source_question?(question)
+      required_official_topic_keys(question).any?
+    end
+
+    def self.official_sources_for(topic_key, language:)
+      registry, required_articles = case topic_key.to_s
+                                    when GDPR_PROCESSOR_TOPIC_KEY
+                                      [GDPR_PROCESSOR_OFFICIAL_SOURCES, GDPR_PROCESSOR_REQUIRED_ARTICLES]
+                                    when GDPR_RETENTION_TOPIC_KEY
+                                      [GDPR_RETENTION_OFFICIAL_SOURCES, GDPR_RETENTION_REQUIRED_ARTICLES]
+                                    when GDPR_DIRECT_MARKETING_TOPIC_KEY
+                                      [GDPR_DIRECT_MARKETING_OFFICIAL_SOURCES, GDPR_DIRECT_MARKETING_REQUIRED_ARTICLES]
+                                    when GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY
+                                      [GDPR_COMMERCIAL_WEBSITE_OFFICIAL_SOURCES, GDPR_COMMERCIAL_WEBSITE_REQUIRED_ARTICLES]
+                                    else
+                                      return []
+                                    end
+      sources = registry.fetch(language.to_s, [])
+      return [] unless sources.map { |source| source.fetch(:article_number) }.sort == required_articles.sort
       return [] unless sources.all? { |source| valid_official_source?(source) }
 
       # Return shallow copies so response assembly cannot mutate the sealed
@@ -144,9 +527,7 @@ module LegalChatbot
     end
 
     def self.required_official_citations_for(topic_key, language:)
-      return [] unless topic_key.to_s == GDPR_PROCESSOR_TOPIC_KEY
-
-      GDPR_PROCESSOR_OFFICIAL_SOURCES.fetch(language.to_s, []).map do |source|
+      official_sources_for(topic_key, language: language).map do |source|
         [source.fetch(:url), source.fetch(:article_number)]
       end
     rescue KeyError
@@ -156,13 +537,26 @@ module LegalChatbot
     def self.valid_official_source?(source)
       uri = URI.parse(source.fetch(:url))
       article_number = source.fetch(:article_number).to_s
+      original_edition = uri.query == 'uri=CELEX:32016R0679' && source[:official_edition].nil? &&
+                         source[:official_source_topic].nil?
+      corrected_marketing_edition =
+        source[:official_source_topic].nil? &&
+        source[:official_edition] == GDPR_DIRECT_MARKETING_OFFICIAL_EDITION &&
+        uri.query == "uri=CELEX:#{GDPR_DIRECT_MARKETING_OFFICIAL_EDITION}" &&
+        GDPR_DIRECT_MARKETING_REQUIRED_ARTICLES.include?(article_number)
+      corrected_website_edition =
+        source[:official_source_topic] == GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY &&
+        source[:official_edition] == GDPR_COMMERCIAL_WEBSITE_OFFICIAL_EDITION &&
+        uri.query == "uri=CELEX:#{GDPR_COMMERCIAL_WEBSITE_OFFICIAL_EDITION}" &&
+        GDPR_COMMERCIAL_WEBSITE_REQUIRED_ARTICLES.include?(article_number) &&
+        source[:article_text] == GDPR_COMMERCIAL_WEBSITE_OFFICIAL_TEXTS.fetch(source.fetch(:language).downcase, {})[article_number]
 
       source.fetch(:source) == 'eur_lex' &&
         source.fetch(:official_source_id) == GDPR_PROCESSOR_OFFICIAL_SOURCE_ID &&
         source.fetch(:authority) == 'EUR-Lex' &&
         uri.scheme == 'https' && uri.host == 'eur-lex.europa.eu' && uri.userinfo.nil? && uri.port == 443 &&
         uri.path == "/legal-content/#{source.fetch(:language)}/TXT/HTML/" &&
-        uri.query == 'uri=CELEX:32016R0679' && uri.fragment == "art_#{article_number}" &&
+        (original_edition || corrected_marketing_edition || corrected_website_edition) && uri.fragment == "art_#{article_number}" &&
         source.fetch(:article_text).to_s.strip.present?
     end
     private_class_method :valid_official_source?
@@ -377,10 +771,17 @@ module LegalChatbot
         official_source_key: GDPR_PROCESSOR_TOPIC_KEY,
         labels: GDPR_PROCESSOR_SOURCE_LABELS
       },
-      'gdpr' => {
-        numac: '2018040581',
-        article_patterns: ['Art. 33', 'Art. 83', 'Art. 12', 'Art. 17'],
-        label: 'Belgische Gegevensbeschermingswet van 30 juli 2018'
+      GDPR_RETENTION_TOPIC_KEY => {
+        official_source_key: GDPR_RETENTION_TOPIC_KEY,
+        labels: GDPR_RETENTION_SOURCE_LABELS
+      },
+      GDPR_DIRECT_MARKETING_TOPIC_KEY => {
+        official_source_key: GDPR_DIRECT_MARKETING_TOPIC_KEY,
+        labels: GDPR_DIRECT_MARKETING_SOURCE_LABELS
+      },
+      GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY => {
+        official_source_key: GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY,
+        labels: GDPR_COMMERCIAL_WEBSITE_SOURCE_LABELS
       },
 
       # ── Social Security Contribution ─────────────────────────────────

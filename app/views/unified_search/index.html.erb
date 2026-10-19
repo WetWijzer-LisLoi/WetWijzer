@@ -252,7 +252,7 @@
         </p>
       </div>
       <a href="<%= chatbot_path %>" class="px-5 py-2.5 text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5" style="background: linear-gradient(135deg, var(--accent-600-solid, #2563eb), var(--accent-700-solid, #4f46e5));">
-        <%= case I18n.locale when :fr then 'Ouvrir le chatbot' when :de then 'Chatbot öffnen' when :en then 'Open chatbot' else 'Open chatbot' end %>
+        <%= t('chatbot.open_chatbot') %>
       </a>
     </div>
   </div>

@@ -19,7 +19,7 @@
       <dl class="grid grid-cols-2 gap-4">
         <div>
           <dt class="text-sm text-gray-500 dark:text-gray-400"><%= t('subscriptions.current_tier') %></dt>
-          <dd class="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+          <dd class="text-lg font-semibold text-gray-900 dark:text-white">
             <%= @subscription.pro? ? 'Pro' : (case I18n.locale when :fr then 'Gratuit' when :de then 'Kostenlos' when :en then 'Free' else 'Gratis' end) %>
           </dd>
         </div>
@@ -50,32 +50,35 @@
             <% if @subscription.canceled_at %>
               <%# ── CANCELLED: show end date prominently ── %>
               <div class="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                <dt class="text-sm font-medium text-amber-700 dark:text-amber-300 mb-1">
-                  📅 <%= case I18n.locale
-                        when :fr then 'Actif jusqu\'au'
-                        when :de then 'Aktiv bis'
-                        when :en then 'Active until'
-                        else 'Actief tot'
-                        end %>
+                <dt class="text-sm font-medium text-amber-700 dark:text-amber-300 mb-1 flex items-center">
+                  <%= account_icon(:calendar) %>
+                  <%= case I18n.locale
+                      when :fr then 'Actif jusqu\'au'
+                      when :de then 'Aktiv bis'
+                      when :en then 'Active until'
+                      else 'Actief tot'
+                      end %>
                 </dt>
                 <dd class="text-xl font-bold text-amber-800 dark:text-amber-200">
                   <%= l(@subscription.current_period_end.to_date, format: :long) rescue @subscription.current_period_end.strftime('%d %B %Y') %>
                 </dd>
-                <p class="text-sm text-amber-600 dark:text-amber-400 mt-1">
+                <p class="text-sm text-amber-600 dark:text-amber-400 mt-1 flex items-center">
                   <% if days_remaining > 1 %>
-                    ⏳ <%= case I18n.locale
-                          when :fr then "Encore #{days_remaining} jours d'accès Pro"
-                          when :de then "Noch #{days_remaining} Tage Pro-Zugang"
-                          when :en then "#{days_remaining} days of Pro access remaining"
-                          else "Nog #{days_remaining} dagen Pro-toegang"
-                          end %>
+                    <%= account_icon(:clock) %>
+                    <%= case I18n.locale
+                        when :fr then "Encore #{days_remaining} jours d'accès Pro"
+                        when :de then "Noch #{days_remaining} Tage Pro-Zugang"
+                        when :en then "#{days_remaining} days of Pro access remaining"
+                        else "Nog #{days_remaining} dagen Pro-toegang"
+                        end %>
                   <% elsif days_remaining == 1 %>
-                    ⏳ <%= case I18n.locale
-                          when :fr then 'Dernier jour d\'accès Pro'
-                          when :de then 'Letzter Tag Pro-Zugang'
-                          when :en then 'Last day of Pro access'
-                          else 'Laatste dag Pro-toegang'
-                          end %>
+                    <%= account_icon(:clock) %>
+                    <%= case I18n.locale
+                        when :fr then 'Dernier jour d\'accès Pro'
+                        when :de then 'Letzter Tag Pro-Zugang'
+                        when :en then 'Last day of Pro access'
+                        else 'Laatste dag Pro-toegang'
+                        end %>
                   <% else %>
                     <%= case I18n.locale
                         when :fr then 'L\'accès Pro expire aujourd\'hui'
@@ -138,7 +141,7 @@
 
           <li class="flex items-center gap-2">
             <svg class="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            <%= case I18n.locale when :fr then 'Tous les niveaux AI (Malin → Omniscient)' when :de then 'Alle AI-Stufen (Schlau → Allwissend)' when :en then 'All AI levels (Smart → Omniscient)' else 'Alle AI-niveaus (Slim → Alwetend)' end %>
+            <%= t('chatbot.research_depth.options.extensive.label') %> — <%= case I18n.locale when :fr then 'groupe de modèles Pro, selon disponibilité' when :de then 'Pro-Modellgruppe, nach Verfügbarkeit' when :en then 'Pro model group, subject to availability' else 'Pro-modelgroep, volgens beschikbaarheid' end %>
           </li>
         </ul>
 

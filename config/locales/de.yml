@@ -186,8 +186,8 @@ de:
   title_details: "Titel"
   toc: "Inhaltsverzeichnis"
   toc_summary:
-    text: "Dieses Gesetz hat ein langes Inhaltsverzeichnis mit %{count} Einträgen. Es steht vollständig und durchsuchbar in der Seitenleiste."
-    open: "Inhaltsverzeichnis öffnen"
+    text: "Das Inhaltsverzeichnis oben umfasst %{count} Einträge. Scrollen Sie darin oder suchen Sie in der Seitenleiste."
+    open: "In der Seitenleiste suchen"
     to_text: "Zum Text"
     print: "Das vollständige Inhaltsverzeichnis (%{count} Einträge) steht auf der Webseite."
   updates: "Dieser Text hat folgende Texte geändert"
@@ -435,6 +435,7 @@ de:
     tagline: "Open-Source-Suchmaschine für belgische Gesetzgebung und Rechtsprechung"
     contact_us: "Kontaktieren Sie uns:"
     github_tooltip: "Quellcode auf GitHub ansehen"
+    version_tooltip: "Version der Anwendung"
     support_tooltip: "Dieses Projekt unterstützen"
     support_us: "Unterstützen Sie uns"
     terms: "Nutzungsbedingungen"
@@ -468,6 +469,9 @@ de:
   switch_to_dutch: "NL"
 
   chatbot:
+    model_coming_soon: "Bald verfügbar"
+    model_preferences_loading_notice: "Ihre Modellpräferenz konnte noch nicht geladen werden. Wählen Sie ein Modell, bevor Sie Ihre Frage senden."
+    model_unavailable_notice: "Dieses Modell ist bald verfügbar. Wählen Sie ein verfügbares Modell, um Ihre Frage zu senden."
     noscript: "Der juristische Assistent baut seine Antworten live auf und funktioniert nur mit JavaScript. Aktivieren Sie JavaScript, um eine Frage zu stellen."
     messages: "Chat-Nachrichten"
     title: "%{brand} Juristischer Chatbot"
@@ -490,6 +494,7 @@ de:
     feedback_negative: "Nicht hilfreich"
     error_connection: "Verbindungsfehler. Versuchen Sie es erneut."
     error_required: "Frage ist erforderlich"
+    error_too_long: "Die Frage ist zu lang (%{count} Zeichen, maximal %{max})"
     limit_exceeded: "Sie haben keine Credits mehr. Kaufen Sie Credits oder upgraden Sie auf Pro."
     capacity_limit: "Der Chatbot hat vorübergehend sein Kapazitätslimit erreicht. Bitte versuchen Sie es später erneut."
     upgrade_required: "Upgraden Sie auf Pro oder kaufen Sie Credits, um fortzufahren."

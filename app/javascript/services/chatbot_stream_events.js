@@ -86,11 +86,14 @@ const SSE_CODE_MESSAGES = {
     de: 'Ihr Credit-Guthaben konnte nicht geprüft werden. Es wurde nichts abgebucht. Versuchen Sie es in wenigen Augenblicken erneut.',
     en: 'Your credit balance could not be checked. Nothing was charged. Please try again in a moment.'
   },
+  // "Nothing was charged" holds only while no paid AI request was sent; a
+  // fence after one keeps the question's single charge (owner policy
+  // 2026-10-18) and the server then sends charge_notice instead.
   account_inactive: {
-    nl: 'Dit account is niet meer actief. Er is niets aangerekend.',
-    fr: "Ce compte n'est plus actif. Rien n'a été débité.",
-    de: 'Dieses Konto ist nicht mehr aktiv. Es wurde nichts abgebucht.',
-    en: 'This account is no longer active. Nothing was charged.'
+    nl: 'Dit account is niet meer actief.',
+    fr: "Ce compte n'est plus actif.",
+    de: 'Dieses Konto ist nicht mehr aktiv.',
+    en: 'This account is no longer active.'
   },
   generic: {
     nl: 'Er is een fout opgetreden. Probeer opnieuw.',
@@ -98,6 +101,29 @@ const SSE_CODE_MESSAGES = {
     de: 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.',
     en: 'An error occurred. Please try again.'
   }
+}
+
+const NOTHING_CHARGED = {
+  nl: 'Er is niets aangerekend.',
+  fr: "Rien n'a été débité.",
+  de: 'Es wurde nichts abgebucht.',
+  en: 'Nothing was charged.'
+}
+
+// A code-only error event or body says in its own words whether this
+// question's credits came back. The server states a retained charge in
+// `charge_notice`, already localized, exactly once; it is appended as sent.
+// Without it, a code that used to promise "nothing was charged" (a fence
+// after the model ran) still does, truthfully, when the payload reports no
+// deduction.
+export function withChargeNotice(message, parsed, language) {
+  const lang = language || 'nl'
+  const notice = typeof parsed?.charge_notice === 'string' ? parsed.charge_notice.trim() : ''
+  if (notice) return `${message}\n\n${notice}`
+  if (parsed?.error === 'account_inactive' && !(parsed.credits_info && parsed.credits_info.credits_deducted > 0)) {
+    return `${message} ${NOTHING_CHARGED[lang] || NOTHING_CHARGED.nl}`
+  }
+  return message
 }
 
 // The three budget codes share one sentence: which cap tripped is an
@@ -144,6 +170,10 @@ const DISCONNECT_MESSAGES = {
 
 // Message for a server-side `type: "error"` event.
 export function sseErrorMessage(parsed, language) {
+  return withChargeNotice(sseErrorSentence(parsed, language), parsed, language)
+}
+
+function sseErrorSentence(parsed, language) {
   const lang = language || 'nl'
   if (parsed.error === 'login_required') return LOGIN_REQUIRED_MESSAGES[lang] || LOGIN_REQUIRED_MESSAGES.nl
   if (parsed.error === 'zero_knowledge_state_conflict') return ZK_CONFLICT_MESSAGES[lang] || ZK_CONFLICT_MESSAGES.nl

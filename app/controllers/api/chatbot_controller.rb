@@ -23,20 +23,9 @@ module Api
 
     # ===========================================
     # COST PROTECTION LIMITS - TARGET: €200/month
-    # Standard-envelope estimates (12K input + 3K output; verified 2026-07-22):
-    #   mistral-small: ~€0.004/query
-    #   gpt-5-mini:    ~€0.010/query
-    # Embeddings and provider billing adjustments are additional. These are
-    # conservative application estimates, not invoice guarantees.
-    #
-    # PREMIUM MODEL COSTS (per query):
-    #   gpt-5.6-luna:  ~€0.033
-    #   gpt-5:         ~€0.050
-    #   claude-haiku:  ~€0.027
-    #   gpt-5.6-terra: ~€0.083
-    #   claude-sonnet: ~€0.081
-    #   claude-opus:   ~€0.135
-    #   gpt-5.6-sol:   ~€0.165
+    # Current EU model costs and spend caps are centralized in ModelsConfig.
+    # Standard-envelope estimates are application circuit-breaker values,
+    # not invoice guarantees; embeddings and billing adjustments are additional.
     #
     # PROTECTION LAYERS:
     #   1. Global rate limits (daily/hourly/monthly)
@@ -48,7 +37,7 @@ module Api
     # NOTE: HMAC service auth = app-level access (no per-user account needed).
     # Regular users authenticate via session cookie and use WetWijzer credits.
     # ===========================================
-    DAILY_GLOBAL_LIMIT = 2500         # ~€22/day max (gpt-5-mini), budget-safe
+    DAILY_GLOBAL_LIMIT = 2500         # request-count circuit breaker, not a spend guarantee
     HOURLY_GLOBAL_LIMIT = 600         # spike protection (was 300, too strict for testing)
     MONTHLY_GLOBAL_LIMIT = 25_000 # request-count circuit breaker; actual model mix determines cost
     PER_IP_BURST_LIMIT = 30           # 30/minute per IP (anti-bot, not user-facing)
@@ -154,8 +143,14 @@ module Api
       billing_delivery_abort_allowed = false
       new_conversation_for_request = false
       keep_new_conversation = false
+      # Owner policy 2026-10-18: the question's paid-AI dispatch receipt,
+      # built once the credits are reserved and the claim is held; nil for
+      # service requests. Every exit asks it (or the durable row) whether a
+      # paid request was sent: then the charge stands, otherwise it is released.
+      provider_work_receipt = nil
       question = params[:question]&.strip
       requested_language = params[:language].presence || 'nl'
+      language = effective_request_language(requested_language, host: request.host)
       stream = ['true', true].include?(params[:stream])
       conversation_id = params[:conversation_id]&.strip
 
@@ -201,13 +196,26 @@ module Api
                           end
 
       # Validation
-      return render json: { error: 'Question is required' }, status: :bad_request if question.blank?
+      # Validation messages follow the page's UI locale, not the legal corpus
+      # (GesetzGuide retrieves French law while its interface is German).
+      if question.blank?
+        return render json: {
+          error: I18n.t('chatbot.error_required'),
+          code: 'question_required'
+        }, status: :bad_request
+      end
 
-      # Input length validation - prevents oversized prompts from reaching LLM
-      max_question_length = 2000
+      # Input length validation - prevents oversized prompts from reaching LLM.
+      # The question boxes count down to the same limit
+      # (services/chatbot_question_length.js, which measures as String#length).
+      max_question_length = LegalChatbotService::MAX_QUESTION_LENGTH
       if question.length > max_question_length
         return render json: {
-          error: "Question too long (#{question.length} chars, max #{max_question_length})"
+          error: I18n.t('chatbot.error_too_long',
+                        count: question.length, max: max_question_length),
+          code: 'question_too_long',
+          length: question.length,
+          max_length: max_question_length
         }, status: :bad_request
       end
 
@@ -219,9 +227,8 @@ module Api
 
       # Browser requests remain bound to their domain. A signed service request
       # may explicitly benchmark either supported legal corpus on one host.
-      language = effective_request_language(requested_language, host: request.host)
-
-      # Accept any language - LLM will respond in user's language
+      # Accept any question language; the site policy or an explicit answer
+      # language request chooses the response language.
       # Default to 'nl' for source search if language not nl/fr
       @search_language = %w[nl fr].include?(language) ? language : 'nl'
 
@@ -230,6 +237,18 @@ module Api
         return render json: {
           error: 'Source must be: legislation, parliamentary, or jurisprudence'
         }, status: :bad_request
+      end
+
+      # Pending models are visible placeholders, not paid routes. Reject them
+      # before even creating a conversation, for browser and service requests.
+      pending_model = ChatbotApi::ModelSelection.unavailable_requested_model(params)
+      if pending_model
+        return render json: {
+          error: I18n.t('chatbot.model_unavailable_notice'),
+          error_code: 'model_unavailable',
+          model: pending_model,
+          coming_soon: true
+        }, status: :service_unavailable
       end
 
       # Get or create conversation for context. A zero-knowledge conversation
@@ -252,14 +271,28 @@ module Api
         params: params,
         conversation: conversation,
         service_bypass: @service_bypass,
-        user_tier: current_user&.current_tier || :free
+        user_tier: current_user&.current_tier || :free,
+        reasoning_access: current_user&.pro? == true
       )
+      if selection.retired_model?
+        return render json: {
+          error: case language
+                 when 'fr' then 'Ce modèle a été remplacé. Rechargez la page pour consulter le nouveau modèle et son coût avant de réessayer.'
+                 when 'de' then 'Dieses Modell wurde ersetzt. Laden Sie die Seite neu, um das neue Modell und seine Kosten vor dem erneuten Senden zu sehen.'
+                 when 'en' then 'This model has been replaced. Reload the page to review the new model and its cost before trying again.'
+                 else 'Dit model is vervangen. Herlaad de pagina om het nieuwe model en de kosten te bekijken voordat u opnieuw verstuurt.'
+                 end,
+          error_code: 'model_retired'
+        }, status: :conflict
+      end
       intelligence = selection.intelligence
       model = selection.model
       model_override = selection.model_override
       credits_to_deduct = selection.credits_to_deduct
       reasoning_effort = selection.reasoning_effort
       requested_reasoning_effort = selection.requested_reasoning_effort
+      research_depth = selection.research_depth
+      research_depth_denied = selection.research_depth_denied?
       model_tier_denied = selection.model_tier_denied?
       model_tier_mismatch = selection.model_tier_mismatch?
 
@@ -272,7 +305,11 @@ module Api
       end
 
       reasoning_effort_used = reasoning_effort || 'none'
-      if quality_evidence_requested? && requested_reasoning_effort.present? &&
+      # A depth is capability-adaptive by contract (e.g. balanced Mistral
+      # uses low/none reasoning but a broader evidence search). Echo the real
+      # effort rather than rejecting that valid profile. Legacy exact-effort
+      # probes retain their strict unsupported-mode check.
+      if quality_evidence_requested? && research_depth.nil? && requested_reasoning_effort.present? &&
          requested_reasoning_effort != reasoning_effort_used
         return render json: {
           error: 'unsupported_reasoning_effort',
@@ -297,6 +334,12 @@ module Api
         unless @service_bypass
           unless current_user
             response.stream.write("data: #{JSON.generate({ type: 'error', error: 'login_required' })}\n\n")
+            response.stream.close
+            return
+          end
+
+          if research_depth_denied
+            response.stream.write("data: #{JSON.generate({ type: 'error', error: 'upgrade_required', error_code: 'research_depth_requires_pro', research_depth: research_depth })}\n\n")
             response.stream.close
             return
           end
@@ -398,13 +441,17 @@ module Api
         # Capture user reference before streaming block (thread-safety)
         streaming_user = current_user
         query_thread = nil
+        provider_work_receipt = build_browser_provider_work_receipt(
+          reservation, claim: zk_claim, storage_generation: zk_claim ? conversation_storage_admitted : nil
+        )
 
         begin
           start_time = Time.current
           # ZK mode: client provides conversation context (server cannot read stored messages)
           context_override = client_context_messages
           quality_provenance_before = quality_capture_provenance
-          chatbot = LegalChatbotService.new(language: language, conversation: conversation, model: model, domain: request.host, reasoning_effort: reasoning_effort, profile: requested_profile, context_messages_override: context_override, law_numac: params[:law_numac].to_s.presence, include_quality_evidence: quality_evidence_requested?, german_lane: german_lane_request?, **mistral_credential_options)
+          chatbot = LegalChatbotService.new(language: language, conversation: conversation, model: model, domain: request.host, reasoning_effort: reasoning_effort, research_depth: research_depth, profile: requested_profile, context_messages_override: context_override, law_numac: params[:law_numac].to_s.presence, include_quality_evidence: quality_evidence_requested?, german_lane: german_lane_request?, answer_language_override: explicit_answer_language_request, site_language_policy: !@service_bypass, request_deadline_at: Process.clock_gettime(Process::CLOCK_MONOTONIC) + streaming_timeout_seconds - 5.0, **mistral_credential_options)
+          chatbot.provider_work_receipt = provider_work_receipt if provider_work_receipt && chatbot.respond_to?(:provider_work_receipt=)
 
           # Send immediate progress event so client knows connection is alive
           response.stream.write("data: #{JSON.generate({ type: 'progress', step: 'searching' })}\n\n")
@@ -428,6 +475,11 @@ module Api
           # first, inside the same thread and supervisor, and the whole
           # answer path runs on the French question (GermanQuestionTranslation).
           question_translation = LegalChatbot::GermanQuestionTranslation.new if german_question_request?
+          # Both translations are paid AI requests of this question as well.
+          if provider_work_receipt
+            german_translation&.provider_work_receipt = provider_work_receipt
+            question_translation&.provider_work_receipt = provider_work_receipt
+          end
           french_result = nil
           query_started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
           query_thread = Thread.new do
@@ -493,9 +545,12 @@ module Api
 
           unless query_completed
             Rails.logger.warn(
-              "Chatbot streaming hard timeout after #{streaming_timeout_seconds}s " \
-              "(model=#{model}, user=#{streaming_user&.id || 'service'})"
+              "[ChatbotTimeout] kind=supervisor model=#{model} " \
+              "duration_ms=#{((Process.clock_gettime(Process::CLOCK_MONOTONIC) - query_started_at) * 1000).round}"
             )
+            # A paid request not yet written is refused from here on; one
+            # already sent keeps the question's single charge (below).
+            provider_work_receipt&.cancel!
             terminate_chatbot_query_thread(query_thread)
             if german_translation && french_result
               # The French answer was complete; only its translation ran out of
@@ -527,13 +582,18 @@ module Api
 
           # Account erasure fences active=false while provider work is in
           # flight. Re-check immediately on return, while the durable row is
-          # still reserved and before conversation/analytics persistence.
+          # still reserved and before conversation/analytics persistence. The
+          # answer is discarded either way; the charge stands only when a paid
+          # request was sent (root decision 2026-10-18).
           unless @service_bypass || browser_chat_account_active?(streaming_user)
-            refund_browser_chat_reservation!(reservation, analytic: analytic, reason: 'account_fenced')
             rollback_zero_knowledge_chat_revision!(conversation, zk_claim) if zk_claim
             zk_claim = nil
-            credits_info = credit_balance_info(streaming_user, deducted: 0) if reservation
-            response.stream.write("data: #{JSON.generate({ type: 'error' }.merge(browser_chat_account_fenced_payload(credits_info: credits_info)))}\n\n")
+            credits_info = finish_undelivered_browser_chat!(
+              reservation, receipt: provider_work_receipt, analytic: analytic, user: streaming_user, reason: 'account_fenced'
+            )
+            payload = { type: 'error' }.merge(browser_chat_account_fenced_payload(credits_info: credits_info))
+                                       .merge(browser_chat_charge_notice_field(credits_info, language))
+            response.stream.write("data: #{JSON.generate(payload)}\n\n")
             response.stream.close
             return
           end
@@ -545,7 +605,8 @@ module Api
             model: model,
             intelligence: intelligence,
             language: language,
-            reasoning_effort_used: reasoning_effort_used
+            reasoning_effort_used: reasoning_effort_used,
+            research_depth_used: research_depth
           )
           attach_quality_capture_metadata(result, expected_provenance: quality_provenance_before)
 
@@ -555,27 +616,28 @@ module Api
           end
 
           # Another tab may explicitly clear this conversation while the model
-          # is running. Never deliver (and charge for) a ZK answer whose lease
-          # has already been cancelled, expired, or fenced by that request.
+          # is running. Never deliver a ZK answer whose lease has already been
+          # cancelled, expired, or fenced by that request: the answer is
+          # discarded, and the charge stands only for a paid request that was
+          # already sent (owner policy 2026-10-18).
           if !result[:error] && zk_claim && !conversation_claim_owned?(zk_claim)
-            refund_browser_chat_reservation!(reservation, analytic: analytic, reason: 'zero_knowledge_claim_lost')
-            credits_info = credit_balance_info(streaming_user, deducted: 0) if reservation
             zk_claim = nil
-            response.stream.write("data: #{JSON.generate({ type: 'error', error: 'zero_knowledge_state_conflict', key_generation: zero_knowledge_key_generation(streaming_user), credits_info: credits_info })}\n\n")
+            credits_info = finish_undelivered_browser_chat!(
+              reservation, receipt: provider_work_receipt, analytic: analytic, user: streaming_user, reason: 'zero_knowledge_claim_lost'
+            )
+            payload = { type: 'error', error: 'zero_knowledge_state_conflict', key_generation: zero_knowledge_key_generation(streaming_user), credits_info: credits_info }
+                      .merge(browser_chat_charge_notice_field(credits_info, language))
+            response.stream.write("data: #{JSON.generate(payload)}\n\n")
             response.stream.close
             return
           end
 
-          # Owner default 2026-09-27 (to-do 6.7): an answer that says its
-          # search was incomplete costs no credit. Released here, while the
-          # row is still reserved and before any delivery intent, so nothing
-          # below can settle it; log_analytic records the waiver off the
-          # result. From here on a waived answer is delivered like one that
-          # was never charged, and the outer rescue's refund is a no-op.
-          charge_waived = waive_browser_chat_charge_for_incomplete_search!(
-            reservation, result, user: streaming_user, language: delivered_answer_language(result, language)
-          )
-          charge_stands = reservation && !result[:error] && !charge_waived
+          # Owner policy 2026-10-18: a delivered answer is charged when a paid
+          # AI request was sent for it, whatever the answer says about its
+          # search (the 2026-09-27 free-incomplete-search default is retired).
+          # An answer produced without any paid request (a local notice, a
+          # refusal before retrieval) is delivered without a charge below.
+          charge_stands = reservation && !result[:error] && browser_chat_work_dispatched?(reservation, provider_work_receipt)
 
           if charge_stands
             billing_delivery_token = begin_browser_chat_delivery!(reservation)
@@ -586,7 +648,8 @@ module Api
 
           # Save standard history under the same claimed revision. ZK payloads
           # are encrypted and finalized separately by the browser.
-          unless conversation&.zero_knowledge?
+          # Error results already rolled back the claim and must not persist.
+          unless result[:error] || conversation&.zero_knowledge?
             begin
               saved_delivery_receipt = save_to_conversation(conversation, question, result, claim: zk_claim)
             rescue ConversationPersistenceError => e
@@ -622,14 +685,19 @@ module Api
           result[:analytic_id] = analytic&.id
           attach_rating_token(result, analytic)
 
-          # Error/timeout/safety results are never billable. Keep the durable
-          # reservation object in scope after refund so a later operation raising
-          # can safely retry refund! without applying a second credit mutation.
-          # A successful result stays reserved until the result event is written.
-          # A waived answer already carries its zero-deduction credits_info.
-          if reservation && result[:error]
-            refund_browser_chat_reservation!(reservation, analytic: analytic, reason: 'provider_result_error')
-            result[:credits_info] = credit_balance_info(streaming_user, deducted: 0)
+          # An error, timeout or safety result delivers no answer; an answer
+          # without any paid request is delivered free. Both end the
+          # reservation now: released, or retained once for a paid request
+          # that was sent, in which case the shown text says so. Keep the
+          # durable reservation object in scope so a later operation raising
+          # can safely retry without a second credit mutation. A charged
+          # answer stays reserved until the result event is written.
+          if reservation && !charge_stands
+            result[:credits_info] = finish_undelivered_browser_chat!(
+              reservation, receipt: provider_work_receipt, analytic: analytic, user: streaming_user,
+                           reason: result[:error] ? 'provider_result_error' : 'no_provider_dispatch'
+            )
+            attach_work_charge_notice!(result, result[:credits_info], delivered_answer_language(result, language)) if result[:error]
           elsif charge_stands
             result[:credits_info] = credit_balance_info(
               streaming_user,
@@ -670,6 +738,12 @@ module Api
         unless @service_bypass
           unless current_user
             return render json: { error: 'login_required', login_required: true }, status: :unauthorized
+          end
+
+          if research_depth_denied
+            return render json: {
+              error: 'upgrade_required', error_code: 'research_depth_requires_pro', research_depth: research_depth
+            }, status: :forbidden
           end
 
           if intelligence.present? && LegalChatbotService.valid_intelligence_level?(intelligence)
@@ -745,13 +819,18 @@ module Api
         # ZK mode: client provides conversation context (server cannot read stored messages)
         context_override = client_context_messages
         quality_provenance_before = quality_capture_provenance
-        chatbot = LegalChatbotService.new(language: language, conversation: conversation, model: model, domain: request.host, reasoning_effort: reasoning_effort, profile: requested_profile, context_messages_override: context_override, law_numac: params[:law_numac].to_s.presence, include_quality_evidence: quality_evidence_requested?, german_lane: german_lane_request?, **mistral_credential_options)
+        provider_work_receipt = build_browser_provider_work_receipt(
+          reservation, claim: zk_claim, storage_generation: zk_claim ? conversation_storage_admitted : nil
+        )
+        chatbot = LegalChatbotService.new(language: language, conversation: conversation, model: model, domain: request.host, reasoning_effort: reasoning_effort, research_depth: research_depth, profile: requested_profile, context_messages_override: context_override, law_numac: params[:law_numac].to_s.presence, include_quality_evidence: quality_evidence_requested?, german_lane: german_lane_request?, answer_language_override: explicit_answer_language_request, site_language_policy: !@service_bypass, **mistral_credential_options)
+        chatbot.provider_work_receipt = provider_work_receipt if provider_work_receipt && chatbot.respond_to?(:provider_work_receipt=)
 
         json_started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         # German answers v3, as in the streaming branch: the answer path runs
         # on the French question. The translation client restores this
         # thread's token usage, which the answer then sets.
         question_translation = LegalChatbot::GermanQuestionTranslation.new if german_question_request?
+        question_translation.provider_work_receipt = provider_work_receipt if question_translation && provider_work_receipt
         translated_question = question_translation&.apply(question)
         asked = translated_question ? translated_question.question : question
         result = with_benchmark_cap_bypass(benchmark_cap_bypass?) do
@@ -767,7 +846,9 @@ module Api
         # describes the answer.
         if german_answer_request?
           answer_seconds = Process.clock_gettime(Process::CLOCK_MONOTONIC) - json_started_at
-          result = LegalChatbot::GermanAnswerTranslation.new.apply(
+          german_translation = LegalChatbot::GermanAnswerTranslation.new
+          german_translation.provider_work_receipt = provider_work_receipt if provider_work_receipt
+          result = german_translation.apply(
             result,
             question: question,
             time_budget: GERMAN_ANSWER_JSON_DEADLINE_SECONDS - answer_seconds
@@ -779,13 +860,18 @@ module Api
         end
 
         # Keep the reservation open and verify the erasure fence immediately
-        # after provider return, before saving history or analytics.
+        # after provider return, before saving history or analytics. The
+        # answer is discarded; the charge stands only for a paid request that
+        # was sent (root decision 2026-10-18).
         unless @service_bypass || browser_chat_account_active?(current_user)
-          refund_browser_chat_reservation!(reservation, analytic: analytic, reason: 'account_fenced')
           rollback_zero_knowledge_chat_revision!(conversation, zk_claim) if zk_claim
           zk_claim = nil
-          credits_info = credit_balance_info(current_user, deducted: 0) if reservation
-          return render json: browser_chat_account_fenced_payload(credits_info: credits_info), status: :forbidden
+          credits_info = finish_undelivered_browser_chat!(
+            reservation, receipt: provider_work_receipt, analytic: analytic, user: current_user, reason: 'account_fenced'
+          )
+          payload = browser_chat_account_fenced_payload(credits_info: credits_info)
+                    .merge(browser_chat_charge_notice_field(credits_info, language))
+          return render json: payload, status: :forbidden
         end
 
         attach_execution_metadata(
@@ -793,7 +879,8 @@ module Api
           model: model,
           intelligence: intelligence,
           language: language,
-          reasoning_effort_used: reasoning_effort_used
+          reasoning_effort_used: reasoning_effort_used,
+          research_depth_used: research_depth
         )
         attach_quality_capture_metadata(result, expected_provenance: quality_provenance_before)
 
@@ -805,20 +892,21 @@ module Api
 
         # Re-check the claimed tuple after the provider returns. A concurrent
         # clear/revoke request is the winning operation if it has already
-        # fenced the lease, so the undeliverable answer must be refunded.
+        # fenced the lease: the undeliverable answer is discarded, and the
+        # charge stands only for a paid request that was sent.
         if !result[:error] && zk_claim && !conversation_claim_owned?(zk_claim)
-          refund_browser_chat_reservation!(reservation, analytic: analytic, reason: 'zero_knowledge_claim_lost')
-          credits_info = credit_balance_info(current_user, deducted: 0) if reservation
           zk_claim = nil
-          return render_zero_knowledge_state_conflict(credits_info: credits_info)
+          credits_info = finish_undelivered_browser_chat!(
+            reservation, receipt: provider_work_receipt, analytic: analytic, user: current_user, reason: 'zero_knowledge_claim_lost'
+          )
+          return render_zero_knowledge_state_conflict(
+            credits_info: credits_info, **browser_chat_charge_notice_field(credits_info, language)
+          )
         end
 
-        # To-do 6.7: an incomplete search is not charged; see the streaming
-        # branch for the reasoning. Released before the delivery intent.
-        charge_waived = waive_browser_chat_charge_for_incomplete_search!(
-          reservation, result, user: current_user, language: delivered_answer_language(result, language)
-        )
-        charge_stands = reservation && !result[:error] && !charge_waived
+        # Owner policy 2026-10-18, as in the streaming branch: charged when a
+        # paid AI request was sent, delivered free otherwise.
+        charge_stands = reservation && !result[:error] && browser_chat_work_dispatched?(reservation, provider_work_receipt)
 
         if charge_stands
           billing_delivery_token = begin_browser_chat_delivery!(reservation)
@@ -830,7 +918,8 @@ module Api
 
         # Save standard history under the claimed revision. ZK conversations
         # remain client-managed and retain their lease for encrypted PATCH.
-        unless conversation&.zero_knowledge?
+        # Error results already rolled back the claim and must not persist.
+        unless result[:error] || conversation&.zero_knowledge?
           begin
             saved_delivery_receipt = save_to_conversation(conversation, question, result, claim: zk_claim)
           rescue ConversationPersistenceError => e
@@ -860,13 +949,18 @@ module Api
         result[:analytic_id] = analytic&.id
         attach_rating_token(result, analytic)
 
-        # Error/timeout/safety results are refunded before rendering. Successful
-        # results remain reserved through render. Durable standard history is
-        # already accepted value; ZK/no-history may still abort on proven failure.
-        # A waived answer already carries its zero-deduction credits_info.
-        if reservation && result[:error]
-          refund_browser_chat_reservation!(reservation, analytic: analytic, reason: 'provider_result_error')
-          result[:credits_info] = credit_balance_info(current_user, deducted: 0)
+        # Error, timeout and safety results, and answers without any paid
+        # request, end the reservation before rendering: released, or retained
+        # once for a paid request that was sent, in which case the shown text
+        # says so. Charged results remain reserved through render. Durable
+        # standard history is already accepted value; ZK/no-history may still
+        # abort on proven failure.
+        if reservation && !charge_stands
+          result[:credits_info] = finish_undelivered_browser_chat!(
+            reservation, receipt: provider_work_receipt, analytic: analytic, user: current_user,
+                         reason: result[:error] ? 'provider_result_error' : 'no_provider_dispatch'
+          )
+          attach_work_charge_notice!(result, result[:credits_info], delivered_answer_language(result, language)) if result[:error]
         elsif charge_stands
           result[:credits_info] = credit_balance_info(
             current_user,
@@ -893,6 +987,7 @@ module Api
         keep_new_conversation = true unless result[:error]
       end
     rescue ArgumentError => e
+      provider_work_receipt&.cancel!
       terminate_chatbot_query_thread(query_thread)
       rollback_zero_knowledge_chat_revision!(conversation, zk_claim) if zk_claim
       if reservation
@@ -906,22 +1001,26 @@ module Api
           delivery_token: billing_delivery_token,
           delivery_abort_allowed: billing_delivery_abort_allowed,
           user: streaming_user || current_user,
-          reason: 'invalid_request'
+          reason: 'invalid_request',
+          receipt: provider_work_receipt
         )
         failure_credits_info = billing_resolution[:credits_info]
         keep_new_conversation = true if billing_resolution[:outcome] == :settled
       end
+      failure_payload = { error: 'bad_request', credits_info: failure_credits_info }
+                        .merge(browser_chat_charge_notice_field(failure_credits_info, language))
       # FBL-044: the raw ArgumentError text reaches neither the client (it
       # names internals) nor the log (the privacy-logging guard forbids
       # exception MESSAGES here - they can echo the user's legal question).
       Rails.logger.error("Chatbot ask rejected: #{e.class}")
       if response.committed?
-        response.stream.write("data: #{JSON.generate({ type: 'error', error: 'bad_request', credits_info: failure_credits_info })}\n\n") rescue nil
+        response.stream.write("data: #{JSON.generate({ type: 'error' }.merge(failure_payload))}\n\n") rescue nil
         response.stream.close rescue nil
       else
-        render json: { error: 'bad_request', credits_info: failure_credits_info }, status: :bad_request
+        render json: failure_payload, status: :bad_request
       end
     rescue LegalChatbot::ModelsConfig::BudgetLimitExceeded => e
+      provider_work_receipt&.cancel!
       terminate_chatbot_query_thread(query_thread)
       rollback_zero_knowledge_chat_revision!(conversation, zk_claim) if zk_claim
       if reservation
@@ -935,13 +1034,15 @@ module Api
           delivery_token: billing_delivery_token,
           delivery_abort_allowed: billing_delivery_abort_allowed,
           user: streaming_user || current_user,
-          reason: 'provider_budget_rejected'
+          reason: 'provider_budget_rejected',
+          receipt: provider_work_receipt
         )
         failure_credits_info = billing_resolution[:credits_info]
         keep_new_conversation = true if billing_resolution[:outcome] == :settled
       end
-      render_chatbot_budget_limit(e, credits_info: failure_credits_info)
+      render_chatbot_budget_limit(e, credits_info: failure_credits_info, language: language)
     rescue StandardError => e
+      provider_work_receipt&.cancel!
       terminate_chatbot_query_thread(query_thread)
       rollback_zero_knowledge_chat_revision!(conversation, zk_claim) if zk_claim
       if reservation
@@ -955,7 +1056,8 @@ module Api
           delivery_token: billing_delivery_token,
           delivery_abort_allowed: billing_delivery_abort_allowed,
           user: streaming_user || current_user,
-          reason: "request_exception_#{e.class.name}"
+          reason: "request_exception_#{e.class.name}",
+          receipt: provider_work_receipt
         )
         failure_credits_info = billing_resolution[:credits_info]
         keep_new_conversation = true if billing_resolution[:outcome] == :settled
@@ -971,12 +1073,13 @@ module Api
         response.stream.close rescue nil if stream
         return
       end
+      charge_notice = browser_chat_charge_notice_field(failure_credits_info, language)
       if response.committed?
         # Stream already open - send error as SSE event so client sees it
-        response.stream.write("data: #{JSON.generate({ type: 'error', error: 'server_error', message: 'Er is een fout opgetreden. Probeer opnieuw.', credits_info: failure_credits_info })}\n\n") rescue nil
+        response.stream.write("data: #{JSON.generate({ type: 'error', error: 'server_error', message: 'Er is een fout opgetreden. Probeer opnieuw.', credits_info: failure_credits_info }.merge(charge_notice))}\n\n") rescue nil
         response.stream.close rescue nil
       else
-        render json: { error: 'Internal server error', credits_info: failure_credits_info }, status: :internal_server_error
+        render json: { error: 'Internal server error', credits_info: failure_credits_info }.merge(charge_notice), status: :internal_server_error
       end
     ensure
       if new_conversation_for_request && !keep_new_conversation
@@ -1130,17 +1233,13 @@ module Api
     #
     # Label overrides for models that need localized suffixes.
     # Everything else gets "{name}" or "{name} (EU/UE)" for Mistral models.
-    DEEP_LABEL_OVERRIDES = {
-      'gpt-5.6-luna' => { label_nl: 'GPT-5.6 Luna Redeneermodel', label_fr: 'Modèle de raisonnement GPT-5.6 Luna', label_en: 'GPT-5.6 Luna Reasoning Model' },
-      'gpt-5' => { label_nl: 'GPT-5 Premium', label_fr: 'GPT-5 Premium', label_en: 'GPT-5 Premium' }
-    }.freeze
+    DEEP_LABEL_OVERRIDES = {}.freeze
 
     DEEP_ANALYSIS_MODELS = LegalChatbot::ModelsConfig::INTELLIGENCE_LEVELS.each_with_object({}) do |(_tier, level), hash|
       level[:models].each do |model_id, model_cfg|
         credit_cost = model_cfg[:credits] || level[:credits]
         available = LegalChatbot::ModelsConfig::AVAILABLE_MODELS[model_id]
         next unless available # model must exist in AVAILABLE_MODELS
-        next if available[:deployed] == false # skip undeployed models
 
         # Labels: use override if present, otherwise auto-generate from name + provider
         if DEEP_LABEL_OVERRIDES.key?(model_id)
@@ -1156,7 +1255,11 @@ module Api
                    end
         end
 
-        hash[model_id] = { credit_cost: credit_cost, coming_soon: (available[:deployed] == false) }.merge(labels)
+        hash[model_id] = {
+          credit_cost: credit_cost,
+          available: available[:deployed] != false,
+          coming_soon: available[:deployed] == false
+        }.merge(labels)
       end
     end.freeze
 
@@ -1183,7 +1286,7 @@ module Api
       original_answer = params[:original_answer]&.strip
       language = params[:language] || 'nl'
       source = (params[:source] || 'legislation').to_sym
-      deep_model = params[:deep_model] || 'gpt-5.6-luna'
+      deep_model = params[:deep_model] || LegalChatbotService.model_for_intelligence('genius')
 
       return render json: { error: 'Question is required' }, status: :bad_request if question.blank?
       return render json: { error: 'Original answer is required' }, status: :bad_request if original_answer.blank?
@@ -1196,7 +1299,10 @@ module Api
       # Guard: coming soon models
       if DEEP_ANALYSIS_MODELS[deep_model][:coming_soon]
         return render json: {
-          error: language == 'fr' ? 'Ce modèle sera bientôt disponible.' : 'Dit model is binnenkort beschikbaar.'
+          error: I18n.t('chatbot.model_unavailable_notice'),
+          error_code: 'model_unavailable',
+          model: deep_model,
+          coming_soon: true
         }, status: :service_unavailable
       end
 
@@ -1316,6 +1422,8 @@ module Api
         model: deep_model,
         domain: request.host,
         german_lane: german_lane_request?,
+        answer_language_override: explicit_answer_language_request,
+        site_language_policy: !@service_bypass,
         **mistral_credential_options
       )
 
@@ -1566,7 +1674,7 @@ module Api
       false
     end
 
-    def render_chatbot_budget_limit(error, credits_info: nil)
+    def render_chatbot_budget_limit(error, credits_info: nil, language: nil)
       code = chatbot_budget_error_code(error)
       payload = {
         type: 'error',
@@ -1575,7 +1683,7 @@ module Api
         model: error.model,
         provider: error.provider&.to_s,
         credits_info: credits_info
-      }.compact
+      }.compact.merge(browser_chat_charge_notice_field(credits_info, language))
 
       if response.committed?
         response.stream.write("data: #{JSON.generate(payload)}\n\n")
@@ -1599,18 +1707,28 @@ module Api
       requested = requested_language.to_s.downcase
       supported = %w[nl fr]
 
-      return requested if @service_bypass && supported.include?(requested)
+      return supported.include?(requested) ? requested : 'nl' if @service_bypass
 
-      normalized_host = host.to_s.downcase
-      return 'fr' if normalized_host.include?('lisloi')
+      brand = SiteBrand.resolve_host(host)
+      explicit = explicit_answer_language_request
+      return explicit if explicit && !(brand == 'gesetzguide' && explicit == 'de')
+
       # DE UI, FR legal corpus. gesetzguide REASONS in French, exactly as
       # lisloi: answering in German from the French evidence answered the law
       # wrongly (rolled back in b3d911413). German answers are the French
       # answer translated afterwards (german_answer_request?).
-      return 'fr' if normalized_host.include?('gesetzguide')
-      return supported.include?(requested) ? requested : 'nl' if normalized_host.include?('lexlibera')
+      return 'fr' if brand == 'gesetzguide'
 
-      'nl'
+      SiteBrand.locale_for(brand) || 'nl'
+    end
+
+    # Read the original typed question, before the German question translator
+    # or the legacy deep-analysis wrapper can rewrite it. The UI language
+    # parameter is not an explicit request to change the answer language.
+    def explicit_answer_language_request
+      return nil unless instance_variable_get(:@_params) || request.respond_to?(:parameters)
+
+      LegalChatbot::LanguageDetection.requested_answer_language(params[:question])
     end
 
     # The German pointer lane (D6 of docs/ops/german-corpus-plan-2026-09-27.md)
@@ -1630,6 +1748,9 @@ module Api
     # The reasoning language stays effective_request_language's 'fr'; only
     # the finished answer is translated (LegalChatbot::GermanAnswerTranslation).
     def german_answer_request?
+      explicit = explicit_answer_language_request
+      return false if explicit && explicit != 'de'
+
       LegalChatbot::GermanAnswerTranslation.applies_to?(
         brand: SiteBrand.resolve_request(request),
         service_bypass: @service_bypass
@@ -1641,6 +1762,9 @@ module Api
     # switch and independently of the latter. The question is translated into
     # French before the answer path runs (LegalChatbot::GermanQuestionTranslation).
     def german_question_request?
+      explicit = explicit_answer_language_request
+      return false if explicit && explicit != 'de'
+
       LegalChatbot::GermanQuestionTranslation.applies_to?(
         brand: SiteBrand.resolve_request(request),
         service_bypass: @service_bypass
@@ -1665,12 +1789,13 @@ module Api
     def figure_check_language(result, language)
       return delivered_answer_language(result, 'fr') if german_figure_check_request?
 
-      'fr' if language.to_s == 'fr'
+      'fr' if delivered_answer_language(result, language).to_s == 'fr'
     end
 
     # The language the delivered answer is written in, for the free-answer
     # note that joins the notice paragraph: German when the answer was
-    # translated or swapped for its German twin, else the request language
+    # translated or swapped for its German twin, else the canonical result
+    # language (the original request/interface is only a legacy fallback)
     # (a French answer shown with the German note keeps French notes).
     def delivered_answer_language(result, language)
       status = result.is_a?(Hash) ? result.dig(:german_answer, :status) : nil
@@ -1678,7 +1803,10 @@ module Api
         LegalChatbot::GermanAnswerTranslation::STATUS_TRANSLATED,
         LegalChatbot::GermanAnswerTranslation::STATUS_MAPPED
       ].include?(status)
-      german ? 'de' : language
+      return 'de' if german
+
+      resolved = result.is_a?(Hash) ? result[:language].to_s : ''
+      %w[nl fr de en].include?(resolved) ? resolved : language
     end
 
     # The follow-up context the browser sends (context_messages), last six
@@ -1728,11 +1856,12 @@ module Api
       end
     end
 
-    def attach_execution_metadata(result, model:, intelligence:, language:, reasoning_effort_used:)
+    def attach_execution_metadata(result, model:, intelligence:, language:, reasoning_effort_used:, research_depth_used: nil)
       result[:model_used] ||= model
       result[:intelligence] ||= intelligence
       result[:language] ||= language
       result[:reasoning_effort_used] ||= reasoning_effort_used
+      result[:research_depth_used] ||= research_depth_used if research_depth_used
       result
     end
 
@@ -1917,11 +2046,12 @@ module Api
     end
 
     # Detect if the current request targets a premium (expensive) model.
-    # Level III (mastermind): GPT-5, Sonnet 4, GPT-5.6 Terra, €0.05-0.09/query
-    # Level IV (omniscient): Opus 4, GPT-5.6 Sol, €0.13-0.17/query
+    # Models in Level III (mastermind) and IV (omniscient) use the stricter limit.
     # deep_analysis: always premium (uses reasoning models)
     PREMIUM_INTELLIGENCE_LEVELS = %w[mastermind omniscient].freeze
-    PREMIUM_MODELS = %w[gpt-5 gpt-5.6-terra gpt-5.6-sol claude-sonnet-4-6 claude-opus-4-6].freeze
+    PREMIUM_MODELS = PREMIUM_INTELLIGENCE_LEVELS.flat_map do |level|
+      LegalChatbotService::INTELLIGENCE_LEVELS.fetch(level).fetch(:models).keys
+    end.freeze
 
     def premium_model_request?
       return true if action_name == 'deep_analysis'
@@ -1929,8 +2059,9 @@ module Api
       intelligence = params[:intelligence].to_s
       return true if PREMIUM_INTELLIGENCE_LEVELS.include?(intelligence)
 
-      model = params[:model].to_s
-      return true if PREMIUM_MODELS.include?(model)
+      return true if [params[:model], params[:model_override]].any? do |model|
+        PREMIUM_MODELS.include?(model.to_s)
+      end
 
       false
     end

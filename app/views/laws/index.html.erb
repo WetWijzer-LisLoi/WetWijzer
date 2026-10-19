@@ -1,18 +1,86 @@
 <style>
-  /* Mobile: keep search-result tables inside the viewport.
-
-     Their fixed columns and whitespace-nowrap cells otherwise create a
-     roughly 466px min-content width on narrow screens. Keep this scoped to
-     actual results: concordance tables intentionally retain horizontal
-     scrolling inside their own wrappers.
-
-     table-layout: fixed makes each table exactly as wide as its container
-     and wraps the content instead of demanding more width. */
-  @media (max-width: 640px) {
-    .results-table { table-layout: fixed; width: 100%; }
-    .results-table th, .results-table td { overflow-wrap: anywhere; }
-    .results-table th.whitespace-nowrap,
-    .results-table td.whitespace-nowrap { white-space: normal; }
+  /* Each date stays readable even inside a narrow filter column. */
+  .filter-date-range {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+    gap: 8px;
+  }
+  /* On phones a table's date/source/action columns leave no room for its
+     title. Keep the same semantic rows and native links, but lay each result
+     out as a card: full-width text, with compact metadata and actions. The
+     explicit table roles preserve semantics when CSS changes display. Print
+     and desktop retain the original tabular layout. */
+  @media screen and (max-width: 640px) {
+    .results-table,
+    .results-table > thead,
+    .results-table > tbody { display: block; width: 100%; min-width: 0; }
+    .results-table > tbody > tr {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      padding: 10px 12px;
+    }
+    .results-table > tbody > tr > td {
+      display: block;
+      width: auto !important;
+      min-width: 0;
+      padding: 6px 0;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .results-table .result-date,
+    .results-table .result-content,
+    .results-table .result-meta { grid-column: 1 / -1; }
+    .results-table .result-date,
+    .results-table .result-meta { text-align: left; }
+    .results-table .result-action > a,
+    .results-table .result-action > button { min-width: 44px; min-height: 44px; }
+    /* Single-action cards have a true metadata header, not four equal
+       action columns. Centre the date with its 44px bookmark target and
+       anchor that target to the same inner right edge as the content. */
+    .results-table--case > tbody > tr,
+    .results-table--parliamentary > tbody > tr {
+      grid-template-columns: minmax(0, 1fr) 44px;
+      column-gap: 8px;
+    }
+    .results-table--case .result-date,
+    .results-table--parliamentary .result-date {
+      grid-column: 1;
+      grid-row: 1;
+      display: flex;
+      align-items: center;
+      padding: 0;
+    }
+    .results-table--case .result-action,
+    .results-table--parliamentary .result-action {
+      grid-column: 2;
+      grid-row: 1;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 0;
+    }
+    .results-table--law > thead > tr { display: flex; }
+    .results-table--law > thead > tr > th.result-sort { width: 50%; padding: 10px 12px; }
+    /* Case/document headers and law action headings remain available to
+       assistive technology without consuming a phone's content width. */
+    .results-table--case > thead,
+    .results-table--parliamentary > thead,
+    .results-table--law th:not(.result-sort) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+    .search-results-tools { flex-wrap: wrap; gap: 8px; }
+    .search-results-tools > * { max-width: 100%; }
+    .search-results-tools [data-dropdown-target="button"] { max-width: 100%; }
+    .search-results-tools [data-dropdown-target="button"] > span { min-width: 0; text-align: left; }
+    .search-results-tools [data-dropdown-target="button"] > svg { flex-shrink: 0; }
+    .search-results-disclosure > summary > h2 { flex-wrap: wrap; min-width: 0; }
   }
 </style>
 <% if classic_host? %>
@@ -54,7 +122,9 @@
                 focus-within:shadow-[0_10px_30px_-14px_rgb(0_0_0/0.35)] dark:focus-within:shadow-[0_10px_30px_-12px_rgb(0_0_0/0.7)]
                 motion-reduce:transition-none" id="hero-chat-input"
          data-controller="hero-chatbot"
-         data-hero-chatbot-language-value="<%= I18n.locale %>">
+         data-hero-chatbot-language-value="<%= I18n.locale %>"
+         data-hero-chatbot-intelligence-value="<%= LegalChatbotService.ui_default_selection[:intelligence] %>"
+         data-hero-chatbot-pro-value="<%= current_user&.pro? || false %>">
 
       <%# The well groups the chatbot's parts, but until now nothing NAMED the
           route: a reader saw an input with an icon and had to infer what it
@@ -75,52 +145,22 @@
         <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400"><%= case I18n.locale when :fr then 'Posez votre question en langage courant.' when :de then 'Stellen Sie Ihre Frage in Alltagssprache.' when :en then 'Ask your question in plain language.' else 'Stel uw vraag in gewone taal.' end %></p>
       </div>
 
-      <%# Main input area %>
-      <div class="flex items-center gap-2 px-4 py-3 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-white/90 dark:bg-gray-800/80 shadow-lg transition-all duration-300 focus-within:border-blue-400 dark:focus-within:border-blue-400/50 focus-within:shadow-xl">
-        <div class="flex flex-col items-center shrink-0 gap-0.5">
-          <button type="button" id="hero-chatbot-icon-btn" data-action="click->hero-chatbot#highlightFab"
-                  class="flex items-center justify-center w-10 h-10 rounded-lg relative cursor-pointer transition-transform hover:scale-110 active:scale-95"
-                  style="background: linear-gradient(135deg, var(--accent-600-solid, #2563eb), var(--accent-700-solid, #1d4ed8));"
-                  title="<%= case I18n.locale when :fr then 'Chatbot en bas à droite' when :de then 'Chatbot unten rechts' when :en then 'Chatbot bottom right' else 'Chatbot rechtsonder' end %>">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
-            <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse ring-2 ring-white/30"></span>
-          </button>
-          <a href="<%= chatbot_path %>" class="inline-block pb-[14px] -mb-[14px] text-[8px] leading-tight font-medium text-gray-600 dark:text-gray-400 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors whitespace-nowrap no-underline"><%= case I18n.locale when :fr then 'Version complète' when :de then 'Vollversion' when :en then 'Full version' else 'Volledige versie' end %></a>
-        </div>
-        <textarea data-hero-chatbot-target="input"
-                  data-action="keydown->hero-chatbot#handleKeydown"
-                  autocomplete="off"
-                  aria-label="<%= case I18n.locale when :fr then 'Votre question juridique' when :de then 'Ihre juristische Frage' when :en then 'Your legal question' else 'Uw juridische vraag' end %>"
-                  rows="1"
-                  class="flex-1 min-w-0 resize-none border-0 bg-transparent text-sm sm:text-base text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0 focus:outline-none py-1"
-                  placeholder="<%= case I18n.locale when :fr then 'Posez votre question juridique à notre chatbot...' when :de then 'Stellen Sie Ihre juristische Frage an unseren Chatbot...' when :en then 'Ask your legal question to our chatbot...' else 'Stel uw juridische vraag aan onze chatbot...' end %>"
-                  id="hero-chat-question"></textarea>
-        <button type="button"
-                data-action="click->hero-chatbot#submit"
-                aria-label="<%= case I18n.locale when :fr then 'Envoyer la question' when :de then 'Frage senden' when :en then 'Send question' else 'Vraag versturen' end %>"
-                class="shrink-0 px-3 py-2 text-xs font-bold capitalize tracking-wider rounded-lg text-white transition-all hover:scale-105 hover:brightness-110 hover:shadow-lg"
-                style="background: linear-gradient(135deg, var(--accent-600-solid, #2563eb), var(--accent-700-solid, #1d4ed8));"
-                id="hero-chat-send">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-        </button>
-      </div>
-
-      <%# Options indicator row - matches widget footer. The toggle's padding,
-          cancelled by a negative margin, gives a 24px touch target without
-          moving the row; so does the full-version link's bottom padding
-          above (WW-A11Y-02). %>
-      <div class="flex items-center justify-between mt-1.5 px-1">
+      <%# Advanced choices stay hideable; the depth and exact cost remain visible. %>
+      <%= render 'chatbot/research_depth', prefix: 'hero', controller_name: 'hero-chatbot', compact: true %>
+      <div class="flex items-center justify-between min-h-9 mb-1.5">
         <button type="button" id="hero-settings-toggle"
                 data-action="click->hero-chatbot#toggleSettings"
                 aria-expanded="false"
                 aria-controls="hero-settings-panel"
-                class="flex items-center gap-1 py-[5px] -my-[5px] rounded text-[10px] text-gray-600 dark:text-gray-400 hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors group cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-(--accent-500)"
-                title="<%= case I18n.locale when :fr then 'Options' when :de then 'Optionen' when :en then 'Options' else 'Opties' end %>">
+                class="flex items-center gap-1.5 min-h-9 pl-0 pr-1.5 rounded text-xs text-gray-600 dark:text-gray-400 hover:text-(--accent-600) dark:hover:text-(--accent-400) transition-colors group cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-(--accent-500)"
+                title="<%= case I18n.locale when :fr then 'Paramètres' when :de then 'Einstellungen' when :en then 'Settings' else 'Instellingen' end %>">
           <svg class="w-3 h-3 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z"/>
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
           </svg>
-          <span id="hero-level-indicator"><%= case I18n.locale when :fr then 'Intelligence IA' when :de then 'KI-Intelligenz' when :en then 'AI Intelligence' else 'AI-Intelligentie' end %>: <span data-hero-active-label><%= LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :labels, I18n.locale) || LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :labels, :nl) %></span> <span data-hero-active-desc class="text-gray-600 dark:text-gray-300">| <%= LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :descriptions, I18n.locale) || LegalChatbotService::INTELLIGENCE_LEVELS.dig('smart', :descriptions, :nl) %></span></span>
+          <span><%= case I18n.locale when :fr then 'Paramètres' when :de then 'Einstellungen' when :en then 'Settings' else 'Instellingen' end %></span>
+          <span class="chatbot-settings-caret group-aria-expanded:rotate-90" aria-hidden="true">›</span>
+          <span id="hero-level-indicator" class="hidden" aria-hidden="true"></span>
         </button>
         <% if current_user %>
           <%
@@ -136,6 +176,7 @@
       </div>
 
       <%# Collapsible settings panel - toggled by gear icon %>
+      <p id="hero-model-availability-notice" role="status" hidden data-preferences-loading-message="<%= t('chatbot.model_preferences_loading_notice') %>" class="mt-1.5 text-xs text-gray-600 dark:text-gray-300"></p>
       <%
         intelligence_levels_hero = LegalChatbotService::INTELLIGENCE_LEVELS
         user_is_pro_hero = defined?(current_user) && current_user&.pro?
@@ -147,56 +188,15 @@
            data-hero-chatbot-target="settingsPanel">
         <div class="px-3 py-2 space-y-1.5">
 
-          <%# ROW 1: Intelligence pills %>
-          <div class="flex items-center gap-0.5" id="hero-intelligence-pills">
-            <% roman_numerals_h = %w[I II III IV] %>
-            <% intelligence_levels_hero.each_with_index do |(level_id, config), hidx| %>
-              <% locked = !LegalChatbotService.intelligence_tier_accessible?(
-                   config[:tier], pro: user_is_pro_hero, purchased: user_has_purchased_hero
-                 ) %>
-              <% label = config[:labels][I18n.locale] || config[:labels][:nl] %>
-              <% roman = roman_numerals_h[hidx] || (hidx + 1).to_s %>
-              <button type="button"
-                      class="hero-intel-pill relative flex items-center gap-0.5 px-1.5 py-1 rounded-md text-[10px] font-medium whitespace-nowrap transition-all duration-150 cursor-pointer
-                             <%= locked ? 'opacity-50 hover:opacity-70' : '' %> hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-sm
-                             <%= level_id == 'smart' ? 'bg-white dark:bg-gray-700 shadow-sm ring-1 ring-gray-200 dark:ring-gray-600 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' %>"
-                      data-hero-level="<%= level_id %>"
-                      data-hero-credits="<%= config[:credits] %>"
-                      data-hero-locked="<%= locked %>"
-                      data-hero-label="<%= label %>"
-                      data-hero-desc="<%= config[:descriptions][I18n.locale] || config[:descriptions][:nl] %>"
-                      data-hero-roman="<%= roman %>"
-                      data-action="click->hero-chatbot#selectIntelligence"
-                      title="<%= label %><%= ' - PRO' if locked %>">
-                <span><%= label %></span>
-                <% if locked %>
-                  <span class="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 text-[6px] text-white rounded-full flex items-center justify-center font-bold leading-none">P</span>
-                <% end %>
-              </button>
-            <% end %>
-          </div>
-
           <%# ROW 2: Model + Profile dropdowns %>
           <div class="flex items-center gap-1.5">
             <select id="hero-model-select"
+                    aria-label="<%= case I18n.locale when :fr then 'Modèle IA' when :de then 'KI-Modell' when :en then 'AI model' else 'AI-model' end %>"
+                    data-action="change->hero-chatbot#updateModel"
+                    aria-describedby="hero-model-availability-notice"
                     data-hero-chatbot-target="modelSelect"
                     class="text-[10px] rounded border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 px-1 py-0.5 flex-1 min-w-0 truncate">
-              <% intelligence_levels_hero.each do |level_id, config| %>
-                <% tier_accessible = LegalChatbotService.intelligence_tier_accessible?(
-                     config[:tier], pro: user_is_pro_hero, purchased: user_has_purchased_hero
-                   ) %>
-                <% config[:models].sort_by { |mid, mc| [(mc[:credits] || config[:credits]), LegalChatbot::ModelsConfig::AVAILABLE_MODELS.dig(mid, :cost_per_query_eur) || 0] }.each do |model_id, model_config| %>
-                  <% is_default = model_id == config[:default_model]
-                     model_locked = !tier_accessible || !LegalChatbotService.model_allowed?(model_id, hero_model_tier) %>
-                  <option value="<%= model_id %>"
-                          data-intelligence="<%= level_id %>"
-                          data-default="<%= is_default %>"
-                          data-credits="<%= model_config[:credits] || config[:credits] %>"
-                          <%= 'disabled' if model_locked %>
-                          <%= 'selected' if level_id == 'smart' && is_default %>><%= model_locked ? '🔒 ' : '' %><%= model_config[:name] %> (<%= model_config[:credits] || config[:credits] %>cr)
-                  </option>
-                <% end %>
-              <% end %>
+              <%= render 'chatbot/model_options', user_is_pro: user_is_pro_hero, user_has_purchased: user_has_purchased_hero, user_model_tier: hero_model_tier %>
             </select>
             <select id="hero-profile-select"
                     data-hero-chatbot-target="profileSelect"
@@ -233,6 +233,39 @@
 
         </div>
       </div>
+
+      <%# Main input area %>
+      <div class="grid grid-cols-[1fr_auto] sm:flex items-center gap-2 px-3 sm:px-4 py-3 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-white/90 dark:bg-gray-800/80 shadow-lg transition-all duration-300 focus-within:border-blue-400 dark:focus-within:border-blue-400/50 focus-within:shadow-xl">
+        <div class="row-start-2 flex flex-col items-center justify-self-start shrink-0 gap-0.5">
+          <button type="button" id="hero-chatbot-icon-btn" data-action="click->hero-chatbot#openChatbot"
+                  class="flex items-center justify-center w-10 h-10 rounded-lg relative cursor-pointer transition-transform hover:scale-110 active:scale-95"
+                  style="background: linear-gradient(135deg, var(--accent-600-solid, #2563eb), var(--accent-700-solid, #1d4ed8));"
+                  title="<%= case I18n.locale when :fr then 'Ouvrir le chatbot' when :de then 'Chatbot öffnen' when :en then 'Open chatbot' else 'Chatbot openen' end %>">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+            <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse ring-2 ring-white/30"></span>
+          </button>
+          <a href="<%= chatbot_path %>" class="inline-block pb-[14px] -mb-[14px] text-[8px] leading-tight font-medium text-gray-600 dark:text-gray-400 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors whitespace-nowrap no-underline"><%= case I18n.locale when :fr then 'Version complète' when :de then 'Vollversion' when :en then 'Full version' else 'Volledige versie' end %></a>
+        </div>
+        <textarea data-hero-chatbot-target="input"
+                  data-action="keydown->hero-chatbot#handleKeydown"
+                  autocomplete="off"
+                  aria-describedby="hero-question-count"
+                  aria-label="<%= case I18n.locale when :fr then 'Votre question juridique' when :de then 'Ihre juristische Frage' when :en then 'Your legal question' else 'Uw juridische vraag' end %>"
+                  rows="1"
+                  class="col-span-2 row-start-1 w-full flex-1 min-w-0 min-h-20 sm:min-h-0 resize-none overflow-y-auto border-0 bg-transparent text-base text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0 focus:outline-none px-1 sm:px-3 py-1"
+                  placeholder="<%= case I18n.locale when :fr then 'Posez votre question juridique à notre chatbot...' when :de then 'Stellen Sie Ihre juristische Frage an unseren Chatbot...' when :en then 'Ask your legal question to our chatbot...' else 'Stel uw juridische vraag aan onze chatbot...' end %>"
+                  id="hero-chat-question"></textarea>
+        <button type="button"
+                data-action="click->hero-chatbot#submit"
+                aria-label="<%= case I18n.locale when :fr then 'Envoyer la question' when :de then 'Frage senden' when :en then 'Send question' else 'Vraag versturen' end %>"
+                class="row-start-2 shrink-0 min-w-11 min-h-11 px-3 py-2 text-xs font-bold tracking-wider rounded-lg text-white transition-all hover:scale-105 hover:brightness-110 hover:shadow-lg"
+                style="background: linear-gradient(135deg, var(--accent-600-solid, #2563eb), var(--accent-700-solid, #1d4ed8));"
+                id="hero-chat-send">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          <span id="hero-send-credit-badge" class="block mt-0.5 text-[10px]">−<%= LegalChatbotService.ui_default_credits %>cr</span>
+        </button>
+      </div>
+      <%= render 'chatbot/question_count', id: 'hero-question-count', controller: 'hero-chatbot' %>
 
       <%# Sample question pills - dynamically loaded from chatbot_questions.json, rotates every 30s %>
       <div class="mt-2.5 flex flex-wrap justify-center items-center gap-2" id="hero-sample-questions">
@@ -273,12 +306,12 @@
     </div>
 
     <%# ── Search bar ── %>
-    <div class="max-w-3xl mx-auto mt-4 rounded-2xl px-2 py-3 sm:px-4 sm:py-4
+    <div class="homepage-search-card max-w-3xl mx-auto mt-4 rounded-2xl px-2 py-3 sm:px-4 sm:py-4
                 transition-colors duration-300 ease-out motion-reduce:transition-none
                 hover:bg-black/[0.025] dark:hover:bg-white/[0.04]
                 focus-within:bg-black/[0.025] dark:focus-within:bg-white/[0.04]"
-         data-controller="global-search">
-      <div class="mb-3 px-1">
+         id="homepage-search-card" data-controller="global-search">
+      <div class="mb-3">
         <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
           <svg class="w-4 h-4 shrink-0 text-(--accent-600) dark:text-(--accent-400)" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
           <%= case I18n.locale when :fr then 'Recherche directe' when :de then 'Direkt suchen' when :en then 'Search directly' else 'Zoek direct' end %>
@@ -286,49 +319,50 @@
         <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400"><%= case I18n.locale when :fr then 'Cherchez vous-même dans la législation, la jurisprudence et les documents parlementaires.' when :de then 'Durchsuchen Sie Gesetzgebung, Rechtsprechung und Parlamentsdokumente selbst.' when :en then 'Search legislation, case law and parliamentary documents yourself.' else 'Zoek zelf in wetgeving, rechtspraak en parlementaire stukken.' end %></p>
       </div>
       <div class="flex gap-2">
-        <div class="relative grow">
+        <div class="relative grow min-w-0">
           <% placeholder = t(:search_placeholder) %>
           <%= form.text_field :title,
             placeholder: placeholder,
+            aria: { label: t(:search) },
             value: params[:title],
             autocomplete: "off",
-            class: "w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:placeholder-gray-400 shadow-sm focus:border-(--accent-500) focus:ring-(--accent-500) dark:focus:border-sky dark:focus:ring-sky text-sm sm:text-base py-2.5 px-4",
+            class: "w-full min-h-[46px] rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:placeholder-gray-400 shadow-sm focus:border-(--accent-500) focus:ring-(--accent-500) dark:focus:border-sky dark:focus:ring-sky text-sm sm:text-base py-2.5 px-4",
             data: { global_search_target: "input", action: "input->global-search#search keydown->global-search#handleKeydown" }
           %>
           <div class="gs-dropdown hidden" data-global-search-target="results"></div>
         </div>
-        <%= form.submit t(:search), class: "px-5 sm:px-6 py-2.5 bg-(--accent-600-solid) hover:bg-(--accent-700-solid) text-white font-semibold rounded-lg shadow-sm cursor-pointer transition-colors duration-200 text-sm whitespace-nowrap" %>
+        <%= form.submit t(:search), class: "min-h-[46px] px-5 sm:px-6 py-2.5 bg-(--accent-600-solid) hover:bg-(--accent-700-solid) text-white font-semibold rounded-lg shadow-sm cursor-pointer transition-colors duration-200 text-sm whitespace-nowrap" %>
       </div>
       <div class="gs-backdrop hidden" data-global-search-target="backdrop" data-action="click->global-search#close"></div>
     </div>
 
     <%# Source pills %>
-    <div class="max-w-3xl mx-auto mt-3" id="hero-sources-row">
+    <div class="max-w-3xl mx-auto mt-3 px-2 sm:px-4" id="hero-sources-row">
       <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center sm:justify-between gap-2">
         <div class="flex flex-wrap items-center gap-1.5">
           <span class="text-xs text-gray-500 dark:text-gray-400 mr-1 font-medium"><%= case I18n.locale when :fr then 'Sources:' when :de then 'Quellen:' when :en then 'Sources:' else 'Bronnen:' end %></span>
-          <label class="source-pill inline-flex items-center gap-1 cursor-pointer select-none px-2.5 py-1 rounded-md border border-gray-300 dark:border-gray-600/50 bg-white dark:bg-gray-800 shadow-sm transition-all hover:bg-(--accent-50) hover:border-(--accent-400) hover:shadow-md dark:hover:bg-(--accent-500)/15 dark:hover:border-(--accent-400)">
+          <label class="source-pill inline-flex items-center gap-1 min-h-11 md:min-h-0 cursor-pointer select-none px-2.5 py-1 rounded-md border border-gray-300 dark:border-gray-600/50 bg-white dark:bg-gray-800 shadow-sm transition-all hover:bg-(--accent-50) hover:border-(--accent-400) hover:shadow-md dark:hover:bg-(--accent-500)/15 dark:hover:border-(--accent-400)">
             <input type="hidden" name="source_legislation" value="0">
             <input type="checkbox" name="source_legislation" value="1" <%= params[:source_legislation] != '0' ? 'checked' : '' %> data-source-filters-target="legislation" data-action="change->source-filters#toggle">
             <svg class="pill-icon w-3.5 h-3.5 text-(--accent-600) dark:text-(--accent-400)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
             <span class="pill-label text-xs font-medium text-(--accent-600) dark:text-(--accent-400)"><%= case I18n.locale when :fr then 'Législation' when :de then 'Gesetzgebung' when :en then 'Legislation' else 'Wetgeving' end %></span>
           </label>
-          <label class="source-pill inline-flex items-center gap-1 cursor-pointer select-none px-2.5 py-1 rounded-md border border-gray-300 dark:border-gray-600/50 bg-white dark:bg-gray-800 shadow-sm transition-all hover:bg-(--accent-50) hover:border-(--accent-400) hover:shadow-md dark:hover:bg-(--accent-500)/15 dark:hover:border-(--accent-400)">
+          <label class="source-pill inline-flex items-center gap-1 min-h-11 md:min-h-0 cursor-pointer select-none px-2.5 py-1 rounded-md border border-gray-300 dark:border-gray-600/50 bg-white dark:bg-gray-800 shadow-sm transition-all hover:bg-(--accent-50) hover:border-(--accent-400) hover:shadow-md dark:hover:bg-(--accent-500)/15 dark:hover:border-(--accent-400)">
             <input type="hidden" name="source_jurisprudence" value="0">
             <input type="checkbox" name="source_jurisprudence" value="1" <%= params[:source_jurisprudence] != '0' ? 'checked' : '' %> data-source-filters-target="jurisprudence" data-action="change->source-filters#toggle">
             <svg class="pill-icon w-3.5 h-3.5 text-(--accent-600) dark:text-(--accent-400)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
             <span class="pill-label text-xs font-medium text-(--accent-600) dark:text-(--accent-400)"><%= case I18n.locale when :fr then 'Jurisprudence' when :de then 'Rechtsprechung' when :en then 'Case law' else 'Rechtspraak' end %></span>
           </label>
-          <label class="source-pill inline-flex items-center gap-1 cursor-pointer select-none px-2.5 py-1 rounded-md border border-gray-300 dark:border-gray-600/50 bg-white dark:bg-gray-800 shadow-sm transition-all hover:bg-(--accent-50) hover:border-(--accent-400) hover:shadow-md dark:hover:bg-(--accent-500)/15 dark:hover:border-(--accent-400)">
+          <label class="source-pill inline-flex items-center gap-1 min-h-11 md:min-h-0 cursor-pointer select-none px-2.5 py-1 rounded-md border border-gray-300 dark:border-gray-600/50 bg-white dark:bg-gray-800 shadow-sm transition-all hover:bg-(--accent-50) hover:border-(--accent-400) hover:shadow-md dark:hover:bg-(--accent-500)/15 dark:hover:border-(--accent-400)">
             <input type="hidden" name="source_parliamentary" value="0">
             <input type="checkbox" name="source_parliamentary" value="1" <%= params[:source_parliamentary] != '0' ? 'checked' : '' %> data-source-filters-target="parliamentary" data-action="change->source-filters#toggle">
             <svg class="pill-icon w-3.5 h-3.5 text-(--accent-600) dark:text-(--accent-400)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
             <span class="pill-label text-xs font-medium text-(--accent-600) dark:text-(--accent-400)"><%= case I18n.locale when :fr then 'Travaux parl.' when :de then 'Parl. Arbeit' when :en then 'Parl. work' else 'Parl. stukken' end %></span>
           </label>
         </div>
-        <div class="flex items-center gap-2 w-full sm:w-auto">
+        <div class="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
           <button type="button"
-                  class="w-full sm:w-auto px-4 py-1.5 border border-gray-300 dark:border-gray-600/50 bg-white dark:bg-gray-800 text-(--accent-600) dark:text-(--accent-400) rounded-md shadow-sm hover:bg-(--accent-100) hover:border-(--accent-400) hover:shadow-md dark:hover:bg-(--accent-500)/20 dark:hover:border-(--accent-400) text-sm font-medium transition-all"
+                  class="w-full sm:w-auto min-h-[46px] px-4 py-1.5 border border-gray-300 dark:border-gray-600/50 bg-white dark:bg-gray-800 text-(--accent-600) dark:text-(--accent-400) rounded-md shadow-sm hover:bg-(--accent-100) hover:border-(--accent-400) hover:shadow-md dark:hover:bg-(--accent-500)/20 dark:hover:border-(--accent-400) text-sm font-medium transition-all"
                   data-action="click->filters-toggle#toggle"
                   data-filters-toggle-target="button"
                   aria-controls="filters-panel"
@@ -347,7 +381,7 @@
   </div>
 </div>
 
-<%= render 'shared/site_tour' %>
+<%= render 'shared/site_tour_invitation', classic_mode: false if request.path == root_path %>
 
 <%# Source pill styles (CSS-only, position doesn't matter) %>
 <style nonce="<%= content_security_policy_nonce %>">
@@ -433,7 +467,7 @@
 
     <%# ── Wetgeving Results ── %>
     <% if frame_src.present? && params[:source_legislation] != '0' %>
-      <details open class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden group">
+      <details open class="search-results-disclosure bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden group">
         <summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
           <h2 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 m-0">
             <svg class="w-4 h-4 text-(--accent-600) shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -442,7 +476,7 @@
             <%= case I18n.locale when :fr then 'Législation' when :de then 'Gesetzgebung' when :en then 'Legislation' else 'Wetgeving' end %>
             <span id="wetgeving-count" class="font-normal text-gray-500 dark:text-gray-400"></span>
           </h2>
-          <svg class="w-4 h-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          <svg class="search-section-chevron w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </summary>
         <%= turbo_frame_tag 'laws_list', src: frame_src,
               data: { controller: 'frame-status', frame_status_loading_value: t('loading_status.loading'), frame_status_completed_value: t('loading_status.completed'), frame_status_duration_value: 4000, frame_status_mount_selector_value: '#search-status-mount' } do %>
@@ -462,7 +496,7 @@
       juris_sort = params[:juris_sort].presence || 'date_desc'
       juris_sort_label = juris_sort == 'date_asc' ? (case I18n.locale when :fr then 'Date ↑' when :en then 'Date ↑' else 'Datum ↑' end) : (case I18n.locale when :fr then 'Date ↓' when :en then 'Date ↓' else 'Datum ↓' end)
     %>
-    <details open class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden group">
+    <details open class="search-results-disclosure bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden group">
       <summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
         <h2 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 m-0">
           <svg class="w-4 h-4 text-(--accent-600) shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -471,10 +505,10 @@
           <%= case I18n.locale when :fr then 'Jurisprudence' when :de then 'Rechtsprechung' when :en then 'Case law' else 'Rechtspraak' end %>
           <span class="font-normal text-gray-500 dark:text-gray-400">(<%= number_with_delimiter(@jurisprudence_total_count) %>)</span>
         </h2>
-        <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        <svg class="search-section-chevron w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
       </summary>
       <%# Results bar with sort %>
-      <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-700/50">
+      <div class="search-results-tools flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-700/50">
         <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">
           <%= t(:results_found, count: @jurisprudence_total_count) %>
         </span>
@@ -505,19 +539,19 @@
         </div>
       </div>
       <div class="overflow-x-auto w-full">
-        <table class="w-full results-table">
-          <thead class="bg-linear-to-r from-(--accent-500)/5 to-(--accent-500)/10 dark:from-(--accent-500)/20 dark:to-(--accent-500)/30">
-            <tr class="border-b-2 border-(--accent-500)/20 dark:border-(--accent-500)/50">
-              <th class="w-28 px-2 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 capitalize tracking-wider whitespace-nowrap">
+        <table role="table" class="w-full results-table results-table--case" aria-label="<%= t('global_search.jurisprudence') %>">
+          <thead role="rowgroup" class="bg-linear-to-r from-(--accent-500)/5 to-(--accent-500)/10 dark:from-(--accent-500)/20 dark:to-(--accent-500)/30">
+            <tr role="row" class="border-b-2 border-(--accent-500)/20 dark:border-(--accent-500)/50">
+              <th role="columnheader" scope="col" class="w-28 px-2 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider whitespace-nowrap">
                 <%= case I18n.locale when :fr then 'Date' when :de then 'Datum' when :en then 'Date' else 'Datum' end %>
               </th>
-              <th class="px-4 py-3 text-left text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 capitalize tracking-wider" style="width:40%">
+              <th role="columnheader" scope="col" class="px-4 py-3 text-left text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider" style="width:40%">
                 <%= case I18n.locale when :fr then 'Numéro / Cour' when :de then 'Nummer / Gericht' when :en then 'Number / Court' else 'Nummer / Rechtbank' end %>
               </th>
-              <th class="w-full px-4 py-3 text-left text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 capitalize tracking-wider">
+              <th role="columnheader" scope="col" class="w-full px-4 py-3 text-left text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider">
                 <%= case I18n.locale when :fr then 'Résumé' when :de then 'Zusammenfassung' when :en then 'Summary' else 'Samenvatting' end %>
               </th>
-              <th class="w-10 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 capitalize tracking-wider whitespace-nowrap no-print">
+              <th role="columnheader" scope="col" class="w-10 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider whitespace-nowrap no-print">
                 <span class="sr-only"><%= t('bookmarks.title') %></span>
                 <span class="inline-flex items-center justify-center w-6 h-6 mx-auto">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" title="<%= t('bookmarks.title') %>">
@@ -527,10 +561,10 @@
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100 dark:divide-(--border-divider) dark:bg-gray-800">
+          <tbody role="rowgroup" class="divide-y divide-gray-100 dark:divide-(--border-divider) dark:bg-gray-800">
             <% @jurisprudence_results.each_with_index do |result, idx| %>
-              <tr class="<%= idx.odd? ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900' %> hover:bg-(--accent-active-bg) transition-colors duration-200">
-                <td class="w-28 px-2 py-3 align-top text-sm leading-5 font-medium text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">
+              <tr role="row" class="<%= idx.odd? ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900' %> hover:bg-(--accent-active-bg) transition-colors duration-200">
+                <td role="cell" class="result-date w-28 px-2 py-3 align-top text-sm leading-5 font-medium text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">
                   <span class="badge-date">
                     <% if result[:decision_date].present? %>
                       <% begin %>
@@ -543,7 +577,7 @@
                     <% end %>
                   </span>
                 </td>
-                <td class="px-4 py-3 align-top text-sm leading-5" style="width:40%">
+                <td role="cell" class="result-content px-4 py-3 align-top text-sm leading-5" style="width:40%">
                   <a href="<%= jurisprudence_path(result[:case_number]) %>" class="font-medium text-(--accent-700) dark:text-(--accent-400) hover:underline">
                     <%= result[:case_number] %>
                   </a>
@@ -551,14 +585,14 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"><%= result[:court] %></p>
                   <% end %>
                 </td>
-                <td class="w-full px-4 py-3 align-top whitespace-normal text-sm leading-5 text-gray-600 dark:text-gray-300">
+                <td role="cell" class="result-content w-full px-4 py-3 align-top whitespace-normal text-sm leading-5 text-gray-600 dark:text-gray-300">
                   <% if result[:summary].present? %>
                     <p class="line-clamp-2"><%= truncate(result[:summary], length: 200) %></p>
                   <% else %>
                     <span class="text-gray-400 dark:text-gray-500 italic text-xs">–</span>
                   <% end %>
                 </td>
-                <td class="w-10 px-1 py-3 align-top text-center whitespace-nowrap no-print">
+                <td role="cell" class="result-action w-10 px-1 py-3 align-top text-center whitespace-nowrap no-print">
                   <button type="button"
                     class="bookmark-btn inline-flex items-center justify-center w-6 h-6 mx-auto text-gray-400 hover:text-(--accent-500) dark:text-gray-500 dark:hover:text-(--accent-400) transition-colors duration-200"
                     data-controller="bookmark"
@@ -601,7 +635,7 @@
       parl_sort = params[:parl_sort].presence || 'date_desc'
       parl_sort_label = parl_sort == 'date_asc' ? (case I18n.locale when :fr then 'Date ↑' when :en then 'Date ↑' else 'Datum ↑' end) : (case I18n.locale when :fr then 'Date ↓' when :en then 'Date ↓' else 'Datum ↓' end)
     %>
-    <details open class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden group">
+    <details open class="search-results-disclosure bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden group">
       <summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
         <h2 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 m-0">
           <svg class="w-4 h-4 text-(--accent-600) shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -610,10 +644,10 @@
           <%= case I18n.locale when :fr then 'Travaux parlementaires' when :de then 'Parlamentarische Dokumente' when :en then 'Parliamentary documents' else 'Parlementaire stukken' end %>
           <span class="font-normal text-gray-500 dark:text-gray-400">(<%= number_with_delimiter(@parliamentary_total_count) %>)</span>
         </h2>
-        <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        <svg class="search-section-chevron w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
       </summary>
       <%# Results bar with sort %>
-      <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-700/50">
+      <div class="search-results-tools flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-700/50">
         <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">
           <%= t(:results_found, count: @parliamentary_total_count) %>
         </span>
@@ -644,19 +678,19 @@
         </div>
       </div>
       <div class="overflow-x-auto w-full">
-        <table class="w-full results-table">
-          <thead class="bg-linear-to-r from-(--accent-500)/5 to-(--accent-500)/10 dark:from-(--accent-500)/20 dark:to-(--accent-500)/30">
-            <tr class="border-b-2 border-(--accent-500)/20 dark:border-(--accent-500)/50">
-              <th class="w-28 px-2 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 capitalize tracking-wider whitespace-nowrap">
+        <table role="table" class="w-full results-table results-table--parliamentary" aria-label="<%= t('related_sources.parliamentary.heading') %>">
+          <thead role="rowgroup" class="bg-linear-to-r from-(--accent-500)/5 to-(--accent-500)/10 dark:from-(--accent-500)/20 dark:to-(--accent-500)/30">
+            <tr role="row" class="border-b-2 border-(--accent-500)/20 dark:border-(--accent-500)/50">
+              <th role="columnheader" scope="col" class="w-28 px-2 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider whitespace-nowrap">
                 <%= case I18n.locale when :fr then 'Date' when :de then 'Datum' when :en then 'Date' else 'Datum' end %>
               </th>
-              <th class="w-36 px-2 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 capitalize tracking-wider whitespace-nowrap">
+              <th role="columnheader" scope="col" class="w-36 px-2 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider whitespace-nowrap">
                 <%= case I18n.locale when :fr then 'Parlement' when :de then 'Parlament' when :en then 'Parliament' else 'Parlement' end %>
               </th>
-              <th class="w-full px-4 py-3 text-left text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 capitalize tracking-wider">
+              <th role="columnheader" scope="col" class="w-full px-4 py-3 text-left text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider">
                 <%= case I18n.locale when :fr then 'Titre / Document' when :de then 'Titel / Dokument' when :en then 'Title / Document' else 'Titel / Document' end %>
               </th>
-              <th class="w-10 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 capitalize tracking-wider whitespace-nowrap no-print">
+              <th role="columnheader" scope="col" class="w-10 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider whitespace-nowrap no-print">
                 <span class="sr-only"><%= t('bookmarks.title') %></span>
                 <span class="inline-flex items-center justify-center w-6 h-6 mx-auto">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" title="<%= t('bookmarks.title') %>">
@@ -666,7 +700,7 @@
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100 dark:divide-(--border-divider) dark:bg-gray-800">
+          <tbody role="rowgroup" class="divide-y divide-gray-100 dark:divide-(--border-divider) dark:bg-gray-800">
             <% @parliamentary_results.each_with_index do |result, idx| %>
               <%
                 raw_title = result[:title].to_s.strip
@@ -675,8 +709,8 @@
                                    raw_title != result[:dossier_number] &&
                                    !ParliamentaryHelper.generic_parl_title?(raw_title)
               %>
-              <tr class="<%= idx.odd? ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900' %> hover:bg-(--accent-active-bg) transition-colors duration-200">
-                <td class="w-28 px-2 py-3 align-top text-sm leading-5 font-medium text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">
+              <tr role="row" class="<%= idx.odd? ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900' %> hover:bg-(--accent-active-bg) transition-colors duration-200">
+                <td role="cell" class="result-date w-28 px-2 py-3 align-top text-sm leading-5 font-medium text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">
                   <span class="badge-date">
                     <% if result[:date].present? %>
                       <% begin %>
@@ -689,10 +723,10 @@
                     <% end %>
                   </span>
                 </td>
-                <td class="w-36 px-2 py-3 align-top text-xs leading-5 text-gray-500 dark:text-gray-400 text-center whitespace-nowrap">
+                <td role="cell" class="result-meta w-36 px-2 py-3 align-top text-xs leading-5 text-gray-500 dark:text-gray-400 text-center whitespace-nowrap">
                   <%= parliament_labels[result[:parliament]] || result[:parliament]&.capitalize %>
                 </td>
-                <td class="w-full px-4 py-3 align-top whitespace-normal text-sm leading-5 text-gray-900 dark:text-gray-300">
+                <td role="cell" class="result-content w-full px-4 py-3 align-top whitespace-normal text-sm leading-5 text-gray-900 dark:text-gray-300">
                   <a href="<%= parliamentary_path(result[:id]) %>" class="font-medium text-(--accent-700) dark:text-(--accent-400) hover:underline">
                     <% if has_useful_title %>
                       <%= raw_title %>
@@ -707,7 +741,7 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2"><%= truncate(clean_preview, length: 150) %></p>
                   <% end %>
                 </td>
-                <td class="w-10 px-1 py-3 align-top text-center whitespace-nowrap no-print">
+                <td role="cell" class="result-action w-10 px-1 py-3 align-top text-center whitespace-nowrap no-print">
                   <button type="button"
                     class="bookmark-btn inline-flex items-center justify-center w-6 h-6 mx-auto text-gray-400 hover:text-(--accent-500) dark:text-gray-500 dark:hover:text-(--accent-400) transition-colors duration-200"
                     data-controller="bookmark"
@@ -765,10 +799,12 @@
     form.addEventListener('submit', function() {
       var card = document.querySelector('[data-controller*="collapse"]');
       if (card) {
-        var content = card.querySelector('[data-collapse-target="content"]');
-        var icon = card.querySelector('[data-collapse-target="icon"]');
-        if (content) content.style.display = 'none';
-        if (icon) icon.style.transform = 'rotate(0deg)';
+        // Use the controller's state contract, not inline display/rotation:
+        // a cancelled navigation must still allow the same card to reopen.
+        card.classList.add('is-collapsed');
+        card.dataset.collapseExpandedValue = 'false';
+        var button = card.querySelector('[data-collapse-target="button"]');
+        if (button) button.setAttribute('aria-expanded', 'false');
       }
     });
   })();

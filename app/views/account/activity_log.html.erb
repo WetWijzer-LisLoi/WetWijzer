@@ -14,9 +14,9 @@
         <div class="divide-y divide-gray-200 dark:divide-gray-700">
           <% @activities.each do |activity| %>
             <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-              <div class="flex items-start justify-between">
-                <div class="flex items-start">
-                  <div class="mr-3 mt-0.5">
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div class="flex items-start min-w-0">
+                  <div class="mr-3 mt-0.5 shrink-0">
                     <% case activity.action %>
                     <% when 'registered' %>
                       <span class="text-green-500">✦</span>
@@ -36,8 +36,8 @@
                       <span class="text-gray-400">•</span>
                     <% end %>
                   </div>
-                  <div>
-                    <p class="font-medium text-gray-900 dark:text-white">
+                  <div class="min-w-0">
+                    <p class="font-medium text-gray-900 dark:text-white [overflow-wrap:anywhere]">
                       <%= t("account.activity.#{activity.action}", default: activity.action.humanize) %>
                       <%# ABA-007: the canonical brand of a creation/sign-in
                           event, safe-labelled, never the stored value raw. %>
@@ -54,7 +54,7 @@
                     <% end %>
                   </div>
                 </div>
-                <span class="text-xs text-gray-400 whitespace-nowrap">
+                <span class="text-xs text-gray-400 sm:whitespace-nowrap sm:shrink-0">
                   <%= time_ago_in_words(activity.created_at) %> <%= t('account.ago') %>
                 </span>
               </div>

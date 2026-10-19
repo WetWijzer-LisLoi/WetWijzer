@@ -5,7 +5,7 @@
     <%= render 'layouts/account_sidebar' %>
     
     <main class="flex-1 min-w-0">
-      <div class="max-w-4xl mx-auto px-4 py-8">
+      <div class="max-w-4xl mx-auto px-0 py-8 sm:px-4">
         <% if flash[:error] %>
           <div class="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 flex items-center gap-3">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
@@ -21,7 +21,7 @@
 
         <%# ==================== CREDIT BALANCE BREAKDOWN ==================== %>
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
-          <div class="flex items-center justify-between mb-5">
+          <div class="flex flex-col gap-4 mb-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
                 <%= t('credits.your_balance') %>
@@ -30,7 +30,7 @@
                 <%= t('credits.balance_description') %>
               </p>
             </div>
-            <div class="text-right">
+            <div class="text-left sm:text-right">
               <div class="text-4xl font-bold text-(--accent-600) dark:text-(--accent-400)">
                 <%= @total_credits %>
               </div>
@@ -51,7 +51,7 @@
             <div class="rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-200 dark:ring-blue-800">
               <div class="flex items-center gap-2 mb-1">
                 <svg class="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 capitalize tracking-wide">
+                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 tracking-wide">
                   <%= case I18n.locale when :fr then 'Crédits' when :de then 'Credits' when :en then 'Credits' else 'Credits' end %>
                 </span>
               </div>
@@ -80,10 +80,10 @@
 
           <div class="space-y-4" data-controller="purchase-consent">
             <% @packages.each do |package| %>
-              <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                <div class="p-6 flex items-center justify-between">
-                  <div class="flex-1">
-                    <div class="flex items-center gap-3">
+              <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden sm:overflow-visible hover:shadow-xl transition-shadow">
+                <div class="p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div class="flex-1 min-w-0 w-full sm:w-auto">
+                    <div class="flex flex-wrap items-center gap-3">
                       <h3 class="text-xl font-bold text-gray-900 dark:text-white">
                         <%= package[:name] %>
                       </h3>
@@ -111,8 +111,8 @@
                     </ul>
                   </div>
                   
-                  <div class="flex items-center gap-6 ml-6">
-                    <div class="text-right">
+                  <div class="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:flex-nowrap sm:gap-6 sm:ml-6">
+                    <div class="text-left sm:text-right">
                       <% if package[:has_pro_discount] %>
                         <span class="text-sm text-gray-400 line-through mr-1"><%= package[:price_display] %></span>
                         <span class="text-3xl font-bold text-green-600 dark:text-green-400">
@@ -130,7 +130,7 @@
                       <% end %>
                     </div>
                     
-                    <div class="relative purchase-btn-wrap group">
+                    <div class="relative purchase-btn-wrap group shrink-0 max-w-full">
                       <%= button_to credits_purchase_path(package: package[:id]), 
                           method: :post,
                           data: { purchase_consent_target: 'button' },
@@ -138,7 +138,7 @@
                           class: "px-6 py-3 rounded-lg font-medium transition-colors bg-gray-300 text-gray-500 dark:bg-gray-600 dark:text-gray-400 cursor-not-allowed whitespace-nowrap purchase-btn" do %>
                         <%= t('credits.buy_now') %>
                       <% end %>
-                      <div class="consent-tooltip hidden absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg whitespace-nowrap z-10">
+                      <div class="consent-tooltip hidden absolute bottom-full right-0 mb-2 w-max max-w-full sm:max-w-64 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg whitespace-normal z-10">
                         <%= t('credits.agree_first', default: 'Vink eerst het vakje hieronder aan') %>
                         <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
                       </div>

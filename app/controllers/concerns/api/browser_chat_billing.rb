@@ -75,43 +75,19 @@ module Api
       refunded
     end
 
-    # Owner default 2026-09-27 (to-do 6.7): an answer that tells the user its
-    # search was incomplete costs no credit. The orchestrator marks such a
-    # result with :retrieval_degraded (apply_retrieval_notice!), whatever the
-    # reason: a source that ran into the shared deadline, a semantic leg that
-    # gave up, a raising search or a full worker pool all deliver an answer
-    # with the notice, and the user cannot tell them apart. A hard failure
-    # (result[:error]: a timeout of the whole ask, a blocked response, a
-    # provider exception) is a different thing and keeps its own refund path.
+    # Owner default 2026-09-27 (to-do 6.7) made an incomplete-search answer
+    # free. Owner policy 2026-10-18 replaced it for the ask path: a question is
+    # charged once a paid AI request for it was sent, whatever the answer says
+    # about its search; see browser_chat_work_dispatched?. The constant stays
+    # for the analytics allowlist of historical rows, and the two helpers below
+    # only for the retired deep-analysis code, which is unreachable (410).
     CHARGE_WAIVED_INCOMPLETE_SEARCH = 'retrieval_incomplete'
 
     def incomplete_search_answer?(result)
       result.is_a?(Hash) && result[:error].blank? && result[:retrieval_degraded].present?
     end
 
-    # Ask path: releases the durable reservation while it is still `reserved`
-    # and no delivery has begun (refund! would SETTLE a pending delivery, see
-    # BillingReservation#refund!), then marks the result. Returns true when the
-    # charge fell away, false when there was nothing to waive or the release
-    # did not happen, in which case the charge stands as before. Idempotent
-    # through refund!, so a retry cannot credit the user twice.
-    def waive_browser_chat_charge_for_incomplete_search!(reservation, result, user:, language:)
-      return false unless reservation&.credit? && incomplete_search_answer?(result)
-
-      reservation.refund!(reason: CHARGE_WAIVED_INCOMPLETE_SEARCH)
-      unless reservation.refunded?
-        Rails.logger.warn('Browser chatbot charge for an incomplete search could not be released; the charge stands')
-        return false
-      end
-
-      mark_charge_waived_for_incomplete_search!(result, user: user, language: language)
-      true
-    end
-
-    # What both paths (ask and deep analysis) tell the client once the credit
-    # is back: the marker the analytics row records (log_analytic reads it off
-    # the result), the note inside the notice paragraph, and a credits_info
-    # that deducts nothing and says why.
+    # Retired deep-analysis path only (see above).
     def mark_charge_waived_for_incomplete_search!(result, user:, language:)
       result[:charge_waived] = CHARGE_WAIVED_INCOMPLETE_SEARCH
       result[:answer] = LegalChatbot::Orchestrator.with_free_answer_note(result[:answer], language)
@@ -133,7 +109,8 @@ module Api
       delivery_token:,
       delivery_abort_allowed:,
       user:,
-      reason:
+      reason:,
+      receipt: nil
     )
       if reservation.settled?
         return {
@@ -198,26 +175,145 @@ module Api
           )
         end
 
-        refunded = reservation.abort_delivery!(token: delivery_token, reason: reason)
+        # Proven non-delivery: the owner aborts. With dispatched paid work the
+        # model keeps the single charge and records the delivery as aborted
+        # (never completed); without it the credits return.
+        reservation.abort_delivery!(token: delivery_token, reason: reason)
         mark_analytic_refunded!(analytic) if reservation.refunded?
         return {
-          outcome: refunded ? :refunded : :settled,
-          credits_info: credit_balance_info(user, deducted: refunded ? 0 : reservation.amount)
+          outcome: reservation.refunded? ? :refunded : :settled,
+          credits_info: browser_chat_settlement_credits_info(reservation, analytic: analytic, user: user)
         }
       end
 
-      refund_browser_chat_reservation!(reservation, analytic: analytic, reason: reason)
-      if reservation.settled?
-        {
-          outcome: :settled,
-          credits_info: credit_balance_info(user, deducted: reservation.amount)
-        }
+      credits_info = finish_undelivered_browser_chat!(
+        reservation, receipt: receipt, analytic: analytic, user: user, reason: reason
+      )
+      {
+        outcome: reservation.refunded? ? :refunded : :settled,
+        credits_info: credits_info
+      }
+    end
+
+    # Owner policy 2026-10-18: "charge once the provider request was sent".
+    # One receipt per browser question, handed explicitly to every client that
+    # can send a paid AI request. Its first dispatch is admitted under the
+    # account's row lock (BillingReservation#admit_work_dispatch!), which
+    # checks that the account is still active and asks this block, on the
+    # locked account rather than the request's shared current_user (the
+    # admission runs in the query thread), whether the request may still
+    # start paid work: for a request admitted with a conversation claim, the
+    # storage generation it was admitted under must be unchanged (a consent
+    # regrant, even in the same mode, renews it and would fence the later
+    # history write) and the claim must still be owned (a clear, consent or
+    # key change fences it). The claim read is a chatbot-lane query made
+    # while accounts locks are held, so its waits are bounded. An ordinary
+    # ask without history or claim needs neither consent nor a generation.
+    # Unbilled service requests get no receipt, so their semantics are
+    # unchanged.
+    def build_browser_provider_work_receipt(reservation, claim:, storage_generation: nil)
+      return nil unless reservation&.browser_work_tracked?
+
+      LegalChatbot::ProviderWorkReceipt.new(
+        reservation: reservation,
+        eligibility: lambda do |account|
+          next true unless claim
+          next false unless storage_generation && ConversationStorageBoundary.generation(account) == storage_generation
+
+          ConversationStorageBoundary.bounded_chatbot_read { claim_owned_by?(account, claim) }
+        end
+      )
+    end
+
+    # The durable answer decides; the receipt's in-memory flag only spares a
+    # read. A wrong `false` here is still safe: refund! re-reads the marker
+    # under its row lock and settles dispatched work instead of refunding.
+    def browser_chat_work_dispatched?(reservation, receipt)
+      return false unless reservation&.browser_work_tracked?
+      return true if receipt&.dispatched?
+
+      reservation.reload_work_dispatch!
+    rescue StandardError => e
+      Rails.logger.error("Browser chatbot dispatch evidence unreadable: #{e.class}")
+      false
+    end
+
+    # Ends a question that delivers no answer (an error result, an account or
+    # claim fence, a pre-delivery failure) and returns its truthful
+    # credits_info. Dispatched work keeps the single charge without inventing a
+    # delivery; otherwise the reservation is released. Callers discard or roll
+    # back any content first, independently of this decision.
+    def finish_undelivered_browser_chat!(reservation, receipt:, analytic:, user:, reason:)
+      return nil unless reservation
+
+      if browser_chat_work_dispatched?(reservation, receipt)
+        begin
+          reservation.retain_work!
+        rescue StandardError => e
+          # The marker is durable: the stale reconciler settles the row (its
+          # refund! cannot return dispatched work).
+          Rails.logger.error("Browser chatbot work retention deferred: #{e.class}")
+        end
       else
-        {
-          outcome: :refunded,
-          credits_info: credit_balance_info(user, deducted: 0)
-        }
+        refund_browser_chat_reservation!(reservation, analytic: analytic, reason: reason)
       end
+      browser_chat_settlement_credits_info(reservation, analytic: analytic, user: user)
+    end
+
+    # What the client is told after any settlement decision: the reservation's
+    # actual state, never an assumed refund. A dispatched row whose retention
+    # was deferred is still charged.
+    def browser_chat_settlement_credits_info(reservation, analytic:, user:)
+      if reservation.settled? || (reservation.reserved? && reservation.work_dispatched?)
+        project_browser_chat_analytic!(reservation, analytic) if reservation.settled?
+        credit_balance_info(user, deducted: reservation.amount)
+      else
+        credit_balance_info(user, deducted: 0)
+      end
+    end
+
+    WORK_CHARGE_NOTICES = {
+      'nl' => ['De AI-verwerking voor deze vraag was al gestart; daarom is de prijs van deze vraag aangerekend (%<amount>s).',
+               %w[credit credits]],
+      'fr' => ["Le traitement par l'IA de cette question avait déjà commencé ; le prix de cette question a donc été débité (%<amount>s).",
+               %w[crédit crédits]],
+      'de' => ['Die KI-Verarbeitung dieser Frage hatte bereits begonnen; der Preis dieser Frage wurde daher abgebucht (%<amount>s).',
+               %w[Credit Credits]],
+      'en' => ['AI processing for this question had already started, so the price of this question was charged (%<amount>s).',
+               %w[credit credits]]
+    }.freeze
+
+    def browser_chat_work_charge_notice(amount, language)
+      template, units = WORK_CHARGE_NOTICES.fetch(language.to_s) { WORK_CHARGE_NOTICES.fetch('nl') }
+      amount = amount.to_i
+      singular = language.to_s == 'fr' ? amount < 2 : amount == 1
+      format(template, amount: "#{amount} #{singular ? units[0] : units[1]}")
+    end
+
+    # A result payload shown as an error states the retained charge in the
+    # text the client displays: the answer for a timeout, the error text
+    # otherwise (and the answer too when it carries the same text). Code-only
+    # error events carry :charge_notice instead, once, for the client's
+    # localized sentence; the two never meet on one payload.
+    def attach_work_charge_notice!(result, credits_info, language)
+      return result unless result.is_a?(Hash) && credits_info && credits_info[:credits_deducted].to_i.positive?
+
+      notice = browser_chat_work_charge_notice(credits_info[:credits_deducted], language)
+      if result[:error] == 'timeout' || !result[:error].is_a?(String)
+        result[:answer] = [result[:answer].presence, notice].compact.join("\n\n")
+      else
+        result[:error] = "#{result[:error]}\n\n#{notice}"
+        result[:answer] = "#{result[:answer]}\n\n#{notice}" if result[:answer].is_a?(String) && result[:answer].present?
+      end
+      result
+    end
+
+    # The retained-charge sentence for a code-only error event or body, or
+    # nothing when the credits came back.
+    def browser_chat_charge_notice_field(credits_info, language)
+      return {} unless credits_info && credits_info[:credits_deducted].to_i.positive?
+
+      { charge_notice: browser_chat_work_charge_notice(credits_info[:credits_deducted], language) }
     end
 
     def begin_browser_chat_delivery!(reservation)

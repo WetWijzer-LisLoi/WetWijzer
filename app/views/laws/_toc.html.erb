@@ -118,7 +118,7 @@
       </div>
     <% end %>
 
-    <nav class="toc-navigation <%= 'max-h-[calc(100vh-200px)] overflow-y-auto overflow-x-hidden' if scrollable %> <%= 'max-h-[min(70vh,48rem)] overflow-y-auto overflow-x-hidden print:max-h-none print:overflow-visible' if variant == :main && !scrollable %> pr-2 <%= 'mt-4' if variant == :main && !hide_header %>" style="scrollbar-width: thin; scrollbar-color: rgb(156 163 175) transparent; scrollbar-gutter: stable both-edges; margin-right: -2px; border-radius: 0.75rem;" <%= raw 'data-controller="toc-tracker"' if track %> <%= raw 'data-collapse-target="content"' if (variant == :main && !hide_header) %> data-toc-search-target="list">
+    <nav class="toc-navigation <%= 'max-h-[calc(100vh-200px)] overflow-y-auto overflow-x-hidden' if scrollable %> <%= 'max-h-[min(50vh,48rem)] md:max-h-[min(70vh,48rem)] overflow-y-auto overflow-x-hidden print:max-h-none print:overflow-visible' if variant == :main && !scrollable %> pr-2 <%= 'mt-4' if variant == :main && !hide_header %>" style="scrollbar-width: thin; scrollbar-color: rgb(156 163 175) transparent; scrollbar-gutter: stable both-edges; margin-right: -2px; border-radius: 0.75rem;" <%= raw 'data-controller="toc-tracker"' if track %> <%= raw 'data-collapse-target="content"' if (variant == :main && !hide_header) %> data-toc-search-target="list">
       <style nonce="<%= content_security_policy_nonce %>">
         .toc-navigation {
           /* Reserve space for scrollbar so it doesn't overlap text on overlay-scrollbar platforms */

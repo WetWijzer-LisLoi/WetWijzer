@@ -182,6 +182,10 @@ export default class extends Controller {
   }
 
   handleEscape(event) {
+    // A menu/modal's own bubbling handler may already have restored focus.
+    // Do not dismiss anything else or blur that restored focus a second time.
+    if (event.defaultPrevented) return
+
     // Close help modal if open
     if (this.hasHelpModalTarget && !this.helpModalTarget.classList.contains('hidden')) {
       event.preventDefault()
@@ -189,13 +193,23 @@ export default class extends Controller {
       return
     }
     
-    // Close any open dropdowns
-    const openDropdowns = document.querySelectorAll('[data-dropdown-target="menu"]:not(.hidden), [aria-expanded="true"]')
-    openDropdowns.forEach(dropdown => {
-      dropdown.classList.add('hidden')
-      const button = dropdown.previousElementSibling
-      if (button) button.setAttribute('aria-expanded', 'false')
-    })
+    // Expanded disclosures are not menus: hiding an aria-expanded trigger
+    // made source cards and filter buttons disappear when closing the TOC.
+    // Genuine menus close through their owners, preserving aria, arrow state
+    // and focus. Sidebar/jump/modal controllers keep their own Escape paths.
+    for (const identifier of ['dropdown', 'copy-reference']) {
+      document.querySelectorAll(`[data-controller~="${identifier}"]`).forEach(element => {
+        const owner = this.application?.getControllerForElementAndIdentifier(element, identifier)
+        if (!owner?.hasMenuTarget || owner.menuTarget.classList.contains('hidden')) return
+
+        if (identifier === 'dropdown') {
+          owner.close({ restoreFocus: true })
+        } else {
+          owner.toggle()
+          if (owner.hasButtonTarget) owner.buttonTarget.focus()
+        }
+      })
+    }
     
     // Clear search selection
     document.querySelectorAll('.keyboard-selected').forEach(el => el.classList.remove('keyboard-selected'))

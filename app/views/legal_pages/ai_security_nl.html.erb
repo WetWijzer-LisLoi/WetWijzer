@@ -267,6 +267,7 @@
     <p>Providercontracten, order forms en gegevensverwerkingsvoorwaarden bepalen deze waarborgen. Hun reikwijdte moet voor de geconfigureerde WetWijzer-accounts worden geverifieerd; documentatie en certificeringen van providers maken WetWijzer zelf niet gecertificeerd.</p>
 
     <h3>2.2 Encryptiestandaarden</h3>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Beschermingslaag</th>
@@ -299,6 +300,7 @@
             <td>Europese providerconfiguraties: Azure DataZoneStandard in de EU Data Zone voor alle aangeboden Azure-modellen, het regionale EU/EFTA-API-eindpunt van Mistral (dus niet uitsluitend EU-lidstaten) en AWS EU-geografieprofielen</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <h3>2.3 Misbruikmonitoring</h3>
     <p>Veiligheidsmonitoring en operationele bewaring door providers zijn niet hetzelfde als modeltraining. Voor de geconfigureerde diensten geldt:</p>
@@ -316,7 +318,7 @@
     <p><%= chatbot_processing_location_summary(:nl) %></p>
     <ul>
         <li><strong>Mistral AI:</strong> Opereert vanuit Frankrijk - een Europees bedrijf onderworpen aan Frans en EU-recht</li>
-        <li><strong>Azure OpenAI:</strong> alle aangeboden modellen uit de GPT-5-familie gebruiken <code>DataZoneStandard</code> in de Azure EU Data Zone en kunnen binnen Microsofts gedocumenteerde EU Data Boundary routeren. Voor de aangeboden modellen gebruiken wij <strong>geen</strong> regionale Standard-, Global Standard- of Global Provisioned-uitrollen</li>
+        <li><strong>Azure OpenAI:</strong> alle aangeboden GPT-modellen gebruiken <code>DataZoneStandard</code> in de Azure EU Data Zone en kunnen binnen Microsofts gedocumenteerde EU Data Boundary routeren. Voor de aangeboden modellen gebruiken wij <strong>geen</strong> regionale Standard-, Global Standard- of Global Provisioned-uitrollen</li>
         <li><strong>AWS Bedrock:</strong> geografische <code>eu.</code>-profielen aangeroepen vanuit eu-central-1; vragen kunnen binnen de gedocumenteerde EU-geografie van het profiel routeren</li>
         <li>De geselecteerde providerroutes hebben een EU-bereik; de precieze grenzen en gemelde doorgiftevoorbehouden staan hierboven</li>
     </ul>
@@ -330,6 +332,7 @@
         <span class="cert-badge">Controleer de geselecteerde dienst</span>
     </div>
 
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Bewijsbron</th>
@@ -352,12 +355,14 @@
             <td>Gebruikt deze providerdiensten maar erft hun certificeringen niet; de eigen controles en wettelijke verplichtingen van WetWijzer blijven afzonderlijk</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
     <p class="small">Controleer het actuele, dienstspecifieke bewijs in het <a href="https://servicetrust.microsoft.com/" target="_blank" rel="noopener">Microsoft Service Trust Portal</a>, het <a href="https://aws.amazon.com/compliance/" target="_blank" rel="noopener">AWS Compliance Center</a> en de toepasselijke contractuele en beveiligingsdocumentatie van Mistral.</p>
 
     <!-- WAT WIJ OPSLAAN -->
     <h2>4. Wat wij opslaan (en wat niet)</h2>
 
     <h3>4.1 Wat wij opslaan</h3>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Gegeven</th>
@@ -402,11 +407,13 @@
             <td>Vervolgvragen en optionele opgeslagen geschiedenis mogelijk maken</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <h3>4.2 Wat wij niet in analytics of gewone applicatielogs opnemen</h3>
     <div class="highlight--success">
         <p><strong>Hoe het in de praktijk werkt:</strong> Wij slaan geen leesbare vraagtekst en geen deterministische vraagvingerafdruk op in chatbot-analytics of gewone applicatielogs. De ruwe vraag wordt in het geheugen verwerkt voor Azure-retrieval, optionele HyDE-verrijking via Mistral Small bij Diep zoeken en de geselecteerde antwoordprovider, en wordt na de vraag niet bewust door WetWijzer gepersisteerd; applicatiegeheugen wordt niet cryptografisch gewist. Expliciet opgeslagen antwoorden, geschiedenis met toestemming en door gebruikers ingediende meldingen zijn afzonderlijke opslagkeuzes hieronder. Voor misbruikpreventie gebruiken wij een gezouten IP-hash; omdat die gedurende zeven dagen een pseudonieme identifier blijft, noemen wij die niet anoniem.</p>
     </div>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Gegeven</th>
@@ -439,11 +446,13 @@
             <td>Standaard bewaren wij uw gesprek <strong>niet</strong> op onze server; recente berichten worden enkel per vraag meegestuurd voor context en daarna gewist. Wij bewaren <strong>geen onversleutelde gespreksinhoud</strong> in localStorage of sessionStorage. Wordt een zero-knowledge opslag onderbroken, dan kan een herstel-envelop met uitsluitend cijfertekst in localStorage staan. Zij kan enkel worden herhaald zolang de bijbehorende serverclaim geldig is (vijf minuten na uitgifte en doorgaans korter vanaf ontvangst van het antwoord). De app verwijdert haar na serverbevestiging, intrekking van toestemming of &mdash; wanneer de app actief is &mdash; bij het verstrijken van de claim; was de browser gesloten, dan gebeurt die opschoning zodra u WetWijzer opnieuw opent. De server weigert een verlopen envelop. Kiest u voor opslag met een opslagwachtwoord, dan wordt het gesprek zero-knowledge versleuteld opgeslagen (AES-256-GCM) &mdash; wij kunnen de inhoud niet ontcijferen. Kiest u voor opslag zonder opslagwachtwoord, dan wordt het gesprek versleuteld op onze server bewaard maar kunnen wij de inhoud lezen om vervolgvragen te beantwoorden. Opgeslagen gesprekken blijven bewaard totdat u ze verwijdert of uw account sluit. Welke conversatie actief is, houden wij server-side bij; de versleutelde herstel-envelop is de enige browserpersistentie-uitzondering voor <em>gespreksgegevens</em>.</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
     <p class="small">* Expliciete opslagkeuzes: "Antwoord opslaan" bewaart de gekozen vraag en het antwoord in uw account; "Melden" (🚩) stuurt de vraag en het antwoord na bevestiging naar de beheerder voor kwaliteitscontrole. Deze records zijn op de server versleuteld in rust, maar leesbaar voor WetWijzer.</p>
 
     <!-- ONZE EIGEN INFRASTRUCTUUR -->
     <h2>5. Onze eigen serverbeveiliging</h2>
     <p>Uw gegevens zijn niet alleen veilig bij onze AI-providers - onze eigen infrastructuur is ook versterkt:</p>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Maatregel</th>
@@ -482,9 +491,11 @@
             <td>Zelf gehoste Umami voor cookieloze, first-party geaggregeerde analytics - geen Google Analytics of cross-site advertentietrackers</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <!-- DATASTROOM-OVERZICHT -->
     <h2>6. Volledig datastroom-overzicht</h2>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Van</th>
@@ -529,10 +540,12 @@
             <td>Onversleutelde inhoud blijft alleen in het werkgeheugen van de browser. Er staan geen onversleutelde gespreksgegevens in localStorage of sessionStorage. Een onderbroken zero-knowledge opslag kan een herstel-envelop met uitsluitend cijfertekst in localStorage bewaren. Zij is na de vijf minuten na uitgifte verlopende serverclaim onbruikbaar en wordt bij het verstrijken of bij de eerstvolgende opening opgeschoond.</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <!-- VERGELIJKING -->
     <h2>7. Hoe wij ons onderscheiden</h2>
     <p>In tegenstelling tot consumenten-AI-chatbots gebruikt WetWijzer enterprise-grade AI-providers met configuraties met EU-bereik en de hierboven beschreven doorgiftevoorbehouden:</p>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Functie</th>
@@ -570,6 +583,7 @@
             <td><strong>De actuele vraag en relevante context zijn tijdens de antwoordverwerking leesbaar. Nadien is geschiedenis met een opslagwachtwoord niet rechtstreeks door ons ontsleutelbaar; gewone opgeslagen geschiedenis, opgeslagen antwoorden en meldingen zijn leesbaar voor WetWijzer. Vraagtekst en deterministische vraagvingerafdrukken worden niet in gewone applicatielogs opgeslagen.</strong></td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
 
     <!-- WAARSCHUWING -->
     <h2>8. Een noot van gezond verstand</h2>
@@ -594,6 +608,7 @@
         <li><strong>Bedrijfsproxies:</strong> Sommige bedrijfsproxyketens routeren verkeer via niet-EU-gateways.</li>
     </ul>
     <h4>Wat dit in de praktijk betekent:</h4>
+    <% unless classic_host? %><div class="legal-table-scroll" tabindex="0" role="region" aria-label="<%= t('legal_pages.table_scroll_label') %>"><% end %>
     <table>
         <tr>
             <th>Scenario</th>
@@ -621,6 +636,7 @@
             <td>✅ Ja, na verificatie</td>
         </tr>
     </table>
+    <% unless classic_host? %></div><% end %>
     <div class="legal-notice">
         <p><strong>Privacynota voor Tor-gebruikers:</strong> Wij respecteren uw recht om anoniem te browsen. De geobeveiligingscontrole identificeert u niet; zij verifieert proof-of-work tussen uw browser en onze zelfgehoste server zonder de uitdaging naar een externe CAPTCHA-provider te sturen. Wees u er echter van bewust dat bij gebruik van Tor uw verkeer verloopt via een <strong>relay-node van derden</strong> die u niet controleert. Hoewel TLS-encryptie de inhoud van uw chatbotvragen beschermt tegen de exitnode-operator, kan de exitnode zien welke website u bezoekt (wetwijzer.be). Dit is een eigenschap van Tor zelf, niet van ons platform.</p>
     </div>

@@ -28,6 +28,8 @@ import {
 import {
   processingLabel,
   doneLabel,
+  LONG_WAIT_NOTICE_DELAY_MS,
+  longWaitNoticeLabel,
   progressPhases,
   resolveServerProgress,
   clampProgress
@@ -50,6 +52,13 @@ import {
   sendMessage,
   mistralFollowupDowngradeMessage
 } from "../services/chatbot_send_request"
+import {
+  announceQuestionCount,
+  questionCharsLeft,
+  questionMaxFrom,
+  questionTooLongMessage,
+  renderQuestionCount
+} from "../services/chatbot_question_length"
 
 // Mixins - extracted method groups for maintainability
 import { settingsMethods } from "./chatbot/settings_mixin"
@@ -69,6 +78,8 @@ class ChatbotController extends Controller {
   static targets = [
     "settingsBody",
     "lengthHint",
+    "questionCount",
+    "questionCountStatus",
     "input",
     "messages",
     "sendButton",
@@ -86,6 +97,7 @@ class ChatbotController extends Controller {
     "loading",
     "progressBar",
     "progressText",
+    "longWaitNotice",
     "profileSelect",
     "intelligenceRange",
     "reasoningRange",
@@ -106,8 +118,9 @@ class ChatbotController extends Controller {
     apiEndpoint: { type: String, default: "/api/chatbot/ask" },
     language: { type: String, default: "nl" },
     source: { type: String, default: "legislation" },
-    intelligence: { type: String, default: "smart" },
+    intelligence: { type: String, default: "genius" },
     reasoningLevel: { type: String, default: "low" },
+    researchDepth: { type: String, default: "balanced" },
     modelOverride: { type: String, default: "" },
     profile: { type: String, default: "general" },
     hasCredits: { type: Boolean, default: false },
@@ -120,6 +133,10 @@ class ChatbotController extends Controller {
   _masterKey = null
 
   connect() {
+    this._modelPreferencesConnected = true
+    this._modelPreferencesHydrated = false
+    this._modelChoiceTouched = false
+    this._modelPreferenceLoadToken = {}
     this.conversationHistory = []
     this.conversationId = null  // Server-side conversation token for context
     this._conversationRevisions = new Map()
@@ -138,7 +155,7 @@ class ChatbotController extends Controller {
     this.loadPreferences()
 
     // Second pass (async): once server prefs arrive, re-apply and re-sync UI.
-    this._initPreferencesAsync()
+    this._modelPreferencesReady = this._initPreferencesAsync(this._modelPreferenceLoadToken)
 
     // Inject credit deduction animation CSS (once per page)
     if (!document.getElementById('credit-deduct-keyframes')) {
@@ -179,15 +196,17 @@ class ChatbotController extends Controller {
       this.inputTarget.addEventListener('input', () => {
         this._autoResize()
         this._updateLengthHint()
+        this._updateQuestionLength()
       })
       this._autoResize()
       this._updateLengthHint()
+      this._updateQuestionLength()
     }
 
     // Initialize ETA preview
 
     // Filter model dropdown to show only models for the active intelligence tier
-    this._filterModelDropdown(this.intelligenceValue || 'smart')
+    this._filterModelDropdown(this.intelligenceValue || 'genius')
 
     // Sync slider position with saved intelligence level
     this._syncSlidersFromPreferences()
@@ -278,7 +297,12 @@ class ChatbotController extends Controller {
   }
 
   disconnect() {
-    this.savePreferences()
+    this._modelPreferencesConnected = false
+    this._modelPreferenceLoadToken = null
+    this._cancelModelPreferenceWait?.()
+    // A visit during preference loading must not overwrite the saved model
+    // with the untouched temporary default. Explicit UI edits save themselves.
+    if (this._modelPreferencesHydrated || this._modelChoiceTouched || this._heroOverrideActive) this.savePreferences()
     // A Turbo visit with the offer open would otherwise orphan its keydown
     // listener, which keeps this controller alive after its element is gone.
     this._closeLockedTierModal()
@@ -340,10 +364,9 @@ class ChatbotController extends Controller {
     this._updateAriaExpanded()
 
     if (this.openValue && this.hasInputTarget) {
-      setTimeout(() => this.inputTarget.focus(), 100)
-    } else if (!this.openValue && this.hasToggleButtonTarget) {
-      // Return focus to FAB when closing (keyboard accessibility)
-      this.toggleButtonTarget.focus()
+      setTimeout(() => { if (this.openValue) this.inputTarget.focus() }, 100)
+    } else if (!this.openValue && this.hasWidgetTarget) {
+      this._focusWidgetLauncher()
     }
     // Clear badge when opening
     if (this.openValue && this.hasBadgeTarget) {
@@ -387,10 +410,7 @@ class ChatbotController extends Controller {
     this._updateFabIcons()
     this._updateAriaExpanded()
     this._unbindEscapeKey()
-    // Return focus to FAB (keyboard users)
-    if (this.hasToggleButtonTarget) {
-      this.toggleButtonTarget.focus()
-    }
+    this._focusWidgetLauncher()
   }
 
   // Swap chat/close icons on the FAB
@@ -405,6 +425,12 @@ class ChatbotController extends Controller {
   _updateAriaExpanded() {
     if (this.hasToggleButtonTarget) {
       this.toggleButtonTarget.setAttribute('aria-expanded', this.openValue ? 'true' : 'false')
+    }
+    const dockChat = this.hasWidgetTarget && document.getElementById('mobile-chat-btn')
+    if (dockChat) {
+      dockChat.setAttribute('aria-controls', 'chatbot-widget-panel')
+      dockChat.setAttribute('aria-haspopup', 'dialog')
+      dockChat.setAttribute('aria-expanded', String(this.openValue))
     }
   }
 
@@ -474,7 +500,7 @@ class ChatbotController extends Controller {
     this._syncResetPositionButton()
   }
   _syncWidgetPills() {
-    const level = this.intelligenceValue || 'smart'
+    const level = this.intelligenceValue || 'genius'
     const pills = document.querySelectorAll('#widget-intelligence-pills .widget-intel-pill')
     if (!pills.length) return
 
@@ -594,6 +620,32 @@ class ChatbotController extends Controller {
     this.lengthHintTarget.classList.toggle('hidden', !(long && level === 'smart'))
   }
 
+  // The characters the question may still take before the server refuses it
+  // (LegalChatbotService::MAX_QUESTION_LENGTH, which the counter carries as
+  // data-max). Called on every keystroke and wherever the box is filled or
+  // cleared without one: a draft, a sent question.
+  _updateQuestionLength({ announceNow = false } = {}) {
+    if (!this.hasInputTarget || !this.hasQuestionCountTarget) return null
+    const count = renderQuestionCount(this.inputTarget, this.questionCountTarget, this.languageValue)
+    if (this.hasQuestionCountStatusTarget) {
+      announceQuestionCount(this.questionCountStatusTarget, count.text, announceNow ? 0 : undefined)
+    }
+    return count
+  }
+
+  // A question the server would refuse for its length is not sent, and costs
+  // nothing: the count under the box turns red and says by how much, the
+  // toast says what to do, and the box keeps the text to shorten.
+  _blockOverlongQuestion() {
+    if (!this.hasInputTarget) return false
+    const max = questionMaxFrom(this.hasQuestionCountTarget ? this.questionCountTarget : null)
+    if (questionCharsLeft(this.inputTarget.value, max) >= 0) return false
+    this._updateQuestionLength({ announceNow: true })
+    this._showToast(questionTooLongMessage(this.inputTarget.value, this.languageValue, max), 'error')
+    this.inputTarget.focus()
+    return true
+  }
+
   openModelSettings(event) {
     if (event) event.preventDefault()
     this._setSettingsPanelOpen(true)
@@ -632,7 +684,7 @@ class ChatbotController extends Controller {
       if (this.hasMessagesTarget) {
         this.messagesTarget.innerHTML = ''
         this.messagesTarget.classList.add("chatbot-messages--empty")
-        this._setSettingsPanelOpen(true)
+        this._setSettingsPanelOpen(false)
         this.addWelcomeMessage()
         // Reset scroll position to top so welcome message is visible
         this.messagesTarget.scrollTop = 0
@@ -662,10 +714,16 @@ class ChatbotController extends Controller {
   async send() {
     // Block while a request is in flight OR while the previous answer is
     // still animating in (loading clears before the typewriter finishes)
-    if (this.loadingValue || this._animatingMessage || this._sendInProgress) return
+    if (this.loadingValue || this._animatingMessage || this._sendInProgress || this._modelPreferenceSendWaiting) return
 
+    if (!this.inputTarget.value.trim()) return
+    if (this._blockOverlongQuestion()) return
+    if (this._blockUnavailableModelRequest()) return
+    if (this._modelPreferencesReady && !this._modelChoiceTouched && !this._heroOverrideActive &&
+        !await this._prepareModelPreferenceForSend()) return
     const question = this.inputTarget.value.trim()
     if (!question) return
+    if (this._blockUnavailableModelRequest()) return
 
     // ── Locked tier gate: block send if user selected a tier they can't use ──
     if (this._selectedLevelLocked) {
@@ -709,6 +767,7 @@ class ChatbotController extends Controller {
     })
 
     const contextMessages = contextMessagesFrom(this.conversationHistory)
+    this._refreshResearchDepthState()
     const requestReasoningEffort = this._effectiveReasoningForRequest(contextMessages)
     if (requestReasoningEffort !== this.reasoningLevelValue) {
       this.reasoningLevelValue = requestReasoningEffort
@@ -722,9 +781,11 @@ class ChatbotController extends Controller {
     this.addMessage("user", question)
     this.inputTarget.value = ""
     this._autoResize()  // Reset textarea to single line
+    this._updateQuestionLength()
 
     // Add to conversation history
-    this.conversationHistory.push({ role: "user", content: question })
+    const userTurn = { role: "user", content: question }
+    this.conversationHistory.push(userTurn)
 
     // Reset any stale user-abort flag from a prior request (e.g. one cleared
     // during its typewriter animation, where no catch consumed the flag) so it
@@ -745,7 +806,8 @@ class ChatbotController extends Controller {
     const requestState = {
       timedOut: false,
       conversationContextEpoch: this._conversationContextEpoch || 0,
-      skipEncryptedPersistence: false
+      skipEncryptedPersistence: false,
+      userTurn
     }
     const deadline = createRequestDeadline({
       onTimeout: () => {
@@ -788,6 +850,8 @@ class ChatbotController extends Controller {
           sources: this.getSelectedSources(),
           intelligence: this.intelligenceValue,
           reasoningEffort: requestReasoningEffort,
+          researchDepth: this._normalizedResearchDepth(),
+          linkedResearch: this._hasLinkedResearchCombinations(),
           modelOverride: this.modelOverrideValue,
           profile: this.profileValue,
           lawNumac: document.querySelector('meta[name="chatbot-context"]')?.dataset?.lawNumac,
@@ -835,7 +899,7 @@ class ChatbotController extends Controller {
           // Handle specific error types with user-friendly messages
           // Status-to-copy resolution lives in services/chatbot_send_request.js.
           const errorView = jsonErrorDescriptor(response.status, data, this.languageValue)
-          this.addMessage("error", errorView.message)
+          this._showTurnError(requestState, errorView.message)
           if (errorView.upsell) {
             // Logged-in user out of credits - buy credits + Pro upsell card.
             const upsell = errorView.upsell
@@ -897,6 +961,7 @@ class ChatbotController extends Controller {
           responseDelivered = true
           // Add to conversation history (cap at 50 messages to prevent memory leaks)
           this.conversationHistory.push(assistantHistoryEntry(data, this.lastAnalyticId))
+          this._refreshResearchDepthState?.()
           if (this.conversationHistory.length > 50) {
             this.conversationHistory = this.conversationHistory.slice(-50)
           }
@@ -958,9 +1023,9 @@ class ChatbotController extends Controller {
       if (requestState.timedOut || error.name === "AbortError") {
         // User-initiated abort (clearChat), not a timeout; stay silent.
         if (this._userAborted) { this._userAborted = false; return }
-        this.addMessage("error", sendMessage('request_timed_out', this.languageValue))
+        this._showTurnError(requestState, sendMessage('request_timed_out', this.languageValue))
       } else {
-        this.addMessage("error", sendMessage('connection_error', this.languageValue))
+        this._showTurnError(requestState, sendMessage('connection_error', this.languageValue))
       }
     } finally {
       deadline.clear()
@@ -968,6 +1033,15 @@ class ChatbotController extends Controller {
       // Only clear if a newer send hasn't replaced the controller
       if (this.abortController === abortController) this.abortController = null
     }
+  }
+
+  // Every way a question ends without an answer goes through here: the error
+  // bubble, and the same text kept for the conversation exports
+  // (_rememberShownReply in the export mixin), so a copied chat holds what
+  // the reader saw under that question.
+  _showTurnError(requestState, message) {
+    this.addMessage("error", message)
+    this._rememberShownReply?.(requestState?.userTurn, message)
   }
 
   // Centralized loading cleanup (prevents forgetting to reset state)
@@ -1220,7 +1294,7 @@ class ChatbotController extends Controller {
       nl: {
         eyebrow: `${siteName} · juridische chatbot`,
         title: 'Waarmee kan ik u helpen?',
-        body: `Stel uw vraag in uw eigen woorden. ${siteName} doorzoekt wetgeving, rechtspraak en parlementaire stukken.`,
+        body: 'Stel uw vraag in uw eigen woorden of kies een voorbeeldvraag.',
         prompt: 'Probeer bijvoorbeeld',
         hint: 'Of typ hieronder uw eigen vraag.',
         questions: [
@@ -1232,7 +1306,7 @@ class ChatbotController extends Controller {
       fr: {
         eyebrow: `${siteName} · chatbot juridique`,
         title: 'Comment puis-je vous aider ?',
-        body: `Posez votre question en langage courant. ${siteName} consulte la législation, la jurisprudence et les travaux parlementaires.`,
+        body: 'Posez votre question avec vos propres mots ou choisissez un exemple de question.',
         prompt: 'Essayez par exemple',
         hint: 'Ou saisissez votre propre question ci-dessous.',
         questions: [
@@ -1244,7 +1318,7 @@ class ChatbotController extends Controller {
       de: {
         eyebrow: `${siteName} · juristischer Chatbot`,
         title: 'Wobei kann ich Ihnen helfen?',
-        body: `Stellen Sie Ihre Frage in eigenen Worten. ${siteName} durchsucht Gesetzgebung, Rechtsprechung und parlamentarische Dokumente.`,
+        body: 'Stellen Sie Ihre Frage in eigenen Worten oder wählen Sie eine Beispielfrage.',
         prompt: 'Zum Beispiel',
         hint: 'Oder geben Sie unten Ihre eigene Frage ein.',
         questions: [
@@ -1256,7 +1330,7 @@ class ChatbotController extends Controller {
       en: {
         eyebrow: `${siteName} · legal chatbot`,
         title: 'How can I help?',
-        body: `Ask your question in your own words. ${siteName} searches legislation, case law, and parliamentary documents.`,
+        body: 'Ask your question in your own words or choose a sample question.',
         prompt: 'Try asking',
         hint: 'Or type your own question below.',
         questions: [
@@ -1317,23 +1391,23 @@ class ChatbotController extends Controller {
     if (!welcome) {
       if (this.languageValue === "fr") {
         const settingsHint = isWidget
-          ? "⚙ Réglez le niveau d'intelligence via l'icône d'engrenage en bas à gauche."
-          : "⚙ Réglez le niveau d'intelligence via le panneau de configuration ci-dessus."
+          ? "⚙ La barre au-dessus de la question choisit une combinaison de modèle et de raisonnement. La liste liée est dans Paramètres."
+          : "⚙ La barre au-dessus de la question choisit une combinaison de modèle et de raisonnement. La liste liée est dans Paramètres."
         welcome = `Bonjour! Je suis le chatbot juridique LisLoi. Posez votre question juridique!\n\n${settingsHint}\n\n🔒 **Confidentialité:** Par défaut, nous n'enregistrons pas vos conversations. Avec un mot de passe de stockage, seul l'historique enregistré est chiffré dans votre navigateur et nous ne pouvons pas le déchiffrer sans ce mot de passe ; votre question actuelle et le contexte pertinent sont néanmoins traités temporairement en clair afin de répondre. Plus d'infos sur notre [page sécurité IA](/ai-security).`
       } else if (this.languageValue === "en") {
         const settingsHint = isWidget
-          ? "⚙ Adjust the intelligence level via the gear icon at the bottom left."
-          : "⚙ Adjust the intelligence level via the settings panel above."
+          ? "⚙ The bar above your question selects a model/reasoning combination. Find the linked dropdown in Settings."
+          : "⚙ The bar above your question selects a model/reasoning combination. Find the linked dropdown in Settings."
         welcome = `Hello! I'm the LexLibera Legal Chatbot. Ask your legal question!\n\n${settingsHint}\n\n🔒 **Privacy:** By default we do not store your conversations. With a storage password, only saved history is encrypted in your browser and we cannot decrypt it without that password; your current question and relevant context are still processed temporarily in readable form to answer. More info on our [AI security page](/ai-security).`
       } else if (this.languageValue === "de") {
         const settingsHint = isWidget
-          ? "⚙ Die Intelligenzstufe können Sie über das Zahnrad-Symbol unten links einstellen."
-          : "⚙ Die Intelligenzstufe können Sie über das Einstellungsfeld oben einstellen."
+          ? "⚙ Die Leiste über Ihrer Frage wählt eine Modell-Denkmodus-Kombination. Die gekoppelte Liste finden Sie unter Einstellungen."
+          : "⚙ Die Leiste über Ihrer Frage wählt eine Modell-Denkmodus-Kombination. Die gekoppelte Liste finden Sie unter Einstellungen."
         welcome = `Hallo! Ich bin der juristische Chatbot von GesetzGuide. Stellen Sie Ihre juristische Frage!\n\n${settingsHint}\n\n🔒 **Datenschutz:** Standardmäßig speichern wir Ihre Gespräche nicht. Mit einem Speicherpasswort wird nur der gespeicherte Verlauf im Browser verschlüsselt und kann von uns ohne dieses Passwort nicht entschlüsselt werden; Ihre aktuelle Frage und der relevante Kontext werden zur Beantwortung dennoch vorübergehend im Klartext verarbeitet. Weitere Infos auf unserer [KI-Sicherheitsseite](/ai-security).`
       } else {
         const settingsHint = isWidget
-          ? "⚙ Het intelligentieniveau kunt u aanpassen via het tandwielpictogram linksonder."
-          : "⚙ Het intelligentieniveau kunt u aanpassen via het instellingenpaneel hierboven."
+          ? "⚙ De balk boven uw vraag kiest een model-denkwerkcombinatie. De gekoppelde keuzelijst vindt u in Instellingen."
+          : "⚙ De balk boven uw vraag kiest een model-denkwerkcombinatie. De gekoppelde keuzelijst vindt u in Instellingen."
         welcome = `Hallo! Ik ben de WetWijzer Juridische Chatbot. Stel uw juridische vraag!\n\n${settingsHint}\n\n🔒 **Privacy:** Standaard slaan wij uw gesprekken niet op. Met een opslagwachtwoord wordt alleen de opgeslagen geschiedenis in uw browser versleuteld en kunnen wij die zonder dat wachtwoord niet ontsleutelen; uw actuele vraag en relevante context worden voor beantwoording wel tijdelijk in leesbare vorm verwerkt. Meer info op onze [AI-beveiligingspagina](/ai-security).`
       }
     }
@@ -1786,7 +1860,9 @@ class ChatbotController extends Controller {
     this._progressStartTime = performance.now()
     this._stopwatchInterval = setInterval(() => {
       if (!this._progressStartTime) return
-      const sec = ((performance.now() - this._progressStartTime) / 1000).toFixed(1)
+      const elapsedMs = performance.now() - this._progressStartTime
+      const sec = (elapsedMs / 1000).toFixed(1)
+      this._showLongWaitNoticeIfNeeded(elapsedMs)
       // Update just the timer portion inside progressText
       if (this.hasProgressTextTarget) {
         const timerSpan = this.progressTextTarget.querySelector(".font-mono")
@@ -1802,12 +1878,31 @@ class ChatbotController extends Controller {
       clearInterval(this._stopwatchInterval)
       this._stopwatchInterval = null
     }
+    this._resetLongWaitNotice()
     if (this._progressStartTime) {
       const elapsed = ((performance.now() - this._progressStartTime) / 1000).toFixed(1) + "s"
       this._progressStartTime = null
       return elapsed
     }
     return null
+  }
+
+  // Separate from the frequently updated stage/elapsed line: one polite
+  // announcement per request, without a modal, focus change or extra timer.
+  _showLongWaitNoticeIfNeeded(elapsedMs) {
+    if (!this.loadingValue || this._longWaitNoticeShown || !this.hasLongWaitNoticeTarget || elapsedMs < LONG_WAIT_NOTICE_DELAY_MS) return
+
+    this.longWaitNoticeTarget.textContent = longWaitNoticeLabel(this.languageValue)
+    this.longWaitNoticeTarget.classList.remove("sr-only")
+    this._longWaitNoticeShown = true
+  }
+
+  _resetLongWaitNotice() {
+    this._longWaitNoticeShown = false
+    if (!this.hasLongWaitNoticeTarget) return
+
+    this.longWaitNoticeTarget.classList.add("sr-only")
+    if (this.longWaitNoticeTarget.textContent) this.longWaitNoticeTarget.textContent = ""
   }
 
   // Auto-resize textarea to fit content (max 120px height)
@@ -1874,7 +1969,7 @@ class ChatbotController extends Controller {
             requestState.skipEncryptedPersistence = true
             this._applyCreditsInfo?.(parsed.credits_info, { visual: false })
             this._finishLoading()
-            this.addMessage('error', sseErrorMessage(parsed, this.languageValue))
+            this._showTurnError(requestState, sseErrorMessage(parsed, this.languageValue))
             resultReceived = true
           } else if (parsed.type === "progress") {
             // Real-time progress from server (raises the simulated bar)
@@ -1908,7 +2003,7 @@ class ChatbotController extends Controller {
               // already refunded the reservation and supplies a localized
               // explanation in `answer`. Do not replace it with the internal
               // machine code (`timeout`) in the UI.
-              this.addMessage("error", terminalErrorMessage(data))
+              this._showTurnError(requestState, terminalErrorMessage(data))
             } else {
               if (requestState.conversationContextEpoch !== undefined &&
                   requestState.conversationContextEpoch !== (this._conversationContextEpoch || 0)) {
@@ -1963,6 +2058,7 @@ class ChatbotController extends Controller {
               if (!rendered) return false
 
               this.conversationHistory.push(assistantHistoryEntry(data, this.lastAnalyticId))
+          this._refreshResearchDepthState?.()
               if (this.conversationHistory.length > 50) {
                 this.conversationHistory = this.conversationHistory.slice(-50)
               }
@@ -1995,7 +2091,7 @@ class ChatbotController extends Controller {
       // Safety net: if stream ended without a 'result' event, clean up loading state
       if (this.loadingValue) {
         this._finishLoading()
-        this.addMessage("error", incompleteResponseMessage(this.languageValue))
+        this._showTurnError(requestState, incompleteResponseMessage(this.languageValue))
       }
     } catch (streamError) {
       // User-initiated abort (clearChat/newConversation): the read was cancelled
@@ -2018,7 +2114,7 @@ class ChatbotController extends Controller {
       } else {
         console.error("SSE stream error:", streamError)
         this._finishLoading()
-        this.addMessage("error", disconnectMessage(this.languageValue))
+        this._showTurnError(requestState, disconnectMessage(this.languageValue))
       }
     }
 
@@ -2102,10 +2198,10 @@ class ChatbotController extends Controller {
     const brand = this._siteBrandName?.() || 'WetWijzer'
 
     const msgs = loggedIn ? {
-      nl: `🔒 Standaard bewaren wij geen chatgeschiedenis. Met Geschiedenis wordt zij serverversleuteld opgeslagen en kan ${brand} ze technisch lezen; met een opslagwachtwoord wordt zij eerst in uw browser versleuteld en kunnen wij ze niet ontsleutelen. Uw actuele vraag en relevante context worden tijdelijk verwerkt door ${brand} en de gekozen AI-provider. Credits betalen het gegenereerde antwoord; het bewaren van geschiedenis is een afzonderlijke stap.`,
-      fr: `🔒 Par défaut, nous ne conservons pas l'historique. Avec Historique, il est chiffré sur le serveur mais reste techniquement lisible par ${brand} ; avec un mot de passe de stockage, il est d'abord chiffré dans votre navigateur et nous ne pouvons pas le déchiffrer. Votre question actuelle et le contexte pertinent sont traités temporairement par ${brand} et le fournisseur d'IA choisi. Les crédits paient la réponse générée ; l'enregistrement de l'historique est une étape distincte.`,
-      de: `🔒 Standardmäßig speichern wir keinen Chatverlauf. Mit Verlauf wird er serverseitig verschlüsselt, bleibt für ${brand} aber technisch lesbar; mit Speicherpasswort wird er zuerst im Browser verschlüsselt und kann von uns nicht entschlüsselt werden. Ihre aktuelle Frage und der relevante Kontext werden vorübergehend von ${brand} und dem gewählten KI-Anbieter verarbeitet. Credits bezahlen die erzeugte Antwort; das Speichern des Verlaufs ist ein separater Schritt.`,
-      en: `🔒 By default, we do not save chat history. With History, it is encrypted on the server but remains technically readable by ${brand}; with a storage password, it is first encrypted in your browser and we cannot decrypt it. Your current question and relevant context are temporarily processed by ${brand} and the selected AI provider. Credits pay for the generated answer; saving history is a separate step.`
+      nl: `🔒 Uw gesprek wordt alleen bewaard met Geschiedenis. Zonder opslagwachtwoord kan ${brand} de versleutelde geschiedenis technisch lezen. Met een opslagwachtwoord wordt ze eerst in uw browser versleuteld en kan ${brand} ze niet lezen. Uw vraag en context worden tijdelijk verwerkt door ${brand} en uw AI-provider.`,
+      fr: `🔒 Votre conversation n’est conservée qu’avec Historique. Sans mot de passe de stockage, ${brand} peut techniquement lire l’historique chiffré. Avec un mot de passe de stockage, il est d’abord chiffré dans votre navigateur et ${brand} ne peut pas le lire. Votre question et son contexte sont traités temporairement par ${brand} et votre fournisseur d’IA.`,
+      de: `🔒 Ihre Unterhaltung wird nur mit Verlauf gespeichert. Ohne Speicherpasswort kann ${brand} den verschlüsselten Verlauf technisch lesen. Mit einem Speicherpasswort wird er zuerst im Browser verschlüsselt, und ${brand} kann ihn nicht lesen. Ihre Frage und ihr Kontext werden vorübergehend von ${brand} und Ihrem KI-Anbieter verarbeitet.`,
+      en: `🔒 Your conversation is saved only with History. Without a storage password, ${brand} can technically read the encrypted history. With a storage password, it is first encrypted in your browser and ${brand} cannot read it. Your question and context are temporarily processed by ${brand} and your AI provider.`
     } : {
       nl: `🔒 Er wordt geen chatgeschiedenis bewaard. Uw actuele vraag en relevante context worden tijdelijk verwerkt door ${brand} en de gekozen AI-provider om het antwoord te maken; beperkte technische metadata kan worden gelogd.`,
       fr: `🔒 Aucun historique de conversation n'est conservé. Votre question actuelle et le contexte pertinent sont traités temporairement par ${brand} et le fournisseur d'IA choisi pour produire la réponse ; des métadonnées techniques limitées peuvent être journalisées.`,
@@ -2307,7 +2403,11 @@ class ChatbotController extends Controller {
   // The intelligence levels this page offers, in server order. Parsing lives
   // in the service so what the user is offered can be tested without a browser.
   _intelligenceChoices() {
-    return readIntelligenceChoices(document, this.languageValue || 'nl')
+    const legacy = readIntelligenceChoices(document, this.languageValue || 'nl')
+    if (legacy.length) return legacy
+    const seen = new Set()
+    const options = this._allModelOptions || this._allWidgetModelOptions || Array.from(document.querySelectorAll('#model-select option, #widget-model-select option'))
+    return options.filter(option => { if (seen.has(option.dataset.intelligence)) return false; seen.add(option.dataset.intelligence); return true }).map((option, index) => ({ id: option.dataset.intelligence, index, locked: option.disabled && option.dataset.modelAvailable !== 'false', tier: option.dataset.tier || 'pro', name: option.dataset.modelName || option.value, desc: '', element: option }))
   }
 
   _bestUnlockedChoice(choices, excludeId) {
@@ -2332,6 +2432,9 @@ class ChatbotController extends Controller {
     this._selectedLevelLocked = false
     this._selectedLevelTier = choice.tier
     this.intelligenceValue = choice.id
+    const option = this._syncModelDropdowns(choice.id, choice.element?.value)
+    this._applyModelReasoningCapabilities(option)
+    this.savePreferences()
   }
 
   // Shown when a question is sent with an intelligence level the account
@@ -2566,31 +2669,40 @@ class ChatbotController extends Controller {
 
       // Preserve the user's intended model family across portfolio upgrades.
       // Generic dropdown fallback would silently select another model in the
-      // same tier (for example GPT-5 instead of Terra).
+      // same tier rather than silently resetting to its default model.
       const migration = migrateChatbotModelPreference(savedPreferences)
       const chatPrefs = migration.preferences
-      if (migration.migrated) prefsStore.set('chatbot', chatPrefs)
+      if (migration.migrated && !this._heroOverrideActive && !this._modelChoiceTouched) prefsStore.set('chatbot', chatPrefs)
 
       // Skip intelligence if hero just applied an override (prevents async race)
-      if (chatPrefs.intelligence && !this._heroOverrideActive) this.intelligenceValue = chatPrefs.intelligence
-      if (chatPrefs.model && !this._heroOverrideActive) this.modelOverrideValue = chatPrefs.model
+      if (chatPrefs.intelligence && !this._heroOverrideActive && !this._modelChoiceTouched) this.intelligenceValue = chatPrefs.intelligence
+      if (chatPrefs.model && !this._heroOverrideActive && !this._modelChoiceTouched) this.modelOverrideValue = chatPrefs.model
       // Profile/category intentionally NOT restored: always starts at "general"
       // and auto-sets when user clicks a sample question.
       if (chatPrefs.source && !this._heroOverrideActive) this.sourceValue = chatPrefs.source
-      if (chatPrefs.reasoningLevel && !this._heroOverrideActive) this.reasoningLevelValue = chatPrefs.reasoningLevel
+      if (!this._heroOverrideActive && !this._researchDepthTouched) {
+        this.researchDepthValue = chatPrefs.researchDepth
+          ? this._normalizedResearchDepth(chatPrefs.researchDepth)
+          : this._depthFromLegacyReasoning(chatPrefs.reasoningLevel)
+      }
+      if (chatPrefs.reasoningLevel && !this._heroOverrideActive && !this._researchDepthTouched) this.reasoningLevelValue = chatPrefs.reasoningLevel
     } catch (e) {
       // Corrupted prefs - ignore
     }
   }
 
   savePreferences() {
+    // Sources/profile/reasoning can change before the model preference arrives.
+    // Do not persist the temporary default over an unknown saved model choice.
+    if (this._modelPreferencesHydrated !== true && !this._modelChoiceTouched && !this._heroOverrideActive) return
     try {
       prefsStore.set('chatbot', {
         intelligence: this.intelligenceValue,
         model: this.modelOverrideValue,
         // Profile/category intentionally NOT saved: resets to "general" each session.
         source: this.sourceValue,
-        reasoningLevel: this.reasoningLevelValue
+        reasoningLevel: this.reasoningLevelValue,
+        researchDepth: this._normalizedResearchDepth()
       })
     } catch (e) {
       // Profile save failed - ignore
@@ -2600,17 +2712,22 @@ class ChatbotController extends Controller {
   // Wait for server-side preferences to load, then re-sync everything.
   // Called once from connect(). The eager prefs.init() in application.js
   // starts the fetch; this just awaits its completion.
-  async _initPreferencesAsync() {
+  async _initPreferencesAsync(token) {
     try {
       await prefsStore.init()
+      if (prefsStore.hydrated !== true || !this._modelPreferencesConnected || token !== this._modelPreferenceLoadToken) return false
+      this._modelPreferencesHydrated = true
       // Re-load values now that the server cache is populated
       this.loadPreferences()
       // Re-sync all UI controls to match loaded preferences
       this._syncSlidersFromPreferences()
       this._syncWidgetPills()
       this._syncSourceCheckboxes()
+      if (this._researchDepthTouched) this.savePreferences()
+      return true
     } catch (e) {
-      // Server unreachable - continue with defaults
+      // Preserve an unknown saved model: only an explicit choice may send.
+      return false
     }
   }
 
@@ -2701,8 +2818,12 @@ class ChatbotController extends Controller {
       ]
       const model = options.find(option => option.value === params.model && option.dataset.intelligence === params.intelligence)
       if (model) this.modelOverrideValue = model.value
+      if (params.linked_research === 'true' && ['low', 'medium', 'high'].includes(params.reasoning_effort || params.reasoning_level)) {
+        this.reasoningLevelValue = params.reasoning_effort || params.reasoning_level
+      }
       const sources = (params.sources || '').split(',').filter(source => ['legislation', 'jurisprudence', 'parliamentary'].includes(source))
       if (sources.length) this.sourceValue = Array.from(new Set(sources)).join(',')
+      if (params.research_depth) this.researchDepthValue = this._normalizedResearchDepth(params.research_depth)
       this._syncSlidersFromPreferences()
       this._syncWidgetPills()
       this._syncSourceCheckboxes()
@@ -2725,7 +2846,9 @@ class ChatbotController extends Controller {
 
     // Clear the hash fragment from the URL bar without triggering navigation
     history.replaceState(null, '', window.location.pathname + window.location.search)
-    return { question: q.slice(0, 2000), draft: params.draft === '1' }
+    // The server's question limit (LegalChatbotService::MAX_QUESTION_LENGTH),
+    // cut in code points as the server and the count under the box measure.
+    return { question: Array.from(q).slice(0, 2000).join(''), draft: params.draft === '1' }
   }
 
   _applyHashQuestion({ question, draft }) {
@@ -2734,6 +2857,7 @@ class ChatbotController extends Controller {
         this.inputTarget.value = question
         this._autoResize()
         this._updateLengthHint()
+        this._updateQuestionLength()
         this.inputTarget.focus()
       }
       return
@@ -2755,6 +2879,7 @@ class ChatbotController extends Controller {
   // (see clearChat) is what makes a cleared conversation stop auto-restoring.
   _clearSavedConversation() {
     this.conversationHistory = []
+    this._refreshResearchDepthState?.()
     this.conversationId = null
     this.messageCount = 0
     this._currentLawNumac = null
@@ -2805,6 +2930,7 @@ class ChatbotController extends Controller {
       if (!safeMessages.length) return
       this.conversationId = data.id
       this.conversationHistory = safeMessages
+      this._refreshResearchDepthState?.()
       this.messageCount = data.message_count || safeMessages.length
       if (this.hasMessagesTarget) {
         this._renderMessagesFromData(safeMessages)

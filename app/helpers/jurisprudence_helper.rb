@@ -49,6 +49,13 @@ module JurisprudenceHelper
   # holds none of them.
   RAADVST_PDF_URL = %r{\Ahttps://www\.raadvst-consetat\.be/dbx/(adviezen|gutachten)/(\d{1,6})\.pdf\z}
 
+  # Whether the row is an advisory opinion of the Council's Legislation
+  # section (RVSADV keys): an advice, not a judgment and not a rule in force,
+  # which the page must not call an "arrest" (WW-RVSADV-01).
+  def advisory_opinion?(kase)
+    kase[:case_number].to_s.start_with?('RVSADV:')
+  end
+
   # @param kase [Hash] the case hash from the controller (:url, :language_id)
   # @return [String] 'NL', 'FR' or 'DE'
   def juportal_language(kase)

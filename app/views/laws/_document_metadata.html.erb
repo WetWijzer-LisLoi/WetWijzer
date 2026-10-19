@@ -11,7 +11,7 @@
   <div class="space-y-3 text-xs mt-4" data-collapse-target="content">
     <!-- Numac Number -->
     <div class="flex flex-col">
-      <dt class="font-medium text-gray-500 dark:text-gray-400 capitalize tracking-wide">
+      <dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide">
         <%= t(:numac) %>
       </dt>
       <dd class="mt-1 text-gray-900 dark:text-gray-300 font-mono bg-gray-50 dark:bg-gray-900 px-2 py-1 rounded text-xs metadata-numac-value">
@@ -21,7 +21,7 @@
 
     <!-- Source -->
     <div class="flex flex-col">
-      <dt class="font-medium text-gray-500 dark:text-gray-400 capitalize tracking-wide">
+      <dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide">
         <%= case I18n.locale when :fr then 'Source' when :de then 'Quelle' when :en then 'Source' else 'Bron' end %>
       </dt>
       <%# A German text names its publisher (GermanTextProvenance) %>
@@ -31,7 +31,7 @@
 
     <!-- Status -->
     <div class="flex flex-col">
-      <dt class="font-medium text-gray-500 dark:text-gray-400 capitalize tracking-wide"><%= I18n.locale == :fr ? 'Statut' : 'Status' %></dt>
+      <dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide"><%= I18n.locale == :fr ? 'Statut' : 'Status' %></dt>
       <dd class="mt-1">
         <% if law.respond_to?(:is_abolished) && law.is_abolished == 1 %>
           <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 metadata-status-badge"><%= case I18n.locale when :fr then 'Abrogé' when :de then 'Aufgehoben' when :en then 'Repealed' else 'Opgeheven' end %></span>
@@ -43,7 +43,7 @@
     
     <!-- Language -->
     <div class="flex flex-col">
-      <dt class="font-medium text-gray-500 dark:text-gray-400 capitalize tracking-wide">
+      <dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide">
         <%= t(:language) %>
       </dt>
       <dd class="mt-1 text-gray-900 dark:text-gray-300">
@@ -57,7 +57,7 @@
     <!-- Document Type -->
     <% if law.law_type_id.present? %>
       <div class="flex flex-col">
-        <dt class="font-medium text-gray-500 dark:text-gray-400 capitalize tracking-wide">
+        <dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide">
           <%= t(:type) %>
         </dt>
         <dd class="mt-1 text-gray-900 dark:text-gray-300">
@@ -95,7 +95,7 @@
         <!-- Publication Date -->
         <% if content.publication_date.present? %>
           <div class="flex flex-col">
-            <dt class="font-medium text-gray-500 dark:text-gray-400 capitalize tracking-wide">
+            <dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide">
               <%= t(:publication_date, default: 'Publicatiedatum') %>
             </dt>
             <dd class="mt-1 text-gray-900 dark:text-gray-300 text-xs">
@@ -107,7 +107,7 @@
         <!-- Effective Date -->
         <% if content.effective_date.present? %>
           <div class="flex flex-col">
-            <dt class="font-medium text-gray-500 dark:text-gray-400 capitalize tracking-wide">
+            <dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide">
               <%= t(:date_in_effect) %>
             </dt>
             <dd class="mt-1 text-gray-900 dark:text-gray-300 text-xs">
@@ -125,7 +125,7 @@
     <% dossier_links = ParliamentaryRelations.metadata_dossiers(law.numac, content) %>
     <% if dossier_links.any? %>
       <div class="flex flex-col">
-        <dt class="font-medium text-gray-500 dark:text-gray-400 capitalize tracking-wide">
+        <dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide">
           <%= t(:parliamentary_preparations, default: 'Parlementaire werkzaamheden') %>
         </dt>
         <dd class="mt-1 text-gray-900 dark:text-gray-300 space-y-1">

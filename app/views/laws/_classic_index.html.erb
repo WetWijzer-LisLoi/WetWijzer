@@ -13,7 +13,7 @@
   </p>
 </div>
 
-<%= render 'shared/site_tour' %>
+<%= render 'shared/site_tour_invitation', classic_mode: true if request.path == root_path %>
 
 <form action="<%= laws_path %>" method="get">
   <% if classic_theme != 'system' %><input type="hidden" name="classic_theme" value="<%= classic_theme %>" /><% end %>
@@ -95,11 +95,11 @@
         <tr>
           <th>
             <% if current_sort == 'date_desc' %>
-              <a href="<%= laws_path(sort_base.merge(sort: 'date_asc')) %>"><%= t(:date_label) %> &darr;</a>
+              <a href="<%= laws_path(sort_base.merge(sort: 'date_asc')) %>"><%= t(:date_label).upcase_first %> &darr;</a>
             <% elsif current_sort == 'date_asc' %>
-              <a href="<%= laws_path(sort_base.merge(sort: 'date_desc')) %>"><%= t(:date_label) %> &uarr;</a>
+              <a href="<%= laws_path(sort_base.merge(sort: 'date_desc')) %>"><%= t(:date_label).upcase_first %> &uarr;</a>
             <% else %>
-              <a href="<%= laws_path(sort_base.merge(sort: 'date_desc')) %>"><%= t(:date_label) %></a>
+              <a href="<%= laws_path(sort_base.merge(sort: 'date_desc')) %>"><%= t(:date_label).upcase_first %></a>
             <% end %>
           </th>
           <th>

@@ -16,15 +16,16 @@
     </p>
   </noscript>
 
-  <div class="mt-8 flex gap-6">
+  <div class="mt-8 flex flex-col md:flex-row gap-6">
     <%# Folder Sidebar %>
-    <aside class="w-56 shrink-0 hidden md:block" data-bookmarks-page-target="sidebar">
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sticky top-4">
+    <aside class="w-full md:w-56 min-w-0 shrink-0" data-bookmarks-page-target="sidebar">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:sticky top-4">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 capitalize tracking-wide">
+          <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 tracking-wide">
             <%= case I18n.locale when :fr then 'Dossiers' when :de then 'Ordner' when :en then 'Folders' else 'Mappen' end %>
           </h2>
-          <button type="button" class="p-1 text-gray-400 hover:text-(--accent-500) transition-colors" data-action="click->bookmarks-page#showCreateFolder" title="<%= case I18n.locale when :fr then 'Nouveau dossier' when :de then 'Neuer Ordner' when :en then 'New folder' else 'Nieuwe map' end %>">
+          <% new_folder_label = case I18n.locale when :fr then 'Nouveau dossier' when :de then 'Neuer Ordner' when :en then 'New folder' else 'Nieuwe map' end %>
+          <button type="button" class="inline-flex min-h-9 min-w-9 items-center justify-center p-1 text-gray-400 hover:text-(--accent-500) transition-colors" data-action="click->bookmarks-page#showCreateFolder" aria-label="<%= new_folder_label %>" title="<%= new_folder_label %>">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
           </button>
         </div>
@@ -45,7 +46,7 @@
         </div>
 
         <%# Folder list %>
-        <ul class="space-y-0.5" data-bookmarks-page-target="folderList">
+        <ul class="max-h-64 overflow-y-auto md:max-h-none md:overflow-visible space-y-0.5" data-bookmarks-page-target="folderList">
           <%# Folders rendered dynamically by JS %>
         </ul>
       </div>
@@ -54,8 +55,8 @@
     <%# Main content %>
     <div class="flex-1 min-w-0">
       <%# Action bar %>
-      <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-        <div class="flex items-center gap-3">
+      <div data-testid="bookmarks-toolbar" class="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <div class="flex min-w-0 flex-wrap items-center gap-3">
           <span class="text-sm text-gray-600 dark:text-gray-300" data-bookmarks-page-target="count">
             0 <%= t('bookmarks.title').downcase %>
           </span>
@@ -76,7 +77,7 @@
             </div>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex min-w-0 max-w-full flex-wrap items-center gap-2">
           <button type="button"
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-300 dark:border-gray-600 transition-colors duration-150"
                   data-action="click->bookmarks-page#exportBookmarks"

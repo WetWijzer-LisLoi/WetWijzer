@@ -1,0 +1,7 @@
+<%# Populated once after 50 seconds by the shared chatbot stopwatch. Keep it
+    separate from the changing phase/timer so assistive technology hears it once.
+    Initially empty and visually hidden, but registered as a live region while
+    loading; display:none would prevent some readers announcing its first text. %>
+<p data-chatbot-target="longWaitNotice"
+   role="status" aria-live="polite" aria-atomic="true"
+   class="sr-only mt-2 text-xs leading-relaxed text-gray-600 dark:text-gray-300 text-center"></p>

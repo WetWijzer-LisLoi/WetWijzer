@@ -1,35 +1,35 @@
 <% if @laws.present? %>
   <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden w-full">
     <%# Results count bar with sort dropdown %>
-    <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-700/50">
+    <div class="search-results-tools flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-700/50">
       <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">
         <%= t(:results_found, count: (@pagy&.count || @laws.size)) %>
       </span>
       <%= render 'laws/sort_dropdown' %>
     </div>
     <div class="overflow-x-auto w-full">
-      <table class="w-full results-table">
-        <thead class="bg-linear-to-r from-(--accent-500)/5 to-(--accent-500)/10 dark:from-(--accent-500)/20 dark:to-(--accent-500)/30">
-          <tr class="border-b-2 border-(--accent-500)/20 dark:border-(--accent-500)/50">
-            <th class="w-28 px-2 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 capitalize tracking-wider whitespace-nowrap">
-              <%= sort_link_to t(:date_label), 'date' %>
+      <table role="table" class="w-full results-table results-table--law" aria-label="<%= t('global_search.legislation') %>">
+        <thead role="rowgroup" class="bg-linear-to-r from-(--accent-500)/5 to-(--accent-500)/10 dark:from-(--accent-500)/20 dark:to-(--accent-500)/30">
+          <tr role="row" class="border-b-2 border-(--accent-500)/20 dark:border-(--accent-500)/50">
+            <th role="columnheader" scope="col" class="result-sort w-28 px-2 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider whitespace-nowrap">
+              <%= sort_link_to t(:date_label).upcase_first, 'date' %>
             </th>
-            <th class="w-full px-4 py-3 text-left text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 capitalize tracking-wider">
+            <th role="columnheader" scope="col" class="result-sort w-full px-4 py-3 text-left text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider">
               <%= sort_link_to t(:title), 'title' %>
             </th>
-            <th class="w-14 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 capitalize tracking-wider whitespace-nowrap">
+            <th role="columnheader" scope="col" class="w-14 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider whitespace-nowrap">
               <span class="sr-only"><%= t(:details).capitalize() %></span>
               <span class="inline-flex items-center justify-center w-6 h-6 mx-auto" title="<%= t(:details).capitalize() %>">D</span>
             </th>
-            <th class="w-14 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 capitalize tracking-wider whitespace-nowrap">
+            <th role="columnheader" scope="col" class="w-14 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider whitespace-nowrap">
               <span class="sr-only">Justel</span>
               <span class="inline-flex items-center justify-center w-6 h-6 mx-auto" title="Justel">J</span>
             </th>
-            <th class="w-14 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 capitalize tracking-wider whitespace-nowrap">
+            <th role="columnheader" scope="col" class="w-14 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider whitespace-nowrap">
               <span class="sr-only">Reflex</span>
               <span class="inline-flex items-center justify-center w-6 h-6 mx-auto" title="Reflex">R</span>
             </th>
-            <th class="w-10 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 capitalize tracking-wider whitespace-nowrap no-print">
+            <th role="columnheader" scope="col" class="w-10 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider whitespace-nowrap no-print">
               <span class="sr-only"><%= t('bookmarks.title') %></span>
               <span class="inline-flex items-center justify-center w-6 h-6 mx-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" title="<%= t('bookmarks.title') %>">
@@ -39,7 +39,7 @@
             </th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-(--border-divider) dark:bg-gray-800">
+        <tbody role="rowgroup" class="divide-y divide-gray-100 dark:divide-(--border-divider) dark:bg-gray-800">
           <%= render partial: 'laws/law', collection: @laws %>
         </tbody>
       </table>

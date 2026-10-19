@@ -156,8 +156,21 @@ module LegalChatbot
     # UI hint the model sometimes rewords ("niveau d'intensité", "via les
     # paramètres ⚙"), so any line that starts like it is the tip. The long
     # privacy tip comes before the short one it extends.
-    FOLLOW_UP_TIP_DE = '💡 Stellen Sie gerne eine Folgefrage für mehr Details, oder probieren Sie ein höheres ' \
-                       'Intelligenz- und/oder Denkniveau (falls möglich) über die Einstellungen ⚙.'
+    FOLLOW_UP_TIP_DE = '💡 Stellen Sie eine Folgefrage für mehr Details. Unter Einstellungen ⚙ wählen Sie Ihre ' \
+                       'Modell-Denkmodus-Kombination mit der gekoppelten Leiste oder Liste; prüfen Sie die angezeigten Credits vor Senden.'
+    # The earlier wordings of the German tip (c51720259, 4dde7f2ee). German
+    # answers recorded or kept in a conversation before 2026-10-11 still end
+    # with one; prose strips them like the current line, as
+    # FOLLOW_UP_TIP_FR_TEXT recognises the older French tip. Left in, the
+    # line moved the negation tally's line pairing, and the replay of every
+    # served German answer since v3 refused faithful translations
+    # ("negations", q0377 t1).
+    LEGACY_FOLLOW_UP_TIPS_DE = [
+      '💡 Stellen Sie gerne eine Folgefrage für mehr Details, oder probieren Sie ein höheres ' \
+      'Intelligenz- und/oder Denkniveau (falls möglich) über die Einstellungen ⚙.',
+      '💡 Stellen Sie eine Folgefrage für mehr Details. Unter Einstellungen ⚙ wählen Sie Modell ' \
+      'und Rechercheumfang getrennt; prüfen Sie die angezeigten Credits vor Senden.'
+    ].freeze
     PRIVACY_TIP_FR = '⚠️ Conseil: évitez les données personnelles dans vos questions.'
     PRIVACY_TIP_DE = '⚠️ Tipp: vermeiden Sie persönliche Daten in Ihren Fragen.'
     PRIVACY_NOTICE_FR = "#{PRIVACY_TIP_FR} WetWijzer n'enregistre pas votre question par défaut; pour y répondre, " \
@@ -181,10 +194,13 @@ module LegalChatbot
     # reprendre la question prudemment" into "um die Frage sorgfältig zu
     # beantworten", as if the listed sources answered it.
     RENDERED_FIXED_LINES = %i[
-      localized_guarded_source_list_fallback_intro localized_verified_fallback_heading
+      localized_guarded_source_list_fallback_intro localized_guarded_source_list_statement_fallback_intro
+      localized_verified_fallback_heading
       high_confidence_citation_heading localized_consulted_source_note
     ].freeze
-    FOLLOW_UP_TIP_FR_TEXT = "N['’]hésitez pas à poser une question complémentaire[^\\n]*?"
+    # Retain recognition of older French histories as well as the new research
+    # depth hint; neither footer is left to an unconstrained model translation.
+    FOLLOW_UP_TIP_FR_TEXT = "(?:N['’]hésitez pas à poser une question complémentaire|Posez une question complémentaire)[^\\n]*?"
     FIXED_LINE_PATTERNS = [
       [Regexp.new(NO_INFORMATION_FR.source + NO_INFORMATION_RETRY_FR.source), "#{NO_INFORMATION_DE} #{NO_INFORMATION_RETRY_DE}"],
       [NO_INFORMATION_FR, NO_INFORMATION_DE],
@@ -196,7 +212,14 @@ module LegalChatbot
       [/(?:[*_]+💡[*_]+[ \t]*#{FOLLOW_UP_TIP_FR_TEXT}|💡[ \t]*(?<tip_markers>[*_]*)#{FOLLOW_UP_TIP_FR_TEXT}\k<tip_markers>)(?=[*_]*[ \t]*$)/,
        FOLLOW_UP_TIP_DE],
       [Regexp.new(Regexp.escape(PRIVACY_TIP_FR)), PRIVACY_TIP_DE],
-      [/Ceci n['’]est pas un avis juridique officiel\./, 'Dies ist keine offizielle Rechtsberatung.']
+      [/Ceci n['’]est pas un avis juridique officiel\./, 'Dies ist keine offizielle Rechtsberatung.'],
+      # The quote guard's note before f208ec24a (2026-10-12), still in answers
+      # recorded or kept in a conversation before then: a fixed line like its
+      # successor (AnswerGuards#missing_quote_message, read through
+      # RENDERED_FIXED_LINES), or its "Aucune" moved the negation tally's line
+      # pairing (v8 q0181 t2).
+      [/Aucune citation exacte disponible dans les sources consultées\./,
+       'In den konsultierten Quellen ist kein exaktes Zitat verfügbar.']
     ].freeze
 
     # A quotation (.quotations): its blockquote lines, as
@@ -358,16 +381,12 @@ module LegalChatbot
 
       # German follow-up suggestions whatever the question's language (the
       # reader is on the German site), with the general German list for topics
-      # without one. Same map and keyword walk as generate_follow_up_suggestions.
+      # without one. Topic selection is shared with the ordinary delivery path.
       def german_suggestions(question)
         map = LegalChatbotService::FOLLOW_UP_SUGGESTIONS
         default = map.fetch('_default').fetch(:de)
-        text = question.to_s.downcase
-        map.each do |keyword, suggestions|
-          next if keyword == '_default'
-          return suggestions[:de] || default if text.include?(keyword)
-        end
-        default
+        topic = LegalChatbot::LanguageDetection.follow_up_suggestion_topic(question, map, language: :de)
+        map.fetch(topic)[:de] || default
       end
 
       # French text -> German text for every message the code writes as a
@@ -485,6 +504,10 @@ module LegalChatbot
     # the controller records in analytics) is restored afterwards; the
     # translation's usage is returned instead.
     class Client
+      # The browser question's dispatch receipt and what these calls are for
+      # it (owner policy 2026-10-18); given to every client built per call.
+      attr_accessor :provider_work_receipt, :provider_work_kind
+
       def initialize(llm_factory: nil)
         @llm_factory = llm_factory || lambda {
           LlmClient.new(model_override: MODEL, language: 'de', reasoning_effort: 'low')
@@ -496,6 +519,10 @@ module LegalChatbot
         answer_tokens = Thread.current[:last_chat_tokens]
         begin
           llm = @llm_factory.call
+          if llm.respond_to?(:provider_work_receipt=)
+            llm.provider_work_receipt = provider_work_receipt
+            llm.provider_work_kind = provider_work_kind
+          end
           text = Timeout.timeout(timeout) do
             llm.call_llm(messages, temperature: TEMPERATURE, max_tokens: max_tokens)
           end
@@ -532,6 +559,15 @@ module LegalChatbot
       @logger = logger
       @clock = clock
       @rejected_attempts = []
+    end
+
+    # The browser question's paid-AI dispatch receipt (owner policy
+    # 2026-10-18), passed explicitly by the controller.
+    def provider_work_receipt=(receipt)
+      return unless @client.respond_to?(:provider_work_receipt=)
+
+      @client.provider_work_receipt = receipt
+      @client.provider_work_kind = 'answer_translation'
     end
 
     # The last German text a check refused, or nil (see #rejected_attempts).
@@ -642,7 +678,7 @@ module LegalChatbot
       text = self.class.replace_quotations(text) { "\n" }
       text = text.split(/\n{2,}/).grep_v(Orchestrator::RETRIEVAL_NOTICE_PARAGRAPH).join("\n\n")
       text = text.gsub(LINK_PATTERN, ' ').gsub(self.class.fixed_line_pattern, ' ')
-      self.class.fixed_lines.map(&:last).uniq.reduce(text) { |stripped, line| stripped.gsub(line, ' ') }
+      (self.class.fixed_lines.map(&:last) + LEGACY_FOLLOW_UP_TIPS_DE).uniq.reduce(text) { |stripped, line| stripped.gsub(line, ' ') }
     end
 
     private

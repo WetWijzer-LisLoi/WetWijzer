@@ -10,13 +10,59 @@ module ChatbotApi
     VALID_REASONING_EFFORTS = %w[none low medium high].freeze
 
     attr_reader :intelligence, :model, :model_override, :credits_to_deduct,
-                :reasoning_effort, :requested_reasoning_effort
+                :reasoning_effort, :requested_reasoning_effort, :unavailable_model, :research_depth
 
-    def initialize(params:, conversation:, service_bypass:, user_tier:)
+    def self.linked_research_request?(params)
+      [true, 'true'].include?(params[:linked_research])
+    end
+
+    # A linked option carries its actual model, not a user-controlled group or
+    # retrieval budget. A stale group cannot change its model, profile or price.
+    def self.linked_requested_model(params)
+      explicit = [params[:model_override], params[:model]].find do |value|
+        value.is_a?(String) && LegalChatbotService::AVAILABLE_MODELS.key?(value.strip)
+      end
+      return explicit.strip if explicit
+
+      level = params[:intelligence].to_s.strip
+      LegalChatbotService.model_for_intelligence(level) if LegalChatbotService.valid_intelligence_level?(level)
+    end
+
+    # Run this before creating a conversation or reserving credits. An explicit
+    # pending choice must never silently turn into the tier's cheapest model.
+    def self.unavailable_requested_model(params)
+      requested = [params[:model_override], params[:model]].map { |value| value.to_s.strip }
+      return if requested.any? { |model| LegalChatbot::ModelsConfig::RETIRED_MODEL_REPLACEMENTS.key?(model) }
+
+      pending = requested.find { |model| LegalChatbotService::AVAILABLE_MODELS.dig(model, :deployed) == false }
+      return pending if pending
+
+      if linked_research_request?(params)
+        selected = linked_requested_model(params)
+        return selected if LegalChatbotService::AVAILABLE_MODELS.dig(selected, :deployed) == false
+
+        return
+      end
+
+      intelligence = params[:intelligence].to_s.strip
+      return unless LegalChatbotService.valid_intelligence_level?(intelligence)
+
+      override = params[:model_override].to_s.strip
+      selected = if LegalChatbotService::AVAILABLE_MODELS.key?(override) &&
+                    LegalChatbotService.model_in_intelligence_level?(intelligence, override)
+                   override
+                 else
+                   LegalChatbotService.model_for_intelligence(intelligence)
+                 end
+      selected if LegalChatbotService::AVAILABLE_MODELS.dig(selected, :deployed) == false
+    end
+
+    def initialize(params:, conversation:, service_bypass:, user_tier:, reasoning_access: nil)
       @params = params
       @conversation = conversation
       @service_bypass = service_bypass
       @user_tier = user_tier
+      @reasoning_access = reasoning_access.nil? ? @user_tier.to_s.in?(%w[pro subscriber]) : reasoning_access == true
       resolve!
     end
 
@@ -28,6 +74,18 @@ module ChatbotApi
       @model_tier_mismatch
     end
 
+    def retired_model?
+      @retired_model
+    end
+
+    def linked_research?
+      @linked_research
+    end
+
+    def research_depth_denied?
+      @research_depth_denied
+    end
+
     private
 
     def resolve!
@@ -37,8 +95,22 @@ module ChatbotApi
       @credits_to_deduct = 1
       @reasoning_effort = nil
       @requested_reasoning_effort = nil
+      @linked_research = self.class.linked_research_request?(@params)
+      @research_depth = LegalChatbotService.normalize_research_depth(@params[:research_depth])
+      @research_depth_denied = false
       @model_tier_denied = false
       @model_tier_mismatch = false
+      @retired_model = [@params[:model], @params[:model_override]].any? do |requested|
+        LegalChatbot::ModelsConfig::RETIRED_MODEL_REPLACEMENTS.key?(requested.to_s.strip)
+      end
+      @unavailable_model = self.class.unavailable_requested_model(@params)
+      if @unavailable_model
+        @model = @unavailable_model
+        @credits_to_deduct = 0
+        return
+      end
+
+      return resolve_linked! if @linked_research
 
       if @intelligence.present? && LegalChatbotService.valid_intelligence_level?(@intelligence)
         @model = LegalChatbotService.model_for_intelligence(@intelligence)
@@ -54,7 +126,7 @@ module ChatbotApi
           end
         end
 
-        @requested_reasoning_effort = sanitized_requested_effort ||
+        @requested_reasoning_effort = research_requested_effort || sanitized_requested_effort ||
                                       LegalChatbotService.reasoning_effort_for_intelligence(@intelligence)
         @reasoning_effort = effective_reasoning_effort_for_chat(@model, @requested_reasoning_effort)
         # Charge only reasoning levels that map to a documented, distinct
@@ -66,27 +138,62 @@ module ChatbotApi
           @model
         )
       elsif @model.present? && LegalChatbotService::AVAILABLE_MODELS.key?(@model)
-        @requested_reasoning_effort = sanitized_requested_effort
+        @requested_reasoning_effort = research_requested_effort || sanitized_requested_effort
         @reasoning_effort = effective_reasoning_effort_for_chat(@model, @requested_reasoning_effort)
         @credits_to_deduct = LegalChatbotService.canonical_credits_for_model(@model) +
                              LegalChatbotService.reasoning_surcharge_for_model(@model, @reasoning_effort)
-        # Legacy model param must respect tier gating like everywhere else;
-        # previously a free user could request Pro-only models directly.
+        # Legacy model params respect the same canonical model access contract.
         @model_tier_denied = !@service_bypass &&
                              !LegalChatbotService.model_allowed?(@model, @user_tier)
       else
         @model = LegalChatbotService::CHAT_MODEL
         @credits_to_deduct = 1
+        if @research_depth
+          @requested_reasoning_effort = research_requested_effort
+          @reasoning_effort = effective_reasoning_effort_for_chat(@model, @requested_reasoning_effort)
+          @credits_to_deduct = LegalChatbotService.canonical_credits_for_model(@model) +
+                               LegalChatbotService.reasoning_surcharge_for_model(@model, @reasoning_effort)
+        end
       end
+
+      @research_depth_denied = !@service_bypass && !@reasoning_access && @research_depth == 'extensive'
 
       return if @service_bypass || @model_tier_denied
 
       @model_tier_denied = !LegalChatbotService.model_allowed?(@model, @user_tier)
     end
 
+    def resolve_linked!
+      @model = self.class.linked_requested_model(@params) || LegalChatbotService::CHAT_MODEL
+      @intelligence = LegalChatbotService.intelligence_level_for_model(@model)
+      @model_tier_denied = !@service_bypass && !LegalChatbotService.model_allowed?(@model, @user_tier)
+      @requested_reasoning_effort = sanitized_requested_effort || 'low'
+      @reasoning_effort = effective_reasoning_effort_for_chat(@model, @requested_reasoning_effort)
+      # Resolve the budget after the actual effort, including the private
+      # Mistral follow-up clamp. Neither a stale client category nor a mode
+      # that will not be used may buy a different research budget.
+      @research_depth = LegalChatbotService.research_depth_for_combination(@model, @reasoning_effort)
+      @research_depth_denied = !@service_bypass && !@reasoning_access && @research_depth == 'extensive'
+      @credits_to_deduct = LegalChatbotService.canonical_credits_for_model(@model) +
+                           LegalChatbotService.reasoning_surcharge_for_model(@model, @reasoning_effort)
+    end
+
     def sanitized_requested_effort
-      effort = @params[:reasoning_effort]&.to_s&.strip
+      value = @params[:reasoning_effort]
+      value = @params[:reasoning_level] if value.nil? && @linked_research
+      effort = value.is_a?(String) || value.is_a?(Symbol) ? value.to_s.strip : nil
       VALID_REASONING_EFFORTS.include?(effort) ? effort : nil
+    end
+
+    def research_requested_effort
+      return nil unless @research_depth
+
+      # Cached, unflagged depth clients preview low effort for regular accounts.
+      # Preserve that exact billing contract until they reload the linked UI;
+      # linked choices resolve their explicit variant in resolve_linked! instead.
+      # Model access and the extensive profile's Pro gate remain independent.
+      access = @service_bypass || @reasoning_access
+      access ? LegalChatbotService::RESEARCH_DEPTHS.fetch(@research_depth).fetch(:reasoning_effort) : 'low'
     end
 
     # Mistral Small high-reasoning follow-ups require the provider's typed

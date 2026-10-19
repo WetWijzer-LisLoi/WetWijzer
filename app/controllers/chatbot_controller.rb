@@ -44,12 +44,21 @@ class ChatbotController < ApplicationController
   # is processed transiently, then the question is not stored server-side or in
   # a question-bearing cookie.
   def create
-    q = params[:q].to_s.strip.truncate(2000)
+    # A form posts its line breaks as CRLF, which counted every break in the
+    # homepage box twice here: a question the box showed as fitting could be
+    # cut. And truncate appended "..." and the page then sent the cut
+    # question. The box now counts down to the limit and refuses to hand over
+    # more; anything longer that still arrives is cut to the limit and handed
+    # over as a draft to shorten, never sent.
+    q = params[:q].to_s.gsub(/\r\n?/, "\n").strip
+    too_long = q.length > LegalChatbotService::MAX_QUESTION_LENGTH
+    q = q[0, LegalChatbotService::MAX_QUESTION_LENGTH].rstrip if too_long
     base = chatbot_path
     if q.present?
       # URI-encode the question for safe hash fragment transport
       # Also pass profile if provided (from hero sample question clicks)
       fragment = "q=#{ERB::Util.url_encode(q)}"
+      fragment += '&draft=1' if too_long
       profile = params[:profile].to_s.strip
       fragment += "&profile=#{ERB::Util.url_encode(profile)}" if profile.present? && LegalChatbotService.profile_exists?(profile)
       hero_handoff_settings.each do |key, value|
@@ -80,9 +89,24 @@ class ChatbotController < ApplicationController
     model = params[:model]
     levels = LegalChatbotService::INTELLIGENCE_LEVELS
     settings = {}
-    if intelligence.is_a?(String) && levels.key?(intelligence)
-      settings['intelligence'] = intelligence
-      settings['model'] = model if model.is_a?(String) && levels[intelligence][:models].key?(model)
+    if ChatbotApi::ModelSelection.linked_research_request?(params)
+      selected = ChatbotApi::ModelSelection.linked_requested_model(params)
+      if selected
+        settings['linked_research'] = 'true'
+        settings['model'] = selected
+        settings['intelligence'] = LegalChatbotService.intelligence_level_for_model(selected)
+        effort = params[:reasoning_effort] || params[:reasoning_level]
+        settings['reasoning_level'] = effort if effort.is_a?(String) && ChatbotApi::ModelSelection::VALID_REASONING_EFFORTS.include?(effort)
+        settings['research_depth'] = LegalChatbotService.research_depth_for_combination(selected, settings['reasoning_level'])
+      end
+    else
+      if params[:research_depth].is_a?(String) && LegalChatbotService::RESEARCH_DEPTHS.key?(params[:research_depth])
+        settings['research_depth'] = params[:research_depth]
+      end
+      if intelligence.is_a?(String) && levels.key?(intelligence)
+        settings['intelligence'] = intelligence
+        settings['model'] = model if model.is_a?(String) && levels[intelligence][:models].key?(model)
+      end
     end
     if params[:sources].is_a?(String) && params[:sources].bytesize <= 256
       sources = params[:sources].split(',').select { |source| ChatbotSourceCategories::ALL.include?(source) }.uniq

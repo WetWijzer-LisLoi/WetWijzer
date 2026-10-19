@@ -1,0 +1,11 @@
+<% locale = local_assigns.fetch(:locale, I18n.locale) %>
+<div data-testid="research-depth-explanation">
+  <p><%= t('chatbot.research_depth.explanation', locale: locale) %></p>
+  <p><strong><%= t('chatbot.research_depth.credit_tick_unit', locale: locale) %></strong> <%= t('chatbot.research_depth.credit_tick_explanation', locale: locale) %></p>
+  <p><%= t('chatbot.research_depth.selection_linked_explanation', locale: locale) %> <%= t('chatbot.research_depth.model_explanation', locale: locale) %></p>
+  <ul>
+    <li><%= t('chatbot.research_depth.access_note', locale: locale) %></li>
+    <li><%= t('chatbot.research_depth.cost_note', locale: locale) %></li>
+    <li><%= t('chatbot.research_depth.verification_note', locale: locale) %></li>
+  </ul>
+</div>

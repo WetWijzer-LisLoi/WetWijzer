@@ -210,8 +210,8 @@ nl:
   title_details: "titel"
   toc: "inhoudstafel"
   toc_summary:
-    text: "Deze wet heeft een lange inhoudstafel van %{count} onderdelen. Die staat volledig, en doorzoekbaar, in de zijbalk."
-    open: "Inhoudstafel openen"
+    text: "De inhoudstafel hierboven telt %{count} onderdelen. Blader erdoor of zoek in de zijbalk."
+    open: "Zoeken in de zijbalk"
     to_text: "Naar de tekst"
     print: "De volledige inhoudstafel (%{count} onderdelen) staat op de webpagina."
   updates: "Deze tekst heeft de volgende tekst(en) gewijzigd"
@@ -426,6 +426,7 @@ nl:
     tagline: "Open-source zoekmachine voor Belgische wetgeving en rechtspraak"
     contact_us: "Contacteer ons:"
     github_tooltip: "Bekijk broncode op GitHub"
+    version_tooltip: "Versie van de toepassing"
     support_tooltip: "Ondersteun dit project"
     support_us: "Steun Ons"
     terms: "Gebruiksvoorwaarden"
@@ -459,6 +460,9 @@ nl:
   switch_to_dutch: "NL"
 
   chatbot:
+    model_coming_soon: "Binnenkort beschikbaar"
+    model_preferences_loading_notice: "Uw modelvoorkeur kon nog niet worden geladen. Kies zelf een model voordat u uw vraag verstuurt."
+    model_unavailable_notice: "Dit model is binnenkort beschikbaar. Kies een beschikbaar model om uw vraag te versturen."
     noscript: "De juridische assistent bouwt zijn antwoorden live op en werkt alleen met JavaScript. Schakel JavaScript in om een vraag te stellen."
     messages: "Chatberichten"
     title: "%{brand} Juridische Chatbot"
@@ -481,6 +485,7 @@ nl:
     feedback_negative: "Niet nuttig"
     error_connection: "Verbindingsfout. Probeer opnieuw."
     error_required: "Vraag is verplicht"
+    error_too_long: "Vraag is te lang (%{count} tekens, maximaal %{max})"
     limit_exceeded: "U heeft geen credits meer. Koop credits of upgrade naar Pro."
     capacity_limit: "De chatbot heeft tijdelijk zijn capaciteitslimiet bereikt. Probeer het later opnieuw."
     upgrade_required: "Upgrade naar Pro of koop credits om door te gaan."

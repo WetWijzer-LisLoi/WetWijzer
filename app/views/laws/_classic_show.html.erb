@@ -24,7 +24,7 @@
 <%# ── Metadata table - compact key/value pairs; a long Justel URL wraps ── %>
 <table class="classic-table classic-meta-table">
   <tbody>
-    <tr><td><strong><%= t(:date_label) %></strong></td><td><%= @law.date %></td></tr>
+    <tr><td><strong><%= t(:date_label).upcase_first %></strong></td><td><%= @law.date %></td></tr>
     <tr><td><strong>NUMAC</strong></td><td><%= @law.numac %></td></tr>
     <% if @content&.respond_to?(:publication_date) && @content.publication_date.present? %>
       <tr><td><strong><%= t(:publication) %></strong></td><td><%= @content.publication_date %></td></tr>
@@ -63,6 +63,7 @@
 <% if german_site? %>
   <%= render 'laws/german_text_notice', law: @law, notice: @german_notice, versions: @language_versions, classic: true %>
 <% end %>
+<%= render 'laws/fisconet_text_notice', law: @law, classic: true %>
 
 <hr style="border:0;border-top:1px solid #e5e7eb;margin-bottom:24px">
 
@@ -76,8 +77,8 @@
   <% if large_toc %>
     <p class="classic-skip"><a href="#law-text"><%= t('classic.toc.skip_to_text') %></a></p>
   <% end %>
-  <details class="classic-toc<%= ' classic-toc-large' if large_toc %>"<%= ' open' unless large_toc %>>
-    <summary><%= t(:toc) %> (<%= toc.size %>)</summary>
+  <details class="classic-toc<%= ' classic-toc-large' if large_toc %>" open>
+    <summary><%= t(:toc).strip.upcase_first %> (<%= toc.size %>)</summary>
     <nav id="classic-toc" class="classic-toc-body" aria-label="<%= t(:toc) %>">
       <ul <%= tag.attributes(lang: text_lang) %>>
         <% toc.each do |entry| %>
@@ -97,7 +98,7 @@
       <table class="classic-table">
         <thead>
           <tr>
-            <th><%= t(:date_label) %></th>
+            <th><%= t(:date_label).upcase_first %></th>
             <th><%= t(:title_header) %></th>
           </tr>
         </thead>
@@ -125,7 +126,7 @@
       <table class="classic-table">
         <thead>
           <tr>
-            <th><%= t(:date_label) %></th>
+            <th><%= t(:date_label).upcase_first %></th>
             <th><%= t(:title_header) %></th>
           </tr>
         </thead>
