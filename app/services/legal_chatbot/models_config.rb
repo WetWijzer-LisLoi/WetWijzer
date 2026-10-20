@@ -252,6 +252,10 @@ module LegalChatbot
     # stop keeps the same citation/quote/scope guards and mandatory legal packs.
     # Retrieval itself has no surcharge; only an actually supported/used
     # reasoning mode uses the existing +0/+1/+2 credit schedule.
+    # max_article_chars bounds the excerpt of a case-law or parliamentary
+    # document. Since r47 (1.0.2) it is NOT a statutory per-article cut:
+    # statutory articles reach the model complete under
+    # LegalChatbotService::STATUTORY_CONTEXT_MAX_CHARS (admit_statutory_sources).
     RESEARCH_DEPTHS = {
       'quick' => {
         reasoning_effort: 'low', max_article_chars: 1800,
@@ -371,7 +375,7 @@ module LegalChatbot
         tier: :free,
         planned_intelligence_level: 'genius',
         planned_credits: 2,
-        deployed: false, # Enable only after the WW Frankfurt runtime probe passes.
+        deployed: true, # WW Frankfurt runtime probe passed 2026-10-19 (root's receipt 155adf61…: HTTP 200, visible text).
         data_region: :eu,
         extra_credits: 1,
         # WW PUBLIC EU offer verified 2026-10-11, USD per million tokens.
@@ -381,6 +385,16 @@ module LegalChatbot
         long_context_threshold_tokens: 100_000,
         long_context_input_usd_per_million_tokens: 0.55,
         long_context_output_usd_per_million_tokens: 2.75,
+        # Prompt caching on Bedrock is implicit for Anthropic models: reads
+        # and writes are billed and reported separately (root's WetWijzer
+        # offer receipt 2ed562e8…, 2026-10-19), and the total input
+        # (uncached + reads + writes) selects the tier of the whole request.
+        cache_read_usd_per_million_tokens: 0.011,
+        cache_write_5m_usd_per_million_tokens: 0.1375,
+        cache_write_1h_usd_per_million_tokens: 0.22,
+        long_context_cache_read_usd_per_million_tokens: 0.055,
+        long_context_cache_write_5m_usd_per_million_tokens: 0.6875,
+        long_context_cache_write_1h_usd_per_million_tokens: 1.10,
         cost_per_query_eur: 0.004, # Standard 12k/3k envelope at the conservative EUR/USD accounting floor.
         description_nl: 'Claude Haiku 5.5 - snel & nauwkeurig',
         description_fr: 'Claude Haiku 5.5 - rapide & précis',
@@ -394,11 +408,16 @@ module LegalChatbot
         tier: :free,
         planned_intelligence_level: 'mastermind',
         planned_credits: 6,
-        deployed: false, # Enable only after the WW Frankfurt runtime probe passes.
+        deployed: true, # WW Frankfurt runtime probe passed 2026-10-19 (root's receipt 155adf61…: HTTP 200, visible text).
         data_region: :eu,
         extra_credits: 3,
         input_usd_per_million_tokens: 2.20,
         output_usd_per_million_tokens: 11.00,
+        # Implicit prompt caching, same receipt as Haiku: read, 5-minute and
+        # 1-hour creation rates.
+        cache_read_usd_per_million_tokens: 0.11,
+        cache_write_5m_usd_per_million_tokens: 2.75,
+        cache_write_1h_usd_per_million_tokens: 4.40,
         cost_per_query_eur: 0.066, # WW PUBLIC EU offer; standard 12k/3k envelope with conservative FX.
         description_nl: 'Claude Sonnet 5.5 - topkwaliteit analyse',
         description_fr: 'Claude Sonnet 5.5 - analyse de premier ordre',
@@ -412,11 +431,16 @@ module LegalChatbot
         tier: :pro,
         planned_intelligence_level: 'omniscient',
         planned_credits: 12,
-        deployed: false, # Enable only after the WW Frankfurt runtime probe passes.
+        deployed: true, # WW Frankfurt runtime probe passed 2026-10-19 (root's receipt 155adf61…: HTTP 200, visible text).
         data_region: :eu,
         extra_credits: 11,
         input_usd_per_million_tokens: 4.40,
         output_usd_per_million_tokens: 22.00,
+        # Implicit prompt caching, same receipt as Haiku: read, 5-minute and
+        # 1-hour creation rates.
+        cache_read_usd_per_million_tokens: 0.22,
+        cache_write_5m_usd_per_million_tokens: 5.50,
+        cache_write_1h_usd_per_million_tokens: 8.80,
         # WW PUBLIC EU offer; conservative 12k-input/3k-output envelope.
         # Pre-I/O byte ceilings cover larger tokenizers and reasoning headroom.
         cost_per_query_eur: 0.131,
@@ -433,7 +457,7 @@ module LegalChatbot
     #   :openai_effort   -> reasoning_effort: low/medium/high (Azure OpenAI)
     #   :mistral_effort  -> reasoning_effort: high/none (Mistral Small 4+)
     #   :bedrock_budgeted -> legacy fixed-budget capability, not in the offered portfolio
-    #   :bedrock_adaptive -> thinking: {type: "adaptive"} + output_config effort (pending Claude 5.5)
+    #   :bedrock_adaptive -> thinking: {type: "adaptive"} + output_config effort (Claude 5.5)
     #
     # AUTO-DERIVED from AVAILABLE_MODELS[:reasoning_support]. When you add or remove
     # a model, this set updates automatically - no other files to touch.
@@ -520,6 +544,13 @@ module LegalChatbot
     # still reconciles against the month it was charged to.
     PROVIDER_SPEND_LEDGER_KEY_PREFIX = 'provider_spend_ledger'
     PROVIDER_SPEND_LEDGER_KEY = /\A#{PROVIDER_SPEND_LEDGER_KEY_PREFIX}:([a-z_]+):(\d{6})\z/
+
+    # The token categories a provider usage record carries into the
+    # reservation's settlement (LlmClient#track_token_usage and
+    # #track_bedrock_token_usage): input and output are required, the cache
+    # categories are optional and count as zero when absent.
+    BUDGET_REQUIRED_TOKEN_USAGE_KEYS = %i[input output].freeze
+    BUDGET_CACHE_TOKEN_USAGE_KEYS = %i[cache_read cache_creation_5m cache_creation_1h].freeze
 
     # Provider prices above are published in USD. Use a deliberately high
     # application accounting rate and never allow runtime configuration to
@@ -708,7 +739,10 @@ module LegalChatbot
         actual_units = model_token_cost_units(
           reservation[:model],
           input_tokens: token_usage[:input],
-          output_tokens: token_usage[:output]
+          output_tokens: token_usage[:output],
+          cache_read_tokens: token_usage.fetch(:cache_read, 0),
+          cache_creation_5m_tokens: token_usage.fetch(:cache_creation_5m, 0),
+          cache_creation_1h_tokens: token_usage.fetch(:cache_creation_1h, 0)
         )
         reserved_units = reservation.fetch(:reserved_units)
         delta = actual_units - reserved_units
@@ -985,23 +1019,86 @@ module LegalChatbot
       end
 
       # Published list-price cost in application micro-euro accounting units.
-      # Cached-input discounts are intentionally ignored, which errs toward
-      # blocking early. Both token counts must be non-negative integers.
-      def model_token_cost_units(model, input_tokens:, output_tokens:)
+      #
+      # Anthropic models on Bedrock cache prompts implicitly (no request cache
+      # controls) and report the billable input in three categories: uncached
+      # input, cache reads and cache creation (a 5-minute or a 1-hour TTL).
+      # Their sum is the request's total input, and Claude Haiku 5.5's higher
+      # tier applies to the WHOLE request, output included, once that total
+      # exceeds 100,000 tokens (Anthropic pricing documentation; root's
+      # WetWijzer offer receipt 2ed562e8…, 2026-10-19). Every category is
+      # settled at its published rate when the model declares one. A model
+      # that declares no cache-read rate settles reads at its ordinary input
+      # rate (no discount assumed); a creation count on a model that declares
+      # no cache-write rate is an accounting error, never a discount. Every
+      # count must be a non-negative Integer: a fractional, negative or
+      # non-numeric count is refused rather than truncated.
+      def model_token_cost_units(model, input_tokens:, output_tokens:, cache_read_tokens: 0,
+                                 cache_creation_5m_tokens: 0, cache_creation_1h_tokens: 0)
         config = AVAILABLE_MODELS.fetch(model)
-        input = Integer(input_tokens)
-        output = Integer(output_tokens)
-        raise ArgumentError, 'Token counts must be non-negative' if input.negative? || output.negative?
+        input = strict_token_count(input_tokens)
+        output = strict_token_count(output_tokens)
+        reads = strict_token_count(cache_read_tokens)
+        writes_5m = strict_token_count(cache_creation_5m_tokens)
+        writes_1h = strict_token_count(cache_creation_1h_tokens)
+        rates = model_token_rates(config, total_input_tokens: input + reads + writes_5m + writes_1h)
+        if (writes_5m.positive? && rates[:cache_write_5m].nil?) || (writes_1h.positive? && rates[:cache_write_1h].nil?)
+          raise ArgumentError, "#{model} declares no cache-write rate for the reported cache creation"
+        end
 
-        long_context = config[:long_context_threshold_tokens] && input > config.fetch(:long_context_threshold_tokens)
-        input_rate_key = long_context ? :long_context_input_usd_per_million_tokens : :input_usd_per_million_tokens
-        output_rate_key = long_context ? :long_context_output_usd_per_million_tokens : :output_usd_per_million_tokens
-        input_rate = BigDecimal(config.fetch(input_rate_key).to_s)
-        output_rate = BigDecimal(config.fetch(output_rate_key).to_s)
+        usd_micro = (rates[:input] * input) + (rates[:output] * output) + (rates[:cache_read] * reads) +
+                    ((rates[:cache_write_5m] || 0) * writes_5m) + ((rates[:cache_write_1h] || 0) * writes_1h)
+        micro_euro_units(usd_micro)
+      end
+
+      # The pre-dispatch maximum for a prompt whose token count is bounded by
+      # `input_tokens`: every one of those tokens at the highest input rate
+      # the model declares (a one-hour cache write, twice the ordinary input
+      # rate on Claude 5.5) and the output ceiling at the tier the bound
+      # selects. The settlement never exceeds it: the prompt's tokens are at
+      # most its bytes, the tier is monotonic in the total input, and the
+      # output ceiling equals the request's limit. A model that declares no
+      # cache-write rate keeps its ordinary input rate, so its maximum is
+      # unchanged.
+      def model_token_cost_ceiling_units(model, input_tokens:, output_tokens:)
+        config = AVAILABLE_MODELS.fetch(model)
+        input = strict_token_count(input_tokens)
+        output = strict_token_count(output_tokens)
+        rates = model_token_rates(config, total_input_tokens: input)
+        highest_input_rate = [rates[:input], rates[:cache_write_5m], rates[:cache_write_1h]].compact.max
+        micro_euro_units((highest_input_rate * input) + (rates[:output] * output))
+      end
+
+      # USD per million tokens as BigDecimal, for the tier that the total
+      # input selects; a cache rate the model does not declare is nil (reads
+      # fall back to the ordinary input rate, writes to nothing).
+      def model_token_rates(config, total_input_tokens:)
+        threshold = config[:long_context_threshold_tokens]
+        prefix = threshold && total_input_tokens > threshold ? 'long_context_' : ''
+        rate = lambda do |name|
+          value = config[:"#{prefix}#{name}_usd_per_million_tokens"]
+          value.nil? ? nil : BigDecimal(value.to_s)
+        end
+        input = rate.call('input') || raise(KeyError, "#{prefix}input_usd_per_million_tokens missing")
+        {
+          input: input,
+          output: rate.call('output') || raise(KeyError, "#{prefix}output_usd_per_million_tokens missing"),
+          cache_read: rate.call('cache_read') || input,
+          cache_write_5m: rate.call('cache_write_5m'),
+          cache_write_1h: rate.call('cache_write_1h')
+        }
+      end
+
+      # USD/MTok * tokens * EUR/USD equals micro-euro units directly.
+      def micro_euro_units(usd_micro)
         fx = BigDecimal(provider_budget_usd_to_eur_rate.to_s)
+        [(usd_micro * fx).ceil, 1].max
+      end
 
-        # USD/MTok * tokens * EUR/USD equals micro-euro units directly.
-        [((input_rate * input) + (output_rate * output)).then { |usd_micro| (usd_micro * fx).ceil }, 1].max
+      def strict_token_count(value)
+        raise ArgumentError, 'Token counts must be non-negative integers' unless value.is_a?(Integer) && !value.negative?
+
+        value
       end
 
       def embedding_token_cost_units(input_tokens)
@@ -1023,7 +1120,7 @@ module LegalChatbot
         flat_units = (cost_per_query_eur(model) * PROVIDER_SPEND_UNITS_PER_EUR).ceil
         return flat_units if max_output_tokens.nil? || messages.nil?
 
-        token_envelope_units = model_token_cost_units(
+        token_envelope_units = model_token_cost_ceiling_units(
           model,
           input_tokens: estimated_input_token_ceiling(messages),
           output_tokens: max_output_tokens
@@ -1053,14 +1150,28 @@ module LegalChatbot
         (MODEL_DAILY_BUDGET_EUR * PROVIDER_SPEND_UNITS_PER_EUR).round
       end
 
+      # Usage the reservation may be settled from: complete by the client's
+      # own judgement, for this model, input and output present as
+      # non-negative Integers, the optional cache categories non-negative
+      # Integers when present, and any cache creation on a model that
+      # declares the write rate to settle it. Anything else keeps the
+      # pre-dispatch reservation, without raising.
       def complete_budget_token_usage?(reservation, token_usage)
         return false unless token_usage.is_a?(Hash)
         return false unless token_usage[:billing_complete] == true
         return false unless token_usage[:model].to_s == reservation[:model].to_s
 
-        Integer(token_usage[:input]) >= 0 && Integer(token_usage[:output]) >= 0
-      rescue ArgumentError, TypeError
-        false
+        required = BUDGET_REQUIRED_TOKEN_USAGE_KEYS.map { |key| token_usage[key] }
+        return false unless required.all? { |count| count.is_a?(Integer) && !count.negative? }
+
+        cache = BUDGET_CACHE_TOKEN_USAGE_KEYS.to_h { |key| [key, token_usage.fetch(key, 0)] }
+        return false unless cache.values.all? { |count| count.is_a?(Integer) && !count.negative? }
+
+        config = AVAILABLE_MODELS[reservation[:model].to_s]
+        return false unless config
+        return false if cache[:cache_creation_5m].positive? && !config.key?(:cache_write_5m_usd_per_million_tokens)
+
+        !(cache[:cache_creation_1h].positive? && !config.key?(:cache_write_1h_usd_per_million_tokens))
       end
 
       def model_daily_count_key(model)
@@ -1291,7 +1402,7 @@ module LegalChatbot
 
       # Get total credits including reasoning surcharge
       # e.g. credits_with_reasoning('genius', 'medium', 'gpt-6-luna') → 2 + 1 = 3
-      # e.g. credits_with_reasoning('genius', 'medium', 'claude-haiku-5-5') → 2 + 1 = 3 (when deployed)
+      # e.g. credits_with_reasoning('genius', 'medium', 'claude-haiku-5-5') → 2 + 1 = 3
       # e.g. credits_with_reasoning('smart', 'medium', 'mistral-small') → 1 (unsupported, not charged)
       # e.g. credits_with_reasoning('mastermind', 'medium', 'gpt-6.1-sol') → 6 + 1 = 7
       def credits_with_reasoning(level, reasoning = nil, model = nil)

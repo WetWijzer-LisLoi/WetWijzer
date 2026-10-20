@@ -97,6 +97,27 @@ module LegalChatbot
       )
     end
 
+    # The verified-data block this client prepends to the context for a
+    # question, computed once per question and reused by every generation of
+    # the ask, so the orchestrator can count exactly what is emitted against
+    # the statutory allowance before the first provider call (r47). Measuring
+    # first is the reference pass the first generation would make anyway: it
+    # adds no provider or embedding request.
+    def reference_facts_block(question)
+      return @reference_facts_memo.last if @reference_facts_memo && @reference_facts_memo.first == question
+
+      matched_sections = @reference_sheets.select_relevant_sections(question)
+      facts = matched_sections.present? ? @reference_sheets.extract_imperative_facts(matched_sections) : []
+      block = if facts.present?
+                Rails.logger.info("[REFSHEET] Injecting #{facts.size} facts into context")
+                "<verified_legal_data>\n#{facts.map { |fact| "- #{fact}" }.join("\n")}\n</verified_legal_data>\n\n"
+              else
+                ''
+              end
+      @reference_facts_memo = [question, block]
+      block
+    end
+
     # Query the LLM with context and question
     def query(question, context, source_type: :legislation, conversation_messages: [], corrective_feedback: nil)
       detected_lang = detect_prompt_language(question)
@@ -611,18 +632,23 @@ module LegalChatbot
       record_generation_response(bedrock_model_id, expected: [bedrock_model_id, model],
                                                    reasoning_tokens: result.dig('usage', 'thinking_tokens'))
 
-      # Track token usage (Anthropic format)
+      # Track token usage (Anthropic format, the cache categories included)
       usage = result['usage'] || {}
-      track_token_usage(model, usage['input_tokens'], usage['output_tokens'])
+      track_bedrock_token_usage(model, usage)
 
-      Rails.logger.info("[BEDROCK] Response: #{usage['input_tokens']} in / #{usage['output_tokens']} out tokens")
+      Rails.logger.info(
+        "[BEDROCK] Response: #{usage['input_tokens']} in / #{usage['output_tokens']} out tokens " \
+        "cache_read=#{usage['cache_read_input_tokens'] || 0} cache_creation=#{usage['cache_creation_input_tokens'] || 0}"
+      )
 
       content_blocks = result['content'] || []
       text_blocks = content_blocks.select { |b| b['type'] == 'text' }
       answer = text_blocks.map { |b| b['text'] }.join("\n")
       stop_reason = result['stop_reason'].to_s
       # A 5.5 safeguard refusal may be HTTP 200 with nonempty text. It is not
-      # a completed legal answer and must enter the existing no-charge path.
+      # a completed legal answer: it enters the incomplete-response path, so
+      # no answer is delivered, and the reservation settles on its dispatch
+      # evidence like any other sent paid request (owner policy 2026-10-18).
       @provider_response_incomplete = answer.strip.empty? || %w[max_tokens refusal].include?(stop_reason)
       if @provider_response_incomplete
         Rails.logger.warn(
@@ -726,6 +752,65 @@ module LegalChatbot
         model: model,
         billing_complete: false
       }
+    end
+
+    # Anthropic usage on Bedrock. Prompt caching is implicit there (no request
+    # cache controls), so the billable input arrives in three categories:
+    # input_tokens (uncached), cache_read_input_tokens and
+    # cache_creation_input_tokens, the last split by TTL in cache_creation
+    # (ephemeral_5m_input_tokens, ephemeral_1h_input_tokens) when the
+    # provider reports it. The budget settles every category at its
+    # published rate and selects Haiku's tier on their total
+    # (ModelsConfig#model_token_cost_units). A creation token whose TTL is
+    # not reported is settled at the one-hour rate, the highest published
+    # write rate: the settlement never under-funds, and a merely unreported
+    # split never parks the worst-case reservation against the spend
+    # ceilings (owner 2026-10-19). Only malformed usage keeps the
+    # reservation (billing_complete: false): a count that is not a
+    # non-negative Integer, an absent input or output count, a split that is
+    # not an object, or buckets adding up to more than the creation total.
+    # A cache field absent altogether counts as zero. The user's credit
+    # settlement follows dispatch evidence, never this record.
+    def track_bedrock_token_usage(model, usage)
+      usage = {} unless usage.is_a?(Hash)
+      input = strict_usage_count(usage['input_tokens'])
+      output = strict_usage_count(usage['output_tokens'])
+      cache_read = strict_usage_count(usage.fetch('cache_read_input_tokens', 0))
+      creation_total = strict_usage_count(usage.fetch('cache_creation_input_tokens', 0))
+      creation_5m, creation_1h, split_valid = bedrock_cache_creation_split(usage['cache_creation'], creation_total)
+      billing_complete = [input, output, cache_read, creation_total].none?(&:nil?) && split_valid
+      Thread.current[:last_chat_tokens] = {
+        input: input || 0,
+        output: output || 0,
+        cache_read: cache_read || 0,
+        cache_creation_5m: creation_5m,
+        cache_creation_1h: creation_1h,
+        model: model,
+        billing_complete: billing_complete
+      }
+    end
+
+    # [five-minute tokens, one-hour-rate tokens, valid]. Every reported
+    # bucket must be a non-negative Integer and the buckets together must
+    # not exceed the total; whatever the five-minute bucket does not explain
+    # (the one-hour bucket, an unknown bucket, an unreported remainder) is
+    # priced at the one-hour rate.
+    def bedrock_cache_creation_split(detail, creation_total)
+      return [0, 0, false] if creation_total.nil?
+      return [0, creation_total, true] if detail.nil?
+      return [0, 0, false] unless detail.is_a?(Hash)
+
+      buckets = detail.transform_values { |value| strict_usage_count(value) }
+      return [0, 0, false] if buckets.values.any?(&:nil?)
+
+      five_minute = buckets.fetch('ephemeral_5m_input_tokens', 0)
+      return [0, 0, false] if buckets.values.sum > creation_total
+
+      [five_minute, creation_total - five_minute, true]
+    end
+
+    def strict_usage_count(value)
+      value if value.is_a?(Integer) && !value.negative?
     end
 
     # Provider output ceilings must stay identical to request-body limits so
@@ -969,15 +1054,7 @@ module LegalChatbot
     end
 
     def inject_reference_corrections(question, context)
-      matched_sections = @reference_sheets.select_relevant_sections(question)
-      return context unless matched_sections.present?
-
-      facts = @reference_sheets.extract_imperative_facts(matched_sections)
-      return context unless facts.present?
-
-      Rails.logger.info("[REFSHEET] Injecting #{facts.size} facts into context")
-      facts_block = facts.map { |f| "- #{f}" }.join("\n")
-      "<verified_legal_data>\n#{facts_block}\n</verified_legal_data>\n\n#{context}"
+      "#{reference_facts_block(question)}#{context}"
     end
   end
 end

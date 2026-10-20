@@ -234,13 +234,17 @@ module LegalChatbot
 
       'COMMERCIAL-WEBSITE SOURCE TASK: Answer in the resolved answer language. ' \
         'Give a useful, source-linked overview for a Belgian commercial service website, rather than replacing the answer ' \
-        'with a clarification request or Brussels public-administration portal rules. State the assumed commercial scope, ' \
+        'with a clarification request or Brussels public-administration portal rules. State the assumed commercial scope ' \
+        'and write every heading and label in the answer language (no English label in a Dutch or French answer), ' \
         'then distinguish general service-provider identification/electronic ordering from additional B2C distance-contract duties. ' \
         'For a broad overview, keep the visible answer within about 600 words, grouping related obligations into short paragraphs. ' \
         'Do not enumerate or reproduce every retrieved source: cite the governing articles for each group and preserve decisive exceptions. ' \
         'Do not assume the customers are consumers: describe consumer obligations conditionally and ask B2B/B2C and service type at the end. ' \
         'Use only the supplied current provisions, linking the actual relevant article for each group. ' \
         'For XII.10, distinguish a permitted agreed B2B derogation from an automatic exemption from all provider information; ' \
+        'XII.6, § 1, 8° concerns subscribed codes of conduct and their electronic consultation, not identification, and XII.10 limits ' \
+        'both the agreed B2B derogation and the e-mail-only exception to the items it lists, so the identification items of XII.6, § 1, ' \
+        '1° to 7° remain; ' \
         'the email-only exception is not an ordinary website checkout. The VI.45-53 pack concerns non-financial consumer distance contracts, ' \
         'not a complete financial-services or regulated-profession checklist. ' \
         'Distinguish electronic order acknowledgement under supplied XII.9 from B2C contract confirmation on a durable medium ' \
@@ -250,7 +254,10 @@ module LegalChatbot
         'Distinguish early performance of services from digital content and preserve the supplied consent/acknowledgement conditions. ' \
         'Apply supplied GDPR Articles 6, 13 and 32 only when personal data are processed; consent is not the sole lawful basis, ' \
         'and appropriate security is risk-based, not mandatory encryption of everything. ' \
-        'Use supplied Belgian Article 10/2 for cookies/device storage with its strictly necessary exception, not repealed telecom Article 129. ' \
+        'Use supplied Belgian Article 10/2 for cookies/device storage with its strictly necessary exception, not repealed telecom Article 129: ' \
+        'it governs storing or accessing information on terminal equipment whether or not that information is personal data, so never ' \
+        'place it under a personal-data condition, and keep both technical exceptions (transmitting a communication; a service the user ' \
+        'explicitly requested). ' \
         'A privacy notice, contractual terms and a cookie consent mechanism serve different purposes; do not claim every site needs ' \
         'a consent banner or that a checkbox proves compliance. Do not imply the general pack exhausts sector licensing, financial services, ' \
         'intermediary/marketplace or other special obligations. Opinions/proposals are not binding enacted law. ' \

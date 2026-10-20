@@ -285,9 +285,9 @@ fr:
     catalogue:
       civil_book_seven: "Code civil - Livre 7 \"Les contrats spéciaux\""
       future_from_september_2027: "(entrée en vigueur : 1er septembre 2027)"
-      criminal_code_1867: "(ancien) Code pénal de 1867"
-      new_criminal_code_book_one: "Nouveau Code pénal - Livre I"
-      new_criminal_code_book_two: "Nouveau Code pénal - Livre II"
+      criminal_code_1867: "Code pénal de 1867"
+      new_criminal_code_book_one: "Code pénal - Livre I"
+      new_criminal_code_book_two: "Code pénal - Livre II"
     categories:
       civil: "Droit civil"
       criminal: "Droit pénal"

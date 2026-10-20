@@ -517,7 +517,9 @@ module LegalChatbot
     #                  art. 224/2 (Indexering) and 240 (herziening); Wallonia,
     #                  woninghuurdecreet art. 57 (indexation of a main-residence
     #                  lease, under art. 26) and 58 (revision);
-    #   deposit        art. 37 (Huurwaarborg), 248 and 62;
+    #   deposit        art. 37 (Huurwaarborg), 248 and 62, then Brussels
+    #                  art. 249 (placing and releasing the deposit, missing
+    #                  from the 1.0.2 QA's july-282);
     #   termination    art. 20 (by the tenant) and 17 (by the landlord for own
     #                  use), 237 and 55, which cover both sides.
     # Owner rule (2026-10-17): an answer on a regional subject always mentions
@@ -529,28 +531,74 @@ module LegalChatbot
     # verhuurder de huurprijs verhogen?" (a suggested question) was answered
     # from social-housing rules on 2026-10-17 and refused three times by the
     # citation guard.
+    # A question for the statutory definition of the ordinary employment
+    # contract: the noun phrase must end there (punctuation, the end, or a
+    # conjunction starting another question), so "What is an employment
+    # contract notice period?" or "Wat is een arbeidsovereenkomst voor
+    # studenten?" (a subtype with its own definition) do not match, while
+    # "Wat is een arbeidsovereenkomst en wat is de opzegtermijn?" does. Each
+    # language takes its own conjunctions (root 2026-10-19 21:26:42): French
+    # "en" opens a subtype ("contrat de travail en alternance", "en tant
+    # qu'étudiant"), where Dutch "en" joins another question.
+    EMPLOYMENT_CONTRACT_DEFINITION_PATTERN = %r{
+      (?:\bwat\s+is\s+(?:een|de|het)\s+arbeids(?:overeenkomst|contract)
+        |\bdefinitie\s+(?:van\s+(?:een|de|het)\s+)?arbeids(?:overeenkomst|contract))
+      (?=[[:space:]]*(?:[?.!;,]|\z)|[[:space:]]+(?:en|of)[[:space:]])
+      |(?:\bqu['’]est[-\s]ce\s+qu(?:['’][[:space:]]*un|e\s+le)\s+contrat\s+de\s+travail
+        |\bd[ée]finition\s+(?:du|d['’][[:space:]]*un)\s+contrat\s+de\s+travail)
+      (?=[[:space:]]*(?:[?.!;,]|\z)|[[:space:]]+(?:et|ou)[[:space:]])
+      |(?:\bwhat\s+is\s+(?:an?|the)\s+(?:employment|labou?r)\s+contract
+        |\bdefinition\s+of\s+(?:an?|the)\s+(?:employment|labou?r)\s+contract)
+      (?=[[:space:]]*(?:[?.!;,]|\z)|[[:space:]]+(?:and|or)[[:space:]])
+    }ix.freeze
     REGIONAL_RENT_INCREASE_TARGETS = [
       %w[2018015087 34].freeze, %w[2013A31614 224/2].freeze, %w[2018201408 57].freeze,
       %w[2018015087 35].freeze, %w[2013A31614 240].freeze, %w[2018201408 58].freeze
     ].freeze
+    # Rent indexation (held-out 1390, "Huurindexatie berekenen?"): first each
+    # region's indexation rule, Flanders Art. 34, Brussels Art. 224/2 and
+    # Wallonia Art. 26 (the formula that Art. 57 applies), then the Flemish
+    # energy-label correction from 1 October 2023 (Art. 4 of the decree of
+    # 3 October 2022) and Walloon Art. 57. Read in laws.prod on 2026-10-19:
+    # one Dutch and one French row each, no variant, the laws neither
+    # repealed nor amending (is_abolished 0, is_modification 0). Art. 3 of the
+    # 2022 decree, the restriction of 1 October 2022 to 30 September 2023,
+    # has expired and is no target.
+    REGIONAL_RENT_INDEXATION_TARGETS = [
+      %w[2018015087 34].freeze, %w[2013A31614 224/2].freeze, %w[2018201408 26].freeze,
+      %w[2022033702 4].freeze, %w[2018201408 57].freeze
+    ].freeze
     REGIONAL_RENTAL_DEPOSIT_TARGETS = [
-      %w[2018015087 37].freeze, %w[2013A31614 248].freeze, %w[2018201408 62].freeze
+      %w[2018015087 37].freeze, %w[2013A31614 248].freeze, %w[2018201408 62].freeze,
+      %w[2013A31614 249].freeze
     ].freeze
     REGIONAL_RENTAL_TERMINATION_TARGETS = [
       %w[2018015087 20].freeze, %w[2013A31614 237].freeze, %w[2018201408 55].freeze,
       %w[2018015087 17].freeze
     ].freeze
+    # Defects, repairs and maintenance of the rented dwelling, read in
+    # laws.prod on 2026-10-19 (in force, Dutch rows): Flanders art. 25
+    # (landlord) and 26 (tenant), Brussels art. 219 (state of the dwelling)
+    # and 223 (repairs and maintenance), Wallonia art. 7 (landlord) and 8
+    # (repairs charged to each party); then Flanders art. 28 (use as a good
+    # householder). Catalogue item july-280 ("Rechten huurder bij gebreken?")
+    # received none of them and a future Book 7 article instead.
+    REGIONAL_RENTAL_REPAIR_TARGETS = [
+      %w[2018015087 25].freeze, %w[2013A31614 219].freeze, %w[2018201408 7].freeze,
+      %w[2018015087 26].freeze, %w[2013A31614 223].freeze, %w[2018201408 8].freeze,
+      %w[2018015087 28].freeze
+    ].freeze
     REGIONAL_HOUSING_LABELS = {
-      'nl' => { '2018015087' => 'Vlaanderen', '2013A31614' => 'Brussel', '2018201408' => 'Wallonië' },
-      'fr' => { '2018015087' => 'Flandre', '2013A31614' => 'Bruxelles', '2018201408' => 'Wallonie' },
-      'de' => { '2018015087' => 'Flandern', '2013A31614' => 'Brüssel', '2018201408' => 'Wallonien' },
-      'en' => { '2018015087' => 'Flanders', '2013A31614' => 'Brussels', '2018201408' => 'Wallonia' }
+      'nl' => { '2018015087' => 'Vlaanderen', '2013A31614' => 'Brussel', '2018201408' => 'Wallonië', '2022033702' => 'Vlaanderen' },
+      'fr' => { '2018015087' => 'Flandre', '2013A31614' => 'Bruxelles', '2018201408' => 'Wallonie', '2022033702' => 'Flandre' },
+      'de' => { '2018015087' => 'Flandern', '2013A31614' => 'Brüssel', '2018201408' => 'Wallonien', '2022033702' => 'Flandern' },
+      'en' => { '2018015087' => 'Flanders', '2013A31614' => 'Brussels', '2018201408' => 'Wallonia', '2022033702' => 'Flanders' }
     }.freeze
     # A rent increase, indexation or revision, in the four site languages.
     RENT_INCREASE_PATTERN = %r{
       \b(?:
         huur(?:prijs)?(?:verhoging|indexatie|indexering|herziening|stijging)
-        | (?:verhoging|indexatie|indexering|herziening|stijging|aanpassing)\s+van\s+(?:de\s+|mijn\s+|onze\s+|uw\s+)?huur(?:prijs)?\b
+        | (?:verhoging|indexatie|indexering|herziening|stijging|aanpassing)\s+(?:van\s+(?:de\s+|mijn\s+|onze\s+|uw\s+)?)?huur(?:prijs)?\b
         | huur(?:prijs)?\b[^.!?\n]{0,40}\b(?:verho(?:gen|ogt|ogd|ogde)|indexe(?:ren|ert|erde)|geïndexeerd|herzien|optrekken|opgetrokken|stijgen|stijgt|aanpassen|aangepast)\b
         | (?:verho(?:gen|ogt|ogd)|indexe(?:ren|ert)|herzien|optrekken)\b[^.!?\n]{0,40}\bhuur(?:prijs)?\b
         | loyers?\b[^.!?\n]{0,40}\b(?:augment\w*|index\w*|révis\w*|revis\w*|hausse)
@@ -561,9 +609,15 @@ module LegalChatbot
         | (?:erhöh\w*|index\w*)\b[^.!?\n]{0,40}\bmiete\w*\b
       )
     }xi
+    # Indexation within a rent-increase question (indexatie, indexering,
+    # indexation, Indexierung, geïndexeerd); rental_topic? binds it to the
+    # lease.
+    RENT_INDEXATION_WORD_PATTERN = /index|geïndexeerd/i
     # Lease words; deposit and termination wording counts only beside one.
     RENTAL_CONTEXT_TERMS = '(?:huur\w*|verhuur\w*|huisbaas|loyer\w*|bail\w*|locat\w*|propriétaire|rent\w*|tenan\w*|landlord\w*|lease\w*|miet\w*|vermiet\w*)'
     RENTAL_LEASE_TERM_PATTERN = /\b#{RENTAL_CONTEXT_TERMS}\b/i
+    # Defects, repairs and maintenance; "schade" stays a deposit word.
+    RENTAL_REPAIR_TERM_PATTERN = /\b(?:gebrek\w*|herstelling\w*|herstellen|hersteld|reparatie\w*|repareren|onderhoud(?:s|en)?|defect\w*|vocht\w*|schimmel\w*|lekk\w*|lekt|défaut\w*|vices?|réparation\w*|réparer|entretien|humidité|moisissure\w*|fuites?|defects?|repairs?|maintenance|damp|mou?ld|leak\w*|mängel|mangel|reparatur\w*|instandhaltung|feuchtigkeit)\b/i
     RENTAL_DEPOSIT_TERM_PATTERN = /\b(?:huurwaarborg\w*|huurborg\w*|waarborg\w*|borgsom\w*|garanties?\s+locatives?|garantie|cautions?|deposits?|mietkaution\w*|kaution)\b/i
     # "zeg ... op" is the split form of opzeggen; "congé" is the French notice.
     RENTAL_TERMINATION_TERM_PATTERN = /\b(?:opzeg\w*|opgezegd\w*|vooropzeg\w*|zeg(?:t|de|den)?\s+(?:\S+\s+){0,6}?op(?=\s*(?:[.?!,;]|\z))|beëindig\w*|stopzetten|résili\w*|préavis|cong[ée]s?|mettre\s+fin|termin\w*|notice|kündig\w*)\b/i
@@ -581,15 +635,23 @@ module LegalChatbot
     RENTAL_DWELLING_PATTERN = /\b(?:woning\w*|huurwoning\w*|woninghuur\w*|huis|huizen|appartement\w*|studio\w*|flat|woonst|hoofdverblijf\w*|kamer|dwelling\w*|house|home|apartment\w*|logement\w*|maison\w*|résidence|habitation\w*|wohnung\w*|haus|wohnraum\w*|zimmer)\b/i
     # Objects of another regime that a dwelling in the question overrides
     # (the garage that comes with an apartment).
-    RENTAL_OTHER_OBJECT_PATTERN = /\b(?:auto|auto's|autos|wagen|wagens|voitures?|véhicules?|vehicles?|cars?|fahrzeug\w*|pkw|machine\w*|maschine\w*|materiaal|matériel|equipment|toestel\w*|garage\w*|parking\w*|parkeerplaats\w*|staanplaats\w*|loods\w*|hangar\w*|opslagruimte\w*|box)\b/i
+    RENTAL_OTHER_OBJECT_PATTERN = /\b(?:auto|auto's|autos|wagen|wagens|voitures?|véhicules?|vehicles?|cars?|fahrzeug\w*|pkw|machine\w*|maschine\w*|materiaal|matériel|equipment|toestel\w*|garage\w*|parking\w*|parkeerplaats\w*|staanplaats\w*|loods\w*|hangar\w*|opslagruimte\w*|box|fiets\w*|v[ée]los?|bikes?|bicycles?|fahrr[äa]d\w*|laptops?|computers?|ordinateurs?|telefoons?|gsm|smartphones?|camera's|cameras?|gereedschap\w*|outils?|tools?|boten|boot|bateaux?|boats?|aanhangwagens?|remorques?|trailers?)\b/i
+    # The same objects split by kind, for the court pins below: a hired movable,
+    # or an immovable that is not a dwelling (a garage, a parking space, a
+    # warehouse). A guard test keeps the two lists equal to the pattern above.
+    RENTAL_MOVABLE_OBJECT_PATTERN = /\b(?:auto|auto's|autos|wagen|wagens|voitures?|véhicules?|vehicles?|cars?|fahrzeug\w*|pkw|machine\w*|maschine\w*|materiaal|matériel|equipment|toestel\w*|fiets\w*|v[ée]los?|bikes?|bicycles?|fahrr[äa]d\w*|laptops?|computers?|ordinateurs?|telefoons?|gsm|smartphones?|camera's|cameras?|gereedschap\w*|outils?|tools?|boten|boot|bateaux?|boats?|aanhangwagens?|remorques?|trailers?)\b/i
+    RENTAL_IMMOVABLE_OTHER_OBJECT_PATTERN = /\b(?:garage\w*|parking\w*|parkeerplaats\w*|staanplaats\w*|loods\w*|hangar\w*|opslagruimte\w*|box)\b/i
     COMMERCIAL_LEASE_PATTERN = /\b(?:handelshuur\w*|handelspand\w*|bedrijfsruimte\w*|bedrijfspand\w*|bedrijfsgebouw\w*|kantoor|kantoren|kantoorruimte\w*|winkel(?:s|pand\w*|ruimte\w*)?|bail\s+(?:commercial|professionnel)|baux\s+commerciaux|locaux?\s+(?:commerciaux|commercial|professionnels?)|commercial\s+(?:lease|premises)|business\s+premises|office\s+(?:lease|space)|gewerbe\w*|geschäftsräum\w*|pop-?up\w*)\b/i
     AGRICULTURAL_LEASE_PATTERN = /\b(?:pacht\w*|landpacht|landbouw\w*|bail\s+à\s+ferme|fermage|baux\s+à\s+ferme|agricultural\s+(?:lease|tenancy)|landpacht|pachtvertrag\w*)\b/i
     SOCIAL_HOUSING_LEASE_PATTERN = /\b(?:sociale?\s+(?:huur)?woning\w*|sociale\s+huur\w*|sociaal\s+(?:wonen|huren|verhuurkantoor)|logements?\s+sociaux|logement\s+social|social\s+(?:housing|rent\w*)|sozialwohnung\w*)\b/i
     # "geen sociale woning", "niet-sociale woning", "non-social housing".
     SOCIAL_HOUSING_NEGATION_PATTERN = /\b(?:geen|niet|pas|not|no|non|kein\w*)(?:\s+(?:(?:een|in\s+een|de|d['’]un|un|a|in\s+a|in)\s+)?|-)\z/i
     # A building named only as where the rented object is, not as the rented
-    # object: "mijn appartement boven een winkel" rents the apartment.
-    LOCATION_PREFIX_PATTERN = /\b(?:boven|onder|naast|achter|tegenover|nabij|above|below|over|under|next\s+to|beside|behind|opposite|near|au[-\s]dessus|en[-\s]dessous|à\s+côté|derrière|en\s+face|près|über|unter|neben|hinter|gegenüber)\s+(?:(?:d['’]|de|du|des|een|het|a|an|the|un|une|le|la|les|l['’]|einem|einer|dem|der|den)\s*)?(?:\p{L}+\s+)?\z/i
+    # object: "mijn appartement boven een winkel" rents the apartment. "over"
+    # counts only in its English sense, before "a", "an" or "the": in Dutch it
+    # means "about", and "Indexering huurprijs over mijn garage?" rents the
+    # garage (1.0.2; it had received the regions' home-lease provisions).
+    LOCATION_PREFIX_PATTERN = /\b(?:boven|onder|naast|achter|tegenover|nabij|above|below|over(?=\s+(?:a|an|the)\b)|under|next\s+to|beside|behind|opposite|near|au[-\s]dessus|en[-\s]dessous|à\s+côté|derrière|en\s+face|près|über|unter|neben|hinter|gegenüber)\s+(?:(?:d['’]|de|du|des|een|het|a|an|the|un|une|le|la|les|l['’]|einem|einer|dem|der|den)\s*)?(?:\p{L}+\s+)?\z/i
     # A clause ends at sentence punctuation, a colon or semicolon, or a
     # contrast: "Ik huur een appartement, maar mijn vraag gaat over mijn
     # arbeidscontract: wat is mijn opzegtermijn?" asks about the employment.
@@ -598,8 +660,10 @@ module LegalChatbot
     ORDINARY_RESIDENTIAL_LEASE_PATTERN = /\b(?:gewone\s+(?:woning)?huurovereenkomst|woninghuurovereenkomst|hoofdverblijf\w*|bail\s+(?:de\s+résidence\s+principale|d['’]habitation|ordinaire)|résidence\s+principale|ordinary\s+(?:residential\s+)?(?:lease|tenancy)|main\s+residence|hauptwohnsitz)\b/i
     REGIONAL_HOUSING_TOPIC_TARGETS = [
       [:rent_increase, REGIONAL_RENT_INCREASE_TARGETS].freeze,
+      [:indexation, REGIONAL_RENT_INDEXATION_TARGETS].freeze,
       [:deposit, REGIONAL_RENTAL_DEPOSIT_TARGETS].freeze,
-      [:termination, REGIONAL_RENTAL_TERMINATION_TARGETS].freeze
+      [:termination, REGIONAL_RENTAL_TERMINATION_TARGETS].freeze,
+      [:repairs, REGIONAL_RENTAL_REPAIR_TARGETS].freeze
     ].freeze
 
     # :residential, :social, :student, :commercial, :agricultural or
@@ -620,6 +684,18 @@ module LegalChatbot
       text.to_enum(:scan, pattern).any? { !Regexp.last_match.pre_match.last(40).match?(LOCATION_PREFIX_PATTERN) }
     end
 
+    # A hired movable only (a bike, a car, a laptop): a movable named, and no
+    # dwelling, premises or other immovable. The location prefixes above are
+    # not applied: in "Huurgeschil over een gehuurde fiets" the Dutch "over"
+    # means "about", not "above".
+    def self.movable_rental_only?(question)
+      text = question.to_s.gsub(/[[:space:]]+/, ' ')
+      return false unless %i[residential other_object].include?(rental_regime(text))
+      return false if text.match?(RENTAL_DWELLING_PATTERN) || text.match?(RENTAL_IMMOVABLE_OTHER_OBJECT_PATTERN)
+
+      text.match?(RENTAL_MOVABLE_OBJECT_PATTERN)
+    end
+
     # Social housing the question asserts, not one it denies ("geen sociale woning").
     def self.social_housing_lease?(text)
       text.to_enum(:scan, SOCIAL_HOUSING_LEASE_PATTERN).any? do
@@ -631,12 +707,20 @@ module LegalChatbot
       question.to_s.match?(RENT_INCREASE_PATTERN)
     end
 
+    def self.rent_indexation_question?(question)
+      rent_increase_question?(question) && rental_topic?(question, RENT_INDEXATION_WORD_PATTERN)
+    end
+
     def self.rental_deposit_question?(question)
       rental_topic?(question, RENTAL_DEPOSIT_TERM_PATTERN)
     end
 
     def self.rental_termination_question?(question)
       rental_topic?(question, RENTAL_TERMINATION_TERM_PATTERN)
+    end
+
+    def self.rental_repair_question?(question)
+      rental_topic?(question, RENTAL_REPAIR_TERM_PATTERN)
     end
 
     # The topic word beside a lease word in one clause; across clauses only
@@ -667,8 +751,10 @@ module LegalChatbot
     def self.housing_topic?(question, kind)
       case kind
       when :rent_increase then rent_increase_question?(question)
+      when :indexation then rent_indexation_question?(question)
       when :deposit then rental_deposit_question?(question)
       when :termination then rental_termination_question?(question)
+      when :repairs then rental_repair_question?(question)
       end
     end
 
@@ -832,6 +918,11 @@ module LegalChatbot
           # A pin is a ranking instruction, not merely an injection fallback.
           # Promote it even when FAISS already found the same article lower in
           # the result list, while retaining exactly one copy of every result.
+          # A pin that is also one of this question's governing housing
+          # candidates keeps the candidate's place in the governing group; the
+          # candidate copy is the duplicate dropped below.
+          governing_ids = top_articles.select { |article| self.class.governing_source?(article) }.to_set { |article| article[:id] }
+          pins = pins.map { |pin| governing_ids.include?(pin[:id]) ? pin.merge(governing_group: true) : pin }
           pinned_ids = pins.to_set { |article| article[:id] }
           top_articles = pins + top_articles.reject { |article| pinned_ids.include?(article[:id]) }
         end
@@ -893,6 +984,171 @@ module LegalChatbot
                     erforderlich|notwendig)\b)
       .*\z
     /ix
+    # Shared employment-change intent fragments, also used by the
+    # unilateral-change topic (TopicCitations) so the pin and the topic
+    # cannot drift: the employer, the employment scope words, the employee's
+    # consent clause (NL/FR/EN), the unilateral marker, the change verbs, the
+    # employment terms a change can target, and the generic contract words
+    # that count only inside an employer-as-changer phrase.
+    EMPLOYER_PATTERN = /\b(?:werkgever|employeur|employer)\b/i
+    EMPLOYMENT_SCOPE_WORD_PATTERN = /\b(?:werkgever|werknemer|arbeidsovereenkomst|arbeidscontract|employeur|travailleur|employer|employee)\b/i
+    EMPLOYEE_CONSENT_CLAUSE_PATTERN = /
+      \bzonder\s+(?:het\s+|de\s+)?(?:akkoord|toestemming|instemming|goedkeuring)\s+van\s+(?:de\s+|zijn\s+|haar\s+)?werknemer\b|
+      \bsans\s+(?:l['’]accord|le\s+consentement)\s+d[ue]\s+(?:travailleur|salari[eé])\b|
+      \bwithout\s+(?:the\s+)?(?:employee['’]s\s+(?:agreement|consent)|(?:agreement|consent)\s+of\s+the\s+employee)\b
+    /ix
+    UNILATERAL_MARKER_PATTERN = /\b(?:eenzijdig\w*|unilat[eé]ral\w*|unilateral\w*)\b/i
+    # Stems and their Dutch past participles ("gewijzigd worden", "aangepast").
+    EMPLOYMENT_CHANGE_VERB_PATTERN = /
+      \b(?:(?:ge)?wijzig\w*|(?:ge)?verander\w*|(?:ge)?verla(?:ag|g)\w*|(?:ge)?verminder\w*|aanpass\w*|aangepast\w*|
+          modifi\w*|chang\w*|r[eé]dui\w*|baiss\w*|reduc\w*|lower\w*|cut\w*)\b
+    /ix
+    # The core terms are specific enough to carry a question on their own;
+    # the consent list adds the function and the short English words, which
+    # only the employee's consent clause scopes.
+    EMPLOYMENT_CORE_TERMS_PATTERN = /
+      \b(?:arbeidsvoorwaarden|arbeidsovereenkomst|arbeidscontract|loon|salaris|uurrooster|werkrooster|arbeidsrooster|arbeidstijd\w*|
+          conditions\s+de\s+travail|contrat\s+de\s+travail|salaire|r[eé]mun[eé]ration|horaires?(?:\s+de\s+travail)?|
+          working\s+conditions|employment\s+contract|wages?|salary|working\s+(?:hours|time|schedule))\b
+    /ix
+    EMPLOYMENT_CONSENT_TERMS_PATTERN = /#{EMPLOYMENT_CORE_TERMS_PATTERN}|\b(?:functie|fonction|pay|schedule)\b/i
+    GENERIC_CONTRACT_PATTERN = /\b(?:contract|overeenkomst|contrat|agreement)\b/i
+    # The employer changing "the contract" unilaterally, said with the generic
+    # contract word: "Kan werkgever eenzijdig contract wijzigen?" (catalogue
+    # item july-2 and the live question of 2026-10-19 06:19), which neither
+    # Art. 25 pin matched: the employer and the unilateral marker in one
+    # clause, a change verb and the contract word in that clause. Shared with
+    # the unilateral-change topic so the pin and the topic cannot drift.
+    # The marker may also open the clause with the employer as its agent:
+    # "Eenzijdig kan de werkgever het contract wijzigen?", "Unilatéralement,
+    # l'employeur peut-il modifier le contrat ?". An employer named as the
+    # beneficiary ("Eenzijdig kan ik het contract voor de werkgever
+    # wijzigen?", "eenzijdig wijzigen voor mijn werkgever") does not count.
+    INVERSE_EMPLOYER_AGENT_PATTERN = /[[:space:]]*#{UNILATERAL_MARKER_PATTERN}[,[:space:]]+
+      (?:(?:kan|mag|kunnen|mogen|wil|willen|moet|peut|peuvent|can|may|might|could)[[:space:]]+)?
+      (?:(?:de|het|een|mijn|onze?|uw|le|la|un|une|mon|notre|votre|the|an?|my|our|your)[[:space:]]+|l['’][[:space:]]*)?
+      #{EMPLOYER_PATTERN}/ix
+    EMPLOYMENT_UNILATERAL_GENERIC_CONTRACT_PATTERN = /\A(?:[^.;?!]*[.;?!])*?
+      (?=[^.;?!]*#{EMPLOYER_PATTERN}[^.;?!]*#{UNILATERAL_MARKER_PATTERN}|#{INVERSE_EMPLOYER_AGENT_PATTERN})
+      (?=[^.;?!]*#{EMPLOYMENT_CHANGE_VERB_PATTERN})
+      (?=[^.;?!]*#{GENERIC_CONTRACT_PATTERN})/x
+    # The employer changing a contract to or within part-time work, in one
+    # clause (catalogue item july-1081: "Mijn werkgever wil mijn contract
+    # wijzigen van voltijds naar deeltijds, mag dat?"); the 11bis pin only knew
+    # "deeltijdse arbeidsovereenkomst". A part-time word is required: a
+    # full-time contract changed for telework is not a part-time question.
+    PART_TIME_WORK_PATTERN = /\b(?:deeltijd\w*|halftijd\w*|part[-\s]?time|temps\s+partiel|mi-temps|teilzeit\w*)\b/i
+    EMPLOYER_WORKING_TIME_CHANGE_PATTERN = /\A(?:[^.;?!]*[.;?!])*?
+      (?=[^.;?!]*#{EMPLOYER_PATTERN})
+      (?=[^.;?!]*#{PART_TIME_WORK_PATTERN})
+      (?=[^.;?!]*#{EMPLOYMENT_CHANGE_VERB_PATTERN})/x
+
+    # An employer changing pay, the fixed working schedule, the function or
+    # the working conditions without the employee's agreement: the Art. 25
+    # question asked without the word "eenzijdig" (live question of
+    # 2026-10-19, 06:28 CEST, dated "op 19 oktober 2026"). The consent clause
+    # must name the employee, so a landlord's or a client's consent clause
+    # never pins employment law.
+    EMPLOYMENT_CHANGE_WITHOUT_CONSENT_PATTERN = /
+      (?=.*#{EMPLOYER_PATTERN})(?=.*#{EMPLOYEE_CONSENT_CLAUSE_PATTERN})
+      (?=.*#{EMPLOYMENT_CONSENT_TERMS_PATTERN})(?=.*#{EMPLOYMENT_CHANGE_VERB_PATTERN})
+    /x
+    # The same Art. 25 question with the target before the verb ("mijn
+    # arbeidsvoorwaarden eenzijdig wijzigen"), which the Art. 25 pin only
+    # knew for wages: a core employment term, then the unilateral marker and
+    # a change verb, with an employment actor or contract somewhere in the
+    # question. A generic word such as "functie" is not a target, so a
+    # landlord's clause never qualifies.
+    EMPLOYMENT_UNILATERAL_TARGET_FIRST_PATTERN = /
+      \A(?=.*#{EMPLOYMENT_SCOPE_WORD_PATTERN})
+      .*?#{EMPLOYMENT_CORE_TERMS_PATTERN}.{0,60}?#{UNILATERAL_MARKER_PATTERN}\s+(?:te\s+|laten\s+)?#{EMPLOYMENT_CHANGE_VERB_PATTERN}
+    /ix
+    # The employer as the actor changing pay or another core employment term,
+    # without "eenzijdig" or a consent clause (held-out 2145 of the r47 QA:
+    # "Kan mijn werkgever mijn loon verlagen?" received wage deductions and
+    # job subsidies instead of Art. 20 and 25). The three words are bound in
+    # one clause, in order and at a short distance: the employer, at most five
+    # words, the term, at most three words, the change verb (Dutch and German
+    # put the verb last); the employer, at most three words, the verb, at most
+    # three words, the term (French and English); or the term changed by
+    # ("door", "par", "by", "von") the employer. A gap word never contains
+    # punctuation, so pay merely mentioned beside another party's change
+    # ("Mijn werkgever is ook mijn verhuurder; ik werk deeltijds en mijn loon
+    # is laag. Mag hij mijn huur verhogen?") binds nothing.
+    EMPLOYMENT_ACTOR_PATTERN = /\b(?:werkgever|employeur|employer|arbeitgeber)\b/i
+    EMPLOYMENT_CHANGED_TERM_PATTERN = /
+      \b(?:loon|lonen|salaris|wedde|bezoldiging|uurrooster|werkrooster|arbeidsrooster|arbeidsuren|arbeidsvoorwaarden|
+          salaire|r[ée]mun[ée]ration|horaires?|conditions[[:space:]]+de[[:space:]]+travail|
+          pay|wages?|salary|remuneration|working[[:space:]]+(?:hours|conditions)|schedule|
+          lohn|gehalt|arbeitszeit\w*|arbeitsbedingungen)\b
+    /ix
+    EMPLOYMENT_TERM_CHANGE_VERB_PATTERN = /#{EMPLOYMENT_CHANGE_VERB_PATTERN}|\b(?:k(?:ü|ue)rz\w*|gek(?:ü|ue)rzt|senk\w*|gesenkt)\b/i
+    EMPLOYMENT_GAP_WORD = '(?:[[:space:]]+[^[:space:].,;:?!]+)'
+    EMPLOYER_CHANGES_CORE_TERM_PATTERN = /
+      #{EMPLOYMENT_ACTOR_PATTERN}#{EMPLOYMENT_GAP_WORD}{0,5}[[:space:]]+#{EMPLOYMENT_CHANGED_TERM_PATTERN}
+        #{EMPLOYMENT_GAP_WORD}{0,3}[[:space:]]+#{EMPLOYMENT_TERM_CHANGE_VERB_PATTERN}
+      |#{EMPLOYMENT_ACTOR_PATTERN}#{EMPLOYMENT_GAP_WORD}{0,3}[[:space:]]+#{EMPLOYMENT_TERM_CHANGE_VERB_PATTERN}
+        #{EMPLOYMENT_GAP_WORD}{0,3}[[:space:]]+#{EMPLOYMENT_CHANGED_TERM_PATTERN}
+      |#{EMPLOYMENT_CHANGED_TERM_PATTERN}#{EMPLOYMENT_GAP_WORD}{0,3}[[:space:]]+#{EMPLOYMENT_TERM_CHANGE_VERB_PATTERN}
+        #{EMPLOYMENT_GAP_WORD}{0,2}[[:space:]]+(?:door|par|by|von)#{EMPLOYMENT_GAP_WORD}{0,2}[[:space:]]+#{EMPLOYMENT_ACTOR_PATTERN}
+      |#{EMPLOYMENT_CHANGED_TERM_PATTERN}#{EMPLOYMENT_GAP_WORD}{0,3}[[:space:]]+(?:door|par|by|von)
+        #{EMPLOYMENT_GAP_WORD}{0,2}[[:space:]]+#{EMPLOYMENT_ACTOR_PATTERN}#{EMPLOYMENT_GAP_WORD}{0,2}[[:space:]]+#{EMPLOYMENT_TERM_CHANGE_VERB_PATTERN}
+    /ix
+    # The pay cut said as a noun, in a clause that names the employer or asks
+    # whether it is allowed ("Is een loonsverlaging zonder akkoord mogelijk?").
+    # A pay cut only told as background ("Ik heb een loonsverlaging gehad;
+    # mag mijn verhuurder de huur verhogen?") stays out.
+    EMPLOYMENT_PAY_CUT_NOUN_PATTERN = /
+      \b(?:loons?verlaging\w*|loons?vermindering\w*|salarisverlaging\w*|weddeverlaging\w*|
+          (?:baisse|r[ée]duction|diminution)[[:space:]]+(?:de|du)[[:space:]]+(?:salaire|r[ée]mun[ée]ration)|
+          pay[[:space:]]+cuts?|wage[[:space:]]+cuts?|salary[[:space:]]+(?:cuts?|reductions?)|
+          lohnk(?:ü|ue)rzung\w*|gehaltsk(?:ü|ue)rzung\w*)\b
+    /ix
+    EMPLOYMENT_PERMISSION_PATTERN = /
+      \b(?:mag|mogen|toegestaan|toegelaten|legaal|wettig|mogelijk|kan|kunnen|peut|peuvent|permis\w*|autoris\w*|l[ée]gal\w*|
+          possible|allowed|legal|lawful|can|may|darf|d(?:ü|ue)rfen|erlaubt|zul(?:ä|ae)ssig|m(?:ö|oe)glich)\b
+    /ix
+    EMPLOYER_PAY_CUT_NOUN_PATTERN = /
+      \A(?:[^.;?!]*[.;?!])*?
+      (?=[^.;?!]*#{EMPLOYMENT_PAY_CUT_NOUN_PATTERN})
+      (?=[^.;?!]*(?:#{EMPLOYMENT_ACTOR_PATTERN}|#{EMPLOYMENT_PERMISSION_PATTERN}))
+    /ix
+    # The part-time employment contract named as a contract (held-out 9 of the
+    # r47 QA: "Wat is deeltijds contract?" received the timeshare law, Civil
+    # Code Book 5 and an education decree instead of Art. 11bis); the 11bis
+    # pin only knew "deeltijdse (arbeids)overeenkomst". Contract forms only,
+    # in four languages: part-time work said in passing ("ik werk deeltijds en
+    # huur een studio") is no contract question. Within the clause that names
+    # the contract, a timeshare or holiday-use contract, a student,
+    # apprenticeship or part-time-education contract, or a lease without any
+    # employment party keeps the pin out; another clause may name a holiday
+    # home without erasing a genuine employment question.
+    PART_TIME_CONTRACT_PHRASE_PATTERN = /
+      \b(?:deeltijds|halftijds)(?:e)?[[:space:]]+(?:arbeids|werk)?(?:overeenkomst|contract)\w*
+      |\bdeeltijd(?:s)?(?:arbeids)?(?:overeenkomst|contract)\w*
+      |\b(?:arbeids|werk)?(?:overeenkomst|contract)\w*[^.;?!]{0,30}\bdeeltijd
+      |\bcontrats?[[:space:]]+(?:de[[:space:]]+travail[[:space:]]+)?(?:à|a)[[:space:]]+(?:temps[[:space:]]+partiel|mi-temps)\b
+      |\bpart[-[:space:]]?time[[:space:]]+(?:employment[[:space:]]+|work[[:space:]]+|job[[:space:]]+)?(?:contract|agreement)s?\b
+      |\b(?:employment|work)[[:space:]]+contracts?[[:space:]]+(?:for[[:space:]]+(?:a[[:space:]]+)?)?part[-[:space:]]?time\b
+      |\bteilzeit(?:arbeits)?vertr(?:a|ä|ae)g\w*
+      |\barbeitsvertr(?:a|ä|ae)g\w*[^.;?!]{0,30}\bteilzeit
+    /ix
+    PART_TIME_CONTRACT_EXCLUSION_PATTERN = /
+      \btimeshar\w*|\btime[-[:space:]]?share\w*|\bgebruik[[:space:]]+van[[:space:]]+goederen[[:space:]]+in[[:space:]]+deeltijd|\bdeeltijds[[:space:]]+gebruik\b
+      |\bvakantie(?:woning|verblijf|appartement|club|park)\w*|\bjouissance[[:space:]]+(?:à|a)[[:space:]]+temps[[:space:]]+partag\w*|\btemps[[:space:]]+partag\w*|\bmultipropri\w*
+      |\bholiday[[:space:]]+(?:accommodation|home|club|property)\w*|\bteilzeitnutzung\w*|\bteilzeitwohnrecht\w*|\bferienwohn\w*
+      |\bstudent\w*|\bjobstudent\w*|\bleerling\w*|\balternerend\w*|\bduaal[[:space:]]+leren\b|\bleren[[:space:]]+en[[:space:]]+werken\b
+      |\bdeeltijds[[:space:]]+(?:onderwijs|kunstonderwijs|leren)\b|\b(?:leer|opleidings|stage)overeenkomst\w*
+      |(?<![[:alpha:]])[ée]tudiant\w*|(?<![[:alpha:]])[ée]l[èe]ve\w*|\balternance\b|\bapprenti\w*
+      |\benseignement[[:space:]]+(?:à|a)[[:space:]]+temps[[:space:]]+partiel\b
+      |\bapprentice\w*|\bpart[-[:space:]]?time[[:space:]]+(?:education|studies|study|course|school)\b|\bwerkstudent\w*|\bausbildung\w*|\bsch(?:ü|ue)ler\w*
+    /ix
+    PART_TIME_EMPLOYMENT_CONTRACT_PATTERN = /
+      \A(?:[^.;?!]*[.;?!])*?
+      (?=[^.;?!]*(?:#{PART_TIME_CONTRACT_PHRASE_PATTERN}))
+      (?![^.;?!]*(?:#{PART_TIME_CONTRACT_EXCLUSION_PATTERN}))
+      (?!(?=[^.;?!]*#{RENTAL_LEASE_TERM_PATTERN})(?![^.;?!]*#{EMPLOYMENT_SUBJECT_PATTERN}))
+    /ix
     EMPLOYMENT_NON_COMPETE_PATTERN = /
       (?:
         \b(?:niet[-\s]?)?concurrentiebeding(?:en)?\b|\bnon[-\s]?concurrence\b
@@ -944,11 +1200,28 @@ module LegalChatbot
       .*
       \z
     }ixm.freeze
+    # A sale by a private person, said as the seller relationship: "van een
+    # particulier gekocht", "particuliere verkoper", "entre particuliers",
+    # "from a private seller". "Ik ben particulier" (the consumer), a
+    # second-hand good, or a platform such as 2dehands proves no private sale
+    # (root 2026-10-19 23:27:12). The consumer-goods routes below never give
+    # the consumer conformity rules for such a sale.
+    EXPLICIT_PRIVATE_SELLER_PATTERN = /
+      \b(?:van|bij)[[:space:]]+een[[:space:]]+(?:andere[[:space:]]+)?particulier\b
+      |\bparticuliere[[:space:]]+verkoper\w*|\bverkoper[[:space:]]+(?:is|was)[[:space:]]+(?:een[[:space:]]+)?particulier\b
+      |\btussen[[:space:]]+particulieren\b|\bpriv[ée][-[:space:]]?verkoper\w*|\bparticulier[[:space:]]+(?:verkocht|verkoopt|heeft[[:space:]]+verkocht)\b
+      |\b(?:achet[ée]e?s?|acquise?s?|vendue?s?)[[:space:]]+(?:à|a|par|auprès[[:space:]]+d['’])[[:space:]]*(?:un|une)[[:space:]]+particulier\w*
+      |\bvendeur[[:space:]]+particulier\b|\bentre[[:space:]]+particuliers\b
+      |\b(?:from|by)[[:space:]]+(?:a[[:space:]]+)?private[[:space:]]+(?:seller|person|individual|party)\b|\bprivate[[:space:]]+(?:seller|sale)\b
+      |\bvon[[:space:]]+(?:einer|einem)[[:space:]]+privat(?:person|verk(?:ä|ae)ufer)\w*|\bvon[[:space:]]+privat\b|\bprivatverk(?:a|ä|ae)u\w*
+      |\bprivate[nr]?[[:space:]]+verk(?:ä|ae)ufer\w*
+    /ix
     USED_GOODS_WARRANTY_PATTERN = /
       \A
       (?=.*\b(?:tweedehands(?:e)?|2dehands?|2e[-\s]?hands?|occasie(?:wagen)?|d[’']occasion|seconde?\s+main|used|second[-\s]?hand|gebraucht\w*)\b)
       (?:(?=.*\b(?:aankoop|koop|kopen|gekocht|vente|achat|acheter|purchase|buy|bought|kauf|gekauft)\b)|(?=.*\b(?:voertuig|auto|wagen|vehicle|car|fahrzeug)\b)(?=.*\b(?:handelaar|dealer|vendeur|concessionnaire|seller|Händler)\b))
       (?=.*\b(?:garantie|conformiteit|conformité|warranty|gewährleistung)\b)
+      (?!.*(?:#{EXPLICIT_PRIVATE_SELLER_PATTERN.source}))
       .*\z
     /ixm
     # A product warranty is not a bank guarantee, a tenancy deposit, health
@@ -966,8 +1239,175 @@ module LegalChatbot
     CONSUMER_GOODS_WARRANTY_PATTERN = %r{
       \A(?=#{CONSUMER_GOODS_DISPUTE_PATTERN.source})
       (?=.*\b(?:garantie|conformiteit|conformité|warrant\w*|guarantee|Gewährleistung)\b)
+      (?!.*(?:#{EXPLICIT_PRIVATE_SELLER_PATTERN.source}))
       .*\z
     }imxu.freeze
+    # A bought product that does not work, said without any of the warranty
+    # or defect words above (catalogue item july-1082: "Ik heb online een
+    # product gekocht dat niet werkt en de verkoper reageert niet, wat nu?"):
+    # the consumer conformity rules, not a withdrawal or complaint route.
+    # Construction, bank and rental questions stay out.
+    CONSUMER_GOODS_MALFUNCTION_PATTERN = %r{
+      \A
+      (?=.*\b(?:product|toestel|laptop|telefoon|goederen|apparaat|produit|appareil|ordinateur|téléphone|appliance|phone|goods|device)\b)
+      (?=.*\b(?:gekocht|aangekocht|besteld|aankoop|verkoper|webshop|achet\w*|commandé|vendeur|bought|ordered|purchase\w*|seller)\b)
+      (?=.*(?:\bwerkt\s+(?:het\s+)?(?:nog\s+)?niet\b|\bniet\s+(?:meer\s+)?werkt\b|\bdoet\s+het\s+niet\b|\bkapot\b|\bstuk\b|
+            \bne\s+(?:fonctionne|marche)\s+pas\b|\ben\s+panne\b|\b(?:does\s+not|doesn['’]t)\s+work\b|\bbroken\b))
+      (?!.*\b(?:bouwgarantie|nieuwbouw|aannemer|architect|bankgarantie|huur\w*|verhuurder|huurder|bail|bailleur|locataire)\b)
+      (?!.*(?:\bB2B\b|\b(?:mijn|onze?|ma|mon|notre|my|our)\s+(?:BV|NV|VZW|bedrijf|onderneming|vennootschap|firma|soci[ée]t[ée]|entreprise|company|business)\b|
+            \bals\s+(?:zelfstandige|onderneming|bedrijf|ondernemer)\b|\bzakelijke?\s+aankoop\b))
+      (?!.*(?:#{EXPLICIT_PRIVATE_SELLER_PATTERN.source}))
+      .*\z
+    }imxu.freeze
+    # "Wat is een koop op afstand?" (catalogue item july-2600): the definition
+    # in WER art. I.8, not the information duties of VI.46.
+    DISTANCE_CONTRACT_DEFINITION_PATTERN = %r{
+      \b(?:wat\s+(?:is|zijn|betekent)|definitie|begrip|qu['’]est[-\s]ce\s+que?|d[ée]finition|what\s+is|definition)\b
+      [^.?!;]{0,40}
+      (?:\b(?:(?:ver)?koop|overeenkomst|contract|vente|contrat|sale)\s+(?:op|à|at\s+a)\s+(?:afstand|distance)\b
+       |\bdistance\s+(?:contracts?|sales?|selling)\b)
+    }ix.freeze
+    # A rental dispute before the justice of the peace (catalogue item
+    # july-297): the special rental competence of Judicial Code art. 591, 1°
+    # irrespective of the amount, and the territorial rule of art. 629. Both
+    # concern leases of immovables, so matching_article_pins drops them for a
+    # hired movable, and drops art. 629 for an agricultural lease, which its
+    # 1° excludes ("met uitzondering van vorderingen inzake pacht").
+    RENTAL_DISPUTE_PEACE_JUDGE_PATTERN = %r{
+      (?=.*\b(?:vrederechter\w*|vredegerecht\w*|juges?\s+de\s+paix|justice\s+de\s+paix|justice\s+of\s+the\s+peace|friedensrichter\w*|friedensgericht\w*)\b)
+      (?=.*\b(?:huur\w*|verhuur\w*|loyer\w*|bail\w*|locat\w*|rent\w*|lease\w*|tenan\w*|landlord\w*|miet\w*|vermiet\w*)\b)
+    }ix.freeze
+    # Bringing a rental claim before the court (held-out 2432, "Hoe stap ik
+    # naar de vrederechter voor huur?"; root 2026-10-19 23:30:47): an act of
+    # filing, starting or answering the claim, bound in its own words to the
+    # court or to the procedural document. A judge who is only named
+    # ("Hoeveel huurverhoging kan de vrederechter toestaan?") or a competence
+    # question ("Welke rechter is bevoegd voor een huurgeschil?") is no
+    # filing and keeps Art. 591 and 629 alone. rental_filing_question? binds
+    # the act to the lease the way the housing topics are bound.
+    RENTAL_FILING_COURT = '(?:vrederechter\w*|vredegerecht\w*|rechter|rechtbank\w*|griffie|juges?\s+de\s+paix|' \
+                          'justice\s+de\s+paix|juges?|tribunal|greffe|justice\s+of\s+the\s+peace|courts?|judges?|' \
+                          'friedensrichter\w*|friedensgericht\w*|gericht|richter)'
+    RENTAL_FILING_ACTION_PATTERN = %r{
+      \b(?:stap\w*|ga|gaat|gaan|trek\w*|daag\w*|dagen|roep\w*|breng\w*|sleep\w*)\b[^.;?!]{0,40}?
+        \b(?:naar|voor|bij)\s+(?:de\s+|het\s+|een\s+)?#{RENTAL_FILING_COURT}\b
+      |\b(?:naar|voor)\s+(?:de\s+|het\s+|een\s+)?#{RENTAL_FILING_COURT}\b[^.;?!]{0,30}?
+        \b(?:stappen|gaan|trekken|dagen|brengen|slepen|roepen)\b
+      |\bdien\w*\b[^.;?!]{0,40}?\b(?:verzoekschrift\w*|dagvaarding\w*|vordering\w*|eis)\b[^.;?!]{0,30}?\bin\b
+      |\bleid\w*\b[^.;?!]{0,40}?\b(?:procedure|vordering\w*|rechtszaak\w*|geding|eis)\b[^.;?!]{0,30}?\bin\b
+      |\bstel\w*\b[^.;?!]{0,40}?\b(?:vordering\w*|rechtsvordering\w*|eis)\b[^.;?!]{0,30}?\bin\b
+      |\bleg\w*\b[^.;?!]{0,40}?\b(?:verzoekschrift\w*|dagvaarding\w*)\b[^.;?!]{0,30}?\bneer\b
+      |\bspan\w*\b[^.;?!]{0,40}?\b(?:procedure|rechtszaak\w*|geding)\b[^.;?!]{0,30}?\baan\b
+      |\b(?:verzoekschrift\w*|dagvaarding\w*|vordering\w*|procedure|rechtszaak\w*|geding)\b[^.;?!]{0,30}?
+        \b(?:in\s*te\s*(?:dienen|leiden|stellen)|indien\w*|ingediend|inleid\w*|ingeleid|instell\w*|ingesteld|
+           neer\s*te\s*leggen|neerleg\w*|neergelegd|start\w*|opstart\w*|aanspann\w*|aangespannen)\b
+      |\b(?:start\w*|begin\w*|opstart\w*)\b[^.;?!]{0,30}?\b(?:procedure|rechtszaak\w*|geding|vordering\w*)\b
+      |\baanhangig\b|\b(?:ge)?dagvaard\w*|\bverzoekschrift\w*
+      |\b(?:procedure|stappen)\b[^.;?!]{0,30}?\b(?:bij|voor|naar)\s+(?:de\s+|het\s+)?#{RENTAL_FILING_COURT}\b
+      |\b(?:uitzett\w*|uithuiszetting\w*)\b[^.;?!]{0,40}?\b(?:via|door|bij|voor)\s+(?:de\s+|het\s+)?#{RENTAL_FILING_COURT}\b
+      |\bprocedure\b[^.;?!]{0,20}?\b(?:tot|voor|van)\s+(?:een\s+|de\s+)?(?:uithuiszetting|uitzetting)\b
+      |\bsaisi\w*\b[^.;?!]{0,30}?\b(?:le\s+|la\s+|du\s+)?(?:juges?|justice|tribunal)\b
+      |\b(?:introdui\w*|intent\w*|engag\w*|entam\w*|lanc\w*|d[ée]pos\w*)\b[^.;?!]{0,30}?
+        \b(?:requ[êe]te|action|proc[ée]dure|recours|citation)
+      |\b(?:requ[êe]te|action|proc[ée]dure|demande|recours)\b[^.;?!]{0,30}?
+        \b(?:devant|aupr[èe]s\s+du|au)\s+(?:le\s+|la\s+)?(?:juges?|justice|tribunal|greffe)\b
+      |\b(?:aller|vais|va|allons|recourir|adresser|traîner|trainer|amener|convoquer|citer|attraire)\b[^.;?!]{0,30}?
+        \b(?:devant|au|en)\s+(?:le\s+|la\s+)?(?:juges?|justice|tribunal)\b
+      |\bproc[ée]dure\s+d['’]\s*expulsion|\bassign(?:ation|er|[ée]e?s?)(?![[:alpha:]])|\brequ[êe]tes?\b
+      |\bcitation\s+(?:en\s+justice|devant|[àa]\s+compara[iî]tre)
+      |\b(?:take|takes|taking|bring|brings|bringing|drag|haul|summon\w*)\b[^.;?!]{0,40}?
+        \b(?:to|before|into)\s+(?:the\s+|a\s+)?(?:justice\s+of\s+the\s+peace|courts?|judges?|tribunal)\b
+      |\b(?:file|files|filing|lodge|lodging|start|starting|initiate|commence)\b[^.;?!]{0,30}?
+        \b(?:claims?|petitions?|case|action|lawsuit|suit|proceedings|summons)\b
+      |\bsu(?:e|es|ed|ing)\b|\bsummons\b|\blawsuit\b|\beviction\s+(?:procedure|process|proceedings)\b
+      |\b(?:procedure|process|steps)\b[^.;?!]{0,30}?\b(?:at|before|in|to)\s+(?:the\s+)?(?:justice\s+of\s+the\s+peace|courts?)\b
+      |\b(?:klage|klageschrift)\b[^.;?!]{0,40}?\b(?:einreich\w*|eingereicht|erheb\w*|erhoben)
+      |\b(?:einreich\w*|erheb\w*)\b[^.;?!]{0,40}?\bklage\b|\bräumungsklage\w*
+      |\bantrag\b[^.;?!]{0,40}?\b(?:beim|bei\s+dem|am)\s+(?:friedensrichter\w*|friedensgericht\w*|gericht)\b
+      |\bverklag\w*|\bklage\s+gegen\b
+      |\b(?:gehe|gehen|geht|ziehe|ziehen|zieht|bringe|bringen|lade|laden)\b[^.;?!]{0,30}?
+        \b(?:zum|zur|vor\s+(?:den|das|dem|die))\s+(?:friedensrichter\w*|friedensgericht\w*|gericht|richter)\b
+      |\bvor\s+(?:den\s+|das\s+|dem\s+)?(?:friedensrichter\w*|friedensgericht\w*|gericht|richter)\b[^.;?!]{0,30}?
+        \b(?:gehen|ziehen|bringen|laden|klagen)\b
+      |\bverfahren\b[^.;?!]{0,20}?\bvor\s+(?:dem\s+)?(?:friedensrichter\w*|friedensgericht\w*|gericht)\b
+    }ix
+    # The pin rows' prefilter: a lease word and a filing act anywhere, read
+    # from the start only; rental_filing_targets decides with the clause
+    # binding and the lease regime.
+    RENTAL_FILING_PATTERN = /\A(?=.*#{RENTAL_LEASE_TERM_PATTERN})(?=.*#{RENTAL_FILING_ACTION_PATTERN})/
+    # The filing rules, read in laws.prod on 2026-10-19 (one Dutch and one
+    # French row each, no variant, the laws neither repealed nor amending):
+    # Judicial Code Art. 1344bis (a claim on any lease of goods may be brought
+    # by a petition filed at the registry of the justice of the peace, subject
+    # to the rules on agricultural leases) and 1344septies (the judge first
+    # tries to reconcile the parties to a claim on the lease of a dwelling),
+    # and Brussels Housing Code Art. 233quinquies (how a claim on a home
+    # lease, an eviction included, is brought) and 233octies (prior
+    # conciliation), both inserted by the ordinance of 22 June 2023 and in
+    # force since 31 August 2023.
+    RENTAL_FILING_TARGETS = [
+      %w[1967101055 1344bis].freeze, %w[1967101055 1344septies].freeze,
+      %w[2013A31614 233quinquies].freeze, %w[2013A31614 233octies].freeze
+    ].freeze
+    RENTAL_COMPETENCE_TARGETS = [%w[1967101054 591].freeze, %w[1967101054 629].freeze].freeze
+    RENTAL_PROCEDURE_TARGETS = (RENTAL_COMPETENCE_TARGETS + RENTAL_FILING_TARGETS).freeze
+    # Whose rule each filing source is, in the site language: the label opens
+    # the source's law title, so the context and the source card carry the
+    # federal or Brussels scope and the 31 August 2023 date themselves (root
+    # 2026-10-19 23:30:47), not a later date check.
+    RENTAL_FILING_SCOPE_LABELS = {
+      'nl' => [
+        'Federaal, alle gewesten, elke huur van goederen onder voorbehoud van de pachtregels; voor een woninghuur in ' \
+        'Brussel gelden sinds 31 augustus 2023 ook de procedureregels van de Brusselse Huisvestingscode',
+        'Federaal, alle gewesten, huur van woningen; voor een woninghuur in Brussel gelden sinds 31 augustus 2023 ook ' \
+        'de procedureregels van de Brusselse Huisvestingscode',
+        'Brussel, alleen woninghuur in het Brussels Hoofdstedelijk Gewest, in werking sinds 31 augustus 2023',
+        'Brussel, alleen woninghuur in het Brussels Hoofdstedelijk Gewest, in werking sinds 31 augustus 2023'
+      ],
+      'fr' => [
+        'Fédéral, toutes les régions, tout louage de choses sous réserve des règles du bail à ferme ; pour un bail ' \
+        "d'habitation à Bruxelles, les règles de procédure du Code bruxellois du Logement s'appliquent aussi depuis " \
+        'le 31 août 2023',
+        "Fédéral, toutes les régions, louage d'habitations ; pour un bail d'habitation à Bruxelles, les règles de " \
+        "procédure du Code bruxellois du Logement s'appliquent aussi depuis le 31 août 2023",
+        "Bruxelles, uniquement le bail d'habitation en Région de Bruxelles-Capitale, en vigueur depuis le 31 août 2023",
+        "Bruxelles, uniquement le bail d'habitation en Région de Bruxelles-Capitale, en vigueur depuis le 31 août 2023"
+      ],
+      'de' => [
+        'Föderal, alle Regionen, jede Miete von Gütern vorbehaltlich der Regeln über die Landpacht; für eine ' \
+        'Wohnungsmiete in Brüssel gelten seit dem 31. August 2023 auch die Verfahrensregeln des Brüsseler Wohngesetzbuches',
+        'Föderal, alle Regionen, Miete von Wohnungen; für eine Wohnungsmiete in Brüssel gelten seit dem 31. August 2023 ' \
+        'auch die Verfahrensregeln des Brüsseler Wohngesetzbuches',
+        'Brüssel, nur Wohnungsmieten in der Region Brüssel-Hauptstadt, in Kraft seit dem 31. August 2023',
+        'Brüssel, nur Wohnungsmieten in der Region Brüssel-Hauptstadt, in Kraft seit dem 31. August 2023'
+      ],
+      'en' => [
+        'Federal, all regions, every lease of goods subject to the agricultural lease rules; for a residential lease ' \
+        'in Brussels, the procedural rules of the Brussels Housing Code also apply since 31 August 2023',
+        'Federal, all regions, lease of dwellings; for a residential lease in Brussels, the procedural rules of the ' \
+        'Brussels Housing Code also apply since 31 August 2023',
+        'Brussels, residential leases in the Brussels-Capital Region only, in force since 31 August 2023',
+        'Brussels, residential leases in the Brussels-Capital Region only, in force since 31 August 2023'
+      ]
+    }.transform_values { |labels| RENTAL_FILING_TARGETS.zip(labels).to_h.freeze }.freeze
+    # A sale, a buyer or a new owner of the leased property, or the article
+    # itself: old Civil Code Art. 1743 (a sale does not end a lease with a
+    # certain date) then stays a candidate beside a filing step.
+    LEASED_PROPERTY_SALE_PATTERN = %r{
+      \b(?:verko\w*|gekocht|koper\w*|aankoop|aangekocht|koop\s+breekt|nieuwe\s+eigenaar\w*|eigendomsoverdracht\w*|vervreemd\w*
+        |vente\w*|vend(?:s|u|ue|us|ues|re|ra|rait|ait|ent)?|acqu[ée]reur\w*|acheteur\w*|nouveaux?\s+propri[ée]taires?|achat\w*
+        |sale|sales|sell|sells|sold|selling|buyer\w*|purchaser\w*|new\s+owner\w*
+        |verkauf\w*|verkauft\w*|käufer\w*|erwerber\w*|neue[rn]?\s+eigentümer\w*)\b
+    }ix
+    LEASE_SALE_ARTICLE_PATTERN = %r{(?<![\d./])1743(?![\d/])}
+    # The explicit governing group (root 2026-10-19 23:30:47): the provisions
+    # of every housing topic and the competence and filing rules of a filing
+    # question. A row belongs to it only when its own builder marked it for
+    # the question (governing_group: true) and it is one of these exact
+    # articles; no other pin, regional row or keyword hit qualifies. The
+    # optional breadth quotas keep the group whole and first.
+    GOVERNING_GROUP_TARGETS = (REGIONAL_HOUSING_TOPIC_TARGETS.flat_map(&:last) + RENTAL_PROCEDURE_TARGETS)
+                              .to_set { |numac, number| [numac, number.downcase].freeze }.freeze
     # New damage while a professional has a movable good for repair is a
     # performance/liability question, even if the original repair is covered
     # by a sales warranty. Do not conflate that damage with a delivery defect.
@@ -1009,6 +1449,62 @@ module LegalChatbot
       (?!.*(?:#{HISTORICAL_PROFESSIONAL_REPAIR_PATTERN.source}))
       .*\z
     }imxu.freeze
+    # Rights for a defective good, also without a purchase word (held-out 1006
+    # of the r47 QA: "Wat zijn mijn rechten bij een defect product?" received
+    # measuring, gambling and grid regulations instead of the consumer
+    # conformity rules). A good and a defect, then any one of three branches:
+    # a conformity remedy (repair, replacement, refund, warranty) anywhere in
+    # the question, so an injury told beside it never removes the warranty
+    # sources; a rights question in a clause that does not ask about an injury
+    # or liability; or the good bought from a shop or seller. Never for an
+    # explicitly private seller (EXPLICIT_PRIVATE_SELLER_PATTERN), new damage
+    # during a professional repair, a business purchase, or the construction,
+    # bank and rental exclusions of the routes above.
+    CONSUMER_DEFECTIVE_GOOD_WORD_PATTERN = /
+      \b(?:product(?:en)?|toestel(?:len)?|apparaat|apparaten|artikel|goederen|laptop|telefoon|gsm|smartphone|televisie|tv|
+          wasmachine|koelkast|fiets|produit|appareil|article|biens|ordinateur|v[ée]lo|device|appliance|item|goods|phone|bike|
+          produkt|ger(?:ä|ae)t|ware|handy|fahrrad)\b
+      |(?<![[:alpha:]])t[ée]l[ée]phone\b
+    /ix
+    CONSUMER_GOOD_DEFECT_PATTERN = /
+      \b(?:defect\w*|kapot\w*|stuk|gebrekkig\w*|gebreken|cass[ée]e?s?|defective|faulty|broken|defekt\w*|kaputt|mangelhaft\w*)\b
+      |(?<![[:alpha:]])d[ée]fectueu\w*|(?<![[:alpha:]])d[ée]faut\w*
+      |\bwerkt[[:space:]]+(?:het[[:space:]]+)?(?:nog[[:space:]]+)?niet\b|\bniet[[:space:]]+(?:meer[[:space:]]+)?werkt\b|\bdoet[[:space:]]+het[[:space:]]+niet\b
+      |\ben[[:space:]]+panne\b|\bne[[:space:]]+(?:fonctionne|marche)[[:space:]]+(?:plus|pas)\b|\b(?:does[[:space:]]+not|doesn['’]t)[[:space:]]+work\b
+      |\bfunktioniert[[:space:]]+nicht\b
+    /ix
+    CONSUMER_CONFORMITY_REMEDY_PATTERN = /
+      \b(?:herstel\w*|repar\w*|vervang\w*|terugbetal\w*|omruil\w*|terugbreng\w*|garantie\w*|conformiteit\w*|
+          r[ée]par\w*|remplac\w*|rembours\w*|conformit[ée]|repair\w*|replac\w*|refund\w*|exchange\w*|warrant\w*|guarantee\w*|
+          reparatur\w*|ersatz|erstattung\w*|umtausch\w*|gew(?:ä|ae)hrleistung\w*)\b
+      |(?<![[:alpha:]])[ée]chang\w*
+    /ix
+    CONSUMER_RIGHTS_QUESTION_PATTERN = /
+      \b(?:rechten|recht[[:space:]]+op|wat[[:space:]]+(?:kan|moet)[[:space:]]+ik|droits?|que[[:space:]]+(?:faire|puis[-[:space:]]je)|
+          rights?|what[[:space:]]+can[[:space:]]+i|rechte|anspruch|was[[:space:]]+kann[[:space:]]+ich)\b
+    /ix
+    PRODUCT_INJURY_PATTERN = /
+      \b(?:letsel\w*|gewond\w*|verwond\w*|ongeval\w*|aansprakelijk\w*|blessure\w*|bless[ée]\w*|accident\w*|responsabilit\w*|
+          injur\w*|liabilit\w*|verletzung\w*|unfall\w*|haftung\w*)\b
+    /ix
+    CONSUMER_PURCHASE_CONTEXT_PATTERN = /
+      \b(?:gekocht|aangekocht|kocht|koop|aankoop|besteld|winkel\w*|webshop\w*|verkoper\w*|handelaar\w*|achet[ée]\w*|achat\w*|
+          command[ée]\w*|magasin\w*|vendeur\w*|bought|purchas\w*|ordered|shop\w*|store\w*|seller\w*|dealer\w*|retailer\w*|
+          gekauft|kauf\w*|bestellt|gesch(?:ä|ae)ft\w*|h(?:ä|ae)ndler\w*|verk(?:ä|ae)ufer\w*)\b
+    /ix
+    CONSUMER_DEFECTIVE_GOOD_PATTERN = %r{
+      \A
+      (?=.*#{CONSUMER_DEFECTIVE_GOOD_WORD_PATTERN})
+      (?=.*#{CONSUMER_GOOD_DEFECT_PATTERN})
+      (?=.*#{CONSUMER_CONFORMITY_REMEDY_PATTERN}
+        |(?:[^.;?!]*[.;?!])*?(?![^.;?!]*#{PRODUCT_INJURY_PATTERN})[^.;?!]*#{CONSUMER_RIGHTS_QUESTION_PATTERN}
+        |.*#{CONSUMER_PURCHASE_CONTEXT_PATTERN})
+      (?!.*#{EXPLICIT_PRIVATE_SELLER_PATTERN})
+      (?!.*#{REPAIR_NEW_DAMAGE_RELATION_PATTERN})
+      (?!.*\b(?:bouwgarantie|nieuwbouw|aannemer|architect|bankgarantie|huur\w*|verhuurder|huurder|bail|bailleur|locataire)\b)
+      (?!.*(?:\bB2B\b|\b(?:mijn|onze?|ma|mon|notre|my|our)[[:space:]]+(?:BV|NV|VZW|bedrijf|onderneming|vennootschap|firma|entreprise|company|business)\b|
+            \bals[[:space:]]+(?:zelfstandige|onderneming|bedrijf|ondernemer)\b|\bzakelijke?[[:space:]]+aankoop\b))
+    }ix
     CONSUMER_HIDDEN_DEFECT_PATTERN = /\b(?:verborgen\s+gebrek\w*|vices?\s+cach[ée]s?|hidden\s+defect\w*|latent\s+defect\w*|versteckte\w*\s+(?:Mangel|Mängel))\b/i.freeze
     # A private house sale is not the physical consumer-goods conformity
     # regime. Require both the dwelling and purchase; a tenant's defect or
@@ -1651,6 +2147,17 @@ module LegalChatbot
       [/\b(?:minimumloon|ggmmi|gewaarborgd\s+gemiddeld\s+minimum(?:maand)?inkomen|salaire\s+minimum|rmmmg|revenu\s+minimum\s+mensuel\s+moyen)\b/i, '1988050250', '3'],
       [/\b(?:minimumloon|ggmmi|gewaarborgd\s+gemiddeld\s+minimum(?:maand)?inkomen|salaire\s+minimum|rmmmg|revenu\s+minimum\s+mensuel\s+moyen)\b/i, '1988050250', '5'],
       [/\b(?:ius\s+variandi|eenzijdige?\s+(?:wijziging|wijzigen)\s+(?:van\s+)?(?:arbeidsvoorwaarden|arbeidsovereenkomst|loon|functie)|(?:loon|salaris)\s+eenzijdige?\s+(?:verlagen|verminderen|wijzigen)|eenzijdige?\s+(?:loon|salaris)\s+(?:verlagen|verminderen|wijzigen))\b/i, '1978070303', '25'],
+      [EMPLOYMENT_CHANGE_WITHOUT_CONSENT_PATTERN, '1978070303', '25'],
+      [EMPLOYMENT_UNILATERAL_TARGET_FIRST_PATTERN, '1978070303', '25'],
+      [EMPLOYMENT_UNILATERAL_GENERIC_CONTRACT_PATTERN, '1978070303', '25'],
+      [EMPLOYMENT_UNILATERAL_GENERIC_CONTRACT_PATTERN, '1978070303', '20'],
+      [EMPLOYER_CHANGES_CORE_TERM_PATTERN, '1978070303', '25'],
+      [EMPLOYER_CHANGES_CORE_TERM_PATTERN, '1978070303', '20'],
+      [EMPLOYER_PAY_CUT_NOUN_PATTERN, '1978070303', '25'],
+      [EMPLOYER_PAY_CUT_NOUN_PATTERN, '1978070303', '20'],
+      [EMPLOYER_WORKING_TIME_CHANGE_PATTERN, '1978070303', '11bis'],
+      [EMPLOYER_WORKING_TIME_CHANGE_PATTERN, '1978070303', '25'],
+      [EMPLOYER_WORKING_TIME_CHANGE_PATTERN, '1978070303', '20'],
       [EMPLOYMENT_NON_COMPETE_PATTERN, '1978070303', '65'],
       [EMPLOYMENT_NON_COMPETE_PATTERN, '1978070303', '86'],
       [PARALLEL_EMPLOYMENT_PATTERN, '2022206298', '20'],
@@ -1668,7 +2175,7 @@ module LegalChatbot
       [/(?:\b(?:handelsvertegenwoordiger|représentant\s+de\s+commerce)\b.{0,80}\b(?:niet[-\s]?)?concurrentiebeding\b|\b(?:niet[-\s]?)?concurrentiebeding\b.{0,80}\b(?:handelsvertegenwoordiger|représentant\s+de\s+commerce)\b)/i, '1978070303', '104'],
       [/(?=.*\b(?:geheimhoudingsbeding|vertrouwelijkheidsbeding|geheimhoudingsplicht|vertrouwelijkheidsplicht|discretieplicht|clause\s+de\s+confidentialité)\b)(?=.*\b(?:werknemer|werkgever|arbeidsovereenkomst|arbeidscontract|tewerkstelling|travailleur|employeur|contrat\s+de\s+travail)\b)/i, '1978070303', '17'],
       [/(?:scholingsbeding|opleidingsbeding|clause\s+d[’']écolage)/i,   '1978070303', '22bis'],
-      [/(?:deeltijds(?:e)?\s+(?:arbeids)?overeenkomst|arbeidsovereenkomst.{0,30}deeltijd)/i, '1978070303', '11bis'],
+      [PART_TIME_EMPLOYMENT_CONTRACT_PATTERN, '1978070303', '11bis'],
       [/\bvervangingsovereenkomst\b|contrat\s+de\s+remplacement/i,   '1978070303', '11ter'],
       [/(?=.*\b(?:arbeidsovereenkomst|arbeidscontract|werknemer|werkgever|tewerkstelling|job|contrat\s+de\s+travail|travailleur|employeur)\b)(?=.*(?:\b(?:opeenvolgende|successieve)\b.{0,50}\b(?:arbeids?)?overeenkomsten\b|\b(?:maximumduur|duur)\b.{0,40}\b(?:bepaalde\s+tijd|durée\s+déterminée)\b))/i, '1978070303', '10'],
       [/(?=.*\b(?:arbeidsovereenkomst|arbeidscontract|werknemer|werkgever|tewerkstelling|job|contrat\s+de\s+travail|travailleur|employeur)\b)(?=.*(?:\b(?:opeenvolgende|successieve)\b.{0,50}\b(?:arbeids?)?overeenkomsten\b|\b(?:maximumduur|duur)\b.{0,40}\b(?:bepaalde\s+tijd|durée\s+déterminée)\b))/i, '1978070303', '10bis'],
@@ -1695,6 +2202,11 @@ module LegalChatbot
       [/\b(?:proefperiode|proeftijd)\b/i, '1987012597', '5'],
       [/(?:student(?:en)?(?:contract|overeenkomst).{0,30}(?:opzeg|beëindig)|(?:opzeg|beëindig).{0,30}student)/i, '1978070303', '130'],
       [/\bwillekeurige\s+afdanking\b/i,                              '1978070303', '63'],
+      # "Wat is een arbeidsovereenkomst?" asks for the statutory definition:
+      # Art. 2 (workers) and 3 (employees). The 1.0.2 QA's july-1 retrieved
+      # neither and was withheld.
+      [EMPLOYMENT_CONTRACT_DEFINITION_PATTERN, '1978070303', '2'],
+      [EMPLOYMENT_CONTRACT_DEFINITION_PATTERN, '1978070303', '3'],
       # Classification turns on authority/subordination. Pin the statutory
       # employment definition so a comparison with an independent contractor
       # cannot be built from unrelated termination provisions.
@@ -1768,6 +2280,14 @@ module LegalChatbot
       [CONSUMER_GOODS_WARRANTY_PATTERN, '1804032154', '1649bis'],
       [CONSUMER_GOODS_WARRANTY_PATTERN, '1804032154', '1649ter'],
       [CONSUMER_GOODS_WARRANTY_PATTERN, '1804032154', '1649quater'],
+      [CONSUMER_GOODS_MALFUNCTION_PATTERN, '1804032154', '1649bis'],
+      [CONSUMER_GOODS_MALFUNCTION_PATTERN, '1804032154', '1649ter'],
+      [CONSUMER_GOODS_MALFUNCTION_PATTERN, '1804032154', '1649quater'],
+      [CONSUMER_GOODS_MALFUNCTION_PATTERN, '1804032154', '1649quinquies'],
+      [CONSUMER_DEFECTIVE_GOOD_PATTERN, '1804032154', '1649bis'],
+      [CONSUMER_DEFECTIVE_GOOD_PATTERN, '1804032154', '1649ter'],
+      [CONSUMER_DEFECTIVE_GOOD_PATTERN, '1804032154', '1649quater'],
+      [CONSUMER_DEFECTIVE_GOOD_PATTERN, '1804032154', '1649quinquies'],
       # Book 5 contractual remedies are evidence to examine for new damage
       # during a professional repair, not a conclusion that fault or a right
       # to replace the whole original purchase has already been established.
@@ -1891,6 +2411,13 @@ module LegalChatbot
       [/\b(?:ubo[-\s]register|registre\s+ubo|uiteindelijk\s+begunstigde|bénéficiaire\s+effectif)\b/i, '2017013368', '75'],
       [/(?=.*\b(?:kbo|kruispuntbank\s+van\s+ondernemingen|bce|banque-carrefour\s+des\s+entreprises)\b)(?=.*\b(?:inschrij|registr|nummer|identifier|immatricul)\w*\b)/i, '2013A11134', 'III.15'],
       [ONLINE_CONSUMER_RIGHTS_PATTERN, '2013A11134', 'VI.47'],
+      [DISTANCE_CONTRACT_DEFINITION_PATTERN, '2013A11134', 'I.8'],
+      [RENTAL_DISPUTE_PEACE_JUDGE_PATTERN, '1967101054', '591'],
+      [RENTAL_DISPUTE_PEACE_JUDGE_PATTERN, '1967101054', '629'],
+      [RENTAL_FILING_PATTERN, '1967101055', '1344bis'],
+      [RENTAL_FILING_PATTERN, '1967101055', '1344septies'],
+      [RENTAL_FILING_PATTERN, '2013A31614', '233quinquies'],
+      [RENTAL_FILING_PATTERN, '2013A31614', '233octies'],
       [TELEMARKETING_PRIVACY_PATTERN, '2013A11134', 'VI.110'],
       [TELEMARKETING_PRIVACY_PATTERN, '2013A11134', 'VI.112'],
       [TELEMARKETING_PRIVACY_PATTERN, '2013A11134', 'VI.111'],
@@ -1976,7 +2503,9 @@ module LegalChatbot
     ARTICLE_PIN_TARGETS = (ARTICLE_PINS
                           .map { |_pattern, numac, article_number| [numac, article_number].freeze } +
                           REGIONAL_SHORT_COMMERCIAL_TARGETS + REGIONAL_RENT_INCREASE_TARGETS +
+                          REGIONAL_RENT_INDEXATION_TARGETS +
                           REGIONAL_RENTAL_DEPOSIT_TARGETS + REGIONAL_RENTAL_TERMINATION_TARGETS +
+                          REGIONAL_RENTAL_REPAIR_TARGETS + RENTAL_FILING_TARGETS +
                           CommercialWebsiteIntent::ALL_ARTICLE_TARGETS +
                           MarketplaceCivilClaimIntent::ALL_ARTICLE_TARGETS)
                           .uniq
@@ -1993,10 +2522,55 @@ module LegalChatbot
       ARTICLE_PIN_TARGETS
     end
 
+    # A member of GOVERNING_GROUP_TARGETS that its builder marked for the
+    # question: a regional housing topic candidate, or a competence or filing
+    # pin of a filing question.
+    def self.governing_source?(article)
+      return false unless article[:governing_group] == true
+
+      number = article[:article_title].to_s[%r{\A\s*Art(?:ikel|icle)?\.?\s*([[:alnum:]][\w/.:-]*?)\.?\s*\z}i, 1]
+      GOVERNING_GROUP_TARGETS.include?([article[:numac].to_s, number.to_s.downcase])
+    end
+
+    def self.rental_filing_question?(question)
+      rental_topic?(question.to_s.gsub(/[[:space:]]+/, ' '), RENTAL_FILING_ACTION_PATTERN)
+    end
+
+    # The filing rules follow the lease regime: a home lease (residential,
+    # social or student) keeps all four; any other lease of goods (a hired
+    # movable, a garage, business premises) keeps Judicial Code Art. 1344bis
+    # only, which covers every lease of goods; an agricultural lease keeps
+    # none, as Art. 1344bis yields to the rules on agricultural leases and the
+    # other three concern dwellings.
+    def self.rental_filing_targets(question)
+      return [] unless rental_filing_question?(question)
+
+      case rental_regime(question)
+      when :agricultural then []
+      when :residential, :social, :student then RENTAL_FILING_TARGETS
+      else RENTAL_FILING_TARGETS.first(1)
+      end
+    end
+
+    # Old Civil Code Art. 1743 in a pure filing question: no sale, buyer or
+    # new owner named and the article not asked for (held-out 2432).
+    def self.lease_sale_rule_in_pure_filing?(article, question)
+      return false unless (article[:numac] || article['numac']).to_s == '1804032154'
+
+      number = (article[:article_title] || article['article_title']).to_s.sub(/\A\s*Art(?:ikel|icle)?\.?\s*/i, '').delete(' ')
+      return false unless number.sub(/\.+\z/, '').casecmp?('1743')
+
+      text = question.to_s.gsub(/[[:space:]]+/, ' ')
+      rental_filing_question?(text) && !text.match?(LEASED_PROPERTY_SALE_PATTERN) && !text.match?(LEASE_SALE_ARTICLE_PATTERN)
+    end
+
     def pinned_articles(question)
       matched = matching_article_pins(question)
       return [] if matched.empty?
 
+      # A filing question's competence and filing rules are its governing
+      # group (governing_source?).
+      procedure_governing = self.class.rental_filing_targets(question).any?
       matched.filter_map do |_rx, numac, artnum|
         normalized_title = "Art#{artnum}".delete(' .').downcase
         art = ::Article
@@ -2018,6 +2592,8 @@ module LegalChatbot
           labels = FOREIGN_SUCCESSION_REGIONAL_LABELS.fetch(@language, FOREIGN_SUCCESSION_REGIONAL_LABELS.fetch('nl'))
           law_title = "#{labels.fetch(numac)}: #{law_title}" if labels.key?(numac)
         end
+        filing_scope = RENTAL_FILING_SCOPE_LABELS.fetch(@language, RENTAL_FILING_SCOPE_LABELS.fetch('nl'))[[numac, artnum]]
+        law_title = "#{filing_scope}: #{law_title}" if filing_scope
 
         source = {
           id: art.id, numac: art.content_numac,
@@ -2027,6 +2603,7 @@ module LegalChatbot
           language_id: art.language_id, similarity: 99.0, pinned: true,
           is_abolished: art.try(:is_abolished) == 1, is_modification: art.try(:is_modification) == 1
         }
+        source[:governing_group] = true if procedure_governing && RENTAL_PROCEDURE_TARGETS.include?([numac, artnum])
         if numac == '1975120109' && artnum == '8' && VehicleHeadlightGlareSourceScope.topic?(question)
           # The actual 8.3 control rule follows more than 7k characters of
           # age rules. Keep the full source unchanged, but start this automatic
@@ -2222,7 +2799,8 @@ module LegalChatbot
     def sanitize_future_law(articles)
       Array(articles).filter_map do |article|
         next if LegalChatbot::FutureLaw.row_future?(variant: article[:article_variant],
-                                                    title: article[:article_title])
+                                                    title: article[:article_title],
+                                                    numac: article[:numac])
 
         in_force, future_block = LegalChatbot::FutureLaw.split(article[:article_text])
         next if in_force.nil?          # the marker opens the text: the whole row is future law
@@ -2236,17 +2814,27 @@ module LegalChatbot
       end
     end
 
+    # The governing group (governing_source?) is kept whole and once each. It
+    # counts toward the limit and every other row, pins included, shares what
+    # is left, so optional breadth stays capped. The kept pins, governing or
+    # not, keep their search order ahead of the optional rows; without a
+    # governing row, or when everything fits, this is the quota as before.
     def retain_final_search_quota(results, limit:, lexical_quota: 3)
-      pins = results.select { |result| result[:pinned] }.take(limit)
-      remaining = results.reject { |result| pins.include?(result) }
+      governing = results.select { |result| self.class.governing_source?(result) }
+                         .uniq { |result| [result[:numac], result[:article_title], result[:language_id]] }
+      rest = results.reject { |result| self.class.governing_source?(result) }
+      room = [limit - governing.length, 0].max
+      pins = rest.select { |result| result[:pinned] }.take(room)
+      remaining = rest.reject { |result| pins.include?(result) }
       lexical = remaining.select { |result| result[:keyword_hit] }
-                         .take([lexical_quota, limit - pins.length].min)
+                         .take([lexical_quota, room - pins.length].min)
       semantic = remaining.reject { |result| lexical.include?(result) }
-                          .take(limit - pins.length - lexical.length)
+                          .take(room - pins.length - lexical.length)
+      pins = results.select { |result| governing.include?(result) || pins.include?(result) } if governing.any?
 
       (pins + semantic + lexical)
         .sort_by { |result| result[:pinned] ? -Float::INFINITY : -result[:similarity].to_f }
-        .take(limit)
+        .take(governing.length + room)
     end
 
     # Filter articles by title relevance to the question
@@ -3312,11 +3900,37 @@ module LegalChatbot
       result
     end
 
+    # Judicial Code art. 591, 1° and 629, 1° govern leases of IMMOVABLES: a
+    # hired bike, car or laptop gets neither (whether the justice of the peace
+    # is otherwise competent is not decided here), and art. 629, 1° itself
+    # excludes claims about an agricultural lease. Every other regime keeps
+    # both: dwellings, commercial premises, student and social housing, and a
+    # garage or parking space.
+    def scope_peace_judge_rental_pins(matched, question)
+      return matched unless matched.any? { |pattern, _numac, _article| pattern.equal?(RENTAL_DISPUTE_PEACE_JUDGE_PATTERN) }
+
+      movable = self.class.movable_rental_only?(question)
+      agricultural = self.class.rental_regime(question) == :agricultural
+      matched.reject do |pattern, _numac, article|
+        pattern.equal?(RENTAL_DISPUTE_PEACE_JUDGE_PATTERN) && (movable || (agricultural && article == '629'))
+      end
+    end
+
+    # The filing rows keep the targets of the lease regime (rental_filing_targets).
+    def scope_rental_filing_pins(matched, question)
+      return matched unless matched.any? { |pattern, _numac, _article| pattern.equal?(RENTAL_FILING_PATTERN) }
+
+      kept = self.class.rental_filing_targets(question)
+      matched.reject { |pattern, numac, article| pattern.equal?(RENTAL_FILING_PATTERN) && !kept.include?([numac, article]) }
+    end
+
     def matching_article_pins(question)
       # A legal form on a second line is still part of the same question.
       question = question.to_s.gsub(/[[:space:]]+/, ' ')
       matched = ARTICLE_PINS.select { |pattern, _numac, _article| question.match?(pattern) }
                             .uniq { |_pattern, numac, article| [numac, article] }
+      matched = scope_peace_judge_rental_pins(matched, question)
+      matched = scope_rental_filing_pins(matched, question)
       commercial_targets = CommercialWebsiteIntent.article_targets(question)
       if commercial_targets.any?
         matched = (commercial_targets.map { |numac, number| [CommercialWebsiteIntent::QUESTION_PATTERN, numac, number] } + matched)
@@ -3597,6 +4211,10 @@ module LegalChatbot
       return false unless AirPassengerSourceScope.source_relevant?(article, question)
       return false unless MarketplaceCivilClaimIntent.source_relevant?(article, question)
       return false unless PlatformModerationSourceScope.source_relevant?(article, question)
+      # Old Civil Code Art. 1743 (a sale does not end the lease) answers no
+      # step of a rental filing (held-out 2432); a sale, a buyer or the
+      # article named keeps it, and nothing changes outside a filing question.
+      return false if lease_sale_rule_in_pure_filing?(article, question)
 
       title = (article[:law_title] || article[:title] || article['law_title'] || article['title']).to_s
       technical_camera = question.match?(TECHNICAL_CAMERA_PATTERN) && !question.match?(SURVEILLANCE_CAMERA_PATTERN)
@@ -4050,7 +4668,7 @@ module LegalChatbot
       return [] unless self.class.rental_regime(question) == :residential
 
       named = Set.new
-      named << '2018015087' if question.match?(FLANDERS_REGION_PATTERN)
+      named.merge(%w[2018015087 2022033702]) if question.match?(FLANDERS_REGION_PATTERN)
       named << '2013A31614' if question.match?(BRUSSELS_REGION_PATTERN)
       named << '2018201408' if question.match?(WALLONIA_REGION_PATTERN)
       ordered = topics.each_with_index.flat_map do |(_pattern, targets), topic|
@@ -4067,7 +4685,7 @@ module LegalChatbot
 
         article.merge(
           law_title: "#{labels.fetch(numac)}: #{article[:law_title]}",
-          regional_candidate: true, pinned: true, similarity: 0.85
+          regional_candidate: true, pinned: true, similarity: 0.85, governing_group: true
         )
       end
     end

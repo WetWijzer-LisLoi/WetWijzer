@@ -83,7 +83,36 @@ module LegalChatbot
       \)
     /x
 
+    # Consolidated codes whose WHOLE text is enacted and published but applies
+    # only from a later date, while their rows carry no marker, variant or
+    # dated title (unlike Book 9, whose corpus title carries "(Inwerkingtreding
+    # 1-1-2026)"). A sourced, dated fallback: each entry names its official
+    # commencement and stops applying on that day by itself; nothing is
+    # deleted from the corpus, and the website keeps showing the text.
+    LAW_COMMENCEMENTS = {
+      # Civil Code Book 7 "Bijzondere contracten" / "Les contrats spéciaux",
+      # inserted by art. 2 of the Act of 22 July 2026 (B.S. 23 September 2026,
+      # https://www.ejustice.just.fgov.be/eli/wet/2026/07/22/2026005775/justel).
+      # Its art. 50: ordinary commencement on the first day of the twelfth month
+      # after the publication month, 1 September 2027. Arts. 6, 8, 11, 14 and 15
+      # of that Act take effect earlier; they amend other acts and are not Book 7
+      # text, so they are not covered here. Found 2026-10-19: catalogue items
+      # july-280 and july-284 were answered from Book 7 art. 7.3.23 and 7.3.18
+      # as if in force.
+      '2026A05775' => Date.new(2027, 9, 1)
+    }.freeze
+
     module_function
+
+    # The commencement of a whole consolidated code listed above, else nil.
+    def law_commencement(numac)
+      LAW_COMMENCEMENTS[numac.to_s]
+    end
+
+    def law_future?(numac, as_of: Date.current)
+      commencement = law_commencement(numac)
+      !commencement.nil? && as_of < commencement
+    end
 
     def variant_future?(variant)
       FUTURE_VARIANTS.include?(variant.to_s.strip.upcase)
@@ -93,9 +122,10 @@ module LegalChatbot
       TITLE_MARKER.match?(title.to_s)
     end
 
-    # The classifier. A row is future law when EITHER signal says so.
-    def row_future?(variant: nil, title: nil)
-      variant_future?(variant) || title_future?(title)
+    # The classifier. A row is future law when ANY signal says so: its variant,
+    # its title, or the listed commencement of its whole code.
+    def row_future?(variant: nil, title: nil, numac: nil, as_of: Date.current)
+      variant_future?(variant) || title_future?(title) || law_future?(numac, as_of: as_of)
     end
 
     # Does this body carry a future-law block at all?

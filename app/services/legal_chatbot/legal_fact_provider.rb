@@ -1103,6 +1103,12 @@ module LegalChatbot
 
     # Cache TTL for DB lookups (1 hour)
     CACHE_TTL = 1.hour
+    # Version segment of the formatted-fact cache key, bumped whenever the
+    # formatted block changes shape. r47 (root 2026-10-19 21:40:06): the blocks
+    # became complete, and a warm cache must never serve a block cut under the
+    # old format after the deploy. The key stays bounded: version, topic and
+    # language, never anything derived from the question.
+    FACT_CACHE_VERSION = 'r47'
 
     # FisconetPlus DB path (same as FisconetSearch)
     FISCONET_DB = ENV.fetch('FISCONET_DB', '/mnt/HC_Volume_104299669/embeddings/fisconet.sqlite3')
@@ -1123,7 +1129,7 @@ module LegalChatbot
       base_result = if source[:official_source_key]
                       fetch_from_official_source(source)
                     else
-                      cache_key = "legal_fact_provider/#{topic_key}/lang_#{@language_id}"
+                      cache_key = "legal_fact_provider/#{FACT_CACHE_VERSION}/#{topic_key}/lang_#{@language_id}"
                       Rails.cache.fetch(cache_key, expires_in: CACHE_TTL) do
                         result = fetch_from_db(source)
 
@@ -1451,7 +1457,8 @@ module LegalChatbot
       # is not in force yet through the channel the prompt says overrides everything.
       matching = matching.reject do |article|
         FutureLaw.row_future?(variant: article.try(:article_variant),
-                              title: article.article_title)
+                              title: article.article_title,
+                              numac: article.try(:content_numac))
       end
 
       return nil if matching.empty?
@@ -1483,17 +1490,19 @@ module LegalChatbot
 
         next if text.blank?
 
-        # Cut a trailing future-law block off before the truncation below, or a long enough
-        # article can lose the marker and keep the text it introduced. Rows that are ENTIRELY
-        # future law were already rejected by the caller.
+        # Cut a trailing future-law block off first, so the in-force text is what is
+        # emitted and the pending change is only named. Rows that are ENTIRELY future law
+        # were already rejected by the caller.
         in_force, future_block = FutureLaw.split(text)
         next if in_force.nil?
 
         text = in_force
         pending = future_block && FutureLaw.effective_date(future_block)
 
-        # Truncate very long articles to avoid token bloat
-        text = "#{text[0..3000]} [...]" if text.length > 3000
+        # r47 (root 2026-10-19 18:59:40): the in-force text is emitted complete. This
+        # channel overrides the retrieved evidence, so a cut here could drop a condition
+        # even when the main context is whole; the orchestrator counts the whole emitted
+        # verified-data block against the statutory allowance before generation.
         if future_block
           text += @language_id == 2 ? " [modification pas encore en vigueur#{pending ? " (#{pending})" : ''}]"
                                     : " [wijziging nog niet in werking#{pending ? " (vanaf #{pending})" : ''}]"
@@ -1553,8 +1562,8 @@ module LegalChatbot
         # This channel is declared to OVERRIDE the retrieved sources, so a not-yet-in-force
         # rule injected here is the most authoritative wrong answer the system can give.
         # tax_articles has no variant column, so the marker in the body is the only signal.
-        # Splitting here also lands before the dedup key below and the 3000-char cut, so a
-        # row is never deduped or truncated on words that are not in force.
+        # Splitting here also lands before the dedup key below, so a row is never deduped
+        # on words that are not in force.
         in_force, future_block = FutureLaw.split(text)
         next if in_force.nil?
 
@@ -1566,7 +1575,7 @@ module LegalChatbot
 
         seen[key] = true
 
-        text = "#{text[0..3000]} [...]" if text.length > 3000
+        # Complete (r47); counted with the whole verified-data block before generation.
         scope = FISCONET_REGION_LABELS[(is_french ? region_fr : region_nl).to_s]
         # Name the pending change without handing over its text. The model can say a change
         # is coming and when, and has nothing to quote as though it already applied.

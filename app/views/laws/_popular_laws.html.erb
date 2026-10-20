@@ -1539,8 +1539,11 @@
           sw_new_numac = sw_concordance['new_numac']
           sw_book1_numac = sw_concordance['new_numac_boek1']
           sw_book_numacs = { 'Boek I' => { numac: sw_book1_numac, label: (I18n.locale == :fr ? 'Livre I' : 'Boek I') } }
-          sw_col_old = I18n.locale == :fr ? 'Ancien' : 'Oud'
-          sw_col_new = I18n.locale == :fr ? 'Nouveau Sw (+ niveau)' : 'Nieuw Sw (+ niveau)'
+          # The owner's citation rule (2026-10-19): an article of the 1867 code
+          # is "oud artikel X Sw.", the 2024 code is "Sw." for either book;
+          # neither code is called "oud Sw." or "nieuw Sw.".
+          sw_col_old = I18n.locale == :fr ? 'Ancien article C. pén.' : 'Oud artikel Sw.'
+          sw_col_new = I18n.locale == :fr ? 'Article C. pén. (+ niveau)' : 'Artikel Sw. (+ niveau)'
         %>
         <details class="group rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <summary class="flex items-center justify-between gap-3 px-5 py-3.5 bg-gray-50 dark:bg-gray-800/50 cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
@@ -1600,9 +1603,9 @@
                 the old article simply has no successor. Reported 2026-09-05. %>
             <p class="mb-4 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
               <% if I18n.locale == :fr %>
-                <strong>Guide de lecture:</strong> les nouveaux articles renvoient au <a href="/laws/<%= sw_new_numac %>" class="underline hover:text-(--accent-text)">Livre II</a> du nouveau Code pénal (les infractions); <a href="/laws/<%= sw_book1_numac %>" class="underline hover:text-(--accent-text)">Livre I</a> contient les dispositions générales (peines, tentative, participation). (N1–N8) = niveau de peine, voir le tableau ci-dessus. <em>abrogé</em> = l'ancien article n'a pas de successeur dans le nouveau code.
+                <strong>Guide de lecture:</strong> les nouveaux numéros d'article renvoient au <a href="/laws/<%= sw_new_numac %>" class="underline hover:text-(--accent-text)">Livre II</a> du Code pénal de 2024 (les infractions); <a href="/laws/<%= sw_book1_numac %>" class="underline hover:text-(--accent-text)">Livre I</a> contient les dispositions générales (peines, tentative, participation). (N1–N8) = niveau de peine, voir le tableau ci-dessus. <em>abrogé</em> = l'ancien article n'a pas de successeur dans le nouveau code.
               <% else %>
-                <strong>Leeswijzer:</strong> nieuwe artikelen verwijzen naar <a href="/laws/<%= sw_new_numac %>" class="underline hover:text-(--accent-text)">Boek II</a> van het nieuwe Strafwetboek (de misdrijven); <a href="/laws/<%= sw_book1_numac %>" class="underline hover:text-(--accent-text)">Boek I</a> bevat de algemene bepalingen (straffen, poging, deelneming). (N1–N8) = strafniveau, zie de tabel hierboven. <em>opgeheven</em> = het oude artikel heeft geen opvolger in het nieuwe wetboek.
+                <strong>Leeswijzer:</strong> de nieuwe artikelnummers verwijzen naar <a href="/laws/<%= sw_new_numac %>" class="underline hover:text-(--accent-text)">Boek II</a> van het Strafwetboek van 2024 (de misdrijven); <a href="/laws/<%= sw_book1_numac %>" class="underline hover:text-(--accent-text)">Boek I</a> bevat de algemene bepalingen (straffen, poging, deelneming). (N1–N8) = strafniveau, zie de tabel hierboven. <em>opgeheven</em> = het oude artikel heeft geen opvolger in het nieuwe wetboek.
               <% end %>
             </p>
 

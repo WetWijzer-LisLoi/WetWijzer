@@ -1235,33 +1235,41 @@ module Api
     # Everything else gets "{name}" or "{name} (EU/UE)" for Mistral models.
     DEEP_LABEL_OVERRIDES = {}.freeze
 
-    DEEP_ANALYSIS_MODELS = LegalChatbot::ModelsConfig::INTELLIGENCE_LEVELS.each_with_object({}) do |(_tier, level), hash|
-      level[:models].each do |model_id, model_cfg|
-        credit_cost = model_cfg[:credits] || level[:credits]
-        available = LegalChatbot::ModelsConfig::AVAILABLE_MODELS[model_id]
-        next unless available # model must exist in AVAILABLE_MODELS
+    # Derived from the live registry (ModelsConfig) at load. A test fixture
+    # that marks a model undeployed rebuilds this snapshot through the same
+    # method (UnavailableModelFixture), so the metadata can never disagree
+    # with the registry it mirrors.
+    def self.derive_deep_analysis_models
+      LegalChatbot::ModelsConfig::INTELLIGENCE_LEVELS.each_with_object({}) do |(_tier, level), hash|
+        level[:models].each do |model_id, model_cfg|
+          credit_cost = model_cfg[:credits] || level[:credits]
+          available = LegalChatbot::ModelsConfig::AVAILABLE_MODELS[model_id]
+          next unless available # model must exist in AVAILABLE_MODELS
 
-        # Labels: use override if present, otherwise auto-generate from name + provider
-        if DEEP_LABEL_OVERRIDES.key?(model_id)
-          labels = DEEP_LABEL_OVERRIDES[model_id]
-        else
-          name = model_cfg[:name]
-          # Only Mistral gets (EU/UE) suffix - EU-native provider, key selling point.
-          # Azure/Bedrock are US companies with EU regions - suffix would be misleading.
-          labels = if available[:provider] == :mistral
-                     { label_nl: "#{name} (EU)", label_fr: "#{name} (UE)", label_en: "#{name} (EU)" }
-                   else
-                     { label_nl: name, label_fr: name, label_en: name }
-                   end
+          # Labels: use override if present, otherwise auto-generate from name + provider
+          if DEEP_LABEL_OVERRIDES.key?(model_id)
+            labels = DEEP_LABEL_OVERRIDES[model_id]
+          else
+            name = model_cfg[:name]
+            # Only Mistral gets (EU/UE) suffix - EU-native provider, key selling point.
+            # Azure/Bedrock are US companies with EU regions - suffix would be misleading.
+            labels = if available[:provider] == :mistral
+                       { label_nl: "#{name} (EU)", label_fr: "#{name} (UE)", label_en: "#{name} (EU)" }
+                     else
+                       { label_nl: name, label_fr: name, label_en: name }
+                     end
+          end
+
+          hash[model_id] = {
+            credit_cost: credit_cost,
+            available: available[:deployed] != false,
+            coming_soon: available[:deployed] == false
+          }.merge(labels)
         end
+      end.freeze
+    end
 
-        hash[model_id] = {
-          credit_cost: credit_cost,
-          available: available[:deployed] != false,
-          coming_soon: available[:deployed] == false
-        }.merge(labels)
-      end
-    end.freeze
+    DEEP_ANALYSIS_MODELS = derive_deep_analysis_models
 
     def deep_analysis
       # The public UI no longer exposes this legacy second-pass endpoint. Its

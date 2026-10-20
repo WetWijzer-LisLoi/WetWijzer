@@ -261,9 +261,9 @@ de:
     catalogue:
       civil_book_seven: "Zivilgesetzbuch - Buch 7 \"Besondere Verträge\""
       future_from_september_2027: "(tritt am 1. September 2027 in Kraft)"
-      criminal_code_1867: "(altes) Strafgesetzbuch von 1867"
-      new_criminal_code_book_one: "Neues Strafgesetzbuch - Buch I"
-      new_criminal_code_book_two: "Neues Strafgesetzbuch - Buch II"
+      criminal_code_1867: "Strafgesetzbuch von 1867"
+      new_criminal_code_book_one: "Strafgesetzbuch - Buch I"
+      new_criminal_code_book_two: "Strafgesetzbuch - Buch II"
     categories:
       civil: "Zivilrecht"
       criminal: "Strafrecht"

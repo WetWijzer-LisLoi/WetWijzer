@@ -1,7 +1,9 @@
 # Evidence-backed popular-law badges, audited 2026-10-08.
 # Full inventory and interpretation: docs/ops/popular-law-abbreviation-audit-2026-10-08.md.
 # A missing locale label intentionally renders no badge; never infer initials.
-# New Criminal Code I/II suffixes are house book qualifiers, not separate standard citations.
+# The 2024 Criminal Code's two books share the family label (owner's rule of
+# 2026-10-19: the code is "Sw." whichever book; an article of the 1867 code is
+# "oud artikel X Sw."). No book qualifier is a separate standard citation.
 # English labels are intentionally absent; German is retained only where Belgian usage is attested.
 
 "1804032150":
@@ -36,13 +38,13 @@
   sources: ["https://vena.be/afkortingen-wetgeving/","https://www.unamur.be/sites/default/files/2024-05/guiab-bi16001_corpus_final-1.pdf","https://ostbelgienlive.be/PortalData/30/Resources/dokumente/arbeitsdokumente/Glossar_StGB.pdf#page=28"]
 
 "2024002052":
-  labels: {"nl":"Sw. I","fr":"C. pén. I","de":"StGB I"}
-  classification: house_book_qualifier
+  labels: {"nl":"Sw.","fr":"C. pén.","de":"StGB"}
+  classification: style
   sources: ["https://www.wolterskluwer.com/nl-be/expert-insights/new-penal-code","https://ostbelgienlive.be/PortalData/30/Resources/dokumente/arbeitsdokumente/Glossar_StGB.pdf#page=28"]
 
 "2024002088":
-  labels: {"nl":"Sw. II","fr":"C. pén. II","de":"StGB II"}
-  classification: house_book_qualifier
+  labels: {"nl":"Sw.","fr":"C. pén.","de":"StGB"}
+  classification: style
   sources: ["https://www.wolterskluwer.com/nl-be/expert-insights/new-penal-code","https://ostbelgienlive.be/PortalData/30/Resources/dokumente/arbeitsdokumente/Glossar_StGB.pdf#page=28"]
 
 "1878041750":

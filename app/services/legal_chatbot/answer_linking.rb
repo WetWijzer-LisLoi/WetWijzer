@@ -49,6 +49,14 @@ module LegalChatbot
         article_number = retrieved_source_article_number(article)
         allowed_article_pairs << [numac, article_number] if article_number.present?
       end
+      # An admitted regional statutory record is exact article authority too
+      # (root 2026-10-19 23:33:11): its canonical /laws link was stripped
+      # because only primary and tax rows counted. Only the exact pair the
+      # record itself names; no other article of that law.
+      regional_statutory_pairs(regional_docs).each do |numac, article_number|
+        allowed_laws << numac
+        allowed_article_pairs << [numac, article_number]
+      end
       allowed_ecli = jur_cases.to_set { |c| c[:case_number].to_s }
       all_sources = leg_articles + tax_articles + jur_cases + parl_docs + regional_docs + authoritative_docs
       eu_records = all_sources.filter_map do |document|
@@ -638,6 +646,48 @@ module LegalChatbot
       return nil unless month
 
       format('%<year>04d%<month>02d%<day>02d', year: match[:year].to_i, month: month, day: match[:day].to_i)
+    end
+
+    # [numac, article] of every Flemish, Walloon or Brussels codex record in
+    # the (admitted) regional pool that identifies its NUMAC and article
+    # itself (never from its URL) and whose own URL is EXACTLY the canonical
+    # internal link for that pair: /laws/NUMAC#art-N, or with ?language_id=
+    # 1 or 2 agreeing with the record's own language markers. A record from
+    # any other source, an EU corpus copy, a record with a German or
+    # inconsistent language marker (row, metadata or URL), or any other URL
+    # shape gives no authority (root 2026-10-19 23:37:48).
+    def regional_statutory_pairs(regional_docs)
+      Array(regional_docs).filter_map do |doc|
+        next unless LegalChatbot::RegionalSearch::REGION_SOURCES.include?(source_field(doc, :source, 'source').to_s)
+        next if eurlex_corpus_source?(doc)
+
+        numac = retrieved_source_numac(doc)
+        number = regional_record_article_number(doc)
+        next if numac.blank? || number.blank?
+
+        metadata = source_field(doc, :metadata, 'metadata')
+        markers = [source_field(doc, :language_id, 'language_id'),
+                   (source_field(metadata, :language_id, 'language_id') if metadata.is_a?(Hash))]
+        markers = markers.map { |marker| marker.to_s.strip }.reject(&:empty?).uniq
+        next unless markers.size <= 1 && markers.all? { |marker| %w[1 2].include?(marker) }
+
+        query_languages = markers.empty? ? %w[1 2] : markers
+        canonical = ["/laws/#{numac}#art-#{number}"] +
+                    query_languages.map { |id| "/laws/#{numac}?language_id=#{id}#art-#{number}" }
+        next unless canonical.include?(source_field(doc, :url, 'url').to_s)
+
+        [numac, number]
+      end
+    end
+
+    # The article a regional record names itself: its article_number, its
+    # metadata article_number or an "Art. N" article_title. Never its URL.
+    def regional_record_article_number(doc)
+      metadata = source_field(doc, :metadata, 'metadata')
+      raw = source_field(doc, :article_number, 'article_number')
+      raw ||= source_field(metadata, :article_number, 'article_number') if metadata.is_a?(Hash)
+      raw ||= source_field(doc, :article_title, 'article_title').to_s[%r{\bArt(?:ikel|icle)?\.?\s*([[:alnum:]][\w/.:-]*)}i, 1]
+      normalize_article_number(strip_article_prefix(raw)).presence
     end
 
     def chatbot_article_href(numac, article_number)

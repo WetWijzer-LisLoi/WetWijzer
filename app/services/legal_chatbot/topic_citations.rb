@@ -161,13 +161,26 @@ module LegalChatbot
       (?=.*\b(?:consument\w*|consumer\w*|consommateur\w*|herroep\w*|rétractation|withdraw\w*)\b)
       .*\z
     /ix
-    UNILATERAL_EMPLOYMENT_CHANGE_TOPIC_PATTERN = /
-      \A
-      (?=.*\b(?:werkgever|employeur|employer)\b)
-      (?=.*\b(?:eenzijdig|unilat[eé]ral\w*|unilateral\w*)\b)
-      (?=.*\b(?:arbeidsvoorwaarden|voorwaarden|conditions?|wijzig\w*|modifier|change)\b)
-      .*\z
-    /ix
+    # The employer changing the employment terms unilaterally, decided in
+    # one clause: the unilateral marker and a change verb with a core
+    # employment term (pay, the schedule, working time, the working
+    # conditions, the employment contract), or with a generic contract word
+    # when the employer is the changer in that clause ("Kan werkgever
+    # eenzijdig contract wijzigen?", "Mag mijn werkgever mijn contract
+    # eenzijdig wijzigen?"). An employer merely mentioned ("voor mijn
+    # werkgever") or in another clause while a landlord changes a contract
+    # does not qualify. The consent arm is the Art. 25 pin's own matcher
+    # ("zonder akkoord van de werknemer", live question of 2026-10-19,
+    # 06:28 CEST); the fragments live in LegislationSearch so the pin and
+    # the topic cannot drift.
+    UNILATERAL_EMPLOYMENT_CHANGE_TOPIC_PATTERN = Regexp.union(
+      LegalChatbot::LegislationSearch::EMPLOYMENT_CHANGE_WITHOUT_CONSENT_PATTERN,
+      /\A(?=.*#{LegalChatbot::LegislationSearch::EMPLOYER_PATTERN})(?:[^.;?!]*[.;?!])*?
+        (?=[^.;?!]*#{LegalChatbot::LegislationSearch::UNILATERAL_MARKER_PATTERN})
+        (?=[^.;?!]*#{LegalChatbot::LegislationSearch::EMPLOYMENT_CHANGE_VERB_PATTERN})
+        (?=[^.;?!]*#{LegalChatbot::LegislationSearch::EMPLOYMENT_CORE_TERMS_PATTERN})/x,
+      LegalChatbot::LegislationSearch::EMPLOYMENT_UNILATERAL_GENERIC_CONTRACT_PATTERN
+    )
     # v5 grader 1: lisloi's question said "durée du préavis", which the
     # pattern did not know, so the verified line was never appended and the
     # figure note had nothing to compare on two wrong answers.
@@ -408,7 +421,7 @@ module LegalChatbot
       {
         topic: :theft_distinction, pattern: THEFT_DISTINCTION_TOPIC_PATTERN,
         match: { numac: '2024002088', article: '463' },
-        label: 'Art. 463 — Strafwetboek Boek II',
+        label: 'Art. 463 — Strafwetboek',
         answer: true, probe: /\b(?:wegnemen|weggenomen|enl[eè]vement|taking)\b/i,
         appender: true, fallback: true
       },
@@ -647,7 +660,7 @@ module LegalChatbot
               else
                 localized_guarded_source_list_fallback_intro(source_reference: non_article_eu)
               end
-      append_retrieved_source_citation_list("#{localized_verified_fallback_heading}\n#{intro}", entries, force: true)
+      append_retrieved_source_citation_list("#{localized_source_only_fallback_heading}\n#{intro}", entries, force: true)
     end
 
     # A last rejection without any unverified reference, only fixed content
@@ -682,6 +695,21 @@ module LegalChatbot
       when 'de' then '**Geprüfte Antwort:**'
       when 'en' then '**Verified answer:**'
       else '**Geverifieerd antwoord:**'
+      end
+    end
+
+    # The source-list-only delivery: the generated analysis was withheld and
+    # only the consulted sources follow. Headed "Geverifieerd antwoord" it
+    # read as a verified answer (root's live check 2026-10-19, 06:28 CEST);
+    # the heading now says what is delivered. The substantive verified
+    # fallbacks keep the heading above. Also a rendered fixed line of the
+    # German twin (GermanAnswerTranslation::RENDERED_FIXED_LINES).
+    def localized_source_only_fallback_heading
+      case @language
+      when 'fr' then '**Réponse non affichée. Sources consultées :**'
+      when 'de' then '**Antwort nicht angezeigt. Konsultierte Quellen:**'
+      when 'en' then '**Answer not shown. Consulted sources:**'
+      else '**Antwoord niet weergegeven. Geraadpleegde bronnen:**'
       end
     end
 

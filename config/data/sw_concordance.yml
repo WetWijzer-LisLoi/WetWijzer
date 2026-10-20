@@ -1,4 +1,4 @@
-# Concordantietabel Strafwetboek (1867) → Nieuw Strafwetboek (2024)
+# Concordantietabel Strafwetboek (1867) → Strafwetboek (2024)
 # Wet 29/02/2024 (Boek I & II) - B.S. 08/04/2024
 # Inwerkingtreding 01/09/2026
 # Bron: Belgisch Staatsblad, officiële wettekst
@@ -10,20 +10,20 @@
 # below was derived by reading both articles and then re-checked by a second
 # pass that tried to disprove it; 10 of 272 proposed pairs were rejected and
 # are absent rather than guessed. "-" means the old article has no successor.
-# Volgorde: oplopend artikelnummer oud Sw.
+# Volgorde: oplopend oud artikelnummer Sw.
 old_numac: "1867060850"
 new_numac: "2024002088"
 # Boek I (algemene bepalingen) is a separate law; "Boek I Art. N" cells link here.
 new_numac_boek1: "2024002052"
 
-label_nl: "Strafwetboek (1867) → Nieuw Strafwetboek"
-label_fr: "Code pénal (1867) → Nouveau Code pénal"
+label_nl: "Strafwetboek (1867) → Strafwetboek (2024)"
+label_fr: "Code pénal (1867) → Code pénal (2024)"
 source_nl: "Wet 29/02/2024 (B.S. 08/04/2024) · In werking 01/09/2026"
 source_fr: "Loi 29/02/2024 (M.B. 08/04/2024) · En vigueur 01/09/2026"
-transition_nl: "Lex mitior (art. 2, derde lid, nieuw Sw.): \"In geval van wijziging van de strafwet na het plegen van het misdrijf gelden de voor de dader meest gunstige bepalingen.\" Voor feiten van vóór 01/09/2026 past de rechter dus de gunstigste regeling toe. Let op het verschil: het oude art. 2, tweede lid Sw. sprak enkel over de straf (\"de minst zware straf\"), het nieuwe artikel over de bepalingen in hun geheel. Per dossier te beoordelen."
-transition_fr: "Lex mitior (art. 2, alinéa 3, nouveau C. pén.): \"En cas de modification de la loi pénale postérieurement à l'infraction, les dispositions les plus favorables seront appliquées à son auteur.\" Pour les faits antérieurs au 01/09/2026, le juge applique donc le régime le plus favorable. Nuance: l'ancien art. 2, alinéa 2 C. pén. ne visait que la peine (\"la peine la moins forte\"), le nouvel article vise les dispositions dans leur ensemble. À apprécier au cas par cas."
+transition_nl: "Lex mitior (art. 2, derde lid, Sw.): \"In geval van wijziging van de strafwet na het plegen van het misdrijf gelden de voor de dader meest gunstige bepalingen.\" Voor feiten van vóór 01/09/2026 past de rechter dus de gunstigste regeling toe. Let op het verschil: het oude art. 2, tweede lid Sw. sprak enkel over de straf (\"de minst zware straf\"), het nieuwe artikel over de bepalingen in hun geheel. Per dossier te beoordelen."
+transition_fr: "Lex mitior (art. 2, alinéa 3, C. pén.): \"En cas de modification de la loi pénale postérieurement à l'infraction, les dispositions les plus favorables seront appliquées à son auteur.\" Pour les faits antérieurs au 01/09/2026, le juge applique donc le régime le plus favorable. Nuance: l'ancien art. 2, alinéa 2 C. pén. ne visait que la peine (\"la peine la moins forte\"), le nouvel article vise les dispositions dans leur ensemble. À apprécier au cas par cas."
 
-# Strafniveaus: art. 36 nieuw Sw. (hoofdstraffen natuurlijke personen)
+# Strafniveaus: art. 36 Sw. (hoofdstraffen natuurlijke personen)
 # De klassieke driedeling misdaad/wanbedrijf/overtreding wordt vervangen
 # door 8 niveaus.
 #
@@ -48,7 +48,7 @@ transition_fr: "Lex mitior (art. 2, alinéa 3, nouveau C. pén.): \"En cas de mo
 # correctionalisering staat hier niets: dat is procesrecht, buiten art. 36, en
 # niet verifieerbaar uit deze tekst.
 strafniveaus:
-  legal_basis: "Art. 36 nieuw Sw. (Wet 29/02/2024 tot invoering Boek I nieuw Strafwetboek, B.S. 08/04/2024)"
+  legal_basis: "Art. 36 Sw. (Wet 29/02/2024 tot invoering van Boek I van het Strafwetboek, B.S. 08/04/2024)"
   legal_basis_url: "/laws/2024002052"
   levels:
     - level: 1
@@ -195,8 +195,8 @@ sections:
     # targets resolve there, not in the Wetboek of 2024
     new_numac: "1867060850"
     heading_fr: "Infractions sexuelles: anciens articles (abrogés le 01/06/2022)"
-    note_nl: "De hervorming van 21 maart 2022 heeft deze artikelen niet hernummerd maar herschreven: het hele hoofdstuk is vervangen door de artikelen 417/5 e.v. van het oude Strafwetboek. Daardoor bestaat er geen artikelsgewijze concordantie, ook niet in de parlementaire voorbereiding; de wetgever heeft de opvolging enkel in bulk herformuleerd in de verwijzingsartikelen van de hervormingswet. Hieronder staat een specifiek artikel alleen waar de opvolging vaststaat; in de overige gevallen verwijzen we naar het hervormingsblok als geheel. De afdeling \"Zedenmisdrijven na de hervorming van 2022\" hieronder brengt die artikelen 417/x verder naar het nieuwe Strafwetboek."
-    note_fr: "La réforme du 21 mars 2022 n'a pas renuméroté ces articles mais les a réécrits: tout le chapitre a été remplacé par les articles 417/5 et suivants de l'ancien Code pénal. Il n'existe donc pas de concordance article par article, pas même dans les travaux préparatoires; le législateur n'a reformulé la succession qu'en bloc, dans les articles de renvoi de la loi de réforme. Ci-dessous, un article précis n'est indiqué que lorsque la succession est établie; sinon, le renvoi vise le bloc de la réforme. La section \"Infractions sexuelles après la réforme de 2022\" ci-dessous mène ces articles 417/x vers le nouveau Code pénal."
+    note_nl: "De hervorming van 21 maart 2022 heeft deze artikelen niet hernummerd maar herschreven: het hele hoofdstuk is vervangen door de oude artikelen 417/5 e.v. Sw. Daardoor bestaat er geen artikelsgewijze concordantie, ook niet in de parlementaire voorbereiding; de wetgever heeft de opvolging enkel in bulk herformuleerd in de verwijzingsartikelen van de hervormingswet. Hieronder staat een specifiek artikel alleen waar de opvolging vaststaat; in de overige gevallen verwijzen we naar het hervormingsblok als geheel. De afdeling \"Zedenmisdrijven na de hervorming van 2022\" hieronder brengt die artikelen 417/x verder naar het Strafwetboek van 2024."
+    note_fr: "La réforme du 21 mars 2022 n'a pas renuméroté ces articles mais les a réécrits: tout le chapitre a été remplacé par les anciens articles 417/5 et suivants C. pén. Il n'existe donc pas de concordance article par article, pas même dans les travaux préparatoires; le législateur n'a reformulé la succession qu'en bloc, dans les articles de renvoi de la loi de réforme. Ci-dessous, un article précis n'est indiqué que lorsque la succession est établie; sinon, le renvoi vise le bloc de la réforme. La section \"Infractions sexuelles après la réforme de 2022\" ci-dessous mène ces articles 417/x vers le Code pénal de 2024."
     entries:
       - ["Art. 372 (opgeheven)", "Art. 417/7"]
       - ["Art. 373 (opgeheven)", "Art. 417/7"]
@@ -281,8 +281,8 @@ sections:
 
   - heading_nl: "Zedenmisdrijven na de hervorming van 2022 (art. 417/5-417/64)"
     heading_fr: "Infractions sexuelles après la réforme de 2022 (art. 417/5-417/64)"
-    note_nl: "De oude artikelen 372-389 werden opgeheven door de wet van 21 maart 2022 en vervangen door de artikelen 417/5 e.v. van het oude Strafwetboek. De opvolging naar het nieuwe Wetboek loopt via die artikelen, die hieronder staan."
-    note_fr: "Les anciens articles 372-389 ont été abrogés par la loi du 21 mars 2022 et remplacés par les articles 417/5 et suivants de l'ancien Code pénal. La succession vers le nouveau Code passe par ces articles, repris ci-dessous."
+    note_nl: "De oude artikelen 372-389 werden opgeheven door de wet van 21 maart 2022 en vervangen door de oude artikelen 417/5 e.v. Sw. De opvolging naar het Strafwetboek van 2024 loopt via die artikelen, die hieronder staan."
+    note_fr: "Les anciens articles 372-389 ont été abrogés par la loi du 21 mars 2022 et remplacés par les anciens articles 417/5 et suivants C. pén. La succession vers le Code pénal de 2024 passe par ces articles, repris ci-dessous."
     entries:
       - ["Art. 417/5", "Art. 132"]
       - ["Art. 417/6", "Art. 133"]

@@ -262,9 +262,9 @@ en:
     catalogue:
       civil_book_seven: "Civil Code - Book 7 \"Special contracts\""
       future_from_september_2027: "(enters into force: 1 September 2027)"
-      criminal_code_1867: "(old) Criminal Code 1867"
-      new_criminal_code_book_one: "New Criminal Code - Book I"
-      new_criminal_code_book_two: "New Criminal Code - Book II"
+      criminal_code_1867: "Criminal Code 1867"
+      new_criminal_code_book_one: "Criminal Code - Book I"
+      new_criminal_code_book_two: "Criminal Code - Book II"
     categories:
       civil: "Civil Law"
       criminal: "Criminal Law"

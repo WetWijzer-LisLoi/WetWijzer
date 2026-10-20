@@ -30,7 +30,24 @@ module LegalChatbot
     # chunk selection, the citation-repair chain - so ratings gathered under
     # different retrieval are not silently averaged together as one
     # configuration. A version label, never a hash of retrieved content.
-    RETRIEVAL_VERSION = 'retrieval_2026_10_18_r44'
+    # r45 (2026-10-19): the Art. 25 pins for the consent-less and target-first
+    # wording and the unilateral-change topic's wider verb group change which
+    # sources a question retrieves and which verified fallback it can reach.
+    # r46 (2026-10-19 evening): the catalogue QA's missed sources: Art. 25 and
+    # 20 for "werkgever eenzijdig contract wijzigen", Art. 11bis, 20 and 25 for
+    # an employer's full-time to part-time change, the consumer conformity
+    # rules for a bought product that does not work, WER I.8 for the distance
+    # contract definition, Judicial Code 591 and 629 for a rental dispute before
+    # the justice of the peace (never for a hired movable, and 629 not for an
+    # agricultural lease, which its 1° excludes), the three-region indexation for "Indexering
+    # huurprijs", a three-region repairs topic, and Civil Code Book 7 kept out
+    # of current-law answers until its commencement on 1 September 2027.
+    # r47 (2026-10-19 night, 1.0.2): statutory sources reach the model as
+    # complete blocks under one allowance (LegalChatbotService
+    # STATUTORY_CONTEXT_MAX_CHARS) instead of the depth's per-article cut;
+    # Brussels Art. 249 joins the deposit topic and the employment-contract
+    # definition pins Arts. 2 and 3. Kept apart from the paid r46 evidence.
+    RETRIEVAL_VERSION = 'retrieval_2026_10_19_r47'
 
     # Content-free configuration key. Different research budgets must not be
     # averaged as one retrieval configuration in generation/rating telemetry.
@@ -354,6 +371,26 @@ module LegalChatbot
         return apply_retrieval_notice!(result, degraded_sources, lead: true)
       end
 
+      # Statutory sources reach the model complete or not at all (r47). An
+      # optional source that does not fit is left out of the context, the
+      # guards and the source cards alike. A required governing provision that
+      # cannot be shown whole stops the ask here, before any generation, with
+      # the existing limited-evidence response: a clipped rule or a warning
+      # beside an answer is not evidence.
+      # The verified-data block the model client prepends is statutory
+      # evidence under the same allowance: measured once, exactly as every
+      # generation of this ask emits it (LlmClient#reference_facts_block).
+      facts_chars = llm_svc.respond_to?(:reference_facts_block) ? llm_svc.reference_facts_block(question).to_s.length : 0
+      admission = admit_statutory_sources(leg_articles, tax_articles, regional_docs,
+                                          authoritative_docs: authoritative_docs, facts_chars: facts_chars)
+      stop = statutory_admission_stop(admission, [jur_cases, parl_docs], degraded_sources, retrieval_searches)
+      return stop if stop
+
+      leg_articles = admission[:articles]
+      tax_articles = admission[:tax_articles]
+      regional_docs = admission[:regional_docs]
+      authoritative_docs = admission[:authoritative_docs]
+
       # Build combined context via service
       context = build_combined_context_from_db(
         leg_articles,
@@ -412,9 +449,21 @@ module LegalChatbot
         # in the initial bounded pool. Keep the final source cards and any
         # regenerated context to one copy of that exact evidence.
         regional_docs = without_primary_legislation_duplicates(regional_docs, leg_articles)
+        # Admission again (r47), failing closed: an addition that no longer
+        # fits is left out of the context and the guards alike, and a required
+        # source that cannot be shown whole ends the ask before any further
+        # provider call.
+        admission = admit_statutory_sources(leg_articles, tax_articles, regional_docs,
+                                            authoritative_docs: authoritative_docs, facts_chars: facts_chars)
+        stop = statutory_admission_stop(admission, [jur_cases, parl_docs], degraded_sources, retrieval_searches)
+        return stop if stop
+
+        leg_articles, tax_articles, regional_docs, authoritative_docs =
+          admission.values_at(:articles, :tax_articles, :regional_docs, :authoritative_docs)
         statutory_sources = leg_articles + tax_articles + regional_docs + authoritative_docs
         guard_sources = guard_sources.merge(
-          statutory_sources: statutory_sources, leg_articles: leg_articles, regional_docs: regional_docs
+          statutory_sources: statutory_sources, leg_articles: leg_articles, tax_articles: tax_articles,
+          regional_docs: regional_docs, authoritative_docs: authoritative_docs
         )
         context = ensure_utf8(
           build_combined_context_from_db(
@@ -460,9 +509,17 @@ module LegalChatbot
         if repaired.any? && enough_request_time?
           leg_articles += repaired
           regional_docs = without_primary_legislation_duplicates(regional_docs, leg_articles)
+          admission = admit_statutory_sources(leg_articles, tax_articles, regional_docs,
+                                              authoritative_docs: authoritative_docs, facts_chars: facts_chars)
+          stop = statutory_admission_stop(admission, [jur_cases, parl_docs], degraded_sources, retrieval_searches)
+          return stop if stop
+
+          leg_articles, tax_articles, regional_docs, authoritative_docs =
+            admission.values_at(:articles, :tax_articles, :regional_docs, :authoritative_docs)
           statutory_sources = leg_articles + tax_articles + regional_docs + authoritative_docs
           guard_sources = guard_sources.merge(
-            statutory_sources: statutory_sources, leg_articles: leg_articles, regional_docs: regional_docs
+            statutory_sources: statutory_sources, leg_articles: leg_articles, tax_articles: tax_articles,
+            regional_docs: regional_docs, authoritative_docs: authoritative_docs
           )
           repaired_context = ensure_utf8(
             build_combined_context_from_db(
@@ -1007,6 +1064,16 @@ module LegalChatbot
       grounded_answer = validate_marketplace_civil_claim_answer(grounded_answer, question, all_sources, candidate: clean_answer)
       grounded_answer = validate_platform_redress_answer(grounded_answer, question, all_sources, candidate: clean_answer)
       grounded_answer = validate_flight_disruption_answer(grounded_answer, question, all_sources, candidate: clean_answer)
+      grounded_answer = validate_consumer_withdrawal_answer(grounded_answer, question, all_sources, candidate: clean_answer)
+      grounded_answer = validate_rental_notice_answer(grounded_answer, question, all_sources, candidate: clean_answer)
+      # r47 semantic checks (root 2026-10-19 23:36:18): only the retained
+      # Belgian legislation rows are governing evidence, never the search
+      # union, and never another record that copies their NUMAC.
+      retained_legislation = guard_sources.fetch(:leg_articles, [])
+      grounded_answer = validate_serious_cause_dismissal_answer(grounded_answer, question, retained_legislation, candidate: clean_answer)
+      grounded_answer = validate_rental_indexation_answer(grounded_answer, question, retained_legislation, candidate: clean_answer)
+      grounded_answer = validate_withdrawal_function_status_answer(grounded_answer, question, retained_legislation, candidate: clean_answer)
+      grounded_answer = validate_commercial_website_scope_answer(grounded_answer, question, retained_legislation, candidate: clean_answer)
       validate_office_commute_answer(grounded_answer, question, statutory_sources)
     end
 
@@ -1173,6 +1240,38 @@ module LegalChatbot
     # CONTEXT_LAW_BOOST = 2.5 (legislation_search.rb). On 2026-09-20 that
     # would have force-fed the rest-home-hygiene, nickel-limit and
     # identity-card articles into the re-ask, at full charge.
+    # A required statutory source that cannot be shown whole (r47): the
+    # existing limited-evidence response with the incomplete-search notice and
+    # honest degraded metadata, returned before any further provider call.
+    # Counts only in the log, never the question or the text.
+    # The end of every admission (r47): a required source that cannot be
+    # shown whole, or (root 2026-10-19 21:26:18) an admission that left no
+    # usable evidence at all, ends the ask before generation. The no-results
+    # check runs before admission, so an emptiness the allowance caused is
+    # reported as an incomplete search, never as a completed search that
+    # found no rule. Usable: an admitted statutory list, the admitted
+    # authoritative pool, an admitted verified-data block, or other_evidence
+    # (the case-law and parliamentary lists). Returns the response, or nil to
+    # go on.
+    def statutory_admission_stop(admission, other_evidence, degraded_sources, retrieval_searches)
+      usable = admission.values_at(:articles, :tax_articles, :regional_docs, :authoritative_docs).any?(&:present?) ||
+               admission[:facts_admitted] == true || Array(other_evidence).any?(&:present?)
+      return nil if admission[:omitted_required].empty? && usable
+
+      statutory_insufficient_response(admission, degraded_sources, retrieval_searches)
+    end
+
+    def statutory_insufficient_response(admission, degraded_sources, retrieval_searches)
+      Rails.logger.warn("[StatutoryContext] required_omitted=#{admission[:omitted_required].size} " \
+                        "pruned=#{admission[:pruned]}: no answer generated")
+      result = no_answer_response
+      if @include_quality_evidence
+        result[:quality_evidence] = ChatbotQualityEvidence.skipped(retrieval_searches: retrieval_searches)
+      end
+      apply_retrieval_notice!(result, (degraded_sources || {}).merge('legislation' => 'statutory_context_allowance'),
+                              lead: true)
+    end
+
     def apply_retrieval_notice!(result, degraded, lead: false)
       # Strip first and unconditionally, so exactly one notice survives and it
       # is this ask's: an echoed copy from the replayed history would otherwise

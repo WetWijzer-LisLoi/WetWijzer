@@ -181,6 +181,18 @@ export const creditsMethods = {
       widgetCreditsEl.textContent = `${grouped}cr`
     }
 
+    // The account menu in the header and the account sidebar render the same
+    // balance server-side. They are presentation only and follow the accepted
+    // balance: on 2026-10-19 the page counter read 330 after a charge while
+    // the menu of the SAME tab still read its page-load 334 (root's live
+    // check). A data attribute, not an id, because both nodes can be on one
+    // page; the raw integer, as the server renders them.
+    if (remaining !== undefined) {
+      document.querySelectorAll?.('[data-credit-balance]')?.forEach(node => {
+        node.textContent = remaining
+      })
+    }
+
     // Update the source preview label
     this._updateSourcePreview()
 

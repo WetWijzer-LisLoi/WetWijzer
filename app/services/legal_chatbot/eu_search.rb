@@ -309,7 +309,7 @@ module LegalChatbot
         [overview_priority.nil? ? 1 : 0, overview_priority || 0, -score, record[:celex], record[:unit_number].to_s.to_i]
       end
                         .take(result_limit)
-                        .map { |score, record| record.merge(keyword_hit: true, eu_lexical_score: score) }
+                        .map { |score, record| eu_result_record(record, score, website_overview: overview_targets.any?) }
       # Generic questions may already match the small core while still needing
       # broader EU coverage. Discover in the background without branding an
       # existing verified answer as failed. Base/named acts also request bounded
@@ -483,6 +483,17 @@ module LegalChatbot
       record[:kind] == 'recital' && record[:correction_status] == 'verified_unchanged_recitals' &&
         record[:correction_verification] == 'explicit_other_language_correction_closure' &&
         [@corpus, @live_corpus].compact.any? { |reader| reader.respond_to?(:verified_record?) && reader.verified_record?(record) }
+    end
+
+    # A website-overview unit is breadth: "an overview quota is a ceiling, not
+    # an obligation" (search). The Belgian pins and the sealed GDPR texts
+    # govern that topic, so the unit is marked optional for the statutory
+    # allowance, which may leave it out whole (r47, root 2026-10-19
+    # 21:51:37 and 22:11:41). Topic-plan targets and named units carry no
+    # mark and stay required.
+    def eu_result_record(record, score, website_overview:)
+      result = record.merge(keyword_hit: true, eu_lexical_score: score)
+      website_overview ? result.merge(eu_website_overview: true) : result
     end
 
     def overview_identity(record)

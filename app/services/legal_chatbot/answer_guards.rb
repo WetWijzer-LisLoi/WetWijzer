@@ -724,6 +724,97 @@ module LegalChatbot
       unsupported_article_citation_message
     end
 
+    # Measured withdrawal misstatements of the catalogue QA (2026-10-19): the
+    # deadline without its 14 days, the sealed-hygiene and alcohol exceptions
+    # without their conditions, a defect read as excluding withdrawal. Same
+    # contract as the flight check above.
+    def validate_consumer_withdrawal_answer(text, question, sources, candidate: text)
+      verdict = ConsumerWithdrawalGrounding.evaluate(candidate, question, sources)
+      return text unless verdict.fetch(:applicable)
+
+      missing = verdict.fetch(:missing_conditions)
+      previous = @last_citation_guard_result || { verified: true, passed: true, rejected: 0 }
+      @last_citation_guard_result = previous.merge(
+        passed: previous.fetch(:passed, false) && missing.empty?,
+        rejected: previous.fetch(:rejected, 0).to_i + missing.length,
+        missing_consumer_withdrawal_conditions: missing,
+        consumer_withdrawal_grounding_version: verdict.fetch(:version), version: 16
+      )
+      return text if missing.empty?
+
+      Rails.logger.warn("[ConsumerWithdrawalGrounding] blocked answer: condition_count=#{missing.length}")
+      unsupported_article_citation_message
+    end
+
+    # Measured lease-notice misstatements of the catalogue QA (2026-10-19):
+    # the tenant's one-month counter-notice given to the landlord, the short
+    # lease rule applied to a nine-year lease. Same contract as above.
+    def validate_rental_notice_answer(text, question, sources, candidate: text)
+      verdict = RentalNoticeGrounding.evaluate(candidate, question, sources)
+      return text unless verdict.fetch(:applicable)
+
+      missing = verdict.fetch(:missing_conditions)
+      previous = @last_citation_guard_result || { verified: true, passed: true, rejected: 0 }
+      @last_citation_guard_result = previous.merge(
+        passed: previous.fetch(:passed, false) && missing.empty?,
+        rejected: previous.fetch(:rejected, 0).to_i + missing.length,
+        missing_rental_notice_conditions: missing,
+        rental_notice_grounding_version: verdict.fetch(:version), version: 16
+      )
+      return text if missing.empty?
+
+      Rails.logger.warn("[RentalNoticeGrounding] blocked answer: condition_count=#{missing.length}")
+      unsupported_article_citation_message
+    end
+
+    # r47 semantic checks of the stage A answers (root 2026-10-19 23:36:18).
+    # Each reads only the RETAINED Belgian legislation rows the guard chain
+    # received and applies only when its governing unit carries the exact
+    # wording the check relies on. Same contract as the checks above.
+    def validate_serious_cause_dismissal_answer(text, question, sources, candidate: text)
+      merge_semantic_grounding(text, SeriousCauseDismissalGrounding.evaluate(candidate, question, sources),
+                               :missing_serious_cause_conditions, :serious_cause_grounding_version,
+                               'SeriousCauseDismissalGrounding')
+    end
+
+    def validate_rental_indexation_answer(text, question, sources, candidate: text)
+      merge_semantic_grounding(text, RentalIndexationGrounding.evaluate(candidate, question, sources),
+                               :missing_rental_indexation_conditions, :rental_indexation_grounding_version,
+                               'RentalIndexationGrounding')
+    end
+
+    def validate_withdrawal_function_status_answer(text, question, sources, candidate: text)
+      merge_semantic_grounding(text, OnlineWithdrawalFunctionStatus.evaluate(candidate, question, sources),
+                               :missing_withdrawal_function_status_conditions, :withdrawal_function_status_version,
+                               'OnlineWithdrawalFunctionStatus')
+    end
+
+    def validate_commercial_website_scope_answer(text, question, sources, candidate: text)
+      merge_semantic_grounding(text, CommercialWebsiteScopeGrounding.evaluate(candidate, question, sources),
+                               :missing_website_scope_conditions, :website_scope_grounding_version,
+                               'CommercialWebsiteScopeGrounding')
+    end
+
+    def merge_semantic_grounding(text, verdict, missing_key, version_key, label)
+      return text unless verdict.fetch(:applicable)
+
+      missing = verdict.fetch(:missing_conditions)
+      previous = @last_citation_guard_result || { verified: true, passed: true, rejected: 0 }
+      @last_citation_guard_result = previous.merge(
+        {
+          passed: previous.fetch(:passed, false) && missing.empty?,
+          rejected: previous.fetch(:rejected, 0).to_i + missing.length,
+          missing_key => missing,
+          version_key => verdict.fetch(:version),
+          version: 17
+        }
+      )
+      return text if missing.empty?
+
+      Rails.logger.warn("[#{label}] blocked answer: condition_count=#{missing.length}")
+      unsupported_article_citation_message
+    end
+
     def validate_office_commute_answer(text, question, sources)
       verdict = OfficeCommuteGrounding.evaluate(text, question, sources)
       return text unless verdict.fetch(:applicable)
@@ -1320,8 +1411,12 @@ module LegalChatbot
 
     def mark_citation_guard_failure!(result)
       # A generic source list can pass link verification while the requested
-      # analysis was withheld. It is still nonbillable; do not confuse it with
-      # a substantive, verified source-derived answer sharing the outcome enum.
+      # analysis was withheld. Mark it as an error like a failed verdict, so
+      # the controller delivers no answer; whether the reservation is then
+      # charged or released follows its dispatch evidence (a paid provider
+      # request that was sent keeps the single charge, owner policy
+      # 2026-10-18), not this flag. Do not confuse the list with a
+      # substantive, verified source-derived answer sharing the outcome enum.
       verified_answer_delivered = result[:citation_guard_source_list_only] != true &&
                                   @last_citation_guard_result&.fetch(:passed, false)
       result[:error] = result[:answer] unless verified_answer_delivered

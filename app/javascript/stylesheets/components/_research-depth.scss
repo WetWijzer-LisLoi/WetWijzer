@@ -88,6 +88,17 @@
   .research-depth-stop:nth-child(2) { --category-start: 25%; }
   .research-depth-stop:nth-child(3) { --category-start: 50%; }
   .research-depth-stop:nth-child(4) { --category-start: 75%; }
+  // The first category is a one-choice endpoint at every width: its
+  // proportional span is half a ruler step (about 28px of an 804px desktop
+  // control since the Claude 5.5 stops made the free ruler 13 steps),
+  // narrower than "Schnell", "Rapide" or "Quick". Like the mobile endpoints
+  // below, its full label keeps the safe left edge of its own span and stays
+  // clickable above the neighbouring hitbox, while the button and its bottom
+  // highlight keep their proportional range. On a wide control it is centred
+  // on the button's height like the inline labels beside it; the narrow rules
+  // below put it back on their 4px lane.
+  .research-depth-stop:nth-child(1) { overflow: visible; text-overflow: clip; }
+  .research-depth-stop:nth-child(1) .research-depth-stop-label { position: absolute; top: 50%; transform: translateY(-50%); left: 0; text-align: left; white-space: nowrap; pointer-events: auto; z-index: 1; }
 }
 // A one-choice endpoint can be less than one word wide on mobile.  Keep the
 // actual button and its proportional range untouched, while allowing its full
@@ -103,7 +114,7 @@
     // that text clickable above adjacent button hitboxes; its click still
     // bubbles to its own category button, not the neighbor underneath it.
     .research-depth-stop-label { position: absolute; top: 4px; white-space: nowrap; pointer-events: auto; z-index: 1; }
-    .research-depth-stop:nth-child(1) .research-depth-stop-label { left: 0; text-align: left; }
+    .research-depth-stop:nth-child(1) .research-depth-stop-label { left: 0; text-align: left; top: 4px; transform: none; }
     .research-depth-stop:nth-child(2) .research-depth-stop-label { left: 50%; transform: translateX(-50%); text-align: center; }
     .research-depth-stop:nth-child(3) .research-depth-stop-label { right: 6px; text-align: right; }
     .research-depth-stop:nth-child(4) .research-depth-stop-label { right: 0; text-align: right; }

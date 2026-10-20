@@ -428,17 +428,8 @@ class LegalChatbotService
     question: nil
   )
     parts = []
-    law_label = @language == 'fr' ? 'LOI' : 'WET'
     juris_label = @language == 'fr' ? 'JURISPRUDENCE' : 'RECHTSPRAAK'
-    tax_label = @language == 'fr' ? 'FISCALITÉ' : 'FISCALITEIT'
     parl_label = @language == 'fr' ? 'TRAVAUX PRÉPARATOIRES' : 'PARLEMENTAIRE VOORBEREIDING'
-    regional_label = @language == 'fr' ? 'LÉGISLATION RÉGIONALE' : 'REGIONALE WETGEVING'
-    official_label = case @language
-                     when 'fr' then 'LÉGISLATION OFFICIELLE DE L’UNION EUROPÉENNE'
-                     when 'de' then 'OFFIZIELLES EU-RECHT'
-                     when 'en' then 'OFFICIAL EU LEGISLATION'
-                     else 'OFFICIËLE EU-WETGEVING'
-                     end
 
     # A German row reaches the model only as a binding German original
     # (german_original_source?). Any other language 3 row, whatever path
@@ -446,49 +437,10 @@ class LegalChatbotService
     # labelled 'FR' by the binary label below.
     articles = Array(articles).reject { |article| german_row_source?(article) && !german_original_source?(article) }
 
+    # Complete blocks only (r47): the caller passes the sources
+    # admit_statutory_sources admitted; nothing here excerpts or cuts.
     articles.each_with_index do |article, index|
-      if german_row_source?(article)
-        parts << german_original_block(article, index + 1, article_budget(index, max_article_chars), question: question)
-        next
-      end
-
-      lang_label = article[:language_id] == 1 ? 'NL' : 'FR'
-      source_text = ensure_utf8(article[:article_text])
-      text = if formation_deed_context_article?(article, question)
-               # These formation checklists run past the ordinary low-tier
-               # cut. Preserve the already-retrieved article, including its
-               # qualifications/NOTA, under a strict per-source ceiling.
-               LegalChatbot::ArticleExcerpt.excerpt(source_text, question, max_chars: FORMATION_DEED_MAX_ARTICLE_CHARS)
-             else
-               article_context_text(source_text, question, article_budget(index, max_article_chars), article: article)
-             end
-      # Article 1 of the extraordinary-childcare-expenses decree is long:
-      # ordinary truncation can retain the childcare item but lose the
-      # agreement/order qualifications. Keep the exact decisive clauses
-      # from this already-retrieved article together, within the same budget.
-      if LegalChatbot::ChildcareExpenseGrounding.topic?(question) &&
-         (grounding_excerpt = LegalChatbot::ChildcareExpenseGrounding.verified_excerpt(article))
-        budget = article_budget(index, max_article_chars)
-        if grounding_excerpt.length <= budget
-          remainder = [budget - grounding_excerpt.length - 2, 0].max
-          text = remainder.positive? ? "#{grounding_excerpt}\n\n#{text[0, remainder]}" : grounding_excerpt.dup
-        end
-        text = text[0, budget]
-      end
-      numac = article[:numac]
-      law_title = ensure_utf8(article[:law_title])
-      article_title = ensure_utf8(article[:article_title])
-      # Build exact URL with article anchor (server-side, no LLM guessing)
-      art_anchor = extract_article_anchor(article_title)
-      link = art_anchor ? "/laws/#{numac}#{art_anchor}" : "/laws/#{numac}"
-      # The text above is the IN-FORCE half; retrieval already removed any not-yet-applicable
-      # block. Say so on the header line, which no truncation can reach, so the model can
-      # tell the user a change is coming instead of silently omitting it.
-      pending = future_amendment_note(article)
-      # The German lane's wording (wording mode only) rides INSIDE the French
-      # source's block, after the binding text: never its own Bron, NUMAC or
-      # LINK, so the citation, the link guard and the source card stay French.
-      parts << "[Bron #{index + 1} - #{law_label} (#{lang_label})]\nNUMAC: #{numac}\nWet: #{law_title}\n#{article_title}#{pending}\nLINK: #{link}\n#{text}#{german_wording_block(article)}"
+      parts << legislation_context_block(article, index + 1)
     end
 
     cases.each_with_index do |c, index|
@@ -543,35 +495,12 @@ class LegalChatbotService
     end
 
     tax_articles.each_with_index do |art, index|
-      section = art[:section_path].present? ? " (#{art[:section_path]})" : ''
-      text = article_context_text(art[:text].to_s, question, max_article_chars)
-      # LINK is mandatory here: the prompt demands every citation be a
-      # markdown link, so a link-less tax block pushed the model to fabricate
-      # slugs like /laws/btw-wetboek. FisconetSearch provides the working
-      # /laws/FISCONET_<legislation_id> URL.
-      link = art[:url].presence || (art[:legislation_id].present? ? "/laws/FISCONET_#{art[:legislation_id]}" : nil)
-      # The gewest in square brackets after the article number. Without it four regional
-      # variants of one article reach the model as near-identical blocks with nothing to
-      # tell them apart, and the prompt's "give every figure per gewest" rule has nothing
-      # to attach a figure to.
-      scope = LegalChatbot::FisconetSearch.context_region_label(art[:region], language: @language)
-      pending = future_amendment_note(art)
-      metadata = source_context_metadata(art, kind: 'tax_code')
-      parts << "[Bron #{articles.size + cases.size + parl_docs.size + index + 1} - #{tax_label}]\n#{art[:document_type]} - #{art[:legislation_title]}\nArtikel #{art[:article_number]}#{section}#{scope ? " [#{scope}]" : ''}#{pending}\n#{metadata}#{"\nLINK: #{link}" if link}\n\n#{text}"
+      parts << tax_context_block(art, articles.size + cases.size + parl_docs.size + index + 1)
     end
 
     # Regional legislation (Vlaamse Codex, Wallex, Brussels)
     regional_docs.each_with_index do |doc, index|
-      source_name = case doc[:source]
-                    when 'vlaamse_codex' then 'Vlaamse Codex'
-                    when 'wallex' then 'Wallex (Wallonië)'
-                    when 'brussels' then 'Brusselse wetgeving'
-                    else doc[:source]
-                    end
-      meta = doc[:metadata] || {}
-      article_info = meta['article_number'] ? "Artikel #{meta['article_number']}" : ''
-      text = ensure_utf8(doc[:text])[0..max_article_chars]
-      parts << "[Bron #{articles.size + cases.size + parl_docs.size + tax_articles.size + index + 1} - #{regional_label}]\nBron: #{source_name}\nTitel: #{doc[:title]}\n#{article_info}\nLINK: #{doc[:url]}\n#{text}"
+      parts << regional_context_block(doc, articles.size + cases.size + parl_docs.size + tax_articles.size + index + 1)
     end
 
     # These are tiny, code-sealed excerpts from an official source, not
@@ -579,67 +508,9 @@ class LegalChatbotService
     # duties even on the low-cost tier; the provider rejects malformed URLs or
     # incomplete source sets before records reach this method.
     authoritative_docs.each_with_index do |doc, index|
-      if doc[:source] == LegalChatbot::EuCorpus::SOURCE
-        next unless LegalChatbot::EuCorpus.verified_record?(doc)
-
-        offset = articles.size + cases.size + parl_docs.size + tax_articles.size + regional_docs.size
-        source_text = ensure_utf8(doc[:article_text])
-        text = if complete_erasure_context_article?(doc, question, source_text) ||
-                  complete_platform_redress_context_article?(doc, question, source_text) ||
-                  complete_flight_disruption_context_article?(doc, question, source_text)
-                 source_text
-               else
-                 LegalChatbot::EuArticleDependencies.excerpt(doc, source_text, question, max_chars: max_article_chars) ||
-                   LegalChatbot::ArticleExcerpt.excerpt(source_text, question, max_chars: max_article_chars)
-               end
-        kind_notice = case doc[:kind]
-                      when 'recital' then 'INTERPRETATIVE RECITAL: explain its literal content and recorded edition status only; it does not create independent obligations or override operative provisions. Do not introduce numbered operative provisions absent from supplied evidence.'
-                      when 'paragraph'
-                        doc[:judicial_kind] == 'advocate_general_opinion' ? 'ADVOCATE GENERAL OPINION: not a court judgment.' : 'EU CASE-LAW PARAGRAPH: identify court, procedure and edition from metadata; report what this paragraph establishes, not an invented holding. Statutory references inside it are reported court reasoning, not separately retrieved statutory provisions.'
-                      when 'final'
-                        if doc[:source_kind] == 'jurisprudence'
-                          label = doc[:judicial_kind] == 'advocate_general_opinion' ? 'ADVOCATE GENERAL OPINION CONCLUSIONS: not a court judgment.' : 'EU COURT OPERATIVE HOLDING.'
-                          "#{label} UNNUMBERED CASE-LAW UNIT: copy the exact LINK; do not invent paragraph numbers or paragraph anchors. Statutory references inside this unit are reported source text, not separately retrieved statutory provisions."
-                        else
-                          'OPERATIVE EU LEGAL TEXT: assess scope, legal status and application dates; this edition is not automatically the latest applicable text.'
-                        end
-                      else 'OPERATIVE EU LEGAL TEXT: assess scope, legal status and application dates; this edition is not automatically the latest applicable text.'
-                      end
-        if doc[:historical]
-          coverage = doc[:correction_status].to_s.match?(/unresolved/i) ? 'correction overlays are unresolved' : 'correction coverage has not been verified'
-          kind_notice += " HISTORICAL ORIGINAL EDITION: #{coverage}; do not present this wording as current or corrected EU law."
-        end
-        if doc[:document_type].to_s.match?(/directive|richtlijn|directiva/i) || doc[:celex].to_s.match?(/\A[03]\d{4}L/)
-          kind_notice += ' DIRECTIVE: assess national transposition and applicability; do not treat every provision as directly enforceable Belgian legislation.'
-        end
-        parts << "[Bron #{offset + index + 1} - EUR-LEX (#{doc[:language].upcase})]\n" \
-                 "CELEX: #{doc[:celex]}#{"\nECLI: #{doc[:ecli]}" if doc[:ecli].present?}\n" \
-                 "Title: #{doc[:law_title]}\n#{doc[:article_title]}\nSOURCE KIND: #{doc[:document_type]} / #{doc[:kind]}\n" \
-                 "#{kind_notice}\nDocument date: #{doc[:document_date]}\nEdition date: #{doc[:edition_date]}\n" \
-                 "Authentic language metadata: #{doc[:authentic_language].present? ? doc[:authentic_language].to_json : 'unknown'}; literal source language: #{doc[:language]}\n" \
-                 "Legal status: #{doc[:legal_status]}\nCorrection coverage: #{doc[:correction_status]}\n" \
-                 "Correction evidence observed at: #{doc[:correction_observed_at].presence || 'not recorded'}\n" \
-                 "Correction verification: #{doc[:correction_verification].presence || 'not certified'}. A verified unchanged original recital is not a certificate of current legal force.\n" \
-                 "CITATION RULE: copy this exact LINK for the article/recital/paragraph. Use a Markdown link, name the correct source kind and unit; never relabel a recital as an article or an opinion as a judgment.\n" \
-                 "OFFICIAL METADATA (identity, not a substitute for literal source text): #{eu_context_metadata(doc[:metadata])}\n" \
-                 "LINK: #{doc[:url]}\nLITERAL SOURCE TEXT (excerpt):\n#{text}"
-        next
-      end
-      text = ensure_utf8(doc[:article_text].to_s)[0..6000]
       offset = articles.size + cases.size + parl_docs.size + tax_articles.size + regional_docs.size
-      parts << if doc[:source] == 'official_guidance'
-                 # A reviewed lender/supervisor FAQ is not an EU or Belgian statute.
-                 # Only article_text is literal quote evidence; the separate summary
-                 # is editorial source-use context and may not be quoted as native text.
-                 "[Bron #{offset + index + 1} - OFFICIAL GUIDANCE (#{doc[:language]})]\n" \
-                   "Authority: #{doc[:authority]}\nTitle: #{doc[:title]}\nVerified: #{doc[:verified_on]}\n" \
-                   "LINK: #{doc[:url]}\nLITERAL SOURCE EXCERPT:\n#{text}\n" \
-                   "REVIEWED SUMMARY (not a literal quotation or statute):\n#{doc[:reviewed_summary]}"
-               else
-                 "[Bron #{offset + index + 1} - #{official_label} (#{doc[:language]})]\n" \
-                   "Bron: #{doc[:authority]}\nWet: #{doc[:law_title]}\n#{doc[:article_title]}\n" \
-                   "LINK: #{doc[:url]}\n#{text}"
-               end
+      block = authoritative_context_block(doc, offset + index + 1, question: question, max_article_chars: max_article_chars)
+      parts << block if block
     end
 
     # Last, so it sits closest to where generation begins. Measured on production
@@ -654,6 +525,136 @@ class LegalChatbotService
     parts << formation_notice if formation_notice
 
     parts.join("\n\n---\n\n")
+  end
+
+  # One authoritative record as its context block, or nil for an EU record
+  # that does not verify (it is never shown). r47 (root 2026-10-19
+  # 18:59:40): an EU statutory unit (an article, recital or final provision
+  # of legislation) and a sealed official statutory record are shown
+  # complete and are measured as required admission units
+  # (statutory_extra_units); an EU judgment, holding or Advocate-General
+  # unit and official guidance keep their bounded excerpt and their labels.
+  def authoritative_context_block(doc, number, question: nil, max_article_chars: nil)
+    if doc[:source] == LegalChatbot::EuCorpus::SOURCE
+      return nil unless LegalChatbot::EuCorpus.verified_record?(doc)
+
+      source_text = ensure_utf8(doc[:article_text])
+      complete = eu_statutory_unit?(doc) ||
+                 complete_erasure_context_article?(doc, question, source_text) ||
+                 complete_platform_redress_context_article?(doc, question, source_text) ||
+                 complete_flight_disruption_context_article?(doc, question, source_text)
+      text = if complete
+               source_text
+             else
+               LegalChatbot::EuArticleDependencies.excerpt(doc, source_text, question, max_chars: max_article_chars) ||
+                 LegalChatbot::ArticleExcerpt.excerpt(source_text, question, max_chars: max_article_chars)
+             end
+      kind_notice = case doc[:kind]
+                    when 'recital' then 'INTERPRETATIVE RECITAL: explain its literal content and recorded edition status only; it does not create independent obligations or override operative provisions. Do not introduce numbered operative provisions absent from supplied evidence.'
+                    when 'paragraph'
+                      doc[:judicial_kind] == 'advocate_general_opinion' ? 'ADVOCATE GENERAL OPINION: not a court judgment.' : 'EU CASE-LAW PARAGRAPH: identify court, procedure and edition from metadata; report what this paragraph establishes, not an invented holding. Statutory references inside it are reported court reasoning, not separately retrieved statutory provisions.'
+                    when 'final'
+                      if doc[:source_kind] == 'jurisprudence'
+                        label = doc[:judicial_kind] == 'advocate_general_opinion' ? 'ADVOCATE GENERAL OPINION CONCLUSIONS: not a court judgment.' : 'EU COURT OPERATIVE HOLDING.'
+                        "#{label} UNNUMBERED CASE-LAW UNIT: copy the exact LINK; do not invent paragraph numbers or paragraph anchors. Statutory references inside this unit are reported source text, not separately retrieved statutory provisions."
+                      else
+                        'OPERATIVE EU LEGAL TEXT: assess scope, legal status and application dates; this edition is not automatically the latest applicable text.'
+                      end
+                    else 'OPERATIVE EU LEGAL TEXT: assess scope, legal status and application dates; this edition is not automatically the latest applicable text.'
+                    end
+      if doc[:historical]
+        coverage = doc[:correction_status].to_s.match?(/unresolved/i) ? 'correction overlays are unresolved' : 'correction coverage has not been verified'
+        kind_notice += " HISTORICAL ORIGINAL EDITION: #{coverage}; do not present this wording as current or corrected EU law."
+      end
+      if doc[:document_type].to_s.match?(/directive|richtlijn|directiva/i) || doc[:celex].to_s.match?(/\A[03]\d{4}L/)
+        kind_notice += ' DIRECTIVE: assess national transposition and applicability; do not treat every provision as directly enforceable Belgian legislation.'
+      end
+      text_label = complete ? 'LITERAL SOURCE TEXT (complete unit):' : 'LITERAL SOURCE TEXT (excerpt):'
+      return "[Bron #{number} - EUR-LEX (#{doc[:language].upcase})]\n" \
+             "CELEX: #{doc[:celex]}#{"\nECLI: #{doc[:ecli]}" if doc[:ecli].present?}\n" \
+             "Title: #{doc[:law_title]}\n#{doc[:article_title]}\nSOURCE KIND: #{doc[:document_type]} / #{doc[:kind]}\n" \
+             "#{kind_notice}\nDocument date: #{doc[:document_date]}\nEdition date: #{doc[:edition_date]}\n" \
+             "Authentic language metadata: #{doc[:authentic_language].present? ? doc[:authentic_language].to_json : 'unknown'}; literal source language: #{doc[:language]}\n" \
+             "Legal status: #{doc[:legal_status]}\nCorrection coverage: #{doc[:correction_status]}\n" \
+             "Correction evidence observed at: #{doc[:correction_observed_at].presence || 'not recorded'}\n" \
+             "Correction verification: #{doc[:correction_verification].presence || 'not certified'}. A verified unchanged original recital is not a certificate of current legal force.\n" \
+             "CITATION RULE: copy this exact LINK for the article/recital/paragraph. Use a Markdown link, name the correct source kind and unit; never relabel a recital as an article or an opinion as a judgment.\n" \
+             "OFFICIAL METADATA (identity, not a substitute for literal source text): #{eu_context_metadata(doc[:metadata])}\n" \
+             "LINK: #{doc[:url]}\n#{text_label}\n#{text}"
+    end
+
+    if doc[:source] == 'official_guidance'
+      # A reviewed lender/supervisor FAQ is not an EU or Belgian statute.
+      # Only article_text is literal quote evidence; the separate summary
+      # is editorial source-use context and may not be quoted as native text.
+      text = ensure_utf8(doc[:article_text].to_s)[0..6000]
+      return "[Bron #{number} - OFFICIAL GUIDANCE (#{doc[:language]})]\n" \
+             "Authority: #{doc[:authority]}\nTitle: #{doc[:title]}\nVerified: #{doc[:verified_on]}\n" \
+             "LINK: #{doc[:url]}\nLITERAL SOURCE EXCERPT:\n#{text}\n" \
+             "REVIEWED SUMMARY (not a literal quotation or statute):\n#{doc[:reviewed_summary]}"
+    end
+
+    # A sealed official statutory record, complete: the cut at 6,001
+    # characters is gone (r47).
+    text = ensure_utf8(doc[:article_text].to_s)
+    "[Bron #{number} - #{official_eu_label} (#{doc[:language]})]\n" \
+      "Bron: #{doc[:authority]}\nWet: #{doc[:law_title]}\n#{doc[:article_title]}\n" \
+      "LINK: #{doc[:url]}\n#{text}"
+  end
+
+  def official_eu_label
+    case @language
+    when 'fr' then 'LÉGISLATION OFFICIELLE DE L’UNION EUROPÉENNE'
+    when 'de' then 'OFFIZIELLES EU-RECHT'
+    when 'en' then 'OFFICIAL EU LEGISLATION'
+    else 'OFFICIËLE EU-WETGEVING'
+    end
+  end
+
+  # An EU unit of legislation (an article, recital or final provision), not
+  # a judgment, holding or Advocate-General paragraph or conclusion.
+  def eu_statutory_unit?(doc)
+    doc[:source_kind].to_s != 'jurisprudence' && doc[:kind].to_s != 'paragraph'
+  end
+
+  # A record the allowance must hold complete: a verified EU statutory unit,
+  # or a sealed official record that is not guidance.
+  def statutory_authoritative?(doc)
+    if doc[:source] == LegalChatbot::EuCorpus::SOURCE
+      eu_statutory_unit?(doc) && LegalChatbot::EuCorpus.verified_record?(doc)
+    else
+      doc[:source] != 'official_guidance'
+    end
+  end
+
+  # The EU and sealed official statutory records and the verified-data block
+  # as admission units (r47; root 2026-10-19 18:59:40, coordination
+  # 21:24:13), each measured at the length of what reaches the model
+  # complete. Every unit is required except an EU website-overview unit
+  # (EuSearch marks it eu_website_overview): that is breadth beside the
+  # governing Belgian pins and sealed GDPR texts, so it is optional and is
+  # left out whole when the required units fill the allowance (root
+  # 2026-10-19 21:51:37 and 22:11:41). A member names its place in the caller's
+  # lists: [:authoritative, index] in authoritative_docs, [:facts, 0] for the
+  # block the model client prepends (facts_chars, its exact length, from
+  # LlmClient#reference_facts_block). A record that is not statutory keeps
+  # its own bounded excerpt and is no unit; an EU record that does not
+  # verify is never rendered and is no unit either.
+  def statutory_extra_units(authoritative_docs:, facts_chars:)
+    units = []
+    if facts_chars.to_i.positive?
+      units << { kind: :fact_pack, members: [[:facts, 0]], required: true,
+                 required_identities: [%w[verified_legal_data fact_block]], length: facts_chars.to_i }
+    end
+    Array(authoritative_docs).each_with_index do |doc, index|
+      next unless statutory_authoritative?(doc)
+
+      units << { kind: doc[:source] == LegalChatbot::EuCorpus::SOURCE ? :eu_statutory : :official_statutory,
+                 members: [[:authoritative, index]], required: doc[:eu_website_overview] != true,
+                 required_identities: [[doc[:celex] || doc[:url], doc[:article_title]]],
+                 length: authoritative_context_block(doc, STATUTORY_MEASURE_NUMBER).to_s.length }
+    end
+    units
   end
 
   # The instruction over the German wording. French, because gesetzguide's
@@ -865,6 +866,37 @@ class LegalChatbotService
   # introduction left out (2026-10-04). Half a thousand more tokens on one
   # article costs a fraction of a cent on every model.
   FIRST_ARTICLE_BUDGET_FACTOR = 1.5
+  # r47 (owner, 2026-10-19: "make sure the article limit is indeed no longer
+  # there"): a research depth limits how many statutory sources reach the
+  # model, never how much of each. A statutory source (Belgian article,
+  # binding German original, Fisconet tax article, regional document) is
+  # shown as one complete block, header and German wording included, or not
+  # at all. admit_statutory_sources counts every character of those blocks
+  # against this allowance, required governing pins first: an optional source
+  # that does not fit is left out of the context, the guards and the source
+  # cards alike; a required one that does not fit stops the ask before
+  # generation with the existing limited-evidence response. The paid 1.0.2 QA
+  # measured the old per-article cut: at Snel's 1,800 characters Brussels
+  # Art. 237 (6,607) showed none of its paragraphs and Walloon Art. 55
+  # (9,371) only two, and the model stated wrong tenant rules. Case law,
+  # parliamentary and EU documents keep their own excerpts and complete-unit
+  # contracts. The provider reservation is sized on the actual messages.
+  # 128,000 (root 2026-10-19 22:32:10): the measured complete packs of
+  # common questions (tmp/opus_v8/r47-fact-and-eu-unit-sizes.md) reach
+  # 76,219 characters for a consumer warranty question (four pinned Civil
+  # Code articles and the complete garantie fact block) and 75,809 for the
+  # commercial-website question with every EU overview unit; the eight
+  # longest distinct EU units come to 113,489. 48,000 refused those
+  # questions. A larger stack still ends at admission, before generation.
+  STATUTORY_CONTEXT_MAX_CHARS = 128_000
+  # The block number used to measure a block before its final number is
+  # known: no context reaches 1,000 sources, so a measured block is never
+  # shorter than the one rendered.
+  STATUTORY_MEASURE_NUMBER = 999
+  GOVERNING_PROVISION_LABELS = {
+    'nl' => 'Relevante bepaling', 'fr' => 'Disposition pertinente',
+    'en' => 'Governing provision', 'de' => 'Maßgebliche Bestimmung'
+  }.freeze
 
   # Measured current NL/FR formation targets are 123-7,657 characters.
   # Never apply the first-article multiplier to this bounded exception.
@@ -931,13 +963,179 @@ class LegalChatbotService
     index.zero? ? (max_article_chars * FIRST_ARTICLE_BUDGET_FACTOR).to_i : max_article_chars
   end
 
-  def german_original_block(article, number, max_article_chars, question: nil)
+  # Admits statutory sources as complete blocks (r47), in UNITS: each
+  # Belgian article alone; Fisconet tax articles grouped by
+  # FisconetSearch.regional_units (a complete Flemish, Walloon and Brussels
+  # set with its federal companion is indivisible); the selected regional
+  # documents as one unit, so this stage never thins RegionalSearch's region
+  # coverage. A unit counts at the full length of the blocks the context
+  # builder renders for its members; units with a required member (a pinned
+  # governing provision) come first, the rest in context order. A unit that
+  # fits is admitted whole, an optional one that does not is left out whole,
+  # a required one that does not is recorded and ends the ask before
+  # generation. The EU statutory units, the sealed official statutory
+  # records and the verified-data block the model client prepends
+  # (statutory_extra_units, facts_chars measured by
+  # LlmClient#reference_facts_block) are units of the same allowance,
+  # required except an EU website-overview unit (statutory_extra_units).
+  # Returns the admitted lists in their original order, the
+  # admitted authoritative pool (a record that is no unit passes through)
+  # and facts_admitted. Stateless: every call decides from its arguments
+  # alone. German rows that are not binding originals are never rendered as
+  # evidence (build_combined_context_from_db drops them) and pass through at
+  # length 0.
+  def admit_statutory_sources(articles, tax_articles, regional_docs, authoritative_docs: [], facts_chars: 0)
+    articles = Array(articles)
+    tax_articles = Array(tax_articles)
+    regional_docs = Array(regional_docs)
+    authoritative_docs = Array(authoritative_docs)
+    remaining = STATUTORY_CONTEXT_MAX_CHARS
+    admitted = { article: Set.new, tax: Set.new, regional: Set.new, authoritative: Set.new, facts: Set.new }
+    omitted_required = []
+    pruned = 0
+    units = statutory_units(articles, tax_articles, regional_docs) +
+            statutory_extra_units(authoritative_docs: authoritative_docs, facts_chars: facts_chars)
+    units.each_with_index.sort_by { |unit, position| [unit[:required] ? 0 : 1, position] }.each do |unit, _position|
+      if unit[:length] <= remaining
+        unit[:members].each { |kind, index| admitted[kind] << index }
+        remaining -= unit[:length]
+      elsif unit[:required]
+        omitted_required.concat(unit[:required_identities])
+      else
+        pruned += unit[:members].size
+      end
+    end
+    keep = ->(list, kind) { list.each_index.select { |index| admitted[kind].include?(index) }.map { |index| list[index] } }
+    counted = units.flat_map { |unit| unit[:members] }.filter_map { |kind, index| index if kind == :authoritative }.to_set
+    kept_authoritative = authoritative_docs.each_index
+                                           .reject { |index| counted.include?(index) && !admitted[:authoritative].include?(index) }
+                                           .map { |index| authoritative_docs[index] }
+    { articles: keep.call(articles, :article), tax_articles: keep.call(tax_articles, :tax),
+      regional_docs: keep.call(regional_docs, :regional), authoritative_docs: kept_authoritative,
+      facts_admitted: admitted[:facts].include?(0), pruned: pruned, omitted_required: omitted_required }
+  end
+
+  # The admission units in context order: { members: [[kind, index], ...],
+  # required:, required_identities:, length: }.
+  def statutory_units(articles, tax_articles, regional_docs)
+    units = articles.each_with_index.map do |article, index|
+      length = if german_row_source?(article) && !german_original_source?(article)
+                 0
+               else
+                 statutory_block(:article, article, STATUTORY_MEASURE_NUMBER).length
+               end
+      statutory_unit([[:article, index]], [article], length)
+    end
+    # Each occurrence keeps its own index, should one row object be listed twice.
+    positions = Hash.new { |hash, key| hash[key] = [] }.compare_by_identity
+    tax_articles.each_with_index { |art, index| positions[art] << index }
+    LegalChatbot::FisconetSearch.regional_units(tax_articles).each do |group|
+      members = group.map { |art| [:tax, positions[art].shift] }
+      length = group.sum { |art| statutory_block(:tax, art, STATUTORY_MEASURE_NUMBER).length }
+      units << statutory_unit(members, group, length)
+    end
+    if regional_docs.any?
+      length = regional_docs.sum { |doc| statutory_block(:regional, doc, STATUTORY_MEASURE_NUMBER).length }
+      units << statutory_unit(regional_docs.each_index.map { |index| [:regional, index] }, regional_docs, length)
+    end
+    units
+  end
+
+  def statutory_unit(members, sources, length)
+    required = sources.select { |source| source[:pinned] == true }
+    { members: members, required: required.any?, length: length,
+      required_identities: required.map { |source| [source[:numac], source[:article_title]] } }
+  end
+
+  def statutory_block(kind, source, number)
+    case kind
+    when :article then legislation_context_block(source, number)
+    when :tax then tax_context_block(source, number)
+    else regional_context_block(source, number)
+    end
+  end
+
+  # One Belgian statutory article as a complete block: the binding German
+  # original, or the article with its in-force note, governing-provision line
+  # and German wording. Nothing is excerpted or cut (r47).
+  def legislation_context_block(article, number)
+    return german_original_block(article, number) if german_row_source?(article)
+
+    law_label = @language == 'fr' ? 'LOI' : 'WET'
+    lang_label = article[:language_id] == 1 ? 'NL' : 'FR'
+    text = ensure_utf8(article[:article_text]).to_s
+    numac = article[:numac]
+    law_title = ensure_utf8(article[:law_title])
+    article_title = ensure_utf8(article[:article_title])
+    # Build exact URL with article anchor (server-side, no LLM guessing)
+    art_anchor = extract_article_anchor(article_title)
+    link = art_anchor ? "/laws/#{numac}#{art_anchor}" : "/laws/#{numac}"
+    # The text is the IN-FORCE half; retrieval already removed any not-yet-applicable
+    # block. Say so on the header line, so the model can tell the user a change is
+    # coming instead of silently omitting it.
+    pending = future_amendment_note(article)
+    # A pin whose governing provision sits deep in a long article names it
+    # here; the text itself stays complete from its first character.
+    governing = article[:context_excerpt_anchor].to_s
+    governing_line = if governing.empty?
+                       ''
+                     else
+                       "\n#{GOVERNING_PROVISION_LABELS.fetch(@language.to_s, GOVERNING_PROVISION_LABELS.fetch('nl'))}: #{governing}"
+                     end
+    # The German lane's wording (wording mode only) rides INSIDE the French
+    # source's block, after the binding text: never its own Bron, NUMAC or
+    # LINK, so the citation, the link guard and the source card stay French.
+    "[Bron #{number} - #{law_label} (#{lang_label})]\nNUMAC: #{numac}\nWet: #{law_title}\n#{article_title}#{pending}" \
+      "#{governing_line}\nLINK: #{link}\n#{text}#{german_wording_block(article)}"
+  end
+
+  # One Fisconet tax article as a complete block (r47).
+  def tax_context_block(art, number)
+    tax_label = @language == 'fr' ? 'FISCALITÉ' : 'FISCALITEIT'
+    section = art[:section_path].present? ? " (#{art[:section_path]})" : ''
+    text = art[:text].to_s
+    # LINK is mandatory here: the prompt demands every citation be a
+    # markdown link, so a link-less tax block pushed the model to fabricate
+    # slugs like /laws/btw-wetboek. FisconetSearch provides the working
+    # /laws/FISCONET_<legislation_id> URL.
+    link = art[:url].presence || (art[:legislation_id].present? ? "/laws/FISCONET_#{art[:legislation_id]}" : nil)
+    # The gewest in square brackets after the article number. Without it four regional
+    # variants of one article reach the model as near-identical blocks with nothing to
+    # tell them apart, and the prompt's "give every figure per gewest" rule has nothing
+    # to attach a figure to.
+    scope = LegalChatbot::FisconetSearch.context_region_label(art[:region], language: @language)
+    pending = future_amendment_note(art)
+    metadata = source_context_metadata(art, kind: 'tax_code')
+    "[Bron #{number} - #{tax_label}]\n#{art[:document_type]} - #{art[:legislation_title]}\n" \
+      "Artikel #{art[:article_number]}#{section}#{scope ? " [#{scope}]" : ''}#{pending}\n#{metadata}" \
+      "#{"\nLINK: #{link}" if link}\n\n#{text}"
+  end
+
+  # One regional legislation document (Vlaamse Codex, Wallex, Brussels) as a
+  # complete block (r47); it was a plain prefix of the depth's size.
+  def regional_context_block(doc, number)
+    regional_label = @language == 'fr' ? 'LÉGISLATION RÉGIONALE' : 'REGIONALE WETGEVING'
+    source_name = case doc[:source]
+                  when 'vlaamse_codex' then 'Vlaamse Codex'
+                  when 'wallex' then 'Wallex (Wallonië)'
+                  when 'brussels' then 'Brusselse wetgeving'
+                  else doc[:source]
+                  end
+    meta = doc[:metadata] || {}
+    article_info = meta['article_number'] ? "Artikel #{meta['article_number']}" : ''
+    text = ensure_utf8(doc[:text]).to_s
+    "[Bron #{number} - #{regional_label}]\nBron: #{source_name}\nTitel: #{doc[:title]}\n#{article_info}\nLINK: #{doc[:url]}\n#{text}"
+  end
+
+  # The binding German original, complete (r47): article_text is the
+  # rendered German body; german_original is its provenance metadata.
+  def german_original_block(article, number)
     original = article[:german_original]
     numac = article[:numac]
     article_title = ensure_utf8(article[:article_title])
     link = "/laws/#{numac}?language_id=#{LegalChatbot::GermanArticleSearch::GERMAN_LANGUAGE_ID}" \
            "#{extract_article_anchor(article_title)}"
-    text = article_context_text(ensure_utf8(article[:article_text]), question, max_article_chars)
+    text = ensure_utf8(article[:article_text]).to_s
     header = GERMAN_ORIGINAL_HEADERS.fetch(original[:kind].to_s, 'RECHTSAKT')
     "[Bron #{number} - #{header} (DE)]\nNUMAC: #{numac}\nWet: #{ensure_utf8(article[:law_title])}\n" \
       "#{article_title}\nSTAND: #{german_original_stand(original)}\n#{GERMAN_ORIGINAL_INSTRUCTION}\n" \

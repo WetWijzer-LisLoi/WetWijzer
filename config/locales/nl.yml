@@ -285,9 +285,9 @@ nl:
     catalogue:
       civil_book_seven: "Burgerlijk Wetboek - Boek 7 \"Bijzondere contracten\""
       future_from_september_2027: "(inwerkingtreding: 1 september 2027)"
-      criminal_code_1867: "(oud) Strafwetboek 1867"
-      new_criminal_code_book_one: "Nieuw Strafwetboek - Boek I"
-      new_criminal_code_book_two: "Nieuw Strafwetboek - Boek II"
+      criminal_code_1867: "Strafwetboek 1867"
+      new_criminal_code_book_one: "Strafwetboek - Boek I"
+      new_criminal_code_book_two: "Strafwetboek - Boek II"
     categories:
       civil: "Burgerlijk recht"
       criminal: "Strafrecht"

@@ -195,7 +195,7 @@ module LegalChatbot
     # beantworten", as if the listed sources answered it.
     RENDERED_FIXED_LINES = %i[
       localized_guarded_source_list_fallback_intro localized_guarded_source_list_statement_fallback_intro
-      localized_verified_fallback_heading
+      localized_verified_fallback_heading localized_source_only_fallback_heading
       high_confidence_citation_heading localized_consulted_source_note
     ].freeze
     # Retain recognition of older French histories as well as the new research

@@ -476,6 +476,7 @@ module LegalChatbot
         representative = preferred.merge(similarity: rows.map { |row| row[:similarity].to_f }.max)
         representative[:pinned] = true if rows.any? { |row| row[:pinned] }
         representative[:keyword_hit] = true if rows.any? { |row| row[:keyword_hit] }
+        representative[:governing_group] = true if rows.any? { |row| LegalChatbot::LegislationSearch.governing_source?(row) }
         # An independently retrieved translation makes the provision real
         # search evidence, even when the preferred-language row was injected.
         representative[:injected] = rows.all? { |row| row[:injected] } if rows.any? { |row| row.key?(:injected) }
@@ -489,10 +490,19 @@ module LegalChatbot
 
         replacement
       end
-      pins = articles.select { |article| article[:pinned] }.take(limit)
-      remaining = articles.reject { |article| pins.include?(article) }
+      # The explicit governing group (LegislationSearch.governing_source?) is
+      # kept whole and once each. It counts toward the limit and the other
+      # rows, pins included, share what is left (root 2026-10-19 23:30:47);
+      # the kept pins, governing or not, keep their order ahead of the
+      # optional rows. Without a governing row this is the quota as before.
+      governing = articles.select { |article| LegalChatbot::LegislationSearch.governing_source?(article) }
+                          .uniq { |article| [retrieved_source_numac(article), article[:article_title], article[:language_id]] }
+      rest = articles.reject { |article| LegalChatbot::LegislationSearch.governing_source?(article) }
+      room = [limit - governing.length, 0].max
+      pins = rest.select { |article| article[:pinned] }.take(room)
+      remaining = rest.reject { |article| pins.include?(article) }
       lexical = remaining.select { |article| article[:keyword_hit] }
-                         .take([lexical_quota.clamp(0, limit), limit - pins.length].min)
+                         .take([lexical_quota.clamp(0, limit), room - pins.length].min)
       semantic_pool = remaining.reject { |article| lexical.include?(article) }
       if diversify_injected
         # Core-law injection is bounded fallback evidence, not an independent
@@ -513,15 +523,15 @@ module LegalChatbot
           true
         end + surplus
       end
-      semantic = semantic_pool.take(limit - pins.length - lexical.length)
+      semantic = semantic_pool.take(room - pins.length - lexical.length)
       original_positions = {}.compare_by_identity
       articles.each_with_index { |article, index| original_positions[article] ||= index }
 
-      (pins + semantic + lexical)
+      (governing + pins + semantic + lexical)
         .sort_by do |article|
           [article[:pinned] ? -Float::INFINITY : -article[:similarity].to_f, original_positions.fetch(article)]
         end
-        .take(limit)
+        .take(governing.length + room)
     end
 
     # Explicit region names always qualify. Generic regionalized subject

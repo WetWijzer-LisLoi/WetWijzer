@@ -315,6 +315,8 @@ app/services/legal_chatbot/civil_claim_guidance_sources.rb
 app/services/legal_chatbot/commercial_website_context.rb
 app/services/legal_chatbot/commercial_website_gdpr_sources.rb
 app/services/legal_chatbot/commercial_website_intent.rb
+app/services/legal_chatbot/commercial_website_scope_grounding.rb
+app/services/legal_chatbot/consumer_withdrawal_grounding.rb
 app/services/legal_chatbot/context_builder.rb
 app/services/legal_chatbot/core_law_mappings.rb
 app/services/legal_chatbot/embedding_service.rb
@@ -340,6 +342,7 @@ app/services/legal_chatbot/german_article_search.rb
 app/services/legal_chatbot/german_figure_check.rb
 app/services/legal_chatbot/german_legal_glossary.rb
 app/services/legal_chatbot/german_question_translation.rb
+app/services/legal_chatbot/grounding_scope.rb
 app/services/legal_chatbot/house_hidden_defect_practical_grounding.rb
 app/services/legal_chatbot/jurisprudence_search.rb
 app/services/legal_chatbot/language_detection.rb
@@ -356,6 +359,7 @@ app/services/legal_chatbot/municipal_sanctions_source_scope.rb
 app/services/legal_chatbot/negation_tally.rb
 app/services/legal_chatbot/number_words.rb
 app/services/legal_chatbot/office_commute_grounding.rb
+app/services/legal_chatbot/online_withdrawal_function_status.rb
 app/services/legal_chatbot/orchestrator.rb
 app/services/legal_chatbot/parliamentary_search.rb
 app/services/legal_chatbot/payment_acceptance_grounding.rb
@@ -366,9 +370,12 @@ app/services/legal_chatbot/prompts.rb
 app/services/legal_chatbot/provider_work_receipt.rb
 app/services/legal_chatbot/reference_sheets.rb
 app/services/legal_chatbot/regional_search.rb
+app/services/legal_chatbot/rental_indexation_grounding.rb
+app/services/legal_chatbot/rental_notice_grounding.rb
 app/services/legal_chatbot/salduz_minor_grounding.rb
 app/services/legal_chatbot/search_fan_out.rb
 app/services/legal_chatbot/semantic_source_freshness.rb
+app/services/legal_chatbot/serious_cause_dismissal_grounding.rb
 app/services/legal_chatbot/source_fields.rb
 app/services/legal_chatbot/source_formatter.rb
 app/services/legal_chatbot/source_passage_excerpt.rb
@@ -799,6 +806,7 @@ public/vite/assets/application-B1WoaPgs.css
 public/vite/assets/application-B1YwDGSQ.css
 public/vite/assets/application-B6efk9ue.js
 public/vite/assets/application-B7KlHEbf.css
+public/vite/assets/application-B8KTqxvR.css
 public/vite/assets/application-BAUMExtU.css
 public/vite/assets/application-BAbwyxpz.js
 public/vite/assets/application-BBm2cgIV.js
@@ -856,6 +864,7 @@ public/vite/assets/application-DWN-weTi.css
 public/vite/assets/application-DZVf9TOW.css
 public/vite/assets/application-DZwDCCOo.js
 public/vite/assets/application-DdQwCuwY.js
+public/vite/assets/application-DlSYa1EL.js
 public/vite/assets/application-Do5GkheR.css
 public/vite/assets/application-Do6PUB-W.js
 public/vite/assets/application-DoKubQxh.css

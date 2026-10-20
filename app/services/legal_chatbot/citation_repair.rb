@@ -259,6 +259,24 @@ module LegalChatbot
         guard_result&.fetch(:missing_flight_disruption_conditions, nil), language: @language
       )
       sections << flight_feedback if flight_feedback.present?
+      withdrawal_feedback = ConsumerWithdrawalGrounding.corrective_feedback(
+        guard_result&.fetch(:missing_consumer_withdrawal_conditions, nil), language: @language
+      )
+      sections << withdrawal_feedback if withdrawal_feedback.present?
+      notice_feedback = RentalNoticeGrounding.corrective_feedback(
+        guard_result&.fetch(:missing_rental_notice_conditions, nil), language: @language
+      )
+      sections << notice_feedback if notice_feedback.present?
+      # r47 semantic checks: the feedback repeats only the retained unit's
+      # own wording; German takes the French text, as the German lane
+      # answers in French before translation.
+      [[SeriousCauseDismissalGrounding, :missing_serious_cause_conditions],
+       [RentalIndexationGrounding, :missing_rental_indexation_conditions],
+       [OnlineWithdrawalFunctionStatus, :missing_withdrawal_function_status_conditions],
+       [CommercialWebsiteScopeGrounding, :missing_website_scope_conditions]].each do |grounding, key|
+        feedback = grounding.corrective_feedback(guard_result&.fetch(key, nil), language: @language)
+        sections << feedback if feedback.present?
+      end
       commute_feedback = OfficeCommuteGrounding.corrective_feedback(
         guard_result&.fetch(:missing_office_commute_conditions, nil), language: @language
       )

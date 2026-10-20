@@ -5,6 +5,7 @@ module LegalPagesHelper
     nl: {
       starter: 'Bij uw eerste registratie ontvangt u eenmalig %{credits} gratis startcredits. Ze komen in hetzelfde saldo als gekochte en inbegrepen Pro-credits en kunnen worden gebruikt voor beschikbare combinaties waarvan de totaalprijs binnen uw saldo past. Een gewoon account heeft modeltoegang tot en met Grondig.',
       catalogue: '%{available} beschikbare modellen bij %{providers} providers · %{pending} modellen binnenkort · verwerking met Europees bereik',
+      catalogue_available: '%{available} beschikbare modellen bij %{providers} providers · verwerking met Europees bereik',
       base_credit: 'basiscredit', base_credits: 'basiscredits',
       access: 'Een gewoon account kan alle beschikbare modellen en ondersteunde denkmodi van Snel, Gebalanceerd en Grondig gebruiken. Alleen Uitgebreid vereist daarnaast een actief Pro-abonnement. Elke vraag vereist voldoende credits; startcredits, gekochte credits en inbegrepen Pro-credits werken op dezelfde manier en vervallen niet.',
       source_access: 'Pro geeft ook toegang tot rechtspraak en parlementaire documenten in de chatbot. Zelf zoeken en documenten lezen op de website blijft gratis.',
@@ -13,6 +14,7 @@ module LegalPagesHelper
     fr: {
       starter: 'Lors de votre première inscription, vous recevez une seule fois %{credits} crédits de bienvenue gratuits. Ils rejoignent le même solde que les crédits achetés et inclus avec Pro et permettent d’utiliser les combinaisons disponibles dont le coût total ne dépasse pas votre solde. Un compte ordinaire a accès aux modèles jusqu’à Approfondie.',
       catalogue: '%{available} modèles disponibles chez %{providers} fournisseurs · %{pending} modèles bientôt disponibles · traitement à portée européenne',
+      catalogue_available: '%{available} modèles disponibles chez %{providers} fournisseurs · traitement à portée européenne',
       base_credit: 'crédit de base', base_credits: 'crédits de base',
       access: 'Un compte ordinaire peut utiliser tous les modèles et modes de raisonnement pris en charge disponibles dans Rapide, Équilibrée et Approfondie. Seule Étendue nécessite aussi un abonnement Pro actif. Chaque question exige suffisamment de crédits ; les crédits de bienvenue, achetés et inclus avec Pro fonctionnent de la même manière et n’expirent pas.',
       source_access: 'Pro donne aussi accès à la jurisprudence et aux documents parlementaires dans le chatbot. La recherche et la lecture des documents sur le site restent gratuites.',
@@ -21,6 +23,7 @@ module LegalPagesHelper
     de: {
       starter: 'Bei Ihrer ersten Registrierung erhalten Sie einmalig %{credits} kostenlose Startcredits. Sie kommen zum gleichen Guthaben wie gekaufte und in Pro enthaltene Credits und können für verfügbare Kombinationen genutzt werden, deren Gesamtpreis durch Ihr Guthaben gedeckt ist. Ein normales Konto hat Modellzugang bis einschließlich Gründlich.',
       catalogue: '%{available} verfügbare Modelle von %{providers} Anbietern · %{pending} Modelle demnächst · europäisch begrenzte Verarbeitung',
+      catalogue_available: '%{available} verfügbare Modelle von %{providers} Anbietern · europäisch begrenzte Verarbeitung',
       base_credit: 'Basis-Credit', base_credits: 'Basis-Credits',
       access: 'Ein normales Konto kann alle verfügbaren Modelle und unterstützten Denkmodi in Schnell, Ausgewogen und Gründlich nutzen. Nur Umfassend erfordert zusätzlich ein aktives Pro-Abonnement. Jede Frage benötigt ausreichend Credits; Startcredits, gekaufte und in Pro enthaltene Credits funktionieren gleich und verfallen nicht.',
       source_access: 'Pro ermöglicht auch den Zugriff auf Rechtsprechung und parlamentarische Dokumente im Chatbot. Die Suche und das Lesen der Dokumente auf der Website bleiben kostenlos.',
@@ -29,6 +32,7 @@ module LegalPagesHelper
     en: {
       starter: 'On your first registration, you receive %{credits} free starter credits once. They join the same balance as purchased credits and credits included with Pro and can fund available combinations whose total price fits your balance. A regular account has model access through Thorough.',
       catalogue: '%{available} available models from %{providers} providers · %{pending} models coming soon · European-scoped processing',
+      catalogue_available: '%{available} available models from %{providers} providers · European-scoped processing',
       base_credit: 'base credit', base_credits: 'base credits',
       access: 'A regular account can use all available models and supported reasoning modes in Quick, Balanced and Thorough. Only Extensive also requires an active Pro subscription. Every question needs sufficient credits; starter credits, purchased credits and credits included with Pro work in the same way and never expire.',
       source_access: 'Pro also unlocks case law and parliamentary documents in the chatbot. Searching and reading documents on the website remains free.',
@@ -103,6 +107,13 @@ module LegalPagesHelper
     available = models.reject { |model| LegalChatbotService::AVAILABLE_MODELS.fetch(model.fetch(:id))[:deployed] == false }
     { available: available.size, providers: available.map { |model| model.fetch(:provider) }.uniq.size,
       pending: models.size - available.size }
+  end
+
+  # The summary line of the pricing page. The "coming soon" clause appears
+  # only while a configured model is not deployed; since 2026-10-19 none is.
+  def chatbot_pricing_catalogue_summary(locale = I18n.locale, availability = chatbot_pricing_availability)
+    key = availability.fetch(:pending).positive? ? :catalogue : :catalogue_available
+    pricing_access_copy(locale).fetch(key) % availability
   end
 
   def chatbot_base_credit_label(values, locale = I18n.locale)

@@ -151,6 +151,21 @@ module LegalChatbot
       brussels: RegionalSearch::REGION_PATTERNS.fetch('brussels')
     }.freeze
 
+    # The domains that share the word "notice" (opzeg, préavis, Kündigung)
+    # with the employment ladder: leases, insurance, subscriptions, utilities.
+    # Whole word families only: the "leas" prefix also matched "at least" (root 21:38:13).
+    NOTICE_NON_EMPLOYMENT_CONTEXT = /\b(?:(?:woninghuur|handelshuur|huurcontract|huur|huurder|verhuurder|bail|locataire|
+      bailleur|verzekering|assurance|abonnement|telecom|energiecontract|lease|leasing|tenan|landlord|insurance|subscription|
+      miet|vermiet|versicherung)\w*|rent|rental|rentals|renting|rented|renter|renters)\b/ix
+    # Employment as the subject of the question: the contract or the
+    # relationship, a dismissal or resignation, seniority. A worker noun on
+    # its own ("I am an employee", werknemer, travailleur, a job) names the
+    # asker, not the subject, and does not override a lease, insurance or
+    # subscription question (root 2026-10-19 21:27:45).
+    NOTICE_EMPLOYMENT_CONTEXT = /\b(?:(?:arbeidsovereenkomst|arbeidscontract|arbeidsrelatie|ontslag|licenci|démission|employment|
+      dismiss|redundan|resign|arbeitsvertr|arbeitsverh|entlass|anciennet|seniorit|betriebszugeh)\w*|anci[eë]nniteit|fired|
+      contrat\s+de\s+travail)\b/ix
+
     def initialize(language: 'nl', embedding_service: nil)
       @language = language
       @fact_provider = LegalFactProvider.new(language: language)
@@ -279,7 +294,10 @@ module LegalChatbot
           line = line.strip
           next if line.blank?
 
-          facts << "#{label}: #{line}" unless line.length > 2000
+          # r47: a long statutory fact line is kept whole, never dropped
+          # silently; the whole block is counted against the statutory
+          # allowance before generation (LlmClient#reference_facts_block).
+          facts << "#{label}: #{line}"
         end
       end
       facts
@@ -307,10 +325,15 @@ module LegalChatbot
       # and subscriptions. Do not inject the employment ladder into a
       # non-employment cancellation question merely because the same noun is
       # present.
+      # r47 (root 2026-10-19 21:24:13): the same gate in English and German,
+      # where "Notice period for 9-year lease?" got the employment ladder. An
+      # employer named in a lease, insurance or subscription question is a
+      # party, not an employment context ("My employer terminated my lease",
+      # root 22:00:50); a dismissal or an employment contract is, even beside
+      # a rented flat. Questions without a competing domain are not gated.
       if key == 'opzegtermijn'
-        non_employment = q.match?(/\b(?:woninghuur|handelshuur|huurcontract|huur|huurder|verhuurder|bail|locataire|verzekering|assurance|abonnement|telecom|energiecontract)\w*\b/i)
-        employment = q.match?(/\b(?:werkgever|werknemer|arbeid|ontslag|anci[eë]nniteit|employeur|travailleur|licenciement|démission)\w*\b/i)
-        return false if non_employment && !employment
+        non_employment = q.match?(NOTICE_NON_EMPLOYMENT_CONTEXT)
+        return false if non_employment && !q.match?(NOTICE_EMPLOYMENT_CONTEXT)
       end
 
       # The gates below exist because facts are injected with override

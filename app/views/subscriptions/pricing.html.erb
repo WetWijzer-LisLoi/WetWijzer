@@ -241,7 +241,7 @@
         <%= case I18n.locale when :fr then 'Modèles IA par niveau' when :de then 'KI-Modelle pro Stufe' when :en then 'AI models per level' else 'AI-modellen per niveau' end %>
       </h2>
       <p data-testid="pricing-model-availability-summary" class="text-center text-sm text-gray-500 dark:text-gray-400 mb-4">
-        <%= pricing_access_copy.fetch(:catalogue) % pricing_availability %>
+        <%= chatbot_pricing_catalogue_summary(I18n.locale, pricing_availability) %>
       </p>
       <p data-testid="pricing-reasoning-explanation" class="text-center text-sm text-gray-500 dark:text-gray-400 mb-8">
         <%= pricing_depth_summary %>
