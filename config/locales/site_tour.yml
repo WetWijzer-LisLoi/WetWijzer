@@ -81,6 +81,12 @@ nl:
       - id: bookmarks
         title: "Bladwijzers en mappen"
         body: "Met een account kunt u wetten en andere ondersteunde resultaten bladwijzeren, ze in mappen ordenen en ze later openen via Bladwijzers."
+      - id: rss
+        title: "RSS-feed"
+        body: "De feed bevat recente Belgische wetgeving en rechtspraak. In de moderne versie vindt u hem via het RSS-pictogram in de header, op mobiel via het menu. Wilt u hem volgen, voeg dan het adres van de feed toe aan een RSS-lezer naar keuze."
+        guidance:
+          - "De feed toont recente items. Het antwoord kan ongeveer een uur in de cache blijven, zodat nieuwe publicaties er niet altijd meteen in staan. U hebt er geen account voor nodig, en hij bevat geen persoonlijke instellingen of opgeslagen zoekopdrachten."
+          - "U kiest zelf of u de feed opent of aan een lezer toevoegt; de wizard opent hem nooit vanzelf. Een feed verstuurt zelf geen e-mails of meldingen: dat hangt af van de lezer die u kiest."
       - id: account
         title: "Profiel, facturatie en facturen"
         body: "Via Account beheert u uw profiel en facturatiegegevens. Daar vindt u ook betalingen en facturen die voor uw account beschikbaar zijn."
@@ -184,6 +190,12 @@ fr:
       - id: bookmarks
         title: "Favoris et dossiers"
         body: "Avec un compte, vous pouvez ajouter aux favoris les lois et autres résultats pris en charge, les classer dans des dossiers et les rouvrir via Favoris."
+      - id: rss
+        title: "Flux RSS"
+        body: "Le flux reprend la législation et la jurisprudence belges récentes. Dans la version moderne, vous le trouvez avec l’icône RSS dans l’en-tête, ou dans le menu sur mobile. Pour le suivre, ajoutez l’adresse du flux au lecteur RSS de votre choix."
+        guidance:
+          - "Le flux montre des éléments récents. Sa réponse peut rester en cache pendant environ une heure, si bien que les nouvelles publications n’y figurent pas toujours immédiatement. Il ne nécessite pas de compte et ne contient ni réglages personnels ni recherches enregistrées."
+          - "C’est vous qui décidez d’ouvrir le flux ou de l’ajouter à un lecteur ; l’assistant ne l’ouvre jamais de lui-même. Un flux n’envoie lui-même ni e-mails ni notifications : cela dépend du lecteur que vous choisissez."
       - id: account
         title: "Profil, facturation et factures"
         body: "Dans Compte, gérez votre profil et vos données de facturation. Vous y trouvez aussi les paiements et factures disponibles pour votre compte."
@@ -287,6 +299,12 @@ de:
       - id: bookmarks
         title: "Lesezeichen und Ordner"
         body: "Mit einem Konto können Sie Gesetze und andere unterstützte Ergebnisse als Lesezeichen speichern, in Ordnern ordnen und über Lesezeichen wieder öffnen."
+      - id: rss
+        title: "RSS-Feed"
+        body: "Der Feed enthält aktuelle belgische Gesetzgebung und Rechtsprechung. In der modernen Version finden Sie ihn über das RSS-Symbol in der Kopfzeile, auf dem Handy über das Menü. Um ihn zu verfolgen, fügen Sie die Adresse des Feeds in einen RSS-Reader Ihrer Wahl ein."
+        guidance:
+          - "Der Feed zeigt neuere Einträge. Seine Antwort kann etwa eine Stunde zwischengespeichert bleiben, sodass neue Veröffentlichungen nicht immer sofort erscheinen. Die Dokumente stammen aus den belgischen Quellen auf Niederländisch oder Französisch; ihre Texte sind nicht ins Deutsche übersetzt. Ein Konto ist nicht nötig, und der Feed enthält keine persönlichen Einstellungen oder gespeicherten Suchen."
+          - "Sie entscheiden selbst, ob Sie den Feed öffnen oder in einem Reader hinzufügen; der Assistent öffnet ihn nie von selbst. Ein Feed versendet selbst keine E-Mails oder Benachrichtigungen: Das hängt vom gewählten Reader ab."
       - id: account
         title: "Profil, Abrechnung und Rechnungen"
         body: "Unter Konto verwalten Sie Profil und Abrechnungsdaten. Dort finden Sie auch die für Ihr Konto verfügbaren Zahlungen und Rechnungen."
@@ -390,6 +408,12 @@ en:
       - id: bookmarks
         title: "Bookmarks and folders"
         body: "With an account, bookmark laws and other supported results, organise them in folders, and reopen them from Bookmarks."
+      - id: rss
+        title: "RSS feed"
+        body: "The feed carries recent Belgian legislation and case law. In the modern version, you find it under the RSS icon in the header, or in the menu on mobile. To follow it, add the feed’s address to an RSS reader of your choice."
+        guidance:
+          - "The feed shows recent items. Its response can stay cached for about an hour, so new publications do not always appear at once. The documents come from the Belgian sources in Dutch or French; their texts are not translated into English. You need no account, and the feed holds no personal settings or saved searches."
+          - "You decide whether to open the feed or add it to a reader; the wizard never opens it by itself. A feed does not send emails or notifications itself: that depends on the reader you choose."
       - id: account
         title: "Profile, billing and invoices"
         body: "Use Account to manage your profile and billing details. It also shows payments and invoices available for your account."

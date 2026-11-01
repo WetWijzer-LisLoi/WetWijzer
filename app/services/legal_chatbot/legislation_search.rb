@@ -802,12 +802,15 @@ module LegalChatbot
     HISTORICAL_THEFT_PATTERN = %r{\A(?=.*#{LEGACY_CRIMINAL_FACT_PATTERN.source})(?=.*\b(?:diefstal|stelen|gestolen|vol|theft|diebstahl)\b).*\z}ix
     HISTORICAL_STALKING_PATTERN = %r{\A(?=.*#{LEGACY_CRIMINAL_FACT_PATTERN.source})(?=.*\b(?:belaging|belagen|belaagd|harcèlement|stalking)\b).*\z}ix
 
-    def initialize(embedding_service:, language: 'nl', context_numacs: [], profile: 'general')
+    # selected_law_numac: the law page the question is asked from, an
+    # explicit selection. Conversation context NUMACs are not one.
+    def initialize(embedding_service:, language: 'nl', context_numacs: [], profile: 'general', selected_law_numac: nil)
       @language = language
       @language_id = %w[fr de].include?(language) ? 2 : 1
       @embedding_service = embedding_service
       @context_numacs = context_numacs
       @profile = profile
+      @selected_law_numac = selected_law_numac.to_s.strip.presence
     end
 
     # nil after a search whose semantic leg answered (or was disabled by env),
@@ -899,7 +902,8 @@ module LegalChatbot
       # overview selected the existing Flemish-only 99.0 article pins.
       if question.present?
         regional_candidates = regional_short_commercial_candidates(question) +
-                              regional_housing_topic_candidates(question)
+                              regional_housing_topic_candidates(question) +
+                              general_noise_candidates(question)
         if regional_candidates.any?
           candidate_ids = regional_candidates.to_set { |article| article[:id] }
           top_articles = regional_candidates + top_articles.reject { |article| candidate_ids.include?(article[:id]) }
@@ -1406,7 +1410,10 @@ module LegalChatbot
     # the question (governing_group: true) and it is one of these exact
     # articles; no other pin, regional row or keyword hit qualifies. The
     # optional breadth quotas keep the group whole and first.
-    GOVERNING_GROUP_TARGETS = (REGIONAL_HOUSING_TOPIC_TARGETS.flat_map(&:last) + RENTAL_PROCEDURE_TARGETS)
+    # Since r48 also the general-noise group (GeneralNoiseScope), whose
+    # regional rows are keyed by their variant titles (591_vlaams_gewest).
+    GOVERNING_GROUP_TARGETS = (REGIONAL_HOUSING_TOPIC_TARGETS.flat_map(&:last) + RENTAL_PROCEDURE_TARGETS +
+                               GeneralNoiseScope::GOVERNING_PAIRS)
                               .to_set { |numac, number| [numac, number.downcase].freeze }.freeze
     # New damage while a professional has a movable good for repair is a
     # performance/liability question, even if the original repair is covered
@@ -2520,6 +2527,13 @@ module LegalChatbot
 
     def self.article_pin_targets
       ARTICLE_PIN_TARGETS
+    end
+
+    # The readiness targets whose title differs per language (the general
+    # noise group's territorial rows): [numac, language_id, article, phrase],
+    # each checked in its own language only (GeneralNoiseScope::READINESS_TARGETS).
+    def self.language_article_pin_targets
+      GeneralNoiseScope::READINESS_TARGETS
     end
 
     # A member of GOVERNING_GROUP_TARGETS that its builder marked for the
@@ -4097,6 +4111,7 @@ module LegalChatbot
       articles.select do |article|
         numac = (article[:numac] || article['numac']).to_s
         next false if INVALID_LEGISLATION_NUMACS.include?(numac)
+        next false if GeneralNoiseScope.stale_current_row?(article, question)
 
         explicitly_selected = article[:pinned] || article['pinned'] || context_numacs.include?(numac) ||
                               (numac.present? && question.to_s.downcase.include?(numac.downcase))
@@ -4109,7 +4124,9 @@ module LegalChatbot
       safe_articles = articles.reject do |article|
         numac = (article[:numac] || article['numac']).to_s
         explicitly_selected = article[:pinned] || article['pinned'] || @context_numacs.map(&:to_s).include?(numac)
-        INVALID_LEGISLATION_NUMACS.include?(article[:numac]) || (!explicitly_selected && !contextual_source_relevant?(article, question))
+        # A known-stale general row is no current law, selected or not.
+        INVALID_LEGISLATION_NUMACS.include?(article[:numac]) || GeneralNoiseScope.stale_current_row?(article, question) ||
+          (!explicitly_selected && !contextual_source_relevant?(article, question))
       end
       scoped = if historical_criminal_exposition?(question)
                  safe_articles.reject { |article| CURRENT_CRIMINAL_CODE_NUMACS.include?(article[:numac]) }
@@ -4185,9 +4202,11 @@ module LegalChatbot
 
     def contextual_source_relevant?(article, question)
       numac = (article[:numac] || article['numac']).to_s
+      return false if GeneralNoiseScope.stale_current_row?(article, question)
       return true if article[:pinned] || article['pinned'] || @context_numacs.map(&:to_s).include?(numac)
 
-      self.class.contextual_source_relevant?(article, question, telemarketing_scope_resolver: telemarketing_scope_resolver)
+      self.class.contextual_source_relevant?(article, question, telemarketing_scope_resolver: telemarketing_scope_resolver,
+                                                                selected_law: @selected_law_numac)
     end
 
     def telemarketing_scope_resolver
@@ -4197,9 +4216,12 @@ module LegalChatbot
     # Shared by the federal candidate routes and the regional-result boundary.
     # RegionalSearch emits :title rather than :law_title; neither lane should
     # acquire a specialist exception just because its adapter uses another key.
-    def self.contextual_source_relevant?(article, question, telemarketing_scope_resolver: nil)
+    def self.contextual_source_relevant?(article, question, telemarketing_scope_resolver: nil, selected_law: nil)
       question = question.to_s
       numac = article[:numac] || article['numac']
+      # Before the selection shortcuts: a named law does not make its
+      # known-stale general row current (GeneralNoiseScope::STALE_GENERAL_ROWS).
+      return false if GeneralNoiseScope.stale_current_row?(article, question)
       return true if numac.present? && question.downcase.include?(numac.to_s.downcase)
       return true if article[:pinned] || article['pinned']
 
@@ -4209,6 +4231,7 @@ module LegalChatbot
       return false unless VehicleHeadlightGlareSourceScope.source_relevant?(article, question)
       return false unless CommercialWebsiteIntent.source_relevant?(article, question)
       return false unless AirPassengerSourceScope.source_relevant?(article, question)
+      return false unless GeneralNoiseScope.source_relevant?(article, question, selected_law: selected_law)
       return false unless MarketplaceCivilClaimIntent.source_relevant?(article, question)
       return false unless PlatformModerationSourceScope.source_relevant?(article, question)
       # Old Civil Code Art. 1743 (a sale does not end the lease) answers no
@@ -4685,6 +4708,26 @@ module LegalChatbot
 
         article.merge(
           law_title: "#{labels.fetch(numac)}: #{article[:law_title]}",
+          regional_candidate: true, pinned: true, similarity: 0.85, governing_group: true
+        )
+      end
+    end
+
+    # The general-noise governing group (GeneralNoiseScope.targets), each row
+    # under its scope label. Fetched one law at a time like the housing
+    # provisions; a missing, other-language, repealed or amending row fails
+    # closed rather than standing in for the provision.
+    def general_noise_candidates(question)
+      return [] if question.match?(RegionalSearch::UNSUPPORTED_GERMAN_COMMUNITY_PATTERN)
+
+      GeneralNoiseScope.targets(question, @language_id, selected_law: @selected_law_numac).filter_map do |numac, number, label|
+        article = fetch_articles_by_number(numacs: [numac], article_numbers: [number], limit: 1).first
+        next if article.nil? || article[:numac] != numac || article[:language_id] != @language_id
+        next unless article_number_key_from_title(article[:article_title]) == normalized_article_key(number)
+        next if article[:article_text].blank? || article[:is_abolished] || article[:is_modification]
+
+        article.merge(
+          law_title: "#{label}: #{article[:law_title]}",
           regional_candidate: true, pinned: true, similarity: 0.85, governing_group: true
         )
       end

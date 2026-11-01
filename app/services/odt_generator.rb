@@ -12,7 +12,7 @@
 #   OdtGenerator.law_document(title:, articles:, citation_mode: false)
 #   OdtGenerator.law_compare_document(title_left:, title_right:, ...)
 #   OdtGenerator.fisconet_document(title:, fisconet_articles:, ...)
-#   OdtGenerator.jurisprudence_document(case_data:, body_text:, locale:)
+#   OdtGenerator.jurisprudence_document(case_data:, body_blocks:, locale:)
 #
 class OdtGenerator
   require 'zlib'
@@ -114,7 +114,7 @@ class OdtGenerator
           body_text = body_text.lines.map(&:strip).join("\n").gsub(/\s+/, ' ').strip
         end
 
-        body_xml << article_paragraph("Art. #{art_num}.", body_text)
+        body_xml << article_paragraph(FisconetProvision.label(art_num, article[:article_title]), body_text)
       end
 
       body_xml << horizontal_rule
@@ -125,7 +125,7 @@ class OdtGenerator
 
     # ── Jurisprudence Document ────────────────────────────────────────────
 
-    def jurisprudence_document(case_data:, body_text:, locale: :nl, pseudonymized: false)
+    def jurisprudence_document(case_data:, body_blocks:, locale: :nl, pseudonymized: false)
       court = case_data[:court].to_s
       date = case_data[:decision_date].to_s
       ecli = case_data[:case_number].to_s
@@ -169,25 +169,30 @@ class OdtGenerator
 
       body_xml << '</table:table>'
 
-      # Body text
-      body_text.to_s.split(/\n\n+/).each do |para|
-        next if para.strip.blank?
+      # Body: the case page's own blocks (ParliamentaryHelper#jurisprudence_export_blocks),
+      # so the download reads like the page; a kept line break is a line break.
+      Array(body_blocks).each do |kind, text|
+        lines = text.to_s.split("\n").map { |line| esc(line.strip) }.reject(&:empty?)
+        next if lines.empty?
 
-        body_xml << paragraph(esc(para.strip))
+        body_xml << case kind
+                    when :heading then heading(lines.join(' '), level: 2)
+                    when :subheading then heading(lines.join(' '), level: 3)
+                    when :item then paragraph("• #{lines.join(' ')}")
+                    else paragraph(lines.join('<text:line-break/>'))
+                    end
       end
 
       body_xml << horizontal_rule
       body_xml << paragraph(esc("#{accessed_label}: #{Date.today.strftime('%d/%m/%Y')} – #{brand_for(locale)}"), style: 'Subtle')
 
-      if pseudonymized
-        pseudo_label = case locale
-                       when :fr then 'Texte pseudonymisé (RGPD)'
-                       when :de then 'Pseudonymisierter Text (DSGVO)'
-                       when :en then 'Pseudonymised text (GDPR)'
-                       else 'Gepseudonimiseerde tekst (GDPR)'
+      privacy_notice = case locale
+                       when :fr then 'Ce texte peut contenir des données personnelles.'
+                       when :de then 'Dieser Text kann personenbezogene Daten enthalten.'
+                       when :en then 'This text may contain personal data.'
+                       else 'Deze tekst kan persoonsgegevens bevatten.'
                        end
-        body_xml << paragraph(esc(pseudo_label), style: 'Subtle')
-      end
+      body_xml << paragraph(esc(privacy_notice), style: 'Subtle')
 
       build_odt(body_xml, title: ecli, author: brand_for(locale))
     end
@@ -223,8 +228,12 @@ class OdtGenerator
       %(<text:p text:style-name="Horizontal_20_Line"/>\n)
     end
 
+    # A cell holding the given paragraph markup (or text, wrapped in one). A
+    # stray "<" before the paragraph made every cell "<<text:p" (Sol
+    # 2026-10-21 12:01:35): each judgment and law comparison was malformed XML.
     def table_cell(content)
-      %(<table:table-cell table:style-name="TableCell"><#{'<text:p text:style-name="TableContent">' unless content.start_with?('<text:p')}#{content}#{'</text:p>' unless content.start_with?('<text:p')}</table:table-cell>)
+      inner = content.start_with?('<text:p') ? content : %(<text:p text:style-name="TableContent">#{content}</text:p>)
+      %(<table:table-cell table:style-name="TableCell">#{inner}</table:table-cell>)
     end
 
     # ── Article Rendering ─────────────────────────────────────────────────
@@ -233,13 +242,13 @@ class OdtGenerator
       return '' unless article.present?
 
       if article.article_type == 'LNK'
-        heading_text = ActionController::Base.helpers.strip_tags(article.article_text).split(/\n|----------/).first.to_s.strip
+        heading_text = html_text(article.article_text).split(/\n|----------/).first.to_s.strip
         heading_text = heading_text.gsub(/\[\d+\s*/, '').gsub(/\s*\]\d+/, '').gsub(/\[\d+\]/, '')
         heading_text = heading_text.gsub(/&nbsp;/i, ' ').gsub(/\s+/, ' ').strip
         level = heading_level(heading_text)
         heading(esc(heading_text), level: level)
       else
-        rendered = ActionController::Base.helpers.strip_tags(article.article_text.to_s).strip
+        rendered = html_text(article.article_text.to_s).strip
 
         if citation_mode
           rendered = rendered.gsub(/\[\d+\s*\.{3}\s*\d*\]/, '').gsub(/\[\d+\s*…\s*\d*\]/, '')
@@ -260,12 +269,12 @@ class OdtGenerator
       return '<text:p text:style-name="TableContent">–</text:p>' unless article.present?
 
       if article.article_type == 'LNK'
-        heading_text = ActionController::Base.helpers.strip_tags(article.article_text).split(/\n|----------/).first.to_s.strip
+        heading_text = html_text(article.article_text).split(/\n|----------/).first.to_s.strip
         heading_text = heading_text.gsub(/\[\d+\s*/, '').gsub(/\s*\]\d+/, '').gsub(/\[\d+\]/, '')
         heading_text = heading_text.gsub(/&nbsp;/i, ' ').gsub(/\s+/, ' ').strip
         "<text:p text:style-name=\"TableContent\"><text:span text:style-name=\"Bold\">#{esc(heading_text)}</text:span></text:p>"
       else
-        text = ActionController::Base.helpers.strip_tags(article.article_text.to_s).strip
+        text = html_text(article.article_text.to_s).strip
 
         if citation_mode
           text = text.gsub(/\[\d+\s*\.{3}\s*\d*\]/, '').gsub(/\[\d+\s*…\s*\d*\]/, '')
@@ -584,7 +593,14 @@ class OdtGenerator
     end
 
     def strip_html(html)
-      ActionController::Base.helpers.strip_tags(html.to_s)
+      html_text(html.to_s)
+    end
+
+    # The text of an article's HTML: its tags stripped, then every entity
+    # decoded once. strip_tags keeps entities escaped and esc escaped them
+    # again, so a reader saw "&amp;" (Sol 2026-10-21 12:01:35).
+    def html_text(html)
+      Nokogiri::HTML5.fragment(ActionController::Base.helpers.strip_tags(html.to_s)).text
     end
   end
 end

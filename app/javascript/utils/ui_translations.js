@@ -6,6 +6,8 @@ export const UI_TRANSLATIONS = {
   close: { nl: 'Sluiten', fr: 'Fermer', de: 'Schließen', en: 'Close' },
   loading: { nl: 'Laden...', fr: 'Chargement...', de: 'Wird geladen...', en: 'Loading...' },
   loadFailed: { nl: 'Laden mislukt', fr: 'Échec du chargement', de: 'Laden fehlgeschlagen', en: 'Loading failed' },
+  retry: { nl: 'Opnieuw proberen', fr: 'Réessayer', de: 'Erneut versuchen', en: 'Retry' },
+  previousResults: { nl: 'De eerder geladen resultaten blijven zichtbaar.', fr: 'Les résultats précédemment chargés restent affichés.', de: 'Die zuvor geladenen Ergebnisse bleiben sichtbar.', en: 'Previously loaded results remain visible.' },
   bookmarkLogin: { nl: 'Log in om bladwijzers te gebruiken', fr: 'Connectez-vous pour utiliser les signets', de: 'Melden Sie sich an, um Lesezeichen zu verwenden', en: 'Sign in to use bookmarks' },
   bookmarkAdded: { nl: 'Bladwijzer toegevoegd', fr: 'Signet ajouté', de: 'Lesezeichen hinzugefügt', en: 'Bookmark added' },
   bookmarkRemoved: { nl: 'Bladwijzer verwijderd', fr: 'Signet supprimé', de: 'Lesezeichen gelöscht', en: 'Bookmark removed' },

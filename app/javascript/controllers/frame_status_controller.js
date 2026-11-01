@@ -21,6 +21,7 @@ export default class extends Controller {
     this._timerInterval = null;
     this._startTime = null;
     this._failsafeTimeout = null;
+    this._hasLoadedContent = !this.element.getAttribute('src') || Boolean(this.element.querySelector('[data-frame-status-results]'));
     this.onFrameLoad = this.onFrameLoad.bind(this);
     this.onFrameRequestStart = this.onFrameRequestStart.bind(this);
     this.onFrameError = this.onFrameError.bind(this);
@@ -47,22 +48,64 @@ export default class extends Controller {
     this.element.removeEventListener("turbo:frame-missing", this.onFrameError);
   }
 
-  onFrameLoad() {
+  onFrameLoad(event) {
+    if (event && event.target !== this.element) return;
+    this._hasLoadedContent = true;
+    this._clearFrameError();
     // Stop the stopwatch and show completed pill with elapsed time
     this._clearFailsafe();
     const elapsed = this._stopTimer();
     this.showCompletedPill(elapsed);
   }
 
-  onFrameError() {
+  onFrameError(event) {
+    if (event && event.target !== this.element) return;
+    if (event?.type === 'turbo:frame-missing') event.preventDefault();
     // Frame load failed – stop the timer and show error state instead of staying stuck
     this._clearFailsafe();
     const elapsed = this._stopTimer();
     this._showErrorPill(elapsed);
+    this._showFrameError();
   }
 
-  onFrameRequestStart() {
+  _clearFrameError() {
+    this.element.querySelector('[data-frame-status-error]')?.remove();
+  }
+
+  _showFrameError() {
+    this._clearFrameError();
+    const panel = document.createElement('div');
+    panel.setAttribute('data-frame-status-error', '');
+    panel.setAttribute('role', 'alert');
+    panel.className = 'flex flex-wrap items-center gap-3 p-4 text-sm text-red-700 dark:text-red-300';
+    const message = document.createElement('span');
+    message.textContent = uiText('loadFailed');
+    panel.appendChild(message);
+    if (this._hasLoadedContent) {
+      const previous = document.createElement('span');
+      previous.textContent = uiText('previousResults');
+      panel.appendChild(previous);
+    }
+    if (this.element.getAttribute('src') && typeof this.element.reload === 'function') {
+      const retry = document.createElement('button');
+      retry.setAttribute('type', 'button');
+      retry.className = 'underline font-medium';
+      retry.textContent = uiText('retry');
+      retry.addEventListener('click', () => {
+        this._clearFrameError();
+        try { this.element.reload(); } catch { this.onFrameError(); }
+      });
+      panel.appendChild(retry);
+    }
+    if (this._hasLoadedContent) this.element.prepend(panel);
+    else this.element.replaceChildren(panel);
+  }
+
+  onFrameRequestStart(event) {
+    if (event && event.target !== this.element) return;
+    this._clearFrameError();
     // Start the stopwatch and show the loading pill
+    this._stopTimer();
     this._startTime = performance.now();
     const target = this.mountTarget();
     this.clearExisting(target);
@@ -75,7 +118,7 @@ export default class extends Controller {
   _startFailsafe() {
     this._clearFailsafe();
     this._failsafeTimeout = setTimeout(() => {
-      if (this._startTime) {
+      if (this._startTime != null) {
         // Still loading after 30s – treat as error
         this.onFrameError();
       }
@@ -136,7 +179,6 @@ export default class extends Controller {
   }
 
   _startStopwatch() {
-    this._stopTimer();
     // Delay showing the timer value until 0.5s to avoid the jarring "0.0s" flash
     this._timerDelay = setTimeout(() => {
       const el = this.mountTarget().querySelector('.frame-status-timer');
@@ -144,7 +186,7 @@ export default class extends Controller {
     }, 500);
     this._timerInterval = setInterval(() => {
       const el = this.mountTarget().querySelector('.frame-status-timer');
-      if (el && this._startTime) {
+      if (el && this._startTime != null) {
         const sec = ((performance.now() - this._startTime) / 1000).toFixed(1);
         el.textContent = sec + 's';
       }
@@ -160,7 +202,7 @@ export default class extends Controller {
       clearInterval(this._timerInterval);
       this._timerInterval = null;
     }
-    if (this._startTime) {
+    if (this._startTime != null) {
       const elapsed = ((performance.now() - this._startTime) / 1000).toFixed(1);
       this._startTime = null;
       return elapsed;

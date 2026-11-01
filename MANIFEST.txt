@@ -74,6 +74,7 @@ app/helpers/article_references_helper.rb
 app/helpers/branding_helper.rb
 app/helpers/cache_version_helper.rb
 app/helpers/classic_helper.rb
+app/helpers/fisconet_provision_helper.rb
 app/helpers/german_text_helper.rb
 app/helpers/invoices_helper.rb
 app/helpers/jurisprudence_helper.rb
@@ -155,6 +156,7 @@ app/javascript/controllers/turbo_cache_controller.js
 app/javascript/controllers/unified_search_controller.js
 app/javascript/controllers/voter_avatar_controller.js
 app/javascript/entrypoints/application.js
+app/javascript/services/answer_meta.js
 app/javascript/services/chatbot_locked_tier.js
 app/javascript/services/chatbot_markdown.js
 app/javascript/services/chatbot_message_safety.js
@@ -297,6 +299,8 @@ app/services/document_lookup_service.rb
 app/services/encryption_audit_service.rb
 app/services/encryption_reencrypt_service.rb
 app/services/existing_user_credit_bonus_service.rb
+app/services/fisconet_code_registry.rb
+app/services/fisconet_provision.rb
 app/services/fisconet_search_service.rb
 app/services/invoice_service.rb
 app/services/jurisprudence_search_service.rb
@@ -308,6 +312,7 @@ app/services/legal_chatbot/advisory_opinions.rb
 app/services/legal_chatbot/air_passenger_source_scope.rb
 app/services/legal_chatbot/answer_guards.rb
 app/services/legal_chatbot/answer_linking.rb
+app/services/legal_chatbot/answer_meta.rb
 app/services/legal_chatbot/article_excerpt.rb
 app/services/legal_chatbot/childcare_expense_grounding.rb
 app/services/legal_chatbot/citation_repair.rb
@@ -336,6 +341,7 @@ app/services/legal_chatbot/formation_bv_checklist.rb
 app/services/legal_chatbot/formation_deed_classification.rb
 app/services/legal_chatbot/formation_deed_grounding.rb
 app/services/legal_chatbot/future_law.rb
+app/services/legal_chatbot/general_noise_scope.rb
 app/services/legal_chatbot/generation_trace.rb
 app/services/legal_chatbot/german_answer_translation.rb
 app/services/legal_chatbot/german_article_search.rb
@@ -491,6 +497,7 @@ app/views/laws/_related_sources.html.erb
 app/views/laws/_related_sources_card.html.erb
 app/views/laws/_related_sources_content.html.erb
 app/views/laws/_search_hints.html.erb
+app/views/laws/_search_results.html.erb
 app/views/laws/_sort_dropdown.html.erb
 app/views/laws/_title.html.erb
 app/views/laws/_toc.html.erb
@@ -566,6 +573,7 @@ app/views/shared/_about_card.html.erb
 app/views/shared/_clipboard_messages.html.erb
 app/views/shared/_no_content.html.erb
 app/views/shared/_password_toggle.html.erb
+app/views/shared/_reading_styles.html.erb
 app/views/shared/_site_tour.html.erb
 app/views/shared/_site_tour_invitation.html.erb
 app/views/shared/pagy/_nav.html.erb
@@ -804,8 +812,10 @@ public/vite/assets/application-B-pm7Ghm.js
 public/vite/assets/application-B1QhQZLl.js
 public/vite/assets/application-B1WoaPgs.css
 public/vite/assets/application-B1YwDGSQ.css
+public/vite/assets/application-B6005Xmq.css
 public/vite/assets/application-B6efk9ue.js
 public/vite/assets/application-B7KlHEbf.css
+public/vite/assets/application-B7T0QSMh.js
 public/vite/assets/application-B8KTqxvR.css
 public/vite/assets/application-BAUMExtU.css
 public/vite/assets/application-BAbwyxpz.js
@@ -842,6 +852,7 @@ public/vite/assets/application-CH3bDzQA.css
 public/vite/assets/application-CKSngAOE.css
 public/vite/assets/application-CO0dL6Pn.js
 public/vite/assets/application-COM5XECo.css
+public/vite/assets/application-CRH5sO66.js
 public/vite/assets/application-CXtzfpCz.css
 public/vite/assets/application-CYth1P3V.css
 public/vite/assets/application-CZ0BllcU.js
@@ -854,8 +865,10 @@ public/vite/assets/application-CqcCHVTp.js
 public/vite/assets/application-CzxfxDkz.js
 public/vite/assets/application-D5IORe4o.css
 public/vite/assets/application-D6iDaEmU.js
+public/vite/assets/application-D9JiV3Xz.css
 public/vite/assets/application-DAMLj1vG.js
 public/vite/assets/application-DEP0LCsQ.js
+public/vite/assets/application-DGOmgdBG.js
 public/vite/assets/application-DL2VPsTH.js
 public/vite/assets/application-DQZJgscu.css
 public/vite/assets/application-DQgxQ4cU.js
@@ -863,15 +876,18 @@ public/vite/assets/application-DRC8r2NI.js
 public/vite/assets/application-DWN-weTi.css
 public/vite/assets/application-DZVf9TOW.css
 public/vite/assets/application-DZwDCCOo.js
+public/vite/assets/application-Dc1GM41R.js
 public/vite/assets/application-DdQwCuwY.js
 public/vite/assets/application-DlSYa1EL.js
 public/vite/assets/application-Do5GkheR.css
 public/vite/assets/application-Do6PUB-W.js
 public/vite/assets/application-DoKubQxh.css
 public/vite/assets/application-Dvbu9Z8Q.js
+public/vite/assets/application-DxOjIIOU.js
 public/vite/assets/application-DxR2X1mB.js
 public/vite/assets/application-DyMIQ0Eo.js
 public/vite/assets/application-E7ejS_db.js
+public/vite/assets/application-LIkOKG3U.js
 public/vite/assets/application-LffN2UK_.js
 public/vite/assets/application-MAGPDVhj.css
 public/vite/assets/application-VrnMrANY.js

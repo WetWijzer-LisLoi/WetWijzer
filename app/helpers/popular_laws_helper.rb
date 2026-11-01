@@ -181,10 +181,22 @@ module PopularLawsHelper
     label if label.is_a?(String) && label.present?
   end
 
+  # GesetzGuide's catalogue opens the French legal texts under German titles,
+  # so its short labels are LisLoi's curated French citation abbreviations,
+  # marked lang="fr" (owner, 2026-10-28: "add the popular laws shortlink from
+  # lisloi to gesetzguide"). The attested German labels stay in the data, and
+  # popular_law_abbreviation still answers per locale for other uses.
+  POPULAR_CATALOGUE_LABEL_LOCALES = { 'de' => 'fr' }.freeze
+
+  # The locale whose curated abbreviation the Popular Laws catalogue shows.
+  def popular_catalogue_label_locale(locale = I18n.locale)
+    POPULAR_CATALOGUE_LABEL_LOCALES.fetch(locale.to_s, locale.to_s)
+  end
+
   # A compact, locale-labelled rendering of a supported abbreviation. The
   # unavailable state is for cards whose target document cannot currently be
   # opened; it must not cause an abbreviation to appear where none is attested.
-  def popular_law_abbreviation_badge(key, locale: I18n.locale, unavailable: false)
+  def popular_law_abbreviation_badge(key, locale: popular_catalogue_label_locale, unavailable: false)
     label = popular_law_abbreviation(key, locale: locale)
     return nil unless label
 

@@ -86,9 +86,15 @@ module LegalChatbot
     # region's name: "Ik woon in Brussel" does not make a federal question
     # regional. Shared by the regional lane's admission (SearchFanOut), its
     # selection and the all-regions prompt task, so they cannot disagree.
-    def self.regional_subject_question?(question)
+    # selected_law: the law page the question is asked from. It affects ONLY
+    # the general-noise subject below, which a selected law page leaves on its
+    # own path (GeneralNoiseScope); every other subject is unchanged.
+    def self.regional_subject_question?(question, selected_law: nil)
       text = question.to_s.gsub(/[[:space:]]+/, ' ')
       return true if regional_lease_question?(text)
+      # Noise rules are regional (with the federal neighbour-nuisance rule
+      # beside them); only an asked general-noise subject counts.
+      return true if GeneralNoiseScope.asked?(text, selected_law: selected_law)
 
       [
         LegislationSearch::REGIONAL_TAX_SUBJECT_PATTERN, LegislationSearch::REGIONAL_TAX_GIFT_CONTEXT_PATTERN,
@@ -144,10 +150,11 @@ module LegalChatbot
       strict_subjects.none? { |pattern| strict_text.match?(pattern) }
     end
 
-    def initialize(embedding_service:, language: 'nl', context_numacs: [])
+    def initialize(embedding_service:, language: 'nl', context_numacs: [], selected_law_numac: nil)
       @language = language
       @language_id = %w[fr de].include?(language) ? 2 : 1
       @embedding_service = embedding_service
+      @selected_law_numac = selected_law_numac.to_s.strip.presence
       # Regional rows are normally selected semantically, but a controller may
       # pass the law currently being viewed. Keep that deliberate selection
       # above the narrow private/social distinction below.
@@ -267,7 +274,7 @@ module LegalChatbot
         question.to_s.match?(REGION_PATTERNS.fetch(source))
       end
 
-      if requested_sources.any? && self.class.regional_subject_question?(question)
+      if requested_sources.any? && self.class.regional_subject_question?(question, selected_law: @selected_law_numac)
         # Owner rule (2026-10-17): always mention all regions. The named
         # regions lead; the others follow instead of being dropped.
         named_first = docs.each_with_index.sort_by do |doc, index|

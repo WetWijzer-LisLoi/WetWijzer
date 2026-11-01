@@ -66,12 +66,20 @@
     color: inherit;
   }
 
-  /* Long prose fills the reading column; the last line stays natural. */
+  /* Long prose fills the reading column from 40rem; the last line stays
+     natural. On a phone a line holds too few words and the gaps stretch, so
+     it starts naturally there (owner's repair request of 2026-10-21). */
   .legal-page p {
-    text-align: justify;
+    text-align: start;
     text-align-last: start;
     hyphens: auto;
     overflow-wrap: break-word;
+  }
+
+  @media (min-width: 40rem) {
+    .legal-page p {
+      text-align: justify;
+    }
   }
 
   /* Do not stretch captions, structured content or narrow card copy. */

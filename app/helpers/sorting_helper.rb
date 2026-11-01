@@ -132,17 +132,25 @@ module SortingHelper
   #   <%= sort_link_to 'Created At', 'created_at' do %>
   #     <i class='fa fa-calendar'></i> Date
   #   <% end %>
-  def sort_link_to(name = nil, sort_name = nil, &)
+  def sort_link_to(name = nil, sort_name = nil, frame: nil, &)
     name, sort_name = extract_sort_params(name, sort_name, &)
     current_sort = extract_current_sort
 
     icon = sort_icon_for(current_sort, sort_name)
     sort_param = next_sort_direction(current_sort, sort_name)
 
-    link_to url_for(permitted_params.merge(sort: sort_param)),
+    # Result-frame sorts retain the other sources' filters/pages. The legacy
+    # internal frame flag and only this source's page are not navigation state.
+    target_url = if frame
+                   laws_path(request.query_parameters.except('frame', 'page').merge(sort: sort_param))
+                 else
+                   url_for(permitted_params.merge(sort: sort_param))
+                 end
+    link_to target_url,
             class: 'inline-flex items-center space-x-1',
             data: {
               turbo_action: 'replace',
+              turbo_frame: frame,
               controller: 'sort-link',
               action: 'click->sort-link#sort'
             } do

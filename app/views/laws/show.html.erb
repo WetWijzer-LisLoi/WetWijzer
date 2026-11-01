@@ -28,6 +28,8 @@
 <% if @law.present? %>
   <meta name="chatbot-context" data-context-type="law" data-law-title="<%= strip_tags(@law.title.to_s).truncate(200) %>" data-law-numac="<%= @law.numac %>" data-law-url="<%= law_path(@law) %>">
 <% end %>
+<%# Outside every fragment cache, so the head gets the rules on a cache hit too. %>
+<%= render 'shared/reading_styles' %>
 <% if @is_fisconet %>
   <%= render 'laws/fisconet_show' %>
 <% else %>

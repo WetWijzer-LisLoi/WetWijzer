@@ -51,6 +51,8 @@ module LawsFiltering
   def run_search_if_needed
     return if @validation_failed
 
+    @search_incomplete = false
+
     should_query =
       classic_host? || # Classic always queries (no Turbo, no commit param)
       turbo_frame_request? ||
@@ -97,6 +99,7 @@ module LawsFiltering
           LawSearchService.search(effective_params, german_site: german_site?)
         end
       rescue Timeout::Error
+        @search_incomplete = true
         # WW-PRIV-02: the event only, never the search terms.
         Rails.logger.warn('[SEARCH TIMEOUT] LawSearchService.search timed out')
         # Fallback: simple LIKE search, fast but less feature-rich
@@ -143,6 +146,7 @@ module LawsFiltering
           @juris_pagy = Pagy::Offset.new(count: juris_result.total_count, page: juris_page, limit: @per_page, page_key: 'juris_page', request: request)
         end
       rescue Timeout::Error
+        @search_incomplete = true
         Rails.logger.warn('[SEARCH TIMEOUT] Jurisprudence search timed out')
         @jurisprudence_results = []
         @jurisprudence_total_count = 0
@@ -161,6 +165,7 @@ module LawsFiltering
           @parl_pagy = Pagy::Offset.new(count: parl_result.total_count, page: parl_page, limit: @per_page, page_key: 'parl_page', request: request)
         end
       rescue Timeout::Error
+        @search_incomplete = true
         Rails.logger.warn('[SEARCH TIMEOUT] Parliamentary search timed out')
         @parliamentary_results = []
         @parliamentary_total_count = 0

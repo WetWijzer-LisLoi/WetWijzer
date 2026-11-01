@@ -5,6 +5,8 @@
  * Mixed into the controller prototype - all methods use 'this' as normal.
  */
 
+import { answerMetaLine } from '../../services/answer_meta.js'
+
 export const exportMethods = {
 
   // Report a failed/bad chatbot answer to the administrator.
@@ -139,7 +141,7 @@ export const exportMethods = {
     this._closeSingleExportMenu(button.closest('[id^="export-single-menu-"]'))
 
     // Get HTML content with formatting
-    const html = this._savedAnswerHtml(contentDiv, sourcesDiv)
+    const html = this._savedAnswerHtml(contentDiv, sourcesDiv) + this._answerMetaHtml(button)
 
     // Localized Word export content
     const wordLabels = {
@@ -545,6 +547,8 @@ export const exportMethods = {
         text += `\n\n${sourcesLabel}:\n${sourceLines.join("\n")}\n`
       }
     }
+
+    text += `\n\n${this._answerMetaLine(this._answerMetaItem(button))}\n`
 
     // Add disclaimer
     const _t = (map) => map[this.languageValue] || map.nl
@@ -1061,6 +1065,8 @@ export const exportMethods = {
     pairs.forEach((p, i) => {
       text += `${labels.question} ${i + 1}:\n${p.question}\n\n`
       text += `${labels.answer}:\n${this._answerPlainText(p.answer)}\n\n`
+      text += `${this._answerMetaLine(p)}\n\n`
+      text += this._extraAnswersText(p, labels)
       if (i < pairs.length - 1) text += `${'─'.repeat(50)}\n\n`
     })
     text += `${'─'.repeat(50)}\n⚠ ${labels.disclaimer}\n${brand} · ${labels.domain}`
@@ -1115,7 +1121,8 @@ export const exportMethods = {
     // Same document as the Word item beside it in the menu. Printing
     // contentDiv.innerText instead left this one export with flat text: no
     // bullets, no headings, no clickable article links and no sources at all.
-    const answerHtml = this._savedAnswerHtml(contentDiv, messageDiv.querySelector(".message-sources"))
+    const answerHtml = this._savedAnswerHtml(contentDiv, messageDiv.querySelector(".message-sources")) +
+      this._answerMetaHtml(button)
     const question = this._questionForAnswerButton(button)
 
     const brand = this._getBrandName()
@@ -1220,17 +1227,75 @@ export const exportMethods = {
 
   // Build structured conversation data from history
 
+  // A pair also carries what the history holds about its answer: the
+  // answer's metadata record, or the record a question that got no answer
+  // keeps on its own turn, and a legacy deep-analysis turn's stored model.
+  // Every further assistant turn before the next question (the legacy deep
+  // analysis appended to an answered question) is kept, in order, as an
+  // extra answer under the same question with its own record.
   _getExportConversation() {
     const pairs = []
     const hist = this.conversationHistory || []
     for (let i = 0; i < hist.length; i++) {
       if (hist[i].role === 'user') {
-        const answer = (i + 1 < hist.length && hist[i + 1].role === 'assistant')
-          ? hist[i + 1].content : (this._shownReplies?.get(hist[i]) || '')
-        pairs.push({ question: hist[i].content, answer })
+        const replies = []
+        for (let j = i + 1; j < hist.length && hist[j].role === 'assistant'; j++) replies.push(hist[j])
+        const [reply, ...extras] = replies
+        const answer = reply ? reply.content : (this._shownReplies?.get(hist[i]) || '')
+        const pair = { question: hist[i].content, answer, ...this._answerRecord(reply || hist[i]) }
+        if (extras.length) pair.extra = extras.map(extra => ({ answer: extra.content, ...this._answerRecord(extra) }))
+        pairs.push(pair)
       }
     }
     return pairs
+  },
+
+  _answerRecord(entry) {
+    const record = {}
+    if (entry?.meta) record.meta = entry.meta
+    if (entry?.role === 'assistant' && entry.deep_model) record.deep_model = entry.deep_model
+    return record
+  },
+
+  // The extra answers of a pair, in the format of the export they go into.
+  _extraAnswersText(p, labels, indent = '') {
+    return (p.extra || []).map(extra =>
+      `${indent}${labels.extraAnswer}:\n${indent}${this._answerPlainText(extra.answer).split('\n').join(`\n${indent}`)}\n\n` +
+      `${indent}${this._answerMetaLine(extra)}\n\n`).join('')
+  },
+
+  // answerClass: the class the format gives a primary answer, so an extra
+  // answer is styled the same (answer-block in the PDF, answer in Word).
+  _extraAnswersHtml(p, labels, answerClass = 'answer') {
+    return (p.extra || []).map(extra =>
+      `<p class="question-label">${this._escapeHtml(labels.extraAnswer)}</p>` +
+      `<div class="${answerClass}">${this._answerHtml(extra.answer)}</div>` +
+      `<p class="answer-meta" style="color:#6b7280;font-size:9pt;">${this._escapeHtml(this._answerMetaLine(extra))}</p>`).join('')
+  },
+
+  // The line under an answer in every export: category, model, research
+  // depth and reasoning as the answer's record holds them, in the export's
+  // language (services/answer_meta.js). An answer without a record says so.
+  _answerMetaLine(item) {
+    return answerMetaLine(item, this.languageValue)
+  },
+
+  // The history entry of the answer a per-answer button sits under (the row
+  // carries its turn: data-turn-index, see _questionForAnswerButton).
+  _answerEntryForButton(button) {
+    const hist = this.conversationHistory || []
+    const stamped = Number(button?.closest?.(".feedback-buttons")?.dataset?.turnIndex)
+    const entry = Number.isInteger(stamped) ? hist[stamped] : null
+    return entry?.role === 'assistant' ? entry : null
+  },
+
+  _answerMetaItem(button) {
+    const entry = this._answerEntryForButton(button)
+    return entry ? { meta: entry.meta, deep_model: entry.deep_model } : {}
+  },
+
+  _answerMetaHtml(button) {
+    return `<p class="answer-meta" style="color:#6b7280;font-size:9pt;">${this._escapeHtml(this._answerMetaLine(this._answerMetaItem(button)))}</p>`
   },
 
   // The history holds the model's markdown, not what the reader saw, and the
@@ -1339,6 +1404,7 @@ export const exportMethods = {
         en: n === 1 ? 'question' : 'questions'
       }[lang]),
       answer: { nl: 'Antwoord', fr: 'Réponse', de: 'Antwort', en: 'Answer' }[lang],
+      extraAnswer: { nl: 'Aanvullend antwoord', fr: 'Réponse complémentaire', de: 'Zusätzliche Antwort', en: 'Additional answer' }[lang],
       generated: { nl: 'Gegenereerd op', fr: 'Généré le', de: 'Erstellt am', en: 'Generated on' }[lang],
       disclaimer: {
         nl: 'Door AI gegenereerd - geen juridisch advies.',
@@ -1558,6 +1624,8 @@ ${pairs.map((p, i) => `
     </div>
   </div>
   <div class="answer-block">${this._answerHtml(p.answer)}</div>
+  <div class="answer-meta" style="color:#6b7280;font-size:9pt;margin-top:6px;">${this._escapeHtml(this._answerMetaLine(p))}</div>
+  ${this._extraAnswersHtml(p, labels, 'answer-block')}
 </div>${i < pairs.length - 1 ? '<hr class="qa-divider">' : ''}`).join('')}
 </div>
 <div class="footer">
@@ -1630,6 +1698,8 @@ ${pairs.map((p, i) => `
 <p class="question-label">${labels.question} ${i + 1}</p>
 <div class="question">${this._escapeHtml(p.question)}</div>
 <div class="answer">${this._answerHtml(p.answer)}</div>
+<p class="answer-meta" style="color:#6b7280;font-size:9pt;">${this._escapeHtml(this._answerMetaLine(p))}</p>
+${this._extraAnswersHtml(p, labels)}
 ${i < pairs.length - 1 ? '<hr class="divider">' : ''}
 `).join('')}
 <p class="footer">⚠ ${labels.disclaimer}</p>
@@ -1675,6 +1745,12 @@ ${i < pairs.length - 1 ? '<hr class="divider">' : ''}
       typ += `  #text(size: 8pt, weight: "bold", fill: luma(100))[${esc(labels.question)} ${i + 1}]\n\n`
       typ += `  *${esc(p.question)}*\n]\n\n`
       typ += `${esc(this._answerPlainText(p.answer))}\n\n`
+      typ += `#text(size: 8pt, fill: luma(110))[${esc(this._answerMetaLine(p))}]\n\n`
+      for (const extra of p.extra || []) {
+        typ += `#text(size: 8pt, weight: "bold", fill: luma(100))[${esc(labels.extraAnswer)}]\n\n`
+        typ += `${esc(this._answerPlainText(extra.answer))}\n\n`
+        typ += `#text(size: 8pt, fill: luma(110))[${esc(this._answerMetaLine(extra))}]\n\n`
+      }
       if (i < pairs.length - 1) {
         typ += `#line(length: 100%, stroke: 0.5pt + luma(220))\n\n`
       }
@@ -1721,6 +1797,14 @@ ${i < pairs.length - 1 ? '<hr class="divider">' : ''}
         // table came out as one run-on paragraph ("- a - b - c").
         body += `<text:p text:style-name="Standard">${esc(trimmed).replace(/\n/g, '<text:line-break/>')}</text:p>\n`
       }
+      body += `<text:p text:style-name="Subtle">${esc(this._answerMetaLine(p))}</text:p>\n`
+      for (const extra of p.extra || []) {
+        body += `<text:p text:style-name="Subtle">${esc(labels.extraAnswer)}</text:p>\n`
+        for (const para of this._answerPlainText(extra.answer).split(/\n\n+/)) {
+          if (para.trim()) body += `<text:p text:style-name="Standard">${esc(para.trim()).replace(/\n/g, '<text:line-break/>')}</text:p>\n`
+        }
+        body += `<text:p text:style-name="Subtle">${esc(this._answerMetaLine(extra))}</text:p>\n`
+      }
       if (i < pairs.length - 1) {
         body += `<text:p text:style-name="Horizontal_20_Line"/>\n`
       }
@@ -1761,6 +1845,8 @@ ${i < pairs.length - 1 ? '<hr class="divider">' : ''}
       text += `└${'─'.repeat(59)}\n\n`
       text += `   ${labels.answer}:\n`
       text += `   ${this._answerPlainText(p.answer).split('\n').join('\n   ')}\n\n`
+      text += `   ${this._answerMetaLine(p)}\n\n`
+      text += this._extraAnswersText(p, labels, '   ')
       if (i < pairs.length - 1) text += `${thinDiv}\n\n`
     })
 

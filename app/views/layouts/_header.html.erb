@@ -62,7 +62,7 @@
           <% end %>
 
           <%# RSS feed dropdown %>
-          <div class="relative" data-controller="dropdown">
+          <div class="relative" data-controller="dropdown" data-tour="rss">
             <button type="button"
                     class="text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 transition-colors duration-150 ease-out motion-reduce:transition-none"
                     data-action="click->dropdown#toggle"
@@ -236,6 +236,16 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
             </svg>
             <%= t('bookmarks.title') %>
+          <% end %>
+
+          <%# The RSS feed on mobile: the desktop dropdown is hidden here. %>
+          <%= link_to laws_path(format: :rss), class: "flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 transition-colors", target: "_blank", rel: "noopener", data: { tour: 'rss' } do %>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M5 3a1 1 0 000 2c5.523 0 10 4.477 10 10a1 1 0 102 0C17 8.373 11.627 3 5 3z"/>
+              <path d="M4 9a1 1 0 011-1 7 7 0 017 7 1 1 0 11-2 0 5 5 0 00-5-5 1 1 0 01-1-1z"/>
+              <circle cx="5" cy="15" r="2"/>
+            </svg>
+            <%= t('rss.title') %>
           <% end %>
 
           <%= link_to chatbot_path, class: "flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors" do %>

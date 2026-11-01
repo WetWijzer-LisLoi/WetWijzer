@@ -65,6 +65,7 @@ import { settingsMethods } from "./chatbot/settings_mixin"
 import { creditsMethods } from "./chatbot/credits_mixin"
 import { historyMethods } from "./chatbot/history_mixin"
 import { exportMethods } from "./chatbot/export_mixin"
+import { requestedFromPayload, errorTurnMeta } from "../services/answer_meta"
 import { layoutMethods } from "./chatbot/layout_mixin"
 import { encryptedPersistenceMethods } from "./chatbot/encrypted_persistence_mixin"
 import { ratingMethods } from "./chatbot/rating_mixin"
@@ -832,18 +833,11 @@ class ChatbotController extends Controller {
     try {
       const endpoint = this.apiEndpointValue
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": this.csrfToken
-        },
-        signal: abortController.signal,
-        // Payload assembly (incl. the conditional zero-knowledge keys) lives
-        // in services/chatbot_send_request.js. context_messages: recent turns
-        // so follow-ups work WITHOUT server-side storage; processed in-memory
-        // server-side, never persisted unless the user consented.
-        body: JSON.stringify(buildAskPayload({
+      // Payload assembly (incl. the conditional zero-knowledge keys) lives
+      // in services/chatbot_send_request.js. context_messages: recent turns
+      // so follow-ups work WITHOUT server-side storage; processed in-memory
+      // server-side, never persisted unless the user consented.
+      const askPayload = buildAskPayload({
           question: this._enrichQuestionWithLawContext(question),
           language: this.languageValue,
           source: this.sourceValue,
@@ -861,7 +855,19 @@ class ChatbotController extends Controller {
           zkConversation: this._zkConversationIds?.has(this.conversationId),
           conversationRevision: this._conversationRevisions?.get(this.conversationId),
           contextMessages
-        }))
+        })
+      // What was asked, kept with this request: a question that ends without
+      // an answer records it on its own turn (_rememberTurnMeta).
+      requestState.requested = requestedFromPayload(askPayload)
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": this.csrfToken
+        },
+        signal: abortController.signal,
+        body: JSON.stringify(askPayload)
       })
 
       deadline.arm(browserStreamTimeoutMs(response.headers.get(CHATBOT_STREAM_TIMEOUT_HEADER)))
@@ -896,6 +902,7 @@ class ChatbotController extends Controller {
         if (data.error) {
           requestState.skipEncryptedPersistence = true
           this._applyCreditsInfo?.(data.credits_info, { visual: false })
+          this._recordTurnProvenance?.(requestState, data.answer_provenance)
           // Handle specific error types with user-friendly messages
           // Status-to-copy resolution lives in services/chatbot_send_request.js.
           const errorView = jsonErrorDescriptor(response.status, data, this.languageValue)
@@ -1042,6 +1049,26 @@ class ChatbotController extends Controller {
   _showTurnError(requestState, message) {
     this.addMessage("error", message)
     this._rememberShownReply?.(requestState?.userTurn, message)
+    this._rememberTurnMeta?.(requestState)
+  }
+
+  // The server's provenance for a question that ended without an answer,
+  // when its error carried one (LegalChatbot::AnswerMeta).
+  _recordTurnProvenance(requestState, provenance) {
+    if (requestState && provenance && typeof provenance === 'object') requestState.provenance = provenance
+  }
+
+  // A question that got no answer keeps the metadata record of what
+  // happened on its own turn, so the exports can say so. It stays out of the
+  // follow-up context like every record (contextMessagesFrom).
+  _rememberTurnMeta(requestState) {
+    const turn = requestState?.userTurn
+    if (!turn || typeof turn !== 'object' || turn.meta) return
+    turn.meta = errorTurnMeta({
+      requested: requestState.requested,
+      provenance: requestState.provenance,
+      timedOut: requestState.timedOut === true
+    })
   }
 
   // Centralized loading cleanup (prevents forgetting to reset state)
@@ -1969,6 +1996,7 @@ class ChatbotController extends Controller {
             requestState.skipEncryptedPersistence = true
             this._applyCreditsInfo?.(parsed.credits_info, { visual: false })
             this._finishLoading()
+            this._recordTurnProvenance?.(requestState, parsed.answer_provenance)
             this._showTurnError(requestState, sseErrorMessage(parsed, this.languageValue))
             resultReceived = true
           } else if (parsed.type === "progress") {
@@ -2003,6 +2031,7 @@ class ChatbotController extends Controller {
               // already refunded the reservation and supplies a localized
               // explanation in `answer`. Do not replace it with the internal
               // machine code (`timeout`) in the UI.
+              this._recordTurnProvenance?.(requestState, data.answer_provenance)
               this._showTurnError(requestState, terminalErrorMessage(data))
             } else {
               if (requestState.conversationContextEpoch !== undefined &&

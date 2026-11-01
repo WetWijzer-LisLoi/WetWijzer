@@ -263,12 +263,12 @@ module ReferencesHelper
     abolished_link = nil
     if abolished_raw.present?
       refs = lookup_document_references(abolished_raw)
-      if refs.present? && build_law_url(refs[refs.keys.first], nil)
+      if refs.present? && build_law_url(refs[refs.keys.first], nil, inherit_site_language: true)
         first_doc = refs.keys.first
         lookup = refs[first_doc]
         art_match = abolished_raw.match(/(?:art\.|artikel|article)\s*(\d+[a-z]*)/i)
         article_fragment = art_match && art_match[1] ? "#art-#{art_match[1]}" : nil
-        url = build_law_url(lookup, article_fragment)
+        url = build_law_url(lookup, article_fragment, inherit_site_language: true)
         # Include visible angle brackets around the abolished marker in the link label
         label_with_brackets = safe_join(['&lt;'.html_safe, abolished_processed, '&gt;'.html_safe])
         link_classes = [
@@ -423,7 +423,7 @@ module ReferencesHelper
   def build_abolished_title_link(prefix, art_num, lookup, cls)
     title = lookup[:title]
     label = art_num ? "#{prefix} art. #{art_num} van #{title}".strip : "#{prefix} #{title}".strip
-    url = build_law_url(lookup, art_num ? "#art-#{art_num}" : nil)
+    url = build_law_url(lookup, art_num ? "#art-#{art_num}" : nil, inherit_site_language: true)
     return build_abolished_fallback(label, cls) unless url
 
     link_to(label, url, class: "#{cls} hover:underline", target: '_blank', rel: 'noopener noreferrer', title: title)
@@ -1097,7 +1097,7 @@ module ReferencesHelper
 
     first_doc = refs.keys.first
     lookup = refs[first_doc]
-    build_law_url(lookup, compute_article_fragment(abolished_inner, fallback_art_num))
+    build_law_url(lookup, compute_article_fragment(abolished_inner, fallback_art_num), inherit_site_language: true)
   end
 
   # Tries to find document references using European date format (DD-MM-YYYY)
@@ -1307,6 +1307,8 @@ module ReferencesHelper
     return content_tag(:span, safe_label.html_safe, class: 'text-red-600 dark:text-red-400') unless lookup
 
     url = build_abolished_content_url(cleaned_content, lookup, fallback_art_num)
+    return content_tag(:span, safe_label.html_safe, class: 'text-red-600 dark:text-red-400') unless url
+
     link_to(safe_label.html_safe, url, class: abolished_anchor_classes,
                                        title: lookup[:title] || t('articles.view_legislation'), target: '_blank', rel: 'noopener noreferrer')
   end
@@ -1325,12 +1327,10 @@ module ReferencesHelper
   end
 
   def build_abolished_content_url(cleaned_content, lookup, fallback_art_num)
-    url = law_path(lookup[:numac], language_id: lookup[:language_id])
     token = cleaned_content[/\bart\.?\s*(\d+(?:[.:]\d+)*[a-z]*)/i, 1] || fallback_art_num
-    return url unless token
-
-    norm = normalize_article_fragment(token)
-    norm.present? ? "#{url}#art-#{norm}" : url
+    norm = normalize_article_fragment(token) if token
+    fragment = "#art-#{norm}" if norm.present?
+    build_law_url(lookup, fragment, inherit_site_language: true)
   end
 
   # Renders an abolished law with proper formatting for [Opgeheven or [Abrogé notices
@@ -1583,7 +1583,7 @@ module ReferencesHelper
     return span_html unless lookup
 
     fragment = extract_article_fragment(inner_text)
-    url = build_law_url(lookup, fragment)
+    url = build_law_url(lookup, fragment, inherit_site_language: repeal_document_reference?(inner_text, match.pre_match))
     anchor_classes = metadata_tag_anchor_classes(span_type)
 
     link_to(span_html.html_safe, url, class: anchor_classes, title: lookup[:title] || t('articles.view_legislation'),
@@ -1609,7 +1609,7 @@ module ReferencesHelper
     return span_html unless lookup
 
     fragment = extract_article_fragment(clean_text)
-    url = build_law_url(lookup, fragment)
+    url = build_law_url(lookup, fragment, inherit_site_language: repeal_document_reference?(clean_text, match.pre_match))
     # Use same anchor classes as metadata-tag for consistency
     anchor_classes = metadata_tag_anchor_classes('metadata-tag')
 

@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'digest'
+require 'json'
+
 # == Laws Controller
 #
 # Handles legislation-related requests including listing and showing laws.
@@ -82,6 +85,8 @@ class LawsController < ApplicationController
   before_action :ensure_language_param, only: %i[show articles article_exdecs related_sources export_word]
   before_action :set_law, only: %i[show articles article_exdecs related_sources export_word]
   before_action :set_law_for_compare, only: %i[compare export_word_compare]
+  before_action :ensure_fisconet_export_language, only: %i[export_typst export_odt]
+  before_action :set_fisconet_law_for_export, only: %i[export_typst export_odt]
   before_action :set_per_page, only: [:index]
   before_action :set_language_id, only: %i[show articles article_exdecs related_sources export_word]
 
@@ -549,10 +554,29 @@ class LawsController < ApplicationController
     end
   end
 
+  # The Fisconet Typst and ODT routes resolve the language as the page and the Word route do (ensure_language_param:
+  # a bare URL is canonicalized to the host's language, a repeated or nested parameter counts as missing, never as
+  # a crash); a Justel law's Typst and ODT exports are not touched (the owner via Sol, 2026-10-26 12:44:51 UTC).
+  def ensure_fisconet_export_language
+    ensure_language_param if FisconetSearchService.fisconet_numac?(params[:numac])
+  end
+
+  # The Typst and ODT exports of a Fisconet code need its articles the way the Word export gets them from set_law
+  # (which covers export_word only; a Justel law's Typst and ODT exports load their own articles and are not
+  # touched). Without this, both routes redirected to the home page with "no articles" for every tax code
+  # (found by the route-level export checks of 2026-10-26).
+  def set_fisconet_law_for_export
+    return unless FisconetSearchService.fisconet_numac?(params[:numac])
+
+    set_fisconet_law(params[:numac])
+  rescue ActiveRecord::RecordNotFound
+    head :not_found
+  end
+
   # Loads a Fisconet legislation with all its articles and metadata
   def set_fisconet_law(numac)
     legislation_id = FisconetSearchService.legislation_id_from_numac(numac)
-    lang_id = params[:language_id].to_i
+    lang_id = ActiveModel::Type::Integer.new.cast(params[:language_id]) # nil for a repeated or nested parameter
     lang_id = 1 unless [1, 2].include?(lang_id)
 
     info = FisconetSearchService.legislation_info(legislation_id)
@@ -585,9 +609,34 @@ class LawsController < ApplicationController
       true
     end
 
-    doc_type = info[:document_type] || 'WIB 92'
-    title = lang_id == 2 ? (info[:title_fr] || info[:title_nl]) : (info[:title_nl] || info[:title_fr])
+    doc_type = info[:document_type].presence # nil when the row stores none: never a default, never a known code's metadata
+    code = info[:base_code].presence || doc_type
+    # The title is the stored source title in the requested language, else the validated catalogue title of the code
+    # in that language (FisconetCodeRegistry), else, for a code the registry does not know, the stored title of the
+    # other language marked with its language, else explicitly unavailable (the identifier then names the document for
+    # the window title, the copy reference and the exports); the identifier is the attested abbreviation, else the
+    # stored code, else the row's own numac; the legal form and the subject stay nil when the registry does not know
+    # the code (the owner's report of 2026-10-26, via Sol 12:44:51 UTC; Sol 15:14:44 UTC, corrections 2 and 3).
+    requested_title = lang_id == 2 ? info[:title_fr] : info[:title_nl]
+    other_title = lang_id == 2 ? info[:title_nl] : info[:title_fr]
+    registry_title = FisconetCodeRegistry.title(doc_type, lang_id, base_code: code)
     short_name = lang_id == 2 && doc_type == 'WIB 92' ? 'CIR 92' : doc_type
+    identifier = FisconetCodeRegistry.abbreviation(doc_type, lang_id, base_code: code) || short_name.presence || numac
+    title_lang = nil
+    if requested_title.present?
+      title_source = 'stored'
+      title = requested_title
+    elsif registry_title.present?
+      title_source = 'registry'
+      title = registry_title
+    elsif other_title.present?
+      title_lang = lang_id == 2 ? 'nl' : 'fr'
+      title_source = "stored-#{title_lang}"
+      title = other_title
+    else
+      title_source = 'none'
+      title = identifier
+    end
 
     # The walk corpus carries neither date, so these are usually nil. Parsing
     # the empty string raised "invalid date" and logged it as "Query failed"
@@ -600,14 +649,19 @@ class LawsController < ApplicationController
       numac: numac,
       language_id: lang_id,
       title: title,
+      title_source: title_source,
+      title_lang: title_lang,
       document_type: short_name,
+      code: code,
+      identifier: identifier,
+      legal_form: FisconetCodeRegistry.legal_form(doc_type, lang_id, base_code: code),
       date: pub_date,
       effective_date: eff_date,
       last_modified: info[:last_modified],
       is_abolished: !info[:is_in_force],
       is_fisconet: true,
       source_url: info[:source_url],
-      category: info[:category],
+      category: FisconetCodeRegistry.subject(doc_type, lang_id, base_code: code),
       is_in_force: info[:is_in_force],
       is_consolidated: info[:is_consolidated],
       numac_real: info[:numac_real],
@@ -809,13 +863,13 @@ class LawsController < ApplicationController
     db = self.class.jurisprudence_db(db_path)
     db_lang_id = lang_id.to_s
     rows = db.execute(
-      'SELECT id, case_number, court, decision_date, summary FROM cases WHERE language_id = ? ORDER BY decision_date DESC LIMIT ?',
+      'SELECT id, case_number, court, decision_date FROM cases WHERE language_id = ? ORDER BY decision_date DESC LIMIT ?',
       [db_lang_id, limit]
     )
     rows.map do |r|
       {
         id: r[0], case_number: r[1], court: r[2], decision_date: r[3],
-        summary: r[4].to_s.truncate(300), source: :jurisprudence
+        source: :jurisprudence
       }
     end
   rescue StandardError => e
@@ -852,7 +906,11 @@ class LawsController < ApplicationController
   def respond_to_request
     # Also support a fallback query param `frame=1` in case the Turbo-Frame
     # request header is stripped by proxies or not detected in some environments.
-    if turbo_frame_request? || params[:frame].present?
+    if !classic_host? && request.headers['Turbo-Frame'] == 'search_results'
+      # All selected sources share one URL/history snapshot. Never re-render
+      # the hero, form or page layout for a result-page/sort navigation.
+      render partial: 'laws/search_results', layout: false
+    elsif request.headers['Turbo-Frame'] == 'laws_list' || params[:frame].to_s == '1'
       # Respond with a template that wraps the list in <turbo-frame id="laws_list">
       render :list, layout: false
     else
@@ -866,26 +924,22 @@ class LawsController < ApplicationController
 
           lang_id = current_language_id
 
-          # Cache the entire rendered RSS XML for 1 hour server-side.
-          # Key includes locale + type filters for per-feed caching. The
-          # rendered body must depend on nothing else: the builder's channel
-          # links and the helper's title are built from @rss_feed_params
-          # (the type flags), never from request.query_parameters, or one
-          # requester's ?q= text lands in every reader's feed for the hour.
+          # Cache the rendered RSS XML by its presentation and effective query context.
+          # Keep public feed URLs derived from the existing feed params; never add
+          # arbitrary request query text to the rendered feed or cache identity.
           @rss_feed_params = search_params.to_h.select { |_, v| v == '1' }
-          type_filter_key = @rss_feed_params.keys.sort.join('-').presence || 'all'
-          cache_key = "rss_feed/v4/#{lang_id}/#{type_filter_key}"
+          type_ids = LawSearchService.send(:type_ids_from_params, search_params.to_h.with_indifferent_access)
+          cache_key = rss_feed_cache_key(lang_id, type_ids)
 
           cached_xml = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
             # --- Legislation (20 items) ---
             rss_scope = Legislation.includes(:type)
                                    .where(language_id: lang_id)
                                    .where.not(date: ['N/A', '', nil])
-            type_ids = LawSearchService.send(:type_ids_from_params, search_params.to_h.with_indifferent_access)
             rss_scope = rss_scope.where(law_type_id: type_ids) if type_ids.any?
             @laws = rss_scope.order(date: :desc).limit(20)
 
-            # --- Jurisprudence (10 items, for logged-in users via RSS) ---
+            # Public RSS carries case metadata; summaries lack a verified privacy contract.
             @rss_jurisprudence = load_rss_jurisprudence(lang_id, 10)
 
             # --- Parliamentary work (15 items) ---
@@ -900,6 +954,22 @@ class LawsController < ApplicationController
       end
     end
   end
+
+  # A typed, deterministic identity for the RSS body and its absolute URLs.
+  # Legal-content language and interface locale are independent (for example EN/NL).
+  def rss_feed_cache_key(lang_id, type_ids)
+    context = [
+      I18n.locale.to_s,
+      lang_id,
+      request.base_url.to_s,
+      request.script_name.to_s,
+      default_url_options.to_h.map { |key, value| [key.to_s, value.to_s] }.sort,
+      @rss_feed_params.to_h.map { |key, value| [key.to_s, value.to_s] }.sort,
+      type_ids.map(&:to_s).sort
+    ]
+    "rss_feed/v6/#{Digest::SHA256.hexdigest(JSON.generate(context))}"
+  end
+  private :rss_feed_cache_key
 
   # Sets the number of items per page for pagination.
   # Validates and clamps the value between 1 and 500, with a default of 50.

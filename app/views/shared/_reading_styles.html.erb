@@ -1,0 +1,32 @@
+<%# One reading measure for the long legal texts (owner's repair request of
+    2026-10-21, item 4). A judgment's and a parliamentary document's full text
+    ran the whole card, 1,200 px at a 1,280 px window, and stayed justified on
+    a 390 px phone, where a line holds too few words to spread and the gaps
+    stretch. They now keep 80 characters a line (WCAG 1.4.8), justify only from
+    40rem, and hyphenate in the language of the text (the container carries its
+    lang). A law's articles keep their width (their column also holds the open
+    contents and the tables) and only stop justifying on a phone. No
+    text-align-last: it is inherited, and set on the container it pulled every
+    centred one-line child (the judgment's masthead) to the start; a justified
+    paragraph's last line starts naturally without it. These rules are
+    unlayered, so they win over the stylesheet's @layer base without an asset
+    build. %>
+<% content_for :head do %>
+<style>
+  .reading-body {
+    max-width: 80ch;
+    text-align: start;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    overflow-wrap: break-word;
+  }
+  .article-content { text-align: start; }
+  @media (min-width: 40rem) {
+    .reading-body,
+    .article-content {
+      text-align: justify;
+      text-justify: inter-word;
+    }
+  }
+</style>
+<% end %>

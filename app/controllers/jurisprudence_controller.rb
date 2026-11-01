@@ -208,9 +208,9 @@ class JurisprudenceController < ApplicationController
     case_text = @case[:full_text].to_s
 
     # full_text only: rich_text was an unpseudonymized April 2026 copy (and
-    # despite its name held no markup at all). See show.html.erb.
-    body_html = ERB::Util.html_escape(case_text).gsub("\n\n", "</p>\n<p>").gsub("\n", "<br>\n")
-    body_html = "<p>#{body_html}</p>"
+    # despite its name held no markup at all). See show.html.erb. The blocks
+    # are the page's own (owner's repair request of 2026-10-21).
+    body_html = word_body_html(helpers.jurisprudence_export_blocks(case_text, case_number: ecli))
 
     subject = @case[:subject_matter].to_s.presence
     # An advice says what it is (WW-RVSADV-01): no judgment, no rule in force.
@@ -243,6 +243,8 @@ class JurisprudenceController < ApplicationController
           .header .label { font-weight: bold; color: #555; }
           .body-text { margin-top: 12pt; }
           .body-text p { margin: 6pt 0; }
+          .body-text h2 { font-size: 12pt; font-weight: bold; margin: 12pt 0 6pt 0; }
+          .body-text h3 { font-size: 11pt; font-weight: bold; margin: 9pt 0 4pt 0; }
           .footer { margin-top: 24pt; padding-top: 6pt; border-top: 1px solid #ccc; font-size: 9pt; color: #999; }
         </style>
       </head>
@@ -262,7 +264,7 @@ class JurisprudenceController < ApplicationController
         </div>
         <div class="footer">
           <p>#{case I18n.locale when :fr then 'Consulté le' when :de then 'Abgerufen am' when :en then 'Accessed on' else 'Geraadpleegd op' end}: #{Date.today.strftime('%d/%m/%Y')} - WetWijzer.be</p>
-          <p>#{(case I18n.locale when :fr then 'Texte pseudonymisé (RGPD)' when :de then 'Pseudonymisierter Text (DSGVO)' when :en then 'Pseudonymised text (GDPR)' else 'Gepseudonimiseerde tekst (GDPR)' end) if @pseudonymized}</p>
+          <p>#{case I18n.locale when :fr then 'Ce texte peut contenir des données personnelles.' when :de then 'Dieser Text kann personenbezogene Daten enthalten.' when :en then 'This text may contain personal data.' else 'Deze tekst kan persoonsgegevens bevatten.' end}</p>
         </div>
       </body>
       </html>
@@ -288,12 +290,12 @@ class JurisprudenceController < ApplicationController
 
     SecurityLog.info('case_export', request: request, format: 'typst', ecli: @case[:case_number])
 
-    # full_text only - see export_word.
-    body_text = @case[:full_text].to_s
+    # full_text only, as the page's blocks - see export_word.
+    body_blocks = helpers.jurisprudence_export_blocks(@case[:full_text].to_s, case_number: @case[:case_number].to_s)
 
     typst_content = TypstGenerator.jurisprudence_document(
       case_data: @case,
-      body_text: body_text,
+      body_blocks: body_blocks,
       locale: I18n.locale,
       pseudonymized: @pseudonymized
     )
@@ -318,12 +320,12 @@ class JurisprudenceController < ApplicationController
 
     SecurityLog.info('case_export', request: request, format: 'odt', ecli: @case[:case_number])
 
-    # full_text only - see export_word.
-    body_text = @case[:full_text].to_s
+    # full_text only, as the page's blocks - see export_word.
+    body_blocks = helpers.jurisprudence_export_blocks(@case[:full_text].to_s, case_number: @case[:case_number].to_s)
 
     odt_content = OdtGenerator.jurisprudence_document(
       case_data: @case,
-      body_text: body_text,
+      body_blocks: body_blocks,
       locale: I18n.locale,
       pseudonymized: @pseudonymized
     )
@@ -339,6 +341,32 @@ class JurisprudenceController < ApplicationController
   end
 
   private
+
+  # The page's blocks as Word HTML: its two heading levels, one list for
+  # consecutive items, a paragraph with the line breaks the page keeps
+  # (masthead, signature).
+  def word_body_html(blocks)
+    html = +''
+    in_list = false
+    blocks.each do |kind, text|
+      lines = text.split("\n").map { |line| ERB::Util.html_escape(line) }
+      if kind == :item
+        html << '<ul>' unless in_list
+        in_list = true
+        html << "<li>#{lines.join(' ')}</li>\n"
+        next
+      end
+      html << "</ul>\n" if in_list
+      in_list = false
+      html << case kind
+              when :heading then "<h2>#{lines.join(' ')}</h2>\n"
+              when :subheading then "<h3>#{lines.join(' ')}</h3>\n"
+              else "<p>#{lines.join("<br>\n")}</p>\n"
+              end
+    end
+    html << "</ul>\n" if in_list
+    html
+  end
 
   # Set noindex meta tag for all jurisprudence pages (GDPR: prevent search engine indexation)
   def set_noindex

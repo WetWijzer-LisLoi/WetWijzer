@@ -5,17 +5,17 @@
       <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">
         <%= t(:results_found, count: (@pagy&.count || @laws.size)) %>
       </span>
-      <%= render 'laws/sort_dropdown' %>
+      <%= render 'laws/sort_dropdown', frame_target: local_assigns[:frame_target] %>
     </div>
     <div class="overflow-x-auto w-full">
       <table role="table" class="w-full results-table results-table--law" aria-label="<%= t('global_search.legislation') %>">
         <thead role="rowgroup" class="bg-linear-to-r from-(--accent-500)/5 to-(--accent-500)/10 dark:from-(--accent-500)/20 dark:to-(--accent-500)/30">
           <tr role="row" class="border-b-2 border-(--accent-500)/20 dark:border-(--accent-500)/50">
             <th role="columnheader" scope="col" class="result-sort w-28 px-2 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider whitespace-nowrap">
-              <%= sort_link_to t(:date_label).upcase_first, 'date' %>
+              <%= sort_link_to t(:date_label).upcase_first, 'date', frame: local_assigns[:frame_target] %>
             </th>
             <th role="columnheader" scope="col" class="result-sort w-full px-4 py-3 text-left text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider">
-              <%= sort_link_to t(:title), 'title' %>
+              <%= sort_link_to t(:title), 'title', frame: local_assigns[:frame_target] %>
             </th>
             <th role="columnheader" scope="col" class="w-14 px-1 py-3 text-center text-xs leading-4 font-medium text-gray-700 dark:text-gray-300 tracking-wider whitespace-nowrap">
               <span class="sr-only"><%= t(:details).capitalize() %></span>
@@ -46,7 +46,7 @@
     </div>
     <div class="flex items-center justify-between px-4 sm:px-6 py-3 bg-white dark:bg-gray-800">
       <div class="flex-1">
-        <%= render 'shared/pagy/nav', pagy: @pagy %>
+        <%= render 'shared/pagy/nav', pagy: @pagy, frame_target: local_assigns[:frame_target] %>
       </div>
     </div>
 

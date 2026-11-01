@@ -96,7 +96,7 @@
                     <%# WW-SEC-15 refinement: both links come from imported data: the
                         law link through the encoded builder, the Justel link only
                         to an official ejustice address. %>
-                    <% repeal_url = repeal_lookup && build_law_url(repeal_lookup, nil) %>
+                    <% repeal_url = repeal_lookup && build_law_url(repeal_lookup, nil, inherit_site_language: true) %>
                     <% justel_url = OfficialSourceUrl.justel(repeal&.doc_href) %>
                     <% if repeal_url %>
                       <a href="<%= repeal_url %>"
@@ -124,7 +124,7 @@
                   <% entry_lookup ||= entry_law_cache[abolished_entry.object_id] %>
                   <p class="text-sm text-red-700 dark:text-red-400 <%= repeal ? 'mt-2 pt-2 border-t border-red-200 dark:border-red-800/50' : 'mt-1' %>">
                     <% if entry_lookup %>
-                      <a lang="<%= legal_text_lang(@language_id) %>" href="/laws/<%= entry_lookup[:numac] %>?language_id=<%= entry_lookup[:language_id] %>"
+                      <a lang="<%= legal_text_lang(@language_id) %>" href="<%= build_law_url(entry_lookup, nil, inherit_site_language: true) %>"
                          class="text-red-700 dark:text-red-300 underline hover:text-red-900 dark:hover:text-red-100"
                          title="<%= entry_lookup[:title] %>">
                         <%= abolished_entry.text %>
@@ -206,7 +206,7 @@
                     <% timeline_lookup = timeline_doc_num ? doc_lookups[timeline_doc_num] : nil %>
                     <% timeline_lookup ||= entry_law_cache[entry.object_id] %>
                     <% if timeline_lookup %>
-                      <a lang="<%= legal_text_lang(@language_id) %>" href="/laws/<%= timeline_lookup[:numac] %>?language_id=<%= timeline_lookup[:language_id] %>"
+                      <a lang="<%= legal_text_lang(@language_id) %>" href="<%= build_law_url(timeline_lookup, nil, inherit_site_language: is_abolition) %>"
                          class="block mt-1 text-gray-800 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-400) hover:underline"
                          title="<%= timeline_lookup[:title] %>">
                         <%= entry.text %>

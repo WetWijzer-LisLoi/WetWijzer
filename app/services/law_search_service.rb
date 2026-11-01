@@ -26,6 +26,16 @@ class LawSearchService
   # german_site: true (phase B of docs/ops/german-corpus-plan-2026-09-27.md).
   CANONICAL_LANGUAGE_IDS = HasLanguage::SITE_LANGUAGE_IDS
 
+  # Common catalogue names are not part of Justel's long canonical title.
+  # Resolve only a complete name, never individual words in a broader query.
+  COMMON_NAME_NUMACS = {
+    'drugwet' => '1921022450',
+    'drugswet' => '1921022450',
+    'loi drogues' => '1921022450',
+    'drug act' => '1921022450',
+    'drogengesetz' => '1921022450'
+  }.freeze
+
   # Common stop words to exclude from token-based search (would match too broadly)
   STOP_WORDS = %w[
     van de het een en of voor bij tot aan met uit ter op den der des te
@@ -392,6 +402,11 @@ class LawSearchService
 
     return perform_article_text_search(scope, title, params, mode) if params[:search_in_text] == '1'
     return scope unless search_in_title_on?(params)
+
+    # `scope` already carries language/type/status/date restrictions. A title
+    # alias must neither escape those nor replace a body-only search.
+    common_numac = COMMON_NAME_NUMACS[normalize_query(title)]
+    return scope.where(numac: common_numac) if common_numac
 
     perform_title_search(scope, title, params, mode)
   end

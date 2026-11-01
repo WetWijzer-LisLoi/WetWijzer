@@ -48,6 +48,17 @@ module JurisprudenceHelper
   # and that address IS the document - there is no page around it, and JuPortal
   # holds none of them.
   RAADVST_PDF_URL = %r{\Ahttps://www\.raadvst-consetat\.be/dbx/(adviezen|gutachten)/(\d{1,6})\.pdf\z}
+  GHCC_KEY = /\AECLI:BE:GHCC:(\d{4}):ARR\.([0-9]{3})\z/
+
+  # Only a recorded official French counterpart, bound to this exact judgment
+  # and text language. No guessed availability, imported host or render-time GET.
+  def ghcc_source_url(kase)
+    key = GHCC_KEY.match(kase[:case_number].to_s)
+    return nil unless key && key[2].to_i.positive? && kase[:language_id].to_s == '2'
+
+    expected = "https://fr.const-court.be/public/f/#{key[1]}/#{key[1]}-#{key[2]}f.pdf"
+    kase[:url].to_s.strip == expected ? expected : nil
+  end
 
   # Whether the row is an advisory opinion of the Council's Legislation
   # section (RVSADV keys): an advice, not a judgment and not a rule in force,

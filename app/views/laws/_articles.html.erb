@@ -14,10 +14,17 @@
       </button>
       
       <div data-collapse-target="content">
+        <%# The article-exdecs-loader holds the controls row AND the success notice
+            below it: Stimulus finds a target only inside its controller's element,
+            and the notice, a sibling of the row, never showed (2026-10-21). %>
+        <div data-controller="article-exdecs-loader"
+             data-article-exdecs-loader-url-value="<%= article_exdecs_law_path(params[:numac], language_id: @language_id) %>"
+             data-article-exdecs-loader-show-label-value="<%= t('articles.show_exdecs') %>"
+             data-article-exdecs-loader-hide-label-value="<%= t('articles.hide_exdecs') %>"
+             data-article-exdecs-loader-incomplete-message-value="<%= t('articles.exdecs_incomplete') %>"
+             data-article-exdecs-loader-invalid-message-value="<%= t('articles.exdecs_invalid') %>">
         <%# View preference toggles %>
-        <div class="mt-4 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center sm:justify-between gap-2"
-             data-controller="article-exdecs-loader"
-             data-article-exdecs-loader-url-value="<%= article_exdecs_law_path(params[:numac], language_id: @language_id) %>">
+        <div class="mt-4 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center sm:justify-between gap-2">
           <%# Left side: view toggles %>
           <div class="source-detail-toolbar source-detail-toolbar--article flex flex-wrap items-center gap-2">
             <%# Toggle colored references %>
@@ -94,8 +101,13 @@
                 estimated_time = LawOptimization.format_load_time(estimated_seconds)
                 load_time_text = "~#{estimated_time}"
               %>
-              <div class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-yellow-700 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700" 
-                   data-exdec-warning>
+              <%# flex, not inline-flex, on the three pills the loader hides: Tailwind 4
+                  sorts inline-flex after hidden, so a hidden pill stayed on screen (the
+                  spinner and an empty error box at rest, this warning after a load).
+                  They are flex items of the toolbar, so flex renders them the same. %>
+              <div class="flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-yellow-700 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700" 
+                   data-exdec-warning
+                   data-article-exdecs-loader-target="warning">
                 <svg class="w-4 h-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
                 </svg>
@@ -110,7 +122,7 @@
               </div>
               
               <%# Loading indicator %>
-              <div class="hidden inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-(--accent-700) bg-(--accent-100,#dbeafe) dark:bg-(--accent-900,#1e3a5f)/30 dark:text-(--accent-400) border border-(--accent-300) dark:border-(--accent-700)" 
+              <div class="hidden flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-(--accent-700) bg-(--accent-100,#dbeafe) dark:bg-(--accent-900,#1e3a5f)/30 dark:text-(--accent-400) border border-(--accent-300) dark:border-(--accent-700)" 
                    data-article-exdecs-loader-target="loadingIndicator">
                 <svg class="animate-spin h-4 w-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -120,7 +132,7 @@
               </div>
               
               <%# Error message (hidden by default, shown by JS on error) %>
-              <div class="hidden inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-300 border border-red-300 dark:border-red-700"
+              <div class="hidden flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-300 border border-red-300 dark:border-red-700"
                    data-article-exdecs-loader-target="errorMessage">
               </div>
             <% end %>
@@ -309,6 +321,16 @@
             </div>
           </div>
         </div>
+
+        <%# Completed load that found no article references: no success claim and no toggle %>
+        <div class="hidden mt-4 p-3 bg-gray-50 dark:bg-gray-900/20 border-l-4 border-gray-300 dark:border-gray-600 rounded-r"
+             role="status"
+             data-article-exdecs-loader-target="emptyMessage">
+          <p class="text-sm text-gray-700 dark:text-gray-300">
+            <%= t('articles.exdecs_none_found') %>
+          </p>
+        </div>
+        </div>
         
         <%# The legal text, in its own language (the page keeps the UI's); the
             toolbar above stays outside, and UI labels inside are marked back. %>
@@ -389,7 +411,7 @@
           <%# Invisible anchors placed before the article to ensure correct scroll offset for fixed headers %>
           <article id="<%= permalink %>"
                    data-article-scope
-                   class="group relative scroll-mt-24 <%= (index.zero? || prev_was_heading) ? '' : 'border-t border-gray-200 dark:border-(--accent-500)/40' %>">
+                   class="group relative scroll-mt-24 -mx-2 px-2 sm:-mx-3 sm:px-3 <%= (index.zero? || prev_was_heading) ? '' : 'border-t border-gray-200 dark:border-(--accent-500)/40' %>">
             <%# Hidden alias anchor moved inside the article to avoid creating extra space between siblings %>
             <span id="section-<%= permalink %>" class="block h-0 overflow-hidden scroll-mt-24 mt-0!" aria-hidden="true"></span>
             <% # Add a base-ID alias anchor for variant articles so TOC links (which lack variant info) still work %>

@@ -84,6 +84,9 @@ nl:
     loading_exdecs: "Artikelverwijzingen laden..."
     copy_options: "Kopieeropties"
     export_options: "Exporteeropties"
+    exdecs_none_found: "Geen verwijzingen naar artikelen gevonden."
+    exdecs_incomplete: "Niet alle artikelverwijzingen konden worden getoond. Probeer opnieuw."
+    exdecs_invalid: "De artikelverwijzingen konden niet worden geladen. Probeer opnieuw."
   search_results: "Zoekresultaten"
   pagination:
     previous: "Vorige"
@@ -96,6 +99,8 @@ nl:
     no_articles_to_export: "Deze wet heeft geen artikelen om te exporteren."
   jurisprudence:
     no_text_to_export: "Geen tekst beschikbaar om te exporteren."
+  loading_status:
+    source_results: "%{source}: %{results}"
 fr:
   legal_pages:
     contact:
@@ -180,6 +185,9 @@ fr:
     loading_exdecs: "Chargement des références aux articles..."
     copy_options: "Options de copie"
     export_options: "Options d'exportation"
+    exdecs_none_found: "Aucune référence à un article trouvée."
+    exdecs_incomplete: "Certaines références aux articles n’ont pas pu être affichées. Réessayez."
+    exdecs_invalid: "Les références aux articles n’ont pas pu être chargées. Réessayez."
   search_results: "Résultats de recherche"
   pagination:
     previous: "Précédent"
@@ -192,6 +200,8 @@ fr:
     no_articles_to_export: "Cette loi ne contient aucun article à exporter."
   jurisprudence:
     no_text_to_export: "Aucun texte disponible à exporter."
+  loading_status:
+    source_results: "%{source} : %{results}"
 de:
   legal_pages:
     contact:
@@ -276,6 +286,9 @@ de:
     loading_exdecs: "Artikelverweise werden geladen..."
     copy_options: "Kopieroptionen"
     export_options: "Exportoptionen"
+    exdecs_none_found: "Keine Artikelverweise gefunden."
+    exdecs_incomplete: "Nicht alle Artikelverweise konnten angezeigt werden. Versuchen Sie es erneut."
+    exdecs_invalid: "Die Artikelverweise konnten nicht geladen werden. Versuchen Sie es erneut."
   search_results: "Suchergebnisse"
   pagination:
     previous: "Zurück"
@@ -288,6 +301,8 @@ de:
     no_articles_to_export: "Dieses Gesetz enthält keine Artikel zum Exportieren."
   jurisprudence:
     no_text_to_export: "Kein Text zum Exportieren verfügbar."
+  loading_status:
+    source_results: "%{source}: %{results}"
 en:
   legal_pages:
     contact:
@@ -372,6 +387,9 @@ en:
     loading_exdecs: "Loading article references..."
     copy_options: "Copy options"
     export_options: "Export options"
+    exdecs_none_found: "No article references found."
+    exdecs_incomplete: "Some article references could not be displayed. Try again."
+    exdecs_invalid: "The article references could not be loaded. Try again."
   search_results: "Search results"
   pagination:
     previous: "Previous"
@@ -384,3 +402,5 @@ en:
     no_articles_to_export: "This law has no articles to export."
   jurisprudence:
     no_text_to_export: "No text available to export."
+  loading_status:
+    source_results: "%{source}: %{results}"

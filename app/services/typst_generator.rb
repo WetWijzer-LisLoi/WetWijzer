@@ -8,22 +8,41 @@
 # Usage:
 #   TypstGenerator.law_document(title:, articles:, citation_mode: false)
 #   TypstGenerator.law_compare_document(title_left:, title_right:, ...)
-#   TypstGenerator.jurisprudence_document(case_data:, body_text:, locale:)
+#   TypstGenerator.jurisprudence_document(case_data:, body_blocks:, locale:)
 #
 class TypstGenerator
   class << self
     # ── Escaping ──────────────────────────────────────────────────────────
     # Typst special characters that need escaping with backslash
-    TYPST_SPECIAL = %w[# $ * _ @ ~ ` < >].freeze
+    TYPST_SPECIAL = %w[# $ * _ @ ~ ` < > [ ]].freeze
 
+    # Text for Typst markup, every character kept (Sol 2026-10-21 12:01:35).
+    # The replacements are blocks: a replacement STRING halves its
+    # backslashes, so gsub('\\', '\\\\') had left every backslash unescaped,
+    # and Typst read it as an escape or a line break.
     def escape(text)
       return '' if text.blank?
 
-      result = text.to_s
       # Escape backslashes first, then special chars
-      result = result.gsub('\\', '\\\\')
-      TYPST_SPECIAL.each { |c| result = result.gsub(c, "\\#{c}") }
-      result
+      result = text.to_s.gsub('\\') { '\\\\' }
+      TYPST_SPECIAL.each { |c| result = result.gsub(c) { "\\#{c}" } }
+      # "//" and "/*" open a comment in markup and would swallow the rest of the line
+      result.gsub(%r{/(?=[/*])|(?<=/)/}) { '\\/' }
+    end
+
+    # A Typst string literal's content: only a backslash and a double quote are
+    # special there (markup escaping inside a string broke it on a quote).
+    def typst_string(text)
+      text.to_s.gsub(/[\\"]/) { |char| "\\#{char}" }
+    end
+
+    # One escaped line of a judgment, with a line start Typst would read as
+    # markup made literal: "1. Het beroep" stays text, not a numbered list, and
+    # so do a leading "-", "+", "=" or "/ ".
+    def typst_line(text)
+      escape(text.to_s.strip)
+        .sub(/\A(\d+)\.(\s)/) { "#{Regexp.last_match(1)}\\.#{Regexp.last_match(2)}" }
+        .sub(%r{\A([-+=/])(\s)}) { "\\#{Regexp.last_match(1)}#{Regexp.last_match(2)}" }
     end
 
     # ── Law Document (single law) ─────────────────────────────────────────
@@ -127,7 +146,7 @@ class TypstGenerator
           body_text = body_text.lines.map(&:strip).join("\n").gsub(/\s+/, ' ').strip
         end
 
-        typ += "*Art. #{escape(art_num)}.* #{escape(body_text)}\n\n"
+        typ += "*#{escape(FisconetProvision.label(art_num, article[:article_title]))}* #{escape(body_text)}\n\n"
       end
 
       typ += footer_block(locale)
@@ -136,7 +155,7 @@ class TypstGenerator
 
     # ── Jurisprudence Document ────────────────────────────────────────────
 
-    def jurisprudence_document(case_data:, body_text:, locale: :nl, pseudonymized: false)
+    def jurisprudence_document(case_data:, body_blocks:, locale: :nl, pseudonymized: false)
       court = case_data[:court].to_s
       date = case_data[:decision_date].to_s
       ecli = case_data[:case_number].to_s
@@ -173,25 +192,34 @@ class TypstGenerator
 
       TYPST
 
-      # Body text – split paragraphs
-      body_text.to_s.split(/\n\n+/).each do |para|
-        next if para.strip.blank?
+      # Body: the case page's own blocks (ParliamentaryHelper#jurisprudence_export_blocks),
+      # so the download reads like the page; a kept line break is a forced break.
+      previous = nil
+      Array(body_blocks).each do |kind, text|
+        lines = text.to_s.split("\n").map { |line| typst_line(line) }.reject(&:empty?)
+        next if lines.empty?
 
-        typ += "#{escape(para.strip)}\n\n"
+        typ += "\n" if previous == :item && kind != :item
+        typ += case kind
+               when :heading then "== #{lines.join(' ')}\n\n"
+               when :subheading then "=== #{lines.join(' ')}\n\n"
+               when :item then "- #{lines.join(' ')}\n"
+               else "#{lines.join(" \\\n")}\n\n"
+               end
+        previous = kind
       end
+      typ += "\n" if previous == :item
 
       typ += "\n#line(length: 100%, stroke: 0.5pt + luma(180))\n\n"
       typ += "#text(size: 9pt, fill: luma(140))[#{escape(accessed_label)}: #{escape(Date.today.strftime('%d/%m/%Y'))} – #{escape(brand_for(locale))}]\n\n"
 
-      if pseudonymized
-        pseudo_label = case locale
-                       when :fr then 'Texte pseudonymisé (RGPD)'
-                       when :de then 'Pseudonymisierter Text (DSGVO)'
-                       when :en then 'Pseudonymised text (GDPR)'
-                       else 'Gepseudonimiseerde tekst (GDPR)'
+      privacy_notice = case locale
+                       when :fr then 'Ce texte peut contenir des données personnelles.'
+                       when :de then 'Dieser Text kann personenbezogene Daten enthalten.'
+                       when :en then 'This text may contain personal data.'
+                       else 'Deze tekst kan persoonsgegevens bevatten.'
                        end
-        typ += "#text(size: 9pt, fill: luma(140))[#{escape(pseudo_label)}]\n"
-      end
+      typ += "#text(size: 9pt, fill: luma(140))[#{escape(privacy_notice)}]\n"
 
       typ
     end
@@ -203,7 +231,7 @@ class TypstGenerator
     def document_preamble(title:, author:)
       <<~TYPST
         // Generated by #{author} – https://typst.app to compile
-        #set document(title: "#{escape(title)}", author: "#{escape(author)}")
+        #set document(title: "#{typst_string(title)}", author: "#{typst_string(author)}")
         #set page(margin: 2cm)
         #set text(font: "New Computer Modern", size: 11pt, lang: "nl")
         #set par(justify: true)
@@ -228,7 +256,7 @@ class TypstGenerator
 
       if article.article_type == 'LNK'
         # Section heading
-        heading_text = ActionController::Base.helpers.strip_tags(article.article_text).split(/\n|----------/).first.to_s.strip
+        heading_text = html_text(article.article_text).split(/\n|----------/).first.to_s.strip
         heading_text = heading_text.gsub(/\[\d+\s*/, '').gsub(/\s*\]\d+/, '').gsub(/\[\d+\]/, '')
         heading_text = heading_text.gsub(/&nbsp;/i, ' ').gsub(/\s+/, ' ').strip
 
@@ -236,7 +264,7 @@ class TypstGenerator
         prefix = '=' * [level, 6].min
         "\n#{prefix} #{escape(heading_text)}\n\n"
       else
-        rendered_html = ActionController::Base.helpers.strip_tags(article.article_text.to_s)
+        rendered_html = html_text(article.article_text.to_s)
         text = rendered_html.strip
 
         if citation_mode
@@ -260,12 +288,12 @@ class TypstGenerator
       return '–' unless article.present?
 
       if article.article_type == 'LNK'
-        heading_text = ActionController::Base.helpers.strip_tags(article.article_text).split(/\n|----------/).first.to_s.strip
+        heading_text = html_text(article.article_text).split(/\n|----------/).first.to_s.strip
         heading_text = heading_text.gsub(/\[\d+\s*/, '').gsub(/\s*\]\d+/, '').gsub(/\[\d+\]/, '')
         heading_text = heading_text.gsub(/&nbsp;/i, ' ').gsub(/\s+/, ' ').strip
         "*#{escape(heading_text)}*"
       else
-        text = ActionController::Base.helpers.strip_tags(article.article_text.to_s).strip
+        text = html_text(article.article_text.to_s).strip
 
         if citation_mode
           text = text.gsub(/\[\d+\s*\.{3}\s*\d*\]/, '').gsub(/\[\d+\s*…\s*\d*\]/, '')
@@ -329,7 +357,14 @@ class TypstGenerator
     end
 
     def strip_html(html)
-      ActionController::Base.helpers.strip_tags(html.to_s)
+      html_text(html.to_s)
+    end
+
+    # The text of an article's HTML: its tags stripped, then every entity
+    # decoded once. strip_tags keeps entities escaped, so the compiled
+    # document showed "&amp;" (Sol 2026-10-21 12:01:35).
+    def html_text(html)
+      Nokogiri::HTML5.fragment(ActionController::Base.helpers.strip_tags(html.to_s)).text
     end
   end
 end

@@ -13,10 +13,11 @@
       seen_sections.add(section)
       fisconet_toc_sections << { type: :section, text: section, id: "fisconet-section-#{section.parameterize}" }
     end
-    fisconet_toc_sections << { type: :article, number: article[:article_number], id: fisconet_article_anchor_id(article[:article_number]), section: section }
+    fisconet_toc_sections << { type: :article, number: article[:article_number], label: fisconet_toc_label(article), id: fisconet_article_anchor_id(article[:article_number]), section: section }
     fisconet_valid_art_nums << article[:article_number].to_s
   end
   has_toc = fisconet_toc_sections.any? { |e| e[:type] == :section }
+  fisconet_code_names = fisconet_code_names(@law, info || {})
 %>
 <!-- Page Header (matches Justel show.html.erb) -->
 <div class="mb-6" data-controller="articles-loading" data-articles-loading-frame-value="law_articles">
@@ -146,7 +147,7 @@
                   </li>
                 <% else %>
                   <li class="pl-6">
-                    <a href="#<%= entry[:id] %>" class="toc-link block py-1 px-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150" data-toc-tracker-target="link" data-target="<%= entry[:id] %>" data-action="click->toc-anchor#handleClick"><span class="text-xs wrap-break-word">Art. <%= entry[:number] %></span></a>
+                    <a href="#<%= entry[:id] %>" class="toc-link block py-1 px-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150" data-toc-tracker-target="link" data-target="<%= entry[:id] %>" data-action="click->toc-anchor#handleClick"><span class="text-xs wrap-break-word"><%= entry[:label] %></span></a>
                   </li>
                 <% end %>
               <% end %>
@@ -197,7 +198,10 @@
           <div class="flex flex-col"><dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide"><%= t(:numac) %></dt><dd class="mt-1 text-gray-900 dark:text-gray-300 font-mono bg-gray-50 dark:bg-gray-900 px-2 py-1 rounded text-xs"><%= @law.numac %></dd></div>
           <div class="flex flex-col"><dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide"><%= @language_id == 2 ? 'Source' : 'Bron' %></dt><dd class="mt-1 text-gray-900 dark:text-gray-300">Fisconet Plus</dd></div>
           <div class="flex flex-col"><dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide"><%= t(:language) %></dt><dd class="mt-1 text-gray-900 dark:text-gray-300"><span class="badge-language"><%= @language_id == 1 ? 'Nederlands' : 'Français' %></span></dd></div>
-          <div class="flex flex-col"><dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide"><%= t(:type) %></dt><dd class="mt-1 text-gray-900 dark:text-gray-300"><span class="badge-type"><%= @law.document_type %></span></dd></div>
+          <%# The identifier, the legal form and the subject are separate facts (the owner's report of 2026-10-26); a legal
+              form or subject the registry does not establish is omitted, never replaced by the short code. %>
+          <div class="flex flex-col"><dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide"><%= @language_id == 2 ? 'Abréviation' : 'Afkorting' %></dt><dd class="mt-1 text-gray-900 dark:text-gray-300"><span class="badge-type"><%= @law.try(:identifier).presence || @law.document_type %></span></dd></div>
+          <% if @law.try(:legal_form).present? %><div class="flex flex-col"><dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide"><%= t(:type) %></dt><dd class="mt-1 text-gray-900 dark:text-gray-300"><span class="badge-type"><%= @law.legal_form %></span></dd></div><% end %>
           <% if @law.category.present? %><div class="flex flex-col"><dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide"><%= @language_id == 2 ? 'Catégorie' : 'Categorie' %></dt><dd class="mt-1 text-gray-900 dark:text-gray-300"><%= @law.category %></dd></div><% end %>
           <div class="flex flex-col"><dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide">Status</dt><dd class="mt-1"><% if @law.is_abolished %><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"><%= @language_id == 2 ? 'Abrogé' : 'Opgeheven' %></span><% else %><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"><%= @language_id == 2 ? 'En vigueur' : 'Van kracht' %></span><% end %></dd></div>
           <% if @law.date.present? %><div class="flex flex-col"><dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide"><%= t(:publication_date, default: 'Publicatiedatum') %></dt><dd class="mt-1 text-gray-900 dark:text-gray-300 text-xs"><%= @law.date.strftime('%d-%m-%Y') rescue @law.date %></dd></div><% end %>
@@ -209,8 +213,9 @@
     </div>
 
     <!-- Title (matches _title.html.erb) -->
+    <% title_source = @law.try(:title_source).presence || 'stored' %>
     <div id="title-card" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
-      <div class="p-6"><h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-(--accent-500)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg><%= @law.title %></h2>
+      <div class="p-6"><h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2" data-title-source="<%= title_source %>"><svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-(--accent-500)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg><% if title_source == 'none' %><span class="text-gray-600 dark:text-gray-400 font-normal"><%= @language_id == 2 ? 'Titre non disponible dans la source' : 'Titel niet beschikbaar in de bron' %></span><% elsif @law.try(:title_lang).present? %><span lang="<%= @law.title_lang %>"><%= @law.title %></span><% else %><%= @law.title %><% end %></h2>
       <%# Annual codes (WIB 92, KB/WIB 92): each edition is its own page. Name this one and
           link the others, so a reader in the filing season can reach the edition for the
           income year being declared without the two ever sharing one article list. %>
@@ -258,7 +263,7 @@
                 <% is_top = entry[:text].match?(/^(HOOFDSTUK|TITEL|DEEL|CHAPITRE|TITRE|PART)/i) %>
                 <li class="<%= is_top ? 'pl-0' : 'pl-3' %> pt-1"><a href="#<%= entry[:id] %>" class="toc-link block <%= is_top ? 'font-semibold' : 'font-medium' %> text-gray-800 dark:text-gray-200 text-sm py-1.5 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150" data-action="click->toc-anchor#handleClick"><%= entry[:text] %></a></li>
               <% else %>
-                <li class="pl-6"><a href="#<%= entry[:id] %>" class="toc-link block py-1 px-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150" data-action="click->toc-anchor#handleClick"><span class="text-sm">Art. <%= entry[:number] %></span></a></li>
+                <li class="pl-6"><a href="#<%= entry[:id] %>" class="toc-link block py-1 px-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150" data-action="click->toc-anchor#handleClick"><span class="text-sm"><%= entry[:label] %></span></a></li>
               <% end %>
             <% end %>
           </ul>
@@ -446,7 +451,7 @@
               <% next if text.length <= 10 && html_content.length <= 10 %>
               <%# Preserve pre-canonicalization bookmarks such as #art_145/33. %>
               <% if legacy_article_anchor_id %><span id="<%= legacy_article_anchor_id %>" class="block h-0 overflow-hidden scroll-mt-24" aria-hidden="true"></span><% end %>
-              <article id="<%= article_anchor_id %>" data-article-scope class="group relative scroll-mt-24 <%= (index.zero? || prev_was_heading) ? '' : 'border-t border-gray-200 dark:border-(--accent-500)/40' %>">
+              <article id="<%= article_anchor_id %>" data-article-scope class="group relative scroll-mt-24 -mx-2 px-2 sm:-mx-3 sm:px-3 <%= (index.zero? || prev_was_heading) ? '' : 'border-t border-gray-200 dark:border-(--accent-500)/40' %>">
                 <span id="section-<%= article_anchor_id %>" class="block h-0 overflow-hidden scroll-mt-24 mt-0!" aria-hidden="true"></span>
                 <% top_pad = prev_was_heading ? 'pt-2' : 'pt-4' %>
                 <div class="<%= top_pad %> pb-4 flex items-start">
@@ -456,29 +461,27 @@
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 float-right ml-2"><%= @language_id == 2 ? 'Abrogé' : 'Opgeheven' %></span>
                       <% end %>
                       <%
-                        # A sanitizer failure (deeply nested PDF-conversion markup exceeds
-                        # its document-depth limit) must degrade this one article to the
-                        # plain-text path below, never 500 the whole code's page.
-                        #
-                        # `style` is deliberately NOT in the attribute allowlist: see
-                        # LawsHelper#fisconet_reduce_inline_styles. Allowing it sent
-                        # 91,077 inline styles per page through the CSS scrubber and
-                        # cost 25 seconds of the registration code's cold render.
-                        sanitized_html =
-                          if html_content.present? && html_content.length > 10
-                            begin
-                              sanitize(fisconet_reduce_inline_styles(html_content), tags: %w[p br em strong b i u a ul ol li table tr td th thead tbody h1 h2 h3 h4 h5 h6 div span sup sub blockquote], attributes: %w[href title class border cellpadding cellspacing width height align valign rowspan colspan])
-                            rescue ArgumentError
-                              nil
-                            end
-                          end
+                        # One structural heading per provision (FisconetProvision.label: the
+                        # established `Art. N.`, or the stored source title of an implementing
+                        # instrument, never its internal `doc:` key), then the body as block-safe
+                        # HTML: sanitized once with the unchanged allowlists (`style` stays out of
+                        # them, see LawsHelper#fisconet_reduce_inline_styles: allowing it cost 25
+                        # seconds of the registration code's cold render), its leading identity
+                        # headings and spacer artifacts removed, no outer paragraph. A sanitizer
+                        # failure (deeply nested PDF-conversion markup exceeds the document-depth
+                        # limit) degrades this one article to the plain-text path, never 500s
+                        # the page.
+                        provision_label = fisconet_provision_label(article)
+                        provision_body = fisconet_provision_body(article, fisconet_valid_art_nums, code_names: fisconet_code_names)
                       %>
-                      <% if sanitized_html.present? %>
-                        <p><span class="article-number not-prose font-bold text-gray-900 dark:text-white">Art. <%= article[:article_number] %>.</span> <%= linkify_tax_article_refs(sanitized_html, fisconet_valid_art_nums).html_safe %></p>
+                      <% if provision_body %>
+                        <p class="article-heading"><span class="article-number not-prose font-bold text-gray-900 dark:text-white"><%= provision_label %></span></p>
+                        <div class="fisconet-provision"><%= provision_body %></div>
                       <% elsif text.present? && text.length > 10 %>
                         <%
-                          # Clean text for rendering
-                          clean_lines = text.strip.split("\n")
+                          # Clean text for rendering: the leading lines that only repeat the
+                          # provision's own heading go (FisconetProvision), the rest stays
+                          clean_lines = fisconet_plain_lines(text.strip.split("\n"), article, code_names: fisconet_code_names)
 
                           # Strip trailing section heading leftovers (HOOFDSTUK, TITEL, AFDELING, GEWESTELIJKE, VLAAMSE, etc.)
                           heading_pattern = /\A\s*(HOOFDSTUK|TITEL|DEEL|AFDELING|ONDERAFDELING|CHAPITRE|TITRE|SECTION|SOUS-SECTION|PART|GEWESTELIJKE|VLAAMSE|WAALSE|BRUSSELS|Tekst\s*:\s*WIB)/i
@@ -519,12 +522,15 @@
                               rendered_parts << '<br>' + ERB::Util.html_escape(stripped)
                             end
                           end
-                          # Join and clean up: remove leading <br>
-                          article_html = rendered_parts.join.sub(/\A<br>/, '')
+                          # Join and clean up: remove a leading <br>, collapse the doubled
+                          # paragraph break a blank line before a paragraph marker produced
+                          # (an empty paragraph between), and keep the first paragraph with
+                          # the inline marker
+                          article_html = rendered_parts.join.sub(/\A<br>/, '').gsub(%r{(?:</p><p>)+}, '</p><p>').sub(%r{\A</p><p>}, '')
                         %>
-                        <p><span class="article-number not-prose font-bold text-gray-900 dark:text-white">Art. <%= article[:article_number] %>.</span> <%= linkify_tax_article_refs(article_html, fisconet_valid_art_nums).html_safe %></p>
+                        <div class="fisconet-provision"><p><span class="article-number not-prose font-bold text-gray-900 dark:text-white"><%= provision_label %></span> <%= (fisconet_numbered_provision?(article) ? linkify_tax_article_refs(article_html, fisconet_valid_art_nums) : article_html).html_safe %></p></div>
                       <% else %>
-                        <p><span class="article-number not-prose font-bold text-gray-900 dark:text-white">Art. <%= article[:article_number] %>.</span> <span class="text-gray-400">…</span></p>
+                        <p><span class="article-number not-prose font-bold text-gray-900 dark:text-white"><%= provision_label %></span> <span class="text-gray-400">…</span></p>
                       <% end %>
                     </div>
                   </div>

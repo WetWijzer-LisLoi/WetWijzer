@@ -52,7 +52,7 @@
         <% 
           is_current = current_sort == sort_key
           is_disabled = sort_key == 'relevance' && !has_search
-          new_params = request.query_parameters.merge(sort: sort_key).except('frame')
+          new_params = request.query_parameters.except('frame', 'page').merge(sort: sort_key)
         %>
         <% if is_disabled %>
           <span class="flex items-center px-4 py-2 text-sm text-gray-400 dark:text-gray-600 cursor-not-allowed"
@@ -65,7 +65,7 @@
           <%= link_to laws_path(new_params),
                 class: "flex items-center px-4 py-2 text-sm #{is_current ? 'bg-(--accent-50) dark:bg-(--accent-500)/20 text-(--accent-700) dark:text-(--accent-400) font-medium' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-sky/10'}",
                 role: "menuitem",
-                data: { turbo_frame: '_top' } do %>
+                data: { turbo_frame: local_assigns[:frame_target] || '_top', turbo_action: 'advance' } do %>
             <% if is_current %>
               <svg class="w-4 h-4 mr-2 text-(--accent-600)" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>

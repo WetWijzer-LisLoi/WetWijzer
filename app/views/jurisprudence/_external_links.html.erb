@@ -27,6 +27,13 @@
   </button>
 
   <ul class="space-y-2 mt-4" data-collapse-target="content">
+    <% if (court_pdf = local_assigns[:ghcc_url]) %>
+      <li>
+        <a href="<%= court_pdf %>" class="<%= link_class %>" target="_blank" rel="noopener nofollow">
+          <%= case I18n.locale when :fr then 'PDF original (Cour constitutionnelle)' when :de then 'Original-PDF (Verfassungsgerichtshof)' when :en then 'Original PDF (Constitutional Court)' else 'Origineel PDF (Grondwettelijk Hof)' end %><%= download_icon %>
+        </a>
+      </li>
+    <% end %>
     <% if juportal_url %>
       <li>
         <a href="<%= juportal_url %>" class="<%= link_class %>" target="_blank" rel="noopener nofollow">

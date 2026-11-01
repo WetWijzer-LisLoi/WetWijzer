@@ -13,6 +13,7 @@
     of its own; raadvst_key_url derives one from the key, in the language of
     the text shown. JuPortal's two links stay beside it. %>
 <% raadvst_url = raadvst_source_url(@case) || raadvst_source_url(@primary_case) || raadvst_key_url(@case) %>
+<% ghcc_url = ghcc_source_url(@case) || ghcc_source_url(@primary_case) %>
 <%# Carried by the three exports, so a download is the text on screen. %>
 <% export_params = @showing_alternate ? { language_id: @page_language_id } : {} %>
 <% appeal_info = court_appeal_info(@case[:court]) %>
@@ -131,9 +132,9 @@
 <div class="w-full space-y-6">
   <%# External links: the source and the original PDF, in the same card the
       legislation pages use, rather than as toolbar buttons. %>
-  <% if juportal_url || juportal_pdf.present? || raadvst_url %>
+  <% if juportal_url || juportal_pdf.present? || raadvst_url || ghcc_url %>
     <div id="external-links-card" class="no-print bg-white dark:bg-gray-800 rounded-xl shadow-sm scroll-mt-24">
-      <%= render 'jurisprudence/external_links', juportal_url: juportal_url, juportal_pdf: juportal_pdf, raadvst_url: raadvst_url %>
+      <%= render 'jurisprudence/external_links', juportal_url: juportal_url, juportal_pdf: juportal_pdf, raadvst_url: raadvst_url, ghcc_url: ghcc_url %>
     </div>
   <% end %>
   <!-- Case Metadata -->
@@ -317,8 +318,9 @@
         <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-4">
           <% case I18n.locale when :fr %>Texte intégral<% when :de %>Volltext<% when :en %>Full text<% else %>Volledige tekst<% end %>
         </h2>
+        <%= render 'shared/reading_styles' %>
         <div id="full-text-content" class="max-w-none">
-          <div class="text-base text-gray-700 dark:text-gray-300 leading-relaxed" style="text-align: justify;">
+          <div class="reading-body text-base text-gray-700 dark:text-gray-300 leading-relaxed" <%= tag.attributes(lang: { 1 => 'nl', 2 => 'fr', 3 => 'de' }[@page_language_id.to_i]) %>>
 <%= clean_jurisprudence_full_text(display_text, case_number: @case[:case_number]) %>
           </div>
         </div>
@@ -390,13 +392,13 @@
         <p class="text-sm text-amber-800 dark:text-amber-200">
           <% case I18n.locale
              when :fr %>
-            Ce texte est <strong>automatiquement pseudonymisé</strong>. Malgré un traitement minutieux, certaines données personnelles peuvent ne pas être entièrement masquées.
+            Ce texte peut contenir des données personnelles.
           <% when :de %>
-            Dieser Text wurde <strong>automatisch pseudonymisiert</strong>. Trotz sorgfältiger Verarbeitung kann es vorkommen, dass personenbezogene Daten nicht vollständig maskiert sind.
+            Dieser Text kann personenbezogene Daten enthalten.
           <% when :en %>
-            This text has been <strong>automatically pseudonymised</strong>. Despite careful processing, some personal data may not be fully masked.
+            This text may contain personal data.
           <% else %>
-            Deze tekst is <strong>automatisch gepseudonimiseerd</strong>. Ondanks zorgvuldige verwerking kan het voorkomen dat persoonsgegevens niet volledig zijn gemaskeerd.
+            Deze tekst kan persoonsgegevens bevatten.
           <% end %>
         </p>
         <a href="<%= gdpr_takedown_path(ecli: @case[:case_number]) %>"

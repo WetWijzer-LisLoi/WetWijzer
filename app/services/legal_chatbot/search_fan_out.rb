@@ -432,7 +432,11 @@ module LegalChatbot
       # narrowly bounded floor changes no other topic's source budget.
       commercial_pack_size = CommercialWebsiteIntent.article_targets(question).length
       marketplace_pack_size = MarketplaceCivilClaimIntent.article_targets(question).length
-      retain_final_hybrid_quota(articles, limit: [8, commercial_pack_size, marketplace_pack_size].max, lexical_quota: 2)
+      # The general-noise group plus room for the sources an asked specialist
+      # subject keeps beside it (GeneralNoiseScope.pack_size).
+      noise_pack_size = GeneralNoiseScope.pack_size(question, selected_law: @selected_law_numac)
+      retain_final_hybrid_quota(articles, limit: [8, commercial_pack_size, marketplace_pack_size, noise_pack_size].max,
+                                          lexical_quota: 2)
     end
 
     # Preserve pins first and a small lexical slice after every downstream
@@ -544,7 +548,7 @@ module LegalChatbot
       # The same subject decision as the regional selection and the
       # all-regions prompt task (an agricultural lease opened the prompt's
       # all-regions task but not this lane until 2026-10-17).
-      regional_subject = LegalChatbot::RegionalSearch.regional_subject_question?(question)
+      regional_subject = LegalChatbot::RegionalSearch.regional_subject_question?(question, selected_law: @selected_law_numac)
 
       # An airport/destination name is not a request for that region's law.
       # In the flight-compensation replay, "Brussel" alone injected unrelated

@@ -305,7 +305,8 @@ module LawsExportActions
       end
 
       body_escaped = ERB::Util.html_escape(body_text).gsub("\n", "<br>\n")
-      html_content += "<p><b>Art. #{ERB::Util.html_escape(art_num)}.</b> #{body_escaped}</p>\n"
+      label = FisconetProvision.label(art_num, article[:article_title]) # the page heading: never an internal key
+      html_content += "<p><b>#{ERB::Util.html_escape(label)}</b> #{body_escaped}</p>\n"
     end
 
     html_content += '</body></html>'

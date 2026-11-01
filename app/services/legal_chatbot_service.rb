@@ -61,6 +61,9 @@ class LegalChatbotService
     @context_numacs = conversation&.context_numacs_array || []
     # Merge in the law NUMAC from the page the user is viewing (chatbot widget on law pages)
     @context_numacs = (@context_numacs + [law_numac]).compact.uniq if law_numac.present?
+    # That page is also an explicit selection, unlike conversation context:
+    # topic groups such as GeneralNoiseScope leave a selected law's path alone.
+    @selected_law_numac = law_numac.to_s.strip.presence
     @model_override = model # Allow testing different models
     @concise = concise # WhatsApp/API: brief strict answers, no hedging
     @case_context = case_context # firm-specific case context injection (no live producer)

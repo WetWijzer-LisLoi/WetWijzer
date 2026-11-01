@@ -7,7 +7,7 @@
 # English labels are intentionally absent; German is retained only where Belgian usage is attested.
 
 "1804032150":
-  labels: {"nl":"oud BW","fr":"anc. C. civ."}
+  labels: {"nl":"(oud) BW","fr":"anc. C. civ."}
   classification: style
   sources: ["https://vena.be/afkortingen-wetgeving/","https://www.unamur.be/sites/default/files/2024-05/guiab-bi16001_corpus_final-1.pdf","https://www.wolterskluwer.com/fr-be/expert-insights/the-proof-of-a-new-law"]
 

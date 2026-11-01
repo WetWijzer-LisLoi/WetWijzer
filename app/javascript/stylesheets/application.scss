@@ -446,6 +446,34 @@
     p + p {
       @apply mt-6;
     }
+
+    // A Fisconet provision (laws/_fisconet_show): one heading line, then the
+    // source's own paragraphs, often one line each ("1° ...", "a) ...") and
+    // hundreds per article. The shared paragraph rhythm above (16 px below,
+    // 24 px between) compounded with the source's spacer paragraphs into
+    // 40 px gaps between one-line items (owner, 2026-10-26); the spacers are
+    // removed at render time and the rhythm here is the list rhythm.
+    .article-heading {
+      @apply mb-1;
+    }
+
+    .fisconet-provision {
+      p {
+        @apply mb-2;
+      }
+
+      p + p {
+        @apply mt-0;
+      }
+
+      table {
+        @apply my-3;
+
+        & + * {
+          @apply mt-3;
+        }
+      }
+    }
   }
 }
 

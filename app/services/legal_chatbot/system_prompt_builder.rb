@@ -20,7 +20,7 @@ module LegalChatbot
     #
     # It is a version label, never a hash of the prompt: a prompt hash would
     # be a content fingerprint, which the privacy contract forbids.
-    PROMPT_VERSION = 'prompt_2026_10_17_r31'
+    PROMPT_VERSION = 'prompt_2026_10_20_r32'
 
     HOUSE_HIDDEN_DEFECT_PRACTICAL_SUBJECT_PATTERN = /\b(?:kosten|kost\w*|ereloon\w*|honorari\w*|honoraire\w*|co[uû]t\w*|tarie\w*|uurtarie\w*|fee\w*|cost\w*|hourly|charg\w*|Gebühr\w*|Honorar\w*|Stundensatz|insurance|\p{L}*verzeker\p{L}*|assurance|Rechtsschutz\w*|\p{L}*Versicher\p{L}*|duur|duurt|duren|termijn\w*|duration|timeline\w*|deadline\w*|durée|délai\w*|Dauer|Frist\w*)\b|\bhoe\s+lang\b|\bhow\s+long\b|\bcombien\s+de\s+temps\b|\bwie\s+lange\b/iu
 
@@ -31,12 +31,14 @@ module LegalChatbot
       topic if %i[flight_disruption platform_redress].include?(topic)
     end
 
-    def initialize(language: 'nl', concise: false, case_context: nil, profile: 'general', international_mode: false)
+    def initialize(language: 'nl', concise: false, case_context: nil, profile: 'general', international_mode: false,
+                   selected_law_numac: nil)
       @language = language
       @concise = concise
       @case_context = case_context
       @profile = profile
       @international_mode = international_mode == true
+      @selected_law_numac = selected_law_numac
     end
 
     # Build the appropriate system prompt for the given context.
@@ -77,6 +79,8 @@ module LegalChatbot
       prompt = "#{prompt}\n\n#{headlight_task}" if headlight_task
       municipal_task = municipal_sidewalk_fine_task(question)
       prompt = "#{prompt}\n\n#{municipal_task}" if municipal_task
+      noise_task = general_noise_task(question)
+      prompt = "#{prompt}\n\n#{noise_task}" if noise_task
       commercial_task = commercial_website_task(question)
       prompt = "#{prompt}\n\n#{commercial_task}" if commercial_task
       parallel_employment_task = parallel_employment_task(question)
@@ -314,6 +318,44 @@ module LegalChatbot
         'If quoting, copy only a short contiguous literal fragment in its native source language, never reconstruct or translate it.'
     end
 
+    # A general or neighbour-noise question (GeneralNoiseScope): the admitted
+    # governing group arrives first, each row labelled with its scope. The
+    # task keeps the answer to what those rows support. Its sentences are
+    # presentation and source-use rules, not legal content of their own, and
+    # no runtime guard checks them: the answer review does.
+    def general_noise_task(question)
+      return nil unless GeneralNoiseScope.asked?(question, selected_law: @selected_law_numac)
+
+      task = 'GENERAL NOISE SOURCE TASK: Answer in the resolved answer language. ' \
+             'Start with a short overview of what the admitted sources regulate, then ask for what changes the answer ' \
+             'when the question does not say it: the municipality or region, and the source of the noise ' \
+             '(neighbours; a business, café or event; traffic or aircraft; work). ' \
+             'Civil Code Article 3.101 is a balancing of the circumstances (nuisance beyond the normal inconveniences ' \
+             'between neighbours, who it is attributable to, the possible remedies); never present it as an automatic right. ' \
+             'Article 3.102 applies only to serious and manifest risks to safety, health or serious pollution, ' \
+             'not to every noise complaint. Judicial Code Article 591, 2° ter only names the competent court. ' \
+             'Give no general hours or decibel limits (such as a fixed night rest from 22:00) unless an admitted source ' \
+             'gives them for the place asked about; local regulations differ per municipality. ' \
+             'Do not assume ownership, a tenancy, a region, a municipality or a workplace the question does not state. ' \
+             'Each source is labelled with the region or level it applies to. When the question names a region, only that ' \
+             "region's sources and the federal sources govern; mention the other regions at most briefly as regulated " \
+             'differently and never apply their rules to the place named. When no region is named, give per region what the ' \
+             'sources regulate, under its label, and do not say a regional rule applies automatically. ' \
+             'For the Flemish and the Walloon Region the current text of the municipal police power (Nieuwe Gemeentewet / ' \
+             'Nouvelle loi communale Article 135) was not retrieved: say so, do not quote or describe that text, and do not ' \
+             'say the power does not exist. The GAS/SAC Act Article 2 only covers the sanctions for breaches of municipal ' \
+             'regulations, not the noise rule itself. Say a source was not retrieved when it is missing; never say there is ' \
+             'no rule. Never present a repealed provision, such as the old Criminal Code, as current law. ' \
+             'If the question also asks about a specialist subject (work, rail, aviation, road traffic, permits, subsidies, ' \
+             'inspection), treat it separately with its own sources. ' \
+             'Keep the answer short, about 250 words, as presentation only: never drop a source, a condition or a limitation to fit.'
+      return task unless GeneralNoiseScope.historical?(question)
+
+      "#{task} The question concerns facts that may predate 1 September 2021: say that the former rules may govern " \
+        'those facts under the transition provisions of the Act of 4 February 2020 (Articles 37 and 39) when they are ' \
+        'supplied, without deciding which rule applies.'
+    end
+
     def municipal_sidewalk_fine_task(question)
       return nil unless MunicipalSanctionsSourceScope.topic?(question)
 
@@ -424,7 +466,7 @@ module LegalChatbot
     # hold no rule for a region. An unqualified housing question already gets
     # the coverage task above, which asks the same.
     def all_regions_task(question, detected_lang: nil)
-      return nil unless RegionalSearch.regional_subject_question?(question)
+      return nil unless RegionalSearch.regional_subject_question?(question, selected_law: @selected_law_numac)
 
       language = (detected_lang.presence || @language).to_s.downcase
       task = all_regions_text(language)

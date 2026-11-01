@@ -153,6 +153,8 @@ module Api
       language = effective_request_language(requested_language, host: request.host)
       stream = ['true', true].include?(params[:stream])
       conversation_id = params[:conversation_id]&.strip
+      # What the browser asked for, for this answer's metadata record.
+      requested_answer_meta = requested_answer_meta_from_params
 
       # Handle sources array (new checkbox UI) or single source (legacy dropdown)
       sources_array = params[:sources]
@@ -333,13 +335,13 @@ module Api
         # ── Access & credit enforcement (streaming) ──
         unless @service_bypass
           unless current_user
-            response.stream.write("data: #{JSON.generate({ type: 'error', error: 'login_required' })}\n\n")
+            response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error', error: 'login_required' }))}\n\n")
             response.stream.close
             return
           end
 
           if research_depth_denied
-            response.stream.write("data: #{JSON.generate({ type: 'error', error: 'upgrade_required', error_code: 'research_depth_requires_pro', research_depth: research_depth })}\n\n")
+            response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error', error: 'upgrade_required', error_code: 'research_depth_requires_pro', research_depth: research_depth }))}\n\n")
             response.stream.close
             return
           end
@@ -353,14 +355,14 @@ module Api
               purchased: current_user.advanced_intelligence_access?
             )
             if access_denied
-              response.stream.write("data: #{JSON.generate({ type: 'error', error: 'upgrade_required', intelligence: intelligence, tier: tier.to_s })}\n\n")
+              response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error', error: 'upgrade_required', intelligence: intelligence, tier: tier.to_s }))}\n\n")
               response.stream.close
               return
             end
           end
 
           if model_tier_denied
-            response.stream.write("data: #{JSON.generate({ type: 'error', error: 'upgrade_required', model: model_override.presence || model })}\n\n")
+            response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error', error: 'upgrade_required', model: model_override.presence || model }))}\n\n")
             response.stream.close
             return
           end
@@ -368,19 +370,19 @@ module Api
           # Source entitlement, before any reservation or provider call.
           denied_source = denied_pro_source(current_user, source, @selected_sources)
           if denied_source
-            response.stream.write("data: #{JSON.generate({ type: 'error' }.merge(source_requires_pro_payload(denied_source)))}\n\n")
+            response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error' }.merge(source_requires_pro_payload(denied_source))))}\n\n")
             response.stream.close
             return
           end
 
           unless reconcile_browser_chat_billing!(current_user)
-            response.stream.write("data: #{JSON.generate({ type: 'error' }.merge(browser_chat_billing_unavailable_payload))}\n\n")
+            response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error' }.merge(browser_chat_billing_unavailable_payload)))}\n\n")
             response.stream.close
             return
           end
 
           unless current_user.has_credits?(credits_to_deduct)
-            response.stream.write("data: #{JSON.generate({ type: 'error', error: 'insufficient_credits', credits_required: credits_to_deduct, credits_available: current_user.credits })}\n\n")
+            response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error', error: 'insufficient_credits', credits_required: credits_to_deduct, credits_available: current_user.credits }))}\n\n")
             response.stream.close
             return
           end
@@ -392,7 +394,7 @@ module Api
         # provider budget is enforced separately below. The deep_analysis /
         # legacy paths enforced this check but #ask did not.
         if !benchmark_cap_bypass? && LegalChatbotService.model_at_daily_cap?(model)
-          response.stream.write("data: #{JSON.generate({ type: 'error', error: 'model_daily_cap', model: model.to_s })}\n\n")
+          response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error', error: 'model_daily_cap', model: model.to_s }))}\n\n")
           response.stream.close
           return
         end
@@ -400,7 +402,7 @@ module Api
         # Application-side provider estimated-spend ceiling (not a cloud billing hard cap)
         if !benchmark_cap_bypass? && LegalChatbotService.provider_at_monthly_cap?(model)
           provider = LegalChatbotService.provider_for_model(model)
-          response.stream.write("data: #{JSON.generate({ type: 'error', error: 'provider_monthly_cap', provider: provider.to_s })}\n\n")
+          response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error', error: 'provider_monthly_cap', provider: provider.to_s }))}\n\n")
           response.stream.close
           return
         end
@@ -418,7 +420,7 @@ module Api
             model: model
           )
           unless reservation
-            response.stream.write("data: #{JSON.generate({ type: 'error', error: 'insufficient_credits', credits_required: credits_to_deduct, credits_available: current_user.reload.credits })}\n\n")
+            response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error', error: 'insufficient_credits', credits_required: credits_to_deduct, credits_available: current_user.reload.credits }))}\n\n")
             response.stream.close
             return
           end
@@ -433,7 +435,7 @@ module Api
           streaming_user = current_user
           refund_browser_chat_reservation!(reservation, analytic: analytic, reason: 'zero_knowledge_claim_conflict')
           credits_info = credit_balance_info(streaming_user, deducted: 0) if reservation
-          response.stream.write("data: #{JSON.generate({ type: 'error', error: 'zero_knowledge_state_conflict', key_generation: zero_knowledge_key_generation(current_user), credits_info: credits_info })}\n\n")
+          response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error', error: 'zero_knowledge_state_conflict', key_generation: zero_knowledge_key_generation(current_user), credits_info: credits_info }))}\n\n")
           response.stream.close
           return
         end
@@ -593,6 +595,7 @@ module Api
             )
             payload = { type: 'error' }.merge(browser_chat_account_fenced_payload(credits_info: credits_info))
                                        .merge(browser_chat_charge_notice_field(credits_info, language))
+                                       .merge(answer_provenance: answer_provenance(chatbot, result, status: 'error'))
             response.stream.write("data: #{JSON.generate(payload)}\n\n")
             response.stream.close
             return
@@ -606,7 +609,10 @@ module Api
             intelligence: intelligence,
             language: language,
             reasoning_effort_used: reasoning_effort_used,
-            research_depth_used: research_depth
+            research_depth_used: research_depth,
+            chatbot: chatbot,
+            category: requested_profile,
+            requested_meta: requested_answer_meta
           )
           attach_quality_capture_metadata(result, expected_provenance: quality_provenance_before)
 
@@ -627,6 +633,7 @@ module Api
             )
             payload = { type: 'error', error: 'zero_knowledge_state_conflict', key_generation: zero_knowledge_key_generation(streaming_user), credits_info: credits_info }
                       .merge(browser_chat_charge_notice_field(credits_info, language))
+                      .merge(answer_provenance: answer_provenance(chatbot, result, status: 'error'))
             response.stream.write("data: #{JSON.generate(payload)}\n\n")
             response.stream.close
             return
@@ -880,7 +887,10 @@ module Api
           intelligence: intelligence,
           language: language,
           reasoning_effort_used: reasoning_effort_used,
-          research_depth_used: research_depth
+          research_depth_used: research_depth,
+          chatbot: chatbot,
+          category: requested_profile,
+          requested_meta: requested_answer_meta
         )
         attach_quality_capture_metadata(result, expected_provenance: quality_provenance_before)
 
@@ -1014,6 +1024,7 @@ module Api
       # exception MESSAGES here - they can echo the user's legal question).
       Rails.logger.error("Chatbot ask rejected: #{e.class}")
       if response.committed?
+        failure_payload = failure_payload.merge(answer_provenance: answer_provenance(chatbot, result, status: 'error'))
         response.stream.write("data: #{JSON.generate({ type: 'error' }.merge(failure_payload))}\n\n") rescue nil
         response.stream.close rescue nil
       else
@@ -1040,7 +1051,8 @@ module Api
         failure_credits_info = billing_resolution[:credits_info]
         keep_new_conversation = true if billing_resolution[:outcome] == :settled
       end
-      render_chatbot_budget_limit(e, credits_info: failure_credits_info, language: language)
+      render_chatbot_budget_limit(e, credits_info: failure_credits_info, language: language,
+                                     answer_provenance: answer_provenance(chatbot, result, status: 'no_model_answer'))
     rescue StandardError => e
       provider_work_receipt&.cancel!
       terminate_chatbot_query_thread(query_thread)
@@ -1076,7 +1088,7 @@ module Api
       charge_notice = browser_chat_charge_notice_field(failure_credits_info, language)
       if response.committed?
         # Stream already open - send error as SSE event so client sees it
-        response.stream.write("data: #{JSON.generate({ type: 'error', error: 'server_error', message: 'Er is een fout opgetreden. Probeer opnieuw.', credits_info: failure_credits_info }.merge(charge_notice))}\n\n") rescue nil
+        response.stream.write("data: #{JSON.generate({ type: 'error', error: 'server_error', message: 'Er is een fout opgetreden. Probeer opnieuw.', credits_info: failure_credits_info, answer_provenance: answer_provenance(chatbot, result, status: 'error') }.merge(charge_notice))}\n\n") rescue nil
         response.stream.close rescue nil
       else
         render json: { error: 'Internal server error', credits_info: failure_credits_info }.merge(charge_notice), status: :internal_server_error
@@ -1682,7 +1694,7 @@ module Api
       false
     end
 
-    def render_chatbot_budget_limit(error, credits_info: nil, language: nil)
+    def render_chatbot_budget_limit(error, credits_info: nil, language: nil, answer_provenance: nil)
       code = chatbot_budget_error_code(error)
       payload = {
         type: 'error',
@@ -1690,7 +1702,8 @@ module Api
         code: code,
         model: error.model,
         provider: error.provider&.to_s,
-        credits_info: credits_info
+        credits_info: credits_info,
+        answer_provenance: answer_provenance
       }.compact.merge(browser_chat_charge_notice_field(credits_info, language))
 
       if response.committed?
@@ -1864,13 +1877,59 @@ module Api
       end
     end
 
-    def attach_execution_metadata(result, model:, intelligence:, language:, reasoning_effort_used:, research_depth_used: nil)
+    # model_used stays the RESOLVED SELECTION (what the benchmark and capture
+    # scripts read), not proof that model generated the answer. That proof is
+    # the answer_provenance outcome, which the browser and the consented
+    # history keep in the answer's metadata record (LegalChatbot::AnswerMeta).
+    def attach_execution_metadata(result, model:, intelligence:, language:, reasoning_effort_used:, research_depth_used: nil,
+                                  chatbot: nil, category: nil, requested_meta: nil)
       result[:model_used] ||= model
       result[:intelligence] ||= intelligence
       result[:language] ||= language
       result[:reasoning_effort_used] ||= reasoning_effort_used
       result[:research_depth_used] ||= research_depth_used if research_depth_used
+      result[:category_used] ||= category if category
+      if requested_meta
+        result[:answer_provenance] ||= answer_provenance(chatbot, result)
+        result[:answer_meta] = LegalChatbot::AnswerMeta.live(requested: requested_meta,
+                                                             provenance: result[:answer_provenance])
+      end
       result
+    end
+
+    # An SSE error written before the answer service exists: the question was
+    # not started, and its metadata record says so explicitly (AnswerMeta).
+    # The browser never infers that from a missing progress event.
+    def not_started_error_event(payload)
+      payload.merge(answer_provenance: LegalChatbot::AnswerMeta.provenance(status: 'not_started'))
+    end
+
+    # The service's provenance for this result, or an unknown one when the
+    # service (or a test double) cannot give it. Never raises: metadata must
+    # not break answer delivery.
+    def answer_provenance(chatbot, result, status: nil)
+      if chatbot.respond_to?(:answer_provenance_for)
+        chatbot.answer_provenance_for(result, status: status)
+      else
+        LegalChatbot::AnswerMeta.provenance(status: status || 'unknown')
+      end
+    rescue StandardError => e
+      Rails.logger.warn("[AnswerMeta] provenance skipped: #{e.class}")
+      LegalChatbot::AnswerMeta.provenance(status: 'unknown')
+    end
+
+    def requested_answer_meta_from_params
+      LegalChatbot::AnswerMeta.requested(
+        category: params[:profile],
+        intelligence: params[:intelligence],
+        model: params[:model_override],
+        research_depth: params[:research_depth],
+        reasoning_effort: params[:reasoning_effort],
+        linked_research: params[:linked_research]
+      )
+    rescue StandardError => e
+      Rails.logger.warn("[AnswerMeta] requested snapshot skipped: #{e.class}")
+      nil
     end
 
 

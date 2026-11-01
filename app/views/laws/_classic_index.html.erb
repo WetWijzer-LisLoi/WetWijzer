@@ -129,10 +129,11 @@
                                 law.to_s
                               end %>
               <% law_link = law.respond_to?(:numac) ? law_path(law.numac) : '#' %>
-              <%# The German site lists German and French rows of one NUMAC side
-                  by side: each links to its own language and says which it is %>
+              <%# A search can list two language rows of one NUMAC side by side (NL and FR,
+                  or FR and DE on the German site): each opens its own language. The German
+                  site also says which language a row is %>
+              <% law_link = law_path(law.numac, language_id: law.language_id) if law.respond_to?(:numac) && law.respond_to?(:language_id) && law.language_id.present? %>
               <% row_language = german_site? && law.respond_to?(:language_id) && law_language_label(law.language_id) %>
-              <% law_link = law_path(law.numac, language_id: law.language_id) if row_language %>
               <% if row_language %><strong data-law-row-language="<%= row_language %>">[<%= row_language %>]</strong><% end %>
               <% if params[:title].present?
                    search_q = params[:title].to_s.strip

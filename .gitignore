@@ -155,6 +155,7 @@ test/**/*.pyc
 test/**/.pytest_cache/
 lib/wetwijzer_updater/gdrive_token.json
 lib/wetwijzer_updater/gdrive_credentials.json
+/scripts/archive/deploy-ops/letsencrypt.tar.gz
 
 # Docs: tracked on GitHub since 2026-07-14 (credential files stay ignored
 # above; the deploy hooks strip docs/ from server checkouts, keeping only

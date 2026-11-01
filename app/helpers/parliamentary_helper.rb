@@ -475,6 +475,42 @@ module ParliamentaryHelper
   }.freeze
   SYMBOL_FONT_GLYPH = Regexp.union(SYMBOL_FONT_GLYPHS.keys)
 
+  # The block structure of a stored judgment (owner's repair request of
+  # 2026-10-21, ECLI:BE:RVSCE:2024:ARR.261.348). The Council of State's
+  # extraction (pdftotext in its default flow mode) breaks a justified line
+  # with wide word gaps into single words with blank lines between them, sets
+  # a paragraph's number and its first line apart from the rest by a blank
+  # line, glues the rule under the masthead onto the first heading and wraps a
+  # long heading over two lines. Every blank line became a paragraph break.
+  #
+  # Words that never end a sentence (NL, FR, DE, EN): a block that ends in one
+  # of them continues in the next block.
+  JURISPRUDENCE_CONTINUATION_WORDS = %w[
+    de het een van voor met op in aan tot door bij uit naar over onder tussen tegen zonder en of maar dat die dit deze als om te ter ten
+    le la les un une des du au aux et ou par pour sur dans avec sans sous entre contre que qui dont ce cette ces son sa ses leur leurs
+    der das den dem ein eine einen einem einer eines und oder von zu zur zum mit für auf aus bei nach über vor im an am gegen ohne durch dass
+    the a to on for and or by with at from
+  ].to_set.freeze
+  # A paragraph number, a list item, a footnote mark, a numbered or lettered
+  # heading or a bullet opens its own block; it never continues the text before.
+  JURISPRUDENCE_BLOCK_START = /\A(?:\d{1,3}[.)°]|\(\d{1,3}\)|\[\d{1,3}\]|[a-z][)°]\s|[IVXLC]+\.(?:\d+\.)?\s|[A-Z]\.\s+[[:upper:]]|[-–—•◦○➢►▪■]\s)/
+  JURISPRUDENCE_SENTENCE_END = /[.!?:]["”’»)\]]*\z/
+  # A paragraph's number on a line of its own: "1.", "28.", "3.1.".
+  JURISPRUDENCE_PARAGRAPH_NUMBER = /\A\d{1,3}(?:\.\d{1,3})*\.\z/
+  # Initials only ("C. A.,", "M.-L. W."): a name, never a heading, whatever its
+  # letter. "C. A." of the bench read as section C, "P. S." as sub-section P.
+  JURISPRUDENCE_INITIALS_ONLY = /\A(?:[[:upper:]]\.(?:-[[:upper:]]\.)?\s*){1,4}[,;:]?\z/
+  # The closing formula that opens the signature block: what follows is the
+  # bench, the date and the signatures. The Council's Dutch judgments close
+  # with "Dit arrest is uitgesproken", which the formatter did not know.
+  JURISPRUDENCE_SIGNATURE_OPENER = Regexp.union(
+    /\AAinsi\s+(?:prononc|rendu|jug)/i,
+    /\AAldus\s+(?:te\s+\S+\s+)?(?:uitgesproken|gewezen|geoordeeld)/i,
+    /\A(?:Dit|Het)\s+(?:arrest|vonnis|beschikking)\s+(?:is|werd|wordt)\s+(?:uitgesproken|gewezen)/i,
+    /\A(?:Le\s+présent|Cet)\s+arrêt\s+(?:a\s+été|est)\s+(?:prononcé|rendu)/i,
+    /\ASo\s+verkündet/i
+  )
+
   # Clean jurisprudence full text for display.
   # Strips repeating page headers, page numbers, and OCR artifacts from scanned court decisions.
   # When rich_text with [[IMG:filename|WxH]] markers is provided, renders images inline.
@@ -513,6 +549,13 @@ module ParliamentaryHelper
         next
       end
       prev_blank = false
+
+      # A rule of dashes the extraction glued to the next line ("-----I.
+      # Voorwerp van het beroep"): the rule goes, the line stays.
+      if stripped.match?(/\A[-–—=_]{5,}\s*[^-–—=_\s]/)
+        stripped = stripped.sub(/\A[-–—=_]{5,}\s*/, '')
+        line = stripped
+      end
 
       # Skip repeating page headers: "Rolnummer" / "Rolnumme1" / "Rol nummer" (OCR variations)
       next if stripped.match?(/\ARol\s*numme\w*\s*\z/i)
@@ -590,8 +633,10 @@ module ParliamentaryHelper
     result.strip!
 
     # Second pass: fix hyphenation artifacts from PDF line breaks
-    # "woon-\nplaats" -> "woonplaats", "ver-\nnietiging" -> "vernietiging"
-    result.gsub!(/([a-zéèêëàâäùûüôöîïç])-\n([a-zéèêëàâäùûüôöîïç])/, '\1\2')
+    # "woon-\nplaats" -> "woonplaats", "ver-\nnietiging" -> "vernietiging"; a
+    # compound cut before its conjunction ("zorgvuldigheids-\nen redelijk-
+    # heidsbeginsel") keeps its hyphen.
+    result.gsub!(/([a-zéèêëàâäùûüôöîïç])-\n(?!(?:en|of|et|ou|und|oder)\b)([a-zéèêëàâäùûüôöîïç])/, '\1\2')
 
     # Strip VIexturg page markers embedded mid-paragraph (use newline to avoid joining lines)
     result.gsub!(%r{\s*V[Il]?e?xturg\s*-\s*[\d.]+\s*-\s*\d+/\d+\s*}i, "\n")
@@ -605,6 +650,11 @@ module ParliamentaryHelper
     # Convert ASCII guillemets to proper French quotation marks
     result.gsub!('<<', '«')
     result.gsub!('>>', '»')
+
+    # The blocks as the source has them: a block that continues the sentence of
+    # the block before joins it, a paragraph number joins its text, a heading's
+    # short wrapped tail joins the heading.
+    result = reflow_jurisprudence_blocks(result)
 
     # Third pass: build HTML with proper paragraph wrapping and section styling
     html_parts = []
@@ -651,17 +701,24 @@ module ParliamentaryHelper
     # white. Kept deliberately narrow: a bare all-caps line is NOT listed here,
     # because that is what a court name in a real masthead looks like.
     section_start = lambda do |s|
+      next false if s.match?(JURISPRUDENCE_INITIALS_ONLY) # a party "C. D." in the masthead is a name
+
       s.match?(/\A[IVXLC]+\.\s+\S/) ||        # "I. OBJET", "I.\tRECHTSPLEGING"
         s.match?(/\A[IVXLC]+\.\d+\.\s+\S/) || # "V.1. Thèse de la partie requérante"
         dispositif_line.call(s)
     end
 
-    flush_para = lambda do
-      # Close any open bullet list before starting a paragraph
+    close_list = lambda do
       if @in_bullet_list
         html_parts << '</ul>'
         @in_bullet_list = false
       end
+    end
+
+    # The paragraph so far, without closing an open list: a blank line or the
+    # next item keeps a list open, so its items stay one list (each item used
+    # to open a <ul> of its own).
+    flush_text = lambda do
       unless current_para.empty?
         joined = intro_mode || signature_mode ? current_para.join("<br>\n") : current_para.join(' ')
         # Italicize quoted text after joining (handles multi-line quotes)
@@ -681,12 +738,21 @@ module ParliamentaryHelper
       end
     end
 
+    flush_para = lambda do
+      # Close any open bullet list before starting a paragraph
+      close_list.call
+      flush_text.call
+    end
+
     close_section = lambda do
       if section_open
         html_parts << '</div></div>' # Close content div + collapse wrapper
         section_open = false
       end
     end
+
+    last_li_plain = '' # the open list item's text, for its wrapped continuation lines
+    last_li_index = nil
 
     chevron_svg = '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 transition-transform text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor" data-collapse-target="icon"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" /></svg>'
 
@@ -708,7 +774,7 @@ module ParliamentaryHelper
       stripped = line.strip
 
       if stripped.empty?
-        flush_para.call
+        flush_text.call
         next
       end
 
@@ -828,7 +894,7 @@ module ParliamentaryHelper
         current_para << escaped
 
       # Roman numeral sections: "I. Onderwerp van de beroepen", "II. Procédure", "III. Faits"
-      elsif stripped.match?(/\A[IVXLC]+\.\s+\S/)
+      elsif stripped.match?(/\A[IVXLC]+\.\s+\S/) && !stripped.match?(JURISPRUDENCE_INITIALS_ONLY)
         emit_section_heading.call(escaped, 'text-base italic text-gray-900 dark:text-white')
 
       # Major case components (standalone, mixed-case, often italic in PDF):
@@ -853,7 +919,7 @@ module ParliamentaryHelper
         html_parts << "<p class=\"mb-2 font-semibold text-gray-800 dark:text-gray-200\">#{escaped}</p>"
 
       # All-caps section titles > 8 chars: "BESLISSING VAN HET HOF", "CASSATIEMIDDEL", etc.
-      elsif stripped.match?(/\A[A-ZÉÈÊÀÂÙÛÔÎÇÖ\s\-'.]{8,}\z/) && stripped.length < 80
+      elsif stripped.match?(/\A[A-ZÉÈÊÀÂÙÛÔÎÇÖ\s\-'.]{8,}\z/) && stripped.length < 80 && !stripped.match?(JURISPRUDENCE_INITIALS_ONLY)
         emit_section_heading.call(escaped, 'text-sm font-bold uppercase tracking-wide text-gray-800 dark:text-gray-200')
 
       # Sub-section numbering: "V.1. Thèse de la partie requérante", "VI.2. Appréciation"
@@ -863,16 +929,15 @@ module ParliamentaryHelper
 
       # Lettered sub-sections: "A. Standpunt van de...", "B. Beoordeling"
       # Only match short standalone lines (not "M. Christian Amelynck, premier...")
-      elsif stripped.match?(/\A[A-Z]\.\s+[A-ZÉÈÊÀ]/) && stripped.length < 60
+      elsif stripped.match?(/\A[A-Z]\.\s+[A-ZÉÈÊÀ]/) && stripped.length < 60 && !stripped.match?(JURISPRUDENCE_INITIALS_ONLY)
         flush_para.call
         html_parts << "<h4 class=\"text-sm font-semibold text-gray-800 dark:text-gray-200 mt-4 mb-1\">#{escaped}</h4>"
 
-      # Numbered decision points: "1. Krachtens de artikelen...", "2. De overheid..."
-      elsif stripped.match?(/\A\d{1,3}\.\s+[A-ZÉÈÊÀÂÙÛÔÎÇ]/)
+      # Numbered decision points: "1. Krachtens de artikelen...", "2. De overheid...", "3.1. Het middel..."
+      elsif stripped.match?(/\A\d{1,3}(?:\.\d{1,3})*\.\s+[A-ZÉÈÊÀÂÙÛÔÎÇ“‘«("]/)
         flush_para.call
-        dot_pos = escaped.index('.')
-        num_part = escaped[0..dot_pos]
-        rest_part = escaped[(dot_pos + 2)..]
+        num_part = escaped[/\A\d{1,3}(?:\.\d{1,3})*\./]
+        rest_part = escaped[num_part.length..].lstrip
         current_para << "<strong class=\"text-gray-900 dark:text-white\">#{num_part}</strong> #{rest_part}"
 
       # "PAR CES MOTIFS," / "OM DIE REDENEN," / "BESLUIT" - decision header
@@ -889,18 +954,27 @@ module ParliamentaryHelper
         flush_para.call
         html_parts << "<p class=\"font-semibold text-gray-900 dark:text-white mt-4 mb-1\">#{escaped}</p>"
 
-      # Bullet list items: "• text", "◦ text", "○ text" always; "-" only after colon or in existing list
-      elsif stripped.match?(/\A[•◦○]\s+\S/) ||
+      # Bullet list items: "• text", "◦ text", "○ text", "➢ text" always; "-" only after colon or in existing list
+      elsif stripped.match?(/\A[•◦○➢►▪■]\s+\S/) ||
             (stripped.match?(/\A-\s+\S/) && (@in_bullet_list || last_ended_colon))
-        flush_para.call
+        # The lead-in goes out before the list; an open list stays open for
+        # this item (a paragraph still pending inside it closes the list first).
+        flush_para.call unless current_para.empty?
         # Strip the bullet character and leading space
-        bullet_text = ERB::Util.html_escape(stripped.sub(/\A[•◦○-]\s+/, ''))
+        last_li_plain = stripped.sub(/\A[•◦○➢►▪■-]\s+/, '')
         # Open a <ul> if we're not already in one
         unless @in_bullet_list
           html_parts << '<ul class="mb-3 ml-6 list-disc space-y-1 text-gray-700 dark:text-gray-300">'
           @in_bullet_list = true
         end
-        html_parts << "<li>#{bullet_text}</li>"
+        html_parts << "<li>#{ERB::Util.html_escape(last_li_plain)}</li>"
+        last_li_index = html_parts.size - 1
+
+      # A list item whose words the extraction put on lines of their own keeps
+      # them ("➢ Uitvoering" / "aan" / "de" / "evaluatiestudie").
+      elsif @in_bullet_list && last_li_index && jurisprudence_continues?(last_li_plain, stripped)
+        last_li_plain = "#{last_li_plain} #{stripped}"
+        html_parts[last_li_index] = "<li>#{ERB::Util.html_escape(last_li_plain)}</li>"
 
       else
         # Close any open bullet list before regular content
@@ -908,8 +982,8 @@ module ParliamentaryHelper
           html_parts << '</ul>'
           @in_bullet_list = false
         end
-        # Detect signature block: "Ainsi prononcé" / "Aldus uitgesproken" / "Aldus te ... uitgesproken"
-        if !signature_mode && stripped.match?(/\A(?:Ainsi\s+prononc|Aldus\s+(?:te\s+\S+\s+)?uitgesproken)/i)
+        # Detect signature block: "Ainsi prononcé" / "Aldus uitgesproken" / "Dit arrest is uitgesproken" / ...
+        if !signature_mode && stripped.match?(JURISPRUDENCE_SIGNATURE_OPENER)
           flush_para.call
           signature_mode = true
         end
@@ -929,27 +1003,140 @@ module ParliamentaryHelper
     html_parts.join("\n").html_safe
   end
 
+  # The case page's blocks as plain text, for the Word, Typst and ODT downloads
+  # (owner's repair request of 2026-10-21). The exports used to split the
+  # stored text on blank lines themselves, so they kept every fragment the page
+  # no longer shows; now they take the page's own paragraphs, headings, list
+  # items and signature lines. Each block is [kind, text] with kind :heading
+  # (the page's h3), :subheading (its h4), :item or :paragraph; a line break
+  # the page keeps (masthead, signature) is "\n" in the text. Text only: the
+  # page's inline emphasis is not carried, as the exports never carried it.
+  def jurisprudence_export_blocks(text, case_number: nil)
+    html = clean_jurisprudence_full_text(text, case_number: case_number).to_s
+    Nokogiri::HTML5.fragment(html).css('h3, h4, p, li, blockquote').filter_map do |node|
+      kind = { 'h3' => :heading, 'h4' => :subheading, 'li' => :item }.fetch(node.name, :paragraph)
+      lines = node.children.map { |child| child.name == 'br' ? "\n" : child.text }.join.split("\n").map(&:squish).reject(&:empty?)
+      [kind, lines.join("\n")] unless lines.empty?
+    end
+  end
+
+  # C0 control characters (tab and newline kept) and DEL.
+  CONTROL_CHARACTERS = /[\x00-\x08\x0b-\x1f\x7f]/
+  # The party legend of page 2 as the extraction's column clip leaves it:
+  # "N-VA" / ":" / name, "ONAFH/INDÉP :" / name, or "N-VA: name" on one line.
+  # An entry is confirmed only when its abbreviation is a party of
+  # PARTY_LEGEND_NAMES and its text is that party's own name, whole or cut by
+  # the clip ("Partij van de Arbeid van België – Parti du Travail de Belgi").
+  # In a run of consecutive entries with PARTY_LEGEND_MIN_ENTRIES confirmed
+  # entries or more, the confirmed entries go and every other line stays where
+  # it is: "Label: text" legal wording, a party with other text than its name
+  # ("N-VA: 5 leden"), a glossary or a party named in a sentence is never
+  # removed. parl_ocr_pipeline.py's strip_party_legend applies the same rule
+  # when a document is extracted.
+  PARTY_ABBREVIATION = '[A-Za-zÀ-ÿ&./\\-]+(?: [A-Za-zÀ-ÿ&./\\-]+)?'
+  PARTY_LEGEND_ABBREVIATION = /\A#{PARTY_ABBREVIATION}\z/
+  PARTY_LEGEND_ABBREVIATION_COLON = /\A#{PARTY_ABBREVIATION}\s*:\z/
+  PARTY_LEGEND_ONE_LINE = /\A#{PARTY_ABBREVIATION}\s*:\s*[^:]{2,80}\z/
+  PARTY_LEGEND_MIN_ENTRIES = 4
+  # A name the clip cut keeps at least this many characters of the party's name.
+  PARTY_LEGEND_CLIPPED_NAME_MIN = 12
+
+  # Case, accents, apostrophes, dashes and spacing folded and a closing period
+  # dropped, so that the writings of one party name in the legends and in the
+  # text layer compare equal.
+  def self.party_key(text)
+    text = text.unicode_normalize(:nfkd).gsub(/\p{Mn}/, '').tr('’‘', "''")
+    text = text.gsub(/[[:space:]]*[‐-―−-][[:space:]]*/, '-')
+    text = text.split(/[[:space:]]+/).reject(&:empty?).join(' ').downcase
+    text.end_with?('.') ? text[0...-1].rstrip : text
+  end
+
+  # The parties of the Chamber's legends since legislature 50, with the name
+  # the legend gives each one.
+  PARTY_LEGEND_NAMES = [
+    ['N-VA', ['Nieuw-Vlaamse Alliantie']],
+    ['VB', ['Vlaams Belang', 'Vlaams Blok']],
+    ['Vlaams Belang', ['Vlaams Belang']],
+    ['MR', ['Mouvement Réformateur']],
+    ['PS', ['Parti Socialiste']],
+    ['PVDA-PTB', ['Partij van de Arbeid van België – Parti du Travail de Belgique']],
+    ['PTB-PVDA', ['Parti du Travail de Belgique – Partij van de Arbeid van België']],
+    ['PVDA', ['Partij van de Arbeid van België']],
+    ['PTB', ['Parti du Travail de Belgique']],
+    ['Les Engagés', ['Les Engagés']],
+    ['Vooruit', ['Vooruit']],
+    ['cd&v', ['Christen-Democratisch en Vlaams']],
+    ['Ecolo-Groen', ['Ecologistes Confédérés pour l’organisation de luttes originales – Groen']],
+    ['Ecolo', ['Ecologistes Confédérés pour l’organisation de luttes originales']],
+    ['Groen', ['Groen']],
+    ['Open Vld', ['Open Vlaamse liberalen en democraten']],
+    ['VLD', ['Vlaamse Liberalen en Democraten']],
+    ['Anders.', ['Anders.']],
+    ['DéFI', ['Démocrate Fédéraliste Indépendant']],
+    ['FDF', ['Fédéralistes Démocrates Francophones']],
+    ['ONAFH/INDÉP', ['Onafhankelijk-Indépendant']],
+    ['INDEP-ONAFH', ['Indépendant-Onafhankelijk']],
+    ['ONAFH', ['Onafhankelijk']],
+    ['INDÉP', ['Indépendant']],
+    ['cdH', ['centre démocrate Humaniste']],
+    ['sp.a', ['socialistische partij anders']],
+    ['spa', ['socialistische partij anders']],
+    ['LDD', ['Lijst Dedecker']],
+    ['PP', ['Parti Populaire']],
+    ['FN', ['Front National']]
+  ].to_h { |abbreviation, names| [party_key(abbreviation), names.map { |name| party_key(name) }.freeze] }.freeze
+
+  # The type a parliamentary document reads as (owner's repair request of
+  # 2026-10-21). Every Chamber document 001 of legislature 56 was stored
+  # "wetsontwerp" by default, so a private member's bill read "Wetsontwerp
+  # Wetsvoorstel tot ..." with a "Wetsontwerp" badge. Document 001 is the
+  # dossier's own document and its title (from the fiche) names the type; any
+  # other document carries the dossier's title too and keeps its own type.
+  TITLE_DOCUMENT_TYPES = [
+    ['wetsvoorstel', /\A(?:wetsvoorstel|proposition\s+de\s+loi)\b/i],
+    ['wetsontwerp', /\A(?:wetsontwerp|projet\s+de\s+loi)\b/i]
+  ].freeze
+
+  def parliamentary_document_type(document)
+    type = document[:document_type].to_s
+    return type unless document[:document_number].to_s == '001' && %w[wetsontwerp wetsvoorstel].include?(type)
+
+    title = clean_parliamentary_title_display(document[:title], document[:dossier_number])
+    TITLE_DOCUMENT_TYPES.find { |_, pattern| title.match?(pattern) }&.first || type
+  end
+
   # Clean parliamentary document content for the show page.
   def clean_parliamentary_content(content, target_language: nil)
     return '' if content.blank?
 
     lang = target_language || (I18n.locale == :nl ? 'nl' : 'fr')
 
-    # Step 0: Strip wetgevingstechnische nota appendix.
-    # These bilingual annexes always contain garbled interleaved NL/FR text from
-    # both PDF columns. Detect the start marker and truncate.
-    truncated = strip_wetgevingstechnische_nota(content)
+    # Step -1 (owner's repair request of 2026-10-21): the control characters
+    # and the page-2 party legend the extraction's column clip left in stored
+    # rows ("N-VA\b" / ":" / "Nieuw-Vlaamse Alliantie", DOC 56 1817/001).
+    content = strip_party_legend(content.gsub(CONTROL_CHARACTERS, '').split("\n")).join("\n")
+    # A commentary heading the column wrapped ("TOELICHTING" / "BIJ DE
+    # ARTIKELEN") is one line again, so the duplicate-line rule below cannot
+    # take its first word for a repeated running header.
+    content = content.gsub(/^[ \t]*(TOELICHTING|COMMENTAAR|COMMENTAIRE)[ \t]*\n[ \t]*(BIJ DE ARTIKELEN|DES ARTICLES)[ \t]*$/i, '\1 \2')
+
+    # Nothing is cut at a late heading (owner's repair request of 2026-10-21).
+    # The display used to end the text at the first legal-technical-note marker
+    # past 40% of it: "BIJ DE ARTIKELEN" opening a line dropped the commentary
+    # and the operative text of DOC 56 1817/001, and a standalone "OPMERKINGEN"
+    # or "OBSERVATIONS", which also heads ordinary observations, dropped every
+    # article after it (Sol 18:06:09). A heading and its position are no proof
+    # of an appendix that may go, and the legal service's note is source text.
 
     # Step 0.5: Collapse spaced-out OCR text (e.g. "K A M E R" → "KAMER")
-    truncated = collapse_spaced_text(truncated)
+    collapsed = collapse_spaced_text(content)
 
     # Step 1: Filter out wrong-language paragraphs
-    filtered = filter_bilingual_content(truncated, lang)
+    filtered = filter_bilingual_content(collapsed, lang)
 
     # Step 2: Line-level cleanup
     lines = filtered.lines.map(&:rstrip)
     cleaned_lines = []
-    previous_lines = Set.new
 
     # Line-level language indicators for catching interleaved bilingual lines
     target_indicators = lang == 'fr' ? FRENCH_INDICATORS : DUTCH_INDICATORS
@@ -964,11 +1151,8 @@ module ParliamentaryHelper
         next
       end
 
-      # Skip duplicate lines
-      normalized = stripped.downcase.gsub(/\s+/, ' ')
-      next if previous_lines.include?(normalized)
-
-      previous_lines.add(normalized)
+      # Repeated legal wording stays in source order; the existing header,
+      # metadata and line-language filters remain unchanged below.
 
       # Skip noise
       next if skip_header_line?(stripped)
@@ -1066,8 +1250,12 @@ module ParliamentaryHelper
     result.gsub!(/([a-zéèêëàâäùûüôöîïç\d])\s+((?:I{1,3}|IV|VI{0,3}|IX|X{1,3}|Il{1,2}|lI{0,2}|lV)(?:[.,)]\s*[-–]?\s+|\s*[-–]\s+)[A-ZÉÈÊÀÂÙÛÔÎÇ])/) do
       "#{::Regexp.last_match(1)}\n\n#{::Regexp.last_match(2)}"
     end
-    # Case 4: Numbered section headers: "1 – PROCEDURE" or "1. PROCEDURE"
-    result.gsub!(/([.;:!?,a-zéèêëàâä])\s+(\d{1,2}\s*[-–.]\s+[A-ZÉÈÊÀÂ]{2,})/) do
+    # Case 4: Numbered section headers: "1 – PROCEDURE", "1. PROCEDURE",
+    # "123. PROCEDURE", "12.3. PROCEDURE". The number and its title share a
+    # line: across a line break, "Punt 8." ending a sentence and the heading
+    # under it read as "8. WETSVOORSTEL", and the sentence lost its number to a
+    # paragraph of its own (owner's repair request of 2026-10-21).
+    result.gsub!(/([.;:!?,a-zéèêëàâä])\s+(\d{1,3}(?:\.\d{1,3})*[ \t]*[-–.][ \t]+[A-ZÉÈÊÀÂ]{2,})/) do
       "#{::Regexp.last_match(1)}\n\n#{::Regexp.last_match(2)}"
     end
     # Case 3: Letter-labeled inline sections after punctuation: "...opgenomen. A. Vragen"
@@ -1100,18 +1288,36 @@ module ParliamentaryHelper
     end
     # Split at all-caps inline headings: "...judiciaire. DÉVELOPPEMENTS MESDAMES..."
     # Skip HOOFDSTUK/CHAPITRE - these are handled by the final-step regex below.
+    source = result.dup
     result.gsub!(/([.;:!?])\s+([A-ZÉÈÊÀÂÙÛÔÎÇ]{4,}(?:\s+[A-ZÉÈÊÀÂÙÛÔÎÇ]{2,})*)\s/) do
+      # The punctuation is read first: the gsub calls below replace the match
+      # data, and reading it after them dropped the period or colon before
+      # every heading (owner's repair request of 2026-10-21).
+      punctuation = ::Regexp.last_match(1)
       word_block = ::Regexp.last_match(2)
       full_match = ::Regexp.last_match(0) # Preserve original text (including any \n\n paragraph breaks)
+      start = ::Regexp.last_match.begin(0)
       next full_match if word_block.match?(/\A(?:HOOFDSTUK|CHAPITRE)/)
+
+      # The period of a section number that opens its line ("1. PROCEDURE",
+      # "123. PROCEDURE", "12.3. PROCEDURE") is no sentence end: the number
+      # stays with its title, and only the text after the title goes to a
+      # paragraph of its own.
+      lead = source[[start - 16, 0].max...start]
+      line = if lead.include?("\n")
+               lead[(lead.rindex("\n") + 1)..]
+             elsif start <= 16
+               lead
+             end
+      numbered = punctuation == '.' && line&.match?(/\A[ \t]*\d{1,3}(?:\.\d{1,3})*\z/)
 
       # Only split if the block is a short heading (< 60 chars, > 75% uppercase)
       alpha = word_block.gsub(/[^a-zA-ZÀ-ÖØ-öø-ÿ]/, '')
       upper_r = alpha.empty? ? 0 : alpha.gsub(/[^A-ZÀ-ÖØ-Ý]/, '').length.to_f / alpha.length
       if upper_r > 0.75 && word_block.length < 60
-        "#{::Regexp.last_match(1)}\n\n#{word_block}\n\n"
+        numbered ? "#{punctuation} #{word_block}\n\n" : "#{punctuation}\n\n#{word_block}\n\n"
       else
-        "#{::Regexp.last_match(1)} #{word_block} "
+        "#{punctuation} #{word_block} "
       end
     end
 
@@ -1246,16 +1452,9 @@ module ParliamentaryHelper
 
       lines = stripped.lines.map(&:strip).reject(&:empty?)
 
-      # Skip ToC-style lines (e.g. "2.Développements.....................4")
-      lines.reject! { |l| l.match?(/\.{5,}/) }
-      # Skip abbreviation definition blocks (e.g. "QRVA :", "CRIV :", "CRABV :")
-      next if lines.length > 2 && lines.count { |l| l.match?(/\A[A-Z]{2,8}\s*:/) } > lines.length / 2
-      # Skip address/contact blocks (phone, fax, email, www)
-      if lines.any? { |l| l.match?(/\A(?:Tél|Fax|Tel)\s*[.:]/i) } &&
-         lines.any? { |l| l.match?(/\A(?:www\.|e-mail|Commandes)/i) }
-        next
-      end
-
+      # Do not discard a line solely because it contains dots.
+      # Abbreviation definitions and contact details can be legal source text.
+      # Keep these blocks; text patterns alone do not establish boilerplate.
       next if lines.empty?
 
       # Check if this paragraph is a heading
@@ -1419,9 +1618,13 @@ module ParliamentaryHelper
         next
       end
 
-      # Check if this paragraph is a dash/bullet list block
+      # A preamble followed only by bullet items can use the list branch.
+      # If prose follows a bullet, keep the whole block in the paragraph path
+      # below rather than dropping its non-bullet lines.
       bullet_lines = lines.grep(/\A[-–•►]\s/)
-      if bullet_lines.length.positive? && bullet_lines.length >= lines.length / 2
+      first_bullet_index = lines.index { |line| line.match?(/\A[-–•►]\s/) }
+      bullet_only_tail = first_bullet_index && lines[first_bullet_index..].all? { |line| line.match?(/\A[-–•►]\s/) }
+      if bullet_lines.length.positive? && bullet_lines.length >= lines.length / 2 && bullet_only_tail
         # Mixed: some lines are bullets, some are preamble
         preamble = []
         lines.each do |line|
@@ -1508,51 +1711,145 @@ module ParliamentaryHelper
     html_parts.join("\n").html_safe
   end
 
-  # Strip the wetgevingstechnische nota (legal-technical note) appendix.
-  # These are bilingual annexes at the end of committee reports where both
-  # NL and FR text is interleaved at the LINE level (not paragraph level),
-  # making them impossible to clean with paragraph-level filtering.
-  # The content is also low-value for end users (internal legislative drafting notes).
-  #
-  # @param text [String] Raw document content
-  # @return [String] Content with the appendix stripped
-  def strip_wetgevingstechnische_nota(text)
-    return text if text.blank?
+  private
 
-    # Common markers for the start of the legal-technical note appendix.
-    # These appear in both NL and FR documents.
-    nota_markers = [
-      # NL markers
-      /^\s*(?:dienst|afdeling)\s+Juridische\s+Zaken/im,
-      /^\s*OPMERKINGEN\s*$/im,
-      /^\s*BIJLAGE\s+BIJ\s+DE\s+ARTIKELEN/im,
-      /^\s*(?:OPMERKING(?:EN)?\s+)?BIJ\s+DE\s+ARTIKELEN/im,
-      /^\s*wetgevingstechnische\s+nota/im,
-      # FR markers
-      /^\s*(?:service|division)\s+Affaires\s+juridiques/im,
-      /^\s*OBSERVATIONS?\s*$/im,
-      /^\s*ANNEXE\s+AUX\s+ARTICLES/im,
-      /^\s*note\s+législistique/im,
-      /^\s*NOTE\s+TECHNIQUE\s+LEGISLATIVE/im,
-      # Bilingual combined markers (garbled from column merging)
-      /Juridische\s+Zaken.*Affaires\s+juridiques/i,
-      /Affaires\s+juridiques.*Juridische\s+Zaken/i,
-      /division\s+Af(?:f|fi)(?:ir|aires)\s+juridiques/i
-    ]
+  # A judgment's blocks as the source has them (owner's repair request of
+  # 2026-10-21). A block that continues the sentence of the block before joins
+  # it, a paragraph number standing alone joins its text, and a heading's short
+  # wrapped tail joins the heading. Lines stay lines: the HTML pass decides how
+  # they render, so a heading or a masthead line inside a joined block keeps its
+  # own element.
+  def reflow_jurisprudence_blocks(text)
+    blocks = []
+    text.split(/\n{2,}/).each do |block|
+      lines = attach_paragraph_numbers(block.split("\n").reject { |line| line.strip.empty? })
+      next if lines.empty?
 
-    nota_markers.each do |marker|
-      next unless (match = text.match(marker))
-
-      # Only truncate if the match is in the latter half of the document
-      # (the nota is always at the end, never at the beginning)
-      pos = match.begin(0)
-      return text[0...pos].rstrip if pos > text.length * 0.4
+      previous = blocks.last
+      if previous&.size == 1 && previous.first.strip.match?(JURISPRUDENCE_PARAGRAPH_NUMBER) && !jurisprudence_heading_line?(lines.first.strip)
+        blocks.pop
+        lines[0] = "#{previous.first.strip} #{lines.first.strip}"
+        previous = blocks.last
+      end
+      if previous && jurisprudence_continues?(previous.last, lines.first)
+        previous.concat(lines)
+      else
+        blocks << lines
+      end
     end
-
-    text
+    blocks.map { |lines| join_wrapped_heading(lines).join("\n") }.join("\n\n")
   end
 
-  private
+  # "1." on a line of its own, then its text on the next line of the block.
+  def attach_paragraph_numbers(lines)
+    lines.each_with_object([]) do |line, out|
+      if out.last&.strip&.match?(JURISPRUDENCE_PARAGRAPH_NUMBER) && !jurisprudence_heading_line?(line.strip)
+        out[-1] = "#{out.last.strip} #{line.strip}"
+      else
+        out << line
+      end
+    end
+  end
+
+  # A long heading the PDF wrapped, its short tail alone on the next line:
+  # "VI. Toepassing ... op de Raad van" / "State". Only a heading that is
+  # visibly unfinished (it ends in a word no title ends with, a comma or a
+  # hyphen) or a tail that starts in lowercase continues it; a long heading
+  # followed by a short sentence of the body ("IV. Onderzoek van de
+  # ontvankelijkheid van het verzoek" / "Het verzoek is ontvankelijk.", Sol
+  # 11:41:11) stays two things.
+  def join_wrapped_heading(lines)
+    return lines unless lines.size == 2
+
+    head, tail = lines.map(&:strip)
+    return lines unless jurisprudence_heading_line?(head) && head.length >= 50 && tail.length <= 60 &&
+                        !head.match?(JURISPRUDENCE_SENTENCE_END) && !tail.match?(JURISPRUDENCE_BLOCK_START)
+
+    last = head[/\S+\z/]
+    unfinished = JURISPRUDENCE_CONTINUATION_WORDS.include?(last.downcase) || last.end_with?(',', '-')
+    return lines unless unfinished || tail.match?(/\A[[:lower:]]/)
+
+    ["#{head} #{tail}"]
+  end
+
+  def jurisprudence_heading_line?(line)
+    return false if line.match?(JURISPRUDENCE_INITIALS_ONLY)
+
+    line.match?(/\A[IVXLC]+\.(?:\d+\.)?\s+\S/) || (line.match?(/\A[A-Z]\.\s+[[:upper:]]/) && line.length < 60) ||
+      (line.match?(/\A[A-ZÉÈÊÀÂÙÛÔÎÇÖ\s\-'.]{8,}\z/) && line.length < 80)
+  end
+
+  # Whether the text of `following` continues the sentence `previous` ends:
+  # never across a paragraph number, a list item or a heading; always after a
+  # word no sentence ends with; otherwise only into a lowercase start when no
+  # sentence ended (an initial or "art." ends none).
+  def jurisprudence_continues?(previous, following)
+    previous = previous.strip
+    following = following.strip
+    return false if previous.empty? || following.empty? || following.match?(JURISPRUDENCE_BLOCK_START)
+
+    last = previous[/\S+\z/]
+    return true if JURISPRUDENCE_CONTINUATION_WORDS.include?(last.downcase)
+    return false unless following.match?(/\A[“"‘'(«]?[[:lower:]]/)
+
+    last.match?(/\A[[:upper:]]\.\z/) || last.match?(/\A(?:art|artt|nr|nrs|blz|cf|vgl|p|pp)\.\z/i) ||
+      !previous.match?(JURISPRUDENCE_SENTENCE_END)
+  end
+
+  # The confirmed entries of every run of legend entries with
+  # PARTY_LEGEND_MIN_ENTRIES of them or more go; every other line, an
+  # unconfirmed entry inside the run too, stays in place.
+  def strip_party_legend(lines)
+    kept = []
+    i = 0
+    while i < lines.length
+      entries = []
+      j = i
+      while j < lines.length && (size = party_legend_entry(lines, j)).positive?
+        entries << [j, size, party_legend_confirmed?(*party_legend_parts(lines, j, size))]
+        j += size
+      end
+      if entries.count { |_, _, confirmed| confirmed } >= PARTY_LEGEND_MIN_ENTRIES
+        entries.each { |start, length, confirmed| kept.concat(lines[start, length]) unless confirmed }
+        i = j
+        next
+      end
+      kept << lines[i]
+      i += 1
+    end
+    kept
+  end
+
+  # The abbreviation and the name of the legend entry of `size` lines starting
+  # at lines[index].
+  def party_legend_parts(lines, index, size)
+    first = lines[index].strip
+    return first.split(':', 2).map(&:strip) if size == 1
+
+    [first.delete_suffix(':').strip, lines[index + size - 1].strip]
+  end
+
+  # Whether the entry names a party of PARTY_LEGEND_NAMES with that party's own
+  # name, whole or cut by the clip.
+  def party_legend_confirmed?(abbreviation, name)
+    name = ParliamentaryHelper.party_key(name)
+    PARTY_LEGEND_NAMES.fetch(ParliamentaryHelper.party_key(abbreviation), []).any? do |full|
+      name == full || (name.length >= PARTY_LEGEND_CLIPPED_NAME_MIN && full.start_with?(name))
+    end
+  end
+
+  # How many lines the legend entry starting at lines[index] takes (0: none).
+  def party_legend_entry(lines, index)
+    first = lines[index].strip
+    return 0 if first.length > 80
+
+    name_at = ->(k) { k < lines.length && lines[k].strip.length.between?(2, 80) && !lines[k].include?(':') }
+    return 3 if first.length <= 20 && first.match?(PARTY_LEGEND_ABBREVIATION) && lines[index + 1]&.strip == ':' && name_at.call(index + 2)
+    return 2 if first.length <= 22 && first.match?(PARTY_LEGEND_ABBREVIATION_COLON) && name_at.call(index + 1)
+    return 1 if first.match?(PARTY_LEGEND_ONE_LINE) && first.split(':', 2).first.strip.length <= 20
+
+    0
+  end
 
   # Check if a line is a bilingual header (contains both NL and FR text)
   def bilingual_header?(line)

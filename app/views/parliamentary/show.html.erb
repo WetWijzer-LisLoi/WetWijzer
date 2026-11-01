@@ -1,6 +1,8 @@
 <% cleaned_title = clean_parliamentary_title_display(@document[:title], @document[:dossier_number]) %>
 <% parl_label = t("public_navigation.parliaments.#{@document[:parliament]}", default: @document[:parliament]&.capitalize) %>
-<% type_prefix = @document[:document_type].present? ? @document[:document_type].gsub('_', ' ').capitalize : nil %>
+<%# The type the document reads as: document 001's own title corrects a stored default (parliamentary_document_type). %>
+<% display_type = parliamentary_document_type(@document).presence %>
+<% type_prefix = display_type ? display_type.gsub('_', ' ').capitalize : nil %>
 <% full_title = type_prefix && !cleaned_title.downcase.start_with?(type_prefix.downcase) ? "#{type_prefix} #{cleaned_title}" : cleaned_title %>
 <% @title = "#{parl_label} - #{full_title}" %>
 <% dekamer_lang = I18n.locale == :nl ? 'nl' : 'fr' %>
@@ -21,7 +23,7 @@
       data-context-type="parliamentary"
       data-doc-title="<%= strip_tags(full_title.to_s).truncate(200) %>"
       data-doc-parliament="<%= parl_label %>"
-      data-doc-type="<%= @document[:document_type]&.gsub('_', ' ')&.capitalize %>"
+      data-doc-type="<%= display_type&.gsub('_', ' ')&.capitalize %>"
       data-doc-number="<%= @document[:dossier_number] %>">
 
 <style nonce="<%= content_security_policy_nonce %>">
@@ -128,9 +130,9 @@
         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300">
           📁 <%= @document[:dossier_number] %>
         </span>
-        <% if @document[:document_type].present? %>
+        <% if display_type %>
           <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300">
-            <%= @document[:document_type].gsub('_', ' ').capitalize %>
+            <%= display_type.gsub('_', ' ').capitalize %>
           </span>
         <% end %>
         <% if @document[:document_date].present? %>
@@ -593,8 +595,9 @@
         <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-4">
           <% case I18n.locale when :fr %>Texte intégral<% when :de %>Volltext<% when :en %>Full text<% else %>Volledige tekst<% end %>
         </h2>
+        <%= render 'shared/reading_styles' %>
         <div id="parl-content" class="max-w-none">
-          <div class="text-base text-gray-700 dark:text-gray-300 leading-relaxed" style="text-align: justify;">
+          <div class="reading-body text-base text-gray-700 dark:text-gray-300 leading-relaxed" <%= tag.attributes(lang: @document[:language].presence) %>>
 <%= format_parliamentary_html(clean_parliamentary_content(@document[:content].to_s, target_language: @document[:language])) %>
           </div>
         </div>
@@ -661,7 +664,7 @@
   "@type": "CreativeWork",
   "additionalType": "https://schema.org/Legislation",
   "name": full_title,
-  "description": "#{parl_label} - #{@document[:document_type]&.gsub('_', ' ')&.capitalize} #{@document[:document_date]}",
+  "description": "#{parl_label} - #{display_type&.gsub('_', ' ')&.capitalize} #{@document[:document_date]}",
   "datePublished": @document[:document_date].to_s,
   "inLanguage": @document[:language].present? ? @document[:language].downcase : 'nl',
   "author": {

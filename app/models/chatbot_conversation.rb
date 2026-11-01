@@ -478,7 +478,7 @@ class ChatbotConversation < ChatbotRecord
   # question_context_content: the French question a German question was
   # translated into (German answers v3), kept on the user entry the same way.
   def add_exchange_under_claim!(question:, answer:, numacs:, claim:, context_content: nil,
-                                question_context_content: nil)
+                                question_context_content: nil, meta: nil)
     raise ActiveRecord::StaleObjectError.new(self, 'save claimed exchange') if zero_knowledge?
 
     rollback_receipt = nil
@@ -510,6 +510,11 @@ class ChatbotConversation < ChatbotRecord
          question_context_content != question
         question_entry[CONTEXT_CONTENT_KEY.to_sym] = question_context_content
       end
+      # The answer's metadata record goes on the answer, or on the question
+      # when no answer is stored. Like the context it stays out of the
+      # rollback receipt, and the model never sees it.
+      answer_meta = LegalChatbot::AnswerMeta.normalize(meta, source: 'live') if meta
+      (answer_entry || question_entry)[:meta] = answer_meta if answer_meta
 
       msgs = messages_array
       msgs << question_entry

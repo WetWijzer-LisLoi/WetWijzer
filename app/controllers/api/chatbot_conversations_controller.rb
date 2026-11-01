@@ -586,11 +586,23 @@ module Api
       messages = item[:messages].last(ChatbotConversation::MAX_MESSAGES)
       return nil unless messages.length >= 2 && messages.all?(ActionController::Parameters)
 
-      plain = messages.map { |message| message.permit(*IMPORT_MESSAGE_KEYS).to_h }
+      plain = messages.map { |message| importable_entry(message) }
       return nil unless plain.all? { |message| importable_message?(message) }
       return nil if plain.to_json.bytesize > IMPORT_CONVERSATION_MAX_BYTES
 
       plain
+    end
+
+    # The allowlisted keys, plus the answer metadata when the WHOLE record
+    # validates. An invalid record is dropped and the message kept; nothing in
+    # it is repaired. The source is always the server's "imported": an import
+    # is a claimed snapshot, never verified provenance.
+    def importable_entry(message)
+      entry = message.permit(*IMPORT_MESSAGE_KEYS).to_h
+      return entry unless message.key?(:meta)
+
+      meta = LegalChatbot::AnswerMeta.normalize(message[:meta], source: 'imported')
+      meta ? entry.merge('meta' => meta) : entry
     end
 
     def importable_message?(message)

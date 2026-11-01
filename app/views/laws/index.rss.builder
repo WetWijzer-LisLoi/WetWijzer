@@ -24,8 +24,8 @@ xml.rss version: '2.0', 'xmlns:atom' => 'http://www.w3.org/2005/Atom' do
     @laws.each do |law|
       xml.item do
         xml.title law.title.presence || "NUMAC #{law.numac}"
-        xml.link law_url(law)
-        xml.guid law_url(law), isPermaLink: 'true'
+        xml.link law_url(law, language_id: law.language_id)
+        xml.guid law_url(law, language_id: law.language_id), isPermaLink: 'true'
 
         pub_date = begin
           Date.parse(law.date)
@@ -35,16 +35,25 @@ xml.rss version: '2.0', 'xmlns:atom' => 'http://www.w3.org/2005/Atom' do
         xml.pubDate pub_date.to_time.rfc2822 if pub_date
 
         type_label = law.respond_to?(:type) && law.type ? law.type.law_type : nil
-        category = I18n.locale == :fr ? 'Législation' : 'Wetgeving'
+        category = case I18n.locale
+                   when :en, :de then I18n.t('credits.source_legislation')
+                   when :fr then 'Législation'
+                   else 'Wetgeving'
+                   end
         xml.category category
         xml.category type_label.capitalize if type_label.present?
 
         description = []
         description << "<strong>#{category}</strong>"
-        description << " – #{type_label&.capitalize}" if type_label.present?
-        description << "<br>NUMAC: #{law.numac}"
+        description << " – #{ERB::Util.html_escape(String.new(type_label&.capitalize.to_s))}" if type_label.present?
+        description << "<br>NUMAC: #{ERB::Util.html_escape(String.new(law.numac.to_s))}"
         if pub_date
-          label = I18n.locale == :fr ? 'Date de promulgation' : 'Afkondigingsdatum'
+          label = case I18n.locale
+                  when :fr then 'Date de promulgation'
+                  when :en then 'Date of promulgation'
+                  when :de then 'Ausfertigungsdatum'
+                  else 'Afkondigingsdatum'
+                  end
           description << "<br>#{label}: #{pub_date.strftime('%d-%m-%Y')}"
         end
 
@@ -71,17 +80,25 @@ xml.rss version: '2.0', 'xmlns:atom' => 'http://www.w3.org/2005/Atom' do
           xml.pubDate pub_date.to_time.rfc2822 if pub_date
         end
 
-        category = I18n.locale == :fr ? 'Jurisprudence' : 'Rechtspraak'
+        category = case I18n.locale
+                   when :en, :de then I18n.t('credits.source_jurisprudence')
+                   when :fr then 'Jurisprudence'
+                   else 'Rechtspraak'
+                   end
         xml.category category
 
         description = []
         description << "<strong>#{category}</strong>"
-        description << "<br>#{kase[:court]} – #{kase[:case_number]}"
+        description << "<br>#{ERB::Util.html_escape(String.new(kase[:court].to_s))} – #{ERB::Util.html_escape(String.new(kase[:case_number].to_s))}"
         if kase[:decision_date].present?
-          label = I18n.locale == :fr ? 'Date de décision' : 'Beslissingsdatum'
-          description << "<br>#{label}: #{kase[:decision_date]}"
+          label = case I18n.locale
+                  when :fr then 'Date de décision'
+                  when :en then 'Date of decision'
+                  when :de then 'Entscheidungsdatum'
+                  else 'Beslissingsdatum'
+                  end
+          description << "<br>#{label}: #{ERB::Util.html_escape(String.new(kase[:decision_date].to_s))}"
         end
-        description << "<br><br>#{ERB::Util.html_escape(kase[:summary])}" if kase[:summary].present?
 
         xml.description description.join
       end
@@ -115,17 +132,21 @@ xml.rss version: '2.0', 'xmlns:atom' => 'http://www.w3.org/2005/Atom' do
           xml.pubDate pub_date.to_time.rfc2822 if pub_date
         end
 
-        category = I18n.locale == :fr ? 'Travaux parlementaires' : 'Parlementaire stukken'
+        category = case I18n.locale
+                   when :en, :de then I18n.t('credits.source_parliamentary')
+                   when :fr then 'Travaux parlementaires'
+                   else 'Parlementaire stukken'
+                   end
         xml.category category
 
         description = []
         description << "<strong>#{category}</strong>"
-        description << " – #{parliament_label}"
-        description << "<br>#{doc[:dossier_number]}" if doc[:dossier_number].present?
-        description << " (#{doc[:document_type]})" if doc[:document_type].present?
+        description << " – #{ERB::Util.html_escape(String.new(parliament_label.to_s))}"
+        description << "<br>#{ERB::Util.html_escape(String.new(doc[:dossier_number].to_s))}" if doc[:dossier_number].present?
+        description << " (#{ERB::Util.html_escape(String.new(doc[:document_type].to_s))})" if doc[:document_type].present?
         if doc[:document_date].present?
-          label = I18n.locale == :fr ? 'Date' : 'Datum'
-          description << "<br>#{label}: #{doc[:document_date]}"
+          label = %i[fr en].include?(I18n.locale) ? 'Date' : 'Datum'
+          description << "<br>#{label}: #{ERB::Util.html_escape(String.new(doc[:document_date].to_s))}"
         end
 
         xml.description description.join

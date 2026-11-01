@@ -134,7 +134,9 @@ module Api
           context_content: result[LegalChatbot::GermanAnswerTranslation::CONTEXT_KEY],
           # And a German question the French question it was translated into
           # (GermanQuestionTranslation; nil everywhere else).
-          question_context_content: result[LegalChatbot::GermanQuestionTranslation::CONTEXT_KEY]
+          question_context_content: result[LegalChatbot::GermanQuestionTranslation::CONTEXT_KEY],
+          # The server-built answer metadata (attach_execution_metadata).
+          meta: result[:answer_meta]
         )
       end
     rescue ConversationStorageBoundary::Fenced => e

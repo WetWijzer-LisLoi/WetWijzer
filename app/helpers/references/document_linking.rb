@@ -84,7 +84,7 @@ module References
       return span_html unless lookup
 
       fragment = extract_article_fragment(inner_text)
-      url = build_law_url(lookup, fragment)
+      url = build_law_url(lookup, fragment, inherit_site_language: repeal_document_reference?(inner_text, match.pre_match))
       anchor_classes = metadata_tag_anchor_classes(span_type)
 
       link_to(span_html.html_safe, url, class: anchor_classes, title: lookup[:title] || t('articles.view_legislation'),
@@ -110,7 +110,7 @@ module References
       return span_html unless lookup
 
       fragment = extract_article_fragment(clean_text)
-      url = build_law_url(lookup, fragment)
+      url = build_law_url(lookup, fragment, inherit_site_language: repeal_document_reference?(clean_text, match.pre_match))
       # Use same anchor classes as metadata-tag for consistency
       anchor_classes = metadata_tag_anchor_classes('metadata-tag')
 
@@ -293,13 +293,26 @@ module References
     # WW-SEC-15 refinement: the one builder for a law link made from imported
     # lookup data, each part encoded at its own boundary: the NUMAC as a path
     # segment and the language as a query value (through the route helper),
-    # the article fragment only as #[A-Za-z0-9-]. nil without a NUMAC.
-    def build_law_url(lookup, fragment)
+    # the article fragment only as #[A-Za-z0-9-]. Repeal links omit the lookup's
+    # source language so the destination host resolves its own language.
+    # Ordinary references retain their existing language. nil without a NUMAC.
+    def build_law_url(lookup, fragment, inherit_site_language: false)
       numac = lookup[:numac].to_s
       return nil if numac.empty?
 
-      url = Rails.application.routes.url_helpers.show_law_path(numac, language_id: lookup[:language_id].presence)
+      language_id = inherit_site_language ? nil : lookup[:language_id].presence
+      url = Rails.application.routes.url_helpers.show_law_path(numac, language_id: language_id)
       fragment.to_s.match?(/\A#[A-Za-z0-9-]+\z/) ? url + fragment : url
+    end
+
+    # A parenthesized repeal prefix sits outside the DVR span until the later
+    # merge pass, so decide its language while building the original safe URL.
+    def repeal_document_reference?(text, prefix)
+      # Domain highlighting can place opening presentation spans between that
+      # prefix and the metadata span. Inspect their text context, not the href.
+      prefix = prefix.gsub(/<span class="domain-tag domain-[a-z]+">/i, '')
+      text.match?(/\b(?:opgeheven|abrogé)\b/i) ||
+        prefix.match?(/\((?:opgeheven|abrogé)\)(?:[[:space:]\u00A0\u202F]|&nbsp;)*\z/i)
     end
 
     # Returns true if the index is currently within an HTML tag like <span ...> or </span>

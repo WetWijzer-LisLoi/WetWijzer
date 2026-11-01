@@ -47,7 +47,13 @@ module LegalChatbot
     # STATUTORY_CONTEXT_MAX_CHARS) instead of the depth's per-article cut;
     # Brussels Art. 249 joins the deposit topic and the employment-contract
     # definition pins Arts. 2 and 3. Kept apart from the paid r46 evidence.
-    RETRIEVAL_VERSION = 'retrieval_2026_10_19_r47'
+    # r48 (2026-10-20): a general or neighbour-noise question gets its labelled
+    # governing group (GeneralNoiseScope: Book 3 Art. 3.101/3.102, GAS Art. 2,
+    # Art. 591 2° ter and each region's operative rows), specialist noise
+    # sources only when their subject is asked, noise counts as a regional
+    # subject, and the stale general row of the 1973 Act Art. 10 is never
+    # current law for a present-day question.
+    RETRIEVAL_VERSION = 'retrieval_2026_10_20_r48'
 
     # Content-free configuration key. Different research budgets must not be
     # averaged as one retrieval configuration in generation/rating telemetry.
@@ -89,6 +95,98 @@ module LegalChatbot
         @llm_svc&.provider_call_count
       end
 
+      # The answer's provenance for its metadata record (AnswerMeta): the LAST
+      # final-answer generation attempt, the existing citation guard outcome,
+      # and what the visible answer is. Read-only like generation_trace: a
+      # request that never built a client, or never started a call (cache,
+      # early return, admission stop), has no attempt, and none is invented.
+      # status: overrides the derived outcome (the controller's timeouts and
+      # budget refusals happen outside this result).
+      def answer_provenance_for(result, status: nil)
+        attempt = answer_attempt_evidence(result)
+        guard = result.is_a?(Hash) ? result[:citation_guard_outcome] : nil
+        guard = nil unless LegalChatbot::AnswerMeta::GUARDS.include?(guard)
+        status ||= answer_outcome_status(result, attempt, guard)
+        generated = status == 'generated'
+        version = @llm_svc&.generation_trace&.observed_provider_model if generated
+        version = nil unless generated && LegalChatbot::AnswerMeta.valid_model_version?(attempt['model'], version)
+        german = result.is_a?(Hash) ? result.dig(:german_answer, :status) : nil
+        {
+          'attempt' => attempt,
+          'guard' => guard,
+          'outcome' => {
+            'status' => status,
+            'model' => generated ? attempt['model'] : nil,
+            'model_version' => version,
+            'category' => LegalChatbot::AnswerMeta.allowed(@profile || 'general', LegalChatbot::AnswerMeta.categories),
+            'research_depth' => LegalChatbot::AnswerMeta.allowed(@research_depth, LegalChatbot::AnswerMeta.research_depths),
+            'reasoning_effort' => LegalChatbot::AnswerMeta.allowed(@reasoning_effort, LegalChatbot::AnswerMeta::EFFORTS),
+            'translation' => LegalChatbot::AnswerMeta.allowed(german, LegalChatbot::AnswerMeta::TRANSLATIONS)
+          }
+        }
+      end
+
+      private
+
+      # What the client's LAST call proves. A call refused before it was
+      # written names no model; a reasoning-blocked payload is not valid.
+      def answer_attempt_evidence(result)
+        client = @llm_svc
+        calls = client&.provider_call_count.to_i
+        return nil unless calls.positive?
+
+        dispatched = client.provider_dispatch_written?
+        received = client.provider_response_received?
+        generation = received ? client.last_generation_classification : nil
+        if generation == 'valid' && result.is_a?(Hash) && result[:error_code] == ChatbotAnswerSafety::ERROR_CODE
+          generation = 'incomplete'
+        end
+        {
+          'model' => dispatched ? client.application_model : nil,
+          'dispatched' => dispatched,
+          'response' => received ? 'received' : 'none',
+          'generation' => generation,
+          'calls_started' => calls <= LegalChatbot::AnswerMeta::MAX_CALLS ? calls : nil
+        }
+      end
+
+      # What the visible answer IS. That is a different axis from what the
+      # last call did: a rejected draft followed by a corrective call refused
+      # before dispatch still ends in the fallback or refusal the guard chose.
+      # Only "generated" also needs the last attempt: dispatched, answered and
+      # valid, with the guard's "analysis" (the last attempt is the one whose
+      # text survives; a retry that was not accepted restores the first answer
+      # only on the fallback path, which is never "analysis").
+      def answer_outcome_status(result, attempt, guard)
+        return 'error' unless result.is_a?(Hash)
+        return 'timeout' if result[:error] == 'timeout'
+
+        code = result[:error_code]
+        return 'incomplete' if [LegalChatbot::LlmClient::INCOMPLETE_RESPONSE_ERROR_CODE,
+                                ChatbotAnswerSafety::ERROR_CODE].include?(code)
+
+        case guard
+        when 'analysis'
+          return 'error' if result[:error].present?
+          return 'unknown' unless attempt
+
+          valid_last = attempt['dispatched'] == true && attempt['response'] == 'received' && attempt['generation'] == 'valid'
+          valid_last ? 'generated' : 'unknown'
+        # The same guard outcome covers two visible answers: a substantive
+        # answer derived from the verified sources, or only their list
+        # (citation_guard_source_list_only).
+        when 'verified_sources_fallback'
+          result[:citation_guard_source_list_only] ? 'sources_only' : 'verified_recovery'
+        when 'refusal' then 'withheld'
+        else
+          return 'error' if result[:error].present?
+
+          attempt && attempt['dispatched'] == true ? 'unknown' : 'no_model_answer'
+        end
+      end
+
+      public
+
       # The browser question's paid-AI dispatch receipt (owner policy
       # 2026-10-18). Passed explicitly to every client this service builds,
       # including ones already built, never through a thread-local.
@@ -120,7 +218,8 @@ module LegalChatbot
           research_depth: @research_depth,
           profile: @profile || 'general',
           embedding_service: embedding_svc,
-          mistral_api_key_env: @mistral_api_key_env
+          mistral_api_key_env: @mistral_api_key_env,
+          selected_law_numac: @selected_law_numac
         ).tap do |client|
           client.provider_work_receipt = @provider_work_receipt
           client.provider_work_kind = 'generation'
@@ -151,7 +250,8 @@ module LegalChatbot
           language: @language,
           embedding_service: embedding_svc,
           context_numacs: @context_numacs,
-          profile: @profile || 'general'
+          profile: @profile || 'general',
+          selected_law_numac: @selected_law_numac
         )
       end
 
@@ -193,7 +293,8 @@ module LegalChatbot
         @regional_search_svc ||= LegalChatbot::RegionalSearch.new(
           language: @language,
           embedding_service: embedding_svc,
-          context_numacs: @context_numacs
+          context_numacs: @context_numacs,
+          selected_law_numac: @selected_law_numac
         )
       end
     end
@@ -275,7 +376,8 @@ module LegalChatbot
       # answer even after the Belgian legislation candidates were filtered.
       regional_docs = regional_docs.select do |document|
         LegalChatbot::LegislationSearch.contextual_source_relevant?(
-          { numac: document[:numac], law_title: document[:title], article_title: document.dig(:metadata, 'article_number') }, question
+          { numac: document[:numac], law_title: document[:title], article_title: document.dig(:metadata, 'article_number'),
+            source: document[:source] }, question, selected_law: @selected_law_numac
         )
       end
       t_filter = ((Time.current - phase_start) * 1000).round
@@ -961,6 +1063,8 @@ module LegalChatbot
         policy = policy.merge(legislation: [policy.fetch(:legislation), commercial_size].max) if commercial_size.positive?
         marketplace_size = MarketplaceCivilClaimIntent.article_targets(question).length
         policy = policy.merge(legislation: [policy.fetch(:legislation), marketplace_size].max) if marketplace_size.positive?
+        noise_size = GeneralNoiseScope.pack_size(question, selected_law: @selected_law_numac)
+        policy = policy.merge(legislation: [policy.fetch(:legislation), noise_size].max) if noise_size.positive?
         pack_size = LegislationSearch.formation_deed_pack_size(question.to_s)
         return pack_size ? policy.merge(legislation: [policy.fetch(:legislation), pack_size].max) : policy
       end
@@ -1007,6 +1111,10 @@ module LegalChatbot
       marketplace_size = MarketplaceCivilClaimIntent.article_targets(question).length
       if policy[:bounded] && marketplace_size.positive?
         policy = policy.merge(legislation: [policy.fetch(:legislation), marketplace_size].max)
+      end
+      noise_size = GeneralNoiseScope.pack_size(question, selected_law: @selected_law_numac)
+      if policy[:bounded] && noise_size.positive?
+        policy = policy.merge(legislation: [policy.fetch(:legislation), noise_size].max)
       end
       policy
     end

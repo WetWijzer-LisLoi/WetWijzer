@@ -1,3 +1,5 @@
+<%# Every selected source shares the status line below the search bar, but this frame only counts legislation: name it. %>
+<% legislation_status = t('loading_status.source_results', source: t('global_search.legislation'), results: t(:results_found, count: (@pagy&.count || @laws&.size || 0))) %>
 <%= turbo_frame_tag "laws_list",
       data: { 
         controller: 'frame-status', 
@@ -5,12 +7,12 @@
         frame_status_completed_value: t('loading_status.completed'), 
         frame_status_duration_value: 0, 
         frame_status_mount_selector_value: '#search-status-mount', 
-        frame_status_results_value: t(:results_found, count: (@pagy&.count || @laws&.size || 0)),
+        frame_status_results_value: legislation_status,
         turbo_action: 'advance'
       } do %>
   <!-- Hidden marker for frame-status to build persistent message with results count -->
-  <span data-frame-status-results class="sr-only"><%= t(:results_found, count: (@pagy&.count || @laws&.size || 0)) %></span>
+  <span data-frame-status-results class="sr-only"><%= legislation_status %></span>
   <div class="overflow-visible">
-    <%= render partial: "laws/list", locals: { laws: @laws, pagy: @pagy } %>
+    <%= render partial: "laws/list", locals: { laws: @laws, pagy: @pagy, frame_target: 'search_results' } %>
   </div>
 <% end %>

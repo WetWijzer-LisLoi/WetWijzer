@@ -63,9 +63,32 @@ module LegalChatbot
       @provider_response_incomplete == true
     end
 
+    # What the LAST provider call proves, for the answer's metadata
+    # (LegalChatbot::AnswerMeta). All three are reset at the start of every
+    # call_llm, before its budget reservation. Dispatched means the request
+    # was being written (set immediately before http.request); a recorded
+    # generation trace alone is not a dispatch.
+    def provider_dispatch_written?
+      @provider_dispatch_written == true
+    end
+
+    # An HTTP response, of any status, was read for the last call.
+    def provider_response_received?
+      @provider_response_received == true
+    end
+
+    # valid | incomplete | empty | refusal | error, or nil when no response
+    # was read (or the call never got that far).
+    attr_reader :last_generation_classification
+
+    # The application model id every call of this client goes to.
+    def application_model
+      @model_override || CHAT_MODEL
+    end
+
     def initialize(model_override: nil, language: 'nl', concise: false, international_mode: false,
                    case_context: nil, reasoning_effort: nil, research_depth: nil, profile: 'general',
-                   embedding_service: nil, mistral_api_key_env: 'MISTRAL_API_KEY')
+                   embedding_service: nil, mistral_api_key_env: 'MISTRAL_API_KEY', selected_law_numac: nil)
       @model_override = model_override
       @language = language
       @concise = concise
@@ -90,7 +113,8 @@ module LegalChatbot
       # This keeps Mistral usage/caps separate while provider calls remain
       # centralised in WetWijzer.
       @mistral_api_key_env = mistral_api_key_env
-      @prompt_builder = SystemPromptBuilder.new(language: language, concise: concise, case_context: case_context, profile: profile, international_mode: @international_mode)
+      @prompt_builder = SystemPromptBuilder.new(language: language, concise: concise, case_context: case_context, profile: profile,
+                                                international_mode: @international_mode, selected_law_numac: selected_law_numac)
       @reference_sheets = ReferenceSheets.new(
         language: language,
         embedding_service: embedding_service
@@ -205,6 +229,12 @@ module LegalChatbot
       # previous request.
       @generation_trace.reset!
       @provider_call_count += 1
+      # What this call proves for the answer's metadata (AnswerMeta), reset
+      # BEFORE the budget reservation: a reservation that refuses must never
+      # read as the previous call's dispatch or response.
+      @provider_dispatch_written = false
+      @provider_response_received = false
+      @last_generation_classification = nil
       @follow_up_request = messages.any? { |message| message[:role].to_s == 'assistant' }
       @provider_response_incomplete = false
       provider_max_tokens ||= provider_output_token_ceiling(model, max_tokens, messages: messages)
@@ -218,7 +248,6 @@ module LegalChatbot
         )
       end
       @provider_request_started = false
-      @provider_dispatch_written = false
       @last_provider_duration_seconds = nil
       provider_started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       provider_error_class = nil
@@ -243,6 +272,9 @@ module LegalChatbot
       answer
     rescue StandardError => e
       provider_error_class = e.class.name
+      # A response that was read but failed (an HTTP error, a body that does
+      # not parse) is an error generation; one never read stays unknown.
+      @last_generation_classification ||= 'error' if @provider_response_received
       # A refusal at the dispatch receipt wrote nothing in this call, even where
       # @provider_request_started was already set before connecting.
       refused_unsent = e.is_a?(ProviderWorkReceipt::PreDispatchRefused) && !@provider_dispatch_written
@@ -369,7 +401,8 @@ module LegalChatbot
       record_generation_response(
         result['model'],
         expected: [model],
-        reasoning_tokens: result.dig('usage', 'completion_tokens_details', 'reasoning_tokens')
+        reasoning_tokens: result.dig('usage', 'completion_tokens_details', 'reasoning_tokens'),
+        returned: result['model']
       )
 
       # Track token usage
@@ -385,6 +418,7 @@ module LegalChatbot
       output_tokens = usage['completion_tokens'] || 0
 
       @provider_response_incomplete = content.to_s.strip.empty? || finish_reason == 'length'
+      classify_generation!(content, cut_off: finish_reason == 'length', refusal: refusal.present?)
       if @provider_response_incomplete
         Rails.logger.warn("[LLM] Empty/truncated response from #{model}: finish_reason=#{finish_reason} " \
                           "reasoning_tokens=#{reasoning_tokens} output_tokens=#{output_tokens} " \
@@ -469,7 +503,7 @@ module LegalChatbot
 
       result = JSON.parse(response.body)
       @last_provider_model = result['model'].presence || mistral_model_id
-      record_generation_response(result['model'], expected: [mistral_model_id, model])
+      record_generation_response(result['model'], expected: [mistral_model_id, model], returned: result['model'])
 
       # Track token usage (OpenAI-compatible format)
       usage = result['usage'] || {}
@@ -481,6 +515,7 @@ module LegalChatbot
       answer = mistral_response_text(choice.dig('message', 'content'))
       finish_reason = choice['finish_reason'].to_s
       @provider_response_incomplete = answer.to_s.strip.empty? || %w[length model_length].include?(finish_reason)
+      classify_generation!(answer, cut_off: %w[length model_length].include?(finish_reason))
       if @provider_response_incomplete
         Rails.logger.warn(
           "[MISTRAL] Empty/truncated response from #{model}: " \
@@ -629,8 +664,11 @@ module LegalChatbot
 
       result = JSON.parse(response.body)
       @last_provider_model = bedrock_model_id
+      # The trace keeps the request's profile id, as before; only a model the
+      # response body itself names can count as the observed revision.
       record_generation_response(bedrock_model_id, expected: [bedrock_model_id, model],
-                                                   reasoning_tokens: result.dig('usage', 'thinking_tokens'))
+                                                   reasoning_tokens: result.dig('usage', 'thinking_tokens'),
+                                                   returned: result['model'])
 
       # Track token usage (Anthropic format, the cache categories included)
       usage = result['usage'] || {}
@@ -650,6 +688,7 @@ module LegalChatbot
       # no answer is delivered, and the reservation settles on its dispatch
       # evidence like any other sent paid request (owner policy 2026-10-18).
       @provider_response_incomplete = answer.strip.empty? || %w[max_tokens refusal].include?(stop_reason)
+      classify_generation!(answer, cut_off: stop_reason == 'max_tokens', refusal: stop_reason == 'refusal')
       if @provider_response_incomplete
         Rails.logger.warn(
           "[BEDROCK] Empty/truncated response from #{model}: " \
@@ -673,7 +712,9 @@ module LegalChatbot
       http.start if manages_session && !http.started?
       @provider_work_receipt&.before_provider_dispatch!(@provider_work_kind || 'generation')
       @provider_dispatch_written = true
-      http.request(request)
+      response = http.request(request)
+      @provider_response_received = true
+      response
     ensure
       http.finish if manages_session && http.started?
     end
@@ -718,12 +759,28 @@ module LegalChatbot
       Rails.logger.warn("[GenerationTrace] request capture skipped: #{e.class}")
     end
 
-    def record_generation_response(provider_model, expected:, reasoning_tokens: nil)
+    def record_generation_response(provider_model, expected:, reasoning_tokens: nil, returned: nil)
       @generation_trace.record_response!(provider_model: provider_model,
                                          expected: expected,
                                          reasoning_tokens: reasoning_tokens)
+      @generation_trace.observe_returned_revision!(returned, expected: expected) unless returned.nil?
     rescue StandardError => e
       Rails.logger.warn("[GenerationTrace] response capture skipped: #{e.class}")
+    end
+
+    # The received payload of this call, for AnswerMeta: a provider refusal,
+    # an empty text, a text cut off at its ceiling, or a valid one. The same
+    # facts the incomplete-response path already reads; nothing new is parsed.
+    def classify_generation!(text, cut_off:, refusal: false)
+      @last_generation_classification = if refusal
+                                          'refusal'
+                                        elsif text.to_s.strip.empty?
+                                          'empty'
+                                        elsif cut_off
+                                          'incomplete'
+                                        else
+                                          'valid'
+                                        end
     end
 
     def bedrock_reasoning_mode(reasoning_type)

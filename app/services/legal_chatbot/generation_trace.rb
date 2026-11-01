@@ -75,12 +75,22 @@ module LegalChatbot
     def reset!
       @data = {}
       @recorded = false
+      @observed_provider_model = nil
       self
     end
 
     def recorded?
       @recorded
     end
+
+    # The exact model revision the provider RETURNED for this call, kept only
+    # when the response carried a value that itself passes the allowlist
+    # (observe_returned_revision!). The trace's provider_model is not that: it
+    # can come from the request body, Bedrock records its request id there,
+    # and record_response! falls back to the application model for an empty,
+    # unsafe or unexpected value. None of those is an observed revision. Not
+    # part of to_h, the fingerprint or the analytics attributes.
+    attr_reader :observed_provider_model
 
     # Called from a provider branch AFTER its request body is built, with
     # values read from that body.
@@ -106,6 +116,19 @@ module LegalChatbot
                                             fallback: @data[:application_model])
       @data[:provider_model] = safe if safe
       @data[:reasoning_tokens] = scalar(reasoning_tokens) if reasoning_tokens
+      self
+    end
+
+    # Records the revision the provider response ITSELF named, when that value
+    # passes the same allowlist (observed_provider_model). It changes nothing
+    # else: provider_model, the fingerprint and the analytics attributes stay
+    # as record_response! left them.
+    def observe_returned_revision!(returned, expected:)
+      return self unless @recorded
+
+      text = returned.to_s.strip
+      observed = self.class.safe_provider_model(text, expected: Array(expected).compact, fallback: nil)
+      @observed_provider_model = observed if observed && observed == text
       self
     end
 

@@ -283,15 +283,19 @@ class FisconetSearchService
         fisconet_id: nil,
         numac_real: REAL_NUMACS[doc_type] || REAL_NUMACS[code],
         document_number: nil,
-        title_nl: row['title_nl'].presence || doc_type,
-        title_fr: row['title_fr'].presence || doc_type,
+        # The stored titles as stored: a missing title is nil, never the document type under a title's name (the
+        # owner's report of 2026-10-26); the page falls back to the validated registry title (FisconetCodeRegistry).
+        title_nl: row['title_nl'].presence,
+        title_fr: row['title_fr'].presence,
         title_de: nil,
         document_type: doc_type,
         base_code: code,
         edition_year: edition[:edition_year],
         edition_role: edition[:edition_role],
         editions: edition[:editions],
-        category: doc_type,
+        # The walk corpus stores no subject taxonomy; the page derives the subject from the registry, never from the
+        # document type.
+        category: nil,
         subcategory: nil,
         publication_date: (KNOWN_TAX_DATES[doc_type] || KNOWN_TAX_DATES[code])&.iso8601,
         effective_date: nil,

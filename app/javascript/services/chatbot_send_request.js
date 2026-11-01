@@ -6,6 +6,7 @@
 // Pinned by test/javascript/chatbot_send_request_test.mjs.
 import { isProviderReasoningPayload } from './chatbot_message_safety.js'
 import { sseErrorMessage, withChargeNotice } from './chatbot_stream_events.js'
+import { answerMetaOf } from './answer_meta.js'
 
 // Assemble the POST /api/chatbot/ask body. The conditional keys are the
 // contract: key_generation only when the ZK key is unlocked, and
@@ -49,12 +50,16 @@ function contextContentOf(message) {
 }
 
 // The assistant turn the browser keeps in conversationHistory (and in the
-// encrypted snapshot): the answer shown, its analytic id, and the French
-// answer it was made from when there is one.
+// encrypted snapshot): the answer shown, its analytic id, the French answer
+// it was made from when there is one, and the server's metadata record of
+// the answer (answer_meta) when the result carries one. The record never
+// goes into the follow-up context (contextMessagesFrom).
 export function assistantHistoryEntry(data, analyticId) {
   const entry = { role: 'assistant', content: data.answer, analytic_id: analyticId }
   const context = contextContentOf(data)
   if (context) entry.context_content = context
+  const meta = answerMetaOf(data)
+  if (meta) entry.meta = meta
   return entry
 }
 

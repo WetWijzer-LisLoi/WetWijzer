@@ -1,3 +1,5 @@
+import { sanitizeMessageMeta } from './answer_meta.js'
+
 const SERIALIZED_CONTAINER_PREFIX = /^\s*(?:```(?:json|ruby|text)?\s*)?(?:[\[{]|#<)/i
 const TYPED_THINKING_FIELD = /(?:["']?type["']?|:type)\s*(?:=>|:)\s*(?:["']thinking["']|:thinking\b)/i
 const THINK_CHUNK_MARKER = /(?:#<[^>\n]*\bThinkChunk\b|\bThinkChunk\s*\()/i
@@ -45,8 +47,13 @@ export function sanitizeVisibleAssistantAnswer(content, language = 'nl') {
 // it was made from (see services/chatbot_send_request.js). When the turn is
 // hidden, that text goes with it: it is never shown, and never sent back as
 // context either.
+//
+// A restored message's answer record (meta) and legacy deep_model are
+// untrusted too: one that does not validate is dropped, the message kept
+// (services/answer_meta.js).
 export function sanitizeRestoredMessages(messages, language = 'nl') {
-  return Array.isArray(messages) ? messages.map(message => {
+  return Array.isArray(messages) ? messages.map(original => {
+    const message = sanitizeMessageMeta(original)
     if (message?.role !== 'assistant') return message
     const hasContext = message.context_content !== undefined && message.context_content !== null
     if (!isLegacyReasoningPayload(message.content) &&

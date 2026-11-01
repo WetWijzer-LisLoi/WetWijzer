@@ -259,6 +259,18 @@
         <% end %>
       </div>
       
+      <!-- Wet huwelijksvermogen -->
+      <div class="grid grid-cols-1 gap-y-1.5 mb-6">
+        <%= link_to law_path('1976071406', language_id: current_language_id), 
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    title: popular_law_title.('1976071406'),
+                    class: popular_law_class.('1976071406', extra: 'group') do %>
+          <span class="group-hover:underline"><%= popular_law_catalogue_title('1976071406', dutch: 'Wet huwelijksvermogensstelsels (14 juli 1976)', french: 'Loi régimes matrimoniaux (14 juillet 1976)') %></span>
+          <%= popular_law_abbreviation_badge('1976071406') %>
+        <% end %>
+      </div>
+      
       <!-- BW Books (new) -->
       <div class="grid grid-cols-1 gap-y-1.5 mb-6">
         <%= link_to law_path('2022A32057', language_id: current_language_id), 
@@ -427,18 +439,6 @@
                     class: popular_law_class.('1967101058', extra: 'group') do %>
           <span class="group-hover:underline"><%= popular_law_catalogue_title('1967101058', dutch: 'Gerechtelijk Wetboek - Bijvoegsel: Gebiedsomschrijving', french: 'Code judiciaire - Annexe: Limites territoriales') %></span>
           <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 1)</span>
-        <% end %>
-      </div>
-      
-      <!-- Wet huwelijksvermogen -->
-      <div class="grid grid-cols-1 gap-y-1.5">
-        <%= link_to law_path('1976071406', language_id: current_language_id), 
-                    target: "_blank",
-                    rel: "noopener noreferrer",
-                    title: popular_law_title.('1976071406'),
-                    class: popular_law_class.('1976071406', extra: 'group') do %>
-          <span class="group-hover:underline"><%= popular_law_catalogue_title('1976071406', dutch: 'Wet huwelijksvermogensstelsels (14 juli 1976)', french: 'Loi régimes matrimoniaux (14 juillet 1976)') %></span>
-          <%= popular_law_abbreviation_badge('1976071406') %>
         <% end %>
       </div>
     </div>

@@ -14,6 +14,7 @@
      'chatbot_answers' => '#hero-chatbot-icon-btn',
      'chatbot_privacy' => '[data-tour="help"] a[href^="/privacy-policy"]',
      'bookmarks' => '[data-tour="bookmarks"]',
+     'rss' => '[data-tour="rss"]',
      'account' => '[data-tour="account"]',
      'pricing' => '[data-tour="pricing"]',
      'security' => '[data-tour="security"]',
@@ -36,6 +37,11 @@
           <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-gray-700 dark:text-gray-200">
             <% step['guidance'].each do |detail| %><li><%= detail %></li><% end %>
           </ul>
+        <% end %>
+        <%# Classic and the modern version without scripts have no RSS control
+            to point at: the reader may open the feed here, by choice only. %>
+        <% if step.fetch('id') == 'rss' %>
+          <p class="mt-3 text-sm"><%= link_to t('rss.title'), laws_path(format: :rss), target: '_blank', rel: 'noopener', class: 'font-semibold text-(--accent-700) underline dark:text-(--accent-400)', data: { turbo: false, turbo_prefetch: false } %></p>
         <% end %>
       </details>
     <% end %>

@@ -230,7 +230,10 @@
         color: #374151;
         margin-bottom: 4px;
       }
-      .classic-article-content { color: #1a1a1a; line-height: 1.7; text-align: justify; overflow-wrap: break-word; }
+      /* Justified only where a line holds enough words; on a phone the gaps
+         stretch (owner's repair request of 2026-10-21, as the modern site). */
+      .classic-article-content { color: #1a1a1a; line-height: 1.7; text-align: start; hyphens: auto; overflow-wrap: break-word; }
+      @media (min-width: 40rem) { .classic-article-content { text-align: justify; text-justify: inter-word; } }
       .classic-article-content p { margin-bottom: 12px; }
       .classic-article-content br + br { display: block; content: ""; margin-top: 12px; }
 
@@ -332,7 +335,8 @@
       .classic-legal img { max-width: 100%; height: auto; }
       .classic-legal .ww-support-icon { display: none; }
       /* Match public prose typography without loading modern styles or scripts. */
-      .classic-legal p { text-align: justify; text-align-last: start; hyphens: auto; overflow-wrap: break-word; }
+      .classic-legal p { text-align: start; text-align-last: start; hyphens: auto; overflow-wrap: break-word; }
+      @media (min-width: 40rem) { .classic-legal p { text-align: justify; } }
       .classic-legal .last-updated, .classic-legal li p, .classic-legal th p, .classic-legal td p,
       .classic-legal pre p, .classic-legal .security-card p, .classic-legal .config-card p { text-align: start; }
       .classic-legal pre, .classic-legal code { hyphens: none; }
