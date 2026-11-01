@@ -8,6 +8,12 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-10-31
+
+### Fixed
+- RSS feed: the newest parliamentary documents of the site's language are listed again, after the case law. They had been missing since 8 October 2026, when a cleanup removed the database connection that only the feed still used.
+- Security: rack 3.2.8, published fixes for multipart parsing (memory exhaustion, GHSA-5v64-555j-wjxm; boundary handling, GHSA-p8x9-v4hv-2w4g), invalid `Host` values passed through by `base_url` (GHSA-2j8w-xcrc-x985) and `Rack::Static` header rules (GHSA-wvg4-6p58-3gh3).
+
 ## [1.1.2] - 2026-10-31
 
 ### Fixed

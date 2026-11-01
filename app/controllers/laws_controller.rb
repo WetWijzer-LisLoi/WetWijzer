@@ -76,6 +76,23 @@ class LawsController < ApplicationController
        exdec_sig, CacheVersionHelper.laws_db_version].join('/')
     end
 
+    # The RSS feed's only reader. b4ec63ab6 (WW-LINK, 2026-10-08) moved the law
+    # page's panel to ParliamentaryRelations and deleted this with it; the feed's
+    # rescue turned the NoMethodError into a warning and an empty list, so the
+    # feed carried no parliamentary items until 1.1.3.
+    def parliamentary_db(path)
+      @_parliamentary_db = nil unless @_parliamentary_db_path == path
+      @_parliamentary_db_path = path
+      @_parliamentary_db ||= begin
+        db = SQLite3::Database.new(path)
+        db.busy_timeout = 5000
+        db
+      end
+    rescue SQLite3::Exception => e
+      @_parliamentary_db = nil
+      raise e
+    end
+
     def jurisprudence_db(path)
       @_jurisprudence_db = nil unless @_jurisprudence_db_path == path
       @_jurisprudence_db_path = path
