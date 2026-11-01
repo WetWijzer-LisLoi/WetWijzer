@@ -42,6 +42,16 @@ class LawsController < ApplicationController
   RELATED_JURISPRUDENCE_PAGE_SIZES = [10, 25, 50].freeze
   RELATED_JURISPRUDENCE_DEFAULT_PAGE_SIZE = 25
 
+  # The newest cases of one language for the RSS feed: walks idx_date from the
+  # newest decision and stops at the limit. A plain `language_id = ?` makes
+  # SQLite choose idx_lang, fetch every case of the language (176,706 Dutch
+  # rows, full texts inline) and sort them: a cold feed took 25 to 212 s and
+  # nginx answered 504 (open-items.md #36). The unary + keeps idx_lang out and
+  # also drops the column's integer affinity, so bind an Integer: the string
+  # '1' matches nothing.
+  RSS_JURISPRUDENCE_SQL = 'SELECT id, case_number, court, decision_date FROM cases ' \
+                          'WHERE +language_id = ? ORDER BY decision_date DESC, id DESC LIMIT ?'
+
   # Persistent class-level SQLite connections for related sources.
   # Opening multi-GB databases on every request has ~500ms overhead.
   # These persist across requests within the same Puma worker process.
@@ -861,11 +871,12 @@ class LawsController < ApplicationController
     return [] unless File.exist?(db_path)
 
     db = self.class.jurisprudence_db(db_path)
-    db_lang_id = lang_id.to_s
-    rows = db.execute(
-      'SELECT id, case_number, court, decision_date FROM cases WHERE language_id = ? ORDER BY decision_date DESC LIMIT ?',
-      [db_lang_id, limit]
-    )
+    db_lang_id = Integer(lang_id)
+    # The idx_lang probe first: for a language without cases the idx_date
+    # walk of RSS_JURISPRUDENCE_SQL would read the whole table.
+    return [] unless db.get_first_value('SELECT 1 FROM cases WHERE language_id = ? LIMIT 1', [db_lang_id])
+
+    rows = db.execute(RSS_JURISPRUDENCE_SQL, [db_lang_id, limit])
     rows.map do |r|
       {
         id: r[0], case_number: r[1], court: r[2], decision_date: r[3],

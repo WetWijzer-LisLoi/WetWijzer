@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-10-31
+
+### Fixed
+- RSS feed: building the feed no longer reads every case-law decision of the language to find the newest ten. A feed that was not cached took 25 to 212 seconds, so the reader who asked for it after a deploy or an hourly expiry got a gateway timeout; it now takes milliseconds. Equal decision dates are listed newest record first.
+
 ## [1.1.1] - 2026-10-31
 
 ### Changed
