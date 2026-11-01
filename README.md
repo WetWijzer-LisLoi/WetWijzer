@@ -7,7 +7,9 @@ server-rendered and usable without JavaScript; Turbo and Stimulus add optional
 interactive and convenience features.
 
 > This repository is a curated public code snapshot, not a self-contained
-> production application or a hosted-service deployment guide.
+> production application or a hosted-service deployment guide. Each release is
+> published as its own tagged commit; [CHANGELOG.md](CHANGELOG.md) lists what
+> changed.
 
 ## Brands and languages
 
