@@ -400,7 +400,7 @@
           <%# Open new collapse wrapper %>
           <div data-controller="collapse" data-collapse-expanded-value="true" class="collapsible-section">
             <!-- Section Heading is fully rendered (including copy-link) by the helper -->
-            <%= print_article(article.article_text, article.article_title, article.article_type) %>
+            <%= print_article(article.article_text, article.article_title, article.article_type, source_numac: article.content_numac) %>
             
             <%# Open collapsible content container for articles under this section %>
             <div data-collapse-target="content" class="section-content">
@@ -430,7 +430,7 @@
                  data-permalink="<%= permalink %>"
                  data-source="#article-text-<%= permalink %>">
               <div class="flex-1 min-w-0" id="article-text-<%= permalink %>">
-                <%= print_article(article.article_text, article.article_title, article.article_type) %>
+                <%= print_article(article.article_text, article.article_title, article.article_type, source_numac: article.content_numac) %>
               </div>
             </div>
             

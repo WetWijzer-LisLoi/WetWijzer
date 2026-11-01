@@ -790,8 +790,11 @@ module ApplicationHelper
   # @param content [String] the article text/content
   # @param article_heading [String, nil] the article title/heading
   # @param db_type [String, nil] the DB article_type (e.g., 'ART', 'LNK', 'ABO')
+  # @param source_numac [String, nil] the law the article stands in, for a repeal
+  #   marker that names its act by date (see LEGACY_ACT_MARKER)
   # @return [ActiveSupport::SafeBuffer]
-  def print_article(content, article_heading = nil, db_type = nil)
+  def print_article(content, article_heading = nil, db_type = nil, source_numac: nil)
+    @legacy_source_numac = source_numac
     type = determine_article_type(article_heading, content, db_type)
     case type
     when :section_heading

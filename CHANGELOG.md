@@ -8,6 +8,19 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.5] - 2026-11-01
+
+### Changed
+- Council of State opinions: the members of the Council named in the closing of an older, scanned opinion stay named and appear in the opinion's bench. A name counts only on a line of a proved closing and only when the corpus knows it as a member's, and it is kept there alone: a person who shares the surname elsewhere in the text stays in initials. This applies to opinions built from this release on.
+- Council of State opinions: a cited author also stays named when the citation gives the publisher after the year or before the place ("1988, Story-Scientia", "Bruylant, Bruxelles, 1990"), or a place and a year followed by a page. Opinions built from this release on.
+- Public repository: each release is published as its own tagged commit with its changelog. The one-commit snapshot is gone.
+
+### Fixed
+- Council of State opinions and judgments: a treaty or regulation named in capitals ("la Convention MARPOL", "het Verdrag UNCLOS", "le Pacte PIDESC") is no longer initialled as if it were a person.
+- Parliamentary documents: a short heading in capitals keeps the punctuation its source prints ("NOTICE:").
+- Repealed articles: an older citation that names the repealing act only by its kind and date, such as `(Opgeheven) <W 18-03-1970, art. 3>`, now links that act when it can be identified: the only act of that kind on that date, whose title names the law the article stands in. The link opens the cited article when that article is on the page.
+- Repealed articles: such a citation no longer links the first act published on its date, which was often another act. When the act cannot be identified the citation stays red text, with the Justel link beside it.
+
 ## [1.1.4] - 2026-10-31
 
 ### Fixed

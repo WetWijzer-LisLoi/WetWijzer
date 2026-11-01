@@ -393,6 +393,7 @@ module ReferencesHelper
 
     doc_number = rest[%r{(\d{4}-\d{2}-\d{2}/[A-Za-z0-9]+)}, 1]
     art_num = rest[/(?:art\.?|artikel|article)\s*(\d+[a-z]*)/i, 1]
+    return build_legacy_abolished_link(inner, cls).to_s unless doc_number
 
     lookup = lookup_document_by_number(doc_number)
     return build_abolished_fallback(inner, cls).to_s unless lookup&.dig(:title).present?
@@ -401,6 +402,16 @@ module ReferencesHelper
   end
 
   # -- abolished marker sub-helpers --
+
+  # An act named by kind and date: the citation keeps its own words, linked when
+  # it names one act (see LEGACY_ACT_MARKER).
+  def build_legacy_abolished_link(inner, cls)
+    act = legacy_repealing_act(inner)
+    url = act && build_law_url(act, act[:fragment], inherit_site_language: true)
+    return build_abolished_fallback(inner, cls) unless url
+
+    link_to(inner, url, class: "#{cls} hover:underline", target: '_blank', rel: 'noopener noreferrer', title: act[:title])
+  end
 
   def lookup_document_by_number(doc_number)
     return nil unless doc_number
@@ -1089,40 +1100,143 @@ module ReferencesHelper
 
   def abolished_anchor_url(abolished_inner, fallback_art_num)
     refs = lookup_document_references(abolished_inner)
-
-    # Fallback: try European date format (DD-MM-YYYY) common in older legislation
-    refs = lookup_european_date_references(abolished_inner) if refs.blank?
-
-    return nil unless refs.present?
+    return legacy_repealing_act_url(abolished_inner) unless refs.present?
 
     first_doc = refs.keys.first
     lookup = refs[first_doc]
     build_law_url(lookup, compute_article_fragment(abolished_inner, fallback_art_num), inherit_site_language: true)
   end
 
-  # Tries to find document references using European date format (DD-MM-YYYY)
-  # by converting to YYYY-MM-DD and doing a prefix search in the lookup table
-  def lookup_european_date_references(text)
-    return {} if text.blank?
+  # Older legislation names the repealing act by kind and date, "(Opgeheven)
+  # <W 18-03-1970, art. 3>", with no document number. Neither is an identity, as
+  # measured on the 12,604 markers that do carry a number (2026-11-01). The first
+  # act of the date was the cited one 1 time in 8. The one act of that date and
+  # kind was wrong 29 times of 915, because Justel can misname the kind: "W
+  # 1994-03-24/30" is a royal decree. So an act is linked only if it is the one
+  # act of that date and kind AND its title makes a complete reference to the act
+  # the marker stands in: 107 of 107. Otherwise the marker stays red text with its
+  # Justel button.
+  LEGACY_ACT_MARKER = /(?<![[:alpha:]])(W|L|KB|AR|MB|AM)\.?\s*(\d{1,2})-(\d{2})-(\d{4})(?!\d)/
+  LEGACY_LAW = { kind: :law, types: [2, 7] }.freeze
+  # law_type_id does not tell a royal decree from a ministerial one: only the title can.
+  LEGACY_ROYAL_DECREE = { kind: :royal, types: [5, 10] }.freeze
+  LEGACY_MINISTERIAL_DECREE = { kind: :ministerial, types: [5, 10] }.freeze
+  LEGACY_ACTS = { 'W' => LEGACY_LAW, 'L' => LEGACY_LAW, 'KB' => LEGACY_ROYAL_DECREE, 'AR' => LEGACY_ROYAL_DECREE,
+                  'MB' => LEGACY_MINISTERIAL_DECREE, 'AM' => LEGACY_MINISTERIAL_DECREE }.freeze
+  # What a title says the act is, at its head, after the date. A head that is not
+  # here says nothing ("Veldwetboek"): that act stays a candidate, as only a head
+  # naming another kind rules one out.
+  LEGACY_TITLE_HEAD = /\A.{0,40}?\d{4}\s*\.?\s*[-_–—]+\s*\[?\s*(.{0,60})/m
+  LEGACY_TITLE_KINDS = {
+    law: /\A(?:wet|loi)(?![[:alpha:]])/i,
+    royal: /\A(?:koninklijk\s+besluit|arr[êe]t[ée]\s+royal)/i,
+    ministerial: /\A(?:ministerieel\s+besluit|arr[êe]t[ée]\s+minist[ée]riel)/i,
+    other: /\A(?:besluitwet|arr[êe]t[ée][- ]loi|regentsbesluit|besluit\s+van\s+de|arr[êe]t[ée]\s+du|decreet|d[ée]cret|
+              ordonnantie|ordonnance|omzendbrief|circulaire|bericht|avis(?![[:alpha:]])|protocol|overeenkomst|akkoord|
+              accord|convention|verdrag|trait[ée])/ix
+  }.freeze
+  LEGACY_TITLE_DATE = /\A\s*(\d{1,2})(?:er|e)?\s+([^\s.,]+)\s+(\d{4})/
+  LEGACY_TITLE_NAME = /[-_–—]\s*\[?\s*([^.(]{6,60}?)\s*(?:\d{4})?\s*[.(]/
+  # How a title refers to an act, read whole, on folded text. By date: the kind of
+  # the act and all of its date, "wet van 5 juni 1957", so neither "15 juni 1957"
+  # nor "het koninklijk besluit van 5 juni 1957" is the law of 5 June. By name, for
+  # a code: a determiner right before it and nothing that qualifies it after, so
+  # "het Militair Strafwetboek" and "le Code penal militaire" are other codes.
+  LEGACY_REFERENCE_WORDS = { law: '(?:wet|wetten|loi|lois)', royal: '(?:koninklijk besluit|arrete royal)',
+                             ministerial: '(?:ministerieel besluit|arrete ministeriel)' }.freeze
+  LEGACY_NAME_AFTER = '(?=\s*\z|[.,;:()]|\s+(?:wat|met|en|om|ten|ter|inzake|betreffende|voor|tot|quant|et|pour|concernant|' \
+                      'relatif|relative|afin|ainsi)(?![a-z]))'
 
-    # Match DD-MM-YYYY dates (European format used in older Belgian legislation)
-    eu_dates = text.scan(/\b(\d{2})-(\d{2})-(\d{4})\b/)
-    return {} if eu_dates.empty?
+  def legacy_repealing_act_url(text)
+    act = legacy_repealing_act(text)
+    act && build_law_url(act, act[:fragment], inherit_site_language: true)
+  end
 
-    results = {}
-    eu_dates.each do |day, month, year|
-      iso_prefix = "#{year}-#{month}-#{day}"
-      # Find any document that starts with this ISO date
-      lookup = DocumentNumberLookup.where('document_number LIKE ?', "#{iso_prefix}%").first
-      next unless lookup
+  # { numac:, language_id:, title:, fragment: } of the one act `text` can name, or
+  # nil: more than one marker, an impossible date, no act or several, or an act
+  # whose title does not name the source. The rows of an act are its language
+  # versions, so identity is the NUMAC.
+  def legacy_repealing_act(text)
+    markers = text.to_s.scan(LEGACY_ACT_MARKER)
+    return nil unless markers.one?
 
-      law = Legislation.find_by(numac: lookup.numac, language_id: lookup.language_id)
-      results[lookup.document_number] = { numac: lookup.numac, language_id: lookup.language_id, title: law&.title }
-    end
+    kind, day, month, year = markers.first
+    return nil unless Date.valid_date?(year.to_i, month.to_i, day.to_i)
 
-    results
+    acts = legacy_act_candidates(LEGACY_ACTS.fetch(kind), format('%<year>s-%<month>s-%<day>02d', year: year, month: month, day: day.to_i))
+    return nil unless acts.one?
+
+    numac, versions = acts.first
+    return nil unless names_source_act?(versions)
+
+    { numac: numac, language_id: versions.first[1], title: versions.first[2], fragment: legacy_act_fragment(text, numac) }
   rescue ActiveRecord::StatementInvalid
-    {}
+    nil
+  end
+
+  def legacy_act_candidates(rule, date)
+    acts = Legislation.where(date: date, law_type_id: rule[:types]).pluck(:numac, :language_id, :title).group_by(&:first)
+    acts.select do |_numac, versions|
+      said = versions.filter_map { |_numac, _language, title| legacy_title_kind(title) }
+      said.empty? || said.include?(rule[:kind])
+    end
+  end
+
+  def legacy_title_kind(title)
+    head = title.to_s[LEGACY_TITLE_HEAD, 1]
+    head && LEGACY_TITLE_KINDS.find { |_kind, pattern| head.match?(pattern) }&.first
+  end
+
+  # Whether a title of `versions` refers to the act this citation stands in, set by
+  # print_article. No known source, no link.
+  def names_source_act?(versions)
+    return false if @legacy_source_numac.blank?
+
+    references = legacy_source_references(Legislation.where(numac: @legacy_source_numac).pluck(:title))
+    titles = versions.map { |_numac, _language, title| legacy_title_fold(title) }
+    references.any? { |reference| titles.any? { |title| title.match?(reference) } }
+  end
+
+  # The complete references to the act with these language versions. A source whose
+  # title does not say its kind has none by date.
+  def legacy_source_references(titles)
+    kinds = titles.filter_map { |title| legacy_title_kind(title) }.uniq
+    titles.flat_map do |title|
+      name = title.to_s[LEGACY_TITLE_NAME, 1]
+      legacy_date_references(title, kinds) + (name&.match?(/wetboek|\bcode\b/i) ? [legacy_name_reference(name)] : [])
+    end
+  end
+
+  def legacy_date_references(title, kinds)
+    date = title.to_s.match(LEGACY_TITLE_DATE)
+    return [] unless date
+
+    day = date[1].delete_prefix('0')
+    stated = "#{day == '1' ? '1(?:er)?' : day} #{Regexp.escape(legacy_title_fold(date[2]))} #{date[3]}"
+    kinds.filter_map do |kind|
+      words = LEGACY_REFERENCE_WORDS[kind]
+      words && /(?<![a-z])#{words} (?:van|du|de) #{stated}(?!\d)/
+    end
+  end
+
+  def legacy_name_reference(name)
+    /(?<![a-z])(?:het|le|du|au) #{Regexp.escape(legacy_title_fold(name))}#{LEGACY_NAME_AFTER}/
+  end
+
+  def legacy_title_fold(text)
+    ActiveSupport::Inflector.transliterate(text.to_s).downcase.squish
+  end
+
+  # "#art-3" only when that article stands, under that anchor, on the page the link
+  # opens: a modifying act can be a title without a text, and a fragment would then
+  # promise what is not there. Never the article the marker stands in.
+  def legacy_act_fragment(text, numac)
+    token = text[/(?:art\.|artikel|article)\s*(\d+(?:[.:]\d+)*[a-z]*)/i, 1]
+    return nil unless token
+
+    anchor = "art-#{normalize_article_fragment(token)}"
+    titles = Article.where(content_numac: numac, language_id: current_language_id(numac: numac)).pluck(:article_title)
+    "##{anchor}" if titles.any? { |title| article_id_from_toc_line(title) == anchor }
   end
 
   def compute_article_fragment(text, fallback_art_num)
@@ -1315,7 +1429,7 @@ module ReferencesHelper
 
   def find_document_lookup_for_abolished(cleaned_content)
     doc_number = cleaned_content[%r{(\d{4}-\d{2}-\d{2}/[A-Za-z0-9]+)}, 1]
-    return nil unless doc_number
+    return legacy_repealing_act(cleaned_content) unless doc_number
 
     rec = DocumentNumberLookup.find_by(document_number: doc_number)
     return nil unless rec
@@ -1327,6 +1441,8 @@ module ReferencesHelper
   end
 
   def build_abolished_content_url(cleaned_content, lookup, fallback_art_num)
+    return build_law_url(lookup, lookup[:fragment], inherit_site_language: true) if lookup.key?(:fragment)
+
     token = cleaned_content[/\bart\.?\s*(\d+(?:[.:]\d+)*[a-z]*)/i, 1] || fallback_art_num
     norm = normalize_article_fragment(token) if token
     fragment = "#art-#{norm}" if norm.present?

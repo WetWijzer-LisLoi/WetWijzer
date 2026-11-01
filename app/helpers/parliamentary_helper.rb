@@ -1467,6 +1467,7 @@ module ParliamentaryHelper
       if lines.length > 2 || (lines.length >= 1 && first_line.length > 150 && first_line.match?(/\A(?:[IVXLC]+[.,)]|[A-ZÉÈÊÀÂÙÛÔÎÇ]{3,}|\d{1,2}\s*[-–.]|[A-Z][.)])\s/))
         heading_match = false
         heading_text = nil
+        heading_size = nil
 
         # Roman numeral at start: "II, - INLEIDENDE UITEENZETTINGEN"
         if first_line.match?(/\A[IVXLC]+[.,)]\s*[-–]?\s*[A-ZÉÈÊÀÂÙÛÔÎÇ]/)
@@ -1517,8 +1518,11 @@ module ParliamentaryHelper
           alpha = first_line.gsub(/[^a-zA-ZÀ-ÖØ-öø-ÿ]/, '')
           upper_r = alpha.empty? ? 0 : alpha.gsub(/[^A-ZÀ-ÖØ-Ý]/, '').length.to_f / alpha.length
           if first_line.length < 80 && upper_r > 0.75 && first_line.match?(/[A-Z]{3,}/)
-            # Short all-caps heading on its own line
-            heading_text = first_line.strip.sub(/[,;:]\z/, '') # trim trailing punctuation
+            # Short all-caps heading on its own line. The source's punctuation
+            # stays in it. One closing mark does not count toward its length:
+            # "ABC:" is a label and "ABC::" a heading, as when that mark was deleted.
+            heading_text = first_line.strip
+            heading_size = heading_text.sub(/[,;:]\z/, '').length
             remaining_lines = lines[1..]
             heading_match = true
           elsif (caps_md = first_line.match(/\A([A-ZÉÈÊÀÂÙÛÔÎÇ][A-ZÉÈÊÀÂÙÛÔÎÇ\s,;:\-'.]{3,}?[,.]?)\s+([A-Z][a-zéèêëàâäùûüôöîïç])/))
@@ -1548,7 +1552,7 @@ module ParliamentaryHelper
           end
         end
 
-        if heading_match && heading_text && heading_text.length > 3
+        if heading_match && heading_text && (heading_size || heading_text.length) > 3
           if in_bullet_list
             html_parts << '</ul>'
             in_bullet_list = false
