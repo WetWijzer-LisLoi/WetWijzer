@@ -8,6 +8,12 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-10-31
+
+### Fixed
+- Search: going Back to the first page of a multi-source search shows the legislation status line again ("Wetgeving: 0 resultaten gevonden."). The restored page started a loading indicator that nothing finished, which replaced the line and could turn into a load error after 30 seconds.
+- RSS feed: parliamentary items name their assembly in the interface language ("Kamer", "Chambre", "Senaat", "Sénat") instead of the internal codes "chamber" and "senate", and the LexLibera and GesetzGuide feeds link to the French document they list.
+
 ## [1.1.3] - 2026-10-31
 
 ### Fixed

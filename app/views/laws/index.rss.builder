@@ -108,7 +108,11 @@ xml.rss version: '2.0', 'xmlns:atom' => 'http://www.w3.org/2005/Atom' do
     Array(@rss_parliamentary).each do |doc|
       xml.item do
         display_title = doc[:title].presence || doc[:dossier_number]
-        parliament_label = case doc[:parliament]
+        # The corpus stores 'chamber' and 'senate' (58,250 and 25,834 rows on
+        # 2026-10-31); the Dutch-only codes below came first and are kept.
+        labels = JurisprudenceHelper::PARLIAMENT_LABELS[doc[:parliament].to_s]
+        parliament_label = labels&.fetch(I18n.locale, labels[:nl]) ||
+                           case doc[:parliament]
                            when 'kamer' then 'Kamer'
                            when 'senaat' then 'Senaat'
                            when 'vlaams' then 'Vlaams Parlement'
@@ -118,7 +122,9 @@ xml.rss version: '2.0', 'xmlns:atom' => 'http://www.w3.org/2005/Atom' do
                            end
         xml.title "#{parliament_label} – #{display_title&.truncate(120)}"
 
-        lang_id = (I18n.locale == :fr ? 2 : 1)
+        # The language load_rss_parliamentary selected: Dutch on the Dutch
+        # interface, French everywhere else (LexLibera and GesetzGuide included).
+        lang_id = (I18n.locale == :nl ? 1 : 2)
         item_url = parliamentary_url(id: doc[:id], language_id: lang_id)
         xml.link item_url
         xml.guid item_url, isPermaLink: 'true'

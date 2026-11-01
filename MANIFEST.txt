@@ -890,6 +890,7 @@ public/vite/assets/application-E7ejS_db.js
 public/vite/assets/application-LIkOKG3U.js
 public/vite/assets/application-LffN2UK_.js
 public/vite/assets/application-MAGPDVhj.css
+public/vite/assets/application-SgCoZMrL.js
 public/vite/assets/application-VrnMrANY.js
 public/vite/assets/application-WyXijs_E.js
 public/vite/assets/application-bWLWw_JU.css

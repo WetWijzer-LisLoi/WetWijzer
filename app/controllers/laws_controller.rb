@@ -995,7 +995,9 @@ class LawsController < ApplicationController
       @rss_feed_params.to_h.map { |key, value| [key.to_s, value.to_s] }.sort,
       type_ids.map(&:to_s).sort
     ]
-    "rss_feed/v6/#{Digest::SHA256.hexdigest(JSON.generate(context))}"
+    # v7 (1.1.4): parliament labels per interface language; a v6 body would
+    # serve "chamber –" for up to an hour after the deploy.
+    "rss_feed/v7/#{Digest::SHA256.hexdigest(JSON.generate(context))}"
   end
   private :rss_feed_cache_key
 

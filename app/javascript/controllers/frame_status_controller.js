@@ -4,7 +4,6 @@
 //   data-frame-status-completed-value: localized string for the completed label
 //   data-frame-status-results-value: optional localized string (e.g., "X results found.")
 //   data-frame-status-duration-value: duration in ms before auto-hide (default 1200). If <= 0, stays visible.
-
 import { Controller } from "@hotwired/stimulus";
 import { uiText } from '../utils/ui_translations';
 
@@ -33,9 +32,13 @@ export default class extends Controller {
 
     // Auto-start timer if the frame has a src attribute (loading on page render).
     // The turbo:before-fetch-request event may fire before the controller connects,
-    // so we start the timer eagerly here.
+    // so we start the timer eagerly here. A frame restored from a snapshot is already
+    // `complete` and Turbo does not load it again: a loading pill would wait for a
+    // load that never comes and turn into an error after 30 s, so redraw the result
+    // (Back to the first court page of a search, open-items.md #35).
     if (this.element.tagName === 'TURBO-FRAME' && this.element.getAttribute('src')) {
-      this.onFrameRequestStart();
+      if (this.element.hasAttribute('complete')) this.showCompletedPill();
+      else this.onFrameRequestStart();
     }
   }
 
