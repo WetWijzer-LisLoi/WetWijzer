@@ -554,11 +554,20 @@
   bottom: 0;
 }
 
-@media (min-width: 768px) {
+/* From lg the panel is the sliver at the left edge, and the controller sets its
+   position inline. Below lg it slides over the page from the left: on a phone
+   the dock opens it, from md the source toolbar's contents button does
+   (2026-11-02). Until then md had a sticky column here that nothing opened. */
+@media (min-width: 1024px) {
   #toc-sidebar-panel {
     position: sticky;
     top: 1rem;
     bottom: auto;
+  }
+}
+
+@media (min-width: 768px) {
+  #toc-sidebar-panel {
     height: calc(100vh - 2rem);
     min-height: calc(100vh - 2rem);
     max-height: calc(100vh - 2rem);

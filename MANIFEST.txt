@@ -147,6 +147,7 @@ app/javascript/controllers/source_filters_controller.js
 app/javascript/controllers/tabs_controller.js
 app/javascript/controllers/theme_selector_controller.js
 app/javascript/controllers/toc_anchor_controller.js
+app/javascript/controllers/toc_opener_controller.js
 app/javascript/controllers/toc_options_controller.js
 app/javascript/controllers/toc_search_controller.js
 app/javascript/controllers/toc_targets_controller.js
@@ -501,6 +502,7 @@ app/views/laws/_search_results.html.erb
 app/views/laws/_sort_dropdown.html.erb
 app/views/laws/_title.html.erb
 app/views/laws/_toc.html.erb
+app/views/laws/_toc_opener.html.erb
 app/views/laws/_toc_summary.html.erb
 app/views/laws/_updated_laws.html.erb
 app/views/laws/articles.html.erb
@@ -824,6 +826,7 @@ public/vite/assets/application-BE2eHk8s.js
 public/vite/assets/application-BELQxtqB.css
 public/vite/assets/application-BFk3wwTL.js
 public/vite/assets/application-BMip9UU6.js
+public/vite/assets/application-BNy_mebb.js
 public/vite/assets/application-BOb8DHIW.js
 public/vite/assets/application-BOojWfYC.js
 public/vite/assets/application-BPZNHmXb.js
@@ -872,6 +875,7 @@ public/vite/assets/application-DAMLj1vG.js
 public/vite/assets/application-DEP0LCsQ.js
 public/vite/assets/application-DGOmgdBG.js
 public/vite/assets/application-DL2VPsTH.js
+public/vite/assets/application-DOHuBpHw.css
 public/vite/assets/application-DQZJgscu.css
 public/vite/assets/application-DQgxQ4cU.js
 public/vite/assets/application-DRC8r2NI.js

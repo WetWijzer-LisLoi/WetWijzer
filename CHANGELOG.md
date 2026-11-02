@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.7] - 2026-11-02
+
+### Fixed
+- Law pages: between phone and desktop widths (768 to 1023 px) the table of contents in the sidebar can be opened again, from a contents button in the toolbar, by keyboard too; Escape closes it and returns to the button. Since 1.1.6 a long law had no way to open it at those widths, and other laws never had one.
+
 ## [1.1.6] - 2026-11-02
 
 ### Changed

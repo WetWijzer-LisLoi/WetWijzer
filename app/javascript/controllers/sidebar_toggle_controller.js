@@ -33,7 +33,9 @@ export default class extends Controller {
       const n = parseInt(this.element.getAttribute('data-sliver-nudge-y') || "-2", 10);
       this.sliverNudgeYPx = Number.isFinite(n) ? n : -2;
     } catch (_) { this.sliverNudgeYPx = -2; }
-    // Set up auto-show on desktop when the Tekst section is in view (lg ≥ 1024px)
+    // Set up auto-show on desktop when the Tekst section is in view (lg ≥ 1024px).
+    // Below lg the panel slides over the page: the mobile dock opens it below
+    // md (768px), the contents button of the source toolbar from md to lg.
     this.desktopMedia = window.matchMedia && window.matchMedia("(min-width: 1024px)");
 
     // Start state: desktop shows a peek aligned with main cards, mobile stays collapsed off-screen
@@ -109,6 +111,8 @@ export default class extends Controller {
     window.addEventListener('hashchange', this.handleHashChange);
     window.addEventListener('scroll', this.onScroll, { passive: true });
     window.addEventListener('resize', this.computeMeasurements, { passive: true });
+    this.handleTocToggle = this.handleTocToggle || ((e) => this.toggleFromEvent(e));
+    window.addEventListener('ww:toc-toggle', this.handleTocToggle);
 
     // Auto-open only triggers when articles turbo frame loads (not on hash)
 
@@ -300,6 +304,16 @@ export default class extends Controller {
     }
   }
 
+  // The source toolbar's contents button (toc_opener_controller.js) lives
+  // outside this controller and reaches it through a window event. Its
+  // element is the trigger, so focus returns to it when the panel closes.
+  // The listener is bound in connect(), not through a data-action on this
+  // element: print hides every [data-action], and this element holds the law.
+  toggleFromEvent(e) {
+    const trigger = e && e.detail && e.detail.trigger;
+    this.toggle({ currentTarget: trigger instanceof Element ? trigger : null });
+  }
+
   toggleOpenState(isDesktop) {
     if (isDesktop) {
       // Desktop: slide in/out
@@ -378,6 +392,7 @@ export default class extends Controller {
     }
     try { document.removeEventListener('turbo:frame-load', this.handleTurboFrameLoad); } catch (_) { /* no-op */ }
     try { document.removeEventListener('keydown', this.handleKeydown); } catch (_) { /* no-op */ }
+    try { window.removeEventListener('ww:toc-toggle', this.handleTocToggle); } catch (_) { /* no-op */ }
     try { if (this.hasPanelTarget && this.handlePanelPointerDown) this.panelTarget.removeEventListener('pointerdown', this.handlePanelPointerDown, { capture: true }); } catch (_) { /* no-op */ }
     try { if (this.hasPanelTarget && this.handlePanelClick) this.panelTarget.removeEventListener('click', this.handlePanelClick, { capture: true }); } catch (_) { /* no-op */ }
     try { if (this.hasPanelTarget && this.handlePanelPointerMove) this.panelTarget.removeEventListener('pointermove', this.handlePanelPointerMove, { capture: true }); } catch (_) { /* no-op */ }
@@ -402,6 +417,8 @@ export default class extends Controller {
       // Fallback: single button target
       this.buttonTarget.setAttribute("aria-expanded", value);
     }
+    // The source toolbar's contents button sits outside this controller.
+    document.querySelectorAll('[data-toc-opener]').forEach((btn) => btn.setAttribute("aria-expanded", value));
     // On mobile, keep the floating toggle button visible so layout doesn't shift
     try {
       const isDesktop = this.desktopMedia && this.desktopMedia.matches;
