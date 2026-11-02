@@ -461,7 +461,7 @@ export default class extends Controller {
 
       if (makeInert) {
         // Prevent focus/interaction but keep the card box (shadow/border) visible
-        card.setAttribute('inert', '');
+        this.setCardContentsInert(card, true);
         card.style.pointerEvents = 'none';
         // Allow card border/shadow to remain visible near the sliver
         this.panelTarget.style.overflow = 'hidden';
@@ -502,7 +502,7 @@ export default class extends Controller {
         });
       } else {
         // Restore interactivity
-        card.removeAttribute('inert');
+        this.setCardContentsInert(card, false);
         card.style.pointerEvents = '';
         this.panelTarget.style.overflow = '';
         this.panelTarget.style.background = '';
@@ -535,6 +535,20 @@ export default class extends Controller {
         this.removeSliverOverlays();
       }
     } catch (_) {}
+  }
+
+  // Collapsed on a desktop, the card shows only its edge. Its contents are
+  // inert, but its handle stays a real button, so a keyboard can open the
+  // table of contents: since 2026-11-02 nothing else on a long law does (the
+  // note and buttons below the main list are gone). A mouse still opens it
+  // through the sliver, since the card ignores the pointer while collapsed.
+  setCardContentsInert(card, makeInert) {
+    card.removeAttribute('inert');
+    Array.from(card.children).forEach((child) => {
+      if (child.matches('[data-sidebar-toggle-target="button"]')) return;
+      if (makeInert) child.setAttribute('inert', '');
+      else child.removeAttribute('inert');
+    });
   }
 
   // Create/update overlays: a content cover inside the card and a transparent, clickable sliver on the panel

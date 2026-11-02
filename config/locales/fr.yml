@@ -209,11 +209,6 @@ fr:
   ov_pdf: "aperçu PDF"
   title_details: "titre "
   toc: "table des matières "
-  toc_summary:
-    text: "La table des matières ci-dessus compte %{count} éléments. Faites-la défiler ou cherchez dans le panneau latéral."
-    open: "Rechercher dans le panneau latéral"
-    to_text: "Aller au texte"
-    print: "La table des matières complète (%{count} éléments) figure sur la page web."
   updates: "Ce texte modifie le(s) texte(s) suivant(s) "
   exdecs_title: "Arrêté(s) d'exécution "
   exdecs:

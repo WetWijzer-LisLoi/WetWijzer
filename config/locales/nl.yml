@@ -209,11 +209,6 @@ nl:
   ov_pdf: "overzicht PDF"
   title_details: "titel"
   toc: "inhoudstafel"
-  toc_summary:
-    text: "De inhoudstafel hierboven telt %{count} onderdelen. Blader erdoor of zoek in de zijbalk."
-    open: "Zoeken in de zijbalk"
-    to_text: "Naar de tekst"
-    print: "De volledige inhoudstafel (%{count} onderdelen) staat op de webpagina."
   updates: "Deze tekst heeft de volgende tekst(en) gewijzigd"
   exdecs_title: "Uitvoeringsbesluit(en)"
   exdecs:

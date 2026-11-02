@@ -8,6 +8,16 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.6] - 2026-11-02
+
+### Changed
+- Law pages: a long law's table of contents no longer carries the note below it ("De inhoudstafel hierboven telt ... onderdelen") or its two buttons. The full list stays open in the page, with its count in the heading, and the sidebar keeps its own controls.
+
+### Fixed
+- Law pages: on a desktop, the closed table of contents at the left edge opens from the keyboard. Its handle can now take focus and shows it; before, only a mouse could open it there.
+- Security: sqlite3 2.10.2 with SQLite 3.54.1, published fix for SQL text cut short at strings of 4 GiB or more (GHSA-4fqr-96q8-xrfx).
+- Security: addressable 2.9.2, published fixes for denial of service in templates and path normalization (GHSA-4w5q-wg7v-w6gp, GHSA-9f42-57jx-vpp3, GHSA-j82w-28jv-3pmj, GHSA-qq38-m9mg-xjj5), dotted path segments (GHSA-8gmh-2hhj-2hv9) and misleading hosts in `display_uri` (GHSA-539f-xcgw-2gjg, GHSA-9crm-g4mf-wc5j).
+
 ## [1.1.5] - 2026-11-01
 
 ### Changed

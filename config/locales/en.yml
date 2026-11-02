@@ -186,11 +186,6 @@ en:
   ov_pdf: "overview PDF"
   title_details: "title"
   toc: "table of contents"
-  toc_summary:
-    text: "The table of contents above has %{count} entries. Scroll through it or search in the sidebar."
-    open: "Search in the sidebar"
-    to_text: "Go to the text"
-    print: "The full table of contents (%{count} entries) is on the web page."
   updates: "This text has amended the following text(s)"
   exdecs_title: "Implementing decision(s)"
   exdecs:

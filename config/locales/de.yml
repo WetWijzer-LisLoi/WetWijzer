@@ -185,11 +185,6 @@ de:
   ov_pdf: "Übersicht PDF"
   title_details: "Titel"
   toc: "Inhaltsverzeichnis"
-  toc_summary:
-    text: "Das Inhaltsverzeichnis oben umfasst %{count} Einträge. Scrollen Sie darin oder suchen Sie in der Seitenleiste."
-    open: "In der Seitenleiste suchen"
-    to_text: "Zum Text"
-    print: "Das vollständige Inhaltsverzeichnis (%{count} Einträge) steht auf der Webseite."
   updates: "Dieser Text hat folgende Texte geändert"
   exdecs_title: "Durchführungsvorschrift(en)"
   exdecs:
