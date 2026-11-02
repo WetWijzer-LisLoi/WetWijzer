@@ -754,7 +754,6 @@ db/migrate/20260609110000_add_zero_knowledge_fields_to_users.rb
 db/migrate/20260613103235_cleanup_legacy_intelligence_levels.rb
 db/migrate/20260701044939_add_short_title_to_legislation.rb
 db/schema.rb
-lib/assets/.keep
 package-lock.json
 package.json
 postcss.config.js
