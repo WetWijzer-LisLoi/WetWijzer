@@ -2,6 +2,15 @@
 
 # Controller for browsing and searching Belgian parliamentary preparatory works
 class ParliamentaryController < ApplicationController
+  # The columns of the list on this page, for a query that stands on documents itself.
+  DOCUMENT_LIST_COLUMNS = 'id, parliament, dossier_number, document_number, title, url, document_date, document_type, ' \
+                          'substr(content, 1, 800), legislature'
+  # language stands behind content in every row, so reading it for one row walks that row's whole text. Counted that
+  # way, one broad word read 378,588 pages (1.5 GB), and page 501 of its results 163,657: measured on production
+  # 2026-11-03, ledger item 39. This index holds language, parliament and legislature, and the row id with them: the
+  # same count read 1,036 pages. So the rows of a page are chosen here, and only those rows are read.
+  COVERING_DOCUMENT_INDEX = 'documents INDEXED BY idx_documents_unique'
+
   # GET /parlement
   def index
     @title = case I18n.locale when :fr then 'Travaux Préparatoires' when :de then 'Parlamentarische Vorarbeiten' when :en then 'Parliamentary Work' else 'Parlementaire Voorbereidingen' end
@@ -420,15 +429,18 @@ class ParliamentaryController < ApplicationController
     end
   end
 
-  def search_documents(query, filters, limit, offset)
+  # The conditions of the list and of its count, which have to be the same.
+  def document_conditions(query, filters)
     conditions = []
     params = []
 
     if query.present?
       # Use FTS5 for fast full-text search; an opinion number is a phrase
-      # (ParliamentaryFtsQuery).
-      conditions << 'documents.id IN (SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?)'
-      params << ParliamentaryFtsQuery.build(query)
+      # (ParliamentaryFtsQuery). With nothing searchable left ("!!!") MATCH raises,
+      # and the page said the corpus was coming soon: it finds nothing instead.
+      match = ParliamentaryFtsQuery.build(query)
+      conditions << (match.present? ? 'documents.id IN (SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?)' : '0 = 1')
+      params << match if match.present?
     end
 
     if filters[:parliament].present?
@@ -457,64 +469,51 @@ class ParliamentaryController < ApplicationController
       params.concat(relation_binds)
     end
 
-    where_clause = conditions.any? ? "WHERE #{conditions.join(' AND ')}" : ''
+    [conditions.any? ? "WHERE #{conditions.join(' AND ')}" : '', params]
+  end
+
+  # A year is not in the index, so the rows have to be read for it. A law's documents are few and have indexes of their
+  # own, and they come in an order the index does not hold.
+  def covered_by_index?(filters)
+    filters[:year].blank? && filters[:numac].blank?
+  end
+
+  def search_documents(query, filters, limit, offset)
+    where_clause, params = document_conditions(query, filters)
+    return document_page(where_clause, params, 'DESC', limit, offset) if covered_by_index?(filters)
 
     # a law's documents in parliamentary order, so its first page starts with
     # the rows the law page's panel previews
     order = filters[:numac].present? && query.blank? ? ParliamentaryRelations::Filter::ORDER : 'id DESC'
-    sql = "SELECT id, parliament, dossier_number, document_number, title, url, document_date, document_type, substr(content, 1, 800), legislature FROM documents #{where_clause} ORDER BY #{order} LIMIT ? OFFSET ?"
-    params += [limit, offset]
-
-    chamber_db.execute(sql, params).map do |row|
-      { id: row[0], parliament: row[1], dossier_number: row[2], document_number: row[3], title: row[4], url: row[5], date: row[6],
-        document_type: row[7], description: row[8], legislature: row[9] }
-    end
+    sql = "SELECT #{DOCUMENT_LIST_COLUMNS} FROM documents #{where_clause} ORDER BY #{order} LIMIT ? OFFSET ?"
+    chamber_db.execute(sql, params + [limit, offset]).map { |row| document_list_row(row) }
   end
 
   def count_documents(query, filters)
-    conditions = []
-    params = []
-
-    if query.present?
-      conditions << 'documents.id IN (SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?)'
-      params << ParliamentaryFtsQuery.build(query)
-    end
-
-    if filters[:parliament].present?
-      conditions << 'parliament = ?'
-      params << filters[:parliament]
-    end
-
-    if filters[:lang].present?
-      conditions << 'language = ?'
-      params << filters[:lang]
-    end
-
-    if filters[:year].present? && filters[:year].to_s.match?(/^\d{4}$/)
-      conditions << 'document_date LIKE ?'
-      params << "#{filters[:year]}-%"
-    end
-
-    if filters[:numac].present?
-      relation_sql, relation_binds = relation_where(filters)
-      conditions << relation_sql
-      params.concat(relation_binds)
-    end
-
-    where_clause = conditions.any? ? "WHERE #{conditions.join(' AND ')}" : ''
-    chamber_db.execute("SELECT COUNT(*) FROM documents #{where_clause}", params).first[0]
+    where_clause, params = document_conditions(query, filters)
+    source = covered_by_index?(filters) ? COVERING_DOCUMENT_INDEX : 'documents'
+    chamber_db.execute("SELECT COUNT(*) FROM #{source} #{where_clause}", params).first[0]
   end
 
   def recent_documents(limit, offset)
     lang = I18n.locale == :nl ? 'nl' : 'fr'
-    order = @sort == 'date_asc' ? 'ASC' : 'DESC'
-    chamber_db.execute(
-      "SELECT id, parliament, dossier_number, document_number, title, url, document_date, document_type, substr(content, 1, 800), legislature FROM documents WHERE language = ? ORDER BY id #{order} LIMIT ? OFFSET ?",
-      [lang, limit, offset]
-    ).map do |row|
-      { id: row[0], parliament: row[1], dossier_number: row[2], document_number: row[3], title: row[4], url: row[5], date: row[6],
-        document_type: row[7], description: row[8], legislature: row[9] }
-    end
+    document_page('WHERE language = ?', [lang], @sort == 'date_asc' ? 'ASC' : 'DESC', limit, offset)
+  end
+
+  # direction is ours, 'ASC' or 'DESC', never the reader's text.
+  def document_page(where_clause, params, direction, limit, offset)
+    sql = <<~SQL.squish
+      WITH page_ids AS MATERIALIZED (
+        SELECT id FROM #{COVERING_DOCUMENT_INDEX} #{where_clause} ORDER BY id #{direction} LIMIT ? OFFSET ?
+      )
+      SELECT #{DOCUMENT_LIST_COLUMNS} FROM documents WHERE id IN (SELECT id FROM page_ids) ORDER BY id #{direction}
+    SQL
+    chamber_db.execute(sql, params + [limit, offset]).map { |row| document_list_row(row) }
+  end
+
+  def document_list_row(row)
+    { id: row[0], parliament: row[1], dossier_number: row[2], document_number: row[3], title: row[4], url: row[5], date: row[6],
+      document_type: row[7], description: row[8], legislature: row[9] }
   end
 
   def total_documents_count(lang = nil)

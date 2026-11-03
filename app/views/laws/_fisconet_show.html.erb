@@ -16,7 +16,11 @@
     fisconet_toc_sections << { type: :article, number: article[:article_number], label: fisconet_toc_label(article), id: fisconet_article_anchor_id(article[:article_number]), section: section }
     fisconet_valid_art_nums << article[:article_number].to_s
   end
-  has_toc = fisconet_toc_sections.any? { |e| e[:type] == :section }
+  # Any document with more than one entry gets its contents. Asking for a section
+  # instead left the six federal codes without any: the walk corpus has sections
+  # only for regional variants, so WIB 92's 788 articles came with no way around
+  # (found 2026-11-03).
+  has_toc = fisconet_toc_sections.size > 1
   fisconet_code_names = fisconet_code_names(@law, info || {})
 %>
 <!-- Page Header (matches Justel show.html.erb) -->

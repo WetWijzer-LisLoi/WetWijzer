@@ -8,6 +8,17 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.8] - 2026-11-03
+
+### Fixed
+- Tax codes: the federal codes, such as the WIB 92 with its 788 articles and the VAT code, now have a table of contents, open in the main column, with its button in the toolbar and its sidebar. Only a document with regional variants had one.
+- Parliamentary documents: a search for a common word and the later pages of a list no longer read the full text of every document they pass. One such count read 1.5 GB of the corpus and now reads 4 MB, with the same results.
+- Parliamentary documents: the number of results and the pager now follow the legislature filter, as the list already did.
+- Parliamentary documents: a search with nothing searchable in it ("!!!") now finds nothing. The page used to say the documents were coming soon.
+- Home page: room is kept for the sample questions, so what stands below them no longer moves when they arrive or change. The longest sets can still take a row more on a narrow phone.
+- Judgments: the compound of an acronym or an initial, such as "XYZ-steun", which name recognition now and then takes for a person, keeps its ordinary word after the initial ("X.-steun") when the document also writes that word on its own. Before, only the initial remained. This applies to new judgments and later rebuilds; texts already stored keep what they have.
+- Security: Loofah 2.25.3, Nokogiri 1.19.7 and rails-html-sanitizer 1.7.2, published fixes for bypasses of HTML sanitizing and a use-after-free (GHSA-345x-3rq2-jfrm, GHSA-h6v6-rg66-fqj4, GHSA-jcff-cj73-4w4f, GHSA-m3x9-938q-5767, GHSA-mf2j-8f84-cc9q, GHSA-p9wj-w8xq-vjx6, GHSA-3w22-6jfg-527w, GHSA-4p39-36wj-23h4, GHSA-v995-44v6-5fqm, GHSA-cpgf-5mjf-73p7, GHSA-h7wh-q2qr-458c).
+
 ## [1.1.7] - 2026-11-02
 
 ### Fixed
