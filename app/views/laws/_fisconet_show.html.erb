@@ -7,14 +7,19 @@
   seen_sections = Set.new
   # Build set of valid article numbers for cross-reference linking (Story 1.3)
   fisconet_valid_art_nums = Set.new
-  @fisconet_articles.each do |article|
+  # The rows this page shows. A row with nothing to print gets no entry, no id and no reference to it, or it would hold
+  # an id its visible namesake then lacks, and references would lead nowhere.
+  fisconet_rendered = @fisconet_articles.reject { |article| article[:text].to_s.strip.length <= 10 && article[:html].to_s.strip.length <= 10 }
+  # One id per row, used by the contents and the bodies alike (FisconetArticleAnchors).
+  fisconet_anchors = fisconet_article_anchors(fisconet_rendered)
+  fisconet_rendered.each do |article|
+    fisconet_valid_art_nums << article[:article_number].to_s
     section = article[:section_path]
     if section.present? && !seen_sections.include?(section)
       seen_sections.add(section)
       fisconet_toc_sections << { type: :section, text: section, id: "fisconet-section-#{section.parameterize}" }
     end
-    fisconet_toc_sections << { type: :article, number: article[:article_number], label: fisconet_toc_label(article), id: fisconet_article_anchor_id(article[:article_number]), section: section }
-    fisconet_valid_art_nums << article[:article_number].to_s
+    fisconet_toc_sections << { type: :article, number: article[:article_number], label: fisconet_toc_label(article), id: fisconet_anchors.id_of(article), section: section }
   end
   # Any document with more than one entry gets its contents. Asking for a section
   # instead left the six federal codes without any: the walk corpus has sections
@@ -292,7 +297,7 @@
                 repair that rewrites text without changing the number of rows must still
                 invalidate this - the back-to-top cleanup did exactly that and the page
                 kept serving the marker from cache while the corpus was already clean. %>
-            <% cache ["fisconet-articles-v4", @law.numac, @language_id, I18n.locale,
+            <% cache ["fisconet-articles-v5", @law.numac, @language_id, I18n.locale,
                       text_cache_version(@law.title), rows_cache_version(@fisconet_articles), render_code_version],
                      expires_in: 7.days do %>
             <%# Bulk article action buttons (matching Justel _articles.html.erb) %>
@@ -428,10 +433,8 @@
             <% current_section = nil %>
             <% section_stack = [] %>
             <% prev_was_heading = false %>
-            <% @fisconet_articles.each_with_index do |article, index| %>
-              <% article_anchor_id = fisconet_article_anchor_id(article[:article_number]) %>
-              <% legacy_article_anchor_id = "art_#{article[:article_number]}" %>
-              <% legacy_article_anchor_id = nil unless legacy_article_anchor_id != article_anchor_id && legacy_article_anchor_id.match?(/\A[[:alnum:]_.:\/-]+\z/) %>
+            <% fisconet_rendered.each_with_index do |article, index| %>
+              <% article_anchor_id = fisconet_anchors.id_of(article) %>
               <% if article[:section_path].present? && article[:section_path] != current_section %>
                 <% current_section = article[:section_path] %>
                 <% section_id = "fisconet-section-#{current_section.parameterize}" %>
@@ -455,9 +458,8 @@
               <% end %>
               <% text = article[:text].to_s.strip %>
               <% html_content = article[:html].to_s.strip %>
-              <% next if text.length <= 10 && html_content.length <= 10 %>
-              <%# Preserve pre-canonicalization bookmarks such as #art_145/33. %>
-              <% if legacy_article_anchor_id %><span id="<%= legacy_article_anchor_id %>" class="block h-0 overflow-hidden scroll-mt-24" aria-hidden="true"></span><% end %>
+              <%# The plain id, for chatbot citations and links to this page, and pre-canonicalization bookmarks such as #art_145/33. %>
+              <% fisconet_anchors.aliases_of(article).each do |anchor_alias| %><span id="<%= anchor_alias %>" class="block h-0 overflow-hidden scroll-mt-24" aria-hidden="true"></span><% end %>
               <article id="<%= article_anchor_id %>" data-article-scope class="group relative scroll-mt-24 -mx-2 px-2 sm:-mx-3 sm:px-3 <%= (index.zero? || prev_was_heading) ? '' : 'border-t border-gray-200 dark:border-(--accent-500)/40' %>">
                 <span id="section-<%= article_anchor_id %>" class="block h-0 overflow-hidden scroll-mt-24 mt-0!" aria-hidden="true"></span>
                 <% top_pad = prev_was_heading ? 'pt-2' : 'pt-4' %>
@@ -479,7 +481,7 @@
                         # limit) degrades this one article to the plain-text path, never 500s
                         # the page.
                         provision_label = fisconet_provision_label(article)
-                        provision_body = fisconet_provision_body(article, fisconet_valid_art_nums, code_names: fisconet_code_names)
+                        provision_body = fisconet_provision_body(article, fisconet_valid_art_nums, code_names: fisconet_code_names, anchors: fisconet_anchors)
                       %>
                       <% if provision_body %>
                         <p class="article-heading"><span class="article-number not-prose font-bold text-gray-900 dark:text-white"><%= provision_label %></span></p>
@@ -535,7 +537,7 @@
                           # the inline marker
                           article_html = rendered_parts.join.sub(/\A<br>/, '').gsub(%r{(?:</p><p>)+}, '</p><p>').sub(%r{\A</p><p>}, '')
                         %>
-                        <div class="fisconet-provision"><p><span class="article-number not-prose font-bold text-gray-900 dark:text-white"><%= provision_label %></span> <%= (fisconet_numbered_provision?(article) ? linkify_tax_article_refs(article_html, fisconet_valid_art_nums) : article_html).html_safe %></p></div>
+                        <div class="fisconet-provision"><p><span class="article-number not-prose font-bold text-gray-900 dark:text-white"><%= provision_label %></span> <%= (fisconet_numbered_provision?(article) ? linkify_tax_article_refs(article_html, fisconet_valid_art_nums, anchors: fisconet_anchors, region: article[:region]) : article_html).html_safe %></p></div>
                       <% else %>
                         <p><span class="article-number not-prose font-bold text-gray-900 dark:text-white"><%= provision_label %></span> <span class="text-gray-400">…</span></p>
                       <% end %>

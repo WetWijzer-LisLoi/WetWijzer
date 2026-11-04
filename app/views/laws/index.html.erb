@@ -268,9 +268,10 @@
       <%= render 'chatbot/question_count', id: 'hero-question-count', controller: 'hero-chatbot' %>
 
       <%# Sample question pills - dynamically loaded from chatbot_questions.json, rotates every 30s.
-          The room is reserved so that nothing below jumps when they land or rotate. Measured 2026-11-03
-          on 400 random sets on each of the four sites, against 16 px empty: 146 px holds 88 to 98% of
-          them at a width of 390, 106 px nearly all from 600, 68 px 94 to 100% from 768. %>
+          The room is reserved so that less below moves when they land or rotate. A long set can still
+          take a row more. Measured 2026-11-03 on 400 random sets on each of the four sites, against 16 px
+          empty: 146 px holds 40 to 74% of them at a width of 320 and 88 to 98% at 390, 106 px nearly all
+          from 600, 68 px 94 to 100% from 768. %>
       <div class="mt-2.5 flex flex-wrap justify-center items-center content-start gap-2 min-h-[146px] min-[600px]:min-h-[106px] md:min-h-[68px]" id="hero-sample-questions">
         <span class="text-xs text-gray-600 dark:text-gray-400 self-center mr-0.5"><%= case I18n.locale when :fr then 'Essayez:' when :de then 'Probieren Sie:' when :en then 'Try:' else 'Probeer:' end %></span>
         <span id="hero-sample-pills" class="contents"></span>

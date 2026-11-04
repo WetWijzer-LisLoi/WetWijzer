@@ -439,6 +439,7 @@ class FisconetSearchService
           text: text,
           html: html.presence,
           section_path: row[region_col].presence,
+          region: row['region'].presence,
           end_date: row['end_date']
         }
       end.compact

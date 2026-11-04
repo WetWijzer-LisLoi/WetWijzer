@@ -52,6 +52,11 @@ module References
       normalized.present? ? "art_#{normalized}" : nil
     end
 
+    # The ids of this page's rows, for the contents and the bodies alike (FisconetArticleAnchors).
+    def fisconet_article_anchors(articles)
+      FisconetArticleAnchors.new(articles) { |number| fisconet_article_anchor_id(number) }
+    end
+
     # The canonical anchor ids on the page, built ONCE per page. This helper
     # runs once per article, and it used to derive the ids of every article on
     # every call: 1,697 x 1,697 derivations for the registration-duties code,
@@ -68,8 +73,11 @@ module References
     #
     # @param html [String] HTML content (already escaped) to process
     # @param valid_article_numbers [Set, Array] article numbers present on the page
+    # @param anchors [FisconetArticleAnchors, nil] the page's rows, so a reference inside one region's text leads to that
+    #   region's article
+    # @param region [String, nil] the region of the row this text belongs to
     # @return [String] HTML with article references linked
-    def linkify_tax_article_refs(html, valid_article_numbers)
+    def linkify_tax_article_refs(html, valid_article_numbers, anchors: nil, region: nil)
       return html if html.blank? || valid_article_numbers.blank?
 
       # Compare canonical ids so references remain linkable regardless of
@@ -84,7 +92,8 @@ module References
         anchor_id = fisconet_article_anchor_id(art_num)
         if anchor_id && valid_set.include?(anchor_id)
           link_classes = 'text-(--link-color) hover:text-(--link-hover-color) hover:underline'
-          %(<a href="##{anchor_id}" class="#{link_classes}" title="Art. #{art_num}">#{full_match}</a>)
+          target = anchors ? anchors.target(anchor_id, region, number: art_num) : anchor_id
+          %(<a href="##{target}" class="#{link_classes}" title="Art. #{art_num}">#{full_match}</a>)
         else
           full_match
         end

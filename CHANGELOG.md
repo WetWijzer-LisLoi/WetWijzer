@@ -8,6 +8,14 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.9] - 2026-11-03
+
+### Fixed
+- Tax codes: on the regional codes (registration duties and inheritance duties), each article now has its own link. An entry in the table of contents opens its own article. A reference inside an article opens that number in the same region, else in the federal text, else the first article with that number in another region. A link used to depend on the article's number alone, so most entries opened an earlier article with that number. Old links to an article number still land where they did, and so do chatbot citations, which have not changed.
+- Chatbot: finding the governing articles for a long question takes a fraction of the work: on one test question repeated to 2,000 characters, 0.4 s instead of 7.8 s on a busy machine. The changed checks are built to give the same answer: a comparison on about 26,000 questions and test strings found no differences, though 3 checks on a very long test text ran out of time and were not compared. If a check still runs out of time, the question loses that one article instead of all of them, and the answer says the search was incomplete. Before, it lost them all without saying so.
+- Law pages: the chat prompt no longer opens where a visible button or link stands at that moment, because a press meant for that control opened the chat. It also goes away when the reader scrolls.
+- Case-law index: requests to the embedding service stay within a token budget, and a refused request is logged with fixed words for the reason, not the provider's message.
+
 ## [1.1.8] - 2026-11-03
 
 ### Fixed

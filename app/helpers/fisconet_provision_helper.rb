@@ -27,12 +27,12 @@ module FisconetProvisionHelper
   end
 
   # nil when the row has no usable HTML or the source exceeds the parser's depth limit: the caller renders the text.
-  def fisconet_provision_body(article, valid_article_numbers, code_names: [])
+  def fisconet_provision_body(article, valid_article_numbers, code_names: [], anchors: nil)
     body = FisconetProvision.body_html(fisconet_reduce_inline_styles(article[:html].to_s.strip),
                                        number: article[:article_number], title: article[:article_title], code_names: code_names)
     return nil if body.blank?
 
-    body = linkify_tax_article_refs(body, valid_article_numbers) if fisconet_numbered_provision?(article)
+    body = linkify_tax_article_refs(body, valid_article_numbers, anchors: anchors, region: article[:region]) if fisconet_numbered_provision?(article)
     body.html_safe # sanitized by FisconetProvision with the view's own allowlists
   end
 

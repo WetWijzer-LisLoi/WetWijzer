@@ -300,6 +300,7 @@ app/services/document_lookup_service.rb
 app/services/encryption_audit_service.rb
 app/services/encryption_reencrypt_service.rb
 app/services/existing_user_credit_bonus_service.rb
+app/services/fisconet_article_anchors.rb
 app/services/fisconet_code_registry.rb
 app/services/fisconet_provision.rb
 app/services/fisconet_search_service.rb
@@ -356,6 +357,7 @@ app/services/legal_chatbot/language_detection.rb
 app/services/legal_chatbot/legal_fact_provider.rb
 app/services/legal_chatbot/legislation_search.rb
 app/services/legal_chatbot/llm_client.rb
+app/services/legal_chatbot/lookahead_anchor.rb
 app/services/legal_chatbot/marketplace_civil_claim_grounding.rb
 app/services/legal_chatbot/marketplace_civil_claim_grounding/procedure_claims.rb
 app/services/legal_chatbot/marketplace_civil_claim_intent.rb

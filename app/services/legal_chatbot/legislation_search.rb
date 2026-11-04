@@ -2038,6 +2038,9 @@ module LegalChatbot
       (?:(?=.*#{NV_FORM_PATTERN})|(?=#{GENERIC_COMPANY_CAPITAL_PATTERN})(?!.*#{BV_FORM_PATTERN}))
     }imx.freeze
 
+    # retrieval_degradation when a pattern could not be asked, or the pins were lost altogether.
+    ARTICLE_PINS_UNAVAILABLE = 'article_pins_unavailable'
+
     ARTICLE_PINS = [
       # Criminal / civil procedure
       [LEGACY_CRIMINAL_FACT_PATTERN,                                  '2024002052', '2'],        # Book I: more-favourable-law transition
@@ -2501,6 +2504,14 @@ module LegalChatbot
       [FOREIGN_DECEASED_SUCCESSION_TAX_PATTERN, '2013036154', '2.7.3.2.2'],
     ].freeze
 
+    # What each row of ARTICLE_PINS is matched with (LookaheadAnchor). The row itself stays the answer, because later
+    # steps ask by identity which pattern it came from. matching_article_pins normalises whitespace first, which the
+    # anchor requires, and uses the match as a boolean.
+    ARTICLE_PIN_MATCHERS = begin
+      anchored = {}.compare_by_identity
+      ARTICLE_PINS.map { |pin| [anchored[pin.first] ||= LookaheadAnchor.anchored(pin.first), pin] }.freeze
+    end
+
     # Deployment tooling must validate the complete target surface, not a
     # hand-maintained subset of laws that happened to need a repair import.
     # Include the exact regional rescue targets as well as ARTICLE_PINS so
@@ -2634,6 +2645,9 @@ module LegalChatbot
         source
       end
     rescue StandardError => e
+      # Pins recover the governing articles ordinary retrieval misses, so losing them is a search that did not finish,
+      # and the reader is told, as for any other source that could not be searched through.
+      @retrieval_degradation ||= ARTICLE_PINS_UNAVAILABLE
       Rails.logger.warn("[ArticlePins] skipped: #{e.class}")
       []
     end
@@ -3938,11 +3952,21 @@ module LegalChatbot
       matched.reject { |pattern, numac, article| pattern.equal?(RENTAL_FILING_PATTERN) && !kept.include?([numac, article]) }
     end
 
+    # A pattern that runs out of time loses its own pin, not those of the whole question (Rails limits a match to one
+    # second). The log names the row and the question's length, never its text.
+    def article_pin_matches?(question, matcher, pin)
+      question.match?(matcher)
+    rescue Regexp::TimeoutError
+      @retrieval_degradation ||= ARTICLE_PINS_UNAVAILABLE
+      Rails.logger.warn("[ArticlePins] timed out: #{pin[1]} art. #{pin[2]} on #{question.length} characters")
+      false
+    end
+
     def matching_article_pins(question)
       # A legal form on a second line is still part of the same question.
       question = question.to_s.gsub(/[[:space:]]+/, ' ')
-      matched = ARTICLE_PINS.select { |pattern, _numac, _article| question.match?(pattern) }
-                            .uniq { |_pattern, numac, article| [numac, article] }
+      matched = ARTICLE_PIN_MATCHERS.filter_map { |matcher, pin| pin if article_pin_matches?(question, matcher, pin) }
+                                    .uniq { |_pattern, numac, article| [numac, article] }
       matched = scope_peace_judge_rental_pins(matched, question)
       matched = scope_rental_filing_pins(matched, question)
       commercial_targets = CommercialWebsiteIntent.article_targets(question)

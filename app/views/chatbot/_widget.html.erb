@@ -844,13 +844,15 @@
       if (window.matchMedia && window.matchMedia('(max-width: 767px)').matches) return;
       // Desktop: show at most once per session (was re-showing every navigation).
       if (window._chatbotToastShown) return;
-      window._chatbotToastShown = true;
       var toast = document.getElementById('chatbot-context-toast');
       if (!toast) return;
 
       // Don't show if chat panel is already open
       var panel = document.getElementById('chatbot-widget-panel');
-      if (panel && !panel.classList.contains('hidden')) return;
+      if (panel && !panel.classList.contains('hidden')) {
+        window._chatbotToastShown = true;
+        return;
+      }
 
       // Build toast content
       // The CTA is a <button> for the same reason the × is: the toast's whole
@@ -863,6 +865,19 @@
 
       // Show with animation
       toast.classList.remove('hidden', 'toast-exit');
+      // An unsolicited prompt must not stand over a control: a press meant for
+      // the control opens the chat instead. It stood over one in 7 of 30 page and
+      // desktop-size combinations measured on the live site on 2026-11-03 (ledger
+      // item 38). It stays away then, and this session may still offer it on the
+      // next page.
+      if (toastCoversControl(toast)) {
+        toast.classList.add('hidden');
+        return;
+      }
+      window._chatbotToastShown = true;
+      // Once the reader scrolls, a control can move under it, and the prompt has
+      // made its offer.
+      window.addEventListener('scroll', dismissToast, { once: true, passive: true });
       requestAnimationFrame(function() {
         requestAnimationFrame(function() {
           toast.classList.add('toast-visible');
@@ -893,8 +908,36 @@
       window._chatbotToastTimer = setTimeout(dismissToast, 8000);
     }
 
+    // Whether any visible control meets the box the prompt will have once it has
+    // animated in, its pointer included. That box, not the smaller one it starts
+    // from, and every control, not a grid of points, which can miss a small one.
+    function toastCoversControl(toast) {
+      var transition = toast.style.transition;
+      toast.style.transition = 'none';
+      toast.classList.add('toast-visible');
+      var box = toast.getBoundingClientRect();
+      toast.classList.remove('toast-visible');
+      // Flushed, so that it still animates in from where it starts.
+      void toast.offsetWidth;
+      toast.style.transition = transition;
+      // The pointer takes a press too: a 12 px square turned 45 degrees around the
+      // box's lower edge, so its tip is about 8.5 px below it.
+      var bottom = box.bottom + 9;
+      var controls = document.querySelectorAll('a,button,input,select,textarea,summary,label,[role="button"],[role="menuitem"]');
+      for (var i = 0; i < controls.length; i++) {
+        var control = controls[i];
+        if (toast.contains(control) || control.closest('#chatbot-fab')) continue;
+        var rect = control.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) continue;
+        if (rect.right <= box.left || rect.left >= box.right || rect.bottom <= box.top || rect.top >= bottom) continue;
+        if (control.checkVisibility({ checkVisibilityCSS: true })) return true;
+      }
+      return false;
+    }
+
     function dismissToast() {
       clearTimeout(window._chatbotToastTimer);
+      window.removeEventListener('scroll', dismissToast);
       var toast = document.getElementById('chatbot-context-toast');
       if (!toast) return;
       // Hand focus back before the toast goes display:none, or the element the
