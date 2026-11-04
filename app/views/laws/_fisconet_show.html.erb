@@ -7,9 +7,8 @@
   seen_sections = Set.new
   # Build set of valid article numbers for cross-reference linking (Story 1.3)
   fisconet_valid_art_nums = Set.new
-  # The rows this page shows. A row with nothing to print gets no entry, no id and no reference to it, or it would hold
-  # an id its visible namesake then lacks, and references would lead nowhere.
-  fisconet_rendered = @fisconet_articles.reject { |article| article[:text].to_s.strip.length <= 10 && article[:html].to_s.strip.length <= 10 }
+  # The rows this page shows.
+  fisconet_rendered = @fisconet_articles.select { |article| FisconetSearchService.printable_on_page?(article) }
   # One id per row, used by the contents and the bodies alike (FisconetArticleAnchors).
   fisconet_anchors = fisconet_article_anchors(fisconet_rendered)
   fisconet_rendered.each do |article|

@@ -56,7 +56,7 @@ module LegalChatbot
     end
 
     def validate_answer_quotes(text, sources)
-      text = fold_quote_continuations(text)
+      text = resolve_fisconet_citation_links(fold_quote_continuations(text), sources)
       source_records = sources.filter_map do |source|
         eu_record = verified_eurlex_corpus_record(source) if eurlex_corpus_source?(source)
         next if eurlex_corpus_source?(source) && !eu_record
@@ -78,6 +78,8 @@ module LegalChatbot
           text: raw.to_s,
           numac: retrieved_source_numac(source),
           article_number: retrieved_source_article_number(source),
+          fisconet_region: retrieved_fisconet_region(source),
+          fisconet_anchor: retrieved_fisconet_anchor(source),
           ecli: (source[:case_number] || source[:ecli] || source['case_number'] || source['ecli']).to_s.presence,
           url: (source[:url] || source['url']).to_s.presence,
           official_identity: eu_record ? "eurlex:#{source_field(eu_record, :eu_chunk_id, 'eu_chunk_id')}" : official&.fetch(:official_source_id),
@@ -322,7 +324,7 @@ module LegalChatbot
         if (match = href.match(%r{\A(?:https?://(?:www\.)?wetwijzer\.be)?/laws/([^?#/)\s]+)([^)\s]*)\z}i))
           numac = match[1].match?(/\Afisconet_\d+\z/i) ? match[1].upcase : match[1]
           article_number = link_article_number(match[2])
-          internal_targets << [numac, article_number]
+          internal_targets << [numac, article_number, link_article_region(match[2]), match[2][/#(art_[^?&#\s)]+)/i, 1]]
         elsif (match = href.match(%r{\A(?:https?://(?:www\.)?wetwijzer\.be)?/jurisprudence/([^?#/)\s]+)(?:[?#][^)\s]*)?\z}i))
           jurisprudence_targets << CGI.unescape(match[1]).upcase
         elsif href.match?(%r{\Ahttps?://}i) || scheme_missing_external_link?(href)
@@ -332,9 +334,15 @@ module LegalChatbot
       end
 
       if internal_targets.any?
-        return source_records.select do |source|
-          internal_targets.include?([source[:numac], source[:article_number]])
-        end
+        return internal_targets.flat_map do |numac, article_number, region, anchor|
+          rows = source_records.select { |source| source[:numac] == numac && source[:article_number] == article_number }
+          # A link to one row's text attributes the quote to that text, and 1.2 and 1/2 share an article number here. A
+          # region not retrieved says nothing about the rows that were. resolve_fisconet_citation_links has moved such a link
+          # to one of them; this is for a link it left alone. A plain id with several rows retrieved names none of them.
+          exact = rows.select { |source| anchor && source[:fisconet_anchor] == anchor }
+          own = rows.select { |source| region && source[:fisconet_region] == region }
+          exact.presence || own.presence || rows
+        end.uniq
       end
 
       if jurisprudence_targets.any?
@@ -1047,7 +1055,7 @@ module LegalChatbot
         target = parsed[2].match(%r{\A/laws/([^/?#]+)(?:\?language_id=[123])?#art[-_]([^?#[:space:]]+)\z}i)
         next markdown unless target
 
-        pair = [target[1], normalize_article_number(target[2])]
+        pair = [target[1], link_article_number(parsed[2])]
         next markdown unless permitted_domestic_pairs.include?(pair) &&
                              verified_article_citation_link?(parsed[1], parsed[2], allowed_pairs, allowed_external_pairs, allowed_german_pairs)
 
@@ -1347,7 +1355,7 @@ module LegalChatbot
         next unless target
 
         numac = target[1].match?(/\Afisconet_\d+\z/i) ? target[1].upcase : target[1]
-        [numac, normalize_article_number(target[2])]
+        [numac, link_article_number(href)]
       end.uniq
     end
 

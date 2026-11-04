@@ -7,12 +7,27 @@
 # A row of a region always has art_<number>--<region>, whatever else the page holds. A row without a region has
 # art_<number>. A row whose id is already taken, by a repeated number or by two numbers that normalise alike, gets a
 # running number after it. The first row of a number also answers to the plain art_<number>, and each row to the form an
-# old bookmark used, such as art_145/33, as long as no other row has it. Chatbot citations still use the plain form, so
-# they keep landing where they did: on the first region (ledger item 47).
+# old bookmark used, such as art_145/33, as long as no other row has it. Chatbot citations open the row they cite, through
+# these same ids (LegalChatbot::FisconetSearch#article_url, ledger item 47); answers from before that keep the plain form,
+# which lands on the first region.
 class FisconetArticleAnchors
   # What an old bookmark may hold; anything else was never written as an id.
   LEGACY_ID = %r{\A[[:alnum:]_.:/-]+\z}
   FEDERAL = 'federal'
+  SEPARATOR = '--'
+
+  # art_44 of a Walloon row is art_44--waals; a row without a region keeps art_44.
+  def self.regional_id(canonical, region)
+    slug = region.to_s.parameterize.presence
+    slug ? "#{canonical}#{SEPARATOR}#{slug}" : canonical
+  end
+
+  # What the part of an id after art_ holds: 44--waals--2 is article 44, region waals, the second row with that id. An
+  # article number never holds the separator, as normalising collapses it.
+  def self.parse_fragment(fragment)
+    number, *rest = fragment.to_s.split(SEPARATOR)
+    [number.to_s, rest.find { |part| part.match?(/\A[[:alpha:]]/) }&.downcase]
+  end
 
   # &canonical turns an article number into its plain id, as the page and the chatbot's links both derive it.
   def initialize(articles, &canonical)
@@ -51,9 +66,9 @@ class FisconetArticleAnchors
     return nil unless canonical
 
     region = slug(article[:region])
-    base = region ? "#{canonical}--#{region}" : canonical
+    base = self.class.regional_id(canonical, region)
     id = base
-    id = "#{base}--#{(2..).find { |n| used.exclude?("#{base}--#{n}") }}" if used.include?(id)
+    id = "#{base}#{SEPARATOR}#{(2..).find { |n| used.exclude?("#{base}#{SEPARATOR}#{n}") }}" if used.include?(id)
     used << id
     @by_region[[region, canonical]] ||= id
     written = article[:article_number].to_s.downcase

@@ -57,7 +57,7 @@ module LegalChatbot
           match = href.match(%r{\A/laws/([^?#/)\s]+)([^)\s]*)\z}i)
           next unless match
 
-          number = match[2].match(/#art[-_]([^?&#\s)]+)/i)&.[](1)
+          number = link_fragment_number(match[2])
           next if number.blank?
 
           numac = match[1].match?(/\Afisconet_\d+\z/i) ? match[1].upcase : match[1]

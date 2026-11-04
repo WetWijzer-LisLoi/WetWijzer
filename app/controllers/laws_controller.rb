@@ -613,28 +613,7 @@ class LawsController < ApplicationController
     @fisconet_info = info
     raw_articles = FisconetSearchService.all_articles(legislation_id: legislation_id, language_id: lang_id)
 
-    # Filter out garbage articles (TOC lines, too-short content, URL artifacts)
-    @fisconet_articles = raw_articles.select do |art|
-      text = art[:text].to_s.strip
-      html = art[:html].to_s.strip
-      content_length = [text.length, html.length].max
-      # The 100-char floor removes TOC lines and extraction debris, but it
-      # cannot be applied to rate-table entries: those name a good or service
-      # and are legitimately short. It was hiding two real VAT provisions -
-      # KB 20 Table A XIII "Waterdistributie" (96 chars, water supply at 6%)
-      # and Table B VI "Margarine" (30 chars, at 12%).
-      #
-      # Only annexes are exempted. The 8 other sub-100 rows are W.Reg articles
-      # reading "(niet meer van toepassing)", which SHOULD stay hidden, and
-      # they are article-typed. PDF containers cannot come back in through
-      # this door either - all_articles already excludes them in SQL.
-      next false if content_length < 100 && art[:article_type].to_s != 'annex'
-      next false if text.match?(/\.{10,}\s*\d+/) # TOC dotted leaders
-      next false if text.match?(/^Art\.?\s*\d+\s*\.{5,}/) # "Art. 13 ....... 96"
-      next false if text.include?('www.fisconetplus.be') && content_length < 400
-
-      true
-    end
+    @fisconet_articles = raw_articles.select { |art| FisconetSearchService.listed_on_page?(art) }
 
     doc_type = info[:document_type].presence # nil when the row stores none: never a default, never a known code's metadata
     code = info[:base_code].presence || doc_type

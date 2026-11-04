@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.10] - 2026-11-04
+
+### Fixed
+- Chatbot: a link in an answer about registration or inheritance duties now opens the article of the region it cites. It used to open the first region's article of that number, mostly Brussels, whichever region the answer was about. Where an answer's link holds no region, the region its wording names decides; where it names none, the federal text is opened if it was among the sources, and otherwise the first region's article, as before.
+- Chatbot: the sources under an answer list each region's text of an article on its own line with its own link. Only the first of them was shown.
+- Chatbot: a quotation linked to one region's article must now stand in that region's text.
+
 ## [1.1.9] - 2026-11-03
 
 ### Fixed

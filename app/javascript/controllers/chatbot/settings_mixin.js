@@ -1314,13 +1314,15 @@ export const settingsMethods = {
   // the part of it that was retrieved. The server sends one source per article,
   // so a key of the law title alone kept only the first article of each law: an
   // answer citing Art. 80, 81 and 95 showed "Verberg bronnen (1)", and the
-  // exports, which copy this block, lost the same articles. Empty means the
-  // source has nothing to show and is skipped.
+  // exports, which copy this block, lost the same articles. On W.Reg. and
+  // W.Succ. one article number is a different text per region, each with its
+  // own link, so the region is part of it. Empty means the source has nothing
+  // to show and is skipped.
 
   _sourceDedupKey(source) {
     const base = String(source.law_title || source.title || source.ecli || source.numac || '').trim()
     if (!base) return ''
-    const part = [source.article_title || source.article_number, source.dossier, source.document_number]
+    const part = [source.article_title || source.article_number, source.jurisdiction_label, source.dossier, source.document_number]
       .filter(Boolean).join('/')
     return `${base}|${part}`
   },

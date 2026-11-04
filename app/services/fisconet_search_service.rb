@@ -366,6 +366,20 @@ class FisconetSearchService
     end
   end
 
+  # Which rows a page holds, and in which order. The chatbot's links read the same, so that a row whose id depends on its
+  # place (FisconetArticleAnchors) has the same id in both.
+  #
+  # Four KB/WIB 92 Annex III rows store an undecoded PDF container as their text ('%PDF-1.5 %...'). Their article_number is
+  # 'bijlage:III@...', so the pdf:* rule does not reach them and the page rendered the binary. Anchored at the start so a law
+  # that merely mentions PDF is untouched. Decoding them needs PyMuPDF, which is not installed on the host.
+  PAGE_ROWS_WHERE_SQL = <<~SQL.squish.freeze
+    a.legislation_id = ?
+      AND a.article_number_src NOT LIKE 'pdf:%'
+      AND substr(LTRIM(COALESCE(a.text_nl, '')), 1, 4) <> '%PDF'
+      AND substr(LTRIM(COALESCE(a.text_fr, '')), 1, 4) <> '%PDF'
+  SQL
+  PAGE_ROWS_ORDER_SQL = "COALESCE(a.region, ''), CAST(a.article_number AS INTEGER), a.article_number, a.id"
+
   # ─── All articles for a given legislation ──────────────────────────────
   # @param legislation_id [Integer]
   # @param language_id [Integer] 1=NL, 2=FR
@@ -391,62 +405,100 @@ class FisconetSearchService
                a.text_nl, a.text_fr, a.html_nl, a.html_fr,
                a.region, a.region_nl, a.region_fr, a.version_date, a.end_date
         FROM tax_articles a
-        WHERE a.legislation_id = ?
-          AND a.article_number_src NOT LIKE 'pdf:%'
-          -- Four KB/WIB 92 Annex III rows store an undecoded PDF container as
-          -- their text ('%PDF-1.5 %...'). Their article_number is
-          -- 'bijlage:III@...', so the pdf:* rule above does not reach them and
-          -- the page renders the binary. Anchored at the start so a law that
-          -- merely mentions PDF is untouched. Decoding them needs PyMuPDF,
-          -- which is not installed on the host.
-          AND substr(LTRIM(COALESCE(a.text_nl, '')), 1, 4) <> '%PDF'
-          AND substr(LTRIM(COALESCE(a.text_fr, '')), 1, 4) <> '%PDF'
-        ORDER BY COALESCE(a.region, ''), CAST(a.article_number AS INTEGER), a.article_number, a.id
+        WHERE #{PAGE_ROWS_WHERE_SQL}
+        ORDER BY #{PAGE_ROWS_ORDER_SQL}
       SQL
 
       db.close
 
-      text_col = language_id == 2 ? 'text_fr' : 'text_nl'
-      html_col = language_id == 2 ? 'html_fr' : 'html_nl'
-      region_col = language_id == 2 ? 'region_fr' : 'region_nl'
-
-      rows.map do |row|
-        text = row[text_col]
-        html = row[html_col]
-
-        # Skip articles with no content in the requested language
-        next nil unless text.present?
-
-        # Strip URL artifacts from both text and HTML
-        text = text.to_s.gsub(/\bwww\.fisconetplus\.be\b/, '').strip
-        html = html.to_s.gsub(/\bwww\.fisconetplus\.be\b/, '').strip if html.present?
-
-        # Oversized HTML is invariably deep PDF-conversion nesting that blows
-        # the sanitizer's document-depth limit (the 2 MB KB/WIB 92 annex
-        # 500'd the whole page). Dropping it here makes the view render the
-        # clean plain text instead, which is what readers actually need.
-        html = nil if html.present? && html.bytesize > 300_000
-
-        {
-          id: row['id'],
-          article_number: row['article_number'],
-          article_title: row['article_title'],
-          # Exposed so the caller can tell a rate-table ENTRY from a provision.
-          # Table entries name a good or service and are legitimately short
-          # ("XIII. Waterdistributie..."), so a length-based garbage filter
-          # cannot be applied to them the way it can to an article.
-          article_type: row['article_type'],
-          text: text,
-          html: html.presence,
-          section_path: row[region_col].presence,
-          region: row['region'].presence,
-          end_date: row['end_date']
-        }
-      end.compact
+      rows.filter_map { |row| page_article(row, language_id) }
     rescue SQLite3::Exception => e
       Rails.logger.error("[FisconetSearch] all_articles error: #{e.message}")
       []
     end
+  end
+
+  # What a page in this language makes of a stored row. Nil with no text in that language.
+  def self.page_article(row, language_id)
+    text_col = language_id == 2 ? 'text_fr' : 'text_nl'
+    html_col = language_id == 2 ? 'html_fr' : 'html_nl'
+    region_col = language_id == 2 ? 'region_fr' : 'region_nl'
+    text = row[text_col]
+    html = row[html_col]
+
+    # Skip articles with no content in the requested language
+    return nil unless text.present?
+
+    # Strip URL artifacts from both text and HTML
+    text = text.to_s.gsub(/\bwww\.fisconetplus\.be\b/, '').strip
+    html = html.to_s.gsub(/\bwww\.fisconetplus\.be\b/, '').strip if html.present?
+
+    # Oversized HTML is invariably deep PDF-conversion nesting that blows
+    # the sanitizer's document-depth limit (the 2 MB KB/WIB 92 annex
+    # 500'd the whole page). Dropping it here makes the view render the
+    # clean plain text instead, which is what readers actually need.
+    html = nil if html.present? && html.bytesize > 300_000
+
+    {
+      id: row['id'],
+      article_number: row['article_number'],
+      article_title: row['article_title'],
+      # Exposed so the caller can tell a rate-table ENTRY from a provision.
+      # Table entries name a good or service and are legitimately short
+      # ("XIII. Waterdistributie..."), so a length-based garbage filter
+      # cannot be applied to them the way it can to an article.
+      article_type: row['article_type'],
+      text: text,
+      html: html.presence,
+      section_path: row[region_col].presence,
+      region: row['region'].presence,
+      end_date: row['end_date']
+    }
+  end
+
+  # Filter out garbage articles (TOC lines, too-short content, URL artifacts).
+  def self.listed_on_page?(art)
+    text = art[:text].to_s.strip
+    html = art[:html].to_s.strip
+    content_length = [text.length, html.length].max
+    # The 100-char floor removes TOC lines and extraction debris, but it
+    # cannot be applied to rate-table entries: those name a good or service
+    # and are legitimately short. It was hiding two real VAT provisions -
+    # KB 20 Table A XIII "Waterdistributie" (96 chars, water supply at 6%)
+    # and Table B VI "Margarine" (30 chars, at 12%).
+    #
+    # Only annexes are exempted. The 8 other sub-100 rows are W.Reg articles
+    # reading "(niet meer van toepassing)", which SHOULD stay hidden, and
+    # they are article-typed. PDF containers cannot come back in through
+    # this door either - all_articles already excludes them in SQL.
+    return false if content_length < 100 && art[:article_type].to_s != 'annex'
+    return false if text.match?(/\.{10,}\s*\d+/) # TOC dotted leaders
+    return false if text.match?(/^Art\.?\s*\d+\s*\.{5,}/) # "Art. 13 ....... 96"
+    return false if text.include?('www.fisconetplus.be') && content_length < 400
+
+    true
+  end
+
+  # A listed row with nothing to print gets no entry, no id and no reference to it, or it would hold an id its visible
+  # namesake then lacks, and references would lead nowhere.
+  def self.printable_on_page?(article)
+    article[:text].to_s.strip.length > 10 || article[:html].to_s.strip.length > 10
+  end
+
+  # Of these rows, the ids a page in this language does not show. Their text is read, so this is for the few rows whose ids
+  # depend on it (FisconetArticleAnchors), not for a whole document. Takes the caller's connection, which returns arrays.
+  def self.hidden_article_ids(db, ids, language_id)
+    return Set.new if ids.empty?
+
+    columns = %w[id article_number article_title article_type text_nl text_fr html_nl html_fr region region_nl region_fr end_date]
+    rows = db.execute(<<~SQL, ids)
+      SELECT #{columns.map { |column| "a.#{column}" }.join(', ')} FROM tax_articles a WHERE a.id IN (#{(['?'] * ids.size).join(', ')})
+    SQL
+    rows.filter_map do |values|
+      row = columns.zip(values).to_h
+      article = page_article(row, language_id)
+      row['id'] unless article && listed_on_page?(article) && printable_on_page?(article)
+    end.to_set
   end
 
   # ─── All legislation records ───────────────────────────────────────────

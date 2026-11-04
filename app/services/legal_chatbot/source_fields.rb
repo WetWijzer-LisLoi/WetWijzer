@@ -38,6 +38,19 @@ module LegalChatbot
       normalize_article_number(strip_article_prefix(raw)).presence
     end
 
+    # The region of a retrieved Fisconet row, as its id on the page has it. Only Fisconet: a region on another kind of
+    # source is no part of any id.
+    def retrieved_fisconet_region(source)
+      return unless retrieved_source_numac(source).to_s.start_with?('FISCONET_')
+
+      source_field(source, :jurisdiction, 'jurisdiction', :region, 'region').to_s.parameterize.presence
+    end
+
+    # The id a retrieved Fisconet row has on its page, as its own link holds it.
+    def retrieved_fisconet_anchor(source)
+      source_field(source, :url, 'url').to_s[/#(art_[^?&#\s)]+)\z/, 1]
+    end
+
     # The source tag is a routing marker, NOT evidence. An EU id remains in
     # this lane even if someone changes its tag to impersonate a domestic or
     # regional source. Its identity/body must match the immutable generation.

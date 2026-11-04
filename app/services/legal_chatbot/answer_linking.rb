@@ -93,6 +93,8 @@ module LegalChatbot
         end
       end
 
+      @fisconet_article_rows = fisconet_article_rows(tax_articles)
+
       # Slug-repair lookup: fabricated /laws/<law-name> → retrieved tax code page
       tax_titles = {}
       tax_articles.each do |a|
@@ -143,6 +145,8 @@ module LegalChatbot
         id = Regexp.last_match(3)
         suffix = Regexp.last_match(4)
         whole = Regexp.last_match(0)
+        before_text = Regexp.last_match.pre_match
+        after_text = Regexp.last_match.post_match.first(120)
 
         result = if path.start_with?('/jurisprudence/')
                    if allowed_ecli.include?(id) || allowed_ecli.include?(CGI.unescape(id))
@@ -152,12 +156,11 @@ module LegalChatbot
                      label
                    end
                  elsif allowed_laws.include?(id)
-                   after_text = Regexp.last_match.post_match.first(120)
-                   rehome_law_anchor(whole, label, id, suffix, allowed_article_pairs, rewritten, stripped, after_text)
+                   rehome_law_anchor(whole, label, id, suffix, allowed_article_pairs, rewritten, stripped, after_text, before_text)
                  elsif id.match?(/\Afisconet_\d+\z/i) && allowed_laws.include?(id.upcase)
                    canonical_id = id.upcase
                    canonical = "[#{label}](/laws/#{canonical_id}#{suffix})"
-                   rehome_law_anchor(canonical, label, canonical_id, suffix, allowed_article_pairs, rewritten, stripped)
+                   rehome_law_anchor(canonical, label, canonical_id, suffix, allowed_article_pairs, rewritten, stripped, after_text, before_text)
                  else
                    # Fabricated slug (e.g. btw-wetboek): try to map it onto a retrieved
                    # tax code by title tokens; else degrade to plain text.
@@ -543,7 +546,7 @@ module LegalChatbot
     # and cannot disambiguate on their own.
     REHOME_TOKEN_STOPLIST = %w[wetboek besluit koninklijk vlaamse waalse brussels codex decreet uitvoering].freeze
 
-    def rehome_law_anchor(whole, label, numac, suffix, allowed_article_pairs, rewritten, stripped, after_text = nil)
+    def rehome_law_anchor(whole, label, numac, suffix, allowed_article_pairs, rewritten, stripped, after_text = nil, before_text = nil)
       anchor_num = link_article_number(suffix)
       label_anchor = label_article_number(label)
       # Resolve the named law before consulting which law happens to contain
@@ -573,7 +576,12 @@ module LegalChatbot
           return label
         end
 
-        target_href = chatbot_article_href(target.first, target.last)
+        target_href = fisconet_citation_href(target.first, target.last, suffix: suffix, label: label,
+                                                                        before: before_text, after: after_text)
+        unless target_href
+          stripped << "/laws/#{numac}#{suffix} (row not on the page)"
+          return label
+        end
         rewritten << "/laws/#{numac}#{suffix}→#{target_href} (label)"
         return "[#{label}](#{target_href})"
       end
@@ -585,8 +593,13 @@ module LegalChatbot
         end
         return whole unless numac.start_with?('FISCONET_')
 
-        target_href = chatbot_article_href(numac, anchor_num)
-        return whole if whole.include?(target_href)
+        target_href = fisconet_citation_href(numac, anchor_num, suffix: suffix, label: label,
+                                                                before: before_text, after: after_text)
+        unless target_href
+          stripped << "/laws/#{numac}#{suffix} (row not on the page)"
+          return label
+        end
+        return whole if whole.include?("(#{target_href})")
 
         rewritten << "/laws/#{numac}#{suffix}→#{target_href} (language)"
         return "[#{label}](#{target_href})"
@@ -690,15 +703,164 @@ module LegalChatbot
       normalize_article_number(strip_article_prefix(raw)).presence
     end
 
-    def chatbot_article_href(numac, article_number)
+    def chatbot_article_href(numac, article_number, anchor: nil)
       separator = numac.to_s.start_with?('FISCONET_') ? '_' : '-'
       language_query = numac.to_s.start_with?('FISCONET_') ? "?language_id=#{@language_id || 1}" : ''
-      "/laws/#{numac}#{language_query}#art#{separator}#{article_number}"
+      "/laws/#{numac}#{language_query}##{anchor || "art#{separator}#{article_number}"}"
+    end
+
+    # The words that name a region in an answer, by the region's part in a Fisconet id. Whatever follows the stem: vlaamse,
+    # flamande, wallonne, bruxelloise.
+    FISCONET_REGION_WORDS = {
+      'vlaams' => /(?<![[:alpha:]])(?:vlaams|vlaanderen|flamand|flandre|flandern|fl[aä]misch|flemish|flanders)/i,
+      'waals' => /(?<![[:alpha:]])(?:waals|walloni|wallon|walloon)/i,
+      'brussels' => /(?<![[:alpha:]])(?:brussel|bruxell|brüssel)/i,
+      'federal' => /(?<![[:alpha:]])(?:federa|fédéra|föderal)/i
+    }.freeze
+    # A sentence ends at a line, a semicolon or a full stop before a capital, so "art. 43" does not end one.
+    FISCONET_SENTENCE_END = /\n|;|\.\s+(?=[[:upper:]])/
+    FISCONET_REGION_HEADING = /^[ \t]*(?:\#{1,6}[ \t].*|\*\*[^*\n]+\*\*:?[ \t]*)$/
+    # What directly follows a mention and qualifies it, up to any comma: "art. 44 W.Reg. (Waals Gewest)", "art. 44 in Wallonië",
+    # but not the next clause of "art. 44, in Vlaanderen art. 45".
+    FISCONET_REGION_QUALIFIER = /\A[^,:\n]{0,40}/
+    # The destination of a Markdown link, also one cut off by the end of a window of text.
+    FISCONET_LINK_DESTINATION = /\]\([^)\n]*\)?/
+
+    # A Markdown link to a Fisconet page, relative or on our own host. A label may run over lines, as LinkGuard and QuoteGuard
+    # read it.
+    FISCONET_MARKDOWN_LINK = %r{(?<!!)\[([^\]]+)\]\((?:https?://(?:www\.)?wetwijzer\.be)?/laws/(fisconet_\d+)([^)\n]*)\)}i
+
+    # { [numac, article number] => the retrieved rows of that article, with their region, page id and number as written }. A
+    # numbered row whose own link holds no id is one the page does not show, as FisconetSearch#page_anchor decides: no id may be
+    # made up for it, because its number and region are another row's. A record with no link at all is another matter.
+    def fisconet_article_rows(sources)
+      Array(sources).each_with_object({}) do |source, rows|
+        numac = retrieved_source_numac(source)
+        number = retrieved_source_article_number(source)
+        next unless numac.to_s.start_with?('FISCONET_') && number.present?
+
+        anchor = retrieved_fisconet_anchor(source)
+        written = source_field(source, :article_number, 'article_number').to_s.downcase.presence
+        linked = source_field(source, :url, 'url').present?
+        (rows[[numac, number]] ||= []) << { region: retrieved_fisconet_region(source), anchor: anchor, written: written,
+                                            off_page: linked && anchor.nil? && written.present? && !written.start_with?('doc:', 'pdf:') }
+      end
+    end
+
+    # Each Fisconet citation with a retrieved article points at the row LinkGuard will settle on, so that a quotation is judged
+    # on the text its link ends up opening: QuoteGuard runs first, and it reads the link. LinkGuard reaches the same row again.
+    def resolve_fisconet_citation_links(text, sources)
+      @fisconet_article_rows = fisconet_article_rows(sources)
+      return text if @fisconet_article_rows.empty?
+
+      text.to_s.gsub(FISCONET_MARKDOWN_LINK) do |whole|
+        match = Regexp.last_match
+        label = match[1]
+        numac = match[2].upcase
+        suffix = match[3]
+        linked = link_article_number(suffix)
+        number = label_article_number(label) || linked
+        next whole unless linked && @fisconet_article_rows.key?([numac, number])
+
+        href = fisconet_citation_href(numac, number, suffix: suffix, label: label, before: match.pre_match, after: match.post_match.first(120))
+        href ? "[#{label}](#{href})" : whole
+      end
+    end
+
+    # The link of a citation of a Fisconet article: to the retrieved row it means, else by the plain id, the first row of
+    # that number on the page (FisconetArticleAnchors). Nil when it means a row the page does not show: the citation then has
+    # no article to open, and any id would open another row.
+    def fisconet_citation_href(numac, number, suffix: nil, label: nil, before: nil, after: nil)
+      return chatbot_article_href(numac, number) unless numac.to_s.start_with?('FISCONET_')
+
+      rows = Array(@fisconet_article_rows&.fetch([numac, number], nil))
+      row = fisconet_cited_row(rows, suffix, label, before, after)
+      return nil if row ? row[:off_page] : (rows.any? && rows.all? { |candidate| candidate[:off_page] })
+
+      chatbot_article_href(numac, number, anchor: row && fisconet_row_anchor(row, number))
+    end
+
+    # Which retrieved row a citation means. What it says of itself comes first: the region its label names, then the row or
+    # region its link holds. Then what the text around it names. Within a region, the number as its label writes it, because
+    # 1.2 and 1/2 share an article number here and a link can hold the wrong one; of rows written alike, the one its link holds;
+    # else the row its link holds, else one the page shows. A lone row is the source whatever the text names. Of several with
+    # nothing named, the one written as cited, then the federal row, the article as such; without those no row is more right
+    # than another, so nil.
+    def fisconet_cited_row(rows, suffix, label, before, after)
+      return nil if rows.empty?
+
+      anchor = suffix.to_s[/#(art_[^?&#\s)]+)/, 1]
+      written = fisconet_written_number(label)
+      linked = ->(row) { anchor && row[:anchor] == anchor }
+      as_written = ->(row) { written && row[:written] == written }
+      shown_first = ->(scope) { scope.find { |row| !row[:off_page] } || scope.first }
+      within = lambda do |scope|
+        same = scope.select(&as_written)
+        same.find(&linked) || shown_first.call(same) || scope.find(&linked) || shown_first.call(scope)
+      end
+      in_region = ->(region) { region && within.call(rows.select { |row| row[:region] == region }) }
+      in_region.call(fisconet_regions_named(label).last) ||
+        rows.find(&linked)&.then { |row| within.call(rows.select { |other| other[:region] == row[:region] }) } ||
+        in_region.call(link_article_region(suffix)) ||
+        fisconet_regions_around(before, after).filter_map(&in_region).first ||
+        (rows.first if rows.one?) ||
+        rows.select(&as_written).then { |same| same.first if same.one? } ||
+        in_region.call(FisconetArticleAnchors::FEDERAL)
+    end
+
+    # The article number as a label or mention writes it, to hold against the number as stored.
+    def fisconet_written_number(label)
+      label.to_s[%r{\b(?:Artikel|Article|Artt?)\.?\s*([[:alnum:]][\w/.:-]*)}i, 1]&.sub(/[.:]+\z/, '')&.downcase
+    end
+
+    # The regions the text around a citation names, the most telling first: right after it, the nearest before it in its
+    # sentence, the rest of its sentence, the heading it stands under. Only what a reader reads: the destinations of other
+    # links hold region names too.
+    def fisconet_regions_around(before, after)
+      before = before.to_s.gsub(FISCONET_LINK_DESTINATION, ']')
+      after = after.to_s.gsub(FISCONET_LINK_DESTINATION, ']')
+      head = before.last(400).split(FISCONET_SENTENCE_END, -1).last
+      tail = after.split(FISCONET_SENTENCE_END, 2).first.to_s
+      [*fisconet_regions_named(tail[FISCONET_REGION_QUALIFIER]),
+       *fisconet_regions_named(head).reverse,
+       *fisconet_regions_named(tail),
+       *fisconet_regions_named(before.scan(FISCONET_REGION_HEADING).last).reverse]
+    end
+
+    # In the order the text names them.
+    def fisconet_regions_named(text)
+      text = text.to_s
+      FISCONET_REGION_WORDS.flat_map do |region, words|
+        positions = []
+        text.scan(words) { positions << [Regexp.last_match.begin(0), region] }
+        positions
+      end.sort.map(&:last)
+    end
+
+    # A row's id, when it holds the article cited. The stored number can differ from the cited one: a pin cites the row stored
+    # as 1458 as 145/8, and the citation guard holds a link to its label's number, so that row keeps going by the cited number.
+    def fisconet_row_anchor(row, number)
+      return row[:anchor] if row[:anchor] && link_article_number("##{row[:anchor]}") == number
+
+      FisconetArticleAnchors.regional_id("art_#{number}", row[:region])
+    end
+
+    # The article number in a law link's fragment, as written there. A Fisconet id can hold its row's region and a running
+    # number after it, and only such an id has the underscore: art_44--waals--2 is article 44.
+    def link_fragment_number(suffix)
+      match = suffix.to_s.match(/#art([-_])([^?&#\s)]+)/i)
+      return unless match
+
+      match[1] == '_' ? FisconetArticleAnchors.parse_fragment(match[2]).first : match[2]
     end
 
     def link_article_number(suffix)
-      raw = suffix.to_s.match(/#art[-_]([^?&#\s)]+)/i)&.[](1)
-      normalize_article_number(raw).presence
+      normalize_article_number(link_fragment_number(suffix)).presence
+    end
+
+    def link_article_region(suffix)
+      fragment = suffix.to_s[/#art_([^?&#\s)]+)/i, 1]
+      FisconetArticleAnchors.parse_fragment(fragment).last if fragment
     end
 
     def label_article_number(label)
@@ -847,6 +1009,8 @@ module LegalChatbot
 
       return text if source_lookup.empty?
 
+      @fisconet_article_rows = fisconet_article_rows(articles)
+
       # Regroup by article NUMBER: the same number often exists in several
       # retrieved laws (Art. 37/2 lives in both the Arbeidsovereenkomstenwet
       # and the Sociaal Strafwetboek). Candidates keep retrieval-rank order.
@@ -974,8 +1138,16 @@ module LegalChatbot
           # be the target's (law_date_mismatch?).
           next match if law_date_mismatch?(match_data.post_match.first(120), chosen[:url].to_s[%r{/laws/([^#?]+)}, 1])
 
+          target_url = if chosen[:source_key].start_with?('FISCONET_')
+                         fisconet_citation_href(chosen[:source_key], normalize_article_number(art_num),
+                                                label: match, before: match_data.pre_match, after: match_data.post_match)
+                       else
+                         chosen[:url]
+                       end
+          next match unless target_url
+
           link_count += 1
-          "[#{match}](#{chosen[:url]})"
+          "[#{match}](#{target_url})"
         end
       end
 

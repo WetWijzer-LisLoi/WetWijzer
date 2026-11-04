@@ -262,9 +262,9 @@ module LegalChatbot
 
     # Working laws-page URL for a tax article. The fisconet pages are served
     # at /laws/FISCONET_<legislation_id> (uppercase prefix, LEGISLATION id,
-    # NOT article id) and use canonical art_<article-number> anchors
-    # (see _fisconet_show.html.erb). The old /laws/fisconet_<article_id>
-    # format 404'd on every citation.
+    # NOT article id), and each row has its own id (FisconetArticleAnchors):
+    # art_<article-number>, with the region on W.Reg. and W.Succ. The old
+    # /laws/fisconet_<article_id> format 404'd on every citation.
     def article_url(art)
       leg_id = art[:legislation_id]
       return nil if leg_id.blank?
@@ -278,8 +278,56 @@ module LegalChatbot
       # not a fabricated anchor.
       return base if slug_number?(art[:article_number])
 
+      anchor = page_anchor(art, source_language_id)
+      anchor ? "#{base}##{anchor}" : base
+    end
+
+    # The id this row has on the page, so a citation opens the text it quotes. A plain art_44 is only the first row of that
+    # number, Brussels on W.Reg. and W.Succ. (ledger item 47). The page's own ids are read first: they alone know a row whose
+    # id was taken, by a repeated number or by one that normalises alike. A row sharing an id that the page does not show has
+    # no id of its own, so nil: its number and region are another row's, and the guards keep to that
+    # (AnswerLinking#fisconet_article_rows). A row they do not hold, or a page they could not be built for, goes by its number
+    # and region, which is every row's id but those.
+    def page_anchor(art, language_id = @language_id)
       fragment = normalize_article_number(art[:article_number])
-      fragment.present? ? "#{base}#art_#{fragment}" : base
+      return nil if fragment.blank?
+
+      page_ids(art[:legislation_id], language_id).fetch(art[:article_id]) do
+        FisconetArticleAnchors.regional_id("art_#{fragment}", art[:jurisdiction].presence || art[:region])
+      end
+    end
+
+    # { article id => id on the page }, per document and language, per search.
+    def page_ids(legislation_id, language_id)
+      @page_ids ||= {}
+      @page_ids[[legislation_id, language_id]] ||= load_page_ids(legislation_id, language_id)
+    end
+
+    # All of a document's numbers and regions, in the page's order. Only rows that share an id depend on which of them the
+    # page shows, in this language, so only their text is read: on 2026-11-04 that is 2 rows of the 8,000.
+    def load_page_ids(legislation_id, language_id)
+      db = fisconet_db
+      return {} unless db
+
+      rows = db.execute(<<~SQL, [legislation_id]).map { |id, number, region| { id: id, article_number: number, region: region.presence } }
+        SELECT a.id, a.article_number, a.region
+        FROM tax_articles a
+        WHERE #{FisconetSearchService::PAGE_ROWS_WHERE_SQL}
+        ORDER BY #{FisconetSearchService::PAGE_ROWS_ORDER_SQL}
+      SQL
+      canonical = lambda do |number|
+        fragment = normalize_article_number(number)
+        "art_#{fragment}" if fragment.present?
+      end
+      sharing = rows.group_by { |row| FisconetArticleAnchors.regional_id(canonical.call(row[:article_number]), row[:region]) }
+                    .values.select { |group| group.size > 1 }.flatten
+      hidden = FisconetSearchService.hidden_article_ids(db, sharing.map { |row| row[:id] }, language_id)
+      shown, not_shown = rows.partition { |row| hidden.exclude?(row[:id]) }
+      anchors = FisconetArticleAnchors.new(shown, &canonical)
+      shown.to_h { |row| [row[:id], anchors.id_of(row)] }.merge(not_shown.to_h { |row| [row[:id], nil] })
+    rescue StandardError => e
+      Rails.logger.warn("[Fisconet] page ids unavailable: #{e.class}")
+      {}
     end
 
     # The slug stays in the citation. Deriving a tidy number from it would read
