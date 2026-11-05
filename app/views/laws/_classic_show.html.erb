@@ -137,7 +137,7 @@
               <td class="date-col"><%= exec_law&.date %></td>
               <td>
                 <% if exec_law %>
-                  <a href="<%= law_path(exdec.exdec_numac, language_id: @language_id) %>"><%= strip_tags(exec_law.title.to_s).truncate(200) %></a>
+                  <a href="<%= law_path(exdec.exdec_numac, language_id: @language_id) %>"><%= html_to_plain_text(exec_law.title).truncate(200) %></a>
                 <% else %>
                   <%= exdec.exdec_numac %>
                 <% end %>
@@ -163,7 +163,7 @@
     <% if anchor[:heading] %>
       <div class="classic-article" <%= tag.attributes(lang: text_lang) %>>
         <% if legacy_id %><span id="<%= legacy_id %>"></span><% end %>
-        <%= content_tag(:h3, strip_tags(article.article_text.to_s).strip, class: 'classic-section-heading', id: anchor[:id]) %>
+        <%= content_tag(:h3, html_to_plain_text(article.article_text).strip, class: 'classic-section-heading', id: anchor[:id]) %>
       </div>
     <% else %>
       <% art_type = determine_article_type(article.article_title, article.article_text, article.article_type) %>

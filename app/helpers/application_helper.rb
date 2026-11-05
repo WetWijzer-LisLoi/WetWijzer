@@ -261,6 +261,16 @@ module ApplicationHelper
     slug[0, 160]
   end
 
+  # The text of stored HTML, entities decoded, as an ordinary String: ERB escapes it once where it reaches HTML, and it
+  # is safe to cut, split or put in JSON, a file name or an export. strip_tags is only for output that goes straight
+  # into HTML: since Rails 8.1.4.1 it writes `'` as `&#39;`, and a String method on its result loses the safe mark, so
+  # ERB escapes that entity again and the reader sees it.
+  # @param html [String, nil]
+  # @return [String]
+  def html_to_plain_text(html)
+    CGI.unescapeHTML(strip_tags(html.to_s))
+  end
+
   def clean_text_for_slug(text)
     cleaned = text.gsub(/\[\s*\d+\s*\]/, '').gsub(/\]\s*\d+/, '').gsub(/^\s*\(\d+\)\s*/, '')
     CGI.unescapeHTML(cleaned).gsub(/<[^>]*>/, ' ').strip

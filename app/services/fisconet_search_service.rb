@@ -378,7 +378,11 @@ class FisconetSearchService
       AND substr(LTRIM(COALESCE(a.text_nl, '')), 1, 4) <> '%PDF'
       AND substr(LTRIM(COALESCE(a.text_fr, '')), 1, 4) <> '%PDF'
   SQL
-  PAGE_ROWS_ORDER_SQL = "COALESCE(a.region, ''), CAST(a.article_number AS INTEGER), a.article_number, a.id"
+  # Of two rows with one number, the one in force first, as the first row answers to a plain reference. KB/WIB 92 holds repealed
+  # art. 49^1 and art. 49/1 in force, both stored as 49/1 (NUMAC 2024011897, art. 5 and 6), and in its 2027 edition the note on
+  # the repeal has the lower id, so "art. 49/1" opened that note (ledger item 48).
+  PAGE_ROWS_ORDER_SQL = "COALESCE(a.region, ''), CAST(a.article_number AS INTEGER), a.article_number, " \
+                        'CAST(COALESCE(a.is_abolished, 0) AS INTEGER), a.id'
 
   # ─── All articles for a given legislation ──────────────────────────────
   # @param legislation_id [Integer]

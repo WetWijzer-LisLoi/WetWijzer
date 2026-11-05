@@ -8,6 +8,16 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.11] - 2026-11-05
+
+### Fixed
+- Tax codes: in the 2027 edition of the KB/WIB 92, a reference to article 49/1 opens the article in force. It opened the note on the repeal of article 49^1, which is stored under the same number.
+- Law sitemaps: a page that is not in the cache is built far faster, with the same content. In a local comparison on 45,000 invented laws: 0.2 s instead of 26 s.
+- Case law: the privacy rules leave the lower-case ending of a word built on an acronym alone, as in `Q.U.I.'ers`. This applies to text processed from now on; published judgments are unchanged.
+- Law downloads: the Typst and ODT buttons on an ordinary law download the law. They sent the reader to the home page with a message that the law had no articles; only tax codes and the Word format worked.
+- Law text: in downloads, the plain-text law pages, the Classic pages and the data for search engines, a title or heading shows its quotation marks and `&` as text. Some of these showed a stray `&amp;`, and file names could carry the entity's letters. In a Classic search, a word in a title is marked without touching the text around it.
+- Security: Rails 8.1.4.1, published on 2026-11-04 with fixes for 21 advisories on Action Pack, Action View, Active Storage, Active Support and Action Mailbox, among them a streaming denial of service (GHSA-rwvh-fw6r-pwvp) and cross-site scripting in the text and tag helpers (GHSA-2p2f-4rq4-gjwc, GHSA-68p9-83h6-5wpj, GHSA-rq8q-p985-fjq7, GHSA-v6rj-xm57-3p59).
+
 ## [1.1.10] - 2026-11-04
 
 ### Fixed

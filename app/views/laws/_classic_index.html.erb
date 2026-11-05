@@ -122,9 +122,9 @@
             <td class="date-col"><%= law.respond_to?(:datum) ? (law.datum.presence || law.date) : (law.respond_to?(:date) ? law.date : '') %></td>
             <td class="law-result-title" <%= tag.attributes(lang: legal_text_lang(law.language_id)) if law.respond_to?(:language_id) %>>
               <% law_title = if law.respond_to?(:titel)
-                                strip_tags(law.titel.presence || law.title.to_s)
+                                html_to_plain_text(law.titel.presence || law.title)
                               elsif law.respond_to?(:title)
-                                strip_tags(law.title.to_s)
+                                html_to_plain_text(law.title)
                               else
                                 law.to_s
                               end %>
@@ -138,11 +138,11 @@
               <% if params[:title].present?
                    search_q = params[:title].to_s.strip
                    escaped_q = Regexp.escape(search_q)
-                   highlighted = law_title.gsub(/(#{escaped_q})/i, '<mark>\1</mark>')
+                   highlighted = safe_join(law_title.split(/(#{escaped_q})/i).each_with_index.map { |part, index| index.odd? ? tag.mark(part) : part })
                  else
                    highlighted = law_title
                  end %>
-              <a href="<%= law_link %>"><%= highlighted.html_safe %></a>
+              <a href="<%= law_link %>"><%= highlighted %></a>
             </td>
             <td class="link-col">
               <a href="<%= law_link %>"><%= t(:details).capitalize %></a>

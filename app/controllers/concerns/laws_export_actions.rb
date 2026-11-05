@@ -27,7 +27,7 @@ module LawsExportActions
 
     SecurityLog.info('law_export', request: request, format: 'word', numac: params[:numac], articles: @articles.size)
 
-    law_title = @law.present? ? helpers.strip_tags(@law.title) : params[:numac]
+    law_title = @law.present? ? helpers.html_to_plain_text(@law.title) : params[:numac]
     citation_mode = params[:citation] == 'true'
     html_content = build_word_header(law_title)
 
@@ -74,8 +74,8 @@ module LawsExportActions
     left_articles = is_dutch_site ? articles_nl : articles_fr
     right_articles = is_dutch_site ? articles_fr : articles_nl
 
-    law_title_left = left_law.present? ? helpers.strip_tags(left_law.title) : params[:numac]
-    law_title_right = right_law.present? ? helpers.strip_tags(right_law.title) : params[:numac]
+    law_title_left = left_law.present? ? helpers.html_to_plain_text(left_law.title) : params[:numac]
+    law_title_right = right_law.present? ? helpers.html_to_plain_text(right_law.title) : params[:numac]
 
     citation_mode = params[:citation] == 'true'
     html_content = build_word_compare_header(law_title_left, left_lang, right_lang, law_title_right)
@@ -115,7 +115,7 @@ module LawsExportActions
 
     SecurityLog.info('law_export', request: request, format: 'typst', numac: params[:numac], articles: @articles.size)
 
-    law_title = @law.present? ? helpers.strip_tags(@law.title) : params[:numac]
+    law_title = @law.present? ? helpers.html_to_plain_text(@law.title) : params[:numac]
     citation_mode = params[:citation] == 'true'
 
     typst_content = TypstGenerator.law_document(
@@ -158,8 +158,8 @@ module LawsExportActions
     left_articles = is_dutch_site ? articles_nl : articles_fr
     right_articles = is_dutch_site ? articles_fr : articles_nl
 
-    law_title_left = left_law.present? ? helpers.strip_tags(left_law.title) : params[:numac]
-    law_title_right = right_law.present? ? helpers.strip_tags(right_law.title) : params[:numac]
+    law_title_left = left_law.present? ? helpers.html_to_plain_text(left_law.title) : params[:numac]
+    law_title_right = right_law.present? ? helpers.html_to_plain_text(right_law.title) : params[:numac]
 
     citation_mode = params[:citation] == 'true'
 
@@ -199,7 +199,7 @@ module LawsExportActions
 
     SecurityLog.info('law_export', request: request, format: 'odt', numac: params[:numac], articles: @articles.size)
 
-    law_title = @law.present? ? helpers.strip_tags(@law.title) : params[:numac]
+    law_title = @law.present? ? helpers.html_to_plain_text(@law.title) : params[:numac]
     citation_mode = params[:citation] == 'true'
 
     odt_content = OdtGenerator.law_document(
@@ -242,8 +242,8 @@ module LawsExportActions
     left_articles = is_dutch_site ? articles_nl : articles_fr
     right_articles = is_dutch_site ? articles_fr : articles_nl
 
-    law_title_left = left_law.present? ? helpers.strip_tags(left_law.title) : params[:numac]
-    law_title_right = right_law.present? ? helpers.strip_tags(right_law.title) : params[:numac]
+    law_title_left = left_law.present? ? helpers.html_to_plain_text(left_law.title) : params[:numac]
+    law_title_right = right_law.present? ? helpers.html_to_plain_text(right_law.title) : params[:numac]
 
     citation_mode = params[:citation] == 'true'
 
@@ -279,7 +279,7 @@ module LawsExportActions
 
     SecurityLog.info('law_export', request: request, format: 'fisconet_word', numac: params[:numac], articles: @fisconet_articles.size)
 
-    law_title = @law.present? ? helpers.strip_tags(@law.title.to_s) : params[:numac]
+    law_title = @law.present? ? helpers.html_to_plain_text(@law.title.to_s) : params[:numac]
     citation_mode = params[:citation] == 'true'
     html_content = build_word_header(law_title)
 
@@ -297,7 +297,7 @@ module LawsExportActions
       next if text.length <= 10 && html_src.length <= 10
 
       art_num = article[:article_number]
-      body_text = html_src.present? && html_src.length > 10 ? helpers.strip_tags(html_src) : text
+      body_text = html_src.present? && html_src.length > 10 ? helpers.html_to_plain_text(html_src) : text
 
       if citation_mode
         body_text = body_text.gsub(/\[\d+\s*\.{3}\s*\d*\]/, '').gsub(/\[\d+\s*…\s*\d*\]/, '')
@@ -330,7 +330,7 @@ module LawsExportActions
 
     SecurityLog.info('law_export', request: request, format: 'fisconet_typst', numac: params[:numac], articles: @fisconet_articles.size)
 
-    law_title = @law.present? ? helpers.strip_tags(@law.title.to_s) : params[:numac]
+    law_title = @law.present? ? helpers.html_to_plain_text(@law.title.to_s) : params[:numac]
     citation_mode = params[:citation] == 'true'
 
     typst_content = TypstGenerator.fisconet_document(
@@ -359,7 +359,7 @@ module LawsExportActions
 
     SecurityLog.info('law_export', request: request, format: 'fisconet_odt', numac: params[:numac], articles: @fisconet_articles.size)
 
-    law_title = @law.present? ? helpers.strip_tags(@law.title.to_s) : params[:numac]
+    law_title = @law.present? ? helpers.html_to_plain_text(@law.title.to_s) : params[:numac]
     citation_mode = params[:citation] == 'true'
 
     odt_content = OdtGenerator.fisconet_document(
@@ -383,7 +383,7 @@ module LawsExportActions
     return '-' unless article.present?
 
     if article.article_type == 'LNK'
-      heading_text = helpers.strip_tags(article.article_text).split(/\n|----------/).first.to_s.strip
+      heading_text = helpers.html_to_plain_text(article.article_text).split(/\n|----------/).first.to_s.strip
       heading_text = heading_text.gsub(/\[\d+\s*/, '').gsub(/\s*\]\d+/, '').gsub(/\[\d+\]/, '')
       heading_text = heading_text.gsub(/&nbsp;/i, ' ').gsub(/\s+/, ' ').strip
       level = helpers.section_heading_level(heading_text)
@@ -413,7 +413,7 @@ module LawsExportActions
   # Render a full article block for single-law export (includes bold article title, paragraph formatting)
   def render_article_html_for_word(article, citation_mode)
     if article.article_type == 'LNK'
-      full_text = helpers.strip_tags(article.article_text).strip
+      full_text = helpers.html_to_plain_text(article.article_text).strip
       heading_text = full_text.split(/\n|----------/).first.to_s.strip
       heading_text = heading_text.gsub(/\[\d+\s*/, '').gsub(/\s*\]\d+/, '').gsub(/\[\d+\]/, '')
       heading_text = heading_text.gsub(/&nbsp;/i, ' ').gsub(/\s+/, ' ').strip

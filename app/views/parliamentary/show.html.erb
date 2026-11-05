@@ -21,7 +21,7 @@
 <%# Chatbot context: enables the floating widget to offer document analysis %>
 <meta name="chatbot-context"
       data-context-type="parliamentary"
-      data-doc-title="<%= strip_tags(full_title.to_s).truncate(200) %>"
+      data-doc-title="<%= html_to_plain_text(full_title).truncate(200) %>"
       data-doc-parliament="<%= parl_label %>"
       data-doc-type="<%= display_type&.gsub('_', ' ')&.capitalize %>"
       data-doc-number="<%= @document[:dossier_number] %>">

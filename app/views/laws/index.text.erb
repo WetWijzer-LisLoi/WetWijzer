@@ -5,5 +5,5 @@
 # page <%= @pagy.page %>/<%= @pagy.pages %> — next: <%= laws_url(request.query_parameters.merge(page: @pagy.page + 1, format: :txt)) if @pagy.page < @pagy.pages %>
 <%- end -%>
 <%- (@laws || []).each do |law| -%>
-<%= law.respond_to?(:datum) ? (law.datum.presence || law.date) : law.date %>	<%= law.numac %>	<%= raw strip_tags(((law.respond_to?(:titel) ? law.titel.presence : nil) || law.title).to_s).squish %>
+<%= law.respond_to?(:datum) ? (law.datum.presence || law.date) : law.date %>	<%= law.numac %>	<%= raw html_to_plain_text(((law.respond_to?(:titel) ? law.titel.presence : nil) || law.title).to_s).squish %>
 <%- end -%>

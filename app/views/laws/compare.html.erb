@@ -236,14 +236,14 @@
   toc_entries_fr = []
   articles_nl_arr.each_with_index do |article, idx|
     if article&.article_type == 'LNK'
-      heading_text = strip_tags(article.article_text).split(/\n|----------/).first.to_s.strip
+      heading_text = html_to_plain_text(article.article_text).split(/\n|----------/).first.to_s.strip
       level = section_heading_level(heading_text)
       toc_entries_nl << { text: heading_text, level: level, index: idx }
     end
   end
   articles_fr_arr.each_with_index do |article, idx|
     if article&.article_type == 'LNK'
-      heading_text = strip_tags(article.article_text).split(/\n|----------/).first.to_s.strip
+      heading_text = html_to_plain_text(article.article_text).split(/\n|----------/).first.to_s.strip
       level = section_heading_level(heading_text)
       toc_entries_fr << { text: heading_text, level: level, index: idx }
     end
@@ -330,7 +330,7 @@
       <div class="flex gap-2">
         <div class="flex-1 bg-gray-50 dark:bg-gray-800 rounded p-2 text-xs" data-article-scope>
           <% if article_nl.present? %>
-            <% heading_text = strip_tags(article_nl.article_text).split(/\n|----------/).first.to_s.strip %>
+            <% heading_text = html_to_plain_text(article_nl.article_text).split(/\n|----------/).first.to_s.strip %>
             <% level = section_heading_level(heading_text) %>
             <div class="<%= level <= 2 ? 'font-bold text-gray-800 dark:text-gray-200' : 'font-semibold text-gray-700 dark:text-gray-300' %> <%= level == 1 ? 'text-sm' : 'text-xs' %>">
               <%= heading_text %>
@@ -341,7 +341,7 @@
         </div>
         <div class="flex-1 bg-gray-50 dark:bg-gray-800 rounded p-2 text-xs" data-article-scope>
           <% if article_fr.present? %>
-            <% heading_text = strip_tags(article_fr.article_text).split(/\n|----------/).first.to_s.strip %>
+            <% heading_text = html_to_plain_text(article_fr.article_text).split(/\n|----------/).first.to_s.strip %>
             <% level = section_heading_level(heading_text) %>
             <div class="<%= level <= 2 ? 'font-bold text-gray-800 dark:text-gray-200' : 'font-semibold text-gray-700 dark:text-gray-300' %> <%= level == 1 ? 'text-sm' : 'text-xs' %>">
               <%= heading_text %>

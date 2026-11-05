@@ -78,13 +78,11 @@ class SitemapsController < ApplicationController
   end
 
   # GET /sitemap-laws-:page.xml - Legislation pages
-  # Building 45,000 <url> entries with Nokogiri takes about five seconds; the
-  # query behind them takes a fifth of a second. Crawlers fetch each page
-  # several times a day, and the set only changes when the corpus merge
-  # commits, so the built XML is cached under the corpus stamp (main-file
-  # mtime of laws.prod.sqlite3, which moves at that checkpoint) for a day.
-  # Gzipped in the store: a page is ~19 MB of XML and ~1.3 MB compressed.
-  # The host is in the key because <loc> is host-relative.
+  # Crawlers fetch each page several times a day, and the set only changes
+  # when the corpus merge commits, so the built XML is cached under the corpus
+  # stamp (main-file mtime of laws.prod.sqlite3, which moves at that
+  # checkpoint) for a day. Gzipped in the store: a page is ~27 MB of XML and
+  # ~0.9 MB compressed. The host is in the key because <loc> is host-relative.
   def laws
     page = params[:page].to_i
     key = ['sitemap/laws/v2', request.host, page, CacheVersionHelper.laws_db_version].join('/')
@@ -133,20 +131,35 @@ class SitemapsController < ApplicationController
                          .limit(45_000)
                          .offset(offset)
                          .pluck(:numac)
-    german_only = german_only_numacs
 
-    builder = Nokogiri::XML::Builder.new(encoding: 'UTF-8') do |xml|
-      xml.urlset(sitemap_namespaces) do
-        numacs.each do |numac|
-          # A law held only in German has no page on the other sites: no
-          # alternate points there.
-          domains = german_only.include?(numac) ? GERMAN_ONLY_DOMAINS : LANGUAGE_DOMAINS
-          add_url(xml, "/laws/#{numac}", changefreq: 'monthly', priority: '0.6', domains: domains)
-        end
-      end
+    laws_urlset_xml(numacs, german_only_numacs, base_url)
+  end
+
+  # What add_url writes through Nokogiri's builder, byte for byte (a test holds
+  # the two together), as plain strings. A full page through the builder took
+  # 9.4 to 9.9 s on production on 2026-11-04, on each miss, per page and host.
+  def laws_urlset_xml(numacs, german_only, base)
+    open_tag = '<?xml version="1.0" encoding="UTF-8"?>' \
+               "\n<urlset #{sitemap_namespaces.map { |name, value| %(#{name}="#{value}") }.join(' ')}"
+    return "#{open_tag}/>\n" if numacs.empty?
+
+    out = "#{open_tag}>\n"
+    numacs.each do |numac|
+      path = "/laws/#{numac}"
+      # A law held only in German has no page on the other sites: no alternate
+      # points there, nor an x-default.
+      domains = german_only.include?(numac) ? GERMAN_ONLY_DOMAINS : LANGUAGE_DOMAINS
+      out << "  <url>\n    <loc>" << "#{base}#{path}".encode(xml: :text)
+      out << "</loc>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n"
+      domains.each { |domain| out << laws_alternate_xml(domain[:lang], "#{domain[:host]}#{path}") }
+      out << laws_alternate_xml('x-default', "https://wetwijzer.be#{path}") if domains.any? { |domain| domain[:lang] == 'nl' }
+      out << "  </url>\n"
     end
+    out << "</urlset>\n"
+  end
 
-    builder.to_xml
+  def laws_alternate_xml(lang, href)
+    %(    <xhtml:link rel="alternate" hreflang="#{lang}" href="#{href.encode(xml: :text).gsub('"', '&quot;')}"/>\n)
   end
 
   # The German site's NUMACs that have a German text and no Dutch or French

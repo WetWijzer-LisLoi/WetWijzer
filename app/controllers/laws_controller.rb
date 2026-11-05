@@ -109,13 +109,11 @@ class LawsController < ApplicationController
 
   # Callbacks
   # Always canonicalize to a URL that includes language_id (host-based default when missing)
-  before_action :ensure_language_param, only: %i[show articles article_exdecs related_sources export_word]
-  before_action :set_law, only: %i[show articles article_exdecs related_sources export_word]
+  before_action :ensure_language_param, only: %i[show articles article_exdecs related_sources export_word export_typst export_odt]
+  before_action :set_law, only: %i[show articles article_exdecs related_sources export_word export_typst export_odt]
   before_action :set_law_for_compare, only: %i[compare export_word_compare]
-  before_action :ensure_fisconet_export_language, only: %i[export_typst export_odt]
-  before_action :set_fisconet_law_for_export, only: %i[export_typst export_odt]
   before_action :set_per_page, only: [:index]
-  before_action :set_language_id, only: %i[show articles article_exdecs related_sources export_word]
+  before_action :set_language_id, only: %i[show articles article_exdecs related_sources export_word export_typst export_odt]
 
   # Classic (no-JS) pages and the plain-text format render no CSRF meta tags or
   # forms, so the lazy session middleware emits no per-visitor cookie. They are
@@ -579,25 +577,6 @@ class LawsController < ApplicationController
       format.html { render file: Rails.root.join('public', '404.html'), status: :not_found, layout: false }
       format.json { head :not_found }
     end
-  end
-
-  # The Fisconet Typst and ODT routes resolve the language as the page and the Word route do (ensure_language_param:
-  # a bare URL is canonicalized to the host's language, a repeated or nested parameter counts as missing, never as
-  # a crash); a Justel law's Typst and ODT exports are not touched (the owner via Sol, 2026-10-26 12:44:51 UTC).
-  def ensure_fisconet_export_language
-    ensure_language_param if FisconetSearchService.fisconet_numac?(params[:numac])
-  end
-
-  # The Typst and ODT exports of a Fisconet code need its articles the way the Word export gets them from set_law
-  # (which covers export_word only; a Justel law's Typst and ODT exports load their own articles and are not
-  # touched). Without this, both routes redirected to the home page with "no articles" for every tax code
-  # (found by the route-level export checks of 2026-10-26).
-  def set_fisconet_law_for_export
-    return unless FisconetSearchService.fisconet_numac?(params[:numac])
-
-    set_fisconet_law(params[:numac])
-  rescue ActiveRecord::RecordNotFound
-    head :not_found
   end
 
   # Loads a Fisconet legislation with all its articles and metadata
