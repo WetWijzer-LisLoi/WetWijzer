@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.14] - 2026-11-05
+
+### Fixed
+- Search: the unified search no longer walks the text of every judgment it finds to sort them. Pages read for a very common word, by SQL run by hand on production before this release: about 2,100 instead of about 608,000 for the list, about 3,700 instead of about 210,000 for the count. Such a search took about 90 seconds on a cold cache. A rare word now reads somewhat more than before.
+- Search results: when the server cannot answer while paging, the results stay on the screen with a message and a way to try again, instead of being replaced by a bare "Content missing".
+- Judgments: the address rule for rebuilt judgments no longer reads the floor `rez-de-chaussée` or the phrase `prend place sur` as a street with a number. Judgments already published keep their text until they are rebuilt.
+
 ## [1.1.13] - 2026-11-05
 
 ### Fixed

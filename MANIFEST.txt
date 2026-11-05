@@ -193,6 +193,7 @@ app/javascript/stylesheets/components/theme/_sidebar-toc.scss
 app/javascript/stylesheets/themes/_accent.scss
 app/javascript/utils/article_copy.js
 app/javascript/utils/focus_trap.js
+app/javascript/utils/frame_missing_fallback.js
 app/javascript/utils/locale.js
 app/javascript/utils/toast.js
 app/javascript/utils/toc_targets.js
@@ -876,6 +877,7 @@ public/vite/assets/application-D6iDaEmU.js
 public/vite/assets/application-D9JiV3Xz.css
 public/vite/assets/application-DAMLj1vG.js
 public/vite/assets/application-DEP0LCsQ.js
+public/vite/assets/application-DETPY4Kh.js
 public/vite/assets/application-DGOmgdBG.js
 public/vite/assets/application-DL2VPsTH.js
 public/vite/assets/application-DOHuBpHw.css

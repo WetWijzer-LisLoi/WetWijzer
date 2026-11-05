@@ -3,6 +3,7 @@
 import "@hotwired/turbo-rails";
 import { Turbo } from "@hotwired/turbo-rails";
 import { installTurboCspNonce } from "../utils/turbo_csp_nonce";
+import { installFrameMissingFallback } from "../utils/frame_missing_fallback";
 import "@/controllers";
 import '../stylesheets/application.scss';
 
@@ -30,6 +31,9 @@ try {
 
 // F15: a visited page's own inline scripts run under the document's nonce.
 installTurboCspNonce();
+
+// A frame whose response does not hold it says so, and keeps what it showed.
+installFrameMissingFallback();
 
 // Turbo 8 confirm method for data-turbo-confirm
 // NOTE: data-turbo-confirm must be on the FORM element (not the button)

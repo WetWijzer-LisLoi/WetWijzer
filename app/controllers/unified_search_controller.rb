@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class UnifiedSearchController < ApplicationController
+  JURISPRUDENCE_DATE_INDEX = 'idx_date'
+
   def index
     @title = case I18n.locale when :fr then 'Recherche unifiée' when :de then 'Einheitliche Suche' when :en then 'Unified search' else 'Gecombineerd zoeken' end
     @query = params[:q].to_s.strip
@@ -102,17 +104,23 @@ class UnifiedSearchController < ApplicationController
 
     db = @_jurisprudence_db ||= SQLite3::Database.new(jurisprudence_db_path)
     fts_query = query.gsub(/[^\p{L}\p{N}\s]/, ' ').squish
+    source = jurisprudence_source(db)
 
     total = db.execute(
-      'SELECT COUNT(*) FROM cases WHERE id IN (SELECT rowid FROM cases_fts WHERE cases_fts MATCH ?)',
+      "SELECT COUNT(*) FROM #{source} WHERE id IN (SELECT rowid FROM cases_fts WHERE cases_fts MATCH ?)",
       [fts_query]
     ).first[0]
     return { items: [], total: total } if offset >= total
 
-    rows = db.execute(
-      'SELECT id, case_number, court, decision_date, language_id FROM cases WHERE id IN (SELECT rowid FROM cases_fts WHERE cases_fts MATCH ?) ORDER BY decision_date DESC, id ASC LIMIT ? OFFSET ?',
-      [fts_query, limit, offset]
-    )
+    rows = db.execute(<<~SQL, [fts_query, limit, offset])
+      WITH page_ids AS MATERIALIZED (
+        SELECT id FROM #{source} WHERE id IN (SELECT rowid FROM cases_fts WHERE cases_fts MATCH ?)
+        ORDER BY decision_date DESC, id ASC LIMIT ? OFFSET ?
+      )
+      SELECT id, case_number, court, decision_date, language_id
+      FROM cases WHERE id IN (SELECT id FROM page_ids)
+      ORDER BY decision_date DESC, id ASC
+    SQL
 
     items = rows.map do |row|
       lang_id = row[4].to_s == '2' ? 2 : 1
@@ -130,6 +138,15 @@ class UnifiedSearchController < ApplicationController
   rescue StandardError => e
     Rails.logger.error("Unified search jurisprudence error: #{e.message}")
     { items: [], total: 0 }
+  end
+
+  # decision_date stands behind full_text in a row, so sorting on it walks the text of every hit. For `wet`, 115,411 judgments, the list
+  # read 608,535 pages and the count 210,349; through this index, which holds the date and the row id, 2,148 and 3,688, hits and misses
+  # together: SQL by hand on production on 2026-11-05 before this code, a warm cache, ledger item 53. A cold read of the first took about
+  # 90 seconds. A rare word pays for it: 3 judgments, 150 pages plainly, 1,853 through the index. Only where the index exists, as in a fixture.
+  def jurisprudence_source(db)
+    index = db.get_first_value("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?", [JURISPRUDENCE_DATE_INDEX])
+    index ? "cases INDEXED BY #{JURISPRUDENCE_DATE_INDEX}" : 'cases'
   end
 
   def search_parliamentary(query, limit, offset)
