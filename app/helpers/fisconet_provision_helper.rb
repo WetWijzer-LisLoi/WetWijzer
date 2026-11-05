@@ -6,11 +6,11 @@
 # LegalChatbot::FisconetSearch applies the same rule to its citations), and the plain-text fallback's leading lines.
 module FisconetProvisionHelper
   def fisconet_provision_label(article)
-    FisconetProvision.label(article[:article_number], article[:article_title])
+    FisconetProvision.label(FisconetProvision.printed_number(article), article[:article_title])
   end
 
   def fisconet_toc_label(article)
-    FisconetProvision.toc_label(article[:article_number], article[:article_title])
+    FisconetProvision.toc_label(FisconetProvision.printed_number(article), article[:article_title])
   end
 
   def fisconet_numbered_provision?(article)

@@ -106,7 +106,7 @@ class OdtGenerator
         html_src = article[:html].to_s.strip
         next if text.length <= 10 && html_src.length <= 10
 
-        art_num = article[:article_number]
+        art_num = FisconetProvision.printed_number(article)
         body_text = html_src.present? && html_src.length > 10 ? strip_html(html_src) : text
 
         if citation_mode

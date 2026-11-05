@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.12] - 2026-11-05
+
+### Fixed
+- Chatbot: a question about compensation in lieu of notice finds article 39 of the Employment Contracts Act whichever comes first in the question, the employment word or the compensation word. It had to be the compensation word.
+- Case law: the privacy rules leave a word such as `Alle` or `Plusieurs` in full before a dotted acronym, as in `Alle O.C.M.W.'s`, where it became `A.`. This applies to text processed from now on; published judgments are unchanged.
+- Tax codes: in the KB/WIB 92, the note on repealed article 49¹ is headed `Art. 49¹`, on the page and in downloads, where two provisions both read `Art. 49/1`.
+
 ## [1.1.11] - 2026-11-05
 
 ### Fixed

@@ -63,6 +63,9 @@ module FisconetProvision
     numbered?(number) ? "Art. #{number}" : (title.to_s.strip.presence || number.to_s)
   end
 
+  # The number a row's heading and contents entry print (FisconetSearchService.with_shown_numbers). Never for an id.
+  def printed_number(article) = article[:shown_number] || article[:article_number]
+
   # The code's names, normalized, as the positive evidence a title line's tail must EQUAL: the names given (the
   # legislation's stored document type and titles, and the registry's names of the code, FisconetCodeRegistry, as the
   # view helper passes them). Nothing is derived from the article titles themselves: a tail repeated across them is

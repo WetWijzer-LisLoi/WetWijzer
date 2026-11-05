@@ -405,7 +405,7 @@ class FisconetSearchService
       # slices (gap-fill source material), not articles; rendering one 500'd
       # the BTW page on its deeply nested PDF-conversion markup.
       rows = db.execute(<<~SQL, [legislation_id])
-        SELECT a.id, a.article_number, a.article_title, a.article_type,
+        SELECT a.id, a.article_number, a.article_number_src, a.article_title, a.article_type,
                a.text_nl, a.text_fr, a.html_nl, a.html_fr,
                a.region, a.region_nl, a.region_fr, a.version_date, a.end_date
         FROM tax_articles a
@@ -415,11 +415,26 @@ class FisconetSearchService
 
       db.close
 
-      rows.filter_map { |row| page_article(row, language_id) }
+      with_shown_numbers(rows.filter_map { |row| page_article(row, language_id) })
     rescue SQLite3::Exception => e
       Rails.logger.error("[FisconetSearch] all_articles error: #{e.message}")
       []
     end
+  end
+
+  # Two rows of one region with one stored number can be two provisions: KB/WIB 92 holds repealed art. 49^1 and art. 49/1
+  # in force, both stored as 49/1 (ledger item 48). The row whose source number has the superscript shows it. No other row
+  # does: 145^1 has read "Art. 145/1" on these pages all along, and every id still comes from the stored number.
+  def self.with_shown_numbers(articles)
+    articles.group_by { |article| [article[:region], article[:article_number]] }.each_value do |same_number|
+      next if same_number.size < 2
+
+      same_number.each do |article|
+        source = article[:article_number_src].to_s
+        article[:shown_number] = source.sub(/\^(\d+)/) { Regexp.last_match(1).tr('0123456789', '⁰¹²³⁴⁵⁶⁷⁸⁹') } if source.include?('^')
+      end
+    end
+    articles
   end
 
   # What a page in this language makes of a stored row. Nil with no text in that language.
@@ -446,6 +461,7 @@ class FisconetSearchService
     {
       id: row['id'],
       article_number: row['article_number'],
+      article_number_src: row['article_number_src'],
       article_title: row['article_title'],
       # Exposed so the caller can tell a rate-table ENTRY from a provision.
       # Table entries name a good or service and are legitimately short
