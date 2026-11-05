@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.13] - 2026-11-05
+
+### Fixed
+- Parliamentary documents: the search in the site-wide search and the year filter of the parliamentary list read far less of the corpus. Pages read, by SQL run by hand on production before this release, cold and warm cache mixed: the count of a common word with a language about 830 instead of about 56,700; page 1 of a year's list about 380 instead of about 63,700. Results of one date now come in a fixed order, so that a later page does not repeat a result.
+
 ## [1.1.12] - 2026-11-05
 
 ### Fixed

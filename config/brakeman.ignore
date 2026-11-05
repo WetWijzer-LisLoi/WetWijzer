@@ -303,13 +303,13 @@
     {
       "warning_type": "SQL Injection",
       "warning_code": 0,
-      "fingerprint": "b35f32920c15d7c8f685675cfa0e379a950518c9d064532bd98f706ff6f834fc",
+      "fingerprint": "668e195ecb77bf6f725d37d06df6256af5a82556bc4960eb43761373aa66a831",
       "check_name": "SQL",
       "message": "Possible SQL injection",
       "file": "app/services/parliamentary_search_service.rb",
-      "line": 54,
+      "line": 73,
       "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
-      "code": "connection.execute(\"SELECT id, title, parliament, dossier_number, document_date, document_number, substr(content, 1, 120)\\nFROM documents #{(\"WHERE #{conditions.join(\" AND \")}\" or \"\")}\\nORDER BY #{(\"document_date ASC\" or \"document_date DESC\")}\\nLIMIT #{per_page.to_i.clamp(1, 200)} OFFSET #{(([page.to_i, 1].max - 1) * per_page.to_i.clamp(1, 200))}\\n\", bind_params)",
+      "code": "connection.execute(\"WITH page_ids AS MATERIALIZED (\\n  SELECT id FROM #{documents_source(connection, conditions)} #{(\"WHERE #{conditions.join(\" AND \")}\" or \"\")}\\n  ORDER BY #{\"document_date #{(\"ASC\" or \"DESC\")}, id #{(\"ASC\" or \"DESC\")}\"}\\n  LIMIT #{per_page.to_i.clamp(1, 200)} OFFSET #{(([page.to_i, 1].max - 1) * per_page.to_i.clamp(1, 200))}\\n)\\nSELECT id, title, parliament, dossier_number, document_date, document_number, substr(content, 1, 120)\\nFROM documents WHERE id IN (SELECT id FROM page_ids)\\nORDER BY #{\"document_date #{(\"ASC\" or \"DESC\")}, id #{(\"ASC\" or \"DESC\")}\"}\\n\", bind_params)",
       "render_path": null,
       "location": {
         "type": "method",
@@ -318,7 +318,7 @@
       },
       "user_input": "conditions.join(\" AND \")",
       "confidence": "Medium",
-      "note": "False positive. The interpolated string is conditions.join(' AND ') inside ParliamentarySearchService.search. Every element of conditions is a compile-time literal SQL fragment containing ? placeholders (build_conditions, lines 95-138); all user-derived values (query tokens, parliament, year, doc_type, lang) go into bind_params and are passed as bound parameters to db.execute. Unlike the jurisprudence service there is not even a branch-selected constant fragment: every condition uses a ? bind, including the year filter (strftime('%Y', document_date) = ? with year.to_s bound). ORDER BY comes from a case statement yielding only 'document_date ASC'/'document_date DESC', and LIMIT/OFFSET are .to_i-clamped integers. If a future edit ever interpolates a user value directly into a conditions element instead of appending to bind_params, this ignore entry no longer applies and must be removed. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+      "note": "False positive. The interpolated string is conditions.join(' AND ') inside ParliamentarySearchService.search. Every element of conditions is a compile-time literal SQL fragment containing ? placeholders (build_conditions, lines 95-138); all user-derived values (query tokens, parliament, year, doc_type, lang) go into bind_params and are passed as bound parameters to db.execute. Unlike the jurisprudence service there is not even a branch-selected constant fragment: every condition uses a ? bind, including the year filter (strftime('%Y', document_date) = ? with year.to_s bound). ORDER BY comes from a case statement yielding only 'document_date ASC'/'document_date DESC', and LIMIT/OFFSET are .to_i-clamped integers. If a future edit ever interpolates a user value directly into a conditions element instead of appending to bind_params, this ignore entry no longer applies and must be removed. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.] Since 1.1.13 the same is true of what is added around it: documents_source returns 'documents' or that name with a fixed index name, the order is built from ASC or DESC, and limit and offset are integers."
     },
     {
       "warning_type": "Cross-Site Scripting",

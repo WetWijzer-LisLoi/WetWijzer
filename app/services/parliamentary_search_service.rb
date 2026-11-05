@@ -12,6 +12,9 @@ class ParliamentarySearchService
   DEFAULT_PER_PAGE = 20
   SearchResult = Struct.new(:results, :total_count, keyword_init: true)
   PARLIAMENT_ALIASES = { 'kamer' => 'chamber', 'senaat' => 'senate' }.freeze
+  DATE_LANGUAGE_INDEX = 'idx_documents_date_language'
+  # The LIKE fallback reads the title; the index holds neither the parliament nor the document type.
+  CONDITIONS_OUTSIDE_DATE_INDEX = /LIKE|parliament|document_type/
 
   class << self
     # Saved searches used the Dutch labels as values. The corpus uses these
@@ -40,26 +43,31 @@ class ParliamentarySearchService
 
       where_clause = conditions.any? ? "WHERE #{conditions.join(' AND ')}" : ''
 
+      source = documents_source(db, conditions)
+
       # Get total count
-      count_sql = "SELECT COUNT(*) FROM documents #{where_clause}"
+      count_sql = "SELECT COUNT(*) FROM #{source} #{where_clause}"
       total = db.get_first_value(count_sql, bind_params).to_i
 
-      # Sorting
-      order = case sort.to_s
-              when 'date_asc' then 'document_date ASC'
-              else 'document_date DESC'
-              end
+      # Sorting. The id settles rows of one date, so that a page does not repeat a row of the page before it.
+      direction = sort.to_s == 'date_asc' ? 'ASC' : 'DESC'
+      order = "document_date #{direction}, id #{direction}"
 
       # Pagination
       safe_page = [page.to_i, 1].max
       safe_per_page = per_page.to_i.clamp(1, 200)
       offset = (safe_page - 1) * safe_per_page
 
+      # The rows of the page are chosen first, and only those rows are read: see documents_source.
       sql = <<~SQL
+        WITH page_ids AS MATERIALIZED (
+          SELECT id FROM #{source} #{where_clause}
+          ORDER BY #{order}
+          LIMIT #{safe_per_page} OFFSET #{offset}
+        )
         SELECT id, title, parliament, dossier_number, document_date, document_number, substr(content, 1, 120)
-        FROM documents #{where_clause}
+        FROM documents WHERE id IN (SELECT id FROM page_ids)
         ORDER BY #{order}
-        LIMIT #{safe_per_page} OFFSET #{offset}
       SQL
 
       rows = db.execute(sql, bind_params).map do |row|
@@ -78,6 +86,18 @@ class ParliamentarySearchService
     end
 
     private
+
+    # language and document_date stand behind content in a row, so reading them walks the row's whole text. A count of
+    # `wet` in titles with a language read 56,678 pages written plainly and 834 through this index, hits and misses together:
+    # SQL by hand on production before this code was deployed, cold and warm cache mixed (2026-11-05, ledger item 43). The index holds both
+    # columns and the row id. It is used when the conditions need nothing else, and only where it exists: nothing in
+    # the repository builds this corpus's indexes.
+    def documents_source(db, conditions)
+      return 'documents' if conditions.grep(CONDITIONS_OUTSIDE_DATE_INDEX).any?
+
+      index = db.get_first_value("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?", [DATE_LANGUAGE_INDEX])
+      index ? "documents INDEXED BY #{DATE_LANGUAGE_INDEX}" : 'documents'
+    end
 
     def db_path
       @db_path ||= ENV.fetch('CHAMBER_DB') { Rails.root.join('storage', 'chamber.sqlite3').to_s }

@@ -10,6 +10,11 @@ class ParliamentaryController < ApplicationController
   # 2026-11-03, ledger item 39. This index holds language, parliament and legislature, and the row id with them: the
   # same count read 1,036 pages. So the rows of a page are chosen here, and only those rows are read.
   COVERING_DOCUMENT_INDEX = 'documents INDEXED BY idx_documents_unique'
+  # With a year: this index holds the date, the language and the row id. Page 1 of a year's list read 63,736 pages written
+  # plainly and 383 through it: SQL by hand on production before this code was deployed, cold and warm cache mixed,
+  # 2026-11-05, ledger item 43.
+  DATE_LANGUAGE_INDEX = 'idx_documents_date_language'
+  DATE_DOCUMENT_INDEX = "documents INDEXED BY #{DATE_LANGUAGE_INDEX}".freeze
 
   # GET /parlement
   def index
@@ -478,9 +483,20 @@ class ParliamentaryController < ApplicationController
     filters[:year].blank? && filters[:numac].blank?
   end
 
+  # A year with a parliament or a legislature needs both indexes, so it reads the rows. Nothing in the repository builds
+  # this corpus's indexes, so the date index is used only where it exists.
+  def document_source(filters)
+    return COVERING_DOCUMENT_INDEX if covered_by_index?(filters)
+    return 'documents' if filters[:numac].present? || filters[:parliament].present? || filters[:legislature].present?
+
+    date_index = chamber_db.get_first_value("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?", [DATE_LANGUAGE_INDEX])
+    date_index ? DATE_DOCUMENT_INDEX : 'documents'
+  end
+
   def search_documents(query, filters, limit, offset)
     where_clause, params = document_conditions(query, filters)
-    return document_page(where_clause, params, 'DESC', limit, offset) if covered_by_index?(filters)
+    source = document_source(filters)
+    return document_page(where_clause, params, 'DESC', limit, offset, source) unless source == 'documents'
 
     # a law's documents in parliamentary order, so its first page starts with
     # the rows the law page's panel previews
@@ -491,8 +507,7 @@ class ParliamentaryController < ApplicationController
 
   def count_documents(query, filters)
     where_clause, params = document_conditions(query, filters)
-    source = covered_by_index?(filters) ? COVERING_DOCUMENT_INDEX : 'documents'
-    chamber_db.execute("SELECT COUNT(*) FROM #{source} #{where_clause}", params).first[0]
+    chamber_db.execute("SELECT COUNT(*) FROM #{document_source(filters)} #{where_clause}", params).first[0]
   end
 
   def recent_documents(limit, offset)
@@ -501,10 +516,10 @@ class ParliamentaryController < ApplicationController
   end
 
   # direction is ours, 'ASC' or 'DESC', never the reader's text.
-  def document_page(where_clause, params, direction, limit, offset)
+  def document_page(where_clause, params, direction, limit, offset, source = COVERING_DOCUMENT_INDEX)
     sql = <<~SQL.squish
       WITH page_ids AS MATERIALIZED (
-        SELECT id FROM #{COVERING_DOCUMENT_INDEX} #{where_clause} ORDER BY id #{direction} LIMIT ? OFFSET ?
+        SELECT id FROM #{source} #{where_clause} ORDER BY id #{direction} LIMIT ? OFFSET ?
       )
       SELECT #{DOCUMENT_LIST_COLUMNS} FROM documents WHERE id IN (SELECT id FROM page_ids) ORDER BY id #{direction}
     SQL
