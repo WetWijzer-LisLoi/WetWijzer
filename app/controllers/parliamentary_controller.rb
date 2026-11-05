@@ -440,12 +440,9 @@ class ParliamentaryController < ApplicationController
     params = []
 
     if query.present?
-      # Use FTS5 for fast full-text search; an opinion number is a phrase
-      # (ParliamentaryFtsQuery). With nothing searchable left ("!!!") MATCH raises,
-      # and the page said the corpus was coming soon: it finds nothing instead.
-      match = ParliamentaryFtsQuery.build(query)
-      conditions << (match.present? ? 'documents.id IN (SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?)' : '0 = 1')
-      params << match if match.present?
+      sql, binds = search_condition(query)
+      conditions << sql
+      params.concat(binds)
     end
 
     if filters[:parliament].present?
@@ -477,51 +474,108 @@ class ParliamentaryController < ApplicationController
     [conditions.any? ? "WHERE #{conditions.join(' AND ')}" : '', params]
   end
 
+  # Use FTS5 for fast full-text search; an opinion number is a phrase
+  # (ParliamentaryFtsQuery). With nothing searchable left ("!!!") MATCH raises,
+  # and the page said the corpus was coming soon: it finds nothing instead.
+  def search_condition(query)
+    match = ParliamentaryFtsQuery.build(query)
+    match.present? ? ['documents.id IN (SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?)', [match]] : ['0 = 1', []]
+  end
+
   # A year is not in the index, so the rows have to be read for it. A law's documents are few and have indexes of their
   # own, and they come in an order the index does not hold.
   def covered_by_index?(filters)
     filters[:year].blank? && filters[:numac].blank?
   end
 
-  # A year with a parliament or a legislature needs both indexes, so it reads the rows. Nothing in the repository builds
-  # this corpus's indexes, so the date index is used only where it exists.
   def document_source(filters)
-    return COVERING_DOCUMENT_INDEX if covered_by_index?(filters)
-    return 'documents' if filters[:numac].present? || filters[:parliament].present? || filters[:legislature].present?
+    covered_by_index?(filters) ? COVERING_DOCUMENT_INDEX : 'documents'
+  end
 
-    date_index = chamber_db.get_first_value("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?", [DATE_LANGUAGE_INDEX])
-    date_index ? DATE_DOCUMENT_INDEX : 'documents'
+  # Nothing in the repository builds this corpus's indexes, so a date order is given only where the index exists. Without it a
+  # date order would read the text of every row, so the list then keeps the order of its ids.
+  def date_index?
+    return @date_index if defined?(@date_index)
+
+    @date_index = chamber_db.get_first_value("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?", [DATE_LANGUAGE_INDEX]).present?
+  end
+
+  # The filters through the two indexes, so that no row is read to choose a page. The date index holds the date, the language and
+  # the row id; a parliament or a legislature is asked of the other index, which holds those and the language. A year with a
+  # legislature read the rows: about 17 seconds on 2026-11-05, ledger item 55.
+  def date_index_conditions(query, filters)
+    conditions = []
+    params = []
+    if query.present?
+      sql, binds = search_condition(query)
+      conditions << sql
+      params.concat(binds)
+    end
+    inner = { parliament: filters[:parliament], language: filters[:lang], legislature: filters[:legislature].presence&.to_i }.compact_blank
+    if filters[:parliament].present? || filters[:legislature].present?
+      conditions << "id IN (SELECT id FROM #{COVERING_DOCUMENT_INDEX} WHERE #{inner.keys.map { |column| "#{column} = ?" }.join(' AND ')})"
+      params.concat(inner.values)
+    elsif filters[:lang].present?
+      conditions << 'language = ?'
+      params << filters[:lang]
+    end
+    if filters[:year].to_s.match?(/^\d{4}$/)
+      conditions << 'document_date LIKE ?'
+      params << "#{filters[:year]}-%"
+    end
+    [conditions.any? ? "WHERE #{conditions.join(' AND ')}" : '', params]
+  end
+
+  def sort_direction
+    @sort == 'date_asc' ? 'ASC' : 'DESC'
+  end
+
+  # Newest first or oldest first, and a document with no date last in both: it is neither.
+  def date_order
+    sort_direction == 'ASC' ? 'document_date IS NULL, document_date ASC, id ASC' : 'document_date DESC, id DESC'
   end
 
   def search_documents(query, filters, limit, offset)
+    if date_index? && filters[:numac].blank?
+      where_clause, params = date_index_conditions(query, filters)
+      return document_page(where_clause, params, date_order, limit, offset, DATE_DOCUMENT_INDEX)
+    end
+
     where_clause, params = document_conditions(query, filters)
     source = document_source(filters)
-    return document_page(where_clause, params, 'DESC', limit, offset, source) unless source == 'documents'
+    return document_page(where_clause, params, "id #{sort_direction}", limit, offset, source) unless source == 'documents'
 
     # a law's documents in parliamentary order, so its first page starts with
     # the rows the law page's panel previews
-    order = filters[:numac].present? && query.blank? ? ParliamentaryRelations::Filter::ORDER : 'id DESC'
+    order = filters[:numac].present? && query.blank? ? ParliamentaryRelations::Filter::ORDER : "id #{sort_direction}"
     sql = "SELECT #{DOCUMENT_LIST_COLUMNS} FROM documents #{where_clause} ORDER BY #{order} LIMIT ? OFFSET ?"
     chamber_db.execute(sql, params + [limit, offset]).map { |row| document_list_row(row) }
   end
 
   def count_documents(query, filters)
+    if date_index? && filters[:numac].blank? && filters[:year].present?
+      where_clause, params = date_index_conditions(query, filters)
+      return chamber_db.execute("SELECT COUNT(*) FROM #{DATE_DOCUMENT_INDEX} #{where_clause}", params).first[0]
+    end
+
     where_clause, params = document_conditions(query, filters)
     chamber_db.execute("SELECT COUNT(*) FROM #{document_source(filters)} #{where_clause}", params).first[0]
   end
 
   def recent_documents(limit, offset)
     lang = I18n.locale == :nl ? 'nl' : 'fr'
-    document_page('WHERE language = ?', [lang], @sort == 'date_asc' ? 'ASC' : 'DESC', limit, offset)
+    return document_page('WHERE language = ?', [lang], date_order, limit, offset, DATE_DOCUMENT_INDEX) if date_index?
+
+    document_page('WHERE language = ?', [lang], "id #{sort_direction}", limit, offset)
   end
 
-  # direction is ours, 'ASC' or 'DESC', never the reader's text.
-  def document_page(where_clause, params, direction, limit, offset, source = COVERING_DOCUMENT_INDEX)
+  # order is ours, built from fixed words, never the reader's text.
+  def document_page(where_clause, params, order, limit, offset, source = COVERING_DOCUMENT_INDEX)
     sql = <<~SQL.squish
       WITH page_ids AS MATERIALIZED (
-        SELECT id FROM #{source} #{where_clause} ORDER BY id #{direction} LIMIT ? OFFSET ?
+        SELECT id FROM #{source} #{where_clause} ORDER BY #{order} LIMIT ? OFFSET ?
       )
-      SELECT #{DOCUMENT_LIST_COLUMNS} FROM documents WHERE id IN (SELECT id FROM page_ids) ORDER BY id #{direction}
+      SELECT #{DOCUMENT_LIST_COLUMNS} FROM documents WHERE id IN (SELECT id FROM page_ids) ORDER BY #{order}
     SQL
     chamber_db.execute(sql, params + [limit, offset]).map { |row| document_list_row(row) }
   end

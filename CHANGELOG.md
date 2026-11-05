@@ -8,10 +8,21 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.15] - 2026-11-05
+
+### Fixed
+- Parliamentary documents: newest first and oldest first now follow the date, with a word, a year, a parliament or a legislature. They used to follow the row's number whatever was chosen. A document with no date comes last either way. A year with a legislature no longer reads the documents' text to choose a page.
+- Parliamentary documents: dates and types come from the Chamber's own dossier page. Documents 002 to 010 were all called amendments, and many dates were those of a law named in the title. The weekly run corrects a few dozen dossiers at a time, and the stored dates were repaired separately on 2026-11-05: 21,551 wrong dates were replaced by the dossier's filing date or by none.
+- `scripts/enrich_all.py` no longer takes the first date in a document's text for its date.
+- RSS: a feed of one source, as the header's menu offers, holds that source only, and its own address says which. The judgments feed held all three.
+- Law comparison: Back returns to the language the reader came from.
+- Search: with exact search on, a search with no results no longer advises turning it on.
+- Removal requests: the form's link to the privacy policy opens it. It answered 404 on every site.
+
 ## [1.1.14] - 2026-11-05
 
 ### Fixed
-- Search: the unified search no longer walks the text of every judgment it finds to sort them. Pages read for a very common word, by SQL run by hand on production before this release: about 2,100 instead of about 608,000 for the list, about 3,700 instead of about 210,000 for the count. Such a search took about 90 seconds on a cold cache. A rare word now reads somewhat more than before.
+- Search: the unified search no longer walks the text of every judgment it finds to sort them. Pages read for a very common word, by SQL run by hand on production before this release: about 2,100 instead of about 608,000 for the list, about 3,700 instead of about 210,000 for the count. The whole page took about 90 seconds on some requests before this release; how much of that this was is not measured. A rare word now reads somewhat more than before.
 - Search results: when the server cannot answer while paging, the results stay on the screen with a message and a way to try again, instead of being replaced by a bare "Content missing".
 - Judgments: the address rule for rebuilt judgments no longer reads the floor `rez-de-chaussée` or the phrase `prend place sur` as a street with a number. Judgments already published keep their text until they are rebuilt.
 

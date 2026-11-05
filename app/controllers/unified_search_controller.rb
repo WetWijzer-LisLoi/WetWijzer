@@ -142,8 +142,9 @@ class UnifiedSearchController < ApplicationController
 
   # decision_date stands behind full_text in a row, so sorting on it walks the text of every hit. For `wet`, 115,411 judgments, the list
   # read 608,535 pages and the count 210,349; through this index, which holds the date and the row id, 2,148 and 3,688, hits and misses
-  # together: SQL by hand on production on 2026-11-05 before this code, a warm cache, ledger item 53. A cold read of the first took about
-  # 90 seconds. A rare word pays for it: 3 judgments, 150 pages plainly, 1,853 through the index. Only where the index exists, as in a fixture.
+  # together: SQL by hand on production on 2026-11-05 before this code, a warm cache, ledger item 53. Separately, the whole page took about
+  # 90 seconds on some requests; how much of that this was is not shown. A rare word pays for it: 3 judgments, 150 pages plainly, 1,853
+  # through the index. Only where the index exists, as in a fixture.
   def jurisprudence_source(db)
     index = db.get_first_value("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?", [JURISPRUDENCE_DATE_INDEX])
     index ? "cases INDEXED BY #{JURISPRUDENCE_DATE_INDEX}" : 'cases'

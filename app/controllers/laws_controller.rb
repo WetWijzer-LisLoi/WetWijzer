@@ -16,6 +16,8 @@ require 'json'
 # @see ApplicationController
 # @see Legislation
 class LawsController < ApplicationController
+  RSS_SOURCES = %w[legislation jurisprudence parliamentary].freeze
+
   include LawsFiltering
   include LawsExportActions
   include LawsCompareActions
@@ -914,22 +916,29 @@ class LawsController < ApplicationController
           # Keep public feed URLs derived from the existing feed params; never add
           # arbitrary request query text to the rendered feed or cache identity.
           @rss_feed_params = search_params.to_h.select { |_, v| v == '1' }
+          # The header's menu offers one source at a time. Anything else is the whole feed.
+          source = RSS_SOURCES.include?(params[:source]) ? params[:source] : nil
+          @rss_feed_params = @rss_feed_params.merge('source' => source) if source
           type_ids = LawSearchService.send(:type_ids_from_params, search_params.to_h.with_indifferent_access)
           cache_key = rss_feed_cache_key(lang_id, type_ids)
 
           cached_xml = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
             # --- Legislation (20 items) ---
-            rss_scope = Legislation.includes(:type)
-                                   .where(language_id: lang_id)
-                                   .where.not(date: ['N/A', '', nil])
-            rss_scope = rss_scope.where(law_type_id: type_ids) if type_ids.any?
-            @laws = rss_scope.order(date: :desc).limit(20)
+            if source.nil? || source == 'legislation'
+              rss_scope = Legislation.includes(:type)
+                                     .where(language_id: lang_id)
+                                     .where.not(date: ['N/A', '', nil])
+              rss_scope = rss_scope.where(law_type_id: type_ids) if type_ids.any?
+              @laws = rss_scope.order(date: :desc).limit(20)
+            else
+              @laws = []
+            end
 
             # Public RSS carries case metadata; summaries lack a verified privacy contract.
-            @rss_jurisprudence = load_rss_jurisprudence(lang_id, 10)
+            @rss_jurisprudence = load_rss_jurisprudence(lang_id, 10) if source.nil? || source == 'jurisprudence'
 
             # --- Parliamentary work (15 items) ---
-            @rss_parliamentary = load_rss_parliamentary(15)
+            @rss_parliamentary = load_rss_parliamentary(15) if source.nil? || source == 'parliamentary'
 
             render_to_string(layout: false, formats: [:rss])
           end
@@ -953,9 +962,8 @@ class LawsController < ApplicationController
       @rss_feed_params.to_h.map { |key, value| [key.to_s, value.to_s] }.sort,
       type_ids.map(&:to_s).sort
     ]
-    # v7 (1.1.4): parliament labels per interface language; a v6 body would
-    # serve "chamber –" for up to an hour after the deploy.
-    "rss_feed/v7/#{Digest::SHA256.hexdigest(JSON.generate(context))}"
+    # v8 (1.1.15): a feed of one source; a v7 body would serve all three for up to an hour after the deploy.
+    "rss_feed/v8/#{Digest::SHA256.hexdigest(JSON.generate(context))}"
   end
   private :rss_feed_cache_key
 

@@ -125,16 +125,16 @@
         <% case I18n.locale
            when :fr %>
           Vos données sont utilisées exclusivement pour le traitement de cette demande.
-          Voir notre <a href="/privacy-fr.html#section-3-6" class="underline hover:text-(--accent-600)">politique de confidentialité</a>.
+          Voir notre <a href="<%= privacy_policy_path(anchor: 'section-3-6') %>" class="underline hover:text-(--accent-600)">politique de confidentialité</a>.
         <% when :de %>
           Ihre Daten werden ausschließlich zur Bearbeitung dieses Antrags verwendet.
-          Siehe unsere <a href="/privacy-nl.html#section-3-6" class="underline hover:text-(--accent-600)">Datenschutzerklärung</a>.
+          Siehe unsere <a href="<%= privacy_policy_path(anchor: 'section-3-6') %>" class="underline hover:text-(--accent-600)">Datenschutzerklärung</a>.
         <% when :en %>
           Your data is used exclusively for processing this request.
-          See our <a href="/privacy-nl.html#section-3-6" class="underline hover:text-(--accent-600)">privacy policy</a>.
+          See our <a href="<%= privacy_policy_path(anchor: 'section-3-6') %>" class="underline hover:text-(--accent-600)">privacy policy</a>.
         <% else %>
           Uw gegevens worden uitsluitend gebruikt voor de behandeling van dit verzoek.
-          Zie ons <a href="/privacy-nl.html#section-3-6" class="underline hover:text-(--accent-600)">privacybeleid</a>.
+          Zie ons <a href="<%= privacy_policy_path(anchor: 'section-3-6') %>" class="underline hover:text-(--accent-600)">privacybeleid</a>.
         <% end %>
       </p>
     <% end %>

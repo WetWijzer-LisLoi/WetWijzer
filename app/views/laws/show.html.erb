@@ -90,7 +90,7 @@
         <%# Side by side comparison link: NL against FR, so not for a law the
             German site holds in German only %>
         <% if !german_site? || Array(@language_versions).intersect?(HasLanguage::SITE_LANGUAGE_IDS) %>
-        <%= link_to compare_law_path(@law),
+        <%= link_to compare_law_path(@law, return_language: @law.language_id),
                     class: "source-detail-action inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
                     title: case I18n.locale when :fr then "Comparer NL et FR côte à côte" when :de then "NL und FR nebeneinander vergleichen" when :en then "Compare NL and FR side by side" else "NL en FR naast elkaar vergelijken" end do %>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

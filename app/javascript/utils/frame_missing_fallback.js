@@ -1,8 +1,9 @@
 import { uiText } from './ui_translations'
 
 // A frame whose response does not hold it gets Turbo's bare "Content missing" in place of its content, and Turbo then throws. The search
-// results frame has no frame-status controller, so a 502 during a restart emptied the results that way (2026-11-05). frame-status
-// handles its own frames and has already cancelled the event when it reaches the document.
+// results frame has no frame-status controller, so an error page would empty the results that way. Sol saw that message once on
+// 2026-11-05, with a 502 on the same address afterwards; the cause of that one is not known. frame-status handles its own frames and
+// has already cancelled the event when it reaches the document.
 export function handleFrameMissing(event, doc = document, origin = window.location.origin) {
   if (event.defaultPrevented) return
   const frame = event.target
