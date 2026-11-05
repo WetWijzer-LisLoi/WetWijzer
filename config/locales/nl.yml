@@ -227,6 +227,7 @@ nl:
   search_mode_hint: "Standaard: flexibel (alle woorden). Aanvinken: exacte woordvolgorde."
   search_hints_no_results_with_exact: "Geen resultaten gevonden. Probeer minder specifieke zoektermen te gebruiken of schakel de optie 'exacte match' uit."
   search_hints_no_results_without_exact: " Probeer met de filter 'Exacte overeenkomst' voor precieze resultaten."
+  search_hints_no_source: "Er is geen bron gekozen. Kies wetgeving, rechtspraak of parlementaire stukken om te zoeken."
   # WW-LINK-01..03: the law page's related-sources panel and the parliamentary
   # index's relation banner
   related_sources:

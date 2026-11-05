@@ -1,10 +1,14 @@
+<%# Sol, on live 1.1.14: with all three sources unticked the form gave the advice for a search that found nothing. %>
+<% no_source = %w[source_legislation source_jurisprudence source_parliamentary].all? { |key| params[key] == '0' } %>
 <% if defined?(@laws) && params[:title].present? && @laws&.empty? &&
       !@validation_failed && !@search_incomplete &&
       @jurisprudence_results.blank? && @jurisprudence_total_count.to_i.zero? &&
       @parliamentary_results.blank? && @parliamentary_total_count.to_i.zero? %>
   <div data-search-empty-hint class="text-xs text-gray-600 dark:text-gray-400 mt-2">
     <span class="text-amber-600 dark:text-amber-400 font-medium">
-      <% if params[:exact_match] == '1' || params[:search_mode].to_s == 'exact' %>
+      <% if no_source %>
+        <%= t(:search_hints_no_source) %>
+      <% elsif params[:exact_match] == '1' || params[:search_mode].to_s == 'exact' %>
         <%= t(:search_hints_no_results_with_exact) %>
       <% else %>
         <%= t(:search_hints_no_results_without_exact) %>

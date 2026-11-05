@@ -203,6 +203,7 @@ de:
   search_mode_hint: "Standard: flexibel (alle Wörter). Aktivieren: exakte Wortreihenfolge."
   search_hints_no_results_with_exact: "Keine Ergebnisse gefunden. Versuchen Sie weniger spezifische Suchbegriffe oder deaktivieren Sie die Option 'Exakte Übereinstimmung'."
   search_hints_no_results_without_exact: " Versuchen Sie den Filter 'Exakte Übereinstimmung' für präzise Ergebnisse."
+  search_hints_no_source: "Keine Quelle ausgewählt. Wählen Sie Gesetzgebung, Rechtsprechung oder parlamentarische Dokumente, um zu suchen."
   # WW-LINK-01..03: the law page's related-sources panel and the parliamentary
   # index's relation banner
   related_sources:

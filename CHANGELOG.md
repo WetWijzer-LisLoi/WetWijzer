@@ -8,6 +8,15 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.16] - 2026-11-05
+
+### Fixed
+- RSS: a feed of one source names it in its title. The judgments feed was called "Latest laws".
+- Search: with all three sources unticked, the page says that no source is chosen, instead of advising other search terms. The query stays.
+
+### Tests
+- Parliamentary documents: a legislature alone, with a year, a word or a parliament gives the same rows and count with the date index as without it, in date order.
+
 ## [1.1.15] - 2026-11-05
 
 ### Fixed

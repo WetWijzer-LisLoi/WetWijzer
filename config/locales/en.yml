@@ -204,6 +204,7 @@ en:
   search_mode_hint: "Default: flexible (all words). Check: exact word order."
   search_hints_no_results_with_exact: "No results found. Try using less specific search terms or uncheck the 'exact match' option."
   search_hints_no_results_without_exact: " Try with the 'Exact match' filter for precise results."
+  search_hints_no_source: "No source is selected. Choose legislation, case law or parliamentary documents to search."
   # WW-LINK-01..03: the law page's related-sources panel and the parliamentary
   # index's relation banner
   related_sources:

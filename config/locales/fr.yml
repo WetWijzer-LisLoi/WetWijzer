@@ -227,6 +227,7 @@ fr:
   search_mode_hint: "Par défaut : flexible (tous les mots). Cocher : ordre exact."
   search_hints_no_results_with_exact: "Aucun résultat trouvé. Essayez des termes de recherche moins spécifiques ou désactivez l'option 'correspondance exacte'."
   search_hints_no_results_without_exact: "Aucun résultat trouvé. Essayez des termes de recherche moins spécifiques ou alternatifs."
+  search_hints_no_source: "Aucune source n'est choisie. Choisissez la législation, la jurisprudence ou les documents parlementaires pour chercher."
   # WW-LINK-01..03: the law page's related-sources panel and the parliamentary
   # index's relation banner
   related_sources:

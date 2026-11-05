@@ -41,8 +41,20 @@ module RssHelper
   # for the hour. Nothing request-specific beyond the type filters belongs in
   # the body; the controller's key and this text now agree.
 
+  # A feed of one source names that source (Sol, on live 1.1.15: the judgments feed was called "Laatste wetten").
+  # The controller keeps the source in the cache key, so each title has its own body.
+  RSS_SOURCE_TITLES = {
+    'jurisprudence' => { fr: 'Jurisprudence récente', de: 'Neueste Rechtsprechung', en: 'Latest case law',
+                         nl: 'Laatste rechtspraak' },
+    'parliamentary' => { fr: 'Derniers documents parlementaires', de: 'Neueste parlamentarische Dokumente',
+                         en: 'Latest parliamentary documents', nl: 'Laatste parlementaire stukken' }
+  }.freeze
+
   # @return [String] RSS feed title
   def rss_title
+    source_titles = RSS_SOURCE_TITLES[params[:source].to_s]
+    return "#{t(:app_title)} - #{source_titles.fetch(I18n.locale, source_titles[:nl])}" if source_titles
+
     suffix = if any_type_filter?
                active_type_filters.join(', ')
              else
