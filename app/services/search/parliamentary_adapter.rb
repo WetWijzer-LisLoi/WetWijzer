@@ -33,7 +33,7 @@ module Search
         lang_id = row[5].to_s.upcase.start_with?('F') ? 2 : 1
         {
           id: row[0],
-          title: truncate(row[1], 80),
+          title: truncate(ParliamentaryHelper.repair_windows1252_controls(row[1]), 80),
           subtitle: "#{parliament_label(row[2])} - #{row[3]} - #{row[4]}",
           url: "/parliamentary_work/chamber/#{row[0]}?language_id=#{lang_id}",
           source: source_name,
@@ -56,7 +56,7 @@ module Search
 
       {
         id: row[0],
-        title: row[1],
+        title: ParliamentaryHelper.repair_windows1252_controls(row[1]),
         content: row[5],
         metadata: {
           parliament: row[2],

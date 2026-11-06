@@ -51,7 +51,7 @@
               <% reference = summary ? doc[:dossier_number] : [[doc[:legislature], doc[:dossier_number].to_s.rjust(4, '0')].compact_blank.join('-'), doc[:document_number]].compact_blank.join('/') %>
               <% body = capture do %>
                 <div class="text-sm text-gray-900 dark:text-white">
-                  <%= doc[:title].presence&.truncate(80) || reference %>
+                  <%= ParliamentaryHelper.repair_windows1252_controls(doc[:title].presence)&.truncate(80) || reference %>
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">
                   <%= [t("related_sources.parliamentary.#{doc[:parliament]}", default: doc[:parliament].to_s), reference, parliamentary_type_label(doc[:document_type])].compact_blank.join(' · ') %>
@@ -90,7 +90,7 @@
           <div class="space-y-1">
             <% vlaams.items.each do |doc| %>
               <% body = capture do %>
-                <div class="text-sm text-gray-900 dark:text-white"><%= doc[:title].presence&.truncate(80) || doc[:label] %></div>
+                <div class="text-sm text-gray-900 dark:text-white"><%= ParliamentaryHelper.repair_windows1252_controls(doc[:title].presence)&.truncate(80) || doc[:label] %></div>
                 <div class="text-xs text-gray-500 dark:text-gray-400"><%= [doc[:label], parliamentary_type_label(doc[:document_type])].compact_blank.join(' · ') %></div>
               <% end %>
               <% if doc[:pdf_url].to_s.match?(%r{\Ahttps://}i) %>

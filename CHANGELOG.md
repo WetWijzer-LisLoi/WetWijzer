@@ -8,6 +8,18 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.22] - 2026-11-06
+
+### Fixed
+- Parliamentary documents: Senate titles show their dashes, apostrophes and other punctuation ("NAVO – Belgische delegatie", "l’occasion", "mise en œuvre"). They showed control characters: the text had been read in the wrong encoding.
+- Civil Code concordance tables: an old article from a separate Act (the 1991 product-liability Act, the 2003 Act on public servants, the 1824 Acts on building and long-lease rights, and eleven others) opens that Act, not the 1804 Civil Code.
+- Search: Return with no suggestion chosen searches, as the Search button does; it only closed the suggestions. The arrow keys no longer choose an item in a closed list.
+- Search filters: the sort list offers relevance and shows the sort the results use; after a relevance sort, the next Search kept another sort.
+- Search filters: the legislation type, language and scope checkboxes are named by their labels for screen readers, and a click on a label ticks its box.
+- Search filters: a typed date that does not exist (31/02/2026) is kept and marked as not a date, with an explanation. It became 03/03/2026.
+- Law pages: the "Go to" menu takes the keyboard: the focus moves to its first item, the arrow keys move between items, and Tab leaves it.
+- Search: a results list restored empty by Back is loaded again only when it had finished loading, never while it still loads.
+
 ## [1.1.21] - 2026-11-06
 
 1.1.20 was sealed but not released: its CI run was stopped when the build machine ran low on memory, with its first five stages passed. Its change ships here.

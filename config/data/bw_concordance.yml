@@ -1,3 +1,5 @@
+# A section taken from a standalone Act names that Act (old_numac): its old articles link there, not into the 1804
+# Civil Code (Sol, on live 1.1.19, 17:35:15Z: "1" of the 1991 product-liability Act opened Book I, art. 1).
 # Concordantietabel Oud Burgerlijk Wetboek → Nieuw Burgerlijk Wetboek
 # Bron: Belgisch Staatsblad / Moniteur belge
 # Artikelmappings zijn wetgevende feiten (niet auteursrechtelijk beschermd).
@@ -142,6 +144,7 @@ boek_2:
         - ["1474/1", "2.3.81"]
     - heading_nl: "Wet 13/01/1977 (Centraal Huwelijksovereenkomstenregister) → Boek 2"
       heading_fr: "Loi 13/01/1977 (Registre central des conventions matrimoniales) → Livre 2"
+      old_numac: "1977011305"
       entries:
         - ["2", "2.3.83"]
         - ["4 §§2-3", "2.3.82"]
@@ -405,10 +408,12 @@ boek_3:
         - ["2280", "3.28"]
     - heading_nl: "Gerechtelijk Wetboek → Boek 3"
       heading_fr: "Code judiciaire → Livre 3"
+      old_numac: "1967101056"
       entries:
         - ["Ger.W. 1370", "3.25"]
     - heading_nl: "Hypotheekwet → Boek 3"
       heading_fr: "Loi hypothécaire → Livre 3"
+      old_numac: "1851121650"
       entries:
         - ["Hyp.W. 1", "3.30"]
         - ["Hyp.W. 2", "3.31"]
@@ -421,6 +426,7 @@ boek_3:
         - ["Hyp.W. 10", "3.10"]
     - heading_nl: "Veldwetboek → Boek 3"
       heading_fr: "Code rural → Livre 3"
+      old_numac: "1886100750"
       entries:
         - ["Veldw. 29", "3.61"]
         - ["Veldw. 30", "3.61; 3.133"]
@@ -434,6 +440,7 @@ boek_3:
         - ["Veldw. 39", "3.61"]
     - heading_nl: "Wet 10/01/1824 (Opstalrecht) → Boek 3"
       heading_fr: "Loi 10/01/1824 (Droit de superficie) → Livre 3"
+      old_numac: "1824011051"
       entries:
         - ["Opstal 1", "3.177; 3.178"]
         - ["Opstal 2", "3.183"]
@@ -446,6 +453,7 @@ boek_3:
         - ["Opstal 9", "3.15; 3.16; 3.187"]
     - heading_nl: "Wet 10/01/1824 (Erfpachtrecht) → Boek 3"
       heading_fr: "Loi 10/01/1824 (Droit d'emphytéose) → Livre 3"
+      old_numac: "1824011050"
       entries:
         - ["Erfp. 1", "3.167; 3.30"]
         - ["Erfp. 2", "3.169; 3.174"]
@@ -466,10 +474,12 @@ boek_3:
         - ["Erfp. 18", "3.174; 3.175; 3.15; 3.16"]
     - heading_nl: "Wet 30/12/1975 (Achtergelaten goederen) → Boek 3"
       heading_fr: "Loi 30/12/1975 (Biens abandonnés) → Livre 3"
+      old_numac: "1975123002"
       entries:
         - ["Volledige wet", "3.58; 3.59"]
     - heading_nl: "Wet 21/02/1983 (Achtergelaten voorwerpen) → Boek 3"
       heading_fr: "Loi 21/02/1983 (Objets abandonnés) → Livre 3"
+      old_numac: "1983009291"
       entries:
         - ["Volledige wet", "3.60"]
 
@@ -931,6 +941,7 @@ boek_4:
         - ["1698", "4.81 lid 3"]
     - heading_nl: "Wet 16/05/1900 (Kleine nalatenschappen) → Boek 4"
       heading_fr: "Loi 16/05/1900 (Petites successions) → Livre 4"
+      old_numac: "1900051650"
       entries:
         - ["1", "4.106"]
         - ["2", "/"]
@@ -944,6 +955,7 @@ boek_4:
         - ["10", "4.113"]
     - heading_nl: "Wet 13/01/1977 (Testamentenregister) → Boek 4"
       heading_fr: "Loi 13/01/1977 (Registre des testaments) → Livre 4"
+      old_numac: "1977011305"
       entries:
         - ["2", "4.261"]
         - ["3", "4.260 §3"]
@@ -953,6 +965,7 @@ boek_4:
         - ["6", "4.264"]
     - heading_nl: "Wet 29/08/1988 (Landbouwbedrijven) → Boek 4"
       heading_fr: "Loi 29/08/1988 (Exploitations agricoles) → Livre 4"
+      old_numac: "1988016163"
       entries:
         - ["1 lid 1", "4.116 §1"]
         - ["1 lid 2", "4.114 §1"]
@@ -1186,6 +1199,7 @@ boek_6:
         - ["1386bis", "6.11"]
     - heading_nl: "Wet 25/02/1991 (Productaansprakelijkheid) → Boek 6"
       heading_fr: "Loi 25/02/1991 (Responsabilité du fait des produits) → Livre 6"
+      old_numac: "1991009354"
       entries:
         - ["1", "6.41"]
         - ["2", "6.42"]
@@ -1204,6 +1218,7 @@ boek_6:
         - ["15", "6.55"]
     - heading_nl: "Wet 10/02/2003 (Aansprakelijkheid overheidspersoneel) → Boek 6"
       heading_fr: "Loi 10/02/2003 (Responsabilité personnel public) → Livre 6"
+      old_numac: "2003002035"
       entries:
         - ["3", "6.14 §2; 6.15 lid 2"]
 
@@ -1263,6 +1278,7 @@ boek_8:
         - ["1368", "8.38"]
     - heading_nl: "Wet 29/04/2013 (Medeondertekende onderhandse akte) → Boek 8"
       heading_fr: "Loi 29/04/2013 (Acte sous seing privé contresigné) → Livre 8"
+      old_numac: "2013009225"
       entries:
         - ["2-4", "8.23"]
 

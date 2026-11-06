@@ -21,7 +21,7 @@
               <div class="flex items-center justify-between gap-2">
                 <div class="flex-1 min-w-0">
                   <span class="text-sm text-gray-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300">
-                    <%= doc[:title]&.truncate(60) || doc[:document_number] %>
+                    <%= ParliamentaryHelper.repair_windows1252_controls(doc[:title])&.truncate(60) || doc[:document_number] %>
                   </span>
                   <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                     <span><%= t(doc[:parliament], scope: 'related_sources.parliamentary', default: doc[:parliament].to_s.upcase_first) if doc[:parliament].present? %></span>

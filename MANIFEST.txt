@@ -200,6 +200,7 @@ app/javascript/utils/focus_trap.js
 app/javascript/utils/frame_missing_fallback.js
 app/javascript/utils/locale.js
 app/javascript/utils/settle_scroll.js
+app/javascript/utils/strict_date.js
 app/javascript/utils/toast.js
 app/javascript/utils/toc_targets.js
 app/javascript/utils/turbo_csp_nonce.js
@@ -834,6 +835,7 @@ public/vite/assets/application-BE2eHk8s.js
 public/vite/assets/application-BELQxtqB.css
 public/vite/assets/application-BFk3wwTL.js
 public/vite/assets/application-BIfRnGfl.js
+public/vite/assets/application-BJmR8QsU.js
 public/vite/assets/application-BMip9UU6.js
 public/vite/assets/application-BNy_mebb.js
 public/vite/assets/application-BOb8DHIW.js

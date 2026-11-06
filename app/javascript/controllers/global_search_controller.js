@@ -241,6 +241,10 @@ export default class extends Controller {
 
   // ── Keyboard navigation ──
 
+  // Return and the arrows follow what the list shows (Sol, on live 1.1.19, 16:24:35Z: with nothing chosen, Return
+  // closed the list and searched nothing; then Down chose an item in the hidden list and the next Return opened it).
+  // Return with a visible item chosen opens it; otherwise Return searches, as the Search button does. An arrow while
+  // the list is hidden shows it again, with nothing chosen.
   handleKeydown(event) {
     if (event.key === 'Escape') {
       this.hideResults()
@@ -248,23 +252,34 @@ export default class extends Controller {
       return
     }
 
-    const items = this.resultsTarget.querySelectorAll('.gs-item')
-    if (!items.length) return
+    const open = !this.resultsTarget.classList.contains('hidden')
+    const items = open ? this.resultsTarget.querySelectorAll('.gs-item') : []
 
-    if (event.key === 'ArrowDown') {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      if (!open) {
+        if (!this.lastData) return
+        event.preventDefault()
+        this.selectedIndex = -1
+        this.renderResults(this.lastData)
+        return
+      }
+      if (!items.length) return
       event.preventDefault()
-      this.selectedIndex = Math.min(this.selectedIndex + 1, items.length - 1)
+      const step = event.key === 'ArrowDown' ? 1 : -1
+      this.selectedIndex = Math.max(-1, Math.min(this.selectedIndex + step, items.length - 1))
       this.highlightItem(items)
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      this.selectedIndex = Math.max(this.selectedIndex - 1, -1)
-      this.highlightItem(items)
-    } else if (event.key === 'Enter' && this.selectedIndex >= 0) {
-      event.preventDefault()
-      items[this.selectedIndex]?.click()
     } else if (event.key === 'Enter') {
-      // No item selected - let form submit, just close dropdown
+      event.preventDefault()
+      if (open && this.selectedIndex >= 0 && items[this.selectedIndex]) {
+        items[this.selectedIndex].click()
+        return
+      }
       this.hideResults()
+      const form = this.inputTarget.form
+      if (!form) return
+      const submitter = form.querySelector('[type="submit"]')
+      if (typeof form.requestSubmit === 'function') form.requestSubmit(submitter || undefined)
+      else form.submit()
     }
   }
 
@@ -279,10 +294,16 @@ export default class extends Controller {
 
   highlightItem(items) {
     items.forEach((el, i) => {
-      el.classList.toggle('gs-item-active', i === this.selectedIndex)
+      const active = i === this.selectedIndex
+      el.classList.toggle('gs-item-active', active)
+      if (!el.id) el.id = `gs-option-${i}`
+      el.setAttribute('aria-selected', String(active))
     })
     if (this.selectedIndex >= 0) {
       items[this.selectedIndex]?.scrollIntoView({ block: 'nearest' })
+      this.inputTarget.setAttribute('aria-activedescendant', items[this.selectedIndex].id)
+    } else {
+      this.inputTarget.removeAttribute('aria-activedescendant')
     }
   }
 
@@ -292,8 +313,12 @@ export default class extends Controller {
     this.resultsTarget.classList.remove('hidden')
   }
 
+  // A hidden list keeps no chosen item.
   hideResults() {
     this.resultsTarget.classList.add('hidden')
+    this.selectedIndex = -1
+    this.resultsTarget.querySelectorAll?.('.gs-item-active')?.forEach(el => el.classList.remove('gs-item-active'))
+    this.inputTarget?.removeAttribute?.('aria-activedescendant')
   }
 
   close() {

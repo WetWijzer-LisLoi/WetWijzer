@@ -19,11 +19,13 @@ import { Controller } from "@hotwired/stimulus";
 // After Back or Forward, a results frame can come back from Turbo's cache with nothing in it: Sol, on live 1.1.19
 // (15:32:15Z), changed the legislation page size, went Back, and the restored page-2 list was empty with no error
 // until a reload. The cause is not established (the cleanup above removes loading skeletons, and a restored frame
-// marked complete is not fetched again). A frame with a source and no content after a restoration is fetched from
-// its own source; a frame with rows, or a normal visit, is left alone.
+// marked complete is not fetched again). A frame Turbo marked complete (loaded, not loading: Turbo removes the mark
+// when a load starts) that comes back with a source and no content is fetched from its own source; a frame with
+// rows, a frame Turbo is still loading, or a normal visit is left alone. The "busy" mark is no guide here: onLoad
+// clears every one first, as a restored page carries them from the cache (Sol 16:44:13Z).
 export function reloadEmptyFrames(root) {
   root.querySelectorAll('turbo-frame[src]').forEach(frame => {
-    if (frame.hasAttribute('busy') || frame.textContent.trim() !== '') return;
+    if (!frame.hasAttribute('complete') || frame.textContent.trim() !== '') return;
     if (typeof frame.reload === 'function') frame.reload();
   });
 }

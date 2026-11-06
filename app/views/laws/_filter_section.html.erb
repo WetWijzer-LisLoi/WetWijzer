@@ -1,4 +1,6 @@
 <div id="filters-panel" data-filters-toggle-target="panel" data-search-validation-target="panel" class="<%= [(@validation_failed ? nil : 'hidden'), 'p-4 mt-3 bg-white/70 dark:bg-gray-900/50 border border-white/30 dark:border-white/10 rounded-xl backdrop-blur-md shadow-lg'].compact.join(' ') %>">
+  <%# A box's hidden fallback carries its name but no id: with the id it took the box's own, and each label
+      named the hidden field, so eleven boxes had no accessible name (Sol, on live 1.1.19, 17:27:36Z). %>
   <%= form.hidden_field :types_present, value: '1' %>
   <%= form.hidden_field :languages_present, value: '1' %>
   <%= form.hidden_field :scope_present, value: '1' %>
@@ -11,9 +13,9 @@
   <% de_checked = german_site? && (explicit_lang ? params[:lang_de] == '1' : true) %>
 
   <%# Hidden fields for default language selections %>
-  <%= form.hidden_field :lang_nl, value: (nl_checked ? '1' : '0') unless explicit_lang %>
-  <%= form.hidden_field :lang_fr, value: (fr_checked ? '1' : '0') unless explicit_lang %>
-  <%= form.hidden_field :lang_de, value: '1' if german_site? && !explicit_lang %>
+  <%= form.hidden_field :lang_nl, value: (nl_checked ? '1' : '0'), id: nil unless explicit_lang %>
+  <%= form.hidden_field :lang_fr, value: (fr_checked ? '1' : '0'), id: nil unless explicit_lang %>
+  <%= form.hidden_field :lang_de, value: '1', id: nil if german_site? && !explicit_lang %>
 
     <!-- Wetgevingsfilters heading -->
     <h3 class="text-base font-semibold tracking-wider text-gray-800 dark:text-white/90 mb-4 flex items-center gap-2">
@@ -40,12 +42,12 @@
             <% misc_checked = any_type ? (params[:misc] == "1") : true %>
             
             <%# Hidden fields to send values for checked defaults %>
-            <%= form.hidden_field :constitution, value: (constitution_checked ? '1' : '0') unless any_type %>
-            <%= form.hidden_field :law, value: (law_checked ? '1' : '0') unless any_type %>
-            <%= form.hidden_field :decree, value: (decree_checked ? '1' : '0') unless any_type %>
-            <%= form.hidden_field :ordinance, value: (ordinance_checked ? '1' : '0') unless any_type %>
-            <%= form.hidden_field :decision, value: (decision_checked ? '1' : '0') unless any_type %>
-            <%= form.hidden_field :misc, value: (misc_checked ? '1' : '0') unless any_type %>
+            <%= form.hidden_field :constitution, value: (constitution_checked ? '1' : '0'), id: nil unless any_type %>
+            <%= form.hidden_field :law, value: (law_checked ? '1' : '0'), id: nil unless any_type %>
+            <%= form.hidden_field :decree, value: (decree_checked ? '1' : '0'), id: nil unless any_type %>
+            <%= form.hidden_field :ordinance, value: (ordinance_checked ? '1' : '0'), id: nil unless any_type %>
+            <%= form.hidden_field :decision, value: (decision_checked ? '1' : '0'), id: nil unless any_type %>
+            <%= form.hidden_field :misc, value: (misc_checked ? '1' : '0'), id: nil unless any_type %>
             
             <div class="flex items-center gap-2">
               <%= form.check_box :constitution, { include_hidden: false, checked: constitution_checked, class: form_checkbox_classes } %>
@@ -137,9 +139,9 @@
             <% tags_checked  = any_scope ? (params[:search_in_tags] == "1")  : true %>
             
             <%# Hidden fields for default scope selections %>
-            <%= form.hidden_field :search_in_title, value: (title_checked ? '1' : '0') unless any_scope %>
-            <%= form.hidden_field :search_in_tags, value: (tags_checked ? '1' : '0') unless any_scope %>
-            <%= form.hidden_field :search_in_text, value: (text_checked ? '1' : '0') unless any_scope %>
+            <%= form.hidden_field :search_in_title, value: (title_checked ? '1' : '0'), id: nil unless any_scope %>
+            <%= form.hidden_field :search_in_tags, value: (tags_checked ? '1' : '0'), id: nil unless any_scope %>
+            <%= form.hidden_field :search_in_text, value: (text_checked ? '1' : '0'), id: nil unless any_scope %>
             
             <div class="flex items-center gap-2">
               <%= form.check_box :search_in_title, { include_hidden: false, checked: title_checked, class: form_checkbox_classes } %>
@@ -234,15 +236,19 @@
           <label for="sort" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
             <%= t(:sort_order) %>
           </label>
+          <%# The sort the results use: relevance for a title search with no sort chosen (LawSearchService.apply_sort),
+              which this select did not offer, so a results-menu Relevance or the default put back another sort on
+              the next Search (Sol 16:44:13Z). Without a title the server reads relevance as newest first. %>
           <%= form.select :sort,
             options_for_select([
+              [t(:sort_relevance), 'relevance'],
               [t(:sort_date_desc), 'date_desc'],
               [t(:sort_date_asc), 'date_asc'],
               [t(:sort_title_asc), 'title_asc'],
               [t(:sort_title_desc), 'title_desc'],
               [t(:sort_year_desc), 'year_desc'],
               [t(:sort_year_asc), 'year_asc']
-            ], params[:sort] || 'date_desc'),
+            ], params[:sort].presence || (params[:title].present? ? 'relevance' : 'date_desc')),
             {},
             { class: [
               "w-full rounded-md",

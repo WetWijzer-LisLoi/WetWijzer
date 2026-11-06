@@ -326,6 +326,24 @@ module ParliamentaryHelper
 
   # True when a stored title is empty or a page title that describes the site
   # or its refusal page rather than a document. Callers show something else.
+  # Senate titles hold Windows-1252 punctuation read as Latin-1, so a dash or an apostrophe is a C1 control
+  # character: "NAVO \u0096 Belgische", "l\u0092occasion", "mise en \u009Cuvre" (Sol, on live 1.1.16, /parliamentary_work/112366,
+  # and 16:06:12Z, 112279). Measured on production 2026-11-06: 342 titles, all Senate (313 French, 29 Dutch), with
+  # 0x92 518 times, 0x96 106, 0x9C 25, 0x97 4, 0x9A 2, 0x9D 1. A C1 control is never text, so each is shown as the
+  # Windows-1252 character it stands for; the five codes Windows-1252 leaves undefined are dropped. The stored
+  # text is unchanged.
+  WINDOWS_1252_UNDEFINED = [0x81, 0x8D, 0x8F, 0x90, 0x9D].freeze
+
+  def self.repair_windows1252_controls(text)
+    return text unless text.is_a?(String) && text.match?(/[\u0080-\u009F]/)
+
+    text.gsub(/[\u0080-\u009F]/) do |control|
+      next '' if WINDOWS_1252_UNDEFINED.include?(control.ord)
+
+      control.ord.chr.force_encoding(Encoding::Windows_1252).encode(Encoding::UTF_8)
+    end
+  end
+
   def self.generic_parl_title?(title)
     s = title.to_s.strip
     s.empty? || s.match?(%r{\ADossier\s+\d+\s*/\s*\d+\z}i) ||
@@ -340,7 +358,7 @@ module ParliamentaryHelper
   # @param doc [Hash, nil] Full document hash for extracting title from content
   # @return [String] Cleaned title
   def clean_parliamentary_title_display(title, dossier = nil, doc: nil)
-    s = title.to_s.strip
+    s = ParliamentaryHelper.repair_windows1252_controls(title.to_s).strip
 
     # Detect generic placeholder titles
     is_generic = ParliamentaryHelper.generic_parl_title?(s)

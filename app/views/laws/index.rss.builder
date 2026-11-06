@@ -107,7 +107,7 @@ xml.rss version: '2.0', 'xmlns:atom' => 'http://www.w3.org/2005/Atom' do
     # === Parliamentary work items ===
     Array(@rss_parliamentary).each do |doc|
       xml.item do
-        display_title = doc[:title].presence || doc[:dossier_number]
+        display_title = ParliamentaryHelper.repair_windows1252_controls(doc[:title].presence || doc[:dossier_number])
         # The corpus stores 'chamber' and 'senate' (58,250 and 25,834 rows on
         # 2026-10-31); the Dutch-only codes below came first and are kept.
         labels = JurisprudenceHelper::PARLIAMENT_LABELS[doc[:parliament].to_s]

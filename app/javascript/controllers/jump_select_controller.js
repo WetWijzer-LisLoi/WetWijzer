@@ -44,6 +44,10 @@ export default class extends Controller {
     // Ensure clicks on menu items still navigate when portaled (Stimulus action scoping would be lost)
     this.menuEl?.addEventListener('click', this.boundMenuClick);
 
+    // The focus goes into the menu (Sol, on live 1.1.19, 17:16:29Z: it stayed on the opener, and the portaled items
+    // were the last stops of the page's Tab order). Arrow keys move between the items (handleKeydown).
+    this.focusItem(0);
+
     // Animate in (fade + scale)
     const m = this.menuEl;
     if (m) {
@@ -127,7 +131,32 @@ export default class extends Controller {
       this.close();
       // Return focus to the trigger
       this.buttonEl?.focus();
+      return;
     }
+    const items = this.menuItems();
+    if (!items.length) return;
+    const current = items.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const step = e.key === 'ArrowDown' ? 1 : -1;
+      this.focusItem(current < 0 ? (step > 0 ? 0 : items.length - 1) : (current + step + items.length) % items.length);
+    } else if (e.key === 'Home' || e.key === 'End') {
+      e.preventDefault();
+      this.focusItem(e.key === 'Home' ? 0 : items.length - 1);
+    } else if (e.key === 'Tab') {
+      // The menu sits at the end of the page: Tab leaves it from its opener, as if it had not been opened.
+      this.close({ immediate: true });
+      this.buttonEl?.focus();
+    }
+  }
+
+  menuItems() {
+    return Array.from(this.menuEl?.querySelectorAll?.('[role="menuitem"]') || []);
+  }
+
+  focusItem(index) {
+    const item = this.menuItems()[index];
+    if (item) item.focus();
   }
 
   go(event) {
