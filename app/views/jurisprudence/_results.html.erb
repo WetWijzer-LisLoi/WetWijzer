@@ -97,7 +97,7 @@
             <% if subjects.any? %>
               <div class="flex flex-wrap gap-1.5 mb-2 pl-0 sm:pl-7">
                 <% subjects.first(3).each do |subj| %>
-                  <% label = subject_labels[subj]&.dig(locale) || subj.humanize %>
+                  <% label = subject_matter_label(subj) %>
                   <% color = subject_colors[subj] || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' %>
                   <span class="inline-flex items-center min-w-0 max-w-full [overflow-wrap:anywhere] px-2 py-0.5 rounded-full text-[11px] font-medium <%= color %>">
                     <%= label %>

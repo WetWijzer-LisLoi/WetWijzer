@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.19] - 2026-11-06
+
+### Fixed
+- Tax codes: articles numbered with a slash follow their number, 145/1, 145/2 ... 145/10, as Fisconet stores them. They read 145/1, 145/10 ... 145/17, 145/2.
+- Law comparison: each column says the language of its text, for screen readers and hyphenation.
+- Case law: the subject names in the filter and on the results are in the interface language. The English site listed them in French, the German site in Dutch.
+
 ## [1.1.18] - 2026-11-06
 
 1.1.17 was sealed but not released: one system test failed in its CI run, on a timing race in the test itself. Its changes ship here.

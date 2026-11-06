@@ -381,8 +381,15 @@ class FisconetSearchService
   # Of two rows with one number, the one in force first, as the first row answers to a plain reference. KB/WIB 92 holds repealed
   # art. 49^1 and art. 49/1 in force, both stored as 49/1 (NUMAC 2024011897, art. 5 and 6), and in its 2027 edition the note on
   # the repeal has the lower id, so "art. 49/1" opened that note (ledger item 48).
-  PAGE_ROWS_ORDER_SQL = "COALESCE(a.region, ''), CAST(a.article_number AS INTEGER), a.article_number, " \
-                        'CAST(COALESCE(a.is_abolished, 0) AS INTEGER), a.id'
+  # The number after a slash counts as a number, padded for the text order: 145/2 before 145/10 (Sol, on live 1.1.16,
+  # FISCONET_1 read 145/1, 145/10 ... 145/17, 145/2). A suffix after it keeps its place through the plain number that
+  # follows, and the relative place of the slash series and of bis, ter stays as it was.
+  PAGE_ROWS_SLASH_KEY_SQL = "CASE WHEN instr(a.article_number, '/') > 0 THEN " \
+                            "substr(a.article_number, 1, instr(a.article_number, '/')) || " \
+                            "printf('%06d', CAST(substr(a.article_number, instr(a.article_number, '/') + 1) AS INTEGER)) " \
+                            'ELSE a.article_number END'
+  PAGE_ROWS_ORDER_SQL = "COALESCE(a.region, ''), CAST(a.article_number AS INTEGER), #{PAGE_ROWS_SLASH_KEY_SQL}, " \
+                        'a.article_number, CAST(COALESCE(a.is_abolished, 0) AS INTEGER), a.id'.freeze
 
   # ─── All articles for a given legislation ──────────────────────────────
   # @param legislation_id [Integer]

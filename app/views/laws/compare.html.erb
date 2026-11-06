@@ -315,7 +315,8 @@
     drift when only one language was updated at an unchanged count). I18n.locale
     because the brand hosts share one file store and the block emits locale
     strings; laws_links_version for the document-number links in the text. %>
-<% cache ["compare_articles", "v3", params[:numac], I18n.locale,
+<%# v4 (1.1.19): each column says its language; Sol, on live 1.1.16, found both under the page's lang="en". %>
+<% cache ["compare_articles", "v4", params[:numac], I18n.locale,
           rows_cache_version(articles_nl_arr), rows_cache_version(articles_fr_arr),
           laws_links_version, render_code_version], expires_in: 7.days do %>
 <% max_articles.times do |i| %>
@@ -330,7 +331,7 @@
     <% if is_heading_nl || is_heading_fr %>
       <%# Section headings - show side by side without paragraph splitting %>
       <div class="flex gap-2">
-        <div class="flex-1 bg-gray-50 dark:bg-gray-800 rounded p-2 text-xs" data-article-scope>
+        <div class="flex-1 bg-gray-50 dark:bg-gray-800 rounded p-2 text-xs" data-article-scope lang="nl">
           <% if article_nl.present? %>
             <% heading_text = html_to_plain_text(article_nl.article_text).split(/\n|----------/).first.to_s.strip %>
             <% level = section_heading_level(heading_text) %>
@@ -341,7 +342,7 @@
             <span class="text-gray-400 italic">-</span>
           <% end %>
         </div>
-        <div class="flex-1 bg-gray-50 dark:bg-gray-800 rounded p-2 text-xs" data-article-scope>
+        <div class="flex-1 bg-gray-50 dark:bg-gray-800 rounded p-2 text-xs" data-article-scope lang="fr">
           <% if article_fr.present? %>
             <% heading_text = html_to_plain_text(article_fr.article_text).split(/\n|----------/).first.to_s.strip %>
             <% level = section_heading_level(heading_text) %>
@@ -382,14 +383,14 @@
           <% para_nl = paras_nl[p_idx] %>
           <% para_fr = paras_fr[p_idx] %>
           <div class="flex gap-0 <%= p_idx < max_paras - 1 ? 'border-b border-gray-50 dark:border-gray-800' : '' %>">
-            <div class="flex-1 p-2 text-xs text-gray-700 dark:text-gray-300 leading-relaxed border-r border-gray-100 dark:border-gray-700" data-article-scope>
+            <div class="flex-1 p-2 text-xs text-gray-700 dark:text-gray-300 leading-relaxed border-r border-gray-100 dark:border-gray-700" data-article-scope lang="nl">
               <% if para_nl.present? %>
                 <%= process_article_with_references(para_nl) %>
               <% else %>
                 <span class="text-gray-300 dark:text-gray-600">-</span>
               <% end %>
             </div>
-            <div class="flex-1 p-2 text-xs text-gray-700 dark:text-gray-300 leading-relaxed" data-article-scope>
+            <div class="flex-1 p-2 text-xs text-gray-700 dark:text-gray-300 leading-relaxed" data-article-scope lang="fr">
               <% if para_fr.present? %>
                 <%= process_article_with_references(para_fr) %>
               <% else %>

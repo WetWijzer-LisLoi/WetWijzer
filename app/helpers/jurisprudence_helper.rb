@@ -198,6 +198,26 @@ module JurisprudenceHelper
   # opinion page: the assembly in the page's language, then legislature,
   # dossier and document number as the Chamber prints them ("Kamer 54-1234/001").
   # The parts a row lacks are left out rather than shown as blanks.
+  # The stored subject keys and their names in each interface language. Sol, on live 1.1.16: the English filter
+  # listed the French names (German got the Dutch ones); the keys, and so the queries, stay as they are.
+  SUBJECT_LABELS = {
+    'arbeidsrecht' => { nl: 'Arbeidsrecht', fr: 'Droit du travail', de: 'Arbeitsrecht', en: 'Labour law' },
+    'bestuursrecht' => { nl: 'Bestuursrecht', fr: 'Droit administratif', de: 'Verwaltungsrecht', en: 'Administrative law' },
+    'burgerlijk_recht' => { nl: 'Burgerlijk recht', fr: 'Droit civil', de: 'Zivilrecht', en: 'Civil law' },
+    'fiscaal_recht' => { nl: 'Fiscaal recht', fr: 'Droit fiscal', de: 'Steuerrecht', en: 'Tax law' },
+    'grondwettelijk' => { nl: 'Grondwettelijk recht', fr: 'Droit constitutionnel', de: 'Verfassungsrecht',
+                          en: 'Constitutional law' },
+    'sociaal_recht' => { nl: 'Sociaal recht', fr: 'Droit social', de: 'Sozialrecht', en: 'Social law' },
+    'strafrecht' => { nl: 'Strafrecht', fr: 'Droit pénal', de: 'Strafrecht', en: 'Criminal law' },
+    'vennootschapsrecht' => { nl: 'Vennootschapsrecht', fr: 'Droit des sociétés', de: 'Gesellschaftsrecht', en: 'Company law' }
+  }.freeze
+
+  # A stored subject key's name in the interface language; an unknown key as it stands, humanised.
+  def subject_matter_label(key, locale = I18n.locale)
+    labels = SUBJECT_LABELS[key.to_s]
+    labels ? labels.fetch(locale.to_sym, labels[:nl]) : key.to_s.humanize
+  end
+
   PARLIAMENT_LABELS = {
     'chamber' => { nl: 'Kamer', fr: 'Chambre', de: 'Kammer', en: 'Chamber' },
     'senate' => { nl: 'Senaat', fr: 'Sénat', de: 'Senat', en: 'Senate' }

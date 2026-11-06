@@ -875,20 +875,7 @@ class JurisprudenceController < ApplicationController
   end
 
   def available_subject_matters
-    # Subject matter translations
-    translations = {
-      'arbeidsrecht' => { nl: 'Arbeidsrecht', fr: 'Droit du travail' },
-      'bestuursrecht' => { nl: 'Bestuursrecht', fr: 'Droit administratif' },
-      'burgerlijk_recht' => { nl: 'Burgerlijk recht', fr: 'Droit civil' },
-      'fiscaal_recht' => { nl: 'Fiscaal recht', fr: 'Droit fiscal' },
-      'grondwettelijk' => { nl: 'Grondwettelijk recht', fr: 'Droit constitutionnel' },
-      'sociaal_recht' => { nl: 'Sociaal recht', fr: 'Droit social' },
-      'strafrecht' => { nl: 'Strafrecht', fr: 'Droit pénal' },
-      'vennootschapsrecht' => { nl: 'Vennootschapsrecht', fr: 'Droit des sociétés' }
-    }
-
-    locale = case I18n.locale when :nl, :de then :nl else :fr end
-    translations.map { |key, labels| [labels[locale], key] }.sort_by(&:first)
+    JurisprudenceHelper::SUBJECT_LABELS.keys.map { |key| [helpers.subject_matter_label(key), key] }.sort_by(&:first)
   end
 
   # Get courts grouped by hierarchy level for the filter dropdown
