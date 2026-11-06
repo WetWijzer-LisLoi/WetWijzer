@@ -198,7 +198,9 @@
                     class="text-[10px] rounded border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 px-1 py-0.5 flex-1 min-w-0 truncate">
               <%= render 'chatbot/model_options', user_is_pro: user_is_pro_hero, user_has_purchased: user_has_purchased_hero, user_model_tier: hero_model_tier %>
             </select>
+            <%# Sol, on live 1.1.15: this select had no name for a screen reader; the model select beside it has one. %>
             <select id="hero-profile-select"
+                    aria-label="<%= case I18n.locale when :fr then 'Domaine juridique' when :de then 'Rechtsgebiet' when :en then 'Area of law' else 'Rechtsdomein' end %>"
                     data-hero-chatbot-target="profileSelect"
                     class="text-[10px] rounded border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 px-1 py-0.5 w-24 truncate">
               <% LegalChatbotService::CHATBOT_PROFILES.each do |profile_id, config| %>
@@ -337,7 +339,6 @@
         </div>
         <%= form.submit t(:search), class: "min-h-[46px] px-5 sm:px-6 py-2.5 bg-(--accent-600-solid) hover:bg-(--accent-700-solid) text-white font-semibold rounded-lg shadow-sm cursor-pointer transition-colors duration-200 text-sm whitespace-nowrap" %>
       </div>
-      <div class="gs-backdrop hidden" data-global-search-target="backdrop" data-action="click->global-search#close"></div>
     </div>
 
     <%# Source pills %>

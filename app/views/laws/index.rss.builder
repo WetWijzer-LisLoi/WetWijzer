@@ -5,7 +5,7 @@ xml.rss version: '2.0', 'xmlns:atom' => 'http://www.w3.org/2005/Atom' do
   xml.channel do
     xml.title rss_title
     xml.description rss_description
-    xml.link laws_url(format: :html, **@rss_feed_params.to_h.symbolize_keys)
+    xml.link laws_url(format: :html, **rss_site_params.symbolize_keys)
     xml.language I18n.locale.to_s
     xml.lastBuildDate Time.current.rfc2822
     xml.generator 'WetWijzer/LisLoi'

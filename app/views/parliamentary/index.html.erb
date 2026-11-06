@@ -165,6 +165,10 @@
               <% case I18n.locale when :fr %>Trier<% when :de %>Sortieren<% when :en %>Sort<% else %>Sorteren<% end %>
             </label>
             <select name="sort" id="parl-sort" class="w-full min-w-0 py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600/50 dark:bg-gray-800 dark:text-gray-300 text-sm focus:ring-2 focus:ring-(--accent-500)">
+              <%# A law's list: legislature, dossier, document number, as on the law page. %>
+              <% if @numac.present? %>
+                <option value="dossier" <%= 'selected' if @sort == 'dossier' %>><%= case I18n.locale when :fr then 'Ordre parlementaire' when :de then 'Parlamentarische Reihenfolge' when :en then 'Parliamentary order' else 'Parlementaire volgorde' end %></option>
+              <% end %>
               <option value="date_desc" <%= 'selected' if @sort == 'date_desc' %>><%= case I18n.locale when :fr then 'Plus récent' when :de then 'Neueste zuerst' when :en then 'Newest first' else 'Nieuwste eerst' end %></option>
               <option value="date_asc" <%= 'selected' if @sort == 'date_asc' %>><%= case I18n.locale when :fr then 'Plus ancien' when :de then 'Älteste zuerst' when :en then 'Oldest first' else 'Oudste eerst' end %></option>
             </select>

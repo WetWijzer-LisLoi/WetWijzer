@@ -489,7 +489,8 @@
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
               </svg>
-              <% case I18n.locale when :fr %>Voir le dossier complet sur dekamer.be<% when :de %>Vollständiges Dossier auf dekamer.be<% when :en %>Full dossier on dekamer.be<% else %>Volledig dossier op dekamer.be<% end %>
+              <%# The site the link opens: senate.be for the Senate (Sol, on live 1.1.15: it said dekamer.be). %>
+              <% case I18n.locale when :fr %>Voir le dossier complet sur <%= source_label %><% when :de %>Vollständiges Dossier auf <%= source_label %><% when :en %>Full dossier on <%= source_label %><% else %>Volledig dossier op <%= source_label %><% end %>
             </a>
           </div>
         <% end %>

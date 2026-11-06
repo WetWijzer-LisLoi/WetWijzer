@@ -428,7 +428,7 @@ de:
 
   # Footer
   footer:
-    tagline: "Open-Source-Suchmaschine für belgische Gesetzgebung und Rechtsprechung"
+    tagline: "Open-Source-Suchmaschine für belgische Gesetzgebung, Rechtsprechung und parlamentarische Dokumente"
     contact_us: "Kontaktieren Sie uns:"
     github_tooltip: "Quellcode auf GitHub ansehen"
     version_tooltip: "Version der Anwendung"

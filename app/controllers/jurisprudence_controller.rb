@@ -761,6 +761,12 @@ class JurisprudenceController < ApplicationController
     if filters[:year].present?
       conditions << 'decision_date LIKE ?'
       params << "#{filters[:year]}-%"
+      # The same year as a range, which the date index can read; the LIKE alone cannot use an index, and it stays for
+      # exactness.
+      if filters[:year].to_s.match?(/\A\d{4}\z/)
+        conditions << 'decision_date >= ? AND decision_date < ?'
+        params.push("#{filters[:year]}-", "#{filters[:year].to_i + 1}-")
+      end
     end
 
     if filters[:date_from].present?
@@ -775,7 +781,11 @@ class JurisprudenceController < ApplicationController
 
     if filters[:lang].present?
       language_ids = listing_language_ids(filters[:lang])
-      conditions << "language_id IN (#{(['?'] * language_ids.size).join(', ')})"
+      # Sol, on live 1.1.16: one day of French judgments took 50 s. SQLite chose idx_lang and read every French judgment
+      # to keep one day's; with a date the unary + leaves it the date index (0.002 s by hand on production, 2026-11-06).
+      dated = filters[:year].present? || filters[:date_from].present? || filters[:date_to].present?
+      column = dated ? '+language_id' : 'language_id'
+      conditions << "#{column} IN (#{(['?'] * language_ids.size).join(', ')})"
       params.concat(language_ids)
     end
 

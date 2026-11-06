@@ -419,7 +419,7 @@ nl:
 
   # Footer
   footer:
-    tagline: "Open-source zoekmachine voor Belgische wetgeving en rechtspraak"
+    tagline: "Open-source zoekmachine voor Belgische wetgeving, rechtspraak en parlementaire documenten"
     contact_us: "Contacteer ons:"
     github_tooltip: "Bekijk broncode op GitHub"
     version_tooltip: "Versie van de toepassing"

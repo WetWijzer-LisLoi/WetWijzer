@@ -1145,6 +1145,13 @@ module ApplicationHelper
   # Handles various HTML and text formats for the effective date field
   # @param introd_content [String] The introduction content
   # @return [String, nil] Extracted effective date or nil if not found
+  # Justel can give several dates of entry into force on separate lines; the stored value keeps its <br/> markers,
+  # sometimes escaped. Each date stays escaped text and the markers become line breaks (Sol, on live 1.1.16: they
+  # were printed as text).
+  def effective_date_lines(value)
+    safe_join(value.to_s.split(%r{<br\s*/?>|&lt;br\s*/?&gt;}i).map(&:strip).compact_blank, tag.br)
+  end
+
   def extract_effective_date(introd_content)
     return nil if introd_content.blank?
 

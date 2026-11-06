@@ -1162,8 +1162,11 @@ boek_5:
 boek_6:
   label_nl: "Burgerlijk Wetboek - Boek 6: Buitencontractuele aansprakelijkheid"
   label_fr: "Code civil - Livre 6: La responsabilité extracontractuelle"
-  source_nl: "Wet 01/02/2024, B.S. 01/07/2024"
-  source_fr: "Loi 01/02/2024, M.B. 01/07/2024"
+  # Sol, on live 1.1.16: 01/02/2024 is no date of this law. The card names the enacting act, as the others do: the law of
+  # 7 February 2024 "houdende boek 6" (2024001600 in the corpus); the linked consolidated text 2024A01600 is dated
+  # 27 February 2024 by Justel.
+  source_nl: "Wet 07/02/2024, B.S. 01/07/2024"
+  source_fr: "Loi 07/02/2024, M.B. 01/07/2024"
   transition_nl: "Boek 6 geldt voor schade-verwekkende feiten vanaf 01/01/2025. Oudere feiten: oud BW 1382-1386bis."
   transition_fr: "Le Livre 6 s'applique aux faits générateurs de responsabilité survenus à partir du 01/01/2025."
   new_numac: "2024A01600"
@@ -1266,10 +1269,12 @@ boek_8:
 boek_9:
   label_nl: "Burgerlijk Wetboek - Boek 9: Zekerheden, Titel 1 (Persoonlijke zekerheden)"
   label_fr: "Code civil - Livre 9: Sûretés, Titre 1 (Sûretés personnelles)"
-  source_nl: "Wet 04/02/2020, B.S. 17/03/2020"
-  source_fr: "Loi 04/02/2020, M.B. 17/03/2020"
-  transition_nl: "Boek 9 Titel 1 is in werking sinds 01/09/2021."
-  transition_fr: "Le Livre 9 Titre 1 est en vigueur depuis le 01/09/2021."
+  # Sol, on live 1.1.16: this card gave Book 3's law (04/02/2020) and commencement. Law of 5 June 2025, Moniteur of
+  # 11 July 2025 (Justel, read by Sol), in force on 1 January 2026 (its official title in the corpus).
+  source_nl: "Wet 05/06/2025, B.S. 11/07/2025"
+  source_fr: "Loi 05/06/2025, M.B. 11/07/2025"
+  transition_nl: "Boek 9 Titel 1 is in werking sinds 01/01/2026."
+  transition_fr: "Le Livre 9 Titre 1 est en vigueur depuis le 01/01/2026."
   new_numac: "2025A05089"
   sections:
     - heading_nl: "Oud BW → Boek 9 Titel 1"

@@ -419,7 +419,7 @@ fr:
 
   # Footer
   footer:
-    tagline: "Moteur de recherche open-source pour la législation et la jurisprudence belges"
+    tagline: "Moteur de recherche open source pour la législation, la jurisprudence et les documents parlementaires belges"
     contact_us: "Contactez-nous :"
     github_tooltip: "Voir le code source sur GitHub"
     version_tooltip: "Version de l'application"

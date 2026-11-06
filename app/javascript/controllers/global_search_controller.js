@@ -8,7 +8,7 @@ import { uiText } from '../utils/ui_translations'
 // ═══════════════════════════════════════════════════════════════════
 
 export default class extends Controller {
-  static targets = ["input", "results", "backdrop"]
+  static targets = ["input", "results"]
   static values = { url: String }
 
   connect() {
@@ -17,11 +17,14 @@ export default class extends Controller {
     this.activeTab = 'all'  // 'all', 'legislation', 'jurisprudence', 'parliamentary'
     this.lastData = null
     this.selectedIndex = -1
+    this.handleOutsidePointer = (event) => this.closeOnOutsidePointer(event)
+    document.addEventListener('pointerdown', this.handleOutsidePointer, true)
   }
 
   disconnect() {
     this.clearTimeout()
     this.abortRequest()
+    document.removeEventListener('pointerdown', this.handleOutsidePointer, true)
   }
 
   search() {
@@ -278,15 +281,23 @@ export default class extends Controller {
 
   showResults() {
     this.resultsTarget.classList.remove('hidden')
-    if (this.hasBackdropTarget) this.backdropTarget.classList.remove('hidden')
   }
 
   hideResults() {
     this.resultsTarget.classList.add('hidden')
-    if (this.hasBackdropTarget) this.backdropTarget.classList.add('hidden')
   }
 
   close() {
+    this.hideResults()
+  }
+
+  // Sol, on live 1.1.15: a full-screen backdrop closed the suggestions on a click, and so took the click meant for
+  // Search; a NUMAC or an ECLI searched by mouse left the page as it was. A press outside the field and its list now
+  // closes the list and goes on to whatever it was meant for.
+  closeOnOutsidePointer(event) {
+    if (this.resultsTarget.classList.contains('hidden')) return
+    const target = event.target
+    if (this.inputTarget.contains(target) || this.resultsTarget.contains(target)) return
     this.hideResults()
   }
 

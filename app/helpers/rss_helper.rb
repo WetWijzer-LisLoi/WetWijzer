@@ -68,6 +68,17 @@ module RssHelper
     "#{t(:app_title)} - #{suffix}"
   end
 
+  # The channel's link back to the site. The search form reads source_legislation, source_jurisprudence and
+  # source_parliamentary, not source, so a one-source feed links with its own source ticked alone (Sol, on live
+  # 1.1.15: `laws.html?source=jurisprudence` opened with all three ticked). The self link keeps source=.
+  # @return [Hash] query parameters for laws_url
+  def rss_site_params
+    site = @rss_feed_params.to_h.stringify_keys
+    source = site.delete('source')
+    LawsController::RSS_SOURCES.each { |name| site["source_#{name}"] = name == source ? '1' : '0' } if source
+    site
+  end
+
   # @return [String] RSS feed description
   def rss_description
     case I18n.locale

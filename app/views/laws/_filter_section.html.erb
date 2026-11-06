@@ -207,7 +207,7 @@
         <!-- Section: Results per page -->
         <h4 class="<%= filters_heading_classes %>"><%= t(:display_options_title) %></h4>
         <div class="mb-4">
-          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label for="per_page" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
             <%= t(:results_per_page) %>
           </label>
           <%= form.select :per_page,
@@ -231,7 +231,7 @@
         
         <!-- Sort Order -->
         <div class="mb-4">
-          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label for="sort" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
             <%= t(:sort_order) %>
           </label>
           <%= form.select :sort,
@@ -278,7 +278,7 @@
       <div class="min-w-0 w-full overflow-hidden flex flex-col">
         <h4 class="<%= filters_heading_classes %>"><%= case I18n.locale when :fr then 'Cour et matiere' when :de then 'Gericht und Rechtsgebiet' when :en then 'Court and subject' else 'Hof en rechtsgebied' end %></h4>
         <div class="filters-group">
-          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label for="juris_court" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
           <%= case I18n.locale when :fr then 'Cour' when :de then 'Gericht' when :en then 'Court' else 'Hof' end %>
           </label>
           <%= form.select :juris_court,
@@ -296,7 +296,7 @@
           { class: "w-full text-sm rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200" }
           %>
       
-          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label for="juris_subject" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
           <%= case I18n.locale when :fr then 'Matière' when :de then 'Rechtsgebiet' when :en then 'Subject' else 'Rechtsgebied' end %>
           </label>
           <%= form.select :juris_subject,
@@ -317,7 +317,7 @@
       <div class="min-w-0 w-full overflow-hidden flex flex-col">
         <h4 class="<%= filters_heading_classes %>"><%= t(:languages_title) %></h4>
         <div class="filters-group">
-          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label for="juris_lang" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
           <%= case I18n.locale when :fr then 'Langue' when :de then 'Sprache' when :en then 'Language' else 'Taal' end %>
           </label>
           <%= form.select :juris_lang,
@@ -344,7 +344,7 @@
       <div class="min-w-0 w-full overflow-hidden flex flex-col">
         <h4 class="<%= filters_heading_classes %>"><%= t(:advanced_filters_title) %></h4>
         <div class="filters-group">
-          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label for="juris_year" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
           <%= case I18n.locale when :fr then 'Année' when :de then 'Jahr' when :en then 'Year' else 'Jaar' end %>
           </label>
           <%= form.select :juris_year,
@@ -382,7 +382,7 @@
         <h4 class="<%= filters_heading_classes %>"><%= t(:display_options_title) %></h4>
         <div class="filters-group">
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label for="juris_sort" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
               <%= t(:sort_order) %>
             </label>
             <%= form.select :juris_sort,
@@ -413,7 +413,7 @@
       <div class="min-w-0 w-full overflow-hidden flex flex-col">
         <h4 class="<%= filters_heading_classes %>"><%= case I18n.locale when :fr then 'Parlement et type' when :de then 'Parlament und Dokumenttyp' when :en then 'Parliament and type' else 'Parlement en documenttype' end %></h4>
         <div class="filters-group">
-          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label for="parl_parliament" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
           <%= case I18n.locale when :fr then 'Parlement' when :de then 'Parlament' when :en then 'Parliament' else 'Parlement' end %>
           </label>
           <%= form.select :parl_parliament,
@@ -429,7 +429,7 @@
           { class: "w-full text-sm rounded-md border-gray-300/60 dark:border-white/20 bg-white/50 dark:bg-gray-800/60 dark:text-gray-200" }
           %>
       
-          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label for="parl_doc_type" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
           <%= case I18n.locale when :fr then 'Type de document' when :de then 'Dokumenttyp' when :en then 'Document type' else 'Documenttype' end %>
           </label>
           <%= form.select :parl_doc_type,
@@ -452,7 +452,7 @@
       <div class="min-w-0 w-full overflow-hidden flex flex-col">
         <h4 class="<%= filters_heading_classes %>"><%= t(:languages_title) %></h4>
         <div class="filters-group">
-          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label for="parl_lang" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
           <%= case I18n.locale when :fr then 'Langue' when :de then 'Sprache' when :en then 'Language' else 'Taal' end %>
           </label>
           <%= form.select :parl_lang,
@@ -479,7 +479,7 @@
       <div class="min-w-0 w-full overflow-hidden flex flex-col">
         <h4 class="<%= filters_heading_classes %>"><%= t(:advanced_filters_title) %></h4>
         <div class="filters-group">
-          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label for="parl_year" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
           <%= case I18n.locale when :fr then 'Année' when :de then 'Jahr' when :en then 'Year' else 'Jaar' end %>
           </label>
           <%= form.select :parl_year,
@@ -517,7 +517,7 @@
         <h4 class="<%= filters_heading_classes %>"><%= t(:display_options_title) %></h4>
         <div class="filters-group">
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label for="parl_sort" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
               <%= t(:sort_order) %>
             </label>
             <%= form.select :parl_sort,

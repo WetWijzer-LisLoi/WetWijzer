@@ -24,14 +24,20 @@ module References
     # Avoids matching when already inside an <a> tag or when the article number
     # is immediately followed by a period and another digit (e.g., "art. 49.2")
     # which should become #art_49-2 instead.
+    #
+    # A number followed by a colon and a digit ("artikel 1:24") is an article of another code, such as the Code of
+    # companies and associations; it is not linked at all. Sol, on live 1.1.16 (/laws/FISCONET_1): "artikel 1:24" was
+    # linked as "artikel 1" to this code's article 1. The number is matched atomically, so it cannot give back digits
+    # to slip past that check ("12:3" is not read as "1").
     TAX_ART_REF_PATTERN = %r{
       \b                                   # word boundary
       (art(?:ikel|icle)?\.?)               # "art." / "artikel" / "article"
       (\s+)                                # required whitespace
-      (\d+                                 # article number (digits)
+      ((?>\d+                              # article number (digits), taken whole
         (?:[./]\d+)*                       # optional sub-numbers: 145/33, 49.2
         [a-z]*                             # optional suffix: bis, ter, quater
-      )
+      ))
+      (?!:\d)                              # not "1:24": another code's article
       (?:                                  # optional WIB/CIR/BTW qualifier
         (?:\s*,?\s*)
         (?:WIB|CIR|BTW|KB/WIB|KB/CIR)

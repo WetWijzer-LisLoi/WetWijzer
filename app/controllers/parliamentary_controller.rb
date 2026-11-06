@@ -25,7 +25,9 @@ class ParliamentaryController < ApplicationController
     @legislature = params[:legislature].presence
     @numac = params[:numac].presence
     @page = [params[:page].to_i, 1].max
-    @sort = params[:sort].presence || 'date_desc'
+    # A law's list starts in parliamentary order, the order of its panel on the law page; the date orders stay on offer.
+    # With a search word it starts newest first, as it always did.
+    @sort = params[:sort].presence || (@numac && @query.blank? ? 'dossier' : 'date_desc')
 
     per_page = 20
     offset = (@page - 1) * per_page
@@ -545,9 +547,15 @@ class ParliamentaryController < ApplicationController
     source = document_source(filters)
     return document_page(where_clause, params, "id #{sort_direction}", limit, offset, source) unless source == 'documents'
 
-    # a law's documents in parliamentary order, so its first page starts with
-    # the rows the law page's panel previews
-    order = filters[:numac].present? && query.blank? ? ParliamentaryRelations::Filter::ORDER : "id #{sort_direction}"
+    # A law's documents in parliamentary order by default, so its first page starts with the rows the law page's panel
+    # previews; by date when the reader asks for it. Sol, on live 1.1.16: both date choices gave the parliamentary order.
+    order = if filters[:numac].blank?
+              "id #{sort_direction}"
+            elsif @sort == 'dossier'
+              ParliamentaryRelations::Filter::ORDER
+            else
+              date_order
+            end
     sql = "SELECT #{DOCUMENT_LIST_COLUMNS} FROM documents #{where_clause} ORDER BY #{order} LIMIT ? OFFSET ?"
     chamber_db.execute(sql, params + [limit, offset]).map { |row| document_list_row(row) }
   end

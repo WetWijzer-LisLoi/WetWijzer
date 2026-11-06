@@ -963,8 +963,8 @@ class LawsController < ApplicationController
       type_ids.map(&:to_s).sort
     ]
     # v8 (1.1.15): a feed of one source; a v7 body would serve all three for up to an hour after the deploy.
-    # v9 (1.1.16): a feed of one source names it in its title.
-    "rss_feed/v9/#{Digest::SHA256.hexdigest(JSON.generate(context))}"
+    # v9 (1.1.16): a feed of one source names it in its title. v10 (1.1.17): its site link ticks that source alone.
+    "rss_feed/v10/#{Digest::SHA256.hexdigest(JSON.generate(context))}"
   end
   private :rss_feed_cache_key
 

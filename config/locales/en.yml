@@ -396,7 +396,7 @@ en:
 
   # Footer
   footer:
-    tagline: "Open-source search engine for Belgian legislation and case law"
+    tagline: "Open-source search engine for Belgian legislation, case law and parliamentary documents"
     contact_us: "Contact us:"
     github_tooltip: "View source code on GitHub"
     version_tooltip: "Application version"

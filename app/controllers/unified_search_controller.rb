@@ -163,26 +163,35 @@ class UnifiedSearchController < ApplicationController
     return { items: [], total: total } if offset >= total
 
     rows = db.execute(
-      'SELECT id, title, parliament, dossier_number, document_date, language FROM documents WHERE id IN (SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?) ORDER BY id DESC LIMIT ? OFFSET ?',
+      'SELECT id, title, parliament, dossier_number, document_date, language, document_type, document_number FROM documents ' \
+      'WHERE id IN (SELECT rowid FROM documents_fts WHERE documents_fts MATCH ?) ORDER BY id DESC LIMIT ? OFFSET ?',
       [fts_query, limit, offset]
     )
 
-    items = rows.map do |row|
-      lang_id = row[5].to_s.upcase.start_with?('F') ? 2 : 1
-      {
-        id: row[0],
-        title: row[1],
-        subtitle: "#{parliament_label(row[2])} - #{row[3]} - #{row[4]}",
-        url: parliamentary_path(id: row[0], language_id: lang_id),
-        language_id: lang_id,
-        source: :parliamentary
-      }
-    end
-
-    { items: items, total: total }
+    { items: rows.map { |row| parliamentary_item(row) }, total: total }
   rescue StandardError => e
     Rails.logger.error("Unified search parliamentary error: #{e.message}")
     { items: [], total: 0 }
+  end
+
+  # Sol, on live 1.1.16 (/search?q=arbitrage): a document with no stored title had an empty heading, and its line ended
+  # in a separator for a date it does not have. Its type, dossier and number name it instead; nothing is invented.
+  def parliamentary_item(row)
+    id, title, parliament, dossier, date, language, type, number = row
+    lang_id = language.to_s.upcase.start_with?('F') ? 2 : 1
+    {
+      id: id,
+      title: title.presence || parliamentary_untitled(type, dossier, number),
+      subtitle: [parliament_label(parliament), dossier, date].compact_blank.join(' - '),
+      url: parliamentary_path(id: id, language_id: lang_id),
+      language_id: lang_id,
+      source: :parliamentary
+    }
+  end
+
+  def parliamentary_untitled(type, dossier, number)
+    label = type.to_s.tr('_', ' ').capitalize.presence || 'Document'
+    [label, [dossier, number].compact_blank.join('/')].compact_blank.join(' ')
   end
 
   def current_language_id

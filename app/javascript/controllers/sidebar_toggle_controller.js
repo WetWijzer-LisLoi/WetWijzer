@@ -63,9 +63,11 @@ export default class extends Controller {
           // Hint that the edge can be pulled/clicked
           this.panelTarget.style.cursor = 'ew-resize';
           // Make internal TOC inert and hide internals while collapsed
+          this.setMobileClosedInert(false);
           this.setCollapsedInert(true);
         } else {
           // Mobile: keep collapsed off-screen until user opens it
+          this.setMobileClosedInert(true);
           this.panelTarget.classList.remove('translate-x-0');
           this.panelTarget.classList.remove(this.collapsedDesktopClass);
           this.panelTarget.classList.add(this.collapsedMobileClass);
@@ -724,6 +726,7 @@ export default class extends Controller {
       if (this.hasBackdropTarget) this.backdropTarget.classList.add('hidden');
       // Auto-open only triggers when articles turbo frame loads
       // Collapsed on desktop -> inert
+      this.setMobileClosedInert(false);
       this.setCollapsedInert(true);
       this.sync();
     } else {
@@ -761,6 +764,7 @@ export default class extends Controller {
       if (this.hasBackdropTarget) this.backdropTarget.classList.add('hidden');
       // Leaving desktop -> ensure not inert on mobile
       this.setCollapsedInert(false);
+      this.setMobileClosedInert(true);
       this.sync();
     }
   }
@@ -902,6 +906,7 @@ showMobilePanel() {
     this.panelTarget.style.left = '';
     this.panelTarget.style.transform = '';
   } catch (_) {}
+  this.setMobileClosedInert(false);
   this.panelTarget.classList.remove('hidden');
   // Force reflow so transition applies after class change
   void this.panelTarget.offsetWidth;
@@ -935,7 +940,17 @@ hideMobilePanel() {
     const btns = this.buttonTargets && this.buttonTargets.length ? this.buttonTargets : (this.hasButtonTarget ? [this.buttonTarget] : []);
     btns.forEach((btn) => btn.style.pointerEvents = 'auto');
   } catch (_) {}
+  this.setMobileClosedInert(true);
   this.sync();
+}
+
+// Sol, on live 1.1.15 at 375 px: the closed panel slid off-screen with pointer events off, and Tab still reached its
+// search field and entries. Closed below the desktop width, the whole panel is inert; open, or on desktop, it is not:
+// the desktop sliver keeps its handle and makes only its contents inert (setCollapsedInert).
+setMobileClosedInert(closed) {
+  if (!this.hasPanelTarget) return;
+  if (closed) this.panelTarget.setAttribute('inert', '');
+  else this.panelTarget.removeAttribute('inert');
 }
 
 onKeydown(e) {
@@ -993,6 +1008,7 @@ showDesktopPanel() {
   panel.style.zIndex = '40';
   panel.style.pointerEvents = '';
   panel.style.cursor = '';
+  this.setMobileClosedInert(false);
   // Set the STARTING position (collapsed) with only horizontal peek
   panel.style.transform = this.collapsedDesktopTransform;
   

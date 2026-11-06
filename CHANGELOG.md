@@ -8,6 +8,27 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.18] - 2026-11-06
+
+1.1.17 was sealed but not released: one system test failed in its CI run, on a timing race in the test itself. Its changes ship here.
+
+### Fixed
+- Case law: a list with a date or a year reads the date index. One day of French judgments took 50 seconds and the page showed its failure panel.
+- Parliamentary documents: on a law's list, newest first and oldest first follow the date, and a third choice, parliamentary order, is the default; with a search word the list starts newest first, as before. Both date choices gave the parliamentary order.
+- Tax codes: a reference such as "artikel 1:24" (an article of another code) is no longer linked to article 1 of the code on the page.
+- Law pages: the link to a law's Fisconet version keeps the language of the text; from a French text it opened the Dutch one.
+- Site search: a parliamentary document without a stored title is named by its type, dossier and number, and its line has no separator for a missing date.
+- Civil Code concordance tables: the Book 9 card gives its own law (5 June 2025, Moniteur of 11 July 2025, in force since 1 January 2026), not Book 3's; the Book 6 card gives its law of 7 February 2024, not 1 February.
+- Law pages: two dates of entry into force stand on two lines. The line-break markers were printed as text.
+- Search filters: the labels of the display options and of the case-law and parliamentary filters name their selects, for screen readers.
+- Footer and guided tour: the site is described as searching legislation, case law and parliamentary documents; the RSS step says the header offers all sources together or one at a time.
+- Search: with suggestions open, a click on Search searches. A layer over the whole page took that click to close the suggestions.
+- RSS: a feed of one source links back to the search with that source ticked alone. It opened with all three ticked.
+- Law pages on phones: the closed contents panel is out of the keyboard order. Tab reached its hidden search field.
+- Parliamentary documents: a Senate dossier's link says senate.be, the site it opens, not dekamer.be.
+- AI security page: the ALTCHA link opens the geo-verification section of the privacy policy, in every language. It pointed at a section that does not exist.
+- Homepage chat: the area-of-law select has a name for screen readers, as the model select beside it has.
+
 ## [1.1.16] - 2026-11-05
 
 ### Fixed
