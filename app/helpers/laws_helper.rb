@@ -131,6 +131,54 @@ module LawsHelper
     Legislation.language_key_for(language_id.to_i)&.to_s
   end
 
+  ENTRY_INTO_FORCE_MONTHS = {
+    'januari' => 1, 'janvier' => 1, 'februari' => 2, 'février' => 2, 'fevrier' => 2, 'maart' => 3, 'mars' => 3,
+    'april' => 4, 'avril' => 4, 'mei' => 5, 'mai' => 5, 'juni' => 6, 'juin' => 6, 'juli' => 7, 'juillet' => 7,
+    'augustus' => 8, 'août' => 8, 'aout' => 8, 'september' => 9, 'septembre' => 9, 'oktober' => 10, 'octobre' => 10,
+    'november' => 11, 'novembre' => 11, 'december' => 12, 'décembre' => 12, 'decembre' => 12
+  }.freeze
+  # The shapes Justel stores (measured on production 2026-11-06, 10,155 rows with a value): a date, or "onbepaald" /
+  # "indéterminée" (no date set yet), each optionally followed by the provisions it covers ("(ART. 15)", "A6").
+  # Anything after the date that starts as a provision reference is accepted ("(ART. 15)", "(Art.126(2))", "A6",
+  # "ART. 1 - ART. 9"); other text ("abrogé", "later te bepalen") makes the line unreadable: 3 of the 9,927 rows not
+  # repealed.
+  ENTRY_INTO_FORCE_PROVISIONS = /(?:\s+(?:\(|A\d|[Aa]rt\b|ART\b).*)?/
+  ENTRY_INTO_FORCE_DATE = /\A(\d{1,2})(?:er)?\s+(\p{L}+)\s+(\d{4})#{ENTRY_INTO_FORCE_PROVISIONS}\z/
+  ENTRY_INTO_FORCE_UNSET = /\A(?i:onbepaald|indéterminée|indeterminee)#{ENTRY_INTO_FORCE_PROVISIONS}\z/
+
+  # Each stored line of entry into force (effective_date_lines): its Date, :unset for "onbepaald" / "indéterminée",
+  # or nil for a line we cannot read.
+  def entry_into_force_lines(value)
+    value.to_s.split(%r{<br\s*/?>|&lt;br\s*/?&gt;}i).map(&:squish).compact_blank.map do |line|
+      next :unset if ENTRY_INTO_FORCE_UNSET.match?(line)
+
+      match = ENTRY_INTO_FORCE_DATE.match(line)
+      month = match && ENTRY_INTO_FORCE_MONTHS[match[2].downcase]
+      month && Date.valid_date?(match[3].to_i, month, match[1].to_i) ? Date.new(match[3].to_i, month, match[1].to_i) : nil
+    end
+  end
+
+  # What the stored dates say, and nothing more (Sol 12:23:48Z: an explicit contract, no inferred legal force):
+  #   :in_force  every line a date on or before today
+  #   :pending   every line a date after today, or not set, and at least one date
+  #   :unset     every line "not set"
+  #   :partial   a date on or before today, and a date after today or a line not set
+  #   nil        no value, or a line we cannot read: the badge stays what it was before 1.1.21 ("In force" unless
+  #              repealed); the dates themselves are shown as stored below it.
+  # Partly in force describes the stored lines only: which provisions apply is in the text, not decided here.
+  def entry_into_force_status(value, today = Date.current)
+    lines = entry_into_force_lines(value)
+    return nil if lines.empty? || lines.include?(nil)
+
+    dates = lines.grep(Date)
+    passed = dates.count { |date| date <= today }
+    return :unset if dates.empty?
+    return :in_force if passed == lines.size
+    return :partial if passed.positive?
+
+    :pending
+  end
+
   # The stored HTML entity-encodes the colon (font-style&#58;italic).
   FISCONET_ITALIC = /font-style\s*(?::|&#58;)\s*italic/i
 

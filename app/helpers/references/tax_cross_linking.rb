@@ -38,6 +38,7 @@ module References
         [a-z]*                             # optional suffix: bis, ter, quater
       ))
       (?!:\d)                              # not "1:24": another code's article
+      (?:<sup>(\d+)</sup>)?                # "145<sup>1</sup>": Fisconet's 145/1 (Sol, on live 1.1.18)
       (?:                                  # optional WIB/CIR/BTW qualifier
         (?:\s*,?\s*)
         (?:WIB|CIR|BTW|KB/WIB|KB/CIR)
@@ -92,6 +93,9 @@ module References
 
       html.gsub(TAX_ART_REF_PATTERN) do
         art_num = Regexp.last_match(3)
+        # A numeric superscript is part of the number: 145 with superscript 1 is stored as 145/1. With no such article
+        # on the page the reference stays text rather than lead to article 145.
+        art_num = "#{art_num}/#{Regexp.last_match(4)}" if Regexp.last_match(4)
         full_match = Regexp.last_match(0)
 
         # Only link if the article exists on this page

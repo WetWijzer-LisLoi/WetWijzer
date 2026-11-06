@@ -132,9 +132,12 @@ class JurisprudenceController < ApplicationController
     # Resolve numac codes to law titles for display
     if @case[:laws_referenced].present?
       numacs = @case[:laws_referenced].split(/[;,]\s*/).map(&:strip).reject(&:blank?)
+      # In the decision's language where we hold the law, else the language we hold (open-items.md #56: a French
+      # decision's link opened the Dutch law).
       @referenced_laws = numacs.filter_map do |numac|
-        law = Legislation.in_site_languages.find_by(numac: numac)
-        { numac: numac, title: law&.title&.truncate(80), found: law.present? }
+        held = Legislation.in_site_languages.where(numac: numac)
+        law = held.find_by(language_id: @page_language_id.to_i) || held.order(:language_id).first
+        { numac: numac, title: law&.title&.truncate(80), found: law.present?, language_id: law&.language_id }
       end
     else
       @referenced_laws = []

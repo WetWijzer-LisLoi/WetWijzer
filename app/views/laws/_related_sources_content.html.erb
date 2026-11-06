@@ -54,7 +54,7 @@
                   <%= doc[:title].presence&.truncate(80) || reference %>
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">
-                  <%= [t("related_sources.parliamentary.#{doc[:parliament]}", default: doc[:parliament].to_s), reference, doc[:document_type]].compact_blank.join(' · ') %>
+                  <%= [t("related_sources.parliamentary.#{doc[:parliament]}", default: doc[:parliament].to_s), reference, parliamentary_type_label(doc[:document_type])].compact_blank.join(' · ') %>
                 </div>
               <% end %>
               <% if !summary %>
@@ -91,7 +91,7 @@
             <% vlaams.items.each do |doc| %>
               <% body = capture do %>
                 <div class="text-sm text-gray-900 dark:text-white"><%= doc[:title].presence&.truncate(80) || doc[:label] %></div>
-                <div class="text-xs text-gray-500 dark:text-gray-400"><%= [doc[:label], doc[:document_type]].compact_blank.join(' · ') %></div>
+                <div class="text-xs text-gray-500 dark:text-gray-400"><%= [doc[:label], parliamentary_type_label(doc[:document_type])].compact_blank.join(' · ') %></div>
               <% end %>
               <% if doc[:pdf_url].to_s.match?(%r{\Ahttps://}i) %>
                 <%= link_to body, doc[:pdf_url], class: link_class, target: '_blank', rel: 'noopener noreferrer' %>

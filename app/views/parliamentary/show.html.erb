@@ -2,7 +2,8 @@
 <% parl_label = t("public_navigation.parliaments.#{@document[:parliament]}", default: @document[:parliament]&.capitalize) %>
 <%# The type the document reads as: document 001's own title corrects a stored default (parliamentary_document_type). %>
 <% display_type = parliamentary_document_type(@document).presence %>
-<% type_prefix = display_type ? display_type.gsub('_', ' ').capitalize : nil %>
+<%# The prefix is part of the title, so in the document's language; the badge below is the interface's. %>
+<% type_prefix = display_type ? parliamentary_type_label(display_type, @document[:language].presence || ParliamentaryRelations.document_language) : nil %>
 <% full_title = type_prefix && !cleaned_title.downcase.start_with?(type_prefix.downcase) ? "#{type_prefix} #{cleaned_title}" : cleaned_title %>
 <% @title = "#{parl_label} - #{full_title}" %>
 <% dekamer_lang = I18n.locale == :nl ? 'nl' : 'fr' %>
@@ -69,7 +70,8 @@
   <div class="bg-linear-to-r from-(--accent-500)/5 to-(--accent-500)/10 dark:from-(--accent-500)/10 dark:to-(--accent-500)/20 rounded-xl p-4 md:p-6">
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
       <div class="flex items-center gap-3">
-        <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-(--accent-500)">
+        <%# The document's language, as on its body (Sol, on live 1.1.19: a French title under lang="en"). %>
+        <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-(--accent-500)" <%= tag.attributes(lang: @document[:language].presence) %>>
           <%= full_title %>
         </h1>
       </div>
@@ -132,7 +134,7 @@
         </span>
         <% if display_type %>
           <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300">
-            <%= display_type.gsub('_', ' ').capitalize %>
+            <%= parliamentary_type_label(display_type) %>
           </span>
         <% end %>
         <% if @document[:document_date].present? %>
@@ -468,14 +470,14 @@
                 <% if is_current %>
                   <div class="px-3 py-1.5 rounded-lg bg-(--accent-500)/10 dark:bg-(--accent-900)/30 border border-(--accent-500)/20">
                     <span class="text-sm font-bold text-(--accent-700) dark:text-(--accent-400)"><%= sib[:document_number] %></span>
-                    <span class="text-sm font-medium text-(--accent-700) dark:text-(--accent-400) ml-1"><%= sib[:document_type]&.gsub('_', ' ')&.upcase_first %></span>
+                    <span class="text-sm font-medium text-(--accent-700) dark:text-(--accent-400) ml-1"><%= parliamentary_type_label(sib[:document_type]) %></span>
                     <span class="text-xs text-(--accent-500) ml-1">★</span>
                   </div>
                 <% else %>
                   <a href="<%= parliamentary_path(sib[:id]) %>"
                      class="block px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <span class="text-sm font-medium text-gray-600 dark:text-gray-300/80"><%= sib[:document_number] %></span>
-                    <span class="text-sm text-gray-700 dark:text-gray-300 ml-1"><%= sib[:document_type]&.gsub('_', ' ')&.upcase_first %></span>
+                    <span class="text-sm text-gray-700 dark:text-gray-300 ml-1"><%= parliamentary_type_label(sib[:document_type]) %></span>
                   </a>
                 <% end %>
               </div>
@@ -592,13 +594,16 @@
   <!-- Full Text Content -->
   <% if @document[:content].present? %>
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
-      <div class="p-4 md:p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-4">
-          <% case I18n.locale when :fr %>Texte intégral<% when :de %>Volltext<% when :en %>Full text<% else %>Volledige tekst<% end %>
-        </h2>
+      <div class="p-4 md:p-6" data-controller="reading-width">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500)">
+            <% case I18n.locale when :fr %>Texte intégral<% when :de %>Volltext<% when :en %>Full text<% else %>Volledige tekst<% end %>
+          </h2>
+          <%= render 'shared/reading_width_control' %>
+        </div>
         <%= render 'shared/reading_styles' %>
         <div id="parl-content" class="max-w-none">
-          <div class="reading-body text-base text-gray-700 dark:text-gray-300 leading-relaxed" <%= tag.attributes(lang: @document[:language].presence) %>>
+          <div class="reading-body text-base text-gray-700 dark:text-gray-300 leading-relaxed" data-reading-width-target="body" <%= tag.attributes(lang: @document[:language].presence) %>>
 <%= format_parliamentary_html(clean_parliamentary_content(@document[:content].to_s, target_language: @document[:language])) %>
           </div>
         </div>

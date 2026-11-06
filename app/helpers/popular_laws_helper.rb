@@ -138,6 +138,23 @@ module PopularLawsHelper
     'tax_succession' => { en: 'Inheritance Tax Code', de: 'Erbschaftsteuergesetzbuch' }
   }.freeze
 
+  # The article range of the text a new Civil Code book opens, read from its articles, first and last in number
+  # order ("art. 8.1-8.39"). The ranges were typed by hand and eight of nine differed from the texts (Sol, on live
+  # 1.1.19: Book 8 read "art. 8.1-8.35" over a text of 8.1-8.39; measured on production 2026-11-06, NL and FR
+  # alike). Only dotted numbers count: a row Justel keyed "Art.4" (its last anchor truncated) is no range end.
+  # nil when the text holds no such article, and the label is left out. The block is cached with laws_db_version.
+  def popular_law_article_range(numac, language_id = current_language_id)
+    numbers = Article.where(content_numac: numac.to_s, language_id: language_id.to_i, article_type: 'ART')
+                     .pluck(:article_title)
+                     .filter_map { |title| title.to_s[/\AArt\.?\s*(\d+(?:\.\d+)+)/, 1] }
+    return nil if numbers.empty?
+
+    first, last = numbers.minmax_by { |number| number.split('.').map(&:to_i) }
+    "art. #{first}-#{last}"
+  rescue ActiveRecord::ActiveRecordError
+    nil
+  end
+
   def popular_law_catalogue_title(key, dutch:, french:, locale: I18n.locale)
     translated = POPULAR_LAW_CATALOGUE_TITLES.fetch(key.to_s, {})[locale.to_sym]
     return translated if translated

@@ -8,6 +8,32 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.21] - 2026-11-06
+
+1.1.20 was sealed but not released: its CI run was stopped when the build machine ran low on memory, with its first five stages passed. Its change ships here.
+
+### Added
+- Judgments and parliamentary documents: on a large screen the full text can be read wide or at the comfortable 80-character measure, from two buttons beside its heading. Wide is the default from 1,280 px, and the column is centred at both widths; a signed-in reader's choice is kept with their other interface preferences on the server, as the README describes; a visitor's is not stored, and nothing is written to browser storage. The text used under half the card at 1,550 px.
+
+### Fixed
+- Tax codes: a reference such as "article 145<sup>1</sup>" leads to article 145/1, as Fisconet numbers it, and is not linked when that article is not on the page. It led to article 145.
+- Case law: the subject badges on the results are in the interface language. 1.1.19 said so, but translated only the filter: the results show the stored Dutch or French names, which the badges now translate for the eight subjects of the filter; any other stored name stays as it stands.
+- Law pages: the link to the law's other language version keeps the article the reader is on (`#art-5-4`); it opened the other version at the top.
+- Homepage: Recent legislation's View all lists the language of its cards; from the French content selection on LexLibera it listed Dutch and French, and that page's links went back to Dutch. The German site keeps its own languages.
+- Law and parliamentary pages: the title of the text says its language, as its body does, for screen readers and hyphenation; so do the titles on the parliamentary lists.
+- Parliamentary documents: the document type is named in the interface language, on the lists, the document page, a law's related sources and the RSS feed ("Rapport", "Bericht", "Report" for "verslag"). The French pages and feed showed the stored Dutch type. A stored type outside the 20 named ones stays as it stands.
+- Law pages: the status says what the stored dates of entry into force say: "Not yet in force" when every date is still to come (Book 7, 1 September 2027), "Partly in force" when some have passed and others are to come or not set, and "Entry into force not set" when no date is set. A line that cannot be read keeps "In force". It said "In force" for every law not repealed.
+- Tax codes: the document box gives the code's official NUMAC (1992041050 for the Income Tax Code), not the internal FISCONET number, and gives the act's date and its publication date as two facts (10 April 1992 and 30 July 1992). The act's date was labelled the publication date.
+- Case law: a cited law opens in the decision's language where we hold it, under that language's title; a French decision's link opened the Dutch law. The decision page's subject badges are in the interface language, as on the results.
+- Classic: the Justel link beside the language switch is the law's own Justel address; it was an address built from the date alone, which opened no record. A title search that orders by relevance says so, and no longer shows the date column's newest-first arrow.
+- Law pages: an article reached by a link stays at the top while the page finishes loading; opened in a new tab, an amendment link left its article above the screen.
+- Law pages: Compare, and its Back link, keep the article the reader is on; Back opened the law at the top.
+- Homepage: the article range beside each book of the new Civil Code is read from the text it opens (Book 8 "art. 8.1-8.39", Book 9 "art. 9.1.1-9.1.54"). Eight of the nine typed ranges differed from the texts.
+- Search: the suggestions show the book of the Civil Code a query names, as in the field's own example "BW boek 3" (and "Code civil livre 3", "Civil Code book 3"); they said there were no results.
+- Search: Escape on a suggestion closes the list and returns to the field.
+- Search: a sort chosen above the results is also the sort in Filters, so the next Search keeps it; it went back to the earlier sort.
+- Search: a results list that comes back empty on Back is loaded again; after a change of page size it stayed empty until a reload.
+
 ## [1.1.19] - 2026-11-06
 
 ### Fixed

@@ -28,7 +28,7 @@
                     <span><%= doc[:dossier_number] %></span>
                     <% if doc[:document_type].present? %>
                       <span class="px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded">
-                        <%= doc[:document_type].to_s.gsub('_', ' ') %>
+                        <%= parliamentary_type_label(doc[:document_type]) %>
                       </span>
                     <% end %>
                   </div>

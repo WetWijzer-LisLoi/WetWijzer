@@ -16,6 +16,18 @@
  */
 import { Controller } from "@hotwired/stimulus";
 
+// After Back or Forward, a results frame can come back from Turbo's cache with nothing in it: Sol, on live 1.1.19
+// (15:32:15Z), changed the legislation page size, went Back, and the restored page-2 list was empty with no error
+// until a reload. The cause is not established (the cleanup above removes loading skeletons, and a restored frame
+// marked complete is not fetched again). A frame with a source and no content after a restoration is fetched from
+// its own source; a frame with rows, or a normal visit, is left alone.
+export function reloadEmptyFrames(root) {
+  root.querySelectorAll('turbo-frame[src]').forEach(frame => {
+    if (frame.hasAttribute('busy') || frame.textContent.trim() !== '') return;
+    if (typeof frame.reload === 'function') frame.reload();
+  });
+}
+
 export default class extends Controller {
   connect() {
     // Listen for before-cache event to clean up before Turbo caches the page
@@ -23,11 +35,13 @@ export default class extends Controller {
     
     // Listen for load event to ensure proper state restoration
     document.addEventListener("turbo:load", this.onLoad);
+    document.addEventListener("turbo:visit", this.onVisit);
   }
 
   disconnect() {
     document.removeEventListener("turbo:before-cache", this.beforeCache);
     document.removeEventListener("turbo:load", this.onLoad);
+    document.removeEventListener("turbo:visit", this.onVisit);
   }
 
   /**
@@ -92,5 +106,14 @@ export default class extends Controller {
     document.querySelectorAll('turbo-frame[busy]').forEach(frame => {
       frame.removeAttribute('busy');
     });
+
+    if (this.restoring) {
+      this.restoring = false;
+      reloadEmptyFrames(document);
+    }
+  };
+
+  onVisit = (event) => {
+    this.restoring = event?.detail?.action === 'restore';
   };
 }

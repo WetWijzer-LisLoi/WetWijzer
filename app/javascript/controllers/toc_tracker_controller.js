@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { prefs } from "../services/preferences_store"
+import { settleOnTarget } from "../utils/settle_scroll.js"
 
 /**
  * TOC Tracker Controller
@@ -264,6 +265,7 @@ export default class extends Controller {
    * // with data-controller="toc-tracker" is removed from the DOM
    */
   disconnect() {
+    this.stopSettling?.()
     this.cleanup()
     try { document.removeEventListener('turbo:frame-load', this.handleTurboFrameLoad) } catch (_) { /* noop */ }
   }
@@ -791,6 +793,9 @@ export default class extends Controller {
 
       // Perform a single programmatic scroll; anchors have scroll-margin-top for header offset
       el.scrollIntoView({ behavior: 'auto', block: 'start', inline: 'nearest' })
+      // and keep it there while content above still changes size, until the reader moves (utils/settle_scroll.js)
+      this.stopSettling?.()
+      this.stopSettling = settleOnTarget(el)
 
       // Maintain hash priority so observer doesn't override immediately
       const priorityId = /^section-art-/.test(id) ? id.replace(/^section-/, '') : id

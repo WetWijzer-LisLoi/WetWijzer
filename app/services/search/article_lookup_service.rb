@@ -124,6 +124,7 @@ module Search
       'bw4' => %w[2022B30600],
       'bw5' => %w[2022A32058],
       'bw6' => %w[2024A01600],
+      'bw7' => %w[2026A05775],
       'bw8' => %w[2019A12168],
       'bw9' => %w[2025A05089]
     }.freeze
@@ -147,6 +148,20 @@ module Search
       'avg' => 'AVG/GDPR', 'gdpr' => 'AVG/GDPR'
     }.freeze
 
+    # The new Civil Code's books. The search field advertises "BW boek 3" (EN "Civil Code book 3", DE "BGB Buch
+    # 3"); the suggestions said there was nothing (Sol, on live 1.1.19, 14:56:37Z), as no title holds "BW".
+    CIVIL_CODE_BOOKS = {
+      1 => '2022A32057', 2 => '2022A30600', 3 => '2020A20347', 4 => '2022B30600', 5 => '2022A32058',
+      6 => '2024A01600', 7 => '2026A05775', 8 => '2019A12168', 9 => '2025A05089'
+    }.freeze
+    CIVIL_CODE_BOOK_PATTERN = /\A\s*(?:n?bw|burgerlijk\s+wetboek|c\.\s*civ\.?|code\s+civil|civil\s+code|bgb|zgb|zivilgesetzbuch)\s*,?\s*(?:boek|livre|book|buch)\s*([1-9])\s*\z/i
+
+    # The NUMAC of the Civil Code book a query names ("BW boek 3", "Code civil livre 3"), else nil.
+    def self.civil_code_book_numac(query)
+      match = query.to_s.match(CIVIL_CODE_BOOK_PATTERN)
+      match && CIVIL_CODE_BOOKS[match[1].to_i]
+    end
+
     def initialize(locale: :nl)
       @language_id = %w[fr de].include?(locale.to_s) ? 2 : 1
     end
@@ -166,6 +181,21 @@ module Search
       return [] unless numacs&.any?
 
       find_articles(article_num, numacs, abbreviation)
+    end
+
+    # The book a query names, as a legislation suggestion in the reader's language where we hold it.
+    def book_lookup(query)
+      numac = self.class.civil_code_book_numac(query)
+      return [] unless numac
+
+      law = Legislation.find_by(numac: numac, language_id: @language_id) || Legislation.in_site_languages.find_by(numac: numac)
+      return [] unless law
+
+      [{ id: law.numac, title: law.title.to_s.truncate(100), subtitle: law.date.to_s,
+         url: Rails.application.routes.url_helpers.show_law_path(law.numac.to_s, language_id: law.language_id),
+         source: :legislation, score: 1.0 }]
+    rescue ActiveRecord::ActiveRecordError
+      []
     end
 
     # Check if a query looks like an article reference (for UI hints)

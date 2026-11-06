@@ -15,7 +15,10 @@ module Api
       t_req = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
       # Instant article lookup (e.g. "art 1382 BW" → direct article match)
-      article_results = Search::ArticleLookupService.new(locale: I18n.locale).lookup(query)
+      lookup = Search::ArticleLookupService.new(locale: I18n.locale)
+      article_results = lookup.lookup(query)
+      # "BW boek 3": the book first among the legislation suggestions (ArticleLookupService#book_lookup).
+      book_results = lookup.book_lookup(query)
       articles_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - t_req) * 1000).round(1)
 
       # Search all sources (jurisprudence visible to everyone in autocomplete)
@@ -47,7 +50,7 @@ module Api
       payload = {
         query: query,
         articles: article_results,
-        legislation: results[:legislation] || [],
+        legislation: (book_results + (results[:legislation] || [])).uniq { |law| law[:id] }.first(MAX_RESULTS_PER_SOURCE),
         jurisprudence: results[:jurisprudence] || [],
         parliamentary: results[:parliamentary] || []
       }

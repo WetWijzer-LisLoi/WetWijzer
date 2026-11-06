@@ -279,7 +279,7 @@
                     title: popular_law_title.('2022A32057'),
                     class: popular_law_class.('2022A32057', extra: 'group') do %>
           <span class="group-hover:underline"><%= popular_law_catalogue_title('2022A32057', dutch: 'Burgerlijk Wetboek - Boek 1 "Algemene bepalingen"', french: 'Code civil - Livre 1 "Dispositions générales"') %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 1.1-1.13)</span>
+          <% if (range = popular_law_article_range('2022A32057')) %><span class="font-mono text-xs text-gray-500 dark:text-gray-400" data-popular-law-range="2022A32057">(<%= range %>)</span><% end %>
           <%= popular_law_abbreviation_badge('2022A32057') %>
         <% end %>
         
@@ -289,7 +289,7 @@
                     title: popular_law_title.('2022A30600'),
                     class: popular_law_class.('2022A30600', extra: 'group') do %>
           <span class="group-hover:underline"><%= popular_law_catalogue_title('2022A30600', dutch: 'Burgerlijk Wetboek - Boek 2 "Relatievermogensrecht"', french: 'Code civil - Livre 2 "Régimes patrimoniaux"') %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 2.1-2.47)</span>
+          <% if (range = popular_law_article_range('2022A30600')) %><span class="font-mono text-xs text-gray-500 dark:text-gray-400" data-popular-law-range="2022A30600">(<%= range %>)</span><% end %>
         <% end %>
         
         <%= link_to law_path('2020A20347', language_id: current_language_id), 
@@ -298,7 +298,7 @@
                     title: popular_law_title.('2020A20347'),
                     class: popular_law_class.('2020A20347', extra: 'group') do %>
           <span class="group-hover:underline"><%= popular_law_catalogue_title('2020A20347', dutch: 'Burgerlijk Wetboek - Boek 3 "Goederen"', french: 'Code civil - Livre 3 "Biens"') %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 3.1-3.228)</span>
+          <% if (range = popular_law_article_range('2020A20347')) %><span class="font-mono text-xs text-gray-500 dark:text-gray-400" data-popular-law-range="2020A20347">(<%= range %>)</span><% end %>
         <% end %>
         
         <%= link_to law_path('2022B30600', language_id: current_language_id), 
@@ -307,7 +307,7 @@
                     title: popular_law_title.('2022B30600'),
                     class: popular_law_class.('2022B30600', extra: 'group') do %>
           <span class="group-hover:underline"><%= popular_law_catalogue_title('2022B30600', dutch: 'Burgerlijk Wetboek - Boek 4 "Nalatenschappen, schenkingen en testamenten"', french: 'Code civil - Livre 4 "Successions, donations et testaments"') %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 4.1-4.265)</span>
+          <% if (range = popular_law_article_range('2022B30600')) %><span class="font-mono text-xs text-gray-500 dark:text-gray-400" data-popular-law-range="2022B30600">(<%= range %>)</span><% end %>
         <% end %>
         
         <%= link_to law_path('2022A32058', language_id: current_language_id), 
@@ -316,7 +316,7 @@
                     title: popular_law_title.('2022A32058'),
                     class: popular_law_class.('2022A32058', extra: 'group') do %>
           <span class="group-hover:underline"><%= popular_law_catalogue_title('2022A32058', dutch: 'Burgerlijk Wetboek - Boek 5 "Verbintenissen"', french: 'Code civil - Livre 5 "Obligations"') %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 5.1-5.326)</span>
+          <% if (range = popular_law_article_range('2022A32058')) %><span class="font-mono text-xs text-gray-500 dark:text-gray-400" data-popular-law-range="2022A32058">(<%= range %>)</span><% end %>
         <% end %>
         
         <%= link_to law_path('2024A01600', language_id: current_language_id), 
@@ -325,7 +325,7 @@
                     title: popular_law_title.('2024A01600'),
                     class: popular_law_class.('2024A01600', extra: 'group') do %>
           <span class="group-hover:underline"><%= popular_law_catalogue_title('2024A01600', dutch: 'Burgerlijk Wetboek - Boek 6 "Buitencontractuele aansprakelijkheid"', french: 'Code civil - Livre 6 "Responsabilité extracontractuelle"') %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 6.1-6.58)</span>
+          <% if (range = popular_law_article_range('2024A01600')) %><span class="font-mono text-xs text-gray-500 dark:text-gray-400" data-popular-law-range="2024A01600">(<%= range %>)</span><% end %>
         <% end %>
 
         <%= link_to law_path('2026A05775', language_id: current_language_id),
@@ -344,7 +344,7 @@
                     title: popular_law_title.('2019A12168'),
                     class: popular_law_class.('2019A12168', extra: 'group') do %>
           <span class="group-hover:underline"><%= popular_law_catalogue_title('2019A12168', dutch: 'Burgerlijk Wetboek - Boek 8 "Bewijs"', french: 'Code civil - Livre 8 "Preuve"') %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 8.1-8.35)</span>
+          <% if (range = popular_law_article_range('2019A12168')) %><span class="font-mono text-xs text-gray-500 dark:text-gray-400" data-popular-law-range="2019A12168">(<%= range %>)</span><% end %>
         <% end %>
         
         <%= link_to law_path('2025A05089', language_id: current_language_id), 
@@ -353,7 +353,7 @@
                     title: popular_law_title.('2025A05089'),
                     class: popular_law_class.('2025A05089', extra: 'group') do %>
           <span class="group-hover:underline"><%= popular_law_catalogue_title('2025A05089', dutch: 'Burgerlijk Wetboek - Boek 9 "Zekerheden"', french: 'Code civil - Livre 9 "Sûretés"') %></span>
-          <span class="font-mono text-xs text-gray-500 dark:text-gray-400">(art. 9.1-9.75)</span>
+          <% if (range = popular_law_article_range('2025A05089')) %><span class="font-mono text-xs text-gray-500 dark:text-gray-400" data-popular-law-range="2025A05089">(<%= range %>)</span><% end %>
         <% end %>
       </div>
       
@@ -1281,7 +1281,16 @@
         <p class="text-sm text-gray-600 dark:text-gray-400">
           <%= case I18n.locale when :fr then 'Dernières publications au Moniteur belge' when :de then 'Neueste Veröffentlichungen im Belgischen Staatsblatt' when :en then 'Latest publications in the Belgian Official Gazette' else 'Laatste publicaties in het Belgisch Staatsblad' end %>
         </p>
-        <a href="<%= laws_path(source_legislation: 1, sort: 'date_desc') %>" class="text-sm text-(--accent-text) hover:underline">
+        <%# View all lists the cards' language, as the cards below do (Sol, on live 1.1.19: from content_lang=fr it listed
+            Dutch and French with both boxes checked, and the page's own links went back to Dutch). The German site's
+            cards are French and German by text, so its list keeps the site's own languages. %>
+        <% view_all_params = { source_legislation: 1, sort: 'date_desc' } %>
+        <% unless german_site? %>
+          <% view_all_language = current_language_id %>
+          <% view_all_params.merge!(lang_nl: view_all_language == 1 ? '1' : '0', lang_fr: view_all_language == 2 ? '1' : '0', lang_de: '0') %>
+          <% view_all_params[:content_lang] = view_all_language == 2 ? 'fr' : 'nl' if I18n.locale == :en %>
+        <% end %>
+        <a href="<%= laws_path(view_all_params) %>" class="text-sm text-(--accent-text) hover:underline" data-recent-legislation-view-all>
           <%= case I18n.locale when :fr then 'Voir tout →' when :de then 'Alle anzeigen →' when :en then 'View all →' else 'Bekijk alle →' end %>
         </a>
       </div>

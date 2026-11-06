@@ -85,10 +85,15 @@
   <div style="margin-top:24px">
     <p class="classic-meta">
       <span><%= t(:results_found, count: (@pagy&.count || @laws.size)) %></span>
+      <%# A title search with no chosen sort is ordered by relevance (LawSearchService.apply_sort); the date column's
+          arrow said newest first (open-items.md #56). %>
+      <% if params[:sort].blank? && params[:title].present? %>
+        <span data-classic-sort-note> · <%= case I18n.locale when :fr then 'Triés par pertinence' when :de then 'Nach Relevanz sortiert' when :en then 'Sorted by relevance' else 'Gesorteerd op relevantie' end %></span>
+      <% end %>
     </p>
 
     <%# Sortable column headers - pass sort param via links %>
-    <% current_sort = params[:sort].presence || 'date_desc' %>
+    <% current_sort = params[:sort].presence || (params[:title].present? ? 'relevance' : 'date_desc') %>
     <% sort_base = request.query_parameters.except('page') %>
     <table class="classic-table">
       <thead>

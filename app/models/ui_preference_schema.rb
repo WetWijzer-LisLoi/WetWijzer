@@ -44,6 +44,8 @@ module UiPreferenceSchema
     'reference_highlight' => BOOL,
     'bookmarks_view' => BOUNDED_STRING,
     'copy_format' => BOUNDED_STRING,
+    # The full-text reading width of judgments and parliamentary documents (reading_width_controller.js, 1.1.21).
+    'reading_width' => ->(value) { %w[wide comfortable].include?(value) },
     'article_preferences' => lambda { |value|
       value.is_a?(Hash) && value.size <= MAX_OBJECT_KEYS &&
         value.all? { |k, v| k.is_a?(String) && k.length <= MAX_STRING && (v.nil? || SCALAR.call(v)) }

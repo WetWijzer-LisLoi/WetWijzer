@@ -127,6 +127,7 @@ app/javascript/controllers/index.js
 app/javascript/controllers/js_only_controller.js
 app/javascript/controllers/jump_select_controller.js
 app/javascript/controllers/keyboard_shortcuts_controller.js
+app/javascript/controllers/language_version_controller.js
 app/javascript/controllers/mobile_dock_controller.js
 app/javascript/controllers/mobile_menu_controller.js
 app/javascript/controllers/mp_photo_controller.js
@@ -135,6 +136,7 @@ app/javascript/controllers/password_visibility_controller.js
 app/javascript/controllers/pii_mask_controller.js
 app/javascript/controllers/print_controller.js
 app/javascript/controllers/purchase_consent_controller.js
+app/javascript/controllers/reading_width_controller.js
 app/javascript/controllers/reference_highlight_controller.js
 app/javascript/controllers/related_sources_controller.js
 app/javascript/controllers/scroll_top_controller.js
@@ -143,6 +145,7 @@ app/javascript/controllers/sidebar_auto_open_controller.js
 app/javascript/controllers/sidebar_toggle_controller.js
 app/javascript/controllers/signup_challenge_controller.js
 app/javascript/controllers/site_tour_controller.js
+app/javascript/controllers/sort_sync_controller.js
 app/javascript/controllers/source_filters_controller.js
 app/javascript/controllers/tabs_controller.js
 app/javascript/controllers/theme_selector_controller.js
@@ -192,9 +195,11 @@ app/javascript/stylesheets/components/theme/_professional-themes.scss
 app/javascript/stylesheets/components/theme/_sidebar-toc.scss
 app/javascript/stylesheets/themes/_accent.scss
 app/javascript/utils/article_copy.js
+app/javascript/utils/article_fragment.js
 app/javascript/utils/focus_trap.js
 app/javascript/utils/frame_missing_fallback.js
 app/javascript/utils/locale.js
+app/javascript/utils/settle_scroll.js
 app/javascript/utils/toast.js
 app/javascript/utils/toc_targets.js
 app/javascript/utils/turbo_csp_nonce.js
@@ -579,6 +584,7 @@ app/views/shared/_clipboard_messages.html.erb
 app/views/shared/_no_content.html.erb
 app/views/shared/_password_toggle.html.erb
 app/views/shared/_reading_styles.html.erb
+app/views/shared/_reading_width_control.html.erb
 app/views/shared/_site_tour.html.erb
 app/views/shared/_site_tour_invitation.html.erb
 app/views/shared/pagy/_nav.html.erb
@@ -837,6 +843,7 @@ public/vite/assets/application-BQEpLP25.js
 public/vite/assets/application-BRiTEtoR.css
 public/vite/assets/application-BRpe1pe1.css
 public/vite/assets/application-BTE2I1Gk.js
+public/vite/assets/application-BaAHO30A.js
 public/vite/assets/application-BbF8z8QX.css
 public/vite/assets/application-BfJ3aVeg.js
 public/vite/assets/application-BftGVA_w.css
@@ -874,6 +881,7 @@ public/vite/assets/application-CqcCHVTp.js
 public/vite/assets/application-CzAPG3zX.js
 public/vite/assets/application-CzS3DFdH.css
 public/vite/assets/application-CzxfxDkz.js
+public/vite/assets/application-D2Zf7JcF.js
 public/vite/assets/application-D5IORe4o.css
 public/vite/assets/application-D6iDaEmU.js
 public/vite/assets/application-D9JiV3Xz.css
@@ -896,6 +904,7 @@ public/vite/assets/application-DlSYa1EL.js
 public/vite/assets/application-Do5GkheR.css
 public/vite/assets/application-Do6PUB-W.js
 public/vite/assets/application-DoKubQxh.css
+public/vite/assets/application-DsGAQtTY.js
 public/vite/assets/application-Dvbu9Z8Q.js
 public/vite/assets/application-DxOjIIOU.js
 public/vite/assets/application-DxR2X1mB.js
@@ -910,6 +919,7 @@ public/vite/assets/application-WyXijs_E.js
 public/vite/assets/application-bWLWw_JU.css
 public/vite/assets/application-btLrvqaC.js
 public/vite/assets/application-iYUwRfOq.css
+public/vite/assets/application-m9Pjw725.css
 public/vite/assets/application-vQ4NhOm-.js
 public/vite/assets/src-CAVUzBaU.js
 vite.config.mts

@@ -352,8 +352,9 @@ module ParliamentaryHelper
 
       # Fall back to document_type + dossier
       if doc && doc[:document_type].present? && dossier.present?
-        type_label = doc[:document_type].gsub('_', ' ')
-        return "#{type_label.capitalize} #{dossier}"
+        # A title, so in the language the list shows (ParliamentaryRelations.document_language).
+        type_label = parliamentary_type_label(doc[:document_type], ParliamentaryRelations.document_language)
+        return "#{type_label} #{dossier}"
       end
 
       return "Dossier #{dossier}" if dossier.present?
@@ -1085,6 +1086,54 @@ module ParliamentaryHelper
     ['PP', ['Parti Populaire']],
     ['FN', ['Front National']]
   ].to_h { |abbreviation, names| [party_key(abbreviation), names.map { |name| party_key(name) }.freeze] }.freeze
+
+  # The name of a parliamentary document's type in a language (open-items.md #56: the French RSS feed and French pages
+  # showed the stored Dutch "verslag", "wetsontwerp"; Sol, on live 1.1.19, the German list "Verslag"). The corpus stores
+  # Dutch keys ("verslag", "tekst_plenaire") and, for some rows, the Dutch or French name ("Projet de loi"); measured on
+  # production 2026-11-06, 40 values. The types below are the ones whose meaning is certain; any other stored value is
+  # shown as it stands, its underscores as spaces. The names are the Chamber's and the Senate's own where they publish
+  # one (the Dutch and French); German and English are descriptive.
+  PARLIAMENTARY_TYPE_LABELS = {
+    'wetsvoorstel' => { nl: 'Wetsvoorstel', fr: 'Proposition de loi', de: 'Gesetzesvorschlag', en: "Private member's bill" },
+    'wetsontwerp' => { nl: 'Wetsontwerp', fr: 'Projet de loi', de: 'Gesetzentwurf', en: 'Government bill' },
+    'voorstel van bijzondere wet' => { nl: 'Voorstel van bijzondere wet', fr: 'Proposition de loi spéciale',
+                                       de: 'Sondergesetzesvorschlag', en: "Private member's special majority bill" },
+    'ontwerp van bijzondere wet' => { nl: 'Ontwerp van bijzondere wet', fr: 'Projet de loi spéciale', de: 'Sondergesetzentwurf',
+                                      en: 'Government special majority bill' },
+    'amendement' => { nl: 'Amendement', fr: 'Amendement', de: 'Abänderungsantrag', en: 'Amendment' },
+    'verslag' => { nl: 'Verslag', fr: 'Rapport', de: 'Bericht', en: 'Report' },
+    'aanvullend verslag' => { nl: 'Aanvullend verslag', fr: 'Rapport complémentaire', de: 'Zusätzlicher Bericht',
+                              en: 'Supplementary report' },
+    'informatieverslag' => { nl: 'Informatieverslag', fr: "Rapport d'information", de: 'Informationsbericht', en: 'Information report' },
+    'bijlage' => { nl: 'Bijlage', fr: 'Annexe', de: 'Anlage', en: 'Annex' },
+    'voorstel van resolutie' => { nl: 'Voorstel van resolutie', fr: 'Proposition de résolution', de: 'Entschließungsvorschlag',
+                                  en: 'Motion for a resolution' },
+    'voorstel van verklaring' => { nl: 'Voorstel van verklaring', fr: 'Proposition de déclaration', de: 'Erklärungsvorschlag',
+                                   en: 'Proposal for a declaration' },
+    'voorstel tot herziening' => { nl: 'Voorstel tot herziening', fr: 'Proposition de révision', de: 'Revisionsvorschlag',
+                                   en: 'Proposal for revision' },
+    'motie' => { nl: 'Motie', fr: 'Motion', de: 'Antrag', en: 'Motion' },
+    'advies' => { nl: 'Advies', fr: 'Avis', de: 'Gutachten', en: 'Opinion' },
+    'advies van de raad van state' => { nl: 'Advies van de Raad van State', fr: "Avis du Conseil d'État",
+                                        de: 'Gutachten des Staatsrates', en: 'Opinion of the Council of State' },
+    'erratum' => { nl: 'Erratum', fr: 'Erratum', de: 'Erratum', en: 'Erratum' },
+    'interpellatie' => { nl: 'Interpellatie', fr: 'Interpellation', de: 'Interpellation', en: 'Interpellation' },
+    'mondelinge vraag' => { nl: 'Mondelinge vraag', fr: 'Question orale', de: 'Mündliche Frage', en: 'Oral question' },
+    'schriftelijke vraag' => { nl: 'Schriftelijke vraag', fr: 'Question écrite', de: 'Schriftliche Frage', en: 'Written question' }
+  }.freeze
+
+  # Every stored form of a type: its key, its Dutch and French names, and the stored variant "voorstel_bijzondere_wet".
+  PARLIAMENTARY_TYPE_KEYS = PARLIAMENTARY_TYPE_LABELS.each_with_object({}) do |(key, labels), keys|
+    [key, labels[:nl], labels[:fr]].each { |name| keys[name.downcase] = key }
+  end.merge('voorstel bijzondere wet' => 'voorstel van bijzondere wet').freeze
+
+  def parliamentary_type_label(type, locale = I18n.locale)
+    shown = type.to_s.tr('_', ' ').squish
+    return nil if shown.empty?
+
+    labels = PARLIAMENTARY_TYPE_LABELS[PARLIAMENTARY_TYPE_KEYS[shown.downcase]]
+    labels ? labels.fetch(locale.to_s.to_sym, labels[:nl]) : shown.upcase_first
+  end
 
   # The type a parliamentary document reads as (owner's repair request of
   # 2026-10-21). Every Chamber document 001 of legislature 56 was stored

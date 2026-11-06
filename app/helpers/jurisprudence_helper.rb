@@ -212,10 +212,21 @@ module JurisprudenceHelper
     'vennootschapsrecht' => { nl: 'Vennootschapsrecht', fr: 'Droit des sociétés', de: 'Gesellschaftsrecht', en: 'Company law' }
   }.freeze
 
-  # A stored subject key's name in the interface language; an unknown key as it stands, humanised.
-  def subject_matter_label(key, locale = I18n.locale)
-    labels = SUBJECT_LABELS[key.to_s]
-    labels ? labels.fetch(locale.to_sym, labels[:nl]) : key.to_s.humanize
+  # The stored subjects are names, mostly Dutch ("Burgerlijk recht", "Handelsrecht", "Overige - Strafrecht"), not the
+  # keys the filter sends; Sol, on live 1.1.19, saw the English site's badges in Dutch. A key, or the Dutch or French name
+  # of one of the eight subjects, is shown in the interface language; any other stored name as it stands.
+  SUBJECT_KEYS_BY_NAME = SUBJECT_LABELS.each_with_object({}) do |(key, labels), names|
+    names[key] = key
+    [labels[:nl], labels[:fr]].each { |name| names[name.downcase] = key }
+  end.freeze
+
+  # A stored subject, key or name, in the interface language; anything else as it stands.
+  def subject_matter_label(subject, locale = I18n.locale)
+    key = SUBJECT_KEYS_BY_NAME[subject.to_s.strip.downcase]
+    return subject.to_s.include?('_') ? subject.to_s.humanize : subject.to_s.strip unless key
+
+    labels = SUBJECT_LABELS.fetch(key)
+    labels.fetch(locale.to_sym, labels[:nl])
   end
 
   PARLIAMENT_LABELS = {

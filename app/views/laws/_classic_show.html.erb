@@ -47,7 +47,12 @@
   · <a href="<%= laws_path %>"><%= t(:back_to_list) %></a>
   <% end %>
   <% if @law.respond_to?(:numac) %>
-    · <a href="https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=nl&la=N&cn=<%= @law.date.to_s.gsub('-','') %>&table_name=wet" target="_blank" rel="nofollow">Justel</a>
+    <%# The law's own Justel address (ELI), as in the table above. The quick link built a change_lg.pl address from the
+        date alone, always Dutch, which opens no record (open-items.md #56, 2026007951). %>
+    <% justel_href = @law.try(:justel).presence %>
+    <% if justel_href && justel_href != 'N/A' %>
+    · <a href="<%= justel_href %>" target="_blank" rel="nofollow" data-classic-justel-link>Justel</a>
+    <% end %>
     · <a href="https://www.ejustice.just.fgov.be/cgi_loi/loi_a1.pl?DETAIL=<%= @law.date.to_s.gsub('-','') %>%2F<%= @law.numac %>&caller=list&row_id=1&numero=1&ression=1&cn=<%= @law.date.to_s.gsub('-','') %>&table_name=wet&nm=<%= @law.numac %>&la=N&language=nl&fromtab=wet&nl=n&sql=numac+%3D+'<%= @law.numac %>'&tri=dd+AS+RANK+&tession=N&ression=n&imagession=on" target="_blank" rel="nofollow">Reflex</a>
   <% end %>
 </p>

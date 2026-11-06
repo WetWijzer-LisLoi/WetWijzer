@@ -268,6 +268,15 @@ export default class extends Controller {
     }
   }
 
+  // Escape with the focus inside the list (a suggestion or "Bekijk alle" reached by Tab) closes it and returns to
+  // the field, the query kept. It left the list open (Sol, on live 1.1.19, 14:26:18Z).
+  handleResultsKeydown(event) {
+    if (event.key !== 'Escape') return
+    event.preventDefault()
+    this.hideResults()
+    this.inputTarget.focus()
+  }
+
   highlightItem(items) {
     items.forEach((el, i) => {
       el.classList.toggle('gs-item-active', i === this.selectedIndex)

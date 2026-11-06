@@ -10,23 +10,34 @@
     centred one-line child (the judgment's masthead) to the start; a justified
     paragraph's last line starts naturally without it. These rules are
     unlayered, so they win over the stylesheet's @layer base without an asset
-    build. %>
+    build.
+    Wide (owner's request of 2026-11-06, via Sol): at 1,550 px the 80 characters
+    used 690 of the card's 1,456 px. From 80rem the text is 64rem wide unless
+    the reader chose Comfortable (reading_width_controller.js), and the column
+    is centred at both widths. The choice shows only from 80rem and only with
+    JavaScript; below 80rem both widths are the same. %>
 <% content_for :head do %>
 <style>
   .reading-body {
     max-width: 80ch;
+    margin-inline: auto;
     text-align: start;
     hyphens: auto;
     -webkit-hyphens: auto;
     overflow-wrap: break-word;
   }
   .article-content { text-align: start; }
+  .reading-width-control { display: none; }
   @media (min-width: 40rem) {
     .reading-body,
     .article-content {
       text-align: justify;
       text-justify: inter-word;
     }
+  }
+  @media (min-width: 80rem) {
+    .reading-body:not([data-reading-width="comfortable"]) { max-width: min(100%, 64rem); }
+    .reading-width-control:not([hidden]) { display: inline-flex; }
   }
 </style>
 <% end %>

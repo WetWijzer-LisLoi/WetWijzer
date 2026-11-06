@@ -335,7 +335,7 @@
             class: "w-full min-h-[46px] rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:placeholder-gray-400 shadow-sm focus:border-(--accent-500) focus:ring-(--accent-500) dark:focus:border-sky dark:focus:ring-sky text-sm sm:text-base py-2.5 px-4",
             data: { global_search_target: "input", action: "input->global-search#search keydown->global-search#handleKeydown" }
           %>
-          <div class="gs-dropdown hidden" data-global-search-target="results"></div>
+          <div class="gs-dropdown hidden" data-global-search-target="results" data-action="keydown->global-search#handleResultsKeydown"></div>
         </div>
         <%= form.submit t(:search), class: "min-h-[46px] px-5 sm:px-6 py-2.5 bg-(--accent-600-solid) hover:bg-(--accent-700-solid) text-white font-semibold rounded-lg shadow-sm cursor-pointer transition-colors duration-200 text-sm whitespace-nowrap" %>
       </div>

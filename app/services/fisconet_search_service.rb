@@ -57,7 +57,9 @@ class FisconetSearchService
   # Numac prefix for all Fisconet legislation
   FISCONET_PREFIX = 'FISCONET_'
 
-  # Known publication dates for major Belgian tax codes (fallback when DB field is empty)
+  # The date of each tax code's act (the Royal Decree or law that made it), not its publication: the WIB 92 decree is
+  # of 10 April 1992, published 30 July 1992 (official_publication_date). The keys below still say publication_date
+  # where the service hands them on; the page labels them as the act's date.
   KNOWN_TAX_DATES = {
     'WIB 92' => Date.new(1992, 4, 10),
     'KB/WIB 92' => Date.new(1993, 8, 27),
@@ -80,6 +82,16 @@ class FisconetSearchService
     'W.Succ.' => '1936033102',
     'W.Reg.' => '1939113002'
   }.freeze
+
+  # The Moniteur publication date of a tax code's official text, as the Justel contents row stores it
+  # ("30 juli 1992"); nil without a real numac or a row.
+  def self.official_publication_date(numac_real, language_id)
+    return nil if numac_real.blank?
+
+    Content.where(legislation_numac: numac_real.to_s, language_id: language_id.to_i).pick(:publication_date).presence
+  rescue ActiveRecord::ActiveRecordError
+    nil
+  end
 
   # Check whether a numac belongs to Fisconet
   def self.fisconet_numac?(numac)

@@ -34,9 +34,22 @@
       <dt class="font-medium text-gray-500 dark:text-gray-400 tracking-wide"><%= I18n.locale == :fr ? 'Statut' : 'Status' %></dt>
       <dd class="mt-1">
         <% if law.respond_to?(:is_abolished) && law.is_abolished == 1 %>
-          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 metadata-status-badge"><%= case I18n.locale when :fr then 'Abrogé' when :de then 'Aufgehoben' when :en then 'Repealed' else 'Opgeheven' end %></span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 metadata-status-badge" data-law-status="repealed"><%= case I18n.locale when :fr then 'Abrogé' when :de then 'Aufgehoben' when :en then 'Repealed' else 'Opgeheven' end %></span>
+        <% elsif (entry_status = entry_into_force_status(content&.effective_date)) && entry_status != :in_force %>
+          <%# What the stored dates of entry into force say (LawsHelper#entry_into_force_status); a line it cannot read
+              keeps the badge below. %>
+          <% badge_class, badge_text = {
+               pending: ['bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+                         { fr: 'Pas encore en vigueur', de: 'Noch nicht in Kraft', en: 'Not yet in force', nl: 'Nog niet van kracht' }],
+               partial: ['bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+                         { fr: 'Partiellement en vigueur', de: 'Teilweise in Kraft', en: 'Partly in force', nl: 'Gedeeltelijk van kracht' }],
+               unset: ['bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+                       { fr: 'Entrée en vigueur indéterminée', de: 'Inkrafttreten unbestimmt', en: 'Entry into force not set',
+                         nl: 'Inwerkingtreding niet bepaald' }]
+             }.fetch(entry_status) %>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium <%= badge_class %> metadata-status-badge" data-law-status="<%= entry_status %>"><%= badge_text.fetch(I18n.locale, badge_text[:nl]) %></span>
         <% else %>
-          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 metadata-status-badge"><%= case I18n.locale when :fr then 'En vigueur' when :de then 'In Kraft' when :en then 'In force' else 'Van kracht' end %></span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 metadata-status-badge" data-law-status="in-force"><%= case I18n.locale when :fr then 'En vigueur' when :de then 'In Kraft' when :en then 'In force' else 'Van kracht' end %></span>
         <% end %>
       </dd>
     </div>

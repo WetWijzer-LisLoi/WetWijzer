@@ -149,7 +149,7 @@ xml.rss version: '2.0', 'xmlns:atom' => 'http://www.w3.org/2005/Atom' do
         description << "<strong>#{category}</strong>"
         description << " – #{ERB::Util.html_escape(String.new(parliament_label.to_s))}"
         description << "<br>#{ERB::Util.html_escape(String.new(doc[:dossier_number].to_s))}" if doc[:dossier_number].present?
-        description << " (#{ERB::Util.html_escape(String.new(doc[:document_type].to_s))})" if doc[:document_type].present?
+        description << " (#{ERB::Util.html_escape(String.new(parliamentary_type_label(doc[:document_type]).to_s))})" if doc[:document_type].present?
         if doc[:document_date].present?
           label = %i[fr en].include?(I18n.locale) ? 'Date' : 'Datum'
           description << "<br>#{label}: #{ERB::Util.html_escape(String.new(doc[:document_date].to_s))}"

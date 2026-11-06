@@ -67,7 +67,7 @@
           <% version_label = law_language_label(version_id) %>
           <%= link_to law_path(@law, language_id: version_id),
                       class: "source-detail-action inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
-                      data: { law_language_version: version_label },
+                      data: { law_language_version: version_label, controller: 'language-version', action: 'language-version#follow' },
                       title: t('german_text.show_version', language: version_label) do %>
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
@@ -79,6 +79,7 @@
         <%# Language switch link %>
         <% other_language_id = @language_id == 1 ? 2 : 1 %>
         <%= link_to law_path(@law, language_id: other_language_id),
+                    data: { controller: 'language-version', action: 'language-version#follow' },
                     class: "source-detail-action inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
                     title: case I18n.locale when :fr then (@language_id == 1 ? "Voir la version française" : "Voir la version néerlandaise") when :de then (@language_id == 1 ? "Französische Version anzeigen" : "Niederländische Version anzeigen") when :en then (@language_id == 1 ? "View French version" : "View Dutch version") else (@language_id == 1 ? "Bekijk de Franstalige versie" : "Bekijk de Nederlandstalige versie") end do %>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -90,7 +91,10 @@
         <%# Side by side comparison link: NL against FR, so not for a law the
             German site holds in German only %>
         <% if !german_site? || Array(@language_versions).intersect?(HasLanguage::SITE_LANGUAGE_IDS) %>
+        <%# The article in the address bar goes to the comparison and back (language_version_controller.js; Sol
+            14:02:16Z: Vergelijk then Terug left Art. 8.34 some 10,900 px below). %>
         <%= link_to compare_law_path(@law, return_language: @law.language_id),
+                    data: { controller: 'language-version', action: 'language-version#follow' },
                     class: "source-detail-action inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
                     title: case I18n.locale when :fr then "Comparer NL et FR côte à côte" when :de then "NL und FR nebeneinander vergleichen" when :en then "Compare NL and FR side by side" else "NL en FR naast elkaar vergelijken" end do %>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

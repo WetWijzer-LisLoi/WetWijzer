@@ -249,7 +249,7 @@
                 </span>
                 <% if doc[:document_type].present? %>
                   <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-                    <%= doc[:document_type].gsub('_', ' ').capitalize %>
+                    <%= parliamentary_type_label(doc[:document_type]) %>
                   </span>
                 <% end %>
                 <% if doc[:dossier_status].present? %>
@@ -277,7 +277,9 @@
             
             <%# Document title – pass full doc for content-based extraction when title is generic %>
             <% cleaned_title = clean_parliamentary_title_display(doc[:title], doc[:dossier_number], doc: doc) %>
-            <h3 class="font-semibold text-gray-900 dark:text-blue-400 text-base group-hover:text-(--accent-600) dark:group-hover:text-(--accent-400) transition-colors mb-1.5 line-clamp-2 [overflow-wrap:anywhere]">
+            <%# The list holds the documents of one language (ParliamentaryRelations.document_language); the title is theirs
+                (Sol, on live 1.1.19: a French title under the German page's lang). %>
+            <h3 class="font-semibold text-gray-900 dark:text-blue-400 text-base group-hover:text-(--accent-600) dark:group-hover:text-(--accent-400) transition-colors mb-1.5 line-clamp-2 [overflow-wrap:anywhere]" lang="<%= ParliamentaryRelations.document_language %>">
               <%= cleaned_title %>
             </h3>
 
