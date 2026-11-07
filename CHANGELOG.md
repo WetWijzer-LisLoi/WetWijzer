@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.27] - 2026-11-07
+
+### Fixed
+- Judgments: a list the text writes with dashes shows an en dash before each item; 1.1.26 showed two wrong characters instead.
+- Judgments: a paragraph on a line longer than 240 characters stands apart from the next sentence in every text, also when few of the text's lines are long; it was joined to the sentence after it.
+- Case law: a part of a subject that WetWijzer does not know is shown as stored and no longer claims a language; 1.1.26 gave it the language of the names beside it.
+
 ## [1.1.26] - 2026-11-07
 
 ### Fixed

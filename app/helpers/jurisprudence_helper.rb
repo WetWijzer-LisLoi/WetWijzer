@@ -274,22 +274,16 @@ module JurisprudenceHelper
   end
 
   # A stored subject, key, name or names joined by " - ", in the interface language; a part that is not known stays as
-  # it stands.
+  # it stands, except a filter key with underscores, which is humanized ("onbekend_vak": "Onbekend vak").
   def subject_matter_label(subject, locale = I18n.locale)
     subject.to_s.strip.split(/\s+-\s+/).map { |part| subject_matter_segment(part, locale).first }.join(' - ')
   end
 
-  # The same for a badge, with the language of a part that stays as stored: the language of the known names beside it
-  # when they are all written in one, otherwise none (Sol 07:04:06Z: a Dutch name inherited the English page's lang).
+  # The same for a badge. A part that is not a known name stays as stored and claims no language: 1.1.26 gave it the
+  # language of the known names beside it, which proves nothing about the part itself (Sol 15:16:25Z: a Dutch name
+  # beside an English one would have said nl). Every name measured on production is known, so this is the rare case.
   def subject_matter_badge(subject, locale = I18n.locale)
-    parts = subject.to_s.strip.split(/\s+-\s+/)
-    written = parts.filter_map { |part| SUBJECT_NAME_LOOKUP[part.strip.downcase]&.last }.uniq
-    source = written.one? ? written.first : nil
-    pieces = parts.map do |part|
-      text, unknown = subject_matter_segment(part, locale)
-      unknown && source ? content_tag(:span, text, lang: source) : text
-    end
-    safe_join(pieces, ' - ')
+    ERB::Util.html_escape(subject_matter_label(subject, locale))
   end
 
   PARLIAMENT_LABELS = {

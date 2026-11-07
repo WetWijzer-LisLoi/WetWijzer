@@ -27,7 +27,9 @@
   .reading-measure[data-reading-width="wide"] { max-width: min(100%, 64rem); }
   .reading-measure[data-reading-width="comfortable"] { max-width: min(100%, 80ch); }
   /* A judgment's list the source writes with dashes keeps them (ParliamentaryHelper, Sol 08:17:34Z). */
-  .reading-body ul[data-list-marker="dash"] { list-style-type: "3  "; }
+  /* The marker is a literal EN DASH (U+2013) and a space; 1.1.26 wrote it as an escape that the edit turned into
+     U+0081 and a "3" (Sol, on live 1.1.26, 15:16:25Z). */
+  .reading-body ul[data-list-marker="dash"] { list-style-type: "– "; }
   .article-content { text-align: start; }
   .reading-width-control { display: none; }
   @media (min-width: 40rem) {

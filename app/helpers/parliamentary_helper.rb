@@ -1028,7 +1028,11 @@ module ParliamentaryHelper
             previous_plain = stripped
             next
           end
-          if one_line_paragraphs && current_para.any? && previous_plain.to_s.match?(JURISPRUDENCE_SENTENCE_END) &&
+          # A line longer than two of a PDF's wrapped lines rejoined (240 characters) is a whole paragraph in any text,
+          # also below the one-line threshold (Sol 15:16:25Z: an invented text with 2 long lines of 9 welded the next
+          # sentence onto one); in a PDF's text this follows only an odd long line, and only there.
+          paragraph_line = one_line_paragraphs || previous_plain.to_s.length > 240
+          if paragraph_line && current_para.any? && previous_plain.to_s.match?(JURISPRUDENCE_SENTENCE_END) &&
              stripped.match?(/\A[“"‘'(«]?[[:upper:]]/)
             flush_para.call
           end
