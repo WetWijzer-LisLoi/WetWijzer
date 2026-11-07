@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.28] - 2026-11-07
+
+### Fixed
+- Header: Escape on a colour in the accent-colour picker returns the focus to the button that opened it. 1.1.26 meant to do this but focused the first colour instead, hidden with the picker, so the focus still fell to the page.
+
 ## [1.1.27] - 2026-11-07
 
 ### Fixed

@@ -61,7 +61,10 @@ export default class extends Controller {
     const inside = this.element.contains(document.activeElement)
     this.close()
     if (!inside) return
-    const opener = this.hasButtonTarget ? this.buttonTarget : this.element.querySelector('button[data-action*="theme-selector#toggle"]')
+    // The opener is the button that toggles the picker. The controller's "button" targets are the colour swatches:
+    // 1.1.26 focused the first of them, inside the panel it had just hidden, and the focus fell to the page (Sol, on
+    // live 1.1.26, 15:36:13Z).
+    const opener = this.element.querySelector('button[data-action*="theme-selector#toggle"]')
     opener?.focus()
   }
 
