@@ -22,13 +22,37 @@ const INACTIVE = ['border-transparent', 'text-gray-500', 'hover:text-(--accent-t
 export default class extends Controller {
   static targets = ["tab", "panel"]
 
+  // The chosen tab is kept in this page's own history entry, beside Turbo's restoration data, so Back to the page
+  // shows it again (Sol, on live 1.1.21, 20:39:16Z: Back from Recent legislation's View all reopened the first tab).
+  // Nothing is stored in the browser beyond that entry, and the address does not change.
   connect() {
-    this.showPanel(0)
+    const kept = window.history?.state?.[this.historyKey()]
+    this.showPanel(Number.isInteger(kept) && kept >= 0 && kept < this.tabTargets.length ? kept : 0)
   }
 
   select(event) {
     const index = parseInt(event.currentTarget.dataset.tabIndex, 10)
     this.showPanel(index)
+    try {
+      window.history.replaceState({ ...(window.history.state || {}), [this.historyKey()]: index }, '')
+    } catch (_) { /* the tab still shows; Back then opens the first */ }
+  }
+
+  // The tab list as one Tab stop, the arrows moving between tabs and selecting as they go (WAI-ARIA tabs, automatic
+  // activation; Sol, on live 1.1.21, 22:06:23Z: every tab was a Tab stop and the arrows did nothing).
+  keydown(event) {
+    const current = this.tabTargets.findIndex(tab => tab.getAttribute('aria-selected') === 'true')
+    const last = this.tabTargets.length - 1
+    const next = { ArrowRight: current + 1, ArrowLeft: current - 1, Home: 0, End: last }[event.key]
+    if (next === undefined || last < 0) return
+    event.preventDefault()
+    const index = (next + last + 1) % (last + 1)
+    this.select({ currentTarget: this.tabTargets[index] })
+    this.tabTargets[index].focus?.()
+  }
+
+  historyKey() {
+    return `tabs:${this.element.id || 'tabs'}`
   }
 
   showPanel(index) {
@@ -37,6 +61,7 @@ export default class extends Controller {
       tab.classList.remove(...(on ? INACTIVE : ACTIVE))
       tab.classList.add(...(on ? ACTIVE : INACTIVE))
       tab.setAttribute('aria-selected', on ? 'true' : 'false')
+      tab.setAttribute('tabindex', on ? '0' : '-1')
       // Clear the inline styles earlier versions painted, so a page that was
       // rendered before this change does not keep an unhoverable tab.
       tab.style.borderBottomColor = ''

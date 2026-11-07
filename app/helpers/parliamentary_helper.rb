@@ -1135,6 +1135,8 @@ module ParliamentaryHelper
     'advies van de raad van state' => { nl: 'Advies van de Raad van State', fr: "Avis du Conseil d'État",
                                         de: 'Gutachten des Staatsrates', en: 'Opinion of the Council of State' },
     'erratum' => { nl: 'Erratum', fr: 'Erratum', de: 'Erratum', en: 'Erratum' },
+    # 24 stored rows on 2026-11-06; on gesetzguide.be dossier 56-1683 showed it in Dutch (Sol 21:35:15Z).
+    'aangenomen tekst' => { nl: 'Aangenomen tekst', fr: 'Texte adopté', de: 'Angenommener Text', en: 'Adopted text' },
     'interpellatie' => { nl: 'Interpellatie', fr: 'Interpellation', de: 'Interpellation', en: 'Interpellation' },
     'mondelinge vraag' => { nl: 'Mondelinge vraag', fr: 'Question orale', de: 'Mündliche Frage', en: 'Oral question' },
     'schriftelijke vraag' => { nl: 'Schriftelijke vraag', fr: 'Question écrite', de: 'Schriftliche Frage', en: 'Written question' }

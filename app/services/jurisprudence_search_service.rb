@@ -22,14 +22,15 @@ class JurisprudenceSearchService
     # @param sort [String] Sort order: date_desc, date_asc
     # @return [SearchResult] Struct with :results array and :total_count
     def search(query: nil, court: nil, year: nil, subject: nil, locale: I18n.locale,
-               search_body: false, date_from: nil, date_to: nil,
+               search_body: false, date_from: nil, date_to: nil, metadata_only: false,
                page: 1, per_page: DEFAULT_PER_PAGE, sort: 'date_desc')
       return SearchResult.new(results: [], total_count: 0) unless db_path_exists?
 
       db = connection
       conditions, bind_params = build_conditions(db, query, court, year, locale, subject: subject,
                                                                                  search_body: search_body,
-                                                                                 date_from: date_from, date_to: date_to)
+                                                                                 date_from: date_from, date_to: date_to,
+                                                                                 metadata_only: metadata_only)
 
       where_clause = conditions.any? ? "WHERE #{conditions.join(' AND ')}" : ''
 
@@ -95,8 +96,11 @@ class JurisprudenceSearchService
       end
     end
 
+    # The full-text columns a metadata-only search reads: every one of cases_fts but the decision text.
+    METADATA_FTS_COLUMNS = '{case_number court summary subject_matter appellant}'
+
     def build_conditions(db, query, court, year, locale, subject: nil, search_body: false,
-                         date_from: nil, date_to: nil)
+                         date_from: nil, date_to: nil, metadata_only: false)
       conditions = []
       bind_params = []
 
@@ -104,8 +108,9 @@ class JurisprudenceSearchService
         fts_query = query.scan(/\p{Word}+/).map { |t| %("#{t}") }.join(' ')
         if fts5_available?(db) && fts_query.present?
           # Quote each token so FTS5 punctuation is literal text, not operators.
+          # metadata_only (the case-law box unticked): every full-text column but the decision text.
           conditions << 'cases.id IN (SELECT rowid FROM cases_fts WHERE cases_fts MATCH ?)'
-          bind_params << fts_query
+          bind_params << (metadata_only ? "#{METADATA_FTS_COLUMNS} : (#{fts_query})" : fts_query)
         elsif search_body
           # LIKE fallback with body search enabled
           conditions << '(case_number LIKE ? OR court LIKE ? OR full_text LIKE ?)'

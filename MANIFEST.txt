@@ -199,6 +199,7 @@ app/javascript/utils/article_fragment.js
 app/javascript/utils/focus_trap.js
 app/javascript/utils/frame_missing_fallback.js
 app/javascript/utils/locale.js
+app/javascript/utils/reveal_target.js
 app/javascript/utils/settle_scroll.js
 app/javascript/utils/strict_date.js
 app/javascript/utils/toast.js
@@ -820,6 +821,7 @@ public/vite/.vite/manifest.json
 public/vite/assets/application--xCmOLOB.js
 public/vite/assets/application-B-eVfOr8.js
 public/vite/assets/application-B-pm7Ghm.js
+public/vite/assets/application-B1IuKVN2.js
 public/vite/assets/application-B1QhQZLl.js
 public/vite/assets/application-B1WoaPgs.css
 public/vite/assets/application-B1YwDGSQ.css

@@ -8,6 +8,17 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.23] - 2026-11-07
+
+### Fixed
+- Case law: "Search in the decision text" decides what is searched. It starts ticked, which searches the decision text as every search did; unticked, only the case number, court, summary, subject and parties are searched. The box changed nothing, and its help said the default was the case number and court only.
+- Search: after Back, the search and filter forms show the choices of the results on the page, not those of the next search; source boxes came back unticked and filters showed later selections.
+- Homepage: Back returns to the source tab the reader was on; the tabs are one keyboard stop, and the arrow keys, Home and End move between them.
+- Law comparison: it opens at the article the reader came from, and its Back link keeps that article after the comparison's own contents were used.
+- Law pages: a link to an article inside a folded section opens the section.
+- Classic: the link back to the modern site keeps the date filters and the source choice.
+- Parliamentary documents: the type "aangenomen tekst" is named in the interface language ("Texte adopté", "Angenommener Text", "Adopted text").
+
 ## [1.1.22] - 2026-11-06
 
 ### Fixed

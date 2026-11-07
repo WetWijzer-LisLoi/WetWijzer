@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 import { prefs } from "../services/preferences_store"
 import { settleOnTarget } from "../utils/settle_scroll.js"
+import { revealCollapsedAncestors } from "../utils/reveal_target.js"
 
 /**
  * TOC Tracker Controller
@@ -680,6 +681,15 @@ export default class extends Controller {
    * Handle URL hash changes to immediately activate matching TOC link
    */
   handleHashChange() {
+    // A target inside a folded section is shown first (utils/reveal_target.js), then put back at the top, as the
+    // opened sections moved it.
+    try {
+      const id = decodeURIComponent((window.location.hash || '').slice(1))
+      const target = id && document.getElementById(id)
+      if (target && revealCollapsedAncestors(target) > 0) {
+        target.scrollIntoView({ behavior: 'auto', block: 'start', inline: 'nearest' })
+      }
+    } catch (_) { /* a malformed hash shows nothing new */ }
     // Allow hash-based activation regardless of tracking state so manual navigation still highlights
     this.activateByHash(window.location.hash)
   }

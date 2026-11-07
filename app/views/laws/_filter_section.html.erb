@@ -339,11 +339,15 @@
         <h4 class="<%= filters_heading_classes %> mt-4"><%= t(:search_scope_title) %></h4>
         <div class="filters-group">
           <div class="flex items-center gap-2">
-            <%= form.check_box :juris_search_body, { include_hidden: false, checked: params[:juris_search_body] == '1', class: form_checkbox_classes } %>
+            <%# The decision text is searched unless the reader unticks this (the search always read it through cases_fts,
+                whatever the box said, and the help promised "case number and court only": Sol, on live 1.1.16 and
+                1.1.21). The marker tells an unticked box from a form that did not send it. %>
+            <%= hidden_field_tag :juris_scope_present, '1', id: nil %>
+            <%= form.check_box :juris_search_body, { include_hidden: false, checked: juris_search_body_checked?, class: form_checkbox_classes } %>
             <%= form.label :juris_search_body, (case I18n.locale when :fr then 'Rechercher dans le texte de la decision' when :de then 'Im Entscheidungstext suchen' when :en then 'Search in the decision text' else 'Zoeken in de tekst van de uitspraak' end), class: form_inline_label_classes %>
           </div>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            <%= case I18n.locale when :fr then 'Par defaut : numero de role et juridiction uniquement.' when :de then 'Standard: Nur Rollennummer und Gericht.' when :en then 'Default: case number and court only.' else 'Standaard: alleen rolnummer en gerecht.' end %>
+            <%= case I18n.locale when :fr then "Décoché : seulement le numéro de rôle, la juridiction, le résumé, la matière et les parties." when :de then 'Abgewählt: nur Rollennummer, Gericht, Zusammenfassung, Rechtsgebiet und Parteien.' when :en then 'Unticked: only the case number, court, summary, subject and parties.' else 'Uitgevinkt: alleen rolnummer, gerecht, samenvatting, rechtsgebied en partijen.' end %>
           </p>
         </div>
       </div>

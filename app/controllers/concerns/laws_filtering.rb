@@ -3,6 +3,10 @@
 module LawsFiltering
   extend ActiveSupport::Concern
 
+  included do
+    helper_method :juris_search_body_checked?
+  end
+
   private
 
   CLASSIC_FILTER_KEYS = %w[constitution law decree ordinance decision misc lang_nl lang_fr lang_de].freeze
@@ -201,7 +205,8 @@ module LawsFiltering
       year: params[:juris_year],
       subject: params[:juris_subject],
       locale: locale,
-      search_body: params[:juris_search_body] == '1',
+      search_body: juris_search_body_checked?,
+      metadata_only: !juris_search_body_checked?,
       date_from: params[:juris_date_from],
       date_to: params[:juris_date_to],
       page: page,
@@ -270,6 +275,11 @@ module LawsFiltering
 
     # If type params exist, at least one must be '1'
     %i[constitution law decree ordinance decision misc].any? { |k| params_hash[k] == '1' }
+  end
+
+  # The case-law "search in the decision text" box: ticked unless a form that showed it came back without it.
+  def juris_search_body_checked?
+    params[:juris_scope_present].present? ? params[:juris_search_body] == '1' : true
   end
 
   def languages_selected?(params_hash)

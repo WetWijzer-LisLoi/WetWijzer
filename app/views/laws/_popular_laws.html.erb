@@ -137,8 +137,8 @@
           sixteen accent themes have a 600 under 4.5:1 on that wash (green
           3.14:1, teal 3.59:1, rose 4.27:1), so each theme picks 600 or 700
           in _accent.scss. Dark keeps --accent-400, which passes everywhere. %>
-      <div role="tablist" class="flex -mb-px px-4 overflow-x-auto scrollbar-thin" aria-label="<%= t('popular_laws.source_tabs') %>">
-        <button type="button" role="tab" id="popular-laws-tab-0" aria-controls="popular-laws-panel-0" aria-selected="true"
+      <div role="tablist" class="flex -mb-px px-4 overflow-x-auto scrollbar-thin" aria-label="<%= t('popular_laws.source_tabs') %>" data-action="keydown->tabs#keydown">
+        <button type="button" role="tab" id="popular-laws-tab-0" aria-controls="popular-laws-panel-0" aria-selected="true" tabindex="0"
                 data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="0"
                 class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-50) dark:hover:bg-(--accent-400)/10 border-(--accent-500) text-(--accent-text) dark:text-(--accent-400)">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,7 +146,7 @@
           </svg>
           <%= t('popular_laws.title') %>
         </button>
-        <button type="button" role="tab" id="popular-laws-tab-1" aria-controls="popular-laws-panel-1" aria-selected="false"
+        <button type="button" role="tab" id="popular-laws-tab-1" aria-controls="popular-laws-panel-1" aria-selected="false" tabindex="-1"
                 data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="1"
                 class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-50) dark:hover:bg-(--accent-400)/10 border-transparent text-gray-500 hover:text-(--accent-text) hover:border-(--accent-400)/60 dark:text-gray-400 dark:hover:text-(--accent-400) dark:hover:border-(--accent-400)/60">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,7 +155,7 @@
           <%= case I18n.locale when :fr then 'Législation récente' when :de then 'Neue Gesetzgebung' when :en then 'Recent legislation' else 'Recente wetgeving' end %>
         </button>
         <%# Jurisprudence tab (public since June 2026) %>
-        <button type="button" role="tab" id="popular-laws-tab-2" aria-controls="popular-laws-panel-2" aria-selected="false"
+        <button type="button" role="tab" id="popular-laws-tab-2" aria-controls="popular-laws-panel-2" aria-selected="false" tabindex="-1"
                 data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="2"
                 class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-50) dark:hover:bg-(--accent-400)/10 border-transparent text-gray-500 hover:text-(--accent-text) hover:border-(--accent-400)/60 dark:text-gray-400 dark:hover:text-(--accent-400) dark:hover:border-(--accent-400)/60">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,7 +163,7 @@
           </svg>
           <%= case I18n.locale when :fr then 'Jurisprudence récente' when :de then 'Aktuelle Rechtsprechung' when :en then 'Recent case law' else 'Recente rechtspraak' end %>
         </button>
-        <button type="button" role="tab" id="popular-laws-tab-3" aria-controls="popular-laws-panel-3" aria-selected="false"
+        <button type="button" role="tab" id="popular-laws-tab-3" aria-controls="popular-laws-panel-3" aria-selected="false" tabindex="-1"
                 data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="3"
                 class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-50) dark:hover:bg-(--accent-400)/10 border-transparent text-gray-500 hover:text-(--accent-text) hover:border-(--accent-400)/60 dark:text-gray-400 dark:hover:text-(--accent-400) dark:hover:border-(--accent-400)/60">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,7 +171,7 @@
           </svg>
           <%= case I18n.locale when :fr then 'Travaux parlementaires récents' when :de then 'Aktuelle parlamentarische Dokumente' when :en then 'Recent parliamentary work' else 'Recente parlementaire stukken' end %>
         </button>
-        <button type="button" role="tab" id="popular-laws-tab-4" aria-controls="popular-laws-panel-4" aria-selected="false"
+        <button type="button" role="tab" id="popular-laws-tab-4" aria-controls="popular-laws-panel-4" aria-selected="false" tabindex="-1"
                 data-tabs-target="tab" data-action="click->tabs#select" data-tab-index="4"
                 class="px-4 py-3 text-sm font-medium border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors hover:bg-(--accent-50) dark:hover:bg-(--accent-400)/10 border-transparent text-gray-500 hover:text-(--accent-text) hover:border-(--accent-400)/60 dark:text-gray-400 dark:hover:text-(--accent-400) dark:hover:border-(--accent-400)/60">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -8,9 +8,13 @@ require 'cgi'
 # allowlisted subset of the current request, never its raw query string.
 module ClassicHelper
   CLASSIC_THEMES = %w[system light dark].freeze
-  # The search and law parameters the Modern-page switch may carry.
+  # The search and law parameters the Modern-page switch may carry. The date filters and the other two source
+  # flags came in 1.1.23: Modern to Classic keeps the whole address, but the way back dropped them, so a search
+  # for legislation only between two dates came back for all three sources and every date (Sol, on live 1.1.21,
+  # 22:12:58Z).
   CLASSIC_SAFE_QUERY_KEYS = %w[title constitution law decree ordinance decision misc lang_nl lang_fr lang_de
-                               sort page per_page commit source_legislation].freeze
+                               sort page per_page commit source_legislation source_jurisprudence
+                               source_parliamentary date_from date_to].freeze
   CLASSIC_QUERY_VALUE_LIMIT = 200
   # The legal-text languages each site prefers, in order, when the current
   # one is not served there (the German site also serves German rows).

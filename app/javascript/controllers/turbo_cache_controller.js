@@ -30,6 +30,18 @@ export function reloadEmptyFrames(root) {
   });
 }
 
+// Turbo caches a page as it is when the reader leaves it, so a search form changed for the next search came back on
+// Back showing the next search's choices over this page's results (Sol, on live 1.1.21, 21:44:02Z: Kamer / Verslag /
+// Nederlands / 2026 results under four "Alle" selects; and earlier, source boxes unticked after Back). Every GET
+// form, which on this site is a search or filter form, is reset to what the server rendered for this page before
+// the snapshot. Other forms (the chat, account forms) keep what the reader typed.
+export function resetSearchForms(root) {
+  root.querySelectorAll('form').forEach(form => {
+    const method = (form.getAttribute('method') || 'get').toLowerCase();
+    if (method === 'get' && typeof form.reset === 'function') form.reset();
+  });
+}
+
 export default class extends Controller {
   connect() {
     // Listen for before-cache event to clean up before Turbo caches the page
@@ -51,6 +63,7 @@ export default class extends Controller {
    * Removes temporary states that shouldn't be cached
    */
   beforeCache = () => {
+    resetSearchForms(document);
     // Remove loading skeletons
     document.querySelectorAll('.loading-skeleton').forEach(el => {
       el.remove();

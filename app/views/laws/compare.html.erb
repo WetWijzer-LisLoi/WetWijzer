@@ -233,6 +233,11 @@
   articles_nl_arr = @articles_nl.to_a
   articles_fr_arr = @articles_fr.to_a
   max_articles = [articles_nl_arr.size, articles_fr_arr.size].max
+  # The reader's own article ids, in the language the reader came from (law_body_anchors, as the law page writes
+  # them): each comparison row carries its article's id, so /compare#art-8-34 lands on that row (Sol 21:25:18Z: it
+  # stayed at the heading, the row some 8,900 px below).
+  anchor_rows = params[:return_language].to_i == 2 ? articles_fr_arr : articles_nl_arr
+  row_anchors = law_body_anchors(anchor_rows).map { |anchor| anchor[:heading] ? nil : anchor[:id] }
   
   # Build TOC entries from section headings (LNK type)
   toc_entries_nl = []
@@ -317,7 +322,8 @@
     because the brand hosts share one file store and the block emits locale
     strings; laws_links_version for the document-number links in the text. %>
 <%# v4 (1.1.19): each column says its language; Sol, on live 1.1.16, found both under the page's lang="en". %>
-<% cache ["compare_articles", "v4", params[:numac], I18n.locale,
+<%# v5 (1.1.23): each row carries its article's id for the reader's language. %>
+<% cache ["compare_articles", "v5", params[:numac], I18n.locale, params[:return_language].to_i == 2 ? 2 : 1,
           rows_cache_version(articles_nl_arr), rows_cache_version(articles_fr_arr),
           laws_links_version, render_code_version], expires_in: 7.days do %>
 <% max_articles.times do |i| %>
@@ -325,6 +331,7 @@
   <% article_fr = articles_fr_arr[i] %>
   
   <div id="compare-row-<%= i %>" class="mb-2 scroll-mt-16">
+    <% if row_anchors[i].present? %><span id="<%= row_anchors[i] %>" class="block h-0 overflow-hidden scroll-mt-16" aria-hidden="true" data-compare-article-anchor></span><% end %>
     <%# Check if this is a section heading (LNK type) %>
     <% is_heading_nl = article_nl&.article_type == 'LNK' %>
     <% is_heading_fr = article_fr&.article_type == 'LNK' %>
