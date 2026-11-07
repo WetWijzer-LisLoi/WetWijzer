@@ -83,6 +83,11 @@ module LawsFiltering
     @jurisprudence_total_count = 0
     @parliamentary_results = []
     @parliamentary_total_count = 0
+    # Which sources were searched, and which did not finish, so the page can say "none found" or "not finished".
+    @jurisprudence_searched = search_jurisprudence
+    @parliamentary_searched = search_parliamentary
+    @jurisprudence_timed_out = false
+    @parliamentary_timed_out = false
 
     # Get legislation results (FiscoNet tax legislation is always included with Wetgeving)
     if search_legislation
@@ -152,6 +157,7 @@ module LawsFiltering
       rescue Timeout::Error
         @search_incomplete = true
         Rails.logger.warn('[SEARCH TIMEOUT] Jurisprudence search timed out')
+        @jurisprudence_timed_out = true
         @jurisprudence_results = []
         @jurisprudence_total_count = 0
       end
@@ -171,6 +177,7 @@ module LawsFiltering
       rescue Timeout::Error
         @search_incomplete = true
         Rails.logger.warn('[SEARCH TIMEOUT] Parliamentary search timed out')
+        @parliamentary_timed_out = true
         @parliamentary_results = []
         @parliamentary_total_count = 0
       end

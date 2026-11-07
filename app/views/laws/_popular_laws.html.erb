@@ -1521,7 +1521,9 @@
                       <% section['entries'].each do |entry| %>
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                           <%# A standalone Act's section links into that Act (old_numac); the old Civil Code's by article range. %>
-                          <td class="py-1.5 pr-3 font-mono text-xs text-gray-600 dark:text-gray-400"><%= section['old_numac'].present? ? linkify_concordance_article(entry[0], section['old_numac']) : linkify_concordance_article_bw_old(entry[0]) %></td>
+                          <td class="py-1.5 pr-3 font-mono text-xs text-gray-600 dark:text-gray-400"><%= if section['old_numac'].blank? then linkify_concordance_article_bw_old(entry[0])
+                                elsif law_holds_articles?(section['old_numac']) then linkify_concordance_article(entry[0], section['old_numac'])
+                                else concordance_record_only_link(entry[0], section['old_numac']) end %></td>
                           <td class="py-1.5 font-mono text-xs font-semibold text-(--accent-text) dark:text-(--accent-400)"><%= linkify_concordance_article(entry[1], bw_new_numac, old_article: entry[0], book_by_number: bw_book_by_number) %></td>
                         </tr>
                       <% end %>

@@ -510,6 +510,7 @@ app/views/laws/_related_sources_content.html.erb
 app/views/laws/_search_hints.html.erb
 app/views/laws/_search_results.html.erb
 app/views/laws/_sort_dropdown.html.erb
+app/views/laws/_source_empty_state.html.erb
 app/views/laws/_title.html.erb
 app/views/laws/_toc.html.erb
 app/views/laws/_toc_opener.html.erb
@@ -887,6 +888,7 @@ public/vite/assets/application-CzS3DFdH.css
 public/vite/assets/application-CzxfxDkz.js
 public/vite/assets/application-D2Zf7JcF.js
 public/vite/assets/application-D5IORe4o.css
+public/vite/assets/application-D5oEptVa.js
 public/vite/assets/application-D6iDaEmU.js
 public/vite/assets/application-D9JiV3Xz.css
 public/vite/assets/application-DAMLj1vG.js

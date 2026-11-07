@@ -17,8 +17,11 @@
   <%= form.hidden_field :lang_fr, value: (fr_checked ? '1' : '0'), id: nil unless explicit_lang %>
   <%= form.hidden_field :lang_de, value: '1', id: nil if german_site? && !explicit_lang %>
 
+    <%# The heading and the first three columns are legislation's own (types, status, languages, scope, mode, dates):
+        they show only while legislation is selected (source_filters_controller.js; Sol, on live 1.1.22, 01:15:48Z: a
+        case-law-only search still showed them). The fourth column, results per page and sort, is every source's. %>
     <!-- Wetgevingsfilters heading -->
-    <h3 class="text-base font-semibold tracking-wider text-gray-800 dark:text-white/90 mb-4 flex items-center gap-2">
+    <h3 class="text-base font-semibold tracking-wider text-gray-800 dark:text-white/90 mb-4 flex items-center gap-2<%= params[:source_legislation] == '0' ? ' hidden' : '' %>" data-source-filters-target="legislationFilters">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
       </svg>
@@ -28,7 +31,7 @@
     <div class="w-full flex justify-center filters-outer">
       <div class="grid filters-grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left items-stretch w-full max-w-7xl auto-cols-fr">
       <!-- Column 1: Legislation Types + Content Status -->
-      <div class="min-w-0 w-full overflow-hidden flex flex-col">
+      <div class="min-w-0 w-full overflow-hidden flex flex-col<%= params[:source_legislation] == '0' ? ' hidden' : '' %>" data-source-filters-target="legislationFilters">
         <!-- Legislation Types -->
         <div id="filter-types" data-search-validation-target="types">
           <h4 class="<%= filters_heading_classes %>"><%= t(:legislation_types_title) %></h4>
@@ -106,7 +109,7 @@
       </div>
 
       <!-- Languages + Search scope (Column 2) -->
-      <div class="min-w-0 w-full overflow-hidden flex flex-col">
+      <div class="min-w-0 w-full overflow-hidden flex flex-col<%= params[:source_legislation] == '0' ? ' hidden' : '' %>" data-source-filters-target="legislationFilters">
         <!-- Languages -->
         <div id="filter-languages" data-search-validation-target="languages">
           <h4 class="<%= filters_heading_classes %>"><%= t(:languages_title) %></h4>
@@ -175,7 +178,7 @@
       </div>
       
       <!-- Column 3: Advanced Filters -->
-      <div class="min-w-0 w-full overflow-hidden flex flex-col">
+      <div class="min-w-0 w-full overflow-hidden flex flex-col<%= params[:source_legislation] == '0' ? ' hidden' : '' %>" data-source-filters-target="legislationFilters">
         <h4 class="<%= filters_heading_classes %>"><%= t(:advanced_filters_title) %></h4>
         
         <!-- Date Range -->

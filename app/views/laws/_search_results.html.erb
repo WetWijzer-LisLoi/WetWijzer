@@ -189,6 +189,8 @@
         </div>
       <% end %>
     </details>
+  <% elsif @jurisprudence_searched %>
+    <%= render 'laws/source_empty_state', source: :jurisprudence, timed_out: @jurisprudence_timed_out %>
   <% end %>
 
 
@@ -338,6 +340,8 @@
         </div>
       <% end %>
     </details>
+  <% elsif @parliamentary_searched %>
+    <%= render 'laws/source_empty_state', source: :parliamentary, timed_out: @parliamentary_timed_out %>
   <% end %>
 </div>
 <% end %>

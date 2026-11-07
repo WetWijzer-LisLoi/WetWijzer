@@ -8,6 +8,14 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.24] - 2026-11-07
+
+### Fixed
+- Search filters: a typed date that does not exist (31/02/2026) is kept and explained. 1.1.22 meant to do this, but the date picker emptied the field first, so the field went blank without a word. The explanation is added to the field's own description and removed with it.
+- Search: a source that was searched and found nothing says so, with its count of 0; a source whose search did not finish in time says that instead. The results area stayed empty.
+- Search filters: the legislation filters show only while legislation is selected; results per page and sort stay for every source.
+- Civil Code concordance tables: an old article of a repealed Act whose text WetWijzer does not hold (the 1991 product-liability Act) opens that Act's page, which links its official versions on Justel, and says so; the link pointed at an article that page does not show.
+
 ## [1.1.23] - 2026-11-07
 
 ### Fixed

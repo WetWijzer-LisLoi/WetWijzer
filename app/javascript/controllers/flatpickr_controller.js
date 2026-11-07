@@ -33,16 +33,26 @@ export default class extends Controller {
       allowInput: true,
       disableMobile: true,
       parseDate: (text) => parseStrictDate(text),
-      errorHandler: () => {}
+      errorHandler: () => {},
+      // A date the picker set (from the calendar, or a typed date it read) replaces what was typed; a cleared one
+      // does not, since flatpickr clears the field on blur when it cannot read the text.
+      onChange: (dates) => { if (dates && dates.length) this.typed = null }
     })
+    // What the reader typed is kept as they type: flatpickr's own blur handler runs first and empties the field
+    // when it cannot read the text, so the field itself no longer holds it when this blur runs (Sol, on live
+    // 1.1.22, 23:30:56Z: 31/02/2026 became an empty field, no message).
+    this.typed = null
+    this.onInput = () => { this.typed = this.element.value }
     this.onBlur = () => {
-      const typed = this.element.value
+      const typed = this.typed ?? this.element.value
       setTimeout(() => this.checkTyped(typed), 0)
     }
+    this.element.addEventListener('input', this.onInput)
     this.element.addEventListener('blur', this.onBlur)
   }
 
   disconnect() {
+    this.element.removeEventListener('input', this.onInput)
     this.element.removeEventListener('blur', this.onBlur)
     if (this.element._flatpickr) {
       this.element._flatpickr.destroy()
@@ -53,8 +63,13 @@ export default class extends Controller {
   checkTyped(typed) {
     const text = String(typed ?? '').trim()
     if (text === '' || parseStrictDate(text)) {
+      this.typed = null
       this.element.removeAttribute('aria-invalid')
-      this.message()?.remove()
+      const message = this.message()
+      if (message) {
+        this.describedBy(message.id, false)
+        message.remove()
+      }
       return
     }
     this.element.value = text
@@ -68,7 +83,16 @@ export default class extends Controller {
       this.element.insertAdjacentElement('afterend', message)
     }
     message.textContent = this.invalidText
-    this.element.setAttribute('aria-describedby', message.id)
+    this.describedBy(message.id, true)
+  }
+
+  // The field's own descriptions stay; only the error's id is added and taken away again (Sol 23:04:42Z: the
+  // error replaced them, and a corrected date left the field pointing at the removed error).
+  describedBy(id, present) {
+    const ids = (this.element.getAttribute('aria-describedby') || '').split(/\s+/).filter(token => token && token !== id)
+    if (present) ids.push(id)
+    if (ids.length) this.element.setAttribute('aria-describedby', ids.join(' '))
+    else this.element.removeAttribute('aria-describedby')
   }
 
   message() {

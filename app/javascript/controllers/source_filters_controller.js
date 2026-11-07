@@ -27,11 +27,12 @@ export default class extends Controller {
     this.sync("parliamentary", "parliamentaryFilters");
   }
 
+  // Every block of a source: legislation's filters are a heading and three columns beside the shared one.
   sync(source, block) {
     const checkbox = this.target(`has${this.capitalize(source)}Target`, `${source}Target`);
-    const panel = this.target(`has${this.capitalize(block)}Target`, `${block}Target`);
-    if (!checkbox || !panel) return;
-    panel.classList.toggle("hidden", !checkbox.checked);
+    const panels = this[`${block}Targets`] || [];
+    if (!checkbox) return;
+    panels.forEach(panel => panel.classList.toggle("hidden", !checkbox.checked));
   }
 
   target(hasName, name) {

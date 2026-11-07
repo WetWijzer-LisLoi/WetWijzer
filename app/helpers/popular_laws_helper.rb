@@ -143,6 +143,32 @@ module PopularLawsHelper
   # 1.1.19: Book 8 read "art. 8.1-8.35" over a text of 8.1-8.39; measured on production 2026-11-06, NL and FR
   # alike). Only dotted numbers count: a row Justel keyed "Art.4" (its last anchor truncated) is no range end.
   # nil when the text holds no such article, and the label is left out. The block is cached with laws_db_version.
+  # Whether we hold the article text of a law in a language. The repealed 1991 product-liability Act (1991009354) is
+  # held as a record only: its page shows "Opgeheven tekst" and Justel's version history, and no article anchors.
+  def law_holds_articles?(numac, language_id = current_language_id)
+    @law_holds_articles ||= {}
+    key = [numac.to_s, language_id.to_i]
+    return @law_holds_articles[key] if @law_holds_articles.key?(key)
+
+    @law_holds_articles[key] = Article.where(content_numac: key[0], language_id: key[1], article_type: 'ART').exists?
+  rescue ActiveRecord::ActiveRecordError
+    true
+  end
+
+  # An old article of an Act whose text we do not hold: a link to that Act's page, with no fragment, that says why
+  # (Sol, on live 1.1.22, 23:48:04Z: the 1991 Act's "1" opened its page at an #art-1 that is not there).
+  def concordance_record_only_link(text, numac)
+    note = case I18n.locale
+           when :fr then "Loi abrogée : son texte n'est pas repris ici ; la page renvoie aux versions officielles sur Justel."
+           when :de then 'Aufgehobenes Gesetz: Der Text ist hier nicht enthalten; die Seite verweist auf die amtlichen Fassungen bei Justel.'
+           when :en then 'Repealed Act: its text is not held here; the page links to the official versions on Justel.'
+           else 'Opgeheven wet: de tekst staat hier niet; de pagina verwijst naar de officiële versies op Justel.'
+           end
+    link_to(text, law_path(numac, language_id: current_language_id), title: note, target: '_blank', rel: 'noopener noreferrer',
+                                                                     data: { concordance_record_only: true },
+                                                                     class: 'no-underline dark:underline hover:text-(--accent-text) dark:hover:text-(--accent-400) transition-colors')
+  end
+
   def popular_law_article_range(numac, language_id = current_language_id)
     numbers = Article.where(content_numac: numac.to_s, language_id: language_id.to_i, article_type: 'ART')
                      .pluck(:article_title)

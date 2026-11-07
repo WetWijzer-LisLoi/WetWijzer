@@ -1,0 +1,24 @@
+<%# A searched source with nothing to list says so, and says whether the search finished: a case-law-only search with
+    no match showed an empty area with no count and no message (Sol, on live 1.1.22, 01:28:20Z; the owner's legacy
+    item 17). Locals: source (:jurisprudence or :parliamentary), timed_out. %>
+<% names = { jurisprudence: { fr: 'Jurisprudence', de: 'Rechtsprechung', en: 'Case law', nl: 'Rechtspraak' },
+             parliamentary: { fr: 'Documents parlementaires', de: 'Parlamentarische Dokumente', en: 'Parliamentary documents', nl: 'Parlementaire stukken' } }
+   empty = { jurisprudence: { fr: 'Aucune décision trouvée pour cette recherche.', de: 'Keine Entscheidungen für diese Suche gefunden.',
+                              en: 'No decisions found for this search.', nl: 'Geen uitspraken gevonden voor deze zoekopdracht.' },
+             parliamentary: { fr: 'Aucun document parlementaire trouvé pour cette recherche.', de: 'Keine parlamentarischen Dokumente für diese Suche gefunden.',
+                              en: 'No parliamentary documents found for this search.', nl: 'Geen parlementaire stukken gevonden voor deze zoekopdracht.' } }
+   unfinished = { fr: "La recherche n'a pas pu se terminer à temps. Réessayez ou précisez la recherche.",
+                  de: 'Die Suche konnte nicht rechtzeitig abgeschlossen werden. Versuchen Sie es erneut oder grenzen Sie die Suche ein.',
+                  en: 'The search could not finish in time. Try again or narrow the search.',
+                  nl: 'De zoekopdracht kon niet op tijd worden afgerond. Probeer opnieuw of verfijn de zoekopdracht.' }
+   locale = I18n.locale.to_s.to_sym
+   pick = ->(texts) { texts.fetch(locale, texts[:nl]) } %>
+<section class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden" data-source-empty-state="<%= source %>" data-timed-out="<%= timed_out ? 'true' : 'false' %>">
+  <h2 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white px-4 py-3 border-b border-gray-100 dark:border-gray-700/50 m-0">
+    <%= pick.(names.fetch(source)) %>
+    <% unless timed_out %><span class="font-normal text-gray-500 dark:text-gray-400">(0)</span><% end %>
+  </h2>
+  <p class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 m-0" role="status">
+    <%= timed_out ? pick.(unfinished) : pick.(empty.fetch(source)) %>
+  </p>
+</section>
