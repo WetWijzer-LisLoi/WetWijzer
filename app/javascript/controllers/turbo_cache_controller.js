@@ -94,9 +94,12 @@ export default class extends Controller {
     });
 
     // Reset any expanded/collapsed states that might cause issues
+    // A section button (collapse) is left alone: its section's open or folded state is in the snapshot, and Turbo
+    // dispatches this on the page still on screen, where open sections then said aria-expanded="false" (Sol
+    // 02:20:35Z).
     document.querySelectorAll('[aria-expanded="true"]').forEach(el => {
       // Don't reset permanent elements
-      if (!el.closest('[data-turbo-permanent]')) {
+      if (!el.closest('[data-turbo-permanent]') && !el.matches?.('[data-collapse-target="button"]')) {
         el.setAttribute('aria-expanded', 'false');
       }
     });

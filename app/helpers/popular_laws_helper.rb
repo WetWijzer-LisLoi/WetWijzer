@@ -294,6 +294,12 @@ module PopularLawsHelper
   # dossier on a cold homepage cache used to scan the entire multi-GB database
   # and could occupy every Puma worker. Materializing the newest row-id window
   # first keeps I/O bounded; dossier de-duplication is then cheap in Ruby.
+  # The one language the homepage's recent parliamentary documents are read in: Dutch on the Dutch site, French on
+  # the others. Their titles carry it (Sol, on live 1.1.23, 02:41:22Z: a French title under gesetzguide.be's lang=de).
+  def recent_parliamentary_language
+    I18n.locale == :nl ? 'nl' : 'fr'
+  end
+
   def recent_parliamentary_documents(limit: RECENT_PARLIAMENTARY_LIMIT,
                                      candidate_limit: RECENT_PARLIAMENTARY_CANDIDATE_LIMIT)
     path = ENV.fetch('CHAMBER_DB') { Rails.root.join('storage', 'chamber.sqlite3').to_s }
@@ -301,7 +307,7 @@ module PopularLawsHelper
 
     result_limit = Integer(limit).clamp(1, 100)
     window_limit = Integer(candidate_limit).clamp(result_limit, 5_000)
-    language = I18n.locale == :nl ? 'nl' : 'fr'
+    language = recent_parliamentary_language
 
     database = SQLite3::Database.new(path)
     rows = database.execute(RECENT_PARLIAMENTARY_SQL, [language, window_limit])

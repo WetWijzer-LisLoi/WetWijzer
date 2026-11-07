@@ -1421,7 +1421,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <% recent_parl.each do |p| %>
             <a href="<%= parliamentary_path(id: p[0]) %>" class="block p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-sky/10 hover:border-(--accent-400) transition-colors">
-              <div class="font-medium text-gray-900 dark:text-blue-400 text-sm line-clamp-2"><%= ParliamentaryHelper.repair_windows1252_controls((p[1] || p[3]).to_s).strip %></div>
+              <div class="font-medium text-gray-900 dark:text-blue-400 text-sm line-clamp-2" lang="<%= recent_parliamentary_language %>" data-recent-parliamentary-title><%= ParliamentaryHelper.repair_windows1252_controls((p[1] || p[3]).to_s).strip %></div>
               <div class="text-xs text-gray-500 dark:text-gray-300 mt-1"><%= t("public_navigation.parliaments.#{parliament_aliases.fetch(p[2], p[2])}", default: p[2]) %> • <%= t('public_navigation.dossier') %> <%= p[3] %><% if p[4].present? %> • <%= p[4] %><% end %></div>
             </a>
           <% end %>

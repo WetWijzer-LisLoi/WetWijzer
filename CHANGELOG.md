@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.25] - 2026-11-07
+
+### Fixed
+- Law comparison: its Back link keeps the article the comparison was opened at after the comparison's own contents were used. 1.1.23 said this already, but those contents links reloaded the whole comparison, and the reloaded Back link no longer had the article. They now move within the page.
+- Law pages: a folded or opened section's button says whether the section is open. Leaving a page could mark open sections as folded on the page still on screen, and a link to an article now also corrects the sections around it.
+- Homepage: a recent parliamentary document's title says its language, so a French title on the German site is read as French.
+
 ## [1.1.24] - 2026-11-07
 
 ### Fixed

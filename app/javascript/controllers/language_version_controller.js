@@ -7,7 +7,8 @@ import { withArticleFragment } from '../utils/article_fragment.js'
 // the plain version link without JavaScript.
 // It also takes the article the page was opened at, on connect: on the comparison, its own contents move the
 // address to #compare-row-N, and Back then lost the reader's article (Sol 21:25:18Z). A later article in the
-// address replaces it; any other address keeps it.
+// address replaces it; any other address keeps it. Those contents links carry data-turbo="false": as Turbo visits
+// they rendered the page again, and the new link saw only the row (Sol 02:47:24Z).
 export default class extends Controller {
   connect () {
     this.follow()

@@ -871,6 +871,7 @@ public/vite/assets/application-CBormHI8.js
 public/vite/assets/application-CDdQnrxc.js
 public/vite/assets/application-CH3bDzQA.css
 public/vite/assets/application-CKSngAOE.css
+public/vite/assets/application-CLLIJQeA.js
 public/vite/assets/application-CO0dL6Pn.js
 public/vite/assets/application-COM5XECo.css
 public/vite/assets/application-CRH5sO66.js
