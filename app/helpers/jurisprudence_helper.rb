@@ -220,13 +220,76 @@ module JurisprudenceHelper
     [labels[:nl], labels[:fr]].each { |name| names[name.downcase] = key }
   end.freeze
 
-  # A stored subject, key or name, in the interface language; anything else as it stands.
-  def subject_matter_label(subject, locale = I18n.locale)
-    key = SUBJECT_KEYS_BY_NAME[subject.to_s.strip.downcase]
-    return subject.to_s.include?('_') ? subject.to_s.humanize : subject.to_s.strip unless key
+  # The subject names as Juportal stores them in cases.subject_matter, Dutch and French, with their names in each
+  # interface language. Measured on production on 2026-11-07 (through the subject column of the full-text index):
+  # one name, or several joined by " - " ("Strafrecht - Internationaal publiekrecht"); Sol, on live 1.1.24 (07:04:06Z),
+  # saw that composite in Dutch on the English site. Display only: the stored value and the filter's keys stay.
+  SUBJECT_NAMES = [
+    { nl: 'Bestuursrecht', fr: 'Droit administratif', de: 'Verwaltungsrecht', en: 'Administrative law' },
+    { nl: 'Strafrecht', fr: 'Droit pénal', de: 'Strafrecht', en: 'Criminal law' },
+    { nl: 'Overige', fr: 'Autres', de: 'Sonstiges', en: 'Other' },
+    { nl: 'Burgerlijk recht', fr: 'Droit civil', de: 'Zivilrecht', en: 'Civil law' },
+    { nl: 'Constitutioneel recht', fr: 'Droit constitutionnel', de: 'Verfassungsrecht', en: 'Constitutional law' },
+    { nl: 'Belastingrecht', fr: 'Droit fiscal', de: 'Steuerrecht', en: 'Tax law' },
+    { nl: 'Internationaal publiekrecht', fr: 'Droit international public', de: 'Völkerrecht',
+      en: 'Public international law' },
+    { nl: 'Sociale-zekerheidsrecht', fr: 'Droit de la sécurité sociale', de: 'Sozialversicherungsrecht',
+      en: 'Social security law' },
+    { nl: 'Handelsrecht', fr: 'Droit commercial', de: 'Handelsrecht', en: 'Commercial law' },
+    { nl: 'Arbeidsrecht', fr: 'Droit du travail', de: 'Arbeitsrecht', en: 'Labour law' },
+    { nl: 'Insolventierecht', fr: "Droit de l'insolvabilité", de: 'Insolvenzrecht', en: 'Insolvency law' },
+    { nl: 'Unierecht', fr: 'Droit européen', de: 'Unionsrecht', en: 'EU law' },
+    { nl: 'Familierecht', fr: 'Droit de la famille', de: 'Familienrecht', en: 'Family law' },
+    { nl: 'Internationaal privaatrecht', fr: 'Droit international privé', de: 'Internationales Privatrecht',
+      en: 'Private international law' },
+    { nl: 'Intellectuele eigendom', fr: 'Droit de la propriété intellectuelle', de: 'Geistiges Eigentum',
+      en: 'Intellectual property' },
+    { nl: 'Financieel recht', fr: 'Droit financier', de: 'Finanzrecht', en: 'Financial law' },
+    { nl: 'Octrooirecht', fr: 'Droit des brevets', de: 'Patentrecht', en: 'Patent law' },
+    { nl: 'Overheidsboekhoudrecht', fr: 'Droit de la comptabilité publique', de: 'Öffentliches Haushaltsrecht',
+      en: 'Public accounting law' },
+    { nl: 'Advies over wetgeving', fr: 'Avis sur la législation', de: 'Gutachten zur Gesetzgebung',
+      en: 'Advice on legislation' }
+  ].freeze
 
-    labels = SUBJECT_LABELS.fetch(key)
-    labels.fetch(locale.to_sym, labels[:nl])
+  # A stored name (Dutch or French, any case) to its names and the language it is written in.
+  SUBJECT_NAME_LOOKUP = SUBJECT_NAMES.each_with_object({}) do |labels, names|
+    %i[nl fr].each { |language| names[labels[language].downcase] ||= [labels, language.to_s] }
+  end.freeze
+
+  # One part of a stored subject: its name in the interface language and nil, or, when it is not known, the stored
+  # text and the language it was written in (nil when that is not known).
+  def subject_matter_segment(part, locale)
+    text = part.to_s.strip
+    if (labels, = SUBJECT_NAME_LOOKUP[text.downcase])
+      return [labels.fetch(locale.to_sym, labels[:nl]), nil]
+    end
+
+    key = SUBJECT_KEYS_BY_NAME[text.downcase]
+    if key
+      labels = SUBJECT_LABELS.fetch(key)
+      return [labels.fetch(locale.to_sym, labels[:nl]), nil]
+    end
+    [text.include?('_') ? text.humanize : text, :unknown]
+  end
+
+  # A stored subject, key, name or names joined by " - ", in the interface language; a part that is not known stays as
+  # it stands.
+  def subject_matter_label(subject, locale = I18n.locale)
+    subject.to_s.strip.split(/\s+-\s+/).map { |part| subject_matter_segment(part, locale).first }.join(' - ')
+  end
+
+  # The same for a badge, with the language of a part that stays as stored: the language of the known names beside it
+  # when they are all written in one, otherwise none (Sol 07:04:06Z: a Dutch name inherited the English page's lang).
+  def subject_matter_badge(subject, locale = I18n.locale)
+    parts = subject.to_s.strip.split(/\s+-\s+/)
+    written = parts.filter_map { |part| SUBJECT_NAME_LOOKUP[part.strip.downcase]&.last }.uniq
+    source = written.one? ? written.first : nil
+    pieces = parts.map do |part|
+      text, unknown = subject_matter_segment(part, locale)
+      unknown && source ? content_tag(:span, text, lang: source) : text
+    end
+    safe_join(pieces, ' - ')
   end
 
   PARLIAMENT_LABELS = {

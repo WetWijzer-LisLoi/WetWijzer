@@ -8,6 +8,22 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.26] - 2026-11-07
+
+### Fixed
+- Search filters: a typed date that does not exist (31/02/2026) is kept and explained after Tab, a click elsewhere or Enter. 1.1.22 and 1.1.24 said this already, but the date picker emptied the field and then reported its own empty field as what the reader typed, so the field still went blank without a word. A day picked from the calendar afterwards replaces the text and the message.
+- Case law: every subject is named in the interface language, also when a judgment has several ("Strafrecht - Internationaal publiekrecht" reads "Criminal law - Public international law" on the English site); only eight single subjects were translated. A part WetWijzer does not know stays as stored and says its language when the names beside it show it.
+- Law pages: the contents filter keeps an entry for a range of articles that holds the typed article; "3" hid "Art. 1-4". Words and other numbers are matched on the text as before.
+- Judgments and parliamentary documents: the "Full text" heading and the width choice line up with the text at every width, with Wide or Comfortable; on a wide screen they ran the whole card while the text was centred.
+- Judgments: a text that gives each paragraph its own line (as Juportal's own pages do) keeps its paragraphs, short closing sentences and headings apart; the page welded them into one paragraph. A short title between a finished sentence and a numbered paragraph ("Ambtshalve onderzoek") is shown as a heading, and a list the text writes with dashes keeps its dashes. No word is added or removed: on 201 judgments the words are the same before and after.
+- Homepage: a recent law's title says its language, so a French title on the German site is read as French.
+- Header: Escape in the accent-colour picker returns the focus to the button that opened it; it fell to the page.
+- Law pages: a contents link opens the folded sections around its article also when the address already names that article; the article stayed hidden.
+- Law pages: a section around a linked article that could not be opened keeps saying it is folded; one check now decides both opening it and what its button says.
+
+### Changed
+- Judgments, parliamentary documents and law texts: three reading widths, Full screen, Wide and Comfortable, beside the text (on a law, above its articles). The text uses the full width of its card unless a narrower width is chosen; it was 64rem from a wide screen and 80 characters below. A signed-in reader's choice is saved in the profile and comes back on every reader and after a reload; a choice saved before keeps applying. Full screen is the page's reading width, not the browser's full-screen mode.
+
 ## [1.1.25] - 2026-11-07
 
 ### Fixed

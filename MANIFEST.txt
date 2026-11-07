@@ -203,6 +203,7 @@ app/javascript/utils/reveal_target.js
 app/javascript/utils/settle_scroll.js
 app/javascript/utils/strict_date.js
 app/javascript/utils/toast.js
+app/javascript/utils/toc_filter.js
 app/javascript/utils/toc_targets.js
 app/javascript/utils/turbo_csp_nonce.js
 app/javascript/utils/ui_translations.js
@@ -833,6 +834,7 @@ public/vite/assets/application-B7T0QSMh.js
 public/vite/assets/application-B8KTqxvR.css
 public/vite/assets/application-BAUMExtU.css
 public/vite/assets/application-BAbwyxpz.js
+public/vite/assets/application-BBkas85f.js
 public/vite/assets/application-BBm2cgIV.js
 public/vite/assets/application-BE2eHk8s.js
 public/vite/assets/application-BELQxtqB.css
@@ -870,6 +872,7 @@ public/vite/assets/application-C6k_wDJG.css
 public/vite/assets/application-CBormHI8.js
 public/vite/assets/application-CDdQnrxc.js
 public/vite/assets/application-CH3bDzQA.css
+public/vite/assets/application-CJKP9SDV.js
 public/vite/assets/application-CKSngAOE.css
 public/vite/assets/application-CLLIJQeA.js
 public/vite/assets/application-CO0dL6Pn.js

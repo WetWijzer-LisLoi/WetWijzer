@@ -1,19 +1,24 @@
 import { Controller } from '@hotwired/stimulus'
 import { prefs } from '../services/preferences_store.js'
 
-// A judgment's or a parliamentary document's reading width on a large screen
-// (owner's request, 2026-11-06, via Sol: at 1,550 px the text used 690 of the
-// card's 1,456 px). Wide is the default from 80rem (shared/_reading_styles);
-// Comfortable keeps the 80-character measure. The choice is kept as every
+// The reading width of a judgment, a parliamentary document and a law's text
+// (owner's requirement of 2026-11-07, via Sol 08:17:34Z): Full screen (the
+// card's full width), Wide (64rem) or Comfortable (80 characters), centred
+// (shared/_reading_styles). Full is the width when nothing is saved; a saved
+// choice stands. The choice is one preference for every reader, kept as every
 // interface preference is (services/preferences_store.js): for a signed-in
-// reader on the server ('reading_width', UiPreferenceSchema), for a visitor
-// in memory only, never in browser storage. The first 1.1.21 candidate wrote
-// localStorage, against that rule and the README (Sol 11:46:57Z).
+// reader on the server ('reading_width', UiPreferenceSchema), so it comes back
+// on every reader and after a reload; for a visitor in memory only, never in
+// browser storage. The first 1.1.21 candidate wrote localStorage, against that
+// rule and the README (Sol 11:46:57Z).
 const KEY = 'reading_width'
-const WIDTHS = ['wide', 'comfortable']
+const WIDTHS = ['full', 'wide', 'comfortable']
+const DEFAULT_WIDTH = 'full'
 
 export default class extends Controller {
-  static targets = ['body', 'control', 'option']
+  // head: the heading row above a judgment's or parliamentary document's text,
+  // which takes the same measure (Sol 06:57:39Z).
+  static targets = ['body', 'head', 'control', 'option']
 
   connect () {
     this._connected = true
@@ -35,7 +40,7 @@ export default class extends Controller {
   storedWidth () {
     let stored = null
     try { stored = prefs.get(KEY, null) } catch (_) { stored = null }
-    return WIDTHS.includes(stored) ? stored : 'wide'
+    return WIDTHS.includes(stored) ? stored : DEFAULT_WIDTH
   }
 
   choose (event) {
@@ -47,7 +52,7 @@ export default class extends Controller {
   }
 
   apply (width) {
-    this.bodyTargets.forEach(body => { body.dataset.readingWidth = width })
+    ;[...this.bodyTargets, ...(this.headTargets || [])].forEach(node => { node.dataset.readingWidth = width })
     this.optionTargets.forEach(option => {
       option.setAttribute('aria-pressed', String(option.dataset.readingWidthWidthParam === width))
     })

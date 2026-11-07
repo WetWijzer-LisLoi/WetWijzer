@@ -1316,7 +1316,7 @@
                class="block p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:border-(--accent-400) dark:hover:border-(--accent-500) hover:shadow-md transition-all duration-200 group">
               <div class="flex items-start justify-between gap-3">
                 <div class="flex-1 min-w-0">
-                  <h4 class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-(--accent-text) dark:group-hover:text-(--accent-400) transition-colors line-clamp-2">
+                  <h4 class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-(--accent-text) dark:group-hover:text-(--accent-400) transition-colors line-clamp-2" lang="<%= recent_legislation_language(lang_id) %>" data-recent-law-title>
                     <%= truncate(law.title, length: 150) %>
                   </h4>
                   <div class="flex items-center gap-2 mt-2">

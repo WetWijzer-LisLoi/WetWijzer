@@ -789,7 +789,18 @@ module ParliamentaryHelper
       section_open = true
     end
 
-    result.each_line do |line|
+    # A text whose paragraphs are one line each, as Juportal's own pages give them (a quarter of its lines or more
+    # run past 160 characters, where a PDF's wrapped lines stop near 100): a line that starts a sentence after a
+    # finished one is a paragraph of its own there, not the wrapped tail of the one before (Sol 08:17:34Z: paragraph
+    # 18 of ARR.20261006.2N.15, "In zoverre ..." and the heading after it were welded onto it). A PDF's text keeps
+    # joining its lines as before.
+    all_lines = result.lines
+    text_lines = all_lines.map(&:strip).reject(&:empty?)
+    long_lines = text_lines.count { |l| l.length > 160 }
+    one_line_paragraphs = text_lines.size.between?(5, long_lines * 4) # five lines or more, a quarter of them long
+    previous_plain = nil
+
+    all_lines.each_with_index do |line, line_index|
       stripped = line.strip
 
       if stripped.empty?
@@ -981,9 +992,11 @@ module ParliamentaryHelper
         flush_para.call unless current_para.empty?
         # Strip the bullet character and leading space
         last_li_plain = stripped.sub(/\A[•◦○➢►▪■-]\s+/, '')
-        # Open a <ul> if we're not already in one
+        # Open a <ul> if we're not already in one; a list the source writes with dashes keeps them (Sol
+        # 08:17:34Z; shared/_reading_styles draws the marker), any other keeps the disc.
         unless @in_bullet_list
-          html_parts << '<ul class="mb-3 ml-6 list-disc space-y-1 text-gray-700 dark:text-gray-300">'
+          marker = stripped.start_with?('-') ? ' data-list-marker="dash"' : ''
+          html_parts << "<ul class=\"mb-3 ml-6 list-disc space-y-1 text-gray-700 dark:text-gray-300\"#{marker}>"
           @in_bullet_list = true
         end
         html_parts << "<li>#{ERB::Util.html_escape(last_li_plain)}</li>"
@@ -1006,10 +1019,25 @@ module ParliamentaryHelper
           flush_para.call
           signature_mode = true
         end
+        unless signature_mode || intro_mode
+          following = all_lines[(line_index + 1)..].find { |l| !l.strip.empty? }&.strip
+          if jurisprudence_subheading?(stripped, previous_plain, following)
+            flush_para.call
+            html_parts << "<h4 class=\"text-sm font-semibold text-gray-800 dark:text-gray-200 mt-4 mb-1\">#{escaped}</h4>"
+            last_ended_colon = false
+            previous_plain = stripped
+            next
+          end
+          if one_line_paragraphs && current_para.any? && previous_plain.to_s.match?(JURISPRUDENCE_SENTENCE_END) &&
+             stripped.match?(/\A[“"‘'(«]?[[:upper:]]/)
+            flush_para.call
+          end
+        end
         current_para << escaped
       end
       # Track if this line ends with ':' for context-aware dash bullet detection
       last_ended_colon = stripped.end_with?(':')
+      previous_plain = stripped
     end
 
     flush_para.call
@@ -1811,6 +1839,17 @@ module ParliamentaryHelper
       end
     end
     blocks.map { |lines| join_wrapped_heading(lines).join("\n") }.join("\n\n")
+  end
+
+  # A short title on a line of its own between a finished sentence and a numbered paragraph ("Ambtshalve onderzoek"
+  # before "9. De substantiële ..."): a subheading, not the tail of the paragraph before (Sol 08:17:34Z). No digits, no
+  # closing punctuation, at most seven words; the line before ends a sentence, or there is none.
+  def jurisprudence_subheading?(line, previous, following)
+    return false if line.length > 60 || line.split.size > 7 || line.match?(/\d/)
+    return false unless line.match?(/\A[[:upper:]]/) && !line.match?(/[.:;,!?]['"”’»)\]]*\z/)
+    return false if previous && !previous.match?(JURISPRUDENCE_SENTENCE_END)
+
+    following.to_s.match?(/\A\d{1,3}(?:\.\d{1,3})*\.\s/)
   end
 
   # "1." on a line of its own, then its text on the next line of the block.

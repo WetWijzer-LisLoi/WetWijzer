@@ -17,6 +17,11 @@ export const INVALID_DATE_TEXT = {
   en: 'This date does not exist. Use dd/mm/yyyy.'
 }
 
+// The text is taken where flatpickr reads it. When flatpickr cannot read a text (on blur, when focus or a click
+// leaves the open calendar, on Enter, or on load) it empties the field, and on a change it dispatches its own "input"
+// event on the emptied field. 1.1.22 read the field and 1.1.24 that event, so both kept "" and said nothing (Sol, on
+// live 1.1.22 and 1.1.24: 31/02/2026, Tab, an empty field). The text flatpickr rejected is put back once flatpickr
+// has finished, and a real date picked or read in the meantime cancels that (Sol 05:28:58Z).
 export default class extends Controller {
   static values = {
     locale: String
@@ -25,6 +30,8 @@ export default class extends Controller {
   connect() {
     const locale = (this.localeValue || getLocale()).toLowerCase().split(/[-_]/)[0]
     this.invalidText = localeText(INVALID_DATE_TEXT, locale)
+    this.rejected = null
+    this.pending = null
 
     flatpickr(this.element, {
       locale: localeText({ nl: Dutch, fr: French, de: German, en: english }, locale),
@@ -32,38 +39,59 @@ export default class extends Controller {
       altInput: false,
       allowInput: true,
       disableMobile: true,
-      parseDate: (text) => parseStrictDate(text),
+      parseDate: (text) => this.read(text),
       errorHandler: () => {},
-      // A date the picker set (from the calendar, or a typed date it read) replaces what was typed; a cleared one
-      // does not, since flatpickr clears the field on blur when it cannot read the text.
-      onChange: (dates) => { if (dates && dates.length) this.typed = null }
+      onChange: (dates) => { if (dates && dates.length) this.accept() }
     })
-    // What the reader typed is kept as they type: flatpickr's own blur handler runs first and empties the field
-    // when it cannot read the text, so the field itself no longer holds it when this blur runs (Sol, on live
-    // 1.1.22, 23:30:56Z: 31/02/2026 became an empty field, no message).
-    this.typed = null
-    this.onInput = () => { this.typed = this.element.value }
-    this.onBlur = () => {
-      const typed = this.typed ?? this.element.value
-      setTimeout(() => this.checkTyped(typed), 0)
-    }
-    this.element.addEventListener('input', this.onInput)
+    // A field the reader emptied, or holding a real date, loses an old message when focus leaves it.
+    this.onBlur = () => setTimeout(() => this.settle(), 0)
     this.element.addEventListener('blur', this.onBlur)
   }
 
   disconnect() {
-    this.element.removeEventListener('input', this.onInput)
+    clearTimeout(this.pending)
+    this.pending = null
     this.element.removeEventListener('blur', this.onBlur)
     if (this.element._flatpickr) {
       this.element._flatpickr.destroy()
     }
   }
 
-  // After the picker has handled the field: a typed text that is no real date is put back and explained.
+  // flatpickr's parser: only real calendar dates. A text it cannot read is remembered and put back after flatpickr
+  // has emptied the field.
+  read(text) {
+    const date = parseStrictDate(text)
+    const value = String(text ?? '').trim()
+    if (date || value === '') return date
+    this.rejected = value
+    clearTimeout(this.pending)
+    this.pending = setTimeout(() => this.restore(), 0)
+    return date
+  }
+
+  // A real date (picked, or typed and read) replaces a rejected text and cancels putting it back.
+  accept() {
+    clearTimeout(this.pending)
+    this.pending = null
+    this.checkTyped('')
+  }
+
+  restore() {
+    this.pending = null
+    if (this.rejected !== null) this.checkTyped(this.rejected)
+  }
+
+  settle() {
+    if (this.pending) return // a rejected text is about to be put back
+    const value = String(this.element.value ?? '').trim()
+    if (value === '' || parseStrictDate(value)) this.checkTyped(value)
+  }
+
+  // A typed text that is no real date is put back and explained; an empty field or a real date clears the error.
   checkTyped(typed) {
     const text = String(typed ?? '').trim()
     if (text === '' || parseStrictDate(text)) {
-      this.typed = null
+      this.rejected = null
       this.element.removeAttribute('aria-invalid')
       const message = this.message()
       if (message) {

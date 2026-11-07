@@ -595,7 +595,7 @@
   <% if @document[:content].present? %>
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
       <div class="p-4 md:p-6" data-controller="reading-width">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div class="reading-head reading-measure text-base flex flex-wrap items-center justify-between gap-2 mb-4" data-reading-width-target="head">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500)">
             <% case I18n.locale when :fr %>Texte intégral<% when :de %>Volltext<% when :en %>Full text<% else %>Volledige tekst<% end %>
           </h2>
@@ -603,7 +603,7 @@
         </div>
         <%= render 'shared/reading_styles' %>
         <div id="parl-content" class="max-w-none">
-          <div class="reading-body text-base text-gray-700 dark:text-gray-300 leading-relaxed" data-reading-width-target="body" <%= tag.attributes(lang: @document[:language].presence) %>>
+          <div class="reading-body reading-measure text-base text-gray-700 dark:text-gray-300 leading-relaxed" data-reading-width-target="body" <%= tag.attributes(lang: @document[:language].presence) %>>
 <%= format_parliamentary_html(clean_parliamentary_content(@document[:content].to_s, target_language: @document[:language])) %>
           </div>
         </div>

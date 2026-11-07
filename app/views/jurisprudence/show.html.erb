@@ -224,11 +224,11 @@
             <% case I18n.locale when :fr %>Matière<% when :de %>Rechtsgebiet<% when :en %>Subject matter<% else %>Rechtsgebied<% end %>
           </h3>
           <div class="flex flex-wrap gap-1">
-            <%# In the interface language for the eight subjects of the filter (JurisprudenceHelper#subject_matter_label),
-                as on the results since 1.1.21; any other stored name as it stands. %>
+            <%# In the interface language, each part of a composite too (JurisprudenceHelper#subject_matter_badge); a part
+                that stays as stored says its language when the names beside it show it. %>
             <% @case[:subject_matter].split(',').map(&:strip).compact_blank.each do |subject| %>
               <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-(--accent-100) dark:bg-(--accent-900)/30 text-(--accent-700) dark:text-(--accent-400)" data-case-subject-badge>
-                <%= subject_matter_label(subject) %>
+                <%= subject_matter_badge(subject) %>
               </span>
             <% end %>
           </div>
@@ -318,7 +318,7 @@
   <% if display_text.present? %>
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
       <div class="p-4 md:p-6" data-controller="reading-width">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div class="reading-head reading-measure text-base flex flex-wrap items-center justify-between gap-2 mb-4" data-reading-width-target="head">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500)">
             <% case I18n.locale when :fr %>Texte intégral<% when :de %>Volltext<% when :en %>Full text<% else %>Volledige tekst<% end %>
           </h2>
@@ -326,7 +326,7 @@
         </div>
         <%= render 'shared/reading_styles' %>
         <div id="full-text-content" class="max-w-none">
-          <div class="reading-body text-base text-gray-700 dark:text-gray-300 leading-relaxed" data-reading-width-target="body" <%= tag.attributes(lang: { 1 => 'nl', 2 => 'fr', 3 => 'de' }[@page_language_id.to_i]) %>>
+          <div class="reading-body reading-measure text-base text-gray-700 dark:text-gray-300 leading-relaxed" data-reading-width-target="body" <%= tag.attributes(lang: { 1 => 'nl', 2 => 'fr', 3 => 'de' }[@page_language_id.to_i]) %>>
 <%= clean_jurisprudence_full_text(display_text, case_number: @case[:case_number]) %>
           </div>
         </div>

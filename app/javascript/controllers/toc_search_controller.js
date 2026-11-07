@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { tocEntryMatches } from "../utils/toc_filter.js"
 
 /**
  * TOC Search Controller
@@ -39,10 +40,9 @@ export default class extends Controller {
     // First pass: hide everything
     items.forEach(li => { li.style.display = "none" })
 
-    // Show only items whose text contains the query
+    // Show only items whose text contains the query, or whose article range holds it (utils/toc_filter.js)
     items.forEach(li => {
-      const text = (li.textContent || "").toLowerCase()
-      li.style.display = text.includes(query) ? "" : "none"
+      li.style.display = tocEntryMatches(li.textContent, query) ? "" : "none"
     })
   }
 

@@ -1,31 +1,33 @@
 <%# One reading measure for the long legal texts (owner's repair request of
     2026-10-21, item 4). A judgment's and a parliamentary document's full text
-    ran the whole card, 1,200 px at a 1,280 px window, and stayed justified on
-    a 390 px phone, where a line holds too few words to spread and the gaps
-    stretch. They now keep 80 characters a line (WCAG 1.4.8), justify only from
-    40rem, and hyphenate in the language of the text (the container carries its
-    lang). A law's articles keep their width (their column also holds the open
-    contents and the tables) and only stop justifying on a phone. No
-    text-align-last: it is inherited, and set on the container it pulled every
-    centred one-line child (the judgment's masthead) to the start; a justified
-    paragraph's last line starts naturally without it. These rules are
-    unlayered, so they win over the stylesheet's @layer base without an asset
-    build.
-    Wide (owner's request of 2026-11-06, via Sol): at 1,550 px the 80 characters
-    used 690 of the card's 1,456 px. From 80rem the text is 64rem wide unless
-    the reader chose Comfortable (reading_width_controller.js), and the column
-    is centred at both widths. The choice shows only from 80rem and only with
-    JavaScript; below 80rem both widths are the same. %>
+    stayed justified on a 390 px phone, where a line holds too few words to
+    spread and the gaps stretch. They now justify only from 40rem, and
+    hyphenate in the language of the text (the container carries its lang). A
+    law's articles only stop justifying on a phone. No text-align-last: it is
+    inherited, and set on the container it pulled every centred one-line child
+    (the judgment's masthead) to the start; a justified paragraph's last line
+    starts naturally without it. These rules are unlayered, so they win over
+    the stylesheet's @layer base without an asset build.
+    The width (owner's requirement of 2026-11-07, via Sol 08:17:34Z): a
+    judgment, a parliamentary document and a law's text read at the full width
+    of their card unless the reader chose Wide (64rem) or Comfortable (80
+    characters), centred (reading_width_controller.js). Full is also the width
+    without JavaScript and before a saved choice arrives. The heading row above
+    a judgment's or parliamentary document's text takes the same measure (Sol,
+    on live 1.1.24, 06:57:39Z). The choice shows from 48rem, with JavaScript. %>
 <% content_for :head do %>
 <style>
   .reading-body {
-    max-width: 80ch;
-    margin-inline: auto;
     text-align: start;
     hyphens: auto;
     -webkit-hyphens: auto;
     overflow-wrap: break-word;
   }
+  .reading-measure { margin-inline: auto; }
+  .reading-measure[data-reading-width="wide"] { max-width: min(100%, 64rem); }
+  .reading-measure[data-reading-width="comfortable"] { max-width: min(100%, 80ch); }
+  /* A judgment's list the source writes with dashes keeps them (ParliamentaryHelper, Sol 08:17:34Z). */
+  .reading-body ul[data-list-marker="dash"] { list-style-type: "3  "; }
   .article-content { text-align: start; }
   .reading-width-control { display: none; }
   @media (min-width: 40rem) {
@@ -35,8 +37,7 @@
       text-justify: inter-word;
     }
   }
-  @media (min-width: 80rem) {
-    .reading-body:not([data-reading-width="comfortable"]) { max-width: min(100%, 64rem); }
+  @media (min-width: 48rem) {
     .reading-width-control:not([hidden]) { display: inline-flex; }
   }
 </style>

@@ -44,15 +44,25 @@ export default class extends Controller {
     }).catch(() => {})
 
     // Close on escape
-    this._onKeydown = (e) => {
-      if (e.key === 'Escape') this.close()
-    }
+    this._onKeydown = (e) => this.onEscape(e)
     document.addEventListener('keydown', this._onKeydown)
   }
 
   disconnect() {
     this._connected = false
     if (this._onKeydown) document.removeEventListener('keydown', this._onKeydown)
+  }
+
+  // Escape closes an open picker. When the focus was inside it (a colour choice, or the opener itself), it goes back
+  // to the opener: it fell to the page (Sol, on live 1.1.25, 09:14:45Z: Enter, Tab to a colour, Escape, focus on
+  // BODY). A picker that is closed, or one left by a click elsewhere, leaves the focus where it is.
+  onEscape(event) {
+    if (event?.key !== 'Escape' || !this.openValue) return
+    const inside = this.element.contains(document.activeElement)
+    this.close()
+    if (!inside) return
+    const opener = this.hasButtonTarget ? this.buttonTarget : this.element.querySelector('button[data-action*="theme-selector#toggle"]')
+    opener?.focus()
   }
 
   toggle(event) {

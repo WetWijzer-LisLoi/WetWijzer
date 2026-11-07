@@ -719,6 +719,9 @@ export default class extends Controller {
     if (el) {
       // Prevent native jump to avoid double-scrolling and let us control smooth scroll
       event.preventDefault()
+      // A folded section around the target opens before the scroll, whether the address changes or not (Sol
+      // 09:08:16Z; utils/reveal_target.js).
+      revealCollapsedAncestors(el)
 
       // Perform a single smooth scroll; scroll-margin-top on anchors handles header offset
       el.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })

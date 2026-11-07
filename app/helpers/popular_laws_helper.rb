@@ -296,6 +296,14 @@ module PopularLawsHelper
   # first keeps I/O bounded; dossier de-duplication is then cheap in Ruby.
   # The one language the homepage's recent parliamentary documents are read in: Dutch on the Dutch site, French on
   # the others. Their titles carry it (Sol, on live 1.1.23, 02:41:22Z: a French title under gesetzguide.be's lang=de).
+  # The language a recent law's title is written in: the homepage lists the laws of current_language_id, Dutch or
+  # French, whatever the interface language (Sol, on live 1.1.25, 09:44:50Z: a French title under gesetzguide.be's
+  # lang=de). In this helper, not only in the view, so the homepage's cached fragment (popular_laws_code_version)
+  # renews with it.
+  def recent_legislation_language(language_id)
+    { 1 => 'nl', 2 => 'fr', 3 => 'de' }[language_id.to_i]
+  end
+
   def recent_parliamentary_language
     I18n.locale == :nl ? 'nl' : 'fr'
   end

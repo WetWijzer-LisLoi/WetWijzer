@@ -1,6 +1,6 @@
 <% if articles.present? %>
   <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-    <div class="p-6" data-controller="collapse article-preferences" 
+    <div class="p-6" data-controller="collapse article-preferences reading-width" 
          data-collapse-expanded-value="true"
          data-article-preferences-show-colors-value="<%= defined?(@show_colors) ? @show_colors : true %>"
          data-article-preferences-show-exdecs-value="<%= defined?(@show_exdecs) ? @show_exdecs : true %>">
@@ -306,6 +306,9 @@
           </div>
         </div>
         
+        <%# The reading width, as on judgments and parliamentary documents (owner's requirement of 2026-11-07). %>
+        <div class="mt-2 flex justify-end"><%= render 'shared/reading_width_control' %></div>
+
         <%# Success message - Only shown by JavaScript after successful AJAX load %>
         <div class="hidden mt-4 p-3 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-400 dark:border-green-500 rounded-r"
              data-exdec-success
@@ -334,7 +337,7 @@
         
         <%# The legal text, in its own language (the page keeps the UI's); the
             toolbar above stays outside, and UI labels inside are marked back. %>
-        <div class="article-content pt-3" <%= tag.attributes(lang: legal_text_lang) %>>
+        <div class="article-content reading-measure pt-3" data-reading-width-target="body" <%= tag.attributes(lang: legal_text_lang) %>>
         <%# Content-keyed, not count-keyed. The digest over the loaded rows moves on any
             change to article text, title or type - a consolidation that rewrites Art. 5
             without adding a row, a raw-SQL repair - which a count never saw, so readers

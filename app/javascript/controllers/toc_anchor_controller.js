@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { revealCollapsedAncestors } from "../utils/reveal_target.js"
 
 // Handles navigation to article anchors in lazy-loaded content
 // Ensures articles are loaded before attempting to navigate to fragment
@@ -103,6 +104,13 @@ export default class extends Controller {
   }
   
   navigateToHash(hash) {
+    // The folded sections around the target open first, also when the address already names it: no hashchange
+    // follows then, and the contents tracker opens them only on a hashchange (Sol, on live 1.1.25, 09:08:16Z: Book 8
+    // folded at #art-8-34, then the contents link Art. 8.34-8.37 left the article hidden).
+    let id = String(hash || '').replace(/^#/, '')
+    try { id = decodeURIComponent(id) } catch (_) { /* the id as written */ }
+    const folded = id && document.getElementById(id)
+    if (folded) revealCollapsedAncestors(folded)
     // Update URL hash (this will trigger browser scroll)
     window.location.hash = hash
     
