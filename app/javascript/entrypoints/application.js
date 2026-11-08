@@ -4,6 +4,7 @@ import "@hotwired/turbo-rails";
 import { Turbo } from "@hotwired/turbo-rails";
 import { installTurboCspNonce } from "../utils/turbo_csp_nonce";
 import { installFrameMissingFallback } from "../utils/frame_missing_fallback";
+import { installTurboHistoryRepairs } from "../utils/turbo_history_repairs";
 import "@/controllers";
 import '../stylesheets/application.scss';
 
@@ -34,6 +35,10 @@ installTurboCspNonce();
 
 // A frame whose response does not hold it says so, and keeps what it showed.
 installFrameMissingFallback();
+
+// Back and Forward after a frame navigation that advances the address keep the page and the reading position
+// (three Turbo 8.0.23 faults; see the util).
+installTurboHistoryRepairs(Turbo);
 
 // Turbo 8 confirm method for data-turbo-confirm
 // NOTE: data-turbo-confirm must be on the FORM element (not the button)

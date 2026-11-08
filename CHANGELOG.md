@@ -8,6 +8,14 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.31] - 2026-11-08
+
+### Fixed
+- Search: Back and Forward over a source's own page of the combined results (its Next, Previous or a page number) bring each list back with the window where the reader was; they landed at the top of the page, above the results. Three faults of Turbo 8.0.23 after a frame navigation that changes the address are repaired: a flag left set that skipped the scroll of every later visit, the page cached under the address it had left, and a hovered link's frame response reused for a whole-page request, which then reloaded the page.
+- Search: the "Zoekresultaten" region holds the case law and the parliamentary documents as well, with their own pagers; it closed after the legislation results.
+- Parliamentary documents: the voting card's results heading says "1 stemming", "1 vote" or "1 Abstimmung" for a single vote; it said "1 stemmingen".
+- Browser tests: a 50-row page-size control (Back shows the 50 in order with the form on 50, Forward the 10), the three-source Back and Forward journey, and the RSS menu's Escape cases checked on the exact element, including two links of equal text. The page-size test counts the visible rows in the page in one call; a Capybara count across Turbo's body swap after Search could keep failing although the page showed the rows (receipt-1-1-30-c).
+
 ## [1.1.30] - 2026-11-08
 
 ### Changed

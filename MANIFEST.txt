@@ -207,6 +207,7 @@ app/javascript/utils/toast.js
 app/javascript/utils/toc_filter.js
 app/javascript/utils/toc_targets.js
 app/javascript/utils/turbo_csp_nonce.js
+app/javascript/utils/turbo_history_repairs.js
 app/javascript/utils/ui_translations.js
 app/jobs/account_deletion_sweep_job.rb
 app/jobs/application_job.rb
@@ -910,6 +911,7 @@ public/vite/assets/application-DOHuBpHw.css
 public/vite/assets/application-DQZJgscu.css
 public/vite/assets/application-DQgxQ4cU.js
 public/vite/assets/application-DRC8r2NI.js
+public/vite/assets/application-DUHs-b9K.js
 public/vite/assets/application-DWN-weTi.css
 public/vite/assets/application-DZVf9TOW.css
 public/vite/assets/application-DZwDCCOo.js

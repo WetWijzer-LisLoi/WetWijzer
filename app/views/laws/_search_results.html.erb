@@ -6,8 +6,8 @@
   <div id="search-status-mount" class="w-full"></div>
   <%= render 'laws/search_hints' %>
 
-  <!-- Results Section -->
-  <div aria-live="polite" aria-relevant="additions removals" role="region" aria-label="<%= t('search_results', default: 'Zoekresultaten') %>">
+  <!-- Results Section: one landmark for the three sources (it closed after the legislation list until 1.1.31) -->
+  <div aria-live="polite" aria-relevant="additions removals" role="region" aria-label="<%= t('search_results', default: 'Zoekresultaten') %>" class="space-y-4">
     <% if @validation_failed %>
       <div class="mb-4 rounded-md border border-red-300 bg-red-50 p-4 text-red-800 dark:border-red-600/40 dark:bg-red-900/30 dark:text-red-200">
         <p class="font-semibold"><%= t('filters.validation.incomplete') %></p>
@@ -60,7 +60,6 @@
     <% else %>
       <%= turbo_frame_tag 'laws_list' %>
     <% end %>
-  </div>
   <%# ── Rechtspraak Results ── %>
   <% if @jurisprudence_results.present? %>
     <%
@@ -343,5 +342,6 @@
   <% elsif @parliamentary_searched %>
     <%= render 'laws/source_empty_state', source: :parliamentary, timed_out: @parliamentary_timed_out %>
   <% end %>
+  </div><%# the results landmark %>
 </div>
 <% end %>

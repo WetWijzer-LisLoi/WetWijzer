@@ -19,7 +19,7 @@ import { Controller } from "@hotwired/stimulus"
 export const HEMICYCLE_TEXT = {
   nl: {
     seats: n => `${n} zetels`, seatsInChamber: n => `${n} zetels in de Kamer`,
-    results: n => `Stemmingsresultaten (${n} stemmingen)`,
+    results: n => `Stemmingsresultaten (${n} ${n === 1 ? 'stemming' : 'stemmingen'})`,
     unanimousTitle: n => `${n} eenparig aangenomen`, adoptedTitle: n => `${n} aangenomen (niet-eenparig)`, rejectedTitle: n => `${n} verworpen`,
     unanimous: n => `${n} eenparig`, majority: n => `${n} meerderheid`, rejected: n => `${n} verworpen`,
     involved: 'betrokken bij debat', notInvolved: 'niet betrokken', notInvolvedHint: 'niet betrokken - klik voor details',
@@ -29,7 +29,7 @@ export const HEMICYCLE_TEXT = {
   },
   fr: {
     seats: n => `${n} sièges`, seatsInChamber: n => `${n} sièges à la Chambre`,
-    results: n => `Résultats des votes (${n} votes)`,
+    results: n => `Résultats des votes (${n} ${n === 1 ? 'vote' : 'votes'})`,
     unanimousTitle: n => `${n} adoptés à l'unanimité`, adoptedTitle: n => `${n} adoptés (pas à l'unanimité)`, rejectedTitle: n => `${n} rejetés`,
     unanimous: n => `${n} à l'unanimité`, majority: n => `${n} à la majorité`, rejected: n => `${n} rejetés`,
     involved: 'a pris part au débat', notInvolved: "n'a pas pris part", notInvolvedHint: "n'a pas pris part - cliquez pour les détails",
@@ -39,7 +39,7 @@ export const HEMICYCLE_TEXT = {
   },
   de: {
     seats: n => `${n} Sitze`, seatsInChamber: n => `${n} Sitze in der Kammer`,
-    results: n => `Abstimmungsergebnisse (${n} Abstimmungen)`,
+    results: n => `Abstimmungsergebnisse (${n} ${n === 1 ? 'Abstimmung' : 'Abstimmungen'})`,
     unanimousTitle: n => `${n} einstimmig angenommen`, adoptedTitle: n => `${n} angenommen (nicht einstimmig)`, rejectedTitle: n => `${n} abgelehnt`,
     unanimous: n => `${n} einstimmig`, majority: n => `${n} mit Mehrheit`, rejected: n => `${n} abgelehnt`,
     involved: 'an der Debatte beteiligt', notInvolved: 'nicht beteiligt', notInvolvedHint: 'nicht beteiligt - für Details klicken',
@@ -49,7 +49,7 @@ export const HEMICYCLE_TEXT = {
   },
   en: {
     seats: n => `${n} seats`, seatsInChamber: n => `${n} seats in the Chamber`,
-    results: n => `Vote results (${n} votes)`,
+    results: n => `Vote results (${n} ${n === 1 ? 'vote' : 'votes'})`,
     unanimousTitle: n => `${n} adopted unanimously`, adoptedTitle: n => `${n} adopted (not unanimously)`, rejectedTitle: n => `${n} rejected`,
     unanimous: n => `${n} unanimous`, majority: n => `${n} by majority`, rejected: n => `${n} rejected`,
     involved: 'took part in the debate', notInvolved: 'did not take part', notInvolvedHint: 'did not take part - click for details',
