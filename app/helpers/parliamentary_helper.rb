@@ -162,6 +162,25 @@ module ParliamentaryHelper
   # @param content [String] Full document content
   # @param language [String] 'nl' or 'fr'
   # @return [Hash] { votes: [...], parties: [...], final_result: String }
+  # The final result extract_voting_summary reads ("aangenomen", "verworpen", "adopté", "rejeté"), named in the
+  # interface language for the voting card's heading; it showed the stored word, "Aangenomen" on lisloi.be (Sol, on
+  # live 1.1.27, 19:31:47Z). Any other value is shown as it stands.
+  VOTING_RESULT_LABELS = {
+    adopted: { nl: 'Aangenomen', fr: 'Adopté', de: 'Angenommen', en: 'Adopted' },
+    rejected: { nl: 'Verworpen', fr: 'Rejeté', de: 'Abgelehnt', en: 'Rejected' }
+  }.freeze
+
+  def voting_result_label(result, locale = I18n.locale)
+    kind = case result.to_s.strip.downcase
+           when 'aangenomen', 'adopté', 'adopte' then :adopted
+           when 'verworpen', 'rejeté', 'rejete' then :rejected
+           end
+    return result.to_s.strip.capitalize unless kind
+
+    labels = VOTING_RESULT_LABELS.fetch(kind)
+    labels.fetch(locale.to_sym, labels[:nl])
+  end
+
   def extract_voting_summary(content, language = 'nl')
     return nil if content.blank?
 

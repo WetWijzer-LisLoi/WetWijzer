@@ -511,7 +511,7 @@
           <% if voting[:final_result] %>
             <% result_color = voting[:final_result].match?(/aangenomen|adopté/i) ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' %>
             <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= result_color %>">
-              <%= voting[:final_result].capitalize %>
+              <%= voting_result_label(voting[:final_result]) %>
             </span>
           <% end %>
         </h2>

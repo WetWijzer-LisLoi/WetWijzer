@@ -202,11 +202,15 @@ export default class extends Controller {
         const owner = this.application?.getControllerForElementAndIdentifier(element, identifier)
         if (!owner?.hasMenuTarget || owner.menuTarget.classList.contains('hidden')) return
 
+        // The focus goes back to the menu's button only when it was inside the menu. A reader who has already moved
+        // on (Tab out of the open RSS menu, then Escape) keeps the focus there; it jumped back to the button (Sol,
+        // on live 1.1.27, 19:22:50Z). Escape inside a menu is handled by the menu itself first.
+        const inside = Boolean(element.contains?.(document.activeElement))
         if (identifier === 'dropdown') {
-          owner.close({ restoreFocus: true })
+          owner.close({ restoreFocus: inside })
         } else {
           owner.toggle()
-          if (owner.hasButtonTarget) owner.buttonTarget.focus()
+          if (inside && owner.hasButtonTarget) owner.buttonTarget.focus()
         }
       })
     }

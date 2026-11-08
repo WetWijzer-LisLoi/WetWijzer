@@ -46,15 +46,28 @@ export default class extends Controller {
     // A field the reader emptied, or holding a real date, loses an old message when focus leaves it.
     this.onBlur = () => setTimeout(() => this.settle(), 0)
     this.element.addEventListener('blur', this.onBlur)
+    // Escape with the calendar open closes it and leaves the focus and the text in the field. flatpickr leaves the
+    // keys of a field that allows typing to the field, so Escape went on to the page's shortcuts, which let go of
+    // the focus and left the calendar open (Sol, on live 1.1.27, 21:11:23Z). The event is marked handled for them.
+    this.onKeydown = (event) => this.closeOnEscape(event)
+    this.element.addEventListener('keydown', this.onKeydown)
   }
 
   disconnect() {
     clearTimeout(this.pending)
     this.pending = null
     this.element.removeEventListener('blur', this.onBlur)
+    this.element.removeEventListener('keydown', this.onKeydown)
     if (this.element._flatpickr) {
       this.element._flatpickr.destroy()
     }
+  }
+
+  closeOnEscape(event) {
+    const picker = this.element._flatpickr
+    if (event?.key !== 'Escape' || !picker?.isOpen) return
+    event.preventDefault()
+    picker.close()
   }
 
   // flatpickr's parser: only real calendar dates. A text it cannot read is remembered and put back after flatpickr

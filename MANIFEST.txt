@@ -139,6 +139,7 @@ app/javascript/controllers/purchase_consent_controller.js
 app/javascript/controllers/reading_width_controller.js
 app/javascript/controllers/reference_highlight_controller.js
 app/javascript/controllers/related_sources_controller.js
+app/javascript/controllers/results_landing_controller.js
 app/javascript/controllers/scroll_top_controller.js
 app/javascript/controllers/search_validation_controller.js
 app/javascript/controllers/sidebar_auto_open_controller.js
@@ -842,6 +843,7 @@ public/vite/assets/application-BELQxtqB.css
 public/vite/assets/application-BFk3wwTL.js
 public/vite/assets/application-BIfRnGfl.js
 public/vite/assets/application-BJmR8QsU.js
+public/vite/assets/application-BMEVFBu-.js
 public/vite/assets/application-BMip9UU6.js
 public/vite/assets/application-BNy_mebb.js
 public/vite/assets/application-BOb8DHIW.js
@@ -872,6 +874,7 @@ public/vite/assets/application-C5z1BICl.css
 public/vite/assets/application-C6k_wDJG.css
 public/vite/assets/application-CBormHI8.js
 public/vite/assets/application-CDdQnrxc.js
+public/vite/assets/application-CFcQDgA2.js
 public/vite/assets/application-CH3bDzQA.css
 public/vite/assets/application-CJKP9SDV.js
 public/vite/assets/application-CKSngAOE.css

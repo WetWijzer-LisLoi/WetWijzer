@@ -212,6 +212,29 @@ module PopularLawsHelper
     ORDER BY documents.id DESC
   SQL
 
+  # The same, newest document date first, as the View-all list orders its recent documents (ParliamentaryController
+  # #recent_documents, through the same index of date, language and row id). Ordered by row id, the homepage showed
+  # documents imported late but dated 2026-10-22 while the list started at 2026-11-03 (Sol, on live 1.1.27,
+  # 20:45:16Z). A document without a date comes last, as there. The row-id order stays for a database without that
+  # index.
+  RECENT_PARLIAMENTARY_BY_DATE_SQL = <<~SQL.freeze
+    WITH newest_document_ids AS MATERIALIZED (
+      SELECT id
+      FROM documents INDEXED BY idx_documents_date_language
+      WHERE language = ?
+      ORDER BY document_date DESC, id DESC
+      LIMIT ?
+    )
+    SELECT documents.id, documents.title, documents.parliament,
+           documents.dossier_number, documents.document_date
+    FROM newest_document_ids
+    INNER JOIN documents ON documents.id = newest_document_ids.id
+    WHERE documents.title IS NOT NULL
+      AND TRIM(documents.title) != ''
+      AND LENGTH(documents.title) > 20
+    ORDER BY documents.document_date DESC, documents.id DESC
+  SQL
+
   # Returns the catalogue's explicitly supported abbreviation for an
   # instrument and locale. Missing keys and missing locale labels deliberately
   # remain blank: guessing from a title would turn a convenience label into an
@@ -318,7 +341,10 @@ module PopularLawsHelper
     language = recent_parliamentary_language
 
     database = SQLite3::Database.new(path)
-    rows = database.execute(RECENT_PARLIAMENTARY_SQL, [language, window_limit])
+    by_date = database.get_first_value("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?",
+                                       ['idx_documents_date_language']).present?
+    sql = by_date ? RECENT_PARLIAMENTARY_BY_DATE_SQL : RECENT_PARLIAMENTARY_SQL
+    rows = database.execute(sql, [language, window_limit])
 
     seen_dossiers = {}
     documents = []

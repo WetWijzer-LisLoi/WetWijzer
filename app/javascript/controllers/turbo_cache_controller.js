@@ -23,6 +23,26 @@ import { Controller } from "@hotwired/stimulus";
 // when a load starts) that comes back with a source and no content is fetched from its own source; a frame with
 // rows, a frame Turbo is still loading, or a normal visit is left alone. The "busy" mark is no guide here: onLoad
 // clears every one first, as a restored page carries them from the cache (Sol 16:44:13Z).
+//
+// The cause, found 2026-11-08 (Sol, on live 1.1.28, 23:41:13Z, task 77, reproduced in Chrome): a search submit emptied
+// the legislation frame for its loading skeleton (search_validation_controller#showImmediateLoadingUI) before Turbo
+// cached the page, so the snapshot held an empty frame marked complete. The submit now only hides the rows, and
+// restoreHeldResults shows them again before the snapshot. And this repair never ran: Turbo replaces the body on a
+// restore, so the controller that saw the restore visit was gone when the page loaded and its successor never knew;
+// the restore is now remembered by the module (restoreVisitPending).
+let restoreVisitPending = false;
+
+// The rows a search submit hid (search_validation_controller#holdResults), shown again, and its loading marks removed,
+// so the page Turbo caches is the page the reader saw.
+export function restoreHeldResults(root) {
+  root.querySelectorAll('[data-ww-client-loading]').forEach(el => el.remove());
+  root.querySelectorAll('[data-ww-held-results]').forEach(el => {
+    el.style.display = el.dataset.wwHeldDisplay || '';
+    el.removeAttribute('data-ww-held-results');
+    delete el.dataset.wwHeldDisplay;
+  });
+}
+
 export function reloadEmptyFrames(root) {
   root.querySelectorAll('turbo-frame[src]').forEach(frame => {
     if (!frame.hasAttribute('complete') || frame.textContent.trim() !== '') return;
@@ -63,6 +83,7 @@ export default class extends Controller {
    * Removes temporary states that shouldn't be cached
    */
   beforeCache = () => {
+    restoreHeldResults(document);
     resetSearchForms(document);
     // Remove loading skeletons
     document.querySelectorAll('.loading-skeleton').forEach(el => {
@@ -125,13 +146,13 @@ export default class extends Controller {
       frame.removeAttribute('busy');
     });
 
-    if (this.restoring) {
-      this.restoring = false;
+    if (restoreVisitPending) {
+      restoreVisitPending = false;
       reloadEmptyFrames(document);
     }
   };
 
   onVisit = (event) => {
-    this.restoring = event?.detail?.action === 'restore';
+    restoreVisitPending = event?.detail?.action === 'restore';
   };
 }

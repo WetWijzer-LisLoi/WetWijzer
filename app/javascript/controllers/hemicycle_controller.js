@@ -12,6 +12,58 @@ import { Controller } from "@hotwired/stimulus"
  *   votes:    [{ ref, result }]  - article/amendment vote details
  *   result:   String - final result text (e.g. "aangenomen")
  */
+
+// Every word the hemicycle writes, in the interface language (the page's lang). It was Dutch on every site (Sol, on
+// live 1.1.27, 19:31:47Z: lisloi.be showed "betrokken bij debat ... niet betrokken - klik voor details"). Party and
+// speaker names are the document's and stay as they are.
+export const HEMICYCLE_TEXT = {
+  nl: {
+    seats: n => `${n} zetels`, seatsInChamber: n => `${n} zetels in de Kamer`,
+    results: n => `Stemmingsresultaten (${n} stemmingen)`,
+    unanimousTitle: n => `${n} eenparig aangenomen`, adoptedTitle: n => `${n} aangenomen (niet-eenparig)`, rejectedTitle: n => `${n} verworpen`,
+    unanimous: n => `${n} eenparig`, majority: n => `${n} meerderheid`, rejected: n => `${n} verworpen`,
+    involved: 'betrokken bij debat', notInvolved: 'niet betrokken', notInvolvedHint: 'niet betrokken - klik voor details',
+    speakers: 'Sprekers in dit debat:',
+    noSpeakers: 'Partij betrokken bij stemming - individuele sprekers niet geïdentificeerd in deze tekst.',
+    notMentioned: 'Deze partij werd niet vermeld in het verslag van deze commissievergadering.'
+  },
+  fr: {
+    seats: n => `${n} sièges`, seatsInChamber: n => `${n} sièges à la Chambre`,
+    results: n => `Résultats des votes (${n} votes)`,
+    unanimousTitle: n => `${n} adoptés à l'unanimité`, adoptedTitle: n => `${n} adoptés (pas à l'unanimité)`, rejectedTitle: n => `${n} rejetés`,
+    unanimous: n => `${n} à l'unanimité`, majority: n => `${n} à la majorité`, rejected: n => `${n} rejetés`,
+    involved: 'a pris part au débat', notInvolved: "n'a pas pris part", notInvolvedHint: "n'a pas pris part - cliquez pour les détails",
+    speakers: 'Orateurs dans ce débat :',
+    noSpeakers: 'Parti concerné par le vote - orateurs individuels non identifiés dans ce texte.',
+    notMentioned: "Ce parti n'est pas mentionné dans le rapport de cette réunion de commission."
+  },
+  de: {
+    seats: n => `${n} Sitze`, seatsInChamber: n => `${n} Sitze in der Kammer`,
+    results: n => `Abstimmungsergebnisse (${n} Abstimmungen)`,
+    unanimousTitle: n => `${n} einstimmig angenommen`, adoptedTitle: n => `${n} angenommen (nicht einstimmig)`, rejectedTitle: n => `${n} abgelehnt`,
+    unanimous: n => `${n} einstimmig`, majority: n => `${n} mit Mehrheit`, rejected: n => `${n} abgelehnt`,
+    involved: 'an der Debatte beteiligt', notInvolved: 'nicht beteiligt', notInvolvedHint: 'nicht beteiligt - für Details klicken',
+    speakers: 'Redner in dieser Debatte:',
+    noSpeakers: 'Partei an der Abstimmung beteiligt - einzelne Redner in diesem Text nicht erkannt.',
+    notMentioned: 'Diese Partei wird im Bericht dieser Ausschusssitzung nicht erwähnt.'
+  },
+  en: {
+    seats: n => `${n} seats`, seatsInChamber: n => `${n} seats in the Chamber`,
+    results: n => `Vote results (${n} votes)`,
+    unanimousTitle: n => `${n} adopted unanimously`, adoptedTitle: n => `${n} adopted (not unanimously)`, rejectedTitle: n => `${n} rejected`,
+    unanimous: n => `${n} unanimous`, majority: n => `${n} by majority`, rejected: n => `${n} rejected`,
+    involved: 'took part in the debate', notInvolved: 'did not take part', notInvolvedHint: 'did not take part - click for details',
+    speakers: 'Speakers in this debate:',
+    noSpeakers: 'Party involved in the vote - individual speakers not identified in this text.',
+    notMentioned: 'This party is not mentioned in the report of this committee meeting.'
+  }
+}
+
+export function hemicycleText (lang) {
+  const code = String(lang || '').toLowerCase().split(/[-_]/)[0]
+  return HEMICYCLE_TEXT[code] || HEMICYCLE_TEXT.nl
+}
+
 export default class extends Controller {
   static values = {
     parties:  Array,
@@ -21,6 +73,8 @@ export default class extends Controller {
   }
 
   connect() {
+    // The interface language: the page's own lang, not a document's (the card may sit beside the document's text).
+    this.text = hemicycleText(document.documentElement.lang)
     this.selectedParty = null
     this.groups = {}
     this.render()
@@ -79,7 +133,7 @@ export default class extends Controller {
         c.style.cursor = "pointer"
         // Native tooltip
         const t = this._ns("title")
-        t.textContent = `${p.party} (${p.seats} zetels)`
+        t.textContent = `${p.party} (${this.text.seats(p.seats)})`
         c.appendChild(t)
         this.groups[p.party].push(c)
         svg.appendChild(c)
@@ -112,7 +166,7 @@ export default class extends Controller {
     lbl.setAttribute("fill", "currentColor")
     lbl.setAttribute("class", "text-gray-400 dark:text-gray-300/50")
     lbl.setAttribute("font-size", "12"); lbl.setAttribute("font-weight", "600")
-    lbl.textContent = `${totalSeats} zetels`
+    lbl.textContent = this.text.seats(totalSeats)
     svg.appendChild(lbl)
     root.appendChild(svg)
 
@@ -150,17 +204,17 @@ export default class extends Controller {
       // Visual bar
       bar.innerHTML = `
         <div class="text-[10px] text-gray-500 dark:text-gray-300/50 mb-1 text-center font-medium">
-          Stemmingsresultaten (${total} stemmingen)
+          ${this.text.results(total)}
         </div>
         <div class="flex h-2.5 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-900/60">
-          ${unanimous ? `<div class="bg-emerald-500" style="width:${unanimous/total*100}%" title="${unanimous} eenparig aangenomen"></div>` : ''}
-          ${adopted  ? `<div class="bg-amber-400" style="width:${adopted/total*100}%" title="${adopted} aangenomen (niet-eenparig)"></div>` : ''}
-          ${rejected ? `<div class="bg-red-500" style="width:${rejected/total*100}%" title="${rejected} verworpen"></div>` : ''}
+          ${unanimous ? `<div class="bg-emerald-500" style="width:${unanimous/total*100}%" title="${this.text.unanimousTitle(unanimous)}"></div>` : ''}
+          ${adopted  ? `<div class="bg-amber-400" style="width:${adopted/total*100}%" title="${this.text.adoptedTitle(adopted)}"></div>` : ''}
+          ${rejected ? `<div class="bg-red-500" style="width:${rejected/total*100}%" title="${this.text.rejectedTitle(rejected)}"></div>` : ''}
         </div>
         <div class="flex justify-center gap-3 mt-1 text-[10px] text-gray-400 dark:text-gray-300/40">
-          ${unanimous ? `<span class="flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ${unanimous} eenparig</span>` : ''}
-          ${adopted  ? `<span class="flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> ${adopted} meerderheid</span>` : ''}
-          ${rejected ? `<span class="flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> ${rejected} verworpen</span>` : ''}
+          ${unanimous ? `<span class="flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ${this.text.unanimous(unanimous)}</span>` : ''}
+          ${adopted  ? `<span class="flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> ${this.text.majority(adopted)}</span>` : ''}
+          ${rejected ? `<span class="flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> ${this.text.rejected(rejected)}</span>` : ''}
         </div>`
       root.appendChild(bar)
     }
@@ -168,10 +222,11 @@ export default class extends Controller {
     /* ────── Instruction text ────── */
     const hint = document.createElement("p")
     hint.className = "text-[10px] text-gray-400 dark:text-gray-300/40 text-center"
+    hint.setAttribute("data-hemicycle-hint", "")
     hint.innerHTML = `<span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-0.5"></span>`
-      + ` betrokken bij debat &nbsp;`
+      + ` ${this.text.involved} &nbsp;`
       + `<span class="inline-block w-1.5 h-1.5 rounded-full bg-gray-500 opacity-30 mr-0.5"></span>`
-      + ` niet betrokken - klik voor details`
+      + ` ${this.text.notInvolvedHint}`
     root.appendChild(hint)
 
     /* ────── Detail panel (hidden) ────── */
@@ -226,25 +281,25 @@ export default class extends Controller {
     html += `<div class="flex items-center gap-2 mb-1.5 flex-wrap">`
     html += `<span class="w-3 h-3 rounded-full shrink-0" style="background:${pd?.color||'#888'}"></span>`
     html += `<span class="font-semibold text-sm text-gray-900 dark:text-white">${party}</span>`
-    html += `<span class="text-xs text-gray-500 dark:text-gray-300/60">${pd?.seats||'?'} zetels in de Kamer</span>`
+    html += `<span class="text-xs text-gray-500 dark:text-gray-300/60">${this.text.seatsInChamber(pd?.seats || '?')}</span>`
     if (pd?.involved) {
-      html += `<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-medium">betrokken bij debat</span>`
+      html += `<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-medium">${this.text.involved}</span>`
     } else {
-      html += `<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium">niet betrokken</span>`
+      html += `<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium">${this.text.notInvolved}</span>`
     }
     html += `</div>`
 
     if (members.length > 0) {
-      html += `<div class="text-xs text-gray-500 dark:text-gray-300/60 mb-1">Sprekers in dit debat:</div>`
+      html += `<div class="text-xs text-gray-500 dark:text-gray-300/60 mb-1">${this.text.speakers}</div>`
       html += `<div class="flex flex-wrap gap-1">`
       members.forEach(m => {
         html += `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-white dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">${m.name}</span>`
       })
       html += `</div>`
     } else if (pd?.involved) {
-      html += `<div class="text-xs text-gray-400 dark:text-gray-300/40 italic">Partij betrokken bij stemming - individuele sprekers niet geïdentificeerd in deze tekst.</div>`
+      html += `<div class="text-xs text-gray-400 dark:text-gray-300/40 italic">${this.text.noSpeakers}</div>`
     } else {
-      html += `<div class="text-xs text-gray-400 dark:text-gray-300/40 italic">Deze partij werd niet vermeld in het verslag van deze commissievergadering.</div>`
+      html += `<div class="text-xs text-gray-400 dark:text-gray-300/40 italic">${this.text.notMentioned}</div>`
     }
 
     html += `</div>`

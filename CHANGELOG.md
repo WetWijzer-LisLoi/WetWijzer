@@ -8,6 +8,17 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.29] - 2026-11-08
+
+### Fixed
+- Search: Back after a search that changed the number of results per page shows the earlier list again; its results area came back empty. The new search no longer empties the list before it leaves, and an empty list that comes back from the browser's history is fetched again.
+- Search: a source's own Next or Previous on the combined results shows that source's new page from its heading, which gets the focus; the window stayed near the end of the new page.
+- Parliamentary documents: the voting card speaks the interface language: the result ("Adopté" on the French site), the hemicycle's seats, results and legend, and a party's details. It was Dutch on every site. Speakers' names and the document's own text are unchanged.
+- Homepage: the recent parliamentary documents are the newest by date, as on the View-all list; they were the ones imported last, which can be older. A document without a date comes last.
+- Search filters: Escape in a date field with its calendar open closes the calendar and keeps the focus and the text in the field; the calendar stayed open and the focus fell to the page.
+- Header menus: Escape with the focus outside an open menu (after Tab left it) closes the menu and leaves the focus where it is; it jumped back to the menu's button. Escape inside a menu still returns to its button.
+- Judgments: the 1.1.27 entry overstated the paragraph rule. Precisely: below the one-line threshold, a line longer than 240 characters that ends a sentence stands apart from a following line that starts with a capital; a line of exactly 240 characters, a line that does not end a sentence, and a lowercase continuation still join. Tests now pin these edges.
+
 ## [1.1.28] - 2026-11-07
 
 ### Fixed

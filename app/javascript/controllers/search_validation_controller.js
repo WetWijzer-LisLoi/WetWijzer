@@ -1,5 +1,17 @@
 import { Controller } from "@hotwired/stimulus";
 
+// A results frame's current content, hidden while a new search loads: each child keeps its inline display in
+// data-ww-held-display and is marked data-ww-held-results; earlier loading marks go. See showImmediateLoadingUI.
+export function holdResults(frame) {
+  frame.querySelectorAll("[data-ww-client-loading]").forEach((el) => el.remove());
+  Array.from(frame.children).forEach((child) => {
+    if (child.hasAttribute("data-ww-held-results")) return;
+    child.setAttribute("data-ww-held-results", "");
+    child.dataset.wwHeldDisplay = child.style.display || "";
+    child.style.display = "none";
+  });
+}
+
 /**
  * Search Validation Controller
  * @class SearchValidationController
@@ -130,19 +142,24 @@ export default class extends Controller {
       // Clear any previous indicators below the search, including a completed pill if present
       if (mount) mount.querySelectorAll(".frame-status-progress, .frame-status-pill").forEach((el) => el.remove());
 
-      // 2) Clear previous results and show a lightweight skeleton + top progress inside the results frame
+      // 2) Hide the previous results and show a lightweight skeleton + top progress inside the results frame
       if (frame) {
-        // Remove any previous results immediately to avoid overlap/flicker
-        frame.innerHTML = "";
+        // The previous results are hidden, not removed: Turbo caches this page as it leaves it, and Back showed the
+        // emptied frame, marked complete, with nothing in it (Sol, on live 1.1.28, 23:41:13Z, task 77).
+        // turbo_cache_controller#restoreHeldResults shows them again and removes the loading marks before the
+        // snapshot is taken.
+        holdResults(frame);
 
         // Add thin indeterminate top progress bar
         const bar = document.createElement("div");
+        bar.setAttribute("data-ww-client-loading", "");
         bar.className = "progress-top";
         bar.style.color = "var(--accent-600)";
         frame.appendChild(bar);
 
         // Add a minimal skeleton block
         const sk = document.createElement("div");
+        sk.setAttribute("data-ww-client-loading", "");
         sk.className = "ww-client-skeleton bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 space-y-3";
 
         const lines = [

@@ -1,5 +1,5 @@
 <%# One history snapshot for all sources; document links still leave the frame. %>
-<%= turbo_frame_tag 'search_results', target: '_top', data: { turbo_action: 'advance' } do %>
+<%= turbo_frame_tag 'search_results', target: '_top', data: { turbo_action: 'advance', controller: 'results-landing' } do %>
 <%# ── Search Results Container ── %>
 <div class="mt-4 space-y-4">
   <!-- Mount target for the completed pill below the search bar -->
@@ -34,7 +34,7 @@
 
     <%# ── Wetgeving Results ── %>
     <% if frame_src.present? && params[:source_legislation] != '0' %>
-      <details open class="search-results-disclosure bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden group">
+      <details open data-results-section="legislation" class="search-results-disclosure scroll-mt-24 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden group">
         <summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
           <h2 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 m-0">
             <svg class="w-4 h-4 text-(--accent-600) shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,7 +67,7 @@
       juris_sort = params[:juris_sort].presence || 'date_desc'
       juris_sort_label = juris_sort == 'date_asc' ? (case I18n.locale when :fr then 'Date ↑' when :en then 'Date ↑' else 'Datum ↑' end) : (case I18n.locale when :fr then 'Date ↓' when :en then 'Date ↓' else 'Datum ↓' end)
     %>
-    <details open class="search-results-disclosure bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden group">
+    <details open data-results-section="jurisprudence" class="search-results-disclosure scroll-mt-24 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden group">
       <summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
         <h2 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 m-0">
           <svg class="w-4 h-4 text-(--accent-600) shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,7 +208,7 @@
       parl_sort = params[:parl_sort].presence || 'date_desc'
       parl_sort_label = parl_sort == 'date_asc' ? (case I18n.locale when :fr then 'Date ↑' when :en then 'Date ↑' else 'Datum ↑' end) : (case I18n.locale when :fr then 'Date ↓' when :en then 'Date ↓' else 'Datum ↓' end)
     %>
-    <details open class="search-results-disclosure bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden group">
+    <details open data-results-section="parliamentary" class="search-results-disclosure scroll-mt-24 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden group">
       <summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
         <h2 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 m-0">
           <svg class="w-4 h-4 text-(--accent-600) shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
