@@ -131,6 +131,13 @@ module LawsHelper
     Legislation.language_key_for(language_id.to_i)&.to_s
   end
 
+  # The law page's heading size (Sol, on live 1.1.28, 22:32:46Z: the heading read "Details" on every law; it is now the
+  # law's title). A title of up to 160 characters reads at the readers' size; a longer one takes the smaller size
+  # rather than dominating the page: Belgian law titles run to 2,443 characters, 275,494 of 492,806 are over 200.
+  def law_heading_classes(title)
+    title.to_s.length > 160 ? 'text-lg md:text-xl' : 'text-xl md:text-2xl'
+  end
+
   ENTRY_INTO_FORCE_MONTHS = {
     'januari' => 1, 'janvier' => 1, 'februari' => 2, 'février' => 2, 'fevrier' => 2, 'maart' => 3, 'mars' => 3,
     'april' => 4, 'avril' => 4, 'mei' => 5, 'mai' => 5, 'juni' => 6, 'juin' => 6, 'juli' => 7, 'juillet' => 7,

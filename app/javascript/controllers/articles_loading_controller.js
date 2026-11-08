@@ -14,6 +14,8 @@ export default class extends Controller {
 
   connect() {
     this.onFrameLoad = this.onFrameLoad.bind(this);
+    this.releaseHeading = this.releaseHeading.bind(this);
+    document.addEventListener("turbo:before-cache", this.releaseHeading);
     this._startTime = performance.now();
     this._timerInterval = null;
 
@@ -39,6 +41,45 @@ export default class extends Controller {
       this.frame.removeEventListener("turbo:frame-load", this.onFrameLoad);
     }
     document.removeEventListener("turbo:frame-load", this.onFrameLoad);
+    document.removeEventListener("turbo:before-cache", this.releaseHeading);
+    window.removeEventListener("resize", this.onResize);
+  }
+
+  // The law page's heading is the law's title since 1.1.30 and shares its row with this pill. When the pill left the
+  // layout, the header reflowed and the page below moved, 1 to 3 s after it opened (receipt-1-1-30-b; measured in
+  // Chrome on the two-line test title: the title took the pill's width and became one line, 38 px; with the title
+  // held, the shorter row gave the toolbar room to go from two rows to one, 8 px). The title keeps its width and its
+  // row keeps its width until the window's width changes (a phone's address bar changes only its height) or Turbo
+  // caches the page.
+  keepHeadingLines() {
+    const row = this.headingRow;
+    const heading = row?.querySelector("h1");
+    const width = heading?.getBoundingClientRect().width;
+    if (!width) return;
+    heading.style.maxWidth = `${width}px`;
+    row.style.minWidth = `${row.getBoundingClientRect().width}px`;
+    this._lockedWidth = window.innerWidth;
+    window.addEventListener("resize", this.onResize, { passive: true });
+  }
+
+  onResize = () => {
+    if (window.innerWidth !== this._lockedWidth) this.releaseHeading();
+  };
+
+  releaseHeading() {
+    window.removeEventListener("resize", this.onResize);
+    const row = this.headingRow;
+    const heading = row?.querySelector("h1");
+    if (!heading) return;
+    heading.style.maxWidth = "";
+    row.style.minWidth = "";
+  }
+
+  // The pill's row, when it holds the page's heading. The heading is found here, not marked as a target: the print
+  // stylesheet hides every [data-articles-loading-target] element, and a marked heading vanished from the print.
+  get headingRow() {
+    const row = this.hasIndicatorTarget ? this.indicatorTarget.parentElement : null;
+    return row?.querySelector("h1") ? row : null;
   }
 
   onFrameLoad(event) {
@@ -136,6 +177,7 @@ export default class extends Controller {
           "motion-reduce:transition-none"
         );
         setTimeout(() => {
+          this.keepHeadingLines();
           this.indicatorTarget.classList.add("hidden");
           // Theme utilities can keep an opacity-zero hidden pill as an
           // inline flex box. An inline !important declaration is the final

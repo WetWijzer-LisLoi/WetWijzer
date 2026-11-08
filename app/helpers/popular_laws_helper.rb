@@ -733,12 +733,18 @@ module PopularLawsHelper
     result.html_safe
   end
 
+  # What qualifies the article before it and is not itself an article: a paragraph, a "lid" or "alinéa", and a
+  # sentence or clause ordinal ("1429 1e zin", "2e-3e zin", "1e zinsdeel", "1re phrase"). Sol, on live 1.1.28
+  # (2026-11-08 04:28:46Z): "1429 1e zin" also linked "1e", to article 1 of Book I. "1er" alone stays an article.
+  # Over the three concordance files the ordinal rule changes exactly two cells, 1429 1e zin and 1429 2e zin.
+  SENTENCE_ORDINAL = '\d+(?:e|ste|de|re|ème)'
+  SEGMENT_QUALIFIER = /(?=\s*(?:§|\blid\b|\bal\.|\balinea\b|#{SENTENCE_ORDINAL}(?:-#{SENTENCE_ORDINAL})?\s+(?:zinsdeel|zin|phrase)\b))/i
+
   # Shared: link article numbers in a single segment (no ";" inside).
-  # Splits at first §/lid/al./alinea - only links the article part before it.
+  # Splits at the first qualifier (SEGMENT_QUALIFIER) - only links the article part before it.
   # The block receives the matched number and must return a NUMAC (or nil to skip).
   def linkify_segment(segment)
-    # Split at first § / lid / al. / alinea
-    article_part, suffix = segment.split(/(?=\s*(?:§|\blid\b|\bal\.|\balinea\b))/i, 2)
+    article_part, suffix = segment.split(SEGMENT_QUALIFIER, 2)
     return ERB::Util.html_escape(segment) if article_part.blank?
 
     escaped = ERB::Util.html_escape(article_part)

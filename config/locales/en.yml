@@ -306,6 +306,9 @@ en:
   numac_placeholder: "2024001234"
   numac_hint: "Search by NUMAC number"
   sort_order: "Sort by"
+  sort_legislation: "Sort legislation by"
+  sort_jurisprudence: "Sort case law by"
+  sort_parliamentary: "Sort parliamentary documents by"
   sort_relevance: "Relevance"
   sort_date_desc: "Date (descending)"
   sort_date_asc: "Date (ascending)"
@@ -1053,8 +1056,9 @@ en:
     description: "Praxis is still in development. The planned product combines cases, documents, time tracking and invoicing, with legal AI in Plus. From the makers of WetWijzer / LisLoi / GesetzGuide / LexLibera."
     cta: "Discover Praxis"
     tagline: "Planned launch prices for 1 user: Essentials €%{essentials}/month · Plus with AI €%{plus}/month (excl. VAT)"
-    teaser_title: "Praxis is in development"
-    teaser_description: "Planned practice management with legal AI in Plus. Explore the project."
+    teaser_title: "Praxis - In development"
+    teaser_description: "Case files, time tracking and invoicing for lawyers."
+    teaser_cta: "More about Praxis →"
 
   # Roll-call votes (naamstemmingen) on dossier and MP pages. The source,
   # parlement.thundr.be, stopped publishing; the last vote held is from

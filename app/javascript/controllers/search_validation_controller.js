@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus";
+import { restoreHeldResults } from "./turbo_cache_controller.js";
 
 // A results frame's current content, hidden while a new search loads: each child keeps its inline display in
 // data-ww-held-display and is marked data-ww-held-results; earlier loading marks go. See showImmediateLoadingUI.
@@ -37,6 +38,21 @@ export default class extends Controller {
    * @type {string[]}
    */
   static targets = ["panel", "types", "languages", "scope"];
+
+  connect() {
+    this.element.addEventListener("turbo:submit-end", this.onSubmitEnd);
+  }
+
+  disconnect() {
+    this.element.removeEventListener("turbo:submit-end", this.onSubmitEnd);
+  }
+
+  // A submit that fails (a network error, an error response) leaves this page on screen, so the rows hidden for
+  // the loading view come back and the loading marks go (Sol 2026-11-08 00:58:16Z: error submits). A successful
+  // submit leaves them to the visit, which replaces the body; turbo:before-cache restores them for the snapshot.
+  onSubmitEnd = (event) => {
+    if (event?.detail?.success === false) restoreHeldResults(document);
+  };
 
   /**
    * Validates form before submission

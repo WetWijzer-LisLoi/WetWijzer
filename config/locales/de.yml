@@ -307,6 +307,9 @@ de:
   numac_placeholder: "2024001234"
   numac_hint: "Nach NUMAC-Nummer suchen"
   sort_order: "Sortieren"
+  sort_legislation: "Gesetzgebung sortieren"
+  sort_jurisprudence: "Rechtsprechung sortieren"
+  sort_parliamentary: "Parlamentarische Dokumente sortieren"
   sort_relevance: "Relevanz"
   sort_date_desc: "Datum (absteigend)"
   sort_date_asc: "Datum (aufsteigend)"
@@ -1087,8 +1090,9 @@ de:
     description: "Praxis befindet sich noch in Entwicklung. Die geplante Software verbindet Akten, Dokumente, Zeiterfassung und Rechnungsstellung mit juristischer KI in Plus. Von den Machern von WetWijzer / LisLoi / GesetzGuide / LexLibera."
     cta: "Praxis entdecken"
     tagline: "Geplante Einführungspreise für 1 Nutzer: Essentials €%{essentials}/Monat · Plus mit KI €%{plus}/Monat (zzgl. MwSt.)"
-    teaser_title: "Praxis befindet sich in Entwicklung"
-    teaser_description: "Geplante Kanzleiverwaltung mit juristischer KI in Plus. Entdecken Sie das Projekt."
+    teaser_title: "Praxis - In Entwicklung"
+    teaser_description: "Akten, Zeiterfassung und Rechnungsstellung für Anwälte."
+    teaser_cta: "Mehr über Praxis →"
 
   # Roll-call votes on dossier and MP pages; see en.yml.
   parliamentary:

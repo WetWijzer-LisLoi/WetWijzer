@@ -3,23 +3,24 @@
 <h1>Soutenez LisLoi</h1>
 
     <div class="highlight">
-        <p><strong>LisLoi</strong> rend la l&eacute;gislation et la jurisprudence belges consultables et lisibles gratuitement &mdash; sans compte et sans mur payant. Le chatbot IA est une fonction payante : &agrave; l&rsquo;inscription vous recevez <%= RegistrationsController::STARTER_CREDITS %> cr&eacute;dits de d&eacute;part gratuits, ensuite des cr&eacute;dits ou un abonnement Pro sont n&eacute;cessaires, car chaque question au chatbot nous co&ucirc;te de l&rsquo;argent chez le fournisseur IA. La plateforme est g&eacute;r&eacute;e par une seule personne &mdash; un avocat convaincu que la loi elle-m&ecirc;me ne devrait pas &ecirc;tre derri&egrave;re un mur payant. Pour maintenir ce projet en ligne, nous avons besoin de votre soutien.</p>
+        <p><strong>LisLoi</strong> rend la l&eacute;gislation, la jurisprudence et les documents parlementaires belges consultables et lisibles gratuitement &mdash; sans compte et sans mur payant. Le chatbot IA est une fonction payante : &agrave; l&rsquo;inscription vous recevez <%= RegistrationsController::STARTER_CREDITS %> cr&eacute;dits de d&eacute;part gratuits, ensuite des cr&eacute;dits ou un abonnement Pro sont n&eacute;cessaires, car chaque question au chatbot nous co&ucirc;te de l&rsquo;argent chez le fournisseur IA. La plateforme est g&eacute;r&eacute;e par une seule personne &mdash; un avocat convaincu que la loi elle-m&ecirc;me ne devrait pas &ecirc;tre derri&egrave;re un mur payant. Pour maintenir ce projet en ligne, nous avons besoin de votre soutien.</p>
     </div>
 
     <h2>Pourquoi votre soutien compte</h2>
-    <p>LisLoi co&ucirc;te de l&rsquo;argent &agrave; faire tourner : co&ucirc;ts de serveur, co&ucirc;ts IA pour chaque question du chatbot, stockage de plus de 175 000 d&eacute;cisions de justice, et le d&eacute;veloppement continu de nouvelles fonctionnalit&eacute;s. Votre soutien maintient la consultation et la lecture de la l&eacute;gislation et de la jurisprudence gratuites, et rend possibles les cr&eacute;dits de d&eacute;part pour les nouveaux utilisateurs.</p>
+    <p>LisLoi co&ucirc;te de l&rsquo;argent &agrave; faire tourner : co&ucirc;ts de serveur, co&ucirc;ts IA pour chaque question du chatbot, stockage de plus de 175 000 d&eacute;cisions de justice, et le d&eacute;veloppement continu de nouvelles fonctionnalit&eacute;s. Votre soutien maintient la consultation et la lecture de la l&eacute;gislation, de la jurisprudence et des documents parlementaires gratuites, et rend possibles les cr&eacute;dits de d&eacute;part pour les nouveaux utilisateurs.</p>
 
-    <h2><%= support_decoration(:star) %> Abonnez-vous &agrave; LisLoi Pro</h2>
-    <p>La meilleure fa&ccedil;on de soutenir LisLoi est de devenir <strong>abonn&eacute; Pro</strong>. Pour seulement <strong>&euro;2,99/mois</strong>, vous obtenez :</p>
+    <h2><%= support_decoration(:star) %> Abonnez-vous &agrave; <%= site_name %> Pro</h2>
+    <p>La meilleure fa&ccedil;on de soutenir <%= site_name %> est de devenir <strong>abonn&eacute; Pro</strong>. Pour <strong><%= number_to_currency(Subscription::TIER_CONFIG.fetch('pro').fetch(:price_monthly).to_d / 100, locale: I18n.locale, unit: '€', format: '%u%n', precision: 2) %>/mois</strong>, vous obtenez :</p>
     <ul>
-        <li><%= support_decoration(:star) %> Accès aussi au groupe <strong>Étendue</strong>, dès que disponible ; Rapide, Équilibrée et Approfondie ne nécessitent pas Pro</li>
+        <li><%= support_decoration(:star) %> Acc&egrave;s au groupe de mod&egrave;les <strong><%= support_pro_catalogue_lines.select { |line| line[:pro] }.map { |line| line[:label] }.join(', ') %></strong> ; Rapide, &Eacute;quilibr&eacute;e et Approfondie ne n&eacute;cessitent pas Pro</li>
         <li><%= support_decoration(:chat) %> <strong><%= Subscription::PRO_MONTHLY_CREDITS %> cr&eacute;dits chatbot gratuits par mois</strong> (inclus dans l'abonnement)</li>
-        <li><%= support_decoration(:document) %> Recherche dans les <strong>documents parlementaires</strong> via le chatbot</li>
-        <li><%= support_decoration(:robot) %> <strong>Catalogue actuel :</strong> <%= chatbot_all_model_names %>. Les modèles Bientôt disponibles restent non sélectionnables</li>
+        <li><%= support_decoration(:document) %> <%= pricing_access_copy.fetch(:source_access) %></li>
+        <li><%= support_decoration(:robot) %> <strong><%= site_name %> Pro - Mod&egrave;les et possibilit&eacute;s :</strong> <%= chatbot_pricing_catalogue_summary %>
+            <ul><% support_pro_catalogue_lines.each do |line| %><li><%= line[:label] %><%= ' (Pro)' if line[:pro] %>: <%= line[:models].join(', ') %></li><% end %></ul></li>
     </ul>
     <p><%= link_to pricing_path, class: "ww-promotion-cta inline-flex items-center px-4 py-2 text-white rounded-lg font-semibold transition hover:opacity-90", style: "background: var(--accent-600-solid);" do %>
         <svg class="w-4 h-4 mr-2 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1z"/></svg>
-        D&eacute;couvrir LisLoi Pro
+        Voir les mod&egrave;les et les conditions Pro
     <% end %></p>
 
     <h2 id="donate"><%= support_decoration(:coffee) %> Faites un don ponctuel</h2>

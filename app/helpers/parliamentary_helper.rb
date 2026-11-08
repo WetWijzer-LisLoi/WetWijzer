@@ -369,6 +369,18 @@ module ParliamentaryHelper
       GENERIC_PARL_TITLES.any? { |g| s.casecmp?(g) }
   end
 
+  # A legacy title repair (lib/tasks/rescrape_bad_titles.py) stored at most 200 characters: on 2026-11-08 production
+  # held 7,225 Chamber and Senate titles of exactly 200 characters, against about 150 to 260 at each neighbouring
+  # length, 6,899 of them without closing punctuation, mostly cut mid-word (document 46343: "... et des di"; the
+  # dossier's title has 234 characters, Sol 01:12:39Z and 07:46:07Z). Such a title is shown with an ellipsis so it does
+  # not read as complete; no word is guessed. The Chamber lane re-titles them from the fiche (scrape_leg56.py).
+  LEGACY_TITLE_CUT = 200
+
+  def self.legacy_cut_title?(title)
+    s = title.to_s
+    s.length == LEGACY_TITLE_CUT && !s.rstrip.match?(/[.)\]?!»"]\z/)
+  end
+
   # Clean a parliamentary title for display.
   # Strips dossier number prefixes and generic placeholder titles.
   #
@@ -409,7 +421,10 @@ module ParliamentaryHelper
     s = s.sub(/\As\d?\s+/i, '')
 
     s = s.strip
-    s.present? ? s : "Dossier #{dossier}"
+    return "Dossier #{dossier}" if s.blank?
+
+    # A title the legacy repair cut (LEGACY_TITLE_CUT) ends with an ellipsis, so it does not read as complete.
+    ParliamentaryHelper.legacy_cut_title?(title) ? "#{s}…" : s
   end
 
   # Extract a meaningful title from document content.

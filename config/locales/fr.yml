@@ -329,6 +329,9 @@ fr:
   numac_placeholder: "2024001234"
   numac_hint: "Rechercher par numéro NUMAC"
   sort_order: "Trier"
+  sort_legislation: "Trier la législation"
+  sort_jurisprudence: "Trier la jurisprudence"
+  sort_parliamentary: "Trier les documents parlementaires"
   sort_relevance: "Pertinence"
   sort_date_desc: "Date (décroissant)"
   sort_date_asc: "Date (croissant)"
@@ -1065,8 +1068,9 @@ fr:
     description: "Praxis est encore en développement. Le logiciel prévu combine dossiers, documents, suivi du temps et facturation, avec l'IA juridique dans Plus. Par les créateurs de WetWijzer / LisLoi / GesetzGuide / LexLibera."
     cta: "Découvrir Praxis"
     tagline: "Tarifs de lancement prévus pour 1 utilisateur : Essentials %{essentials} €/mois · Plus avec IA %{plus} €/mois (hors TVA)"
-    teaser_title: "Praxis est en développement"
-    teaser_description: "Gestion de cabinet prévue avec l'IA juridique dans Plus. Découvrez le projet."
+    teaser_title: "Praxis - En développement"
+    teaser_description: "Dossiers, suivi du temps et facturation pour avocats."
+    teaser_cta: "En savoir plus sur Praxis →"
 
   # Roll-call votes on dossier and MP pages; see en.yml.
   parliamentary:

@@ -3,23 +3,24 @@
 <h1>Unterst&uuml;tzen Sie GesetzGuide</h1>
 
     <div class="highlight">
-        <p><strong>GesetzGuide</strong> macht belgische Gesetzgebung und Rechtsprechung kostenlos durchsuchbar und lesbar &mdash; ohne Konto und ohne Bezahlschranke. Der KI-Chatbot ist eine kostenpflichtige Funktion: bei der Registrierung erhalten Sie <%= RegistrationsController::STARTER_CREDITS %> kostenlose Startcredits, danach sind Credits oder ein Pro-Abonnement erforderlich, denn jede Chatbot-Frage kostet uns beim KI-Anbieter Geld. Die Plattform wird von einer einzigen Person betrieben &mdash; einem Anwalt, der davon &uuml;berzeugt ist, dass das Gesetz selbst nicht hinter einer Bezahlschranke geh&ouml;rt. Um dieses Projekt am Laufen zu halten, brauchen wir Ihre Unterst&uuml;tzung.</p>
+        <p><strong>GesetzGuide</strong> macht belgische Gesetzgebung, Rechtsprechung und parlamentarische Dokumente kostenlos durchsuchbar und lesbar &mdash; ohne Konto und ohne Bezahlschranke. Der KI-Chatbot ist eine kostenpflichtige Funktion: bei der Registrierung erhalten Sie <%= RegistrationsController::STARTER_CREDITS %> kostenlose Startcredits, danach sind Credits oder ein Pro-Abonnement erforderlich, denn jede Chatbot-Frage kostet uns beim KI-Anbieter Geld. Die Plattform wird von einer einzigen Person betrieben &mdash; einem Anwalt, der davon &uuml;berzeugt ist, dass das Gesetz selbst nicht hinter einer Bezahlschranke geh&ouml;rt. Um dieses Projekt am Laufen zu halten, brauchen wir Ihre Unterst&uuml;tzung.</p>
     </div>
 
     <h2>Warum Ihre Unterst&uuml;tzung wichtig ist</h2>
-    <p>GesetzGuide kostet Geld: Serverkosten, KI-Kosten f&uuml;r jede Chatbot-Frage, Speicherplatz f&uuml;r &uuml;ber 175.000 Gerichtsentscheidungen und die laufende Entwicklung neuer Funktionen. Ihre Unterst&uuml;tzung h&auml;lt das Suchen und Lesen von Gesetzgebung und Rechtsprechung kostenlos und erm&ouml;glicht die Startcredits f&uuml;r neue Nutzer.</p>
+    <p>GesetzGuide kostet Geld: Serverkosten, KI-Kosten f&uuml;r jede Chatbot-Frage, Speicherplatz f&uuml;r &uuml;ber 175.000 Gerichtsentscheidungen und die laufende Entwicklung neuer Funktionen. Ihre Unterst&uuml;tzung h&auml;lt das Suchen und Lesen von Gesetzgebung, Rechtsprechung und parlamentarischen Dokumenten kostenlos und erm&ouml;glicht die Startcredits f&uuml;r neue Nutzer.</p>
 
-    <h2><%= support_decoration(:star) %> GesetzGuide Pro-Abonnement</h2>
-    <p>Die beste M&ouml;glichkeit, GesetzGuide zu unterst&uuml;tzen, ist ein <strong>Pro-Abonnement</strong>. F&uuml;r nur <strong>&euro;2,99/Monat</strong> erhalten Sie:</p>
+    <h2><%= support_decoration(:star) %> <%= site_name %> Pro-Abonnement</h2>
+    <p>Die beste M&ouml;glichkeit, <%= site_name %> zu unterst&uuml;tzen, ist ein <strong>Pro-Abonnement</strong>. F&uuml;r <strong><%= number_to_currency(Subscription::TIER_CONFIG.fetch('pro').fetch(:price_monthly).to_d / 100, locale: I18n.locale, unit: '€', format: '%u%n', precision: 2) %>/Monat</strong> erhalten Sie:</p>
     <ul>
-        <li><%= support_decoration(:star) %> Auch Zugang zur Modellgruppe <strong>Umfassend</strong>, sobald verfügbar; Schnell, Ausgewogen und Gründlich erfordern kein Pro</li>
+        <li><%= support_decoration(:star) %> Zugang zur Modellgruppe <strong><%= support_pro_catalogue_lines.select { |line| line[:pro] }.map { |line| line[:label] }.join(', ') %></strong>; Schnell, Ausgewogen und Gr&uuml;ndlich erfordern kein Pro</li>
         <li><%= support_decoration(:chat) %> <strong><%= Subscription::PRO_MONTHLY_CREDITS %> gratis Chatbot-Credits pro Monat</strong> (im Abonnement enthalten)</li>
-        <li><%= support_decoration(:document) %> Suche in <strong>parlamentarischen Dokumenten</strong> &uuml;ber den Chatbot</li>
-        <li><%= support_decoration(:robot) %> <strong>Aktueller Modellkatalog:</strong> <%= chatbot_all_model_names %>. Demnächst verfügbare Modelle bleiben nicht auswählbar</li>
+        <li><%= support_decoration(:document) %> <%= pricing_access_copy.fetch(:source_access) %></li>
+        <li><%= support_decoration(:robot) %> <strong><%= site_name %> Pro - Modelle und M&ouml;glichkeiten:</strong> <%= chatbot_pricing_catalogue_summary %>
+            <ul><% support_pro_catalogue_lines.each do |line| %><li><%= line[:label] %><%= ' (Pro)' if line[:pro] %>: <%= line[:models].join(', ') %></li><% end %></ul></li>
     </ul>
     <p><%= link_to pricing_path, class: "ww-promotion-cta inline-flex items-center px-4 py-2 text-white rounded-lg font-semibold transition hover:opacity-90", style: "background: var(--accent-600-solid);" do %>
         <svg class="w-4 h-4 mr-2 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1z"/></svg>
-        GesetzGuide Pro entdecken
+        Modelle und Pro-Bedingungen ansehen
     <% end %></p>
 
     <h2 id="donate"><%= support_decoration(:coffee) %> Einmalig spenden</h2>

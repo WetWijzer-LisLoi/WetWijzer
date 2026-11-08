@@ -8,6 +8,22 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.30] - 2026-11-08
+
+### Changed
+- Law pages: the main heading is the law's own title, in the law's language (its short title where it has one, otherwise the title without its editorial notes); every law read "Details". A long title takes a smaller heading size. The Titel card keeps the official text in full.
+- Chatbot page: the privacy notice is three labelled lines in readable text (saving, the storage password, getting an answer) with the privacy policy link and the detailed caveats under their own heading; the Praxis strip says what Praxis is for and links to more about it, without the unexplained "in Plus".
+- Support page: the Pro section draws on the same model catalogue as the pricing page (the levels, their models, the preview and coming-soon labels, the Pro level and the sources Pro unlocks); it listed the models by hand, still called the Uitgebreid group "zodra beschikbaar", and named parliamentary documents but not case law.
+- Support page: the two sentences about what is free name legislation, case law and parliamentary documents; they named the first two.
+- Search filters: the sort of the legislation results and "Show abbreviations first" show only while legislation is selected, like the other legislation filters; each source's sort is labelled by its scope. Results per page stays shared.
+
+### Fixed
+- Parliamentary documents: a title cut at 200 characters by an earlier repair (7,225 Chamber and Senate titles, most of them mid-word) ends with an ellipsis in the reader and the lists instead of reading as complete; the words themselves are not guessed. The Chamber lane now takes the full title from the dossier's fiche whenever it reads one, and reads the French fiche for the French rows with `--retitle-cut`.
+- Parliamentary documents: a former member of the Chamber, written on the fiche without a link, is read as a name and a party ("Segers Ben (Vooruit)"); the party sat between the names. Rapporteurs are written the same way as authors. A hand run can read the affected dossiers again (`--reread-broken-people`).
+- Concordance tables: a sentence or clause qualifier after an article number ("1429 1e zin") is plain text; "1e" and "2e" became links to articles 1 and 2 of Book I.
+- Search: a search whose request fails (a network error, an error response) shows the earlier results again; they stayed hidden under the loading view.
+- Browser tests: the landing test waits for the frame's load event before it measures; the keyboard-navigation test makes sure the search field has lost the focus before typing the shortcut. Both had failed only under load.
+
 ## [1.1.29] - 2026-11-08
 
 ### Fixed

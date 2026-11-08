@@ -3,23 +3,24 @@
 <h1>Steun WetWijzer</h1>
 
     <div class="highlight">
-        <p><strong>WetWijzer</strong> maakt Belgische wetgeving en rechtspraak gratis doorzoekbaar en leesbaar &mdash; zonder account en zonder betaalmuur. De AI-chatbot is een betalende functie: bij registratie krijgt u <%= RegistrationsController::STARTER_CREDITS %> gratis startcredits, daarna hebt u credits of een Pro-abonnement nodig, omdat elke chatbotvraag ons geld kost bij de AI-leverancier. Het platform wordt gerund door &eacute;&eacute;n persoon &mdash; een advocaat die gelooft dat de wet zelf niet achter een betaalmuur thuishoort. Om dit project draaiende te houden, hebben we uw steun nodig.</p>
+        <p><strong>WetWijzer</strong> maakt Belgische wetgeving, rechtspraak en parlementaire documenten gratis doorzoekbaar en leesbaar &mdash; zonder account en zonder betaalmuur. De AI-chatbot is een betalende functie: bij registratie krijgt u <%= RegistrationsController::STARTER_CREDITS %> gratis startcredits, daarna hebt u credits of een Pro-abonnement nodig, omdat elke chatbotvraag ons geld kost bij de AI-leverancier. Het platform wordt gerund door &eacute;&eacute;n persoon &mdash; een advocaat die gelooft dat de wet zelf niet achter een betaalmuur thuishoort. Om dit project draaiende te houden, hebben we uw steun nodig.</p>
     </div>
 
     <h2>Waarom uw steun belangrijk is</h2>
-    <p>WetWijzer kost geld om te draaien: serverkosten, AI-kosten voor elke chatbotvraag, opslagruimte voor 175.000+ gerechtelijke uitspraken, en de voortdurende ontwikkeling van nieuwe functies. Uw steun houdt het zoeken en lezen van wetgeving en rechtspraak gratis, en houdt de startcredits voor nieuwe gebruikers mogelijk.</p>
+    <p>WetWijzer kost geld om te draaien: serverkosten, AI-kosten voor elke chatbotvraag, opslagruimte voor 175.000+ gerechtelijke uitspraken, en de voortdurende ontwikkeling van nieuwe functies. Uw steun houdt het zoeken en lezen van wetgeving, rechtspraak en parlementaire documenten gratis, en houdt de startcredits voor nieuwe gebruikers mogelijk.</p>
 
-    <h2><%= support_decoration(:star) %> Neem een WetWijzer Pro-abonnement</h2>
-    <p>De beste manier om WetWijzer te steunen is door <strong>Pro-abonnee</strong> te worden. Voor slechts <strong>&euro;2,99/maand</strong> krijgt u:</p>
+    <h2><%= support_decoration(:star) %> Neem een <%= site_name %> Pro-abonnement</h2>
+    <p>De beste manier om <%= site_name %> te steunen is door <strong>Pro-abonnee</strong> te worden. Voor <strong><%= number_to_currency(Subscription::TIER_CONFIG.fetch('pro').fetch(:price_monthly).to_d / 100, locale: I18n.locale, unit: '€', format: '%u%n', precision: 2) %>/maand</strong> krijgt u:</p>
     <ul>
-        <li><%= support_decoration(:star) %> Ook toegang tot de modelgroep <strong>Uitgebreid</strong>, zodra beschikbaar; Snel, Gebalanceerd en Grondig vereisen geen Pro</li>
+        <li><%= support_decoration(:star) %> Toegang tot de modelgroep <strong><%= support_pro_catalogue_lines.select { |line| line[:pro] }.map { |line| line[:label] }.join(', ') %></strong>; Snel, Gebalanceerd en Grondig vereisen geen Pro</li>
         <li><%= support_decoration(:chat) %> <strong><%= Subscription::PRO_MONTHLY_CREDITS %> gratis chatbot-credits per maand</strong> (voor Pro-gebruikers)</li>
-        <li><%= support_decoration(:document) %> Zoeken in <strong>parlementaire documenten</strong> via de chatbot</li>
-        <li><%= support_decoration(:robot) %> <strong>Actuele modelcatalogus:</strong> <%= chatbot_all_model_names %>. Modellen met Binnenkort blijven niet-selecteerbaar</li>
+        <li><%= support_decoration(:document) %> <%= pricing_access_copy.fetch(:source_access) %></li>
+        <li><%= support_decoration(:robot) %> <strong><%= site_name %> Pro - Modellen en mogelijkheden:</strong> <%= chatbot_pricing_catalogue_summary %>
+            <ul><% support_pro_catalogue_lines.each do |line| %><li><%= line[:label] %><%= ' (Pro)' if line[:pro] %>: <%= line[:models].join(', ') %></li><% end %></ul></li>
     </ul>
     <p><%= link_to pricing_path, class: "ww-promotion-cta inline-flex items-center px-4 py-2 text-white rounded-lg font-semibold transition hover:opacity-90", style: "background: var(--accent-600-solid);" do %>
         <svg class="w-4 h-4 mr-2 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1z"/></svg>
-        Bekijk WetWijzer Pro
+        Bekijk modellen en Pro-voorwaarden
     <% end %></p>
 
     <h2 id="donate"><%= support_decoration(:coffee) %> Doe een eenmalige donatie</h2>

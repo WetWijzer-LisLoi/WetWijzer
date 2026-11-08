@@ -19,7 +19,9 @@
 
     <%# The heading and the first three columns are legislation's own (types, status, languages, scope, mode, dates):
         they show only while legislation is selected (source_filters_controller.js; Sol, on live 1.1.22, 01:15:48Z: a
-        case-law-only search still showed them). The fourth column, results per page and sort, is every source's. %>
+        case-law-only search still showed them). In the fourth column, results per page is every source's; the sort
+        (legislation's, LawSearchService.apply_sort) and the abbreviations box follow legislation too (Sol, on live
+        1.1.28, task 43), and each source's sort is labelled by its scope. %>
     <!-- Wetgevingsfilters heading -->
     <h3 class="text-base font-semibold tracking-wider text-gray-800 dark:text-white/90 mb-4 flex items-center gap-2<%= params[:source_legislation] == '0' ? ' hidden' : '' %>" data-source-filters-target="legislationFilters">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -234,10 +236,10 @@
           %>
         </div>
         
-        <!-- Sort Order -->
-        <div class="mb-4">
+        <!-- Sort Order (legislation's) -->
+        <div class="mb-4<%= params[:source_legislation] == '0' ? ' hidden' : '' %>" data-source-filters-target="legislationFilters">
           <label for="sort" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-            <%= t(:sort_order) %>
+            <%= t(:sort_legislation) %>
           </label>
           <%# The sort the results use: relevance for a title search with no sort chosen (LawSearchService.apply_sort),
               which this select did not offer, so a results-menu Relevance or the default put back another sort on
@@ -263,10 +265,10 @@
           %>
         </div>
         
-        <!-- Section: Prioritize abbreviations first -->
+        <!-- Section: Prioritize abbreviations first (legislation's) -->
         <% any_prior_toggle = params.key?(:prioritize_tags) %>
         <% prioritize_checked = any_prior_toggle ? (params[:prioritize_tags] != "0") : true %>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2<%= params[:source_legislation] == '0' ? ' hidden' : '' %>" data-source-filters-target="legislationFilters">
           <%= form.check_box :prioritize_tags, { checked: prioritize_checked, class: form_checkbox_classes } %>
           <%= form.label :prioritize_tags, t(:prioritize_tags), class: form_inline_label_classes %>
         </div>
@@ -396,7 +398,7 @@
         <div class="filters-group">
           <div>
             <label for="juris_sort" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              <%= t(:sort_order) %>
+              <%= t(:sort_jurisprudence) %>
             </label>
             <%= form.select :juris_sort,
               options_for_select([
@@ -531,7 +533,7 @@
         <div class="filters-group">
           <div>
             <label for="parl_sort" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              <%= t(:sort_order) %>
+              <%= t(:sort_parliamentary) %>
             </label>
             <%= form.select :parl_sort,
               options_for_select([

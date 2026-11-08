@@ -260,4 +260,22 @@ module LegalPagesHelper
   def chatbot_all_model_names(locale = I18n.locale)
     LegalChatbotService::AVAILABLE_MODELS.keys.map { |id| chatbot_model_display_name(id, locale) }.join(', ')
   end
+
+  # The support page's Pro section draws on the catalogue the pricing page and the model picker use (Sol 2026-11-08
+  # 08:57:58Z, task 36: it listed the models by hand and said "Uitgebreid, zodra beschikbaar" while Claude Opus 5.5 has
+  # been deployed since 2026-10-19): one line per level, its models with the preview and coming-soon labels, and
+  # whether the level needs Pro.
+  def support_pro_catalogue_lines(locale = I18n.locale)
+    preview = chatbot_pricing_copy(locale).fetch(:preview)
+    pending = I18n.t('chatbot.model_coming_soon', locale: locale)
+    chatbot_pricing_rows(locale).map do |row|
+      models = row[:models].map do |model|
+        text = model[:name]
+        text += " (#{preview})" if model[:preview]
+        text += " (#{pending})" if LegalChatbotService::AVAILABLE_MODELS.dig(model[:id], :deployed) == false
+        text
+      end
+      { label: row[:label], pro: row[:pro], models: models }
+    end
+  end
 end
