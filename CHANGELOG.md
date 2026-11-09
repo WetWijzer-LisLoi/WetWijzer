@@ -8,6 +8,12 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.32] - 2026-11-09
+
+### Fixed
+- Chamber lane: a hand run that re-reads both the dossiers whose people are in a broken shape and the older rows chooses each dossier once; a dossier in both groups took two of the run's places and left another out.
+- Chamber lane: a dry run's title counts are the counts an apply writes; with both fiche titles, an empty French row was counted twice.
+
 ## [1.1.31] - 2026-11-08
 
 ### Fixed
