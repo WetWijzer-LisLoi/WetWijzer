@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.34] - 2026-11-09
+
+### Fixed
+- Backups: below the free space they need, the backup jobs now apply their retention rules once, keeping the newest archive of each corpus, and check again. They used to stop before their own cleanup, so old archives stayed on the disk and the backups kept being refused (2026-11-07 to 2026-11-09).
+- Disk: a finished article-index run removes its own replacement embeddings, a failed run's are cleared after 13 days, and a verified case-law repair removes its copies of the index. Every run used to leave them behind.
+- Monitoring: the morning check no longer names the Praxis legal-corpus job, which the owner ended on 2026-11-09.
+
 ## [1.1.33] - 2026-11-09
 
 ### Fixed
