@@ -8,6 +8,15 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.33] - 2026-11-09
+
+### Fixed
+- Law pages: an article that Justel publishes without an article anchor of its own is an article, not part of the heading before it. Article 1 of the new Strafwetboek (the legality principle) was printed as the bold heading of its chapter, in Dutch and in French, and articles Justel marks with a heading anchor, mostly ones inserted later ("Art. 1/1."), were printed as headings: 1,229 heading rows in 286 laws on production held such articles, and the chatbot's index, which takes articles only, did not hold them. The scraper (updater v0.895) stores them as articles; a law already in the corpus is corrected when it is fetched again.
+- Browser tests: the linked-decisions and unified-search paging tests read the links in the page in one call, once Turbo shows the page itself rather than its cached preview; a Capybara count over node handles across that swap met an obsolete node for its whole wait (receipt-1-1-32).
+
+### Changed
+- The scheduled runs (daily 2.5, weekly 2.5, monthly 2.8, consolidations 1.3) and the refresh batches run updater v0.895; v0.894 stays in place for rollback.
+
 ## [1.1.32] - 2026-11-09
 
 ### Fixed
