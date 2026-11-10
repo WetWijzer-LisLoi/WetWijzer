@@ -8,6 +8,12 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.35] - 2026-11-10
+
+### Fixed
+- Document links: the weekly job that turns dossier numbers into links runs again. Two numbers that Justel gives to two documents each had stopped it; each now leads to the document a consolidated text will cite.
+- Monitoring: the morning check no longer reports the Chamber feed as empty because its own query ran past its time limit; both parliamentary feeds now read only their newest rows.
+
 ## [1.1.34] - 2026-11-09
 
 ### Fixed
