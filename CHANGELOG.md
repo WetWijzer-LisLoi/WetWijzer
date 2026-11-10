@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.37] - 2026-11-10
+
+### Fixed
+- Backups: a free-space reading whose `df` command failed no longer counts, even when it printed a number. The run stops without deleting anything, and the space check before an online snapshot reads the value the same way.
+- Parliamentary documents: a 200-character title that the dossier's own page confirms was complete is no longer rewritten or counted as repaired.
+- Browser tests: a search whose request really fails, and a changed judgment sort with legislation off followed by Back, are tested in the browser.
+
 ## [1.1.36] - 2026-11-10
 
 ### Fixed
