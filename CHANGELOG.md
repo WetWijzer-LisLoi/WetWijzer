@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.36] - 2026-11-10
+
+### Fixed
+- Backups: when the free space on the disk cannot be read, the backup job now stops without deleting anything. Only a measured shortage may apply the retention rules early.
+
 ## [1.1.35] - 2026-11-10
 
 ### Fixed
