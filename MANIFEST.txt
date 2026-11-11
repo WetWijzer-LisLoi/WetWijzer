@@ -823,6 +823,7 @@ public/sw.js
 public/vite/.vite/manifest-assets.json
 public/vite/.vite/manifest.json
 public/vite/assets/application--xCmOLOB.js
+public/vite/assets/application-19jp2-xV.js
 public/vite/assets/application-AoyFyjhb.js
 public/vite/assets/application-B-eVfOr8.js
 public/vite/assets/application-B-pm7Ghm.js

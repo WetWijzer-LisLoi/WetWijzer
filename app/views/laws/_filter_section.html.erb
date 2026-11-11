@@ -217,14 +217,14 @@
           <label for="per_page" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
             <%= t(:results_per_page) %>
           </label>
+          <%# The size the page was built with (set_per_page: an older link's per_page=20, the limit alias, a size
+              above the cap of 500) is offered and selected, so the form shows what the page shows and the next search
+              keeps it. With params[:per_page] || 50 and no such choice, the form fell back to its first choice, 10,
+              over a page of 20 rows (a cache test of 2026-11-11), and the next search silently asked for 10. The
+              classic site does not render this form. %>
+          <% page_size = @per_page || 50 %>
           <%= form.select :per_page,
-            options_for_select([
-              [10, 10],
-              [25, 25],
-              [50, 50],
-              [100, 100],
-              [250, 250]
-            ], params[:per_page] || 50),
+            options_for_select(([10, 25, 50, 100, 250] | [page_size]).sort.map { |size| [size, size] }, page_size),
             {},
             { id: 'per_page', class: [
               "w-full rounded-md",

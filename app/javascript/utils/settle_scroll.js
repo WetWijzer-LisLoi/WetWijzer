@@ -7,6 +7,27 @@ const DRIFT_PX = 4
 const STOP_EVENTS = ['wheel', 'touchstart', 'keydown', 'mousedown']
 const LISTEN = { passive: true, capture: true }
 
+// Whether the reader can still see the element. A target the reader folded away, or one taken out of the page, is
+// not held: in Chrome (2026-11-11) the settling held a folded #art-3 for its whole time and moved the page back to it
+// every frame, against any other scroll. Without checkVisibility the element counts as shown, as before.
+function shown (element) {
+  if (element.isConnected === false) return false
+  if (typeof element.checkVisibility !== 'function') return true
+  return element.checkVisibility({ visibilityProperty: true, checkVisibilityCSS: true })
+}
+
+// Starts listening for the reader's own scrolling, typing, touching or clicking; the function returned stops listening
+// and tells whether any came. A deferred scroll asks it first: the reader who acted in between keeps the page.
+export function readerActionSince (win = window) {
+  let acted = false
+  const mark = () => { acted = true }
+  STOP_EVENTS.forEach(name => win.addEventListener(name, mark, LISTEN))
+  return () => {
+    STOP_EVENTS.forEach(name => win.removeEventListener(name, mark, LISTEN))
+    return acted
+  }
+}
+
 export function settleOnTarget (element, {
   win = window,
   durationMs = 3000,
@@ -25,7 +46,7 @@ export function settleOnTarget (element, {
   STOP_EVENTS.forEach(name => win.addEventListener(name, stop, LISTEN))
   const check = () => {
     if (stopped) return
-    if (now() > deadline) { stop(); return }
+    if (now() > deadline || !shown(element)) { stop(); return }
     if (Math.abs(element.getBoundingClientRect().top - expected) > DRIFT_PX) {
       element.scrollIntoView({ behavior: 'auto', block: 'start', inline: 'nearest' })
     }

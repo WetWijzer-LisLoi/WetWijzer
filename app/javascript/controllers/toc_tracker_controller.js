@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { prefs } from "../services/preferences_store"
-import { settleOnTarget } from "../utils/settle_scroll.js"
+import { settleOnTarget, readerActionSince } from "../utils/settle_scroll.js"
 import { revealCollapsedAncestors } from "../utils/reveal_target.js"
 
 /**
@@ -1071,8 +1071,13 @@ export default class extends Controller {
 
       this.cleanup()
       this.initialized = false
+      // The reader who scrolls, types, touches or clicks before the deferred scroll keeps the page: the settling it
+      // starts listens for the reader only from then on, so a section folded within these 150 ms (the contents-link
+      // browser test, receipt-1-1-39) was held at its folded article for 3 s, against every other scroll.
+      const readerActed = readerActionSince()
       // Single deferred initialization after DOM settles
       setTimeout(() => {
+        const acted = readerActed()
         this._refreshing = false
         // Pass skipInitialActive=true so initialize() doesn't reset to sections[0]
         this.initialize(true)
@@ -1083,7 +1088,7 @@ export default class extends Controller {
         const hash = window.location.hash
         if (hash) {
           this.activateByHash(hash)
-          this.scrollToCurrentHash()
+          if (!acted) this.scrollToCurrentHash()
         } else if (savedActiveLinkTarget) {
           // Re-activate the section that was active before the frame reload
           this.activateByHash(`#${savedActiveLinkTarget}`)

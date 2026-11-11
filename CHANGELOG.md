@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.39] - 2026-11-11
+
+### Fixed
+- Search: the results-per-page choice shows the size the page was built with, also when that is not one of the five offered sizes (an older link with 20 per page, for example). It showed 10 or 50 over the page's own rows, and the next search silently used that size.
+- Law pages: opened at an article, the page held that article in place for three seconds even when the reader had just folded its section or clicked something, and pulled the page back to it against any other scrolling; a click on the contents in that time could miss. The page now lets go as soon as the reader acts or the article is folded away.
+- Tests: the advice-extraction tests load where spaCy is not installed, as in the workflow's own environment; returning with Back to a page whose search failed is tested on Turbo's cached copy of it; the search-results test that switches page scripts off first waits for the legislation list to finish loading (a list arriving later was reported as a missing frame).
+
 ## [1.1.38] - 2026-11-11
 
 ### Fixed
