@@ -1,4 +1,5 @@
-import { getLocale, localeText } from './locale'
+// The extension lets Node load this module and the search form's controller as they are (test/javascript).
+import { getLocale, localeText } from './locale.js'
 
 // App-owned interaction copy only. User data, legislation titles, publication
 // identifiers and model names must never pass through this dictionary.
@@ -8,6 +9,7 @@ export const UI_TRANSLATIONS = {
   loadFailed: { nl: 'Laden mislukt', fr: 'Échec du chargement', de: 'Laden fehlgeschlagen', en: 'Loading failed' },
   retry: { nl: 'Opnieuw proberen', fr: 'Réessayer', de: 'Erneut versuchen', en: 'Retry' },
   previousResults: { nl: 'De eerder geladen resultaten blijven zichtbaar.', fr: 'Les résultats précédemment chargés restent affichés.', de: 'Die zuvor geladenen Ergebnisse bleiben sichtbar.', en: 'Previously loaded results remain visible.' },
+  searchFailed: { nl: 'De zoekopdracht is mislukt.', fr: 'La recherche a échoué.', de: 'Die Suche ist fehlgeschlagen.', en: 'The search failed.' },
   bookmarkLogin: { nl: 'Log in om bladwijzers te gebruiken', fr: 'Connectez-vous pour utiliser les signets', de: 'Melden Sie sich an, um Lesezeichen zu verwenden', en: 'Sign in to use bookmarks' },
   bookmarkAdded: { nl: 'Bladwijzer toegevoegd', fr: 'Signet ajouté', de: 'Lesezeichen hinzugefügt', en: 'Bookmark added' },
   bookmarkRemoved: { nl: 'Bladwijzer verwijderd', fr: 'Signet supprimé', de: 'Lesezeichen gelöscht', en: 'Bookmark removed' },

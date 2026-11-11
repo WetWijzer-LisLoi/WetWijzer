@@ -85,6 +85,8 @@ export default class extends Controller {
   beforeCache = () => {
     restoreHeldResults(document);
     resetSearchForms(document);
+    // A failed search's notice belongs to that moment, not to the page Back brings back with its own search.
+    document.querySelectorAll('[data-ww-search-failed]').forEach(el => el.remove());
     // Remove loading skeletons
     document.querySelectorAll('.loading-skeleton').forEach(el => {
       el.remove();

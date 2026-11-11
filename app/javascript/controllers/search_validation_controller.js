@@ -1,5 +1,17 @@
 import { Controller } from "@hotwired/stimulus";
 import { restoreHeldResults } from "./turbo_cache_controller.js";
+import { uiText } from "../utils/ui_translations.js";
+
+// The address a failed search was sent to, for its Retry, only if it is on this site.
+function sameOriginHref(url) {
+  if (!url) return null;
+  try {
+    const target = new URL(String(url), window.location.href);
+    return target.origin === window.location.origin ? target.href : null;
+  } catch {
+    return null;
+  }
+}
 
 // A results frame's current content, hidden while a new search loads: each child keeps its inline display in
 // data-ww-held-display and is marked data-ww-held-results; earlier loading marks go. See showImmediateLoadingUI.
@@ -40,19 +52,66 @@ export default class extends Controller {
   static targets = ["panel", "types", "languages", "scope"];
 
   connect() {
+    this.element.addEventListener("turbo:before-fetch-response", this.onBeforeFetchResponse);
     this.element.addEventListener("turbo:submit-end", this.onSubmitEnd);
   }
 
   disconnect() {
+    this.element.removeEventListener("turbo:before-fetch-response", this.onBeforeFetchResponse);
     this.element.removeEventListener("turbo:submit-end", this.onSubmitEnd);
   }
 
-  // A submit that fails (a network error, an error response) leaves this page on screen, so the rows hidden for
-  // the loading view come back and the loading marks go (Sol 2026-11-08 00:58:16Z: error submits). A successful
-  // submit leaves them to the visit, which replaces the body; turbo:before-cache restores them for the snapshot.
-  onSubmitEnd = (event) => {
-    if (event?.detail?.success === false) restoreHeldResults(document);
+  // Turbo draws an error answer to this search over the whole page and keeps the earlier search's address. In
+  // Chrome with nginx's 502 page (2026-11-11), its Retry then reloaded the earlier search, so the reader's new search
+  // was lost, and its countdown is an inline script this page's policy blocks. The search never answers with an
+  // error on purpose (an incomplete search is an ordinary page), so Turbo does not draw an error answer: the submit
+  // ends as after a network failure, and onSubmitEnd keeps this page.
+  onBeforeFetchResponse = (event) => {
+    if (event.target !== this.element) return;
+    if (event.detail?.fetchResponse?.succeeded === false) event.preventDefault();
   };
+
+  // A submit that fails (a network error, an error answer) leaves this page on screen: the rows hidden for the
+  // loading view come back, the loading marks go (Sol 2026-11-08 00:58:16Z: error submits), and a notice says the
+  // search failed, with a Retry for the search that was sent. A successful submit leaves them to the visit, which
+  // replaces the body; turbo:before-cache restores them for the snapshot.
+  onSubmitEnd = (event) => {
+    if (event?.detail?.success !== false) return;
+    const heldRows = document.querySelector("[data-ww-held-results]") !== null;
+    restoreHeldResults(document);
+    this.showSearchFailed(event.detail.formSubmission?.fetchRequest?.url, heldRows);
+  };
+
+  // The notice above the results, or under the form when there are none. Its Retry is a plain link, not a Turbo
+  // visit: if the server still answers with an error, the browser shows that page at the search's own address, where
+  // the page's Retry and countdown repeat this search and not the earlier one.
+  showSearchFailed(url, heldRows) {
+    document.querySelectorAll("[data-ww-search-failed]").forEach((el) => el.remove());
+    const panel = document.createElement("div");
+    panel.setAttribute("data-ww-search-failed", "");
+    panel.setAttribute("role", "alert");
+    panel.className = "flex flex-wrap items-center gap-3 p-4 text-sm text-red-700 dark:text-red-300";
+    const message = document.createElement("span");
+    message.textContent = uiText("searchFailed");
+    panel.appendChild(message);
+    if (heldRows) {
+      const previous = document.createElement("span");
+      previous.textContent = uiText("previousResults");
+      panel.appendChild(previous);
+    }
+    const target = sameOriginHref(url);
+    if (target) {
+      const retry = document.createElement("a");
+      retry.setAttribute("href", target);
+      retry.setAttribute("data-turbo", "false");
+      retry.className = "underline font-medium";
+      retry.textContent = uiText("retry");
+      panel.appendChild(retry);
+    }
+    const mount = document.querySelector("#search-status-mount");
+    if (mount) mount.prepend(panel);
+    else this.element.after(panel);
+  }
 
   /**
    * Validates form before submission
@@ -151,6 +210,7 @@ export default class extends Controller {
    */
   showImmediateLoadingUI() {
     try {
+      document.querySelectorAll("[data-ww-search-failed]").forEach((el) => el.remove());
       const mount = document.querySelector("#search-status-mount");
       const frame = document.querySelector("turbo-frame#laws_list");
 

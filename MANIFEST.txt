@@ -941,5 +941,6 @@ public/vite/assets/application-gMP1fhAG.css
 public/vite/assets/application-iYUwRfOq.css
 public/vite/assets/application-m9Pjw725.css
 public/vite/assets/application-vQ4NhOm-.js
+public/vite/assets/application-vw_yRi4x.js
 public/vite/assets/src-CAVUzBaU.js
 vite.config.mts

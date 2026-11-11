@@ -8,6 +8,12 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.38] - 2026-11-11
+
+### Fixed
+- Search: when a search fails, the earlier results stay on screen with a notice that says so, and its Retry runs the search that was sent. An error answer from the server, such as the "service unavailable" page during a restart, used to replace the whole page at the earlier search's address, where its Retry reloaded the earlier search and its automatic retry never started.
+- Browser tests: Chrome gets 30 seconds to start and for a run's first command, as for later commands (the first browser test of two runs failed on the shorter defaults); address checks compare the values the server reads, and the judgment sort test also goes Forward.
+
 ## [1.1.37] - 2026-11-10
 
 ### Fixed
