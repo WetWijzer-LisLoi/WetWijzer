@@ -44,7 +44,8 @@
                       <span class="text-xs text-gray-700 dark:text-gray-300"><%= t(:auto_open_sidebar) %></span>
                     </label>
                     <label class="flex items-center gap-2 select-none cursor-pointer px-2 py-1.5 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                      <input type="checkbox" class="<%= form_checkbox_classes %>" data-toc-tracker-target="follow" data-action="change->toc-tracker#toggleFollow" checked>
+                      <%# Outside the tracker's element (the nav below), so not a Stimulus target or action of it: the tracker finds this box in its card and listens to it. %>
+                      <input type="checkbox" class="<%= form_checkbox_classes %>" data-toc-follow checked>
                       <span class="text-xs text-gray-700 dark:text-gray-300"><%= t(:follow_scrolling) %></span>
                     </label>
                   </div>

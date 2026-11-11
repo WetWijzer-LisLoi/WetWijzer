@@ -8,6 +8,14 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.40] - 2026-11-11
+
+### Fixed
+- Law pages: the contents list in the sidebar set itself up twice on each law page, and one set of its scroll, resize and address listeners stayed behind when the reader left, holding on to the old page; every law page opened in the same tab added more. It now sets itself up once and leaves nothing behind, also when the page is left within a split second of opening.
+- Law pages: one click on an entry of the sidebar's contents added three steps to the browser's history, so Back had to be pressed three times to return; it adds one.
+- Law pages: unticking "Follow scrolling" in the contents' options did nothing; it now stops the contents from following the page, and the choice holds on the next law page.
+- Tests: the contents list's lifecycle in Stimulus's own order (unit tests) and in Chrome (its listeners across page visits, one history step per contents click, the follow box); a heading the law's text lacks stays unlinked also when the contents list is set up while the articles are being put in.
+
 ## [1.1.39] - 2026-11-11
 
 ### Fixed

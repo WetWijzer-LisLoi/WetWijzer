@@ -42,7 +42,7 @@ export default class extends Controller {
    * @type {string[]}
    * @default ['link']
    */
-  static targets = ["link", "follow"]
+  static targets = ["link"]
   
   /**
    * Stimulus link targets for this controller
@@ -190,6 +190,12 @@ export default class extends Controller {
    * // with data-controller="toc-tracker" is added to the DOM
    */
   connect() {
+    // Stimulus calls initialize() when it creates the controller and runs enabledValueChanged for the default value
+    // before connect(); both used to set the tracking up then. connect() dropped that first observer and set up again,
+    // so the first window listeners outlived the page with the old sections, and true was saved over the reader's
+    // stored choice before it was read. Nothing is set up, and nothing saved, until the tracker is connected.
+    this._connected = true
+
     /** @type {IntersectionObserver|null} Observer for section visibility */
     this.observer = null
     
@@ -220,26 +226,35 @@ export default class extends Controller {
     /** @type {number} Epoch ms until which hash priority should be respected */
     this.hashPriorityUntil = 0
 
-    // Apply persisted enabled/disabled state before initialization
-    try {
-      const persisted = this.loadEnabledFromStorage()
-      if (persisted !== null) {
-        this.enabledValue = persisted
-      }
-    } catch (_) { /* noop */ }
+    // Apply persisted enabled/disabled state before initialization, and again once the preferences have loaded: a
+    // signed-in reader's are fetched after the page loads (application.js does not wait for them), as the theme's are.
+    this.applyStoredFollowChoice()
+    this._hydratePromise = this.whenPreferencesLoad().then(() => {
+      if (this._connected) this.applyStoredFollowChoice()
+    }).catch(() => {})
 
-    // Initialize after a short delay to ensure DOM is ready
+    // The "follow scrolling" box sits in the contents card's options menu, outside this element, where Stimulus never
+    // bound its target or its action: unticking it changed nothing (measured in Chrome, 2026-11-11). The tracker
+    // listens to the box of its own card.
+    this.handleFollowChange = (event) => this.toggleFollow(event)
+    this._followBoxes = this.followBoxes()
+    this._followBoxes.forEach(box => box.addEventListener('change', this.handleFollowChange))
+
+    // Initialize after a short delay to ensure DOM is ready. The deferred work is kept so that disconnect() can cancel
+    // it: a tracker that leaves the page within these 100 or 150 ms must not set itself up afterwards.
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      setTimeout(() => this.initialize(), 100)
+      this._initTimer = setTimeout(() => this.initialize(), 100)
     } else {
-      document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => this.initialize(), 100)
-      })
+      this._onReady = () => {
+        this._onReady = null
+        this._initTimer = setTimeout(() => this.initialize(), 100)
+      }
+      document.addEventListener('DOMContentLoaded', this._onReady, { once: true })
     }
 
     // Ensure checkbox reflects current state (if present)
     try { this.syncFollowCheckbox() } catch (_) { /* noop */ }
-    setTimeout(() => this.syncFollowCheckbox(), 150)
+    this._syncTimer = setTimeout(() => this.syncFollowCheckbox(), 150)
 
     // Reinitialize when Turbo frames (articles) load to pick up dynamic content
     try {
@@ -266,17 +281,81 @@ export default class extends Controller {
    * // with data-controller="toc-tracker" is removed from the DOM
    */
   disconnect() {
+    // The deferred work started in connect() and refreshAfterFrameLoad() is cancelled, and the reader watch of a
+    // cancelled refresh is taken down here, since its own callback no longer runs to do it (Sol, 15:06:42Z).
+    this._connected = false
+    clearTimeout(this._initTimer)
+    clearTimeout(this._syncTimer)
+    clearTimeout(this._refreshTimer)
+    clearTimeout(this._tocScrollTimer)
+    this._initTimer = this._syncTimer = this._refreshTimer = this._tocScrollTimer = null
+    if (this._onReady) document.removeEventListener('DOMContentLoaded', this._onReady, { once: true })
+    this._onReady = null
+    this._stopReaderWatch?.()
+    this._stopReaderWatch = null
+    this._refreshing = false
     this.stopSettling?.()
+    this.stopSettling = null
     this.cleanup()
+    // The old page's sections and links are let go with it.
+    this.sections = []
+    this.currentActiveLink = null
+    const boxes = this._followBoxes || []
+    boxes.forEach(box => box.removeEventListener('change', this.handleFollowChange))
+    this._followBoxes = []
     try { document.removeEventListener('turbo:frame-load', this.handleTurboFrameLoad) } catch (_) { /* noop */ }
+  }
+
+  /**
+   * The "follow scrolling" boxes of this tracker's contents card (the card renders its options menu beside the list)
+   * @return {HTMLInputElement[]}
+   */
+  followBoxes() {
+    const card = this.element.closest('[data-controller~="toc-search"]')
+    return card ? Array.from(card.querySelectorAll('input[data-toc-follow]')) : []
+  }
+
+  /**
+   * Applies the reader's stored follow choice, when there is one
+   * @return {void}
+   */
+  applyStoredFollowChoice() {
+    try {
+      const persisted = this.loadEnabledFromStorage()
+      if (persisted !== null && persisted !== this.enabledValue) this.enabledValue = persisted
+    } catch (_) { /* noop */ }
+  }
+
+  /**
+   * Resolves once the preferences store has loaded the reader's preferences
+   * @return {Promise}
+   */
+  whenPreferencesLoad() {
+    return prefs.init()
+  }
+
+  /**
+   * Whether Turbo is still loading the law's articles frame: it has an address to load and is not complete yet
+   * @return {boolean}
+   */
+  articlesFrameLoading() {
+    const frame = document.getElementById('law_articles')
+    return !!frame && frame.hasAttribute('src') && !frame.hasAttribute('complete')
   }
 
   // Private methods
 
   initialize(skipInitialActive = false) {
+    // Stimulus calls this when it creates the controller, before connect(); the tracking is set up only while connected
+    if (!this._connected) return
     // Respect enabled flag; do nothing if disabled
     if (!this.enabledValue) return
     if (this.initialized) return
+    // Not while the articles frame is loading. Turbo puts its rows in two repaints before turbo:frame-load, and a setup
+    // in between gave a heading the body lacks an alias with its id, so toc-targets, which reconciles at that event,
+    // kept it linked (receipt-1-1-40, TocTargetsTest; measured in 15 of 30 rounds once the 100 ms timer was the first
+    // setup). refreshAfterFrameLoad sets the tracking up once the frame has loaded.
+    if (this.articlesFrameLoading()) return
     
     try {
       this.initializeObserver()
@@ -633,12 +712,11 @@ export default class extends Controller {
    */
   syncFollowCheckbox() {
     try {
-      if (this.hasFollowTarget) {
-        const checked = !!this.enabledValue
-        if (this.followTarget.checked !== checked) {
-          this.followTarget.checked = checked
-        }
-      }
+      const checked = !!this.enabledValue
+      const boxes = this._followBoxes || []
+      boxes.forEach(box => {
+        if (box.checked !== checked) box.checked = checked
+      })
     } catch (_) { /* noop */ }
   }
 
@@ -726,15 +804,21 @@ export default class extends Controller {
       // Perform a single smooth scroll; scroll-margin-top on anchors handles header offset
       el.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
 
-      // Update the URL without triggering a hashchange handler
+      // Update the URL without triggering a hashchange handler. The link's own handler (toc-anchor) has usually set
+      // this address already in this same click; a second entry for it made Back need three presses after one
+      // contents click (measured in Chrome, 2026-11-11, with the tracker's handler bound twice).
       try {
         // Preserve the prefix for real section headings so hash matches data-target exactly
         const newUrl = `#${preferredId}`
-        if (window.history && window.history.pushState) {
-          window.history.pushState({}, '', newUrl)
-        } else {
-          // Fallback for very old browsers
-          window.location.hash = newUrl
+        let current = window.location.hash
+        try { current = decodeURIComponent(current) } catch (_) { /* the address as written */ }
+        if (current !== newUrl) {
+          if (window.history && window.history.pushState) {
+            window.history.pushState({}, '', newUrl)
+          } else {
+            // Fallback for very old browsers
+            window.location.hash = newUrl
+          }
         }
       } catch (_) { /* noop */ }
     } else {
@@ -1059,7 +1143,7 @@ export default class extends Controller {
    * Refresh tracking after Turbo frame loads to ensure sections and observers reflect new content
    */
   refreshAfterFrameLoad() {
-    if (!this.enabledValue) return
+    if (!this._connected || !this.enabledValue) return
     // Debounce rapid frame loads - only one reinit at a time
     if (this._refreshing) return
     this._refreshing = true
@@ -1075,8 +1159,11 @@ export default class extends Controller {
       // starts listens for the reader only from then on, so a section folded within these 150 ms (the contents-link
       // browser test, receipt-1-1-39) was held at its folded article for 3 s, against every other scroll.
       const readerActed = readerActionSince()
-      // Single deferred initialization after DOM settles
-      setTimeout(() => {
+      this._stopReaderWatch = readerActed
+      // Single deferred initialization after DOM settles; disconnect() cancels it and takes the reader watch down
+      this._refreshTimer = setTimeout(() => {
+        this._refreshTimer = null
+        this._stopReaderWatch = null
         const acted = readerActed()
         this._refreshing = false
         // Pass skipInitialActive=true so initialize() doesn't reset to sections[0]
@@ -1108,6 +1195,9 @@ export default class extends Controller {
    * React when enabledValue changes via Stimulus values API
    */
   enabledValueChanged() {
+    // Stimulus runs this for the default value before connect(), and connect() reads the reader's stored choice
+    // afterwards: saving here then put true over it.
+    if (!this._connected) return
     try {
       if (this.enabledValue) {
         // Re-enable tracking
