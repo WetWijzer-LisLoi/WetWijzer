@@ -8,6 +8,14 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.44] - 2026-11-12
+
+### Fixed
+- Law pages: when the articles' loading was set up again on the same page, what it had found before carried over. After the articles had once loaded, a later failure was kept as it stood when the reader left, and Back showed that notice again instead of loading the articles. Each setup now starts afresh.
+- Law pages: when a law page came back with a failure notice but without its handling, Retry worked, but the indicator and the frame kept the failure while the articles loaded again. They now say "Laden..." until the answer comes.
+- Tests: the Chrome update guard no longer takes a process list it could not read for an empty one. It counts a throwaway start as over only after two readings at least a second apart find no process on its profile, and it reports a browser as stopped only when a later reading no longer lists it. A profile whose browser may still run is kept and named.
+- Tests: the articles' handling when the same controller connects again, and a restored notice's state before the answer.
+
 ## [1.1.43] - 2026-11-12
 
 ### Fixed

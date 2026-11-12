@@ -22,6 +22,12 @@ export default class extends Controller {
     this._startTime = performance.now();
     this._timerInterval = null;
     this._fadeTimers = [];
+    // What this connection finds out: Stimulus can connect the same controller again.
+    this._loaded = false;
+    this._failed = false;
+    this._placeholder = null;
+    this._loadingLabel = null;
+    this._spinner = null;
 
     // Find the turbo frame by ID
     const frameId = this.hasFrameValue ? this.frameValue : "law_articles";
@@ -163,7 +169,8 @@ export default class extends Controller {
 
   showFailure() {
     if (this.hasIndicatorTarget) {
-      this._spinner ??= this.indicatorTarget.querySelector(".animate-spin");
+      // A copy of a failed page has a spinner that no longer spins: it is the pill's svg.
+      this._spinner ??= this.indicatorTarget.querySelector(".animate-spin") ?? this.indicatorTarget.querySelector("svg");
       this._spinner?.classList.remove("animate-spin");
       const timer = this.indicatorTarget.querySelector(".loading-stopwatch");
       if (timer) timer.textContent = "";
@@ -203,10 +210,19 @@ export default class extends Controller {
     this.frame.reload();
   }
 
-  // The frame's loading message and the pill's loading words, in place of the failure notice.
+  // The frame's loading message and the pill's loading words, in place of the failure notice. A copy whose notice
+  // outlived its controller kept neither: the frame and the pill then say "Laden..." (uiText('loading')).
   _showLoading() {
-    if (this._placeholder) this.frame.replaceChildren(...this._placeholder);
-    if (this.hasLabelTarget && this._loadingLabel != null) this.labelTarget.textContent = this._loadingLabel;
+    if (this._placeholder) {
+      this.frame.replaceChildren(...this._placeholder);
+    } else {
+      const loading = document.createElement("p");
+      loading.setAttribute("role", "status");
+      loading.className = "p-4 text-sm";
+      loading.textContent = uiText("loading");
+      this.frame.replaceChildren(loading);
+    }
+    if (this.hasLabelTarget) this.labelTarget.textContent = this._loadingLabel ?? uiText("loading");
     this._spinner?.classList.add("animate-spin");
     this._failed = false;
   }
