@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.41] - 2026-11-12
+
+### Fixed
+- Error pages: when a link was answered while the site was restarting (502 or 503) or after it took too long (504), the page saying so showed no countdown and never tried again: the site's script policy blocked the countdown inside the page the reader was on. The countdown now runs there and, at zero, loads the page the reader asked for.
+- Law pages: for a signed-in reader who had unticked "Follow scrolling", the contents followed the page after a full page load until the saved choice arrived, for up to almost two seconds on a slow connection. The choice now comes with the page, so the contents do not follow.
+- Tests: the error pages' countdowns are admitted by their hashes and nothing else inline (a test holds the hashes to the pages); a link visit answered 502 or 504 runs its countdown, and the 502 page loads the address asked for again (Chrome); the saved follow choice is rendered for a signed-in reader only, and the preferences store has it before its own request answers; the contents list's listener count in Chrome takes a listener to be its type, its callback and its capture flag, as the browser does.
+
 ## [1.1.40] - 2026-11-11
 
 ### Fixed

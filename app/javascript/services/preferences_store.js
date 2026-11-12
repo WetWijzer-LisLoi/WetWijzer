@@ -81,6 +81,7 @@ class PreferencesStore {
   async _doInit(loggedIn, generation) {
     this._hydrated = !loggedIn
     this._seedServerThemes()
+    this._seedServerFollowChoice()
 
     // Bind navigation/unload flushing as soon as auth is known, before the
     // preferences GET. A fast Turbo visit must not outrun hydration and drop
@@ -258,6 +259,15 @@ class PreferencesStore {
     } catch (_) {
       // Invalid metadata is ignored; the API remains the source of truth.
     }
+  }
+
+  // A signed-in reader's saved "follow scrolling" choice for a law's contents, rendered into the page: the contents
+  // tracker reads it when it connects instead of following until the GET answers (Chrome, 2026-11-11: up to 1.8 s
+  // with a slow answer). The GET's answer replaces it, as it does the seeded theme.
+  _seedServerFollowChoice() {
+    if (!this._loggedIn) return
+    const content = document.querySelector('meta[name="toc-follow-preference"]')?.content
+    if (content === 'true' || content === 'false') this._cache.toc_follow_enabled = content === 'true'
   }
 
   _applyPath(key, value, removed = false) {

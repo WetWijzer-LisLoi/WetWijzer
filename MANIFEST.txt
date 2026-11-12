@@ -930,6 +930,7 @@ public/vite/assets/application-Dvbu9Z8Q.js
 public/vite/assets/application-DxOjIIOU.js
 public/vite/assets/application-DxR2X1mB.js
 public/vite/assets/application-DyMIQ0Eo.js
+public/vite/assets/application-DziqXrI_.js
 public/vite/assets/application-E7ejS_db.js
 public/vite/assets/application-LIkOKG3U.js
 public/vite/assets/application-LffN2UK_.js

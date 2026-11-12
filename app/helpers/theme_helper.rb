@@ -44,6 +44,15 @@ module ThemeHelper
     { theme_accent: accent, theme: mode }
   end
 
+  # A signed-in reader's saved "follow scrolling" choice for a law's contents, rendered beside the theme for the
+  # preferences store to seed, so that the contents tracker has it when it connects. Without it the tracker followed
+  # until the preferences GET answered (Chrome, 2026-11-11: up to 1.8 s with a slow answer). Only a saved boolean.
+  def document_toc_follow_preference
+    preferences = current_user&.ui_prefs || {}
+    choice = preferences.is_a?(Hash) ? preferences['toc_follow_enabled'] : nil
+    choice if [true, false].include?(choice)
+  end
+
   def document_theme_classes
     preferences = document_theme_preferences
     ["theme-#{preferences[:theme_accent]}", ('dark' if preferences[:theme] == 'dark')].compact.join(' ')

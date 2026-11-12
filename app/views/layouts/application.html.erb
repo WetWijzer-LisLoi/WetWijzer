@@ -18,6 +18,9 @@
     <% if current_user %>
       <meta name="user-logged-in" content="true" />
       <meta name="theme-preferences" content="<%= document_theme_preferences.to_json %>" />
+      <% unless (toc_follow = document_toc_follow_preference).nil? %>
+        <meta name="toc-follow-preference" content="<%= toc_follow %>" />
+      <% end %>
     <% end %>
 
     <%# Without JavaScript, a page the classic site renders sends the reader there

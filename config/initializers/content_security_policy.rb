@@ -19,6 +19,19 @@ module CspReportOnly
   VLAAMS_PARLEMENT = 'https://docs.vlaamsparlement.be'
   NONCE_ENV_KEY = 'action_dispatch.content_security_policy_nonce'
 
+  # nginx answers 502 and 503 with public/502.html (Puma restarting during a
+  # deploy) and 504 with public/504.html; each retries by an inline countdown.
+  # A Turbo visit answered with one of them draws it into the current
+  # document, whose policy refused the countdown: the page's own head replaces
+  # the nonce's meta, so Turbo re-creates the script without a nonce, and the
+  # page never retried (Chrome, 2026-11-11, qa/probe-error-visit-141). These
+  # hashes admit exactly those two scripts; a test holds them to the pages. A
+  # full load of either page from nginx carries no policy at all.
+  ERROR_PAGE_SCRIPT_HASHES = [
+    "'sha256-cqUbSg4KdgntmBMbEecklA+iGLAjAlO0cNJv/2bhgPY='", # public/502.html, retry in 10 s
+    "'sha256-1ZCiMMsZXwIIKJA43GOO3o2c+Fz/7nb4oXttm40nJd8='" # public/504.html, retry in 15 s
+  ].freeze
+
   # The strict policy as one header value. The policy below is enforced from
   # this list (D7 step 6, 2026-10-15); the report-only middleware that staged
   # it serves the same value and is no longer installed (see the end of this
@@ -31,7 +44,7 @@ module CspReportOnly
   # drowning any genuine finding, and promoting that policy to enforcing would
   # have blocked every inline script and broken the site.
   def self.policy(nonce)
-    script_src = ["'self'", UMAMI]
+    script_src = ["'self'", UMAMI, *ERROR_PAGE_SCRIPT_HASHES]
     script_src << "'nonce-#{nonce}'" if nonce.present?
     [
       "default-src 'self'",
@@ -90,8 +103,8 @@ Rails.application.configure do
     policy.media_src   :self, :data
     policy.object_src  :none
     # Inline scripts run by their per-request nonce (added below), never by
-    # 'unsafe-inline'.
-    policy.script_src  :self, CspReportOnly::UMAMI
+    # 'unsafe-inline'; the gateway pages' retry countdowns by their hashes.
+    policy.script_src  :self, CspReportOnly::UMAMI, *CspReportOnly::ERROR_PAGE_SCRIPT_HASHES
     policy.style_src   :self, :unsafe_inline
     policy.connect_src :self, CspReportOnly::UMAMI
     # Allow same-origin frames for Turbo Frames
