@@ -831,6 +831,7 @@ public/vite/assets/application-B1IuKVN2.js
 public/vite/assets/application-B1QhQZLl.js
 public/vite/assets/application-B1WoaPgs.css
 public/vite/assets/application-B1YwDGSQ.css
+public/vite/assets/application-B2fNq7jH.js
 public/vite/assets/application-B6005Xmq.css
 public/vite/assets/application-B6efk9ue.js
 public/vite/assets/application-B7KlHEbf.css

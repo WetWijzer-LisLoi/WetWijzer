@@ -7,6 +7,7 @@
 // </div>
 
 import { Controller } from "@hotwired/stimulus";
+import { uiText } from "../utils/ui_translations";
 
 export default class extends Controller {
   static targets = ["indicator", "label"];
@@ -14,6 +15,7 @@ export default class extends Controller {
 
   connect() {
     this.onFrameLoad = this.onFrameLoad.bind(this);
+    this.onFrameFailure = this.onFrameFailure.bind(this);
     this.releaseHeading = this.releaseHeading.bind(this);
     document.addEventListener("turbo:before-cache", this.releaseHeading);
     this._startTime = performance.now();
@@ -25,6 +27,12 @@ export default class extends Controller {
 
     if (this.frame) {
       this.frame.addEventListener("turbo:frame-load", this.onFrameLoad);
+      // Turbo sends no frame-load when the request fails (a network failure) or is answered without the frame (an
+      // error page). The pill then went on saying "loading" and the frame kept its loading message with no way to try
+      // again; an error page got the page-wide fallback's notice, whose Retry took the whole page to the frame's own
+      // address (Chrome, 2026-11-11, qa/probe-frame-failure-141).
+      this.frame.addEventListener("turbo:fetch-request-error", this.onFrameFailure);
+      this.frame.addEventListener("turbo:frame-missing", this.onFrameFailure);
     }
 
     // Also listen globally in case the frame doesn't exist yet
@@ -39,6 +47,8 @@ export default class extends Controller {
     this._stopTimer();
     if (this.frame) {
       this.frame.removeEventListener("turbo:frame-load", this.onFrameLoad);
+      this.frame.removeEventListener("turbo:fetch-request-error", this.onFrameFailure);
+      this.frame.removeEventListener("turbo:frame-missing", this.onFrameFailure);
     }
     document.removeEventListener("turbo:frame-load", this.onFrameLoad);
     document.removeEventListener("turbo:before-cache", this.releaseHeading);
@@ -91,6 +101,58 @@ export default class extends Controller {
       const elapsed = this._stopTimer();
       this.hideIndicator(elapsed);
     }
+  }
+
+  // The articles did not load: the pill says so and the frame offers to load them again, in place. An answer that
+  // is a whole page without the frame (a sign-in page, say) is left to the page-wide fallback, which opens it.
+  onFrameFailure(event) {
+    if (!this.frame || event.target !== this.frame) return;
+    if (event.type === "turbo:frame-missing") {
+      if (event.detail?.response?.ok) return;
+      event.preventDefault();
+    }
+    this._stopTimer();
+    this.showFailure();
+  }
+
+  showFailure() {
+    if (this.hasIndicatorTarget) {
+      this._spinner ??= this.indicatorTarget.querySelector(".animate-spin");
+      this._spinner?.classList.remove("animate-spin");
+      const timer = this.indicatorTarget.querySelector(".loading-stopwatch");
+      if (timer) timer.textContent = "";
+    }
+    if (this.hasLabelTarget) {
+      this._loadingLabel ??= this.labelTarget.textContent;
+      this.labelTarget.textContent = uiText("loadFailed");
+    }
+
+    const panel = document.createElement("div");
+    panel.setAttribute("data-frame-status-error", "");
+    panel.setAttribute("role", "alert");
+    panel.className = "flex flex-wrap items-center gap-3 p-4 text-sm text-red-700 dark:text-red-300";
+    const message = document.createElement("span");
+    message.textContent = uiText("loadFailed");
+    panel.appendChild(message);
+    if (typeof this.frame.reload === "function") {
+      const retry = document.createElement("button");
+      retry.setAttribute("type", "button");
+      retry.className = "underline font-medium";
+      retry.textContent = uiText("retry");
+      retry.addEventListener("click", () => this.retry());
+      panel.appendChild(retry);
+    }
+    this.frame.replaceChildren(panel);
+  }
+
+  // Loads the articles again in the frame; the pill counts again, and frame-load or another failure ends it.
+  retry() {
+    if (this.hasLabelTarget && this._loadingLabel != null) this.labelTarget.textContent = this._loadingLabel;
+    this._spinner?.classList.add("animate-spin");
+    this._stopTimer();
+    this._startTime = performance.now();
+    this._startStopwatch();
+    this.frame.reload();
   }
 
   _injectStopwatch() {

@@ -8,6 +8,12 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.42] - 2026-11-12
+
+### Fixed
+- Law pages: when a law's articles could not be loaded because the connection failed, the page went on saying they were loading, with no way to try again; when the site answered with an error page instead, the notice's Retry left the law page. The page now says the loading failed, and Retry loads the articles again in place.
+- Tests: the articles' failure handling in unit tests (a network failure, an error page, a sign-in page left to the page-wide handling, a frame inside the articles, Retry) and in Chrome (the articles request answered 502, and lost to a network failure, each followed by Retry); the mobile dock test reads the reopened dock's saved state once the dock has saved it (a read right after it opened could find the old value).
+
 ## [1.1.41] - 2026-11-12
 
 ### Fixed
