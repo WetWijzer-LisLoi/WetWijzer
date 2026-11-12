@@ -8,6 +8,14 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.43] - 2026-11-12
+
+### Fixed
+- Law pages: Back to a law page whose articles had failed to load brought back the failure notice with a Retry button that did nothing, and the articles were not asked for again. They now load again, as on a new visit, and Retry shows the articles' loading message while they load again.
+- Law pages: on a law page brought back with Back, the articles' loading count kept running until the reader left, out of sight, or beside "Artikelen geladen" when the page had been left within two seconds of loading. The indicator now ends at once, and its fade no longer runs on after the page has gone.
+- Tests: the articles' indicator and frame across leaving, Back and a new controller (unit tests), and in Chrome: Back after a failure and after the fade, and an articles request answered with a redirect to the sign-in page, which the page-wide handling opens.
+- Tests: on Windows, the first browser test of a run could fail when Chrome had an update waiting and no Chrome was open: the first browser to start applied the update and restarted itself where the test driver could not reach it, and that browser kept running after the run (once, on 2026-11-10; it was found two days later). A browser test run now lets Chrome apply such an update in a throwaway start before its first browser test, and stops a browser it started that outlived its parent process. The test driver's comment no longer puts that failure down to a slow start.
+
 ## [1.1.42] - 2026-11-12
 
 ### Fixed

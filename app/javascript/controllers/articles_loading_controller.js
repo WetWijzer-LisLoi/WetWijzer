@@ -17,9 +17,11 @@ export default class extends Controller {
     this.onFrameLoad = this.onFrameLoad.bind(this);
     this.onFrameFailure = this.onFrameFailure.bind(this);
     this.releaseHeading = this.releaseHeading.bind(this);
-    document.addEventListener("turbo:before-cache", this.releaseHeading);
+    this.beforeCache = this.beforeCache.bind(this);
+    document.addEventListener("turbo:before-cache", this.beforeCache);
     this._startTime = performance.now();
     this._timerInterval = null;
+    this._fadeTimers = [];
 
     // Find the turbo frame by ID
     const frameId = this.hasFrameValue ? this.frameValue : "law_articles";
@@ -38,6 +40,21 @@ export default class extends Controller {
     // Also listen globally in case the frame doesn't exist yet
     document.addEventListener("turbo:frame-load", this.onFrameLoad);
 
+    // Back brings a law page back from Turbo's cache with its frame already complete, and no frame-load follows: the
+    // count started here and ran until the reader left, beside "Artikelen geladen" when the page had been cached during
+    // the pill's fade (Chrome, 2026-11-12, qa/probe-articles-lifecycle-143). A complete frame is settled at once.
+    if (this.frame?.hasAttribute("complete")) {
+      this._startTime = null;
+      if (this.frame.querySelector("[data-frame-status-error]")) {
+        this.showFailure();
+      } else {
+        this._loaded = true;
+        this.settle();
+      }
+      return;
+    }
+    if (this.hasLabelTarget) this._loadingLabel = this.labelTarget.textContent;
+
     // Inject the stopwatch into the indicator
     this._injectStopwatch();
     this._startStopwatch();
@@ -45,14 +62,41 @@ export default class extends Controller {
 
   disconnect() {
     this._stopTimer();
+    this._fadeTimers.forEach(clearTimeout);
+    this._fadeTimers = [];
     if (this.frame) {
       this.frame.removeEventListener("turbo:frame-load", this.onFrameLoad);
       this.frame.removeEventListener("turbo:fetch-request-error", this.onFrameFailure);
       this.frame.removeEventListener("turbo:frame-missing", this.onFrameFailure);
     }
     document.removeEventListener("turbo:frame-load", this.onFrameLoad);
-    document.removeEventListener("turbo:before-cache", this.releaseHeading);
+    document.removeEventListener("turbo:before-cache", this.beforeCache);
     window.removeEventListener("resize", this.onResize);
+  }
+
+  // Turbo caches the page the reader leaves, and Back brings that copy back. A copy of the failure notice came back
+  // with a Retry button that did nothing (a copy keeps no listener), in a frame marked complete, which Turbo does not
+  // load again (Chrome, 2026-11-12, qa/probe-articles-lifecycle-143; Turbo 8.0.23 marks a frame complete before it
+  // reports any answer without the frame, a whole page the page-wide fallback opens included). When the articles never
+  // loaded on this page, the copy holds the loading message and the pill's loading words, in a frame that is not
+  // complete, so Back loads the articles again, as a new visit does.
+  beforeCache() {
+    this.releaseHeading();
+    if (this._loaded || !this.frame) return;
+    if (this._failed) this._showLoading();
+    this.frame.removeAttribute("complete");
+  }
+
+  // The articles are already in place: the pill ends as hideIndicator ends it, at once.
+  settle() {
+    if (!this.hasIndicatorTarget) return;
+    if (this.hasLabelTarget && this.doneLabelValue) this.labelTarget.textContent = this.doneLabelValue;
+    const pill = this.indicatorTarget;
+    pill.querySelector(".animate-spin")?.classList.remove("animate-spin");
+    if (pill.classList.contains("hidden")) return;
+    this.keepHeadingLines();
+    pill.classList.add("hidden");
+    pill.style.setProperty("display", "none", "important");
   }
 
   // The law page's heading is the law's title since 1.1.30 and shares its row with this pill. When the pill left the
@@ -98,6 +142,8 @@ export default class extends Controller {
     const targetFrame = event.target;
 
     if (targetFrame && targetFrame.id === frameId) {
+      this._loaded = true;
+      this._failed = false;
       const elapsed = this._stopTimer();
       this.hideIndicator(elapsed);
     }
@@ -122,10 +168,12 @@ export default class extends Controller {
       const timer = this.indicatorTarget.querySelector(".loading-stopwatch");
       if (timer) timer.textContent = "";
     }
-    if (this.hasLabelTarget) {
-      this._loadingLabel ??= this.labelTarget.textContent;
-      this.labelTarget.textContent = uiText("loadFailed");
+    if (this.hasLabelTarget) this.labelTarget.textContent = uiText("loadFailed");
+    // The frame's loading message, for Retry and for the copy Turbo caches (never an earlier notice).
+    if (!this._placeholder && !this.frame.querySelector("[data-frame-status-error]")) {
+      this._placeholder = Array.from(this.frame.childNodes);
     }
+    this._failed = true;
 
     const panel = document.createElement("div");
     panel.setAttribute("data-frame-status-error", "");
@@ -145,14 +193,22 @@ export default class extends Controller {
     this.frame.replaceChildren(panel);
   }
 
-  // Loads the articles again in the frame; the pill counts again, and frame-load or another failure ends it.
+  // Loads the articles again in the frame, which shows its loading message meanwhile; the pill counts again, and
+  // frame-load or another failure ends it.
   retry() {
-    if (this.hasLabelTarget && this._loadingLabel != null) this.labelTarget.textContent = this._loadingLabel;
-    this._spinner?.classList.add("animate-spin");
+    this._showLoading();
     this._stopTimer();
     this._startTime = performance.now();
     this._startStopwatch();
     this.frame.reload();
+  }
+
+  // The frame's loading message and the pill's loading words, in place of the failure notice.
+  _showLoading() {
+    if (this._placeholder) this.frame.replaceChildren(...this._placeholder);
+    if (this.hasLabelTarget && this._loadingLabel != null) this.labelTarget.textContent = this._loadingLabel;
+    this._spinner?.classList.add("animate-spin");
+    this._failed = false;
   }
 
   _injectStopwatch() {
@@ -230,23 +286,23 @@ export default class extends Controller {
           '<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>';
       }
 
-      // Fade out after a moment
-      setTimeout(() => {
+      // Fade out after a moment (disconnect cancels both steps: they belong to the page on screen)
+      this._fadeTimers.push(setTimeout(() => {
         this.indicatorTarget.classList.add(
           "opacity-0",
           "transition-opacity",
           "duration-500",
           "motion-reduce:transition-none"
         );
-        setTimeout(() => {
+        this._fadeTimers.push(setTimeout(() => {
           this.keepHeadingLines();
           this.indicatorTarget.classList.add("hidden");
           // Theme utilities can keep an opacity-zero hidden pill as an
           // inline flex box. An inline !important declaration is the final
           // layout fence after the completion message has been announced.
           this.indicatorTarget.style.setProperty("display", "none", "important");
-        }, 500);
-      }, 1500);
+        }, 500));
+      }, 1500));
     }
   }
 }

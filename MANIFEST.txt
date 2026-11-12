@@ -870,6 +870,7 @@ public/vite/assets/application-BpnsFRLJ.css
 public/vite/assets/application-Btde_OyX.js
 public/vite/assets/application-Bz6veSDz.js
 public/vite/assets/application-C15zJqfd.css
+public/vite/assets/application-C1pgEKlk.js
 public/vite/assets/application-C1zOWc01.js
 public/vite/assets/application-C2rFzRkE.js
 public/vite/assets/application-C5-T8Xsv.js
