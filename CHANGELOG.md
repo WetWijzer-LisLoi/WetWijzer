@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.45] - 2026-11-12
+
+### Tests
+- The Chrome update guard's two limits are pinned by tests, so that changing either is a choice. A profile that shows no process for a second counts as done, whether the throwaway start is not listed yet or a first browser has exited before the one it hands over to is listed; at the 60-second limit, one empty reading counts as the end. Its comment now says that the one-second rule is a heuristic, and that how long such a gap can be on this machine is not measured.
+
 ## [1.1.44] - 2026-11-12
 
 ### Fixed
