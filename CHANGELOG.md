@@ -8,6 +8,12 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.47] - 2026-11-13
+
+### Fixed
+- Parliamentary documents: since 1.1.46, a dossier's first document stored with a bill type whose title opens "Voorstel tot herziening" or "Proposition de révision" was given the type for a revision of the Constitution, also when it revises something else (the Chamber's rules, a decree). That type now needs the title to name the Constitution ("Grondwet", "Constitution"); any other revision shows no type. As in 1.1.46, the title is read only for a dossier's first document stored with a bill type ("wetsontwerp" or "wetsvoorstel"); every other document keeps its stored type.
+- Tests: the dossier's timeline names a first-document resolution proposal and a second-document amendment each by its own type.
+
 ## [1.1.46] - 2026-11-13
 
 ### Fixed

@@ -365,13 +365,11 @@ module ParliamentaryHelper
 
   # A control character is never text (Sol 07:02:50Z, on live 1.1.45: the result snippet of document 85755 showed four
   # U+0008 after N-VA, VB, MR and PS; on production its first 800 characters hold twelve, each after a party's
-  # abbreviation in the extracted party legend). Each one, other than the whitespace controls (tab, line breaks), is
+  # abbreviation in the extracted party legend). Each one (CONTROL_CHARACTERS, the set the document page drops) is
   # shown as a space, so two words it stood between stay apart; the snippet's own whitespace rule then collapses it.
   # The stored text is unchanged.
-  TEXT_CONTROL_CHARACTERS = /[\u0000-\u0008\u000E-\u001F\u007F]/
-
   def self.strip_control_characters(text)
-    text.match?(TEXT_CONTROL_CHARACTERS) ? text.gsub(TEXT_CONTROL_CHARACTERS, ' ') : text
+    text.match?(CONTROL_CHARACTERS) ? text.gsub(CONTROL_CHARACTERS, ' ') : text
   end
 
   def self.generic_parl_title?(title)
@@ -1246,11 +1244,15 @@ module ParliamentaryHelper
   # opening words of the title count, never a word inside it; a special law comes before the plain law it begins
   # with. A title that opens as a proposal of a kind not listed here ("Voorstel tot wijziging van het Reglement") is
   # not a bill either, so it gets no type rather than a wrong one. The stored type and title are unchanged.
+  # A revision is the Constitution's only when the title names it (Sol 09:56:03Z, on the 1.1.46 seal): "Voorstel tot
+  # herziening van het Reglement van de Kamer" opens the same way. On production on 2026-11-13, 3 of the document 001
+  # revision titles stored as a bill named no Constitution (two decrees, the Chamber's rules); they get no type.
   TITLE_DOCUMENT_TYPES = [
     ['voorstel van bijzondere wet', /\A(?:voorstel\s+van\s+bijzondere\s+wet|proposition\s+de\s+loi\s+sp[ée]ciale)\b/i],
     ['ontwerp van bijzondere wet', /\A(?:ontwerp\s+van\s+bijzondere\s+wet|projet\s+de\s+loi\s+sp[ée]ciale)\b/i],
     ['voorstel van resolutie', /\A(?:voorstel\s+van\s+resolutie|proposition\s+de\s+r[ée]solution)\b/i],
-    ['voorstel tot herziening', /\A(?:voorstel\s+tot\s+herziening|proposition\s+de\s+r[ée]vision)\b/i],
+    ['voorstel tot herziening',
+     /\A(?:voorstel\s+tot\s+herziening\b.*\bgrondwet\b|proposition\s+de\s+r[ée]vision\b.*\bconstitution\b)/im],
     ['voorstel van verklaring', /\A(?:voorstel\s+van\s+verklaring|proposition\s+de\s+d[ée]claration)\b/i],
     ['wetsvoorstel', /\A(?:wetsvoorstel|proposition\s+de\s+loi)\b/i],
     ['wetsontwerp', /\A(?:wetsontwerp|projet\s+de\s+loi)\b/i]
