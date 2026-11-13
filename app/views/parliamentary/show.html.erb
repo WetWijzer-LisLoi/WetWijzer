@@ -436,7 +436,8 @@
             <% is_current = sib[:id] == @document[:id] %>
             <% is_last = idx == @siblings.length - 1 %>
             <%
-              doc_type = sib[:document_type].to_s.downcase
+              sib_type = parliamentary_document_type(sib)
+              doc_type = sib_type.downcase
               type_icon = case doc_type
                           when /wetsontwerp|projet/ then '📋'
                           when /amendement/ then '✏️'
@@ -470,14 +471,14 @@
                 <% if is_current %>
                   <div class="px-3 py-1.5 rounded-lg bg-(--accent-500)/10 dark:bg-(--accent-900)/30 border border-(--accent-500)/20">
                     <span class="text-sm font-bold text-(--accent-700) dark:text-(--accent-400)"><%= sib[:document_number] %></span>
-                    <span class="text-sm font-medium text-(--accent-700) dark:text-(--accent-400) ml-1"><%= parliamentary_type_label(sib[:document_type]) %></span>
+                    <span class="text-sm font-medium text-(--accent-700) dark:text-(--accent-400) ml-1"><%= parliamentary_type_label(sib_type) %></span>
                     <span class="text-xs text-(--accent-500) ml-1">★</span>
                   </div>
                 <% else %>
                   <a href="<%= parliamentary_path(sib[:id]) %>"
                      class="block px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <span class="text-sm font-medium text-gray-600 dark:text-gray-300/80"><%= sib[:document_number] %></span>
-                    <span class="text-sm text-gray-700 dark:text-gray-300 ml-1"><%= parliamentary_type_label(sib[:document_type]) %></span>
+                    <span class="text-sm text-gray-700 dark:text-gray-300 ml-1"><%= parliamentary_type_label(sib_type) %></span>
                   </a>
                 <% end %>
               </div>

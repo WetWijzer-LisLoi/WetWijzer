@@ -131,7 +131,7 @@ module ParliamentaryHelper
 
     lang = target_language || (I18n.locale == :nl ? 'nl' : 'fr')
 
-    s = desc.to_s
+    s = ParliamentaryHelper.strip_control_characters(desc.to_s)
 
     # Filter bilingual content (in case any mixed-language data remains)
     s = filter_bilingual_content(s, lang)
@@ -361,6 +361,17 @@ module ParliamentaryHelper
 
       control.ord.chr.force_encoding(Encoding::Windows_1252).encode(Encoding::UTF_8)
     end
+  end
+
+  # A control character is never text (Sol 07:02:50Z, on live 1.1.45: the result snippet of document 85755 showed four
+  # U+0008 after N-VA, VB, MR and PS; on production its first 800 characters hold twelve, each after a party's
+  # abbreviation in the extracted party legend). Each one, other than the whitespace controls (tab, line breaks), is
+  # shown as a space, so two words it stood between stay apart; the snippet's own whitespace rule then collapses it.
+  # The stored text is unchanged.
+  TEXT_CONTROL_CHARACTERS = /[\u0000-\u0008\u000E-\u001F\u007F]/
+
+  def self.strip_control_characters(text)
+    text.match?(TEXT_CONTROL_CHARACTERS) ? text.gsub(TEXT_CONTROL_CHARACTERS, ' ') : text
   end
 
   def self.generic_parl_title?(title)
@@ -1227,17 +1238,36 @@ module ParliamentaryHelper
   # Wetsvoorstel tot ..." with a "Wetsontwerp" badge. Document 001 is the
   # dossier's own document and its title (from the fiche) names the type; any
   # other document carries the dossier's title too and keeps its own type.
+  #
+  # The same default also covers the other proposals a dossier can open with (owner's request of 2026-11-13, via Sol
+  # 05:20:06Z): document 85755, "Voorstel van resolutie betreffende ... Beliris", read "Wetsontwerp Voorstel van
+  # resolutie ...". Measured on production that day, document 001 stored "wetsontwerp" under 419 resolution titles, and
+  # under titles opening "Voorstel tot herziening", "Voorstel van bijzondere wet" and "Projet de loi spéciale". Only the
+  # opening words of the title count, never a word inside it; a special law comes before the plain law it begins
+  # with. A title that opens as a proposal of a kind not listed here ("Voorstel tot wijziging van het Reglement") is
+  # not a bill either, so it gets no type rather than a wrong one. The stored type and title are unchanged.
   TITLE_DOCUMENT_TYPES = [
+    ['voorstel van bijzondere wet', /\A(?:voorstel\s+van\s+bijzondere\s+wet|proposition\s+de\s+loi\s+sp[ée]ciale)\b/i],
+    ['ontwerp van bijzondere wet', /\A(?:ontwerp\s+van\s+bijzondere\s+wet|projet\s+de\s+loi\s+sp[ée]ciale)\b/i],
+    ['voorstel van resolutie', /\A(?:voorstel\s+van\s+resolutie|proposition\s+de\s+r[ée]solution)\b/i],
+    ['voorstel tot herziening', /\A(?:voorstel\s+tot\s+herziening|proposition\s+de\s+r[ée]vision)\b/i],
+    ['voorstel van verklaring', /\A(?:voorstel\s+van\s+verklaring|proposition\s+de\s+d[ée]claration)\b/i],
     ['wetsvoorstel', /\A(?:wetsvoorstel|proposition\s+de\s+loi)\b/i],
     ['wetsontwerp', /\A(?:wetsontwerp|projet\s+de\s+loi)\b/i]
   ].freeze
+  # A title that opens as a proposal: not a government bill, whatever type was stored by default.
+  TITLE_PROPOSAL = /\A(?:voorstel|proposition)\b/i
 
   def parliamentary_document_type(document)
     type = document[:document_type].to_s
     return type unless document[:document_number].to_s == '001' && %w[wetsontwerp wetsvoorstel].include?(type)
 
     title = clean_parliamentary_title_display(document[:title], document[:dossier_number])
-    TITLE_DOCUMENT_TYPES.find { |_, pattern| title.match?(pattern) }&.first || type
+    named = TITLE_DOCUMENT_TYPES.find { |_, pattern| title.match?(pattern) }&.first
+    return named if named
+    return '' if title.match?(TITLE_PROPOSAL)
+
+    type
   end
 
   # Clean parliamentary document content for the show page.

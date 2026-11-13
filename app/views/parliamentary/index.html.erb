@@ -247,9 +247,11 @@
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-(--accent-100) text-(--accent-700) dark:bg-(--accent-500)/20 dark:text-(--accent-400)">
                   <%= parl_labels[doc[:parliament]] || doc[:parliament]&.capitalize %>
                 </span>
-                <% if doc[:document_type].present? %>
+                <%# The type the document reads as, as on its own page (parliamentary_document_type). %>
+                <% list_type = parliamentary_document_type(doc).presence %>
+                <% if list_type %>
                   <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-                    <%= parliamentary_type_label(doc[:document_type]) %>
+                    <%= parliamentary_type_label(list_type) %>
                   </span>
                 <% end %>
                 <% if doc[:dossier_status].present? %>

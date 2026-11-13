@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.46] - 2026-11-13
+
+### Fixed
+- Parliamentary documents: a resolution proposal whose first document was stored with the default type "wetsontwerp" read as a bill, "Wetsontwerp Voorstel van resolutie ...", with a "Wetsontwerp" badge on its page and in the list. A dossier's first document now takes its type from the opening words of its own title: a resolution proposal, a special law, a proposal to revise the Constitution or a declaration, as well as the two kinds of bill. A title that opens as another kind of proposal shows no type rather than a wrong one. A word further on in the title changes nothing, and the stored type and title are unchanged. The list and the dossier's timeline now show the same type as the document's page.
+- Parliamentary list: a result's snippet could show control characters from the extracted text (backspaces after the party abbreviations of a party legend). They are now shown as spaces; the stored text is unchanged.
+- About page: the purpose paragraphs name legislation, case law and parliamentary documents, as the footer and the support page do, in all four languages.
+
 ## [1.1.45] - 2026-11-12
 
 ### Tests
