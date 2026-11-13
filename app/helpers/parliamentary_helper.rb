@@ -1214,7 +1214,10 @@ module ParliamentaryHelper
     'aangenomen tekst' => { nl: 'Aangenomen tekst', fr: 'Texte adopté', de: 'Angenommener Text', en: 'Adopted text' },
     'interpellatie' => { nl: 'Interpellatie', fr: 'Interpellation', de: 'Interpellation', en: 'Interpellation' },
     'mondelinge vraag' => { nl: 'Mondelinge vraag', fr: 'Question orale', de: 'Mündliche Frage', en: 'Oral question' },
-    'schriftelijke vraag' => { nl: 'Schriftelijke vraag', fr: 'Question écrite', de: 'Schriftliche Frage', en: 'Written question' }
+    'schriftelijke vraag' => { nl: 'Schriftelijke vraag', fr: 'Question écrite', de: 'Schriftliche Frage', en: 'Written question' },
+    # The Chamber's document type 50, "TABELLEN OF LIJSTEN" / "TABLEAUX OU LISTES" (its fiche of dossier 56K0019 in
+    # both languages, read 2026-11-13); 439 stored rows that day, shown in Dutch on every site until then.
+    'tabellen of lijsten' => { nl: 'Tabellen of lijsten', fr: 'Tableaux ou listes', de: 'Tabellen oder Listen', en: 'Tables or lists' }
   }.freeze
 
   # Every stored form of a type: its key, its Dutch and French names, and the stored variant "voorstel_bijzondere_wet".
@@ -1247,12 +1250,17 @@ module ParliamentaryHelper
   # A revision is the Constitution's only when the title names it (Sol 09:56:03Z, on the 1.1.46 seal): "Voorstel tot
   # herziening van het Reglement van de Kamer" opens the same way. On production on 2026-11-13, 3 of the document 001
   # revision titles stored as a bill named no Constitution (two decrees, the Chamber's rules); they get no type.
+  # A revision of something with "het"/"du"/"des" ("van het Reglement", "du Règlement") is not the Constitution's,
+  # even when the title goes on to cite it (Sol 14:08:19Z); a Constitution revision reads "van de Grondwet", "van
+  # artikel ...", "van titel ...", "de la Constitution", "de l'article ...". Measured on the 42 document 001
+  # revision titles stored as a bill on production on 2026-11-13: the same result as without this exclusion.
   TITLE_DOCUMENT_TYPES = [
     ['voorstel van bijzondere wet', /\A(?:voorstel\s+van\s+bijzondere\s+wet|proposition\s+de\s+loi\s+sp[ée]ciale)\b/i],
     ['ontwerp van bijzondere wet', /\A(?:ontwerp\s+van\s+bijzondere\s+wet|projet\s+de\s+loi\s+sp[ée]ciale)\b/i],
     ['voorstel van resolutie', /\A(?:voorstel\s+van\s+resolutie|proposition\s+de\s+r[ée]solution)\b/i],
     ['voorstel tot herziening',
-     /\A(?:voorstel\s+tot\s+herziening\b.*\bgrondwet\b|proposition\s+de\s+r[ée]vision\b.*\bconstitution\b)/im],
+     /\A(?:voorstel\s+tot\s+herziening\s+(?!van\s+het\b).*\bgrondwet\b|
+          proposition\s+de\s+r[ée]vision\s+(?!du\b|des\b).*\bconstitution\b)/imx],
     ['voorstel van verklaring', /\A(?:voorstel\s+van\s+verklaring|proposition\s+de\s+d[ée]claration)\b/i],
     ['wetsvoorstel', /\A(?:wetsvoorstel|proposition\s+de\s+loi)\b/i],
     ['wetsontwerp', /\A(?:wetsontwerp|projet\s+de\s+loi)\b/i]
@@ -1260,7 +1268,28 @@ module ParliamentaryHelper
   # A title that opens as a proposal: not a government bill, whatever type was stored by default.
   TITLE_PROPOSAL = /\A(?:voorstel|proposition)\b/i
 
+  # Documents whose type the Chamber's own fiche gives and the stored default contradicts, one by one, where no
+  # general rule is reliable (owner's request via Sol, 2026-11-13 14:24:06Z). The dossier table's type is not one:
+  # on production that day it disagreed with the type a document 001 title names in dozens of dossiers (64 bill
+  # titles under "WETSVOORSTEL", 13 private member's bills under "VOORSTEL VAN RESOLUTIE"). Keyed by parliament,
+  # legislature, dossier and document number, never by row id. The stored type is unchanged.
+  # - 56K0019001 (document 53683), "Orde van voorrang der regeringsleden.", stored "wetsontwerp": the fiche of
+  #   dossier 56K0019 gives main document 56K0019001 "Document type 50 TABELLEN OF LIJSTEN" (read 2026-11-13, in
+  #   Dutch and French), as its documents 002 to 006 are stored.
+  DOCUMENT_TYPE_CORRECTIONS = {
+    ['chamber', 56, 19, '001'] => 'tabellen of lijsten'
+  }.freeze
+
+  def self.document_type_correction(document)
+    key = [document[:parliament].to_s, document[:legislature].to_i, document[:dossier_number].to_s.to_i,
+           document[:document_number].to_s]
+    DOCUMENT_TYPE_CORRECTIONS[key]
+  end
+
   def parliamentary_document_type(document)
+    corrected = ParliamentaryHelper.document_type_correction(document)
+    return corrected if corrected
+
     type = document[:document_type].to_s
     return type unless document[:document_number].to_s == '001' && %w[wetsontwerp wetsvoorstel].include?(type)
 

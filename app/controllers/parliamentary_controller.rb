@@ -120,7 +120,10 @@ class ParliamentaryController < ApplicationController
         'SELECT id, document_number, document_type, substr(title,1,120) FROM documents WHERE parliament = ? AND legislature = ? AND dossier_number = ? AND language = ? ORDER BY document_number',
         [@document[:parliament], @document[:legislature], @document[:dossier_number], @document[:language]]
       ).map do |row|
-        { id: row[0], document_number: row[1], document_type: row[2], title: row[3] }
+        # The dossier's key goes with each row, so the timeline reads the type the page reads
+        # (ParliamentaryHelper#parliamentary_document_type, DOCUMENT_TYPE_CORRECTIONS).
+        { id: row[0], document_number: row[1], document_type: row[2], title: row[3], parliament: @document[:parliament],
+          legislature: @document[:legislature], dossier_number: @document[:dossier_number] }
       end
 
       # Fetch enriched dossier metadata from the dossiers table (scraped from dekamer.be fiche)

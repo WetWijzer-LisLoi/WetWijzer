@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.48] - 2026-11-13
+
+### Fixed
+- Parliamentary documents: the Chamber's document 56K0019001, "Orde van voorrang der regeringsleden.", was shown as a bill ("Wetsontwerp"), the default its first document was stored with. The Chamber's own record gives it document type 50, "Tabellen of lijsten", like the dossier's later documents. It is now shown as such in its heading, its details, the result list and the dossier's timeline. This is a correction for that one document, as no source type is reliable for such documents in general; its stored type and title are unchanged.
+- Parliamentary documents: the type "Tabellen of lijsten" is now named in each site's language ("Tableaux ou listes", "Tabellen oder Listen", "Tables or lists"); it was shown in Dutch everywhere.
+- Parliamentary documents: a proposal to revise the Chamber's rules (or another text) whose title goes on to cite the Constitution no longer takes the type for a revision of the Constitution.
+
 ## [1.1.47] - 2026-11-13
 
 ### Fixed
