@@ -8,6 +8,12 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.49] - 2026-11-13
+
+### Fixed
+- Parliamentary documents: a proposal to revise the Chamber's rules whose title has two spaces before "van het" could still take the type for a revision of the Constitution when the title went on to cite it. Repeated spaces no longer change the result.
+- Tests: the correction for 56K0019001 is checked against a second document of the same dossier stored with the same bill type, which keeps it.
+
 ## [1.1.48] - 2026-11-13
 
 ### Fixed

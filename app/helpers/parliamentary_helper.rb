@@ -1253,14 +1253,16 @@ module ParliamentaryHelper
   # A revision of something with "het"/"du"/"des" ("van het Reglement", "du Règlement") is not the Constitution's,
   # even when the title goes on to cite it (Sol 14:08:19Z); a Constitution revision reads "van de Grondwet", "van
   # artikel ...", "van titel ...", "de la Constitution", "de l'article ...". Measured on the 42 document 001
-  # revision titles stored as a bill on production on 2026-11-13: the same result as without this exclusion.
+  # revision titles stored as a bill on production on 2026-11-13: the same result as without this exclusion. The
+  # spaces before the exclusion are taken whole (possessive), so a repeated space ("herziening  van het"), which the
+  # title cleaner keeps, cannot give one back and let the exclusion look past it (Sol 16:17:11Z).
   TITLE_DOCUMENT_TYPES = [
     ['voorstel van bijzondere wet', /\A(?:voorstel\s+van\s+bijzondere\s+wet|proposition\s+de\s+loi\s+sp[ée]ciale)\b/i],
     ['ontwerp van bijzondere wet', /\A(?:ontwerp\s+van\s+bijzondere\s+wet|projet\s+de\s+loi\s+sp[ée]ciale)\b/i],
     ['voorstel van resolutie', /\A(?:voorstel\s+van\s+resolutie|proposition\s+de\s+r[ée]solution)\b/i],
     ['voorstel tot herziening',
-     /\A(?:voorstel\s+tot\s+herziening\s+(?!van\s+het\b).*\bgrondwet\b|
-          proposition\s+de\s+r[ée]vision\s+(?!du\b|des\b).*\bconstitution\b)/imx],
+     /\A(?:voorstel\s+tot\s+herziening\s++(?!van\s+het\b).*\bgrondwet\b|
+          proposition\s+de\s+r[ée]vision\s++(?!du\b|des\b).*\bconstitution\b)/imx],
     ['voorstel van verklaring', /\A(?:voorstel\s+van\s+verklaring|proposition\s+de\s+d[ée]claration)\b/i],
     ['wetsvoorstel', /\A(?:wetsvoorstel|proposition\s+de\s+loi)\b/i],
     ['wetsontwerp', /\A(?:wetsontwerp|projet\s+de\s+loi)\b/i]
