@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.50] - 2026-11-14
+
+### Fixed
+- Parliamentary documents: the Chamber's documents 56K0613001 and 56K0614001, proposals to revise the 1830 decrees nr. 3 and nr. 5, are shown as "Voorstel tot herziening", the document type the Chamber's own record gives them. Since 1.1.47 they showed no type, because their titles do not name the Constitution. This is a correction for those two documents; the title rule, their stored type and their titles are unchanged, and 54K2806001 (the Chamber's type "Voorstel reglement") still shows no type.
+
 ## [1.1.49] - 2026-11-13
 
 ### Fixed

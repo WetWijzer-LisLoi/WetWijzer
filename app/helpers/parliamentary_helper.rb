@@ -1278,8 +1278,15 @@ module ParliamentaryHelper
   # - 56K0019001 (document 53683), "Orde van voorrang der regeringsleden.", stored "wetsontwerp": the fiche of
   #   dossier 56K0019 gives main document 56K0019001 "Document type 50 TABELLEN OF LIJSTEN" (read 2026-11-13, in
   #   Dutch and French), as its documents 002 to 006 are stored.
+  # - 56K0613001 and 56K0614001 (documents 54902, 54903), revisions of the 1830 decrees nr. 3 and nr. 5, stored
+  #   "wetsontwerp": the fiches of dossiers 56K0613 and 56K0614 give each main document "Document type 08 VOORSTEL TOT
+  #   HERZIENING" (read 2026-11-13; Sol 2026-11-14 04:47:11Z). Their titles do not name the Constitution, so the title
+  #   rule gives them no type; the label "Voorstel tot herziening" does not say whose revision, and is true of them.
+  #   54K2806001 (Chamber type 21, "VOORSTEL REGLEMENT") has no label here and stays without a type.
   DOCUMENT_TYPE_CORRECTIONS = {
-    ['chamber', 56, 19, '001'] => 'tabellen of lijsten'
+    ['chamber', 56, 19, '001'] => 'tabellen of lijsten',
+    ['chamber', 56, 613, '001'] => 'voorstel tot herziening',
+    ['chamber', 56, 614, '001'] => 'voorstel tot herziening'
   }.freeze
 
   def self.document_type_correction(document)
