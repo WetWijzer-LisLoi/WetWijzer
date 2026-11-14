@@ -8,6 +8,14 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.51] - 2026-11-14
+
+### Tests
+- The parliamentary list checks that the result cards which must show no type are on the list before checking that they show none; until now a missing card passed that check.
+- The correction for the Chamber's document 56K0614001 has test cases of its own, so it is proved without 56K0613001's.
+- The browser test of the search page's keyboard shortcuts (j, Tab, Enter) waits for the page a source tab opens before pressing j. The tab is a link: it is marked selected at the click, and the new page, which puts the focus back in the search box, can arrive after the shortcut. A full test run failed on that.
+- Test files only: the application and its bundle are unchanged.
+
 ## [1.1.50] - 2026-11-14
 
 ### Fixed
