@@ -8,6 +8,19 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.53] - 2026-11-16
+
+### Fixed
+- A question about one article asked for by number ("Zoek de Belgische Grondwet (NUMAC 1994021048), artikel 10. Vat de eerste zin samen") is answered from that article alone once it is found: unrelated hits (other articles of the law, VAT articles, unrelated decrees) no longer reach the answer or its source list, so they cannot be cited wrongly and get the answer withheld. A question that asks for an explanation, a comparison or another instrument's article keeps ordinary retrieval.
+- An article of the European Convention on Human Rights asked for by number ("artikel 10 EVRM", "l'article 10 de la CEDH", "Article 8 of the European Convention on Human Rights") is looked up in the Convention's consolidated text (NUMAC 1950110452), so a question comparing Art. 19 of the Constitution with Art. 10 EVRM retrieves and can cite both. Before, the Convention's article was left to ordinary retrieval and was not found.
+- The answer for an article the lookup did not find no longer doubles the full stop after a law title that ends with one ("Grondwet..").
+
+### Changed
+- When the citation check withholds an answer, the server log names the article references it could not verify (numbers only, at most five), not just their count.
+
+### Security
+- Puma 8.0.3 (seven advisories published 2026-11-16 against 8.0.2).
+
 ## [1.1.52] - 2026-11-16
 
 ### Fixed

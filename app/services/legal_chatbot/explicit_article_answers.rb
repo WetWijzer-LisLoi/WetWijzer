@@ -37,13 +37,22 @@ module LegalChatbot
       @explicit_article_targets[question] ||= begin
         targets = ExplicitArticleRequest.targets(question)
         known = targets.map(&:first).uniq.select { |numac| ::Legislation.where(numac: numac).exists? }
-        targets.select { |numac, _number| known.include?(numac) }
+        targets.select { |target| known.include?(target.first) }
       end
     end
 
-    # The question also asks for an article of another instrument, or names one the parser cannot read.
+    # The question also asks for an article of another instrument, names one the parser cannot read, or names an
+    # instrument the corpus does not hold.
     def explicit_article_mixed_request?(question)
-      ExplicitArticleRequest.analyze(question)[:others].positive?
+      analysis = ExplicitArticleRequest.analyze(question)
+      analysis[:others].positive? || analysis[:targets].size > explicit_article_targets(question).size
+    end
+
+    # The sources that are requested articles, in the order the question asks for them.
+    def explicit_article_exact_sources(targets, sources)
+      targets.map { |numac, number| [numac, explicit_article_title_key(number)] }.uniq.flat_map do |pair|
+        sources.select { |source| fallback_source_pair(source) == pair }
+      end
     end
 
     # Words a pure lookup uses besides the article reference itself ("Citeer artikel 9999 van de Belgische Grondwet
@@ -52,19 +61,48 @@ module LegalChatbot
     LOOKUP_WORDS = %w[citeer citeren geef geven zoek zoeken toon tonen wat zegt zeggen woordelijk letterlijk volledige
                       tekst bronlink link links officiële officiele directe rechtstreekse bron graag aub alsjeblieft
                       citez citer donnez donner montrez cherchez que dit disent texte complet intégral integral lien
-                      officiel officielle source quote cite give show find what does say says full text official
-                      source direct please belgische belgisch belge belgian numac van het de la le les des du der den
-                      een een het dat dit die en et and of uit from in voor pour for zijn ses haar ihr zitiere gib zeige
+                      officiel officielle source quote cite give show find what does say says full text official direct please belgische belgisch belge belgian numac van het de la le les des du der den
+                      een dat die en et and of uit from in voor pour for zijn ses haar ihr zitiere gib zeige
                       wortlich wörtlich quelle offizielle].to_set.freeze
 
+    # Words that ask for an explanation, a comparison or a choice: more than the requested article itself.
+    WIDER_QUESTION = /\b(?:leg|uitleg\p{L}*|verklaar|vergelijk|waarom|hoe|wanneer|welke|expliqu\p{L}*|compar\p{L}*|pourquoi|comment|quand|quel\p{L}*|explain|compare|why|how|when|which|erkl[äa]r\p{L}*|warum|wie)\b/
+
     def explicit_article_lookup_only?(question)
-      text = question.to_s.downcase
-      text = text.gsub(ExplicitArticleRequest::ARTICLE, ' ').gsub(ExplicitArticleRequest::NUMAC, ' ')
-                 .gsub(ExplicitArticleRequest::CONSTITUTION_NAME, ' ')
-      return false if text.match?(/\b(?:leg\s+uit|verklaar|vergelijk|waarom|hoe|wanneer|welke|expliqu\p{L}*|compar\p{L}*|pourquoi|comment|quand|quel\p{L}*|explain|compare|why|how|when|which|erkl[äa]r\p{L}*|warum|wie)\b/)
+      text = explicit_article_request_rest(question)
+      return false if text.match?(WIDER_QUESTION)
       return false if text.count('?') > 1
 
       text.scan(/\p{L}{3,}/).reject { |word| LOOKUP_WORDS.include?(word) }.size <= 2
+    end
+
+    # The question without its article references, NUMACs and the Constitution's name.
+    def explicit_article_request_rest(question)
+      question.to_s.downcase.gsub(ExplicitArticleRequest::ARTICLE, ' ').gsub(ExplicitArticleRequest::NUMAC, ' ')
+              .gsub(ExplicitArticleRequest::CONSTITUTION_NAME, ' ')
+    end
+
+    # The legislation rows an answer about requested articles keeps, or nil to keep retrieval as it is.
+    #
+    # When the question asks about articles of one named law by number ("Zoek de Belgische Grondwet (NUMAC
+    # 1994021048), artikel 10. Vat uitsluitend de eerste zin samen"), and every one of them was retrieved, those
+    # articles are the answer's whole subject: the context, the citation guard and the source cards keep them alone.
+    # Unrelated retrieval hits (other articles of the law, VAT articles, unrelated decrees) gave the model articles to
+    # cite wrongly, and the guard then withheld the answer (Sol 2026-11-16 20:17:26Z, Q2). A question that asks more
+    # (an explanation, a comparison, which rules apply), names another instrument, or whose article was not found
+    # keeps ordinary retrieval.
+    def explicit_article_focus_sources(question, sources)
+      targets = explicit_article_targets(question)
+      return nil if targets.empty? || explicit_article_mixed_request?(question)
+
+      rest = explicit_article_request_rest(question)
+      return nil if rest.match?(WIDER_QUESTION) || rest.count('?') > 1
+
+      pairs = targets.map { |numac, number| [numac, explicit_article_title_key(number)] }.uniq
+      exact = explicit_article_exact_sources(targets, sources)
+      return nil unless pairs.all? { |pair| exact.any? { |source| fallback_source_pair(source) == pair } }
+
+      exact
     end
 
     def explicit_article_title_key(number)
@@ -103,29 +141,32 @@ module LegalChatbot
       result
     end
 
+    MISSING_ARTICLE_CONJUNCTIONS = { 'fr' => ' et ', 'en' => ' and ', 'de' => ' und ' }.freeze
+
     def missing_explicit_article_sentence(numac, numbers)
       law = ::Legislation.where(numac: numac).order(Arel.sql("CASE WHEN language_id = #{@language_id.to_i} THEN 0 ELSE 1 END")).first
-      title = (law&.short_title.presence || law&.display_title.presence || numac).to_s.strip
-      list = numbers.join(@language == 'fr' ? ' et ' : (@language == 'en' ? ' and ' : (@language == 'de' ? ' und ' : ' en ')))
+      # A stored title can end with a full stop ("De gecoördineerde Grondwet."); the sentence adds its own.
+      title = (law&.short_title.presence || law&.display_title.presence || numac).to_s.strip.sub(/\.+\z/, '')
+      list = numbers.join(MISSING_ARTICLE_CONJUNCTIONS.fetch(@language, ' en '))
       plural = numbers.size > 1
       link = "[#{title}](/laws/#{numac})"
       case @language
       when 'fr'
         "Je n'ai pas trouvé #{plural ? "d'articles #{list}" : "d'article #{list}"} dans le texte consolidé de #{title} " \
-          "(NUMAC #{numac}) que contient WetWijzer. Il se peut que le numéro soit différent, que l'article ait été " \
-          "renuméroté ou abrogé, ou qu'il manque dans cette version. Vérifiez le numéro d'article ; le texte complet : #{link}."
+        "(NUMAC #{numac}) que contient WetWijzer. Il se peut que le numéro soit différent, que l'article ait été " \
+        "renuméroté ou abrogé, ou qu'il manque dans cette version. Vérifiez le numéro d'article ; le texte complet : #{link}."
       when 'en'
         "I did not find #{plural ? 'Articles' : 'Article'} #{list} in the consolidated text of #{title} (NUMAC #{numac}) held " \
-          'by WetWijzer. The number may differ, the article may have been renumbered or repealed, or it may be missing ' \
-          "from this version. Please check the article number; the full text: #{link}."
+        'by WetWijzer. The number may differ, the article may have been renumbered or repealed, or it may be missing ' \
+        "from this version. Please check the article number; the full text: #{link}."
       when 'de'
         "Ich habe #{plural ? 'die Artikel' : 'Artikel'} #{list} im konsolidierten Text von #{title} (NUMAC #{numac}) in " \
-          'WetWijzer nicht gefunden. Die Nummer kann abweichen, der Artikel kann umnummeriert oder aufgehoben sein oder in ' \
-          "dieser Fassung fehlen. Bitte prüfen Sie die Artikelnummer; der vollständige Text: #{link}."
+        'WetWijzer nicht gefunden. Die Nummer kann abweichen, der Artikel kann umnummeriert oder aufgehoben sein oder in ' \
+        "dieser Fassung fehlen. Bitte prüfen Sie die Artikelnummer; der vollständige Text: #{link}."
       else
         "Ik vond #{plural ? 'artikelen' : 'artikel'} #{list} niet in de geconsolideerde tekst van #{title} " \
-          "(NUMAC #{numac}) die WetWijzer bevat. Mogelijk is het nummer anders, werd het artikel hernummerd of opgeheven, " \
-          "of ontbreekt het in deze versie. Controleer het artikelnummer; de volledige tekst: #{link}."
+        "(NUMAC #{numac}) die WetWijzer bevat. Mogelijk is het nummer anders, werd het artikel hernummerd of opgeheven, " \
+        "of ontbreekt het in deze versie. Controleer het artikelnummer; de volledige tekst: #{link}."
       end
     end
 
@@ -133,8 +174,7 @@ module LegalChatbot
     def relevant_fallback_sources(question, sources)
       targets = explicit_article_targets(question)
       if targets.any?
-        pairs = targets.map { |numac, number| [numac, explicit_article_title_key(number)] }
-        exact = sources.select { |source| pairs.include?(fallback_source_pair(source)) }
+        exact = explicit_article_exact_sources(targets, sources)
         numacs = targets.map(&:first)
         own = exact.presence || sources.select { |source| numacs.include?(source_field(source, :numac, 'numac').to_s) }
         return own unless explicit_article_mixed_request?(question)

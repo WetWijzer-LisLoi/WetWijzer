@@ -48,28 +48,28 @@ module LegalChatbot
       case language.to_s
       when 'fr'
         "Le délai pour contester une décision dépend de la décision elle-même et de l'autorité qui l'a prise, et il court en " \
-          "général à partir de sa notification. Je ne peux donc pas vous donner un nombre de jours sans savoir :\n\n" \
-          "1. de quelle décision il s'agit et qui l'a prise (une administration, une commune, un tribunal, un employeur...) ;\n" \
-          "2. quand et comment vous l'avez reçue (date de la lettre, recommandé, e-mail, remise en main propre).\n\n" \
-          'La décision elle-même mentionne souvent le recours possible et son délai. Dites-moi ces deux éléments et je cherche la règle applicable.'
+        "général à partir de sa notification. Je ne peux donc pas vous donner un nombre de jours sans savoir :\n\n" \
+        "1. de quelle décision il s'agit et qui l'a prise (une administration, une commune, un tribunal, un employeur...) ;\n" \
+        "2. quand et comment vous l'avez reçue (date de la lettre, recommandé, e-mail, remise en main propre).\n\n" \
+        'La décision elle-même mentionne souvent le recours possible et son délai. Dites-moi ces deux éléments et je cherche la règle applicable.'
       when 'en'
         'The time limit for contesting a decision depends on the decision itself and on the authority that took it, and it ' \
-          "usually runs from its notification. So I cannot give a number of days without knowing:\n\n" \
-          "1. which decision it is and who took it (an administration, a municipality, a court, an employer...);\n" \
-          "2. when and how you received it (date of the letter, registered mail, e-mail, handed over).\n\n" \
-          'The decision itself often states the available appeal and its time limit. Tell me these two points and I will look up the applicable rule.'
+        "usually runs from its notification. So I cannot give a number of days without knowing:\n\n" \
+        "1. which decision it is and who took it (an administration, a municipality, a court, an employer...);\n" \
+        "2. when and how you received it (date of the letter, registered mail, e-mail, handed over).\n\n" \
+        'The decision itself often states the available appeal and its time limit. Tell me these two points and I will look up the applicable rule.'
       when 'de'
         'Die Frist für die Anfechtung einer Entscheidung hängt von der Entscheidung selbst und von der Behörde ab, die sie ' \
-          "getroffen hat, und sie läuft in der Regel ab der Zustellung. Ich kann Ihnen deshalb keine Zahl von Tagen nennen, ohne zu wissen:\n\n" \
-          "1. um welche Entscheidung es geht und wer sie getroffen hat (eine Verwaltung, eine Gemeinde, ein Gericht, ein Arbeitgeber...);\n" \
-          "2. wann und wie Sie sie erhalten haben (Datum des Schreibens, Einschreiben, E-Mail, persönliche Übergabe).\n\n" \
-          'Die Entscheidung selbst nennt oft das mögliche Rechtsmittel und seine Frist. Nennen Sie mir diese beiden Punkte, und ich suche die anwendbare Regel.'
+        "getroffen hat, und sie läuft in der Regel ab der Zustellung. Ich kann Ihnen deshalb keine Zahl von Tagen nennen, ohne zu wissen:\n\n" \
+        "1. um welche Entscheidung es geht und wer sie getroffen hat (eine Verwaltung, eine Gemeinde, ein Gericht, ein Arbeitgeber...);\n" \
+        "2. wann und wie Sie sie erhalten haben (Datum des Schreibens, Einschreiben, E-Mail, persönliche Übergabe).\n\n" \
+        'Die Entscheidung selbst nennt oft das mögliche Rechtsmittel und seine Frist. Nennen Sie mir diese beiden Punkte, und ich suche die anwendbare Regel.'
       else
         'De termijn om een beslissing aan te vechten hangt af van de beslissing zelf en van de overheid of instantie die ze ' \
-          "nam, en loopt meestal vanaf de kennisgeving. Ik kan dus geen aantal dagen geven zonder te weten:\n\n" \
-          "1. om welke beslissing het gaat en wie ze nam (een administratie, een gemeente, een rechtbank, een werkgever...);\n" \
-          "2. wanneer en hoe u ze ontving (datum van de brief, aangetekend, e-mail, persoonlijk overhandigd).\n\n" \
-          'De beslissing vermeldt vaak zelf het mogelijke beroep en de termijn. Geef me die twee gegevens en ik zoek de toepasselijke regel.'
+        "nam, en loopt meestal vanaf de kennisgeving. Ik kan dus geen aantal dagen geven zonder te weten:\n\n" \
+        "1. om welke beslissing het gaat en wie ze nam (een administratie, een gemeente, een rechtbank, een werkgever...);\n" \
+        "2. wanneer en hoe u ze ontving (datum van de brief, aangetekend, e-mail, persoonlijk overhandigd).\n\n" \
+        'De beslissing vermeldt vaak zelf het mogelijke beroep en de termijn. Geef me die twee gegevens en ik zoek de toepasselijke regel.'
       end
     end
   end

@@ -388,6 +388,13 @@ module LegalChatbot
             source: document[:source] }, question, selected_law: @selected_law_numac
         )
       end
+      # An article asked for by number and retrieved is the answer's subject (ExplicitArticleAnswers): the context,
+      # the guards and the source cards keep it alone, without unrelated statutory hits from any lane.
+      if (focused = explicit_article_focus_sources(question, leg_articles))
+        leg_articles = focused
+        tax_articles = []
+        regional_docs = []
+      end
       t_filter = ((Time.current - phase_start) * 1000).round
       phase_start = Time.current
 

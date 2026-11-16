@@ -12,11 +12,20 @@ module LegalChatbot
   # 2. else the nearest instrument named in the question (following first on a tie): "Grondwet (NUMAC 1994021048),
   #    artikel 10".
   # A foreign constitution ("la Constitution française", "de Franse grondwet") is another instrument; an unqualified
-  # constitution is the Belgian one. Only targets tied to a NUMAC or to the Belgian Constitution are returned. Article
+  # constitution is the Belgian one. The European Convention on Human Rights is named like the Constitution ("artikel 10
+  # EVRM", "l'article 10 de la CEDH"): its consolidated text is held under NUMAC 1950110452 (Sol 2026-11-16 20:34:53Z,
+  # Q7: "artikel 19 van de Belgische Grondwet en artikel 10 EVRM" must retrieve both). Only targets tied to a NUMAC,
+  # the Belgian Constitution or the Convention are returned. Article
   # strings this parser does not support ("artikelen 1 tot 20", "art. 10000") yield no target rather than a mangled
   # one. Pure: no database access.
   module ExplicitArticleRequest
     CONSTITUTION = '1994021048'
+    ECHR = '1950110452'
+    ECHR_NAME = /\b(?:evrm|echr|cedh|emrk)\b|
+                 \b(?:europees\s+)?verdrag\s+(?:tot|voor)\s+(?:de\s+)?bescherming\s+van\s+de\s+rechten\s+van\s+de\s+mens\b|
+                 \bconvention\s+(?:europ[ée]enne\s+des|de\s+sauvegarde\s+des)\s+droits\s+de\s+l['’]homme\b|
+                 \beuropean\s+convention\s+(?:on|for\s+the\s+protection\s+of)\s+human\s+rights\b|
+                 \beurop[äa]ische[nr]?\s+menschenrechtskonvention\b/ix
     NUMAC = /\b(\d{4}[0-9A-Z]\d{5})\b/i
     FOREIGN = /(?:frans\p{L}*|duits\p{L}*|nederlands\p{L}*|amerikaans\p{L}*|europe?s\p{L}*|spaans\p{L}*|italiaans\p{L}*|
                luxemburgs\p{L}*|brits\p{L}*|fran[çc]ais\p{L}*|allemand\p{L}*|n[ée]erlandais\p{L}*|am[ée]ricain\p{L}*|
@@ -47,7 +56,7 @@ module LegalChatbot
                        belgischen|gecoördineerde|coordonn[ée]e)\s*)*\z/ix
     SUFFIX = '(?:\s?(?:bis|ter|quater|quinquies|sexies|septies|octies|novies|decies))?(?:/\d+)?'
     # "10", "11bis", "32quater/2", "VI.49", "5.233", "2:9". A number running on ("10000", "10a") is no match.
-    NUMBER = "(?:[IVXLC]{1,6}\\.|\\d{1,2}[.:])?\\d{1,4}#{SUFFIX}(?![\\p{L}\\d])"
+    NUMBER = "(?:[IVXLC]{1,6}\\.|\\d{1,2}[.:])?\\d{1,4}#{SUFFIX}(?![\\p{L}\\d])".freeze
     RANGE = '\s*(?:tot(?:\s+en\s+met)?|t\s*/\s*m|à|au|jusqu[\'’]?\s*(?:à|au)|-|–|through|to|bis)\s*(?:(?:het|l[\'’]|art(?:ikel|icle)?\.?)\s*)?\d'
     ARTICLE = /\bart(?:ikel(?:en)?|icles?|\.|s?\b)\s*(#{NUMBER}(?:\s*(?:,|en|et|and|und|&)\s*#{NUMBER})*)(?![\d\p{L}]|#{RANGE})/i
 
@@ -101,9 +110,14 @@ module LegalChatbot
 
         mentions << mention(match, CONSTITUTION)
       end
-      numacs = mentions.select { |instrument| instrument[:numac] && instrument[:numac] != CONSTITUTION }
+      echr = text.to_enum(:scan, ECHR_NAME).map { mention(Regexp.last_match, ECHR) }
+      mentions.concat(echr)
+      numacs = mentions.select { |instrument| instrument[:numac] && ![CONSTITUTION, ECHR].include?(instrument[:numac]) }
       text.to_enum(:scan, OTHER_INSTRUMENT).each do
         named = mention(Regexp.last_match, nil)
+        # "EVRM", or "Verdrag" inside the Convention's full name, is the Convention already.
+        next if echr.any? { |e| named[:from] >= e[:from] && named[:to] <= e[:to] }
+
         named[:numac] = labelling_numac(text, named, numacs)
         mentions << named
       end
@@ -119,7 +133,7 @@ module LegalChatbot
       after = numacs.find { |numac| numac[:from] >= named[:to] && text[named[:to]...numac[:from]].match?(LABEL_BETWEEN_AFTER) }
       return after[:numac] if after
 
-      before = numacs.reverse.find { |numac| numac[:to] <= named[:from] && text[numac[:to]...named[:from]].match?(LABEL_BETWEEN_BEFORE) }
+      before = numacs.rfind { |numac| numac[:to] <= named[:from] && text[numac[:to]...named[:from]].match?(LABEL_BETWEEN_BEFORE) }
       before&.fetch(:numac)
     end
 

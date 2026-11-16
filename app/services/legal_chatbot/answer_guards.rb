@@ -1086,9 +1086,19 @@ module LegalChatbot
         "[CitationGuard] blocked answer: unsupported_count=#{unsupported.size} " \
         "missing_regime_count=#{missing_required_regimes.size} " \
         "missing_external_count=#{missing_required_external.size} " \
-        "misattributed_domestic_count=#{misattributed_domestic_sources.size}"
+        "misattributed_domestic_count=#{misattributed_domestic_sources.size} " \
+        "unsupported=#{citation_guard_log_references(unsupported)} " \
+        "misattributed=#{citation_guard_log_references(misattributed_domestic_sources)}"
       )
       unsupported_article_citation_message
+    end
+
+    # The references a blocked answer could not support, for the log: at most five, each reduced to the characters
+    # an article number or NUMAC uses and cut to 24, so the log line names what failed (Sol 2026-11-16 20:17:26Z:
+    # "Art. 10" alone said nothing) and never carries the answer's prose.
+    def citation_guard_log_references(references)
+      list = Array(references).first(5).map { |reference| reference.to_s.gsub(%r{[^\p{Alnum}./:_-]}, '')[0, 24] }
+      list.reject(&:empty?).join('|').presence || '-'
     end
 
     # Recitals and numbered judgment paragraphs are evidence units, not

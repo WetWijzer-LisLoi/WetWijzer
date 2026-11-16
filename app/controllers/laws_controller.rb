@@ -721,11 +721,11 @@ class LawsController < ApplicationController
     # A variant's key differs by language (Art.42_WAALS_GEWEST / Art.42_REGION_WALLONNE): read either as this page's.
     to_page = ->(key) { HistoryPilotHelper.history_key_for(key, @history_language) }
     @history_versions = history_hash(params[:art_version]).select { |key, value| key.match?(HISTORY_KEY) && value.to_s.match?(HISTORY_VERSION) }
-                                                         .transform_keys(&to_page)
+                                                          .transform_keys(&to_page)
     @history_compare = history_hash(params[:art_compare]).keys.grep(HISTORY_KEY).map(&to_page)
     # history_focus=Art.19:older keeps that article's Versions control open with the focus on the step just taken.
     focus = params[:history_focus].to_s.match(HISTORY_FOCUS)
-    @history_focus = [to_page.(focus[1]), focus[2]] if focus
+    @history_focus = [to_page.call(focus[1]), focus[2]] if focus
   end
 
   def close_history_pilot

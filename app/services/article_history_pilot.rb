@@ -102,16 +102,24 @@ class ArticleHistoryPilot
   def structure_on(numac, language, day)
     snapshot_on(numac, language, day) ||
       snapshots(numac, language).select { |snapshot| snapshot.window_from.present? && snapshot.window_from <= day }
-                                .max_by { |snapshot| [snapshot.window_from, snapshot.version || 10**6] }
+                                .max_by { |snapshot| [snapshot.window_from, snapshot.version || (10**6)] }
   end
 
   # The article keys ('Art.42', 'Art.42_WAALS_GEWEST') with a period covering the day.
   def keys_on(numac, language, day)
-    @db.execute(<<~SQL, [numac, language, day, day]).map { |row| row['variant'].empty? ? row['article'] : "#{row['article']}#{row['variant'].include?(' ') ? ' ' : '_'}#{row['variant']}" }
+    rows = @db.execute(<<~SQL, [numac, language, day, day])
       SELECT DISTINCT article, variant FROM periods
       WHERE numac = ? AND language = ? AND (COALESCE(valid_from, not_before) IS NULL OR COALESCE(valid_from, not_before) <= ?)
         AND (valid_until IS NULL OR valid_until >= ?) AND NOT (valid_from IS NOT NULL AND valid_until IS NOT NULL AND valid_from > valid_until)
     SQL
+    rows.map { |row| period_key(row['article'], row['variant']) }
+  end
+
+  # 'Art.42' with no variant; a variant joins with a space when it holds one ('Art.42 WAALS GEWEST'), else with '_'.
+  def period_key(article, variant)
+    return article if variant.empty?
+
+    "#{article}#{variant.include?(' ') ? ' ' : '_'}#{variant}"
   end
 
   def resolve(numac, language, key, day)
