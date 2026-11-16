@@ -317,6 +317,14 @@ module LegalChatbot
       # semantic neighbours can substitute another Belgian regime.
       return no_answer_response(retrieval_status: 'unsupported_corpus') if unsupported_regional_corpus_question?(question)
 
+      # An article asked for by number that the named law does not contain gets that plain fact, not a withheld answer
+      # with unrelated links (ExplicitArticleAnswers).
+      missing_article = missing_explicit_article_response(question)
+      return missing_article if missing_article
+      # "Contest a decision, how many days?" naming no decision, authority or field: ask what decides the period
+      # (which decision, and when and how it was notified) instead of listing unrelated regimes.
+      return generic_deadline_clarification_response if GenericDeadlineClarification.question?(question)
+
       # Generate embeddings via service
       question_embedding = embedding_svc.generate(question)
       t_embed = ((Time.current - phase_start) * 1000).round
@@ -746,7 +754,9 @@ module LegalChatbot
                             bv_checklist.presence || classification_fallback.presence || formation_fallback.presence
         verified_fallback = grounded_fallback || high_confidence_topic_fallback_answer(question, statutory_sources)
         if verified_fallback.blank?
-          verified_fallback = citation_guard_source_list_fallback_answer(statutory_sources, verdict: @last_citation_guard_result)
+          # Only sources that help with this question (ExplicitArticleAnswers#relevant_fallback_sources).
+          verified_fallback = citation_guard_source_list_fallback_answer(relevant_fallback_sources(question, statutory_sources),
+                                                                         verdict: @last_citation_guard_result)
           # Its links may verify, but a list of consulted sources does not
           # replace the withheld legal answer. Keep this exact delivery
           # distinct from substantive source-grounded recovery for billing.

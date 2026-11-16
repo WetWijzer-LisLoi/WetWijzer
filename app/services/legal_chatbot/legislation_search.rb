@@ -1852,6 +1852,8 @@ module LegalChatbot
       [/\b(?:integratie|int[ée]gration|Integration)\b.{0,60}\b(?:handicap\w*|gehandicapt\w*|Behinder\w*)\b/i,
        /\b(?:handicap\w*|gehandicapt\w*|Behinder\w*|disabilit\w*)\b/i]
     ].map(&:freeze).freeze
+    CONSTITUTION_EQUALITY_PATTERN = /(?=.*\b(?:gelijkheid|gelijk\p{L}*\s+(?:voor\s+de\s+wet|behandel\p{L}*)|non[-\s]?discriminatie|discriminatie|[ée]galit[ée]|[ée]gaux\s+devant\s+la\s+loi|non[-\s]?discrimination|discrimination|equality|equal\s+treatment|Gleichheit|Diskriminierung)\b)(?=.*\b(?:grondwet\p{L}*|constitution\p{L}*|Verfassung)\b)/iu
+    WITHDRAWAL_NOTICE_PATTERN = /(?=.*\b(?:verwittig\p{L}*|kennisgev\p{L}*|kennis\s+geven|meedel\p{L}*|op\s+de\s+hoogte\s+(?:stellen|brengen)|laten\s+weten|notifi\p{L}*|informer|avertir|pr[ée]venir|notify\p{L}*|inform\s+the)\b)(?=.*\b(?:herroep\p{L}*|terugsturen|terugzenden|retour\p{L}*|bedenktijd|r[ée]tract\p{L}*|withdraw\p{L}*|termijn|d[ée]lai)\b)(?=.*\b(?:webshop\p{L}*|webwinkel\p{L}*|online|verkoper|handelaar|onderneming|vendeur|commer[çc]ant|entreprise|trader|seller|consument\p{L}*|consommateur\p{L}*|consumer)\b)/iu
     ONLINE_CONSUMER_RIGHTS_PATTERN = /
       \A
       (?=.*\b(?:online|webshop|internet|op\s+afstand|afstandsovereenkomst|en\s+ligne|
@@ -2119,6 +2121,11 @@ module LegalChatbot
       [/(?=.*\b(?:bestuursdocumenten|documenten\s+van\s+het\s+bestuur|documents?\s+administratifs?)\b)(?=.*\b(?:openbaarheid|inzage|raadplegen|publicité|consulter|accès)\b)/i, '1994021048', '32'],
       [/(?=.*\b(?:onteigening|expropriation)\b)(?=.*\b(?:schadeloosstelling|vergoeding|indemnité|indemnisation)\b)/i, '1994021048', '16'],
       [/\b(?:grondwettelijk\s+hof|cour\s+constitutionnelle|verfassungsgerichtshof)\b/i, '1994021048', '142'],
+      # Equality and non-discrimination in the Constitution (Sol 2026-11-16 16:49:59Z: "Welke twee artikelen van de
+      # Belgische Grondwet gaan over gelijkheid en non-discriminatie?" came back without Arts. 10 and 11; "gelijkheid"
+      # only boosts the 2007 anti-discrimination acts).
+      [CONSTITUTION_EQUALITY_PATTERN, '1994021048', '10'],
+      [CONSTITUTION_EQUALITY_PATTERN, '1994021048', '11'],
 
       # Lay-term aliases (decision D, docs/ops/withheld-answers-2026-08-04.md,
       # measured against config/quality/retrieval_recall_fixture_v1.json):
@@ -2421,6 +2428,9 @@ module LegalChatbot
       [/\b(?:ubo[-\s]register|registre\s+ubo|uiteindelijk\s+begunstigde|bénéficiaire\s+effectif)\b/i, '2017013368', '75'],
       [/(?=.*\b(?:kbo|kruispuntbank\s+van\s+ondernemingen|bce|banque-carrefour\s+des\s+entreprises)\b)(?=.*\b(?:inschrij|registr|nummer|identifier|immatricul)\w*\b)/i, '2013A11134', 'III.15'],
       [ONLINE_CONSUMER_RIGHTS_PATTERN, '2013A11134', 'VI.47'],
+      # How the consumer tells the trader of the withdrawal (Sol 2026-11-16 16:49:59Z: the follow-up "Welk artikel
+      # regelt die kennisgeving?" missed Art. VI.49 § 1).
+      [WITHDRAWAL_NOTICE_PATTERN, '2013A11134', 'VI.49'],
       [DISTANCE_CONTRACT_DEFINITION_PATTERN, '2013A11134', 'I.8'],
       [RENTAL_DISPUTE_PEACE_JUDGE_PATTERN, '1967101054', '591'],
       [RENTAL_DISPUTE_PEACE_JUDGE_PATTERN, '1967101054', '629'],
@@ -3967,6 +3977,10 @@ module LegalChatbot
       question = question.to_s.gsub(/[[:space:]]+/, ' ')
       matched = ARTICLE_PIN_MATCHERS.filter_map { |matcher, pin| pin if article_pin_matches?(question, matcher, pin) }
                                     .uniq { |_pattern, numac, article| [numac, article] }
+      # An article the question asks for by number of a named instrument (NUMAC or the Constitution) is looked up
+      # exactly, first (ExplicitArticleRequest); a number the corpus does not hold is skipped like any missing pin.
+      explicit = ExplicitArticleRequest.targets(question).map { |numac, number| [ExplicitArticleRequest::ARTICLE, numac, number] }
+      matched = (explicit + matched).uniq { |_pattern, numac, article| [numac, article] } if explicit.any?
       matched = scope_peace_judge_rental_pins(matched, question)
       matched = scope_rental_filing_pins(matched, question)
       commercial_targets = CommercialWebsiteIntent.article_targets(question)

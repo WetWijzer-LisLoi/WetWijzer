@@ -8,6 +8,19 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.52] - 2026-11-16
+
+### Fixed
+- The chatbot looks up an article asked for by number together with its law, a NUMAC or the Constitution ("Zoek de Belgische Grondwet (NUMAC 1994021048), artikel 10", "artikel VI.49 van het Wetboek van economisch recht (NUMAC 2013A11134)"), so the article is retrieved and can be cited. Each article number belongs to the law named with it: "artikel 10 van het EVRM" is not read as the Constitution's, and a foreign constitution ("la Constitution suisse") never as the Belgian one.
+- An article the law's consolidated text in WetWijzer does not hold ("artikel 9999 van de Grondwet") gets a plain answer saying it was not found, with a link to the law, instead of a withheld answer with unrelated sources. It does not claim the article does not exist, and a question that asks for more goes the ordinary way.
+- The question which articles of the Constitution concern equality and non-discrimination finds Arts. 10 and 11, and a consumer's question how to notify a webshop of a withdrawal finds Art. VI.49 of the Code of Economic Law without the website operator's privacy articles.
+- When an answer is withheld after its citations could not be verified, the list of consulted sources keeps the sources that help with the question (for an article asked by number, that article and the other laws the question names) instead of the first five retrieved.
+- A question how long one has to contest a decision that names neither the decision nor who took it gets a short question back: which decision, and when and how it was received.
+- A quotation inside or under a list item is shown as a quotation in the chat, not with a literal ">", and a numbered list goes on after it.
+
+### Added
+- The article history of a law page and an archive by date, built for the Judicial Code part I as a local pilot. It is active only where its database is present, which is not the case in production: the production law pages are unchanged.
+
 ## [1.1.51] - 2026-11-14
 
 ### Tests

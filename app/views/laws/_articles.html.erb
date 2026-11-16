@@ -349,7 +349,8 @@
             request does not load. The legacy force-load render (inline exdec sections
             from ?show_article_exdecs=true) is never stored: it is a different page and
             the AJAX path is the supported one. %>
-        <% cache_if @article_exdec_mapping.blank?,
+        <%# The article-history pilot (local only) adds per-request controls: never stored. %>
+        <% cache_if @article_exdec_mapping.blank? && @history_pilot.nil?,
                     ["law_articles", "v8", content&.legislation_numac || params[:numac], @language_id, I18n.locale,
                      @show_colors, @law&.justel.to_s,
                      @articles_digest || rows_cache_version(articles), laws_links_version, render_code_version],
@@ -433,7 +434,18 @@
                  data-permalink="<%= permalink %>"
                  data-source="#article-text-<%= permalink %>">
               <div class="flex-1 min-w-0" id="article-text-<%= permalink %>">
-                <%= print_article(article.article_text, article.article_title, article.article_type, source_numac: article.content_numac) %>
+                <%# Article-history pilot (local only): a covered article keeps its live row as the text, with one quiet
+                    Versions link after its number (laws/_history_article); the other language's anchor of a variant is
+                    kept for the NL/FR switch. %>
+                <% history = history_article_state(article.article_title.to_s.strip, live_body: article.article_text.to_s) %>
+                <% if history %>
+                  <% counterpart = history_permalink(HistoryPilotHelper.history_key_for(history.key, @history_language == 'nl' ? 'fr' : 'nl'), '') %>
+                  <% if counterpart != permalink && emitted_article_ids.add?(counterpart) %><span id="<%= counterpart %>" class="block h-0 overflow-hidden scroll-mt-24 mt-0!" aria-hidden="true"></span><% end %>
+                  <%= render 'laws/history_article', history: history, permalink: permalink, numac: article.content_numac,
+                             live: [article.article_text, article.article_title, article.article_type] %>
+                <% else %>
+                  <%= print_article(article.article_text, article.article_title, article.article_type, source_numac: article.content_numac) %>
+                <% end %>
               </div>
             </div>
             

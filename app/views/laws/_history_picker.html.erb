@@ -1,0 +1,74 @@
+<%# Article-history pilot: one article's history, opened in place (history_open?). The dates of its wordings, Older
+    and Newer, the way back to the law's wording and Close; comparison and the source of the wording shown are one
+    step deeper (a native <details>). Every link is a full visit that keeps the picker open with the focus on the step
+    just taken (autofocus, applied by Turbo when the frame renders), or on the picker's heading when that step is gone.
+    Locals: history (HistoryPilotHelper::ArticleState), permalink. %>
+<% key = history.key %>
+<% versions = history.versions %>
+<% selected = history.selected %>
+<% index = selected && versions.index(selected) %>
+<% chosen = @history_versions[key] %>
+<% step = history_focus?(key) ? @history_focus[1] : nil %>
+<% to = ->(version, name) { history_law_path(@law, versions: @history_versions.merge(key => ArticleHistoryPilot.version_name(version)), anchor: permalink, focus: [key, name]) } %>
+<% older = index&.positive? %>
+<% newer = index && index < versions.size - 1 %>
+<% comparing = @history_compare.include?(key) %>
+<% present = { 'older' => older, 'newer' => newer, 'law' => chosen.present?, 'item' => !index.nil?, 'compare' => true }[step] %>
+<section class="not-prose my-2 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-sm max-w-full" data-history-picker="<%= key %>" aria-label="<%= history_label(:versions) %> <%= key %>">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <h4 class="font-semibold" tabindex="-1" <%= 'autofocus' unless present %>><%= history_label(:versions) %></h4>
+    <%= link_to history_label(:close), history_law_path(@law, anchor: permalink, focus: [key, 'close']), data: { turbo_frame: '_top', history_step: 'close' }, class: 'underline' %>
+  </div>
+  <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+    <% if older %><%= link_to history_label(:older), to.(versions[index - 1], 'older'), data: { turbo_frame: '_top', history_step: 'older' }, class: 'underline', autofocus: step == 'older' %><% end %>
+    <% if newer %><%= link_to history_label(:newer), to.(versions[index + 1], 'newer'), data: { turbo_frame: '_top', history_step: 'newer' }, class: 'underline', autofocus: step == 'newer' %><% end %>
+    <% if chosen %>
+      <%= link_to(@history_as_of.present? ? history_label(:back_to_law) : history_label(:back_to_current),
+                  history_law_path(@law, versions: @history_versions.except(key), compare: @history_compare - [key], anchor: permalink, focus: [key, 'law']),
+                  data: { turbo_frame: '_top', history_step: 'law' }, class: 'underline', autofocus: step == 'law') %>
+    <% end %>
+  </div>
+  <ol class="mt-2 space-y-1" aria-label="<%= history_label(:versions) %>">
+    <% versions.each do |version| %>
+      <li>
+        <% if version == selected %>
+          <span aria-current="true" class="font-semibold" tabindex="-1" <%= 'autofocus' if step == 'item' %>><%= history_period(version) %></span>
+        <% else %>
+          <%= link_to history_period(version), to.(version, 'item'), data: { turbo_frame: '_top' }, class: 'underline' %>
+        <% end %>
+        <% if version.change_kind == 'notes only' %><span class="text-xs text-gray-600 dark:text-gray-300">(<%= history_label(:notes_only) %>)</span><% end %>
+        <% if version.note == 'superseded before it took effect' %><span class="text-xs text-gray-600 dark:text-gray-300">(<%= history_label(:superseded) %>)</span><% end %>
+      </li>
+    <% end %>
+  </ol>
+  <% history.disputes.each do |stretch| %>
+    <p class="mt-1 text-xs" data-history-disputed-stretch><strong><%= history_label(:disputed) %></strong>, <%= history_period(stretch) %>: <%= history_label(:disputed_days) %>, <%= history_dispute_days(stretch) %>.</p>
+  <% end %>
+  <details class="mt-2" data-history-details <%= 'open' if step == 'compare' %>>
+    <summary class="cursor-pointer text-xs underline-offset-2 hover:underline"><%= history_label(:details) %></summary>
+    <div class="mt-1 space-y-1 text-xs text-gray-600 dark:text-gray-300">
+      <% if history.live? %>
+        <p data-history-shown-source><%= history_label(:shown_live) %>
+          <% captured = selected&.captured_at.to_s[0, 10] %>
+          <% if history.compare_base == selected %><%= history_label(:live_differs) % { captured: history_day(captured) } %><% else %><%= history_label(:live_same) % { captured: history_day(captured) } %><% end %>
+        </p>
+      <% end %>
+      <% if selected && !history.live? %>
+        <%# A disputed date never gets a period that presents the wording as in force; the notes give both dates. %>
+        <% unless history.dispute %><p data-history-period><%= history_period(selected) %></p><% end %>
+        <% if selected.introduced_by.present? %>
+          <p><%= history_label(:introduced) %> <%= selected.introduced_by.sub(/\s*\(archived version \d+\)\z/, '') %>, <%= history_label(:published) %> <%= history_day(selected.published) %></p>
+        <% end %>
+      <% end %>
+      <% source = history.live? && history.compare_base == selected ? nil : selected %>
+      <% if source&.source_url.present? %>
+        <p><a href="<%= source.source_url %>" rel="noopener" target="_blank" class="underline" data-history-source><%= history_label(:source) %><%= " #{format('%03d', source.first_version)}" if source.first_version %></a></p>
+      <% end %>
+      <% if history.compare_base || comparing %>
+        <%= link_to history_label(comparing ? :hide_compare : :compare),
+                    history_law_path(@law, compare: comparing ? @history_compare - [key] : @history_compare + [key], anchor: permalink, focus: [key, 'compare']),
+                    data: { turbo_frame: '_top', history_step: 'compare' }, class: 'underline', autofocus: step == 'compare' %>
+      <% end %>
+    </div>
+  </details>
+</section>

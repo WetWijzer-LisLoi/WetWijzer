@@ -756,6 +756,11 @@ module LegalChatbot
       'travail intérimaire' => ['1987012597'],
       'intérim' => ['1987012597'],
       'agence d\'intérim' => ['1987012597'],
+      # The Constitution named as such (Sol 2026-11-16 16:49:59Z: "grondwet" reached it only through topic words).
+      'grondwet' => ['1994021048'],
+      'grondwettelijk' => ['1994021048'],
+      'constitution' => ['1994021048'],
+      'constitutionnel' => ['1994021048'],
       # Anti-discrimination (NL)
       'discriminatie' => %w[2007002098 2007002099 1994021048],
       'gelijke behandeling' => %w[2007002098 2007002099],

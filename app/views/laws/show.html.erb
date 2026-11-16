@@ -52,6 +52,7 @@
         <h1 class="min-w-0 [overflow-wrap:anywhere] <%= law_heading_classes(heading_title) %> font-extrabold tracking-tight text-gray-900 dark:text-(--accent-500)" <%= tag.attributes(lang: legal_text_lang(@law.try(:language_id) || @language_id)) %>>
           <%= heading_title.present? ? print_multiline(heading_title, skip_paragraphs: true) : t(:details).capitalize %>
         </h1>
+        <%= render 'laws/history_archive_control' if @history_pilot %>
         <%# Loading indicator - shown while articles turbo frame is loading %>
         <div data-articles-loading-target="indicator" class="inline-flex items-center gap-2 px-2 py-1 md:px-3 md:py-1.5 text-xs md:text-sm font-medium rounded-lg bg-(--accent-500)/10 text-(--accent-700) dark:text-(--accent-400) border border-(--accent-500)/20">
           <svg class="animate-spin motion-reduce:animate-none h-3 w-3 md:h-4 md:w-4 no-print" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
@@ -83,7 +84,8 @@
         <% else %>
         <%# Language switch link %>
         <% other_language_id = @language_id == 1 ? 2 : 1 %>
-        <%= link_to law_path(@law, language_id: other_language_id),
+        <%# The article-history pilot's date and chosen versions carry over: the versions are named alike in NL and FR. %>
+        <%= link_to law_path(@law, **(@history_pilot ? history_state_params.merge(language_id: other_language_id) : { language_id: other_language_id })),
                     data: { controller: 'language-version', action: 'language-version#follow' },
                     class: "source-detail-action inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
                     title: case I18n.locale when :fr then (@language_id == 1 ? "Voir la version française" : "Voir la version néerlandaise") when :de then (@language_id == 1 ? "Französische Version anzeigen" : "Niederländische Version anzeigen") when :en then (@language_id == 1 ? "View French version" : "View Dutch version") else (@language_id == 1 ? "Bekijk de Franstalige versie" : "Bekijk de Nederlandstalige versie") end do %>
@@ -288,7 +290,8 @@
     <!-- Static TOC section under Title (always visible, collapsible) -->
     <%# Long contents stay here in an open, bounded disclosure; the
         searchable sidebar remains an additional way to browse them. %>
-    <% if @content.present? && @content.toc.present? %>
+    <%# An archived snapshot (article-history pilot) brings its own contents inside the articles frame. %>
+    <% if @content.present? && @content.toc.present? && @history_as_of.blank? %>
     <div id="main-toc-card" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm scroll-mt-24">
       <% if large_law_toc?(@content) %>
         <%= render 'toc_summary', content: @content, count: law_toc_entries(@content).size %>
@@ -318,7 +321,7 @@
          data-article-preferences-show-colors-value="true"
          data-article-preferences-show-exdecs-value="true">
       <%= turbo_frame_tag "law_articles",
-            src: articles_law_path(@law, language_id: @language_id, show_article_exdecs: params[:show_article_exdecs]),
+            src: articles_law_path(@law, language_id: @language_id, show_article_exdecs: params[:show_article_exdecs], **history_frame_params),
             loading: :eager,
             data: { toc_anchor_target: "frame" } do %>
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm">

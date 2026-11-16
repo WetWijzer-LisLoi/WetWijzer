@@ -1,0 +1,12 @@
+<%# Article-history pilot: the one quiet "Versies" link put right after the article number (history_with_link).
+    It opens this article's picker in place (history_focus=<key>:open) or closes it (:close, the focus then back on
+    this link); the address keeps every other choice, so Back restores the previous state. When the reader chose
+    another wording, a short date label stays beside it, and says when that wording did not apply on the archive
+    date. Locals: history (HistoryPilotHelper::ArticleState), permalink. %>
+<% key = history.key %>
+<% open = history_open?(key) %>
+<span class="not-prose whitespace-nowrap" data-history-link-wrap="<%= key %>"><%= link_to history_label(:versions),
+    history_law_path(@law, anchor: permalink, focus: [key, open ? 'close' : 'open']),
+    data: { turbo_frame: '_top', history_link: key }, aria: { expanded: open },
+    class: 'text-xs font-normal text-gray-500 dark:text-gray-400 underline-offset-2 hover:underline focus-visible:underline',
+    autofocus: history_focus?(key, 'close') %><% if history.chosen %> <span class="text-xs font-normal text-gray-600 dark:text-gray-300" data-history-chosen="<%= key %>">· <%= history_label(:version_label) % { period: history_period(history.selected) } %><% if history.off_date %> (<%= history_label(:off_date) % { date: history_day(@history_as_of) } %>)<% end %></span><% end %></span>

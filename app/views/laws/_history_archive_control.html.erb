@@ -1,0 +1,40 @@
+<%# Article-history pilot: Archive by date, beside the title. Any date can be asked; the dates offered are the
+    windows on which a saved Justel page is exactly the law. While a date is shown, a neutral archive label (the view
+    may hold gaps, disputes or composed articles) and the way back to the current law stay visible. %>
+<% snapshots = @history_pilot.snapshots(params[:numac].to_s, @history_language) %>
+<div class="not-prose mt-2 flex flex-wrap items-center gap-2 text-sm" data-history-archive>
+  <% if @history_as_of.present? %>
+    <span class="rounded-lg bg-(--accent-500)/10 px-2 py-1 font-medium" data-history-as-of><%= history_label(:archived_on) %> <%= history_day(@history_as_of) %></span>
+    <%= link_to history_label(:return_current), history_law_path(@law, as_of: nil, versions: {}, compare: []),
+                data: { turbo_frame: '_top', history_step: 'current' }, class: 'underline',
+                aria: { label: history_label(:back_to_current) } %>
+  <% end %>
+  <details class="max-w-full">
+    <summary class="inline-flex cursor-pointer items-center rounded-lg border border-(--accent-500)/30 px-2 py-1 text-(--accent-700) dark:text-(--accent-400) focus-visible:outline-2 focus-visible:outline-(--accent-500)"><%= history_label(:archive) %></summary>
+    <div class="mt-2 rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-3 max-w-full">
+      <%= form_with url: law_path(@law), method: :get, local: true, data: { turbo_frame: '_top' }, class: 'flex flex-wrap items-end gap-2' do %>
+        <%= hidden_field_tag :language_id, @language_id %>
+        <label class="text-sm"><%= history_label(:date) %>
+          <%= date_field_tag :as_of, @history_as_of, class: 'block rounded border px-2 py-1', required: true %>
+        </label>
+        <button type="submit" class="rounded border px-3 py-1"><%= history_label(:show) %></button>
+      <% end %>
+      <p class="text-xs"><%= history_label(:available) %>:</p>
+      <ol class="space-y-1 max-h-64 overflow-y-auto" data-history-snapshots>
+        <%# The dates offered are the windows on which a saved page IS the law; any other date gives a composed view. %>
+        <% snapshots.select(&:exact?).reverse_each do |snapshot| %>
+          <li>
+            <%= link_to history_snapshot_label(snapshot),
+                        history_law_path(@law, as_of: snapshot.current? ? nil : snapshot.window_from, versions: {}, compare: []),
+                        data: { turbo_frame: '_top' }, class: 'underline',
+                        aria: { current: (@history_as_of.present? && snapshot.covers?(@history_as_of) ? 'true' : nil) } %>
+          </li>
+        <% end %>
+      </ol>
+      <% if (archive = @history_pilot.archive_url(params[:numac].to_s, @history_language)) %>
+        <a href="<%= archive %>" rel="noopener" target="_blank" class="text-xs underline"><%= history_label(:justel_archive) %></a>
+      <% end %>
+      <p class="text-xs text-gray-600 dark:text-gray-300"><%= history_label(:authentic) %></p>
+    </div>
+  </details>
+</div>

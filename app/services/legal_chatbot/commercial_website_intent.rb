@@ -57,13 +57,39 @@ module LegalChatbot
     PHARMACY_SECTOR_PATTERN = /\b(?:apothe\p{L}*|farmaceu\p{L}*|geneesmiddel\p{L}*|medicijn\p{L}*|medische\s+hulpmiddel\p{L}*|pharmac\p{L}*|medicines?|medicaments?|m[ée]dicaments?|medical\s+devices?|dispositifs?\s+m[ée]dicaux|Arzneimittel\p{L}*|Medikament\p{L}*|Medizinprodukt\p{L}*)\b/iu
     FINANCIAL_SERVICES_SECTOR_PATTERN = /\b(?:financi[ëe]le\s+diensten?|financial\s+services?|services?\s+financiers?|Finanzdienstleistung\p{L}*|verzeker\p{L}*|insuranc\p{L}*|assuranc\p{L}*|Versicher\p{L}*|krediet\p{L}*|credits?|cr[ée]dits?|Kredit\p{L}*|lening\p{L}*|loans?|pr[êe]ts?|Darlehen\p{L}*|gepersonaliseerd\p{L}*\s+prij\p{L}*|personali[sz]ed\s+pric\p{L}*|prix\s+personnalis[ée]\p{L}*|personalisierte\p{L}*\s+Preis\p{L}*)\b/iu
 
+    # A consumer exercising a right against a webshop ("Je zei dat ik de webshop vóór het verstrijken van de termijn
+    # moet verwittigen. Welk artikel regelt die kennisgeving?") is not a website provider asking what the site must
+    # comply with: that question got the provider pack and its fixed AVG Arts. 6, 13 and 32 (Sol 2026-11-16
+    # 16:49:59Z). A question about the reader's own site stays a provider question.
+    CONSUMER_EXERCISE_PATTERN = /\b(?:verwittig\p{L}*|kennisgev\p{L}*|meedel\p{L}*|terugsturen|terugzenden|terugbetal\p{L}*|herroepen|retourner|renvoyer|rembours\p{L}*|me\s+r[ée]tracter|(?:informer|pr[ée]venir|avertir)\s+(?:le|la|l['’])\s*(?:vendeur|boutique|commer[çc]ant|site|entreprise)|(?:ma|mon)\s+(?:r[ée]tractation|droit\s+de\s+r[ée]tractation)|send\s+(?:it\s+)?back|refund|zur[üu]cksenden|Erstattung)\b/iu
+    CONSUMER_PERSPECTIVE_PATTERN = /\b(?:ik|mij|mijn\s+(?:aankoop|bestelling|pakket|geld)|je\s+zei|als\s+consument|j['’]ai|je\s+(?:dois|veux|peux)|en\s+tant\s+que\s+consommateur|I\s+(?:bought|ordered|must|want)|as\s+a\s+consumer|ich\s+(?:habe|muss|will)|als\s+Verbraucher)\b/iu
+    PROVIDER_PERSPECTIVE_PATTERN = /\b(?:(?:mijn|onze|ma|notre|mon|my|our|meine?|unsere?)\s+(?:eigen\s+)?(?:webshop|webwinkel|website|site|boutique|shop|Onlineshop|klant\p{L}*|client\p{L}*|customers?|Kunden)|ik\s+verkoop|wij\s+verkopen|je\s+vends|nous\s+vendons|I\s+sell|we\s+sell|ich\s+verkaufe|als\s+(?:verkoper|webshop|handelaar|uitbater)|en\s+tant\s+que\s+(?:vendeur|commer[çc]ant)|as\s+a\s+(?:seller|trader)|ik\s+(?:beheer|run|baat|heb\s+een\s+(?:webshop|webwinkel))|beheer\s+(?:een|mijn|onze)\s+(?:webshop|webwinkel|website)|je\s+(?:g[èe]re|exploite|tiens)|I\s+(?:run|manage|operate|own)|ich\s+(?:betreibe|f[üu]hre)|(?:een|de|mijn)\s+klant(?:en)?\s+(?:moet|te|verwittig\p{L}*|informer\p{L}*)|(?:un|mes|nos)\s+clients?\s+(?:doit|dois|pr[ée]venir|informer)|notify\s+(?:a|my|our)\s+customers?)\b/iu
+    # The consumer side is a withdrawal, return or refund question; a provider asking how to warn a customer about a
+    # data breach is no consumer exercise (Sol 18:15:39Z).
+    CONSUMER_RIGHT_CONTEXT_PATTERN = /\b(?:herroep\p{L}*|terugsturen|terugzenden|retour\p{L}*|bedenktijd|terugbetal\p{L}*|termijn|r[ée]tract\p{L}*|rembours\p{L}*|renvoyer|d[ée]lai|withdraw\p{L}*|refund\p{L}*|send\s+(?:it\s+)?back|cooling[-\s]off|Widerruf\p{L}*|R[üu]cksend\p{L}*|Erstattung)\b/iu
+
     def self.topic?(question)
       text = normalized(question)
       return false unless text.match?(QUESTION_PATTERN)
       return false if text.match?(TECHNICAL_PATTERN) && !text.match?(COMMERCIAL_PATTERN)
       return false if text.match?(PUBLIC_PORTAL_PATTERN) && !text.match?(COMMERCIAL_PATTERN)
+      return false if consumer_exercise?(text)
 
       true
+    end
+
+    # Privacy duties of whoever runs the site are never a consumer exercise, whatever deadline words they carry (Sol
+    # 19:02:40Z: a data protection officer asking "binnen welke termijn ik een datalek moet meedelen" for a webshop).
+    PRIVACY_DUTY_PATTERN = /\b(?:datalek\p{L}*|gegevenslek\p{L}*|data\s*breach\p{L}*|fuite\s+de\s+donn[ée]es|violation\s+de\s+donn[ée]es|
+                              persoonsgegevens|donn[ée]es\s+personnelles|personal\s+data|privacy|avg|gdpr|rgpd|dsgvo|dpo|
+                              functionaris\s+voor\s+gegevensbescherming|d[ée]l[ée]gu[ée]\s+[àa]\s+la\s+protection\s+des\s+donn[ée]es|
+                              gegevensbeschermingsautoriteit|autorit[ée]\s+de\s+protection\s+des\s+donn[ée]es|gba|apd|
+                              Datenschutz\p{L}*|Datenpanne)\b/ix
+
+    def self.consumer_exercise?(text)
+      text.match?(CONSUMER_EXERCISE_PATTERN) && text.match?(CONSUMER_PERSPECTIVE_PATTERN) &&
+        text.match?(CONSUMER_RIGHT_CONTEXT_PATTERN) && !text.match?(PROVIDER_PERSPECTIVE_PATTERN) &&
+        !text.match?(PRIVACY_DUTY_PATTERN)
     end
 
     def self.business_only?(question)

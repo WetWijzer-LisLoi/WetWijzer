@@ -1,0 +1,4 @@
+<%# Article-history pilot: the words removed and added from old_body to new_body, labelled for screen readers. %>
+<div class="not-prose rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-sm whitespace-pre-line" data-history-diff>
+  <% ArticleHistoryPilot.word_diff(old_body, new_body).each do |kind, text| %><% if kind == :removed %><del class="bg-red-100 dark:bg-red-900/40"><span class="sr-only">[<%= history_label(:removed) %>] </span><%= text %></del><% elsif kind == :added %><ins class="bg-green-100 dark:bg-green-900/40 no-underline"><span class="sr-only">[<%= history_label(:added) %>] </span><%= text %></ins><% else %><%= text %><% end %><% end %>
+</div>

@@ -107,10 +107,18 @@ export function formatMessage(content) {
       continue
     }
 
-    // Blockquote (&gt; escaped >)
-    if (line.match(/^&gt;\s?(.*)$/)) {
+    // Blockquote (&gt; escaped >), also indented: a quote the model nests under a list or a heading showed its
+    // literal ">" marker (Sol 2026-11-16 16:49:59Z, the French deadline answer).
+    if (line.match(/^\s*&gt;\s?(.*)$/)) {
+      const text = line.replace(/^\s*&gt;\s?/, '')
+      // Indented under a list item: the quote belongs to that item, and the list goes on (Sol 18:15:39Z: a quote on
+      // the line after "1." restarted the numbering).
+      if (inList && /^\s+&gt;/.test(line) && html.endsWith('</li>')) {
+        html = html.slice(0, -'</li>'.length) +
+          `<blockquote class="border-l-3 border-gray-300 dark:border-gray-600 pl-3 my-1 text-gray-600 dark:text-gray-400 italic">${inlineFormat(text)}</blockquote></li>`
+        continue
+      }
       if (inList) { html += `</${listType}>`; inList = false }
-      const text = line.replace(/^&gt;\s?/, '')
       html += `<blockquote class="border-l-3 border-gray-300 dark:border-gray-600 pl-3 my-1 text-gray-600 dark:text-gray-400 italic">${inlineFormat(text)}</blockquote>`
       continue
     }
@@ -123,7 +131,7 @@ export function formatMessage(content) {
         html += '<ul class="list-disc pl-5 my-1 space-y-0.5">'
         inList = true; listType = 'ul'
       }
-      html += `<li>${inlineFormat(ulMatch[1])}</li>`
+      html += `<li>${listItem(ulMatch[1])}</li>`
       continue
     }
 
@@ -138,7 +146,7 @@ export function formatMessage(content) {
         html += `<ol class="list-decimal pl-5 my-1 space-y-0.5"${startAttr}>`
         inList = true; listType = 'ol'
       }
-      html += `<li>${inlineFormat(olMatch[2])}</li>`
+      html += `<li>${listItem(olMatch[2])}</li>`
       continue
     }
 
@@ -189,6 +197,14 @@ export function formatMessage(content) {
   html = html.replace(/(<hr[^>]*>)(\s*<br>\s*)*(<hr[^>]*>)/g, '$1')
 
   return html
+}
+
+// A list item that opens with a quote marker ("- > « ... »") is a quoted passage inside the list: rendered as one,
+// never with the literal marker.
+function listItem (text) {
+  const quote = text.match(/^&gt;\s?(.*)$/)
+  if (!quote) return inlineFormat(text)
+  return `<span class="block border-l-3 border-gray-300 dark:border-gray-600 pl-3 text-gray-600 dark:text-gray-400 italic">${inlineFormat(quote[1])}</span>`
 }
 
 // Render the (already escaped) lines of a ``` fence as one preformatted block.

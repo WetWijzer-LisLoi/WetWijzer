@@ -9,6 +9,11 @@ Rails.application.routes.draw do
   # Bookmarks page (server-side for logged-in users)
   get 'bookmarks', to: 'laws#bookmarks', as: 'bookmarks'
 
+  # Article-history pilot (local only; ArticleHistoryPilot.available? is false in production).
+  get 'pilot/article-history/:numac/:article',
+      to: 'article_history_pilots#show', as: 'article_history_pilot',
+      constraints: { numac: /[0-9A-Z]{10}/, article: %r{[^/]+} }, format: false
+
   resources :laws, param: :numac, only: %i[index show] do
     member do
       get :articles

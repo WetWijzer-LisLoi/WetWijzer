@@ -1,0 +1,110 @@
+<%# Article-history pilot (ArticleHistoryPilot): local only, never in production. %>
+<%
+  labels = {
+    'nl' => { title: 'Geschiedenis van het artikel (pilot)', versions: 'Versies', from: 'van', until: 'tot en met',
+              start_unknown: 'begin niet vermeld', open: 'nog van kracht', end_unknown: 'einde niet vermeld',
+              unknown: 'Tekst niet in het archief', introduced: 'Ingevoerd door', published: 'gepubliceerd op',
+              inline: 'Inwerkingtreding volgens de tekst', source: 'Bron: Justel', captured: 'opgehaald',
+              compare: 'Vergelijk met', day: 'Tekst op datum', show: 'Toon', checks: { 'matches' => 'klopt met de tekst' },
+              differs: 'wijkt af van de tekst', base: 'Justel: geconsolideerde tekst zonder authentiek karakter; enkel het Belgisch Staatsblad is authentiek.',
+              earliest: 'Dit is de oudste tekst die het archief toont; wanneer hij in werking trad, vermeldt het archief niet.',
+              variant: 'Variant', main: 'Algemeen', removed: 'geschrapt', added: 'toegevoegd' },
+    'fr' => { title: "Historique de l'article (pilote)", versions: 'Versions', from: 'du', until: 'au',
+              start_unknown: 'début non mentionné', open: 'toujours en vigueur', end_unknown: 'fin non mentionnée',
+              unknown: "Texte absent de l'archive", introduced: 'Introduit par', published: 'publié le',
+              inline: 'Entrée en vigueur selon le texte', source: 'Source : Justel', captured: 'récupéré le',
+              compare: 'Comparer avec', day: 'Texte à la date du', show: 'Afficher', checks: { 'matches' => 'concorde avec le texte' },
+              differs: 'diffère du texte', base: "Justel : texte consolidé sans caractère authentique ; seul le Moniteur belge fait foi.",
+              earliest: "C'est le plus ancien texte que montre l'archive ; sa date d'entrée en vigueur n'y figure pas.",
+              variant: 'Variante', main: 'Général', removed: 'supprimé', added: 'ajouté' }
+  }[@language]
+  day = ->(iso) { iso.present? ? Date.iso8601(iso).strftime('%d-%m-%Y') : nil }
+  link_params = { language: @language, variant: @variant.presence }
+%>
+<% @title = "#{labels[:title]} - #{@numac} #{@article}" %>
+<div class="max-w-5xl mx-auto px-4 py-6" lang="<%= @language %>" data-article-history-pilot>
+  <h1 class="text-2xl font-semibold mb-1"><%= labels[:title] %></h1>
+  <p class="text-gray-600 dark:text-gray-300 mb-1">NUMAC <%= @numac %>, <%= @article.sub('Art.', 'Art. ') %></p>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mb-4"><%= labels[:base] %></p>
+
+  <% if @variants.size > 1 %>
+    <nav class="flex gap-2 mb-4" aria-label="<%= labels[:variant] %>" data-pilot-variants>
+      <% @variants.each do |variant| %>
+        <%= link_to (variant.presence || labels[:main]).tr('_', ' '),
+                    article_history_pilot_path(@numac, @article, **link_params, variant: variant.presence),
+                    class: "px-3 py-1 rounded border #{'font-semibold' if variant == @variant}",
+                    aria: { current: (variant == @variant ? 'page' : nil) } %>
+      <% end %>
+    </nav>
+  <% end %>
+
+  <%= form_with url: article_history_pilot_path(@numac, @article), method: :get, local: true,
+                class: 'flex flex-wrap items-end gap-2 mb-6' do |f| %>
+    <%= hidden_field_tag :language, @language %>
+    <%= hidden_field_tag :variant, @variant if @variant.present? %>
+    <label class="text-sm"><%= labels[:day] %>
+      <%= date_field_tag :day, @day, class: 'block border rounded px-2 py-1' %>
+    </label>
+    <%= f.submit labels[:show], class: 'px-3 py-1 rounded border', name: nil %>
+  <% end %>
+
+  <div class="grid md:grid-cols-3 gap-6">
+    <ol class="md:col-span-1 space-y-2" aria-label="<%= labels[:versions] %>" data-pilot-versions>
+      <% @versions.each do |version| %>
+        <li class="border rounded p-2 <%= 'ring-2 ring-(--accent-500)' if @selected&.id == version.id %>" data-pilot-version="<%= version.id %>" data-status="<%= version.status %>">
+          <% start = "#{labels[:from]} #{day.(version.valid_from) || labels[:start_unknown]}" %>
+          <% period = version.current? ? "#{start}, #{labels[:open]}" : "#{start} #{labels[:until]} #{day.(version.valid_until) || labels[:end_unknown]}" %>
+          <% if version.text? %>
+            <%= link_to period, article_history_pilot_path(@numac, @article, **link_params, version: version.id),
+                        class: 'font-medium underline' %>
+          <% else %>
+            <span class="font-medium"><%= labels[:unknown] %></span>
+            <span class="block text-sm"><%= period %></span>
+          <% end %>
+          <% if version.introduced_by.present? %>
+            <span class="block text-xs text-gray-600 dark:text-gray-300"><%= labels[:introduced] %> <%= version.introduced_by %>, <%= labels[:published] %> <%= day.(version.published) %></span>
+          <% end %>
+          <% if version.note.present? %>
+            <span class="block text-xs text-gray-600 dark:text-gray-300" data-pilot-note><%= version.note %></span>
+          <% end %>
+          <% if version.source_url.present? %>
+            <a href="<%= version.source_url %>" class="block text-xs underline" rel="noopener" target="_blank"><%= labels[:source] %><%= " #{format('%03d', version.first_version)}" if version.first_version %></a>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+
+    <section class="md:col-span-2" data-pilot-selected="<%= @selected&.id %>">
+      <% if @selected.nil? %>
+        <p><%= labels[:unknown] %></p>
+      <% elsif !@selected.text? %>
+        <p class="font-medium"><%= labels[:unknown] %></p>
+        <p class="text-sm"><%= @selected.note %></p>
+        <% if @selected.source_url.present? %><a href="<%= @selected.source_url %>" class="underline text-sm" rel="noopener" target="_blank"><%= labels[:source] %></a><% end %>
+      <% else %>
+        <% unless @selected.start_known? %>
+          <p class="text-sm mb-2" data-pilot-start-unknown><%= labels[:earliest] %></p>
+        <% end %>
+        <p class="text-sm mb-2">
+          <%= labels[:inline] %>: <%= day.(@selected.inline_effective) || '-' %>
+          <% if @selected.start_check == 'matches' %>(<%= labels[:checks]['matches'] %>)<% elsif @selected.start_check.to_s.start_with?('differs') %>(<%= labels[:differs] %>)<% end %>
+          <% if @selected.captured_at.present? %> · <%= labels[:captured] %> <%= @selected.captured_at %><% end %>
+        </p>
+        <% if @diff %>
+          <div class="whitespace-pre-wrap border rounded p-3 leading-relaxed" data-pilot-diff><% @diff.each do |kind, text| %><% if kind == :same %><%= text %><% elsif kind == :removed %><del class="bg-red-100 dark:bg-red-900/40" title="<%= labels[:removed] %>"><%= text %></del><% else %><ins class="bg-green-100 dark:bg-green-900/40" title="<%= labels[:added] %>"><%= text %></ins><% end %><% end %></div>
+        <% else %>
+          <div class="whitespace-pre-wrap border rounded p-3 leading-relaxed" data-pilot-text><%= @selected.body %></div>
+        <% end %>
+        <%= form_with url: article_history_pilot_path(@numac, @article), method: :get, local: true, class: 'flex items-end gap-2 mt-4' do |f| %>
+          <%= hidden_field_tag :language, @language %>
+          <%= hidden_field_tag :variant, @variant if @variant.present? %>
+          <%= hidden_field_tag :version, @selected.id %>
+          <label class="text-sm"><%= labels[:compare] %>
+            <%= select_tag :compare, options_for_select(@versions.select(&:text?).reject { |v| v.id == @selected.id }.map { |v| ["#{day.(v.valid_from) || labels[:start_unknown]} - #{v.current? ? labels[:open] : (day.(v.valid_until) || labels[:end_unknown])}", v.id] }, @compared&.id), include_blank: true, class: 'block border rounded px-2 py-1', aria: { label: labels[:compare] } %>
+          </label>
+          <%= f.submit labels[:show], class: 'px-3 py-1 rounded border', name: nil %>
+        <% end %>
+      <% end %>
+    </section>
+  </div>
+</div>

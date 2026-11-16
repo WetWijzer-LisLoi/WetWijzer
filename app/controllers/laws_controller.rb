@@ -124,6 +124,9 @@ class LawsController < ApplicationController
   # before_action halts (e.g. the geo challenge), since after_action callbacks
   # only run for completed chains.
   after_action :set_classic_cache_headers, only: %i[index show]
+  # The article-history pilot (ArticleHistoryPilot): local only, for the laws its database covers.
+  before_action :set_history_pilot, only: %i[show articles]
+  after_action :close_history_pilot, only: %i[show articles]
 
   # GET /laws
   # GET /laws.json
@@ -253,6 +256,12 @@ class LawsController < ApplicationController
   #
   # @return [void]
   def articles
+    if history_snapshot_requested?
+      set_view_preferences
+      response.headers['Cache-Control'] = 'no-store'
+      return render :history_snapshot, layout: false
+    end
+
     load_articles_data
     set_view_preferences
 
@@ -261,6 +270,12 @@ class LawsController < ApplicationController
     # consolidation that rewrites text without changing the number of rows must
     # produce a new body, or browsers holding the old one revalidate to 304 and
     # keep it. Same reason the fragment key below is content-keyed.
+    # The pilot's Versions controls are local and per request: never cached.
+    if @history_pilot
+      response.headers['Cache-Control'] = 'no-store'
+      return render(:articles, layout: false)
+    end
+
     expires_in 1.hour, public: true
     return unless stale?(etag: ['law_articles_v3', params[:numac], @language_id, @articles_digest,
                                 @exdec_count.to_i, CacheVersionHelper.laws_links_version,
@@ -683,6 +698,58 @@ class LawsController < ApplicationController
 
   # Sets the @language_id instance variable based on the resolved law
   # @return [void]
+  HISTORY_KEY = %r{\AArt\.[0-9A-Za-z/_. -]{1,60}\z}
+  HISTORY_VERSION = /\A(?:\d{3}|current)\z/
+  HISTORY_DAY = /\A\d{4}-\d{2}-\d{2}\z/
+  HISTORY_FOCUS = %r{\A(Art\.[0-9A-Za-z/_. -]{1,60}):(open|close|older|newer|law|compare|item)\z}
+
+  # The article-history pilot's state, from the address only (so Back and a shared link restore it):
+  # as_of=YYYY-MM-DD picks the archived snapshot of that day; art_version[Art.19]=013 one article's wording (named
+  # by the archived version that first shows it, the same in both languages); art_compare[Art.19]=1 compares it
+  # with the wording before it.
+  def set_history_pilot
+    @history_versions = {}
+    @history_compare = []
+    return unless ArticleHistoryPilot.available?
+
+    pilot = ArticleHistoryPilot.new
+    return pilot.close unless pilot.covers?(params[:numac].to_s)
+
+    @history_pilot = pilot
+    @history_language = @language_id.to_i == 2 ? 'fr' : 'nl'
+    @history_as_of = params[:as_of].to_s if params[:as_of].to_s.match?(HISTORY_DAY) && valid_history_day?(params[:as_of])
+    # A variant's key differs by language (Art.42_WAALS_GEWEST / Art.42_REGION_WALLONNE): read either as this page's.
+    to_page = ->(key) { HistoryPilotHelper.history_key_for(key, @history_language) }
+    @history_versions = history_hash(params[:art_version]).select { |key, value| key.match?(HISTORY_KEY) && value.to_s.match?(HISTORY_VERSION) }
+                                                         .transform_keys(&to_page)
+    @history_compare = history_hash(params[:art_compare]).keys.grep(HISTORY_KEY).map(&to_page)
+    # history_focus=Art.19:older keeps that article's Versions control open with the focus on the step just taken.
+    focus = params[:history_focus].to_s.match(HISTORY_FOCUS)
+    @history_focus = [to_page.(focus[1]), focus[2]] if focus
+  end
+
+  def close_history_pilot
+    @history_pilot&.close
+  end
+
+  # Only an archive date renders the archive view; a moved or compared article on the current law keeps the live
+  # articles as the base (laws/_articles).
+  def history_snapshot_requested?
+    @history_pilot.present? && @history_as_of.present?
+  end
+
+  def history_hash(value)
+    hash = value.respond_to?(:to_unsafe_h) ? value.to_unsafe_h : {}
+    hash.first(200).to_h { |key, entry| [key.to_s, entry.to_s] }
+  end
+
+  def valid_history_day?(text)
+    Date.iso8601(text.to_s)
+    true
+  rescue Date::Error
+    false
+  end
+
   def set_language_id
     # Use the language of the resolved law for all related queries
     @language_id = @law.language_id

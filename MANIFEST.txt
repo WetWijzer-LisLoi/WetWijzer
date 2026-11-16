@@ -28,6 +28,7 @@ app/controllers/api/quality_provenance_controller.rb
 app/controllers/api/release_controller.rb
 app/controllers/api/sample_question_clicks_controller.rb
 app/controllers/application_controller.rb
+app/controllers/article_history_pilots_controller.rb
 app/controllers/chatbot_controller.rb
 app/controllers/concerns/api/browser_chat_billing.rb
 app/controllers/concerns/api/chatbot_analytics.rb
@@ -76,6 +77,7 @@ app/helpers/cache_version_helper.rb
 app/helpers/classic_helper.rb
 app/helpers/fisconet_provision_helper.rb
 app/helpers/german_text_helper.rb
+app/helpers/history_pilot_helper.rb
 app/helpers/invoices_helper.rb
 app/helpers/jurisprudence_helper.rb
 app/helpers/laws_helper.rb
@@ -288,6 +290,7 @@ app/services/account_erasure_service.rb
 app/services/account_export_download.rb
 app/services/account_export_service.rb
 app/services/altcha_service.rb
+app/services/article_history_pilot.rb
 app/services/atomic_cache_counter.rb
 app/services/audited_registration_suspension.rb
 app/services/belgian_court_service.rb
@@ -345,6 +348,8 @@ app/services/legal_chatbot/eu_live_corpus.rb
 app/services/legal_chatbot/eu_sealed_units.rb
 app/services/legal_chatbot/eu_search.rb
 app/services/legal_chatbot/eu_topic_intent.rb
+app/services/legal_chatbot/explicit_article_answers.rb
+app/services/legal_chatbot/explicit_article_request.rb
 app/services/legal_chatbot/fisconet_search.rb
 app/services/legal_chatbot/flight_disruption_grounding.rb
 app/services/legal_chatbot/foreign_succession_civil_devolution_scope.rb
@@ -356,6 +361,7 @@ app/services/legal_chatbot/formation_deed_grounding.rb
 app/services/legal_chatbot/future_law.rb
 app/services/legal_chatbot/general_noise_scope.rb
 app/services/legal_chatbot/generation_trace.rb
+app/services/legal_chatbot/generic_deadline_clarification.rb
 app/services/legal_chatbot/german_answer_translation.rb
 app/services/legal_chatbot/german_article_search.rb
 app/services/legal_chatbot/german_figure_check.rb
@@ -459,6 +465,7 @@ app/views/account/billing_info.html.erb
 app/views/account/edit.html.erb
 app/views/account/show.html.erb
 app/views/archived_partials/_donation_button.html.erb
+app/views/article_history_pilots/show.html.erb
 app/views/chatbot/_consent_modal.html.erb
 app/views/chatbot/_conversation_actions.html.erb
 app/views/chatbot/_header.html.erb
@@ -503,6 +510,12 @@ app/views/laws/_filter_section.html.erb
 app/views/laws/_fisconet_show.html.erb
 app/views/laws/_fisconet_text_notice.html.erb
 app/views/laws/_german_text_notice.html.erb
+app/views/laws/_history_archive_control.html.erb
+app/views/laws/_history_article.html.erb
+app/views/laws/_history_diff.html.erb
+app/views/laws/_history_link.html.erb
+app/views/laws/_history_notes.html.erb
+app/views/laws/_history_picker.html.erb
 app/views/laws/_law.html.erb
 app/views/laws/_list.html.erb
 app/views/laws/_numac.html.erb
@@ -522,6 +535,7 @@ app/views/laws/_updated_laws.html.erb
 app/views/laws/articles.html.erb
 app/views/laws/bookmarks.html.erb
 app/views/laws/compare.html.erb
+app/views/laws/history_snapshot.html.erb
 app/views/laws/index.html.erb
 app/views/laws/index.rss.builder
 app/views/laws/index.text.erb
@@ -822,6 +836,7 @@ public/pwa/icon-nl-maskable.png
 public/sw.js
 public/vite/.vite/manifest-assets.json
 public/vite/.vite/manifest.json
+public/vite/assets/application--Tt29A6V.css
 public/vite/assets/application--xCmOLOB.js
 public/vite/assets/application-19jp2-xV.js
 public/vite/assets/application-AoyFyjhb.js
@@ -880,6 +895,7 @@ public/vite/assets/application-CBormHI8.js
 public/vite/assets/application-CDdQnrxc.js
 public/vite/assets/application-CFcQDgA2.js
 public/vite/assets/application-CH3bDzQA.css
+public/vite/assets/application-CIngSIbw.js
 public/vite/assets/application-CJKP9SDV.js
 public/vite/assets/application-CKSngAOE.css
 public/vite/assets/application-CLLIJQeA.js
@@ -919,6 +935,7 @@ public/vite/assets/application-DQgxQ4cU.js
 public/vite/assets/application-DRC8r2NI.js
 public/vite/assets/application-DUHs-b9K.js
 public/vite/assets/application-DWN-weTi.css
+public/vite/assets/application-DY-C4m8P.js
 public/vite/assets/application-DZVf9TOW.css
 public/vite/assets/application-DZwDCCOo.js
 public/vite/assets/application-Dc1GM41R.js

@@ -15,6 +15,7 @@ class LegalChatbotService
   include LegalChatbot::SearchFanOut
   include LegalChatbot::SourceFields
   include LegalChatbot::TopicCitations
+  include LegalChatbot::ExplicitArticleAnswers
   include LegalChatbot::AnswerGuards
   include LegalChatbot::AnswerLinking
 

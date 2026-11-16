@@ -1,0 +1,29 @@
+<%# Article-history pilot: one covered article, in reading order. Its picker when the reader opened it; the notes
+    the archive date needs (none on the live page); then the text with the quiet Versions link after its number: the
+    live row on the current-law page (live: [text, title, type]), else the wording the archive gives or the reader
+    chose. With a comparison, the words changed against the wording before; at the oldest wording there is none, so
+    the text stays visible with a short note and the way out of the comparison stays in the picker.
+    Locals: history (HistoryPilotHelper::ArticleState), permalink, numac, live (optional). %>
+<% key = history.key %>
+<% live = local_assigns[:live] %>
+<% if history_open?(key) %><%= render 'laws/history_picker', history: history, permalink: permalink %><% end %>
+<% unless history.live? %><%= render 'laws/history_notes', history: history %><% end %>
+<% link = render('laws/history_link', history: history, permalink: permalink) %>
+<% printed = if history.live? && live
+               print_article(*live, source_numac: numac)
+             elsif history.shown_body
+               print_article(history.shown_body, key, 'ART', source_numac: numac)
+             end %>
+<% if @history_compare.include?(key) && history.shown_body %>
+  <% if history.compare_base %>
+    <p class="not-prose mb-1"><%= link %></p>
+    <%= render 'laws/history_diff', old_body: history.compare_base.body, new_body: history.shown_body %>
+  <% else %>
+    <p class="not-prose mb-1 text-xs text-gray-600 dark:text-gray-300" data-history-no-previous><%= history_label(:no_previous) %></p>
+    <%= history_with_link(printed, link) %>
+  <% end %>
+<% elsif printed %>
+  <%= history_with_link(printed, link) %>
+<% else %>
+  <p class="not-prose"><%= link %></p>
+<% end %>

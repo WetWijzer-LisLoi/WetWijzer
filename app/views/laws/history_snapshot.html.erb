@@ -1,0 +1,79 @@
+<%# Article-history pilot (local only): the articles frame for an archive date (as_of).
+    A saved Justel page IS the law only inside its window (ArticleHistoryPilot::Snapshot#covers?): a later-published
+    act can change an article earlier. So the view is composed: the page that gives the date its order and headings
+    (ArticleHistoryPilot#structure_on: the exact page, else the latest page whose own acts all apply by the date), and
+    for every article the wording that applies on the date from its own periods (HistoryPilotHelper#
+    history_article_state). Articles no period covers on the date are left out; articles that apply but are not on
+    that page are put in number order. Reading stays quiet: the date is in the banner above, and a short caveat
+    appears here only when the view is composed or a date is unresolved (a dispute, a gap, an ambiguous date, an
+    undetermined commencement); each article carries one Versions link and only the notes it needs. %>
+<% numac = params[:numac].to_s %>
+<% structure = @history_pilot.structure_on(numac, @history_language, @history_as_of) %>
+<% exact = structure&.covers?(@history_as_of) %>
+<%= turbo_frame_tag "law_articles", data: { controller: 'frame-status', frame_status_completed_value: t('loading_status.completed') } do %>
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm" data-history-snapshot="<%= structure&.label %>" data-history-exact="<%= exact ? 'true' : 'false' %>">
+    <div class="p-4 sm:p-6">
+      <% if structure.nil? %>
+        <div data-history-no-snapshot>
+          <p class="font-medium"><%= history_label(:archived_on) %> <%= history_day(@history_as_of) %></p>
+          <p class="mt-2"><%= history_label(:no_snapshot) %></p>
+          <p class="mt-3 text-sm"><%= history_label(:available) %>:</p>
+          <ol class="mt-1 space-y-1 text-sm">
+            <% @history_pilot.snapshots(numac, @history_language).select(&:exact?).reverse_each do |s| %>
+              <li><%= link_to history_snapshot_label(s), history_law_path(@law, as_of: s.current? ? nil : s.window_from, versions: {}, compare: []), data: { turbo_frame: '_top' }, class: 'underline' %></li>
+            <% end %>
+          </ol>
+          <% if (archive = @history_pilot.archive_url(numac, @history_language)) %>
+            <p class="mt-3 text-sm"><a href="<%= archive %>" rel="noopener" target="_blank" class="underline"><%= history_label(:justel_archive) %></a></p>
+          <% end %>
+        </div>
+      <% else %>
+        <% page_name = structure.current? ? history_label(:current) : "#{history_label(:version)} #{structure.label}" %>
+        <% rows = history_snapshot_rows(structure) %>
+        <% unresolved = rows.filter_map { |key, kind, _, history| key if kind == 'article' && history && !history.absent && history.unresolved? } %>
+        <% if !exact || unresolved.any? %>
+          <div class="not-prose mb-4 rounded-lg border-l-4 border-amber-400 bg-amber-50 dark:bg-amber-900/30 px-3 py-2 text-sm" role="note" data-history-caveat>
+            <% unless exact %><p data-history-composed><%= history_label(:caveat_composed) % { page: page_name } %></p><% end %>
+            <% if unresolved.any? %>
+              <p data-history-unresolved><%= history_label(:caveat_unresolved) %> <% unresolved.each_with_index do |key, i| %><%= ', ' if i.positive? %><a href="#<%= history_permalink(key, key) %>" class="underline"><%= key.sub('Art.', 'Art. ').tr('_', ' ') %></a><% end %>.</p>
+            <% end %>
+          </div>
+        <% end %>
+        <% headings = rows.each_with_index.select { |(_, kind, _, _), _| kind == 'heading' } %>
+        <% if headings.any? %>
+          <nav aria-label="<%= history_label(:toc) %>" class="mb-6 rounded-lg border border-gray-200 dark:border-gray-700 p-3" data-history-toc>
+            <h2 class="text-base font-semibold"><%= history_label(:toc) %></h2>
+            <ol class="mt-2 space-y-1 text-sm">
+              <% headings.each do |(_, _, body, _), position| %>
+                <li><a href="#history-heading-<%= position %>" class="underline"><%= body %></a></li>
+              <% end %>
+            </ol>
+          </nav>
+        <% end %>
+        <div class="article-content reading-measure" <%= tag.attributes(lang: legal_text_lang) %>>
+          <% rows.each_with_index do |(key, kind, body, history), position| %>
+            <% if kind == 'heading' %>
+              <h3 id="history-heading-<%= position %>" class="scroll-mt-24 mt-6 mb-2 font-semibold"><%= body %></h3>
+            <% elsif history.nil? %>
+              <%# No period in the pilot for this key: the structure page's own text, without history. %>
+              <% next unless body %>
+              <% plain_link = history_permalink(key, body) %>
+              <article id="<%= plain_link %>" class="scroll-mt-24 border-t border-gray-200 dark:border-gray-700 py-4" data-history-article="<%= key %>">
+                <div id="article-text-<%= plain_link %>"><%= print_article(body, key, 'ART', source_numac: numac) %></div>
+              </article>
+            <% elsif !history.absent || history.chosen %>
+              <% permalink = history_permalink(key, history.shown_body || key) %>
+              <% counterpart = history_permalink(HistoryPilotHelper.history_key_for(key, @history_language == 'nl' ? 'fr' : 'nl'), '') %>
+              <article id="<%= permalink %>" class="scroll-mt-24 border-t border-gray-200 dark:border-gray-700 py-4" data-history-article="<%= key %>">
+                <% if counterpart != permalink %><span id="<%= counterpart %>" class="block h-0 overflow-hidden scroll-mt-24" aria-hidden="true"></span><% end %>
+                <div id="article-text-<%= permalink %>">
+                  <%= render 'laws/history_article', history: history, permalink: permalink, numac: numac %>
+                </div>
+              </article>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

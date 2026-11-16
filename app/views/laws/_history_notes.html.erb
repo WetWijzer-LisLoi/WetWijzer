@@ -1,0 +1,18 @@
+<%# Article-history pilot: what a reader must know before reading this wording on the archive date, and nothing
+    else: a disputed entry into force (both dates), a stretch the archive does not show, an ambiguous date, or an
+    undetermined commencement. Locals: history (HistoryPilotHelper::ArticleState). %>
+<% key = history.key %>
+<% if history.dispute %>
+  <p class="not-prose mb-1 rounded border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-900/30 px-2 py-1 text-xs" role="note" data-history-disputed="<%= key %>">
+    <strong><%= history_label(:disputed) %></strong> (<%= history_period(history.dispute) %>): <%= history_dispute_days(history.dispute) %>. <%= history_label(:disputed_on) %>
+  </p>
+<% end %>
+<% if history.gap %>
+  <p class="not-prose mb-1 rounded border-l-4 border-gray-400 px-2 py-1 text-xs" role="note" data-history-gap="<%= key %>"><%= history_label(:gap) %> (<%= history_period(history.gap) %>).</p>
+<% end %>
+<% if history.ambiguous %>
+  <p class="not-prose mb-1 rounded border-l-4 border-amber-300 px-2 py-1 text-xs" role="note" data-history-ambiguous="<%= key %>"><%= history_label(:ambiguous) %></p>
+<% end %>
+<% if history.undetermined %>
+  <p class="not-prose mb-1 rounded border-l-4 border-amber-300 px-2 py-1 text-xs" role="note" data-history-undetermined="<%= key %>"><%= history_label(:undetermined) %></p>
+<% end %>
