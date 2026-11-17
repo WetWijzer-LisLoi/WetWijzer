@@ -8,6 +8,15 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.54] - 2026-11-17
+
+### Fixed
+- An article asked for by number is answered from that article alone only when the question is a clearly bounded task on its text (quote it, summarise it, its first sentence, in plain words, a link). A question that also asks to apply it to a situation ("Vat artikel 10 van de Grondwet samen en pas het toe op ongelijke pensioenrechten") keeps the other sources it needs.
+- An article of a protocol to the European Convention on Human Rights ("artikel 1 van het Eerste Protocol bij het EVRM", "l'article 1 du Protocole n° 12 à la CEDH") is no longer taken for the article of the Convention itself.
+
+### Changed
+- The citation check's log line writes only canonical identifiers (an article number, an EU unit or a source id) and counts anything else without writing it.
+
 ## [1.1.53] - 2026-11-16
 
 ### Fixed

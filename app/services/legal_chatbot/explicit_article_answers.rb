@@ -65,8 +65,8 @@ module LegalChatbot
                       een dat die en et and of uit from in voor pour for zijn ses haar ihr zitiere gib zeige
                       wortlich wörtlich quelle offizielle].to_set.freeze
 
-    # Words that ask for an explanation, a comparison or a choice: more than the requested article itself.
-    WIDER_QUESTION = /\b(?:leg|uitleg\p{L}*|verklaar|vergelijk|waarom|hoe|wanneer|welke|expliqu\p{L}*|compar\p{L}*|pourquoi|comment|quand|quel\p{L}*|explain|compare|why|how|when|which|erkl[äa]r\p{L}*|warum|wie)\b/
+    # Words that ask for an explanation, a comparison, an application or a choice: more than the requested article.
+    WIDER_QUESTION = /\b(?:leg|uitleg\p{L}*|toepass\p{L}*|toegepast|appliqu\p{L}*|apply|applies|applied|anwend\p{L}*|verklaar|vergelijk|waarom|hoe|wanneer|welke|expliqu\p{L}*|compar\p{L}*|pourquoi|comment|quand|quel\p{L}*|explain|compare|why|how|when|which|erkl[äa]r\p{L}*|warum|wie)\b/
 
     def explicit_article_lookup_only?(question)
       text = explicit_article_request_rest(question)
@@ -76,10 +76,26 @@ module LegalChatbot
       text.scan(/\p{L}{3,}/).reject { |word| LOOKUP_WORDS.include?(word) }.size <= 2
     end
 
-    # The question without its article references, NUMACs and the Constitution's name.
+    # The question without its article references, NUMACs and the names of the Constitution and the Convention.
     def explicit_article_request_rest(question)
       question.to_s.downcase.gsub(ExplicitArticleRequest::ARTICLE, ' ').gsub(ExplicitArticleRequest::NUMAC, ' ')
-              .gsub(ExplicitArticleRequest::CONSTITUTION_NAME, ' ')
+              .gsub(ExplicitArticleRequest::CONSTITUTION_NAME, ' ').gsub(ExplicitArticleRequest::ECHR_NAME, ' ')
+    end
+
+    # Words a bounded task on the requested text uses: summarise it, its first sentence, in plain words, a link to it.
+    # A word outside these and LOOKUP_WORDS is another task ("en pas het toe op ongelijke pensioenrechten") that needs
+    # more law than the requested article (Sol 2026-11-17 03:58:47Z).
+    FOCUS_WORDS = %w[vat vatten samen samenvatting samenvatten uitsluitend enkel alleen eerste tweede derde laatste zin
+                     zinnen lid leden gewone eenvoudige duidelijke taal woorden kort korte beknopt beknopte naar
+                     résume résumez résumer résumé uniquement seulement première premier deuxième dernière phrase phrases
+                     alinéa langage clair claire termes mots bref brève vers summarize summarise summary only just first
+                     second last sentence sentences paragraph plain simple language words brief short nur ersten satz
+                     einfacher einfachen sprache zusammen zusammenfassen fasse kurz the der die das].to_set.freeze
+
+    def explicit_article_bounded_task?(rest)
+      return false if rest.match?(WIDER_QUESTION) || rest.count('?') > 1
+
+      rest.scan(/\p{L}{3,}/).count { |word| !LOOKUP_WORDS.include?(word) && !FOCUS_WORDS.include?(word) } <= 1
     end
 
     # The legislation rows an answer about requested articles keeps, or nil to keep retrieval as it is.
@@ -88,15 +104,15 @@ module LegalChatbot
     # 1994021048), artikel 10. Vat uitsluitend de eerste zin samen"), and every one of them was retrieved, those
     # articles are the answer's whole subject: the context, the citation guard and the source cards keep them alone.
     # Unrelated retrieval hits (other articles of the law, VAT articles, unrelated decrees) gave the model articles to
-    # cite wrongly, and the guard then withheld the answer (Sol 2026-11-16 20:17:26Z, Q2). A question that asks more
-    # (an explanation, a comparison, which rules apply), names another instrument, or whose article was not found
-    # keeps ordinary retrieval.
+    # cite wrongly, and the guard then withheld the answer (Sol 2026-11-16 20:17:26Z, Q2). Only a clearly bounded task
+    # on the requested text qualifies (explicit_article_bounded_task?): a question that asks more (an explanation, a
+    # comparison, an application to a situation, which rules apply), names another instrument, or whose article was
+    # not found keeps ordinary retrieval.
     def explicit_article_focus_sources(question, sources)
       targets = explicit_article_targets(question)
       return nil if targets.empty? || explicit_article_mixed_request?(question)
 
-      rest = explicit_article_request_rest(question)
-      return nil if rest.match?(WIDER_QUESTION) || rest.count('?') > 1
+      return nil unless explicit_article_bounded_task?(explicit_article_request_rest(question))
 
       pairs = targets.map { |numac, number| [numac, explicit_article_title_key(number)] }.uniq
       exact = explicit_article_exact_sources(targets, sources)

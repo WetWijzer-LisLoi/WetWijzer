@@ -1093,12 +1093,22 @@ module LegalChatbot
       unsupported_article_citation_message
     end
 
-    # The references a blocked answer could not support, for the log: at most five, each reduced to the characters
-    # an article number or NUMAC uses and cut to 24, so the log line names what failed (Sol 2026-11-16 20:17:26Z:
-    # "Art. 10" alone said nothing) and never carries the answer's prose.
+    # The references a blocked answer could not support, for the log, so the line names what failed (Sol 2026-11-16
+    # 20:17:26Z: counts alone said nothing) and never carries the answer's prose. Only canonical identifiers are
+    # written (Sol 2026-11-17 03:58:47Z): "Art. <number>" with a bounded article number ("10", "11bis", "VI.49",
+    # "5:233", "32quater/2"), an EU unit ("Overweging 12"), or a NUMAC-shaped source id; anything else is only
+    # counted. At most five are written.
+    CANONICAL_LOG_ARTICLE = %r{\AArt\.(?:\d{1,5}|[IVXLCDM]{1,6}\.\d{1,5})[a-z]{0,10}(?:[./:-]\d{1,5}[a-z]{0,10}){0,4}\z}
+    CANONICAL_LOG_EU_UNIT = /\A(?:overweging|consid[ée]rant|recital|erw[äa]gungsgrund|randnummer|r\.o\.|punt|point|paragraaf|paragraph|rn\.)\d{1,5}\z/i
+    CANONICAL_LOG_SOURCE = /\A[0-9A-Z_]{4,20}\z/
+
     def citation_guard_log_references(references)
-      list = Array(references).first(5).map { |reference| reference.to_s.gsub(%r{[^\p{Alnum}./:_-]}, '')[0, 24] }
-      list.reject(&:empty?).join('|').presence || '-'
+      compact = Array(references).map { |reference| reference.to_s.gsub(/[[:space:]   ]+/, '') }
+      canonical, other = compact.partition do |reference|
+        reference.match?(CANONICAL_LOG_ARTICLE) || reference.match?(CANONICAL_LOG_EU_UNIT) || reference.match?(CANONICAL_LOG_SOURCE)
+      end
+      written = canonical.first(5).join('|').presence || '-'
+      other.empty? ? written : "#{written}+#{other.size}noncanonical"
     end
 
     # Recitals and numbered judgment paragraphs are evidence units, not

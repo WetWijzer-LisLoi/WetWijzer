@@ -26,6 +26,10 @@ module LegalChatbot
                  \bconvention\s+(?:europ[ée]enne\s+des|de\s+sauvegarde\s+des)\s+droits\s+de\s+l['’]homme\b|
                  \beuropean\s+convention\s+(?:on|for\s+the\s+protection\s+of)\s+human\s+rights\b|
                  \beurop[äa]ische[nr]?\s+menschenrechtskonvention\b/ix
+    # The Convention's name right after a protocol ("het Eerste Protocol bij het EVRM", "le Protocole n° 12 à la
+    # CEDH", "Protocol No. 1 to the ECHR") names that protocol, a distinct instrument: no Convention article is guessed.
+    PROTOCOL_BEFORE = /\bprotocol\p{L}*\b[^;?!\n]{0,60}?\b(?:bij|aan|van|tot|à|a|au|du|de|to|of|zum|zur|zu)\s+
+                       (?:(?:het|la|le|l['’]|the|der|dem|de)\s*)?\z/ix
     NUMAC = /\b(\d{4}[0-9A-Z]\d{5})\b/i
     FOREIGN = /(?:frans\p{L}*|duits\p{L}*|nederlands\p{L}*|amerikaans\p{L}*|europe?s\p{L}*|spaans\p{L}*|italiaans\p{L}*|
                luxemburgs\p{L}*|brits\p{L}*|fran[çc]ais\p{L}*|allemand\p{L}*|n[ée]erlandais\p{L}*|am[ée]ricain\p{L}*|
@@ -50,7 +54,7 @@ module LegalChatbot
     OTHER_INSTRUMENT = /\b(?:evrm|echr|cedh|ehrm|emrk|verdrag|trait[ée]|treaty|convention(?!\s+belge)|richtlijn|directive|
                           verordening|r[èe]glement|regulation|avg|gdpr|rgpd|wetboek|code|wet|loi|gesetz|decreet|d[ée]cret|
                           ordonnantie|ordonnance|besluit|arr[êe]t[ée]|handvest|charte|charter|vweu|tfeu|tfue|veu|teu|tue|
-                          wer|bw|sw|wib|ger\.?\s*w|gw)\b/ix
+                          protocol\p{L}*|wer|bw|sw|wib|ger\.?\s*w|gw)\b/ix
     # Words between an article number and the instrument it belongs to: "van het", "de la", "of the", "der".
     LINK = /\A[\s,]*(?:(?:van|in|uit|de|des|du|der|des|of|from|the|het|la|le|l['’]|den|dem|belgische|belgisch|belge|belgian|
                        belgischen|gecoördineerde|coordonn[ée]e)\s*)*\z/ix
@@ -110,7 +114,10 @@ module LegalChatbot
 
         mentions << mention(match, CONSTITUTION)
       end
-      echr = text.to_enum(:scan, ECHR_NAME).map { mention(Regexp.last_match, ECHR) }
+      echr = text.to_enum(:scan, ECHR_NAME).map do
+        match = Regexp.last_match
+        mention(match, text[[match.begin(0) - 80, 0].max...match.begin(0)].match?(PROTOCOL_BEFORE) ? nil : ECHR)
+      end
       mentions.concat(echr)
       numacs = mentions.select { |instrument| instrument[:numac] && ![CONSTITUTION, ECHR].include?(instrument[:numac]) }
       text.to_enum(:scan, OTHER_INSTRUMENT).each do
