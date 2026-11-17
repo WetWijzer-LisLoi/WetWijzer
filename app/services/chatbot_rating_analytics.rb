@@ -22,10 +22,14 @@
 class ChatbotRatingAnalytics
   # Below this a group is shown but never ranked or styled as a winner.
   MIN_RANKING_SAMPLE = 20
-  # Below this a group is not shown individually at all: with a handful of
-  # rows, a configuration row plus its metadata starts to describe individual
-  # answers rather than a population.
-  MIN_VISIBLE_SAMPLE = 5
+  # Below this a statistic is not shown at all. The owner (2026-11-17, through
+  # Sol 12:20:59Z) asked to see ratings from one recorded rating onward in
+  # Admin > Chatbot analytics, so the floor is one: the count, the mean and
+  # the star breakdown appear as soon as a single rating exists. Zero ratings
+  # keeps its own empty state ("No ratings yet"), which is not suppression.
+  # The suppression branches below stay as code, unreachable at a floor of one,
+  # so raising this constant again restores them without a rewrite.
+  MIN_VISIBLE_SAMPLE = 1
   # Guard behaviour is a different question from rating quality, and it needs a
   # far larger sample before it can justify changing CITATION_GUARD_MAX_RETRIES.
   # Below this the panel reports the numbers and says plainly that they are not
@@ -74,11 +78,9 @@ class ChatbotRatingAnalytics
     eligible_scope.where.not(rating_score: nil)
   end
 
-  # One suppression rule for the whole service. MIN_VISIBLE_SAMPLE guarded the
-  # configuration table from the start, but the overview, the untraced bucket
-  # and the suppressed-group total had no floor at all: with one rated answer
-  # in the period they printed its exact score, its distribution bucket and its
-  # chosen reason codes.
+  # One suppression rule for the whole service, on MIN_VISIBLE_SAMPLE. At the
+  # current floor of one it never fires: any rated answer makes the statistics
+  # visible (owner request 2026-11-17).
   #
   # Zero rated answers is NOT suppression. "Nobody has rated anything" is a
   # measured fact about the period and reveals no one; it keeps its own empty
@@ -181,9 +183,8 @@ class ChatbotRatingAnalytics
     return nil if counts.empty?
 
     regenerated = counts.count { |calls| calls.to_i > 1 }
-    # The call-count half takes the same floor as the verdict half. A single
-    # traced answer otherwise printed its exact provider-call count, which is
-    # both an unreliable statistic and a description of one answer.
+    # The call-count half takes the same floor as the verdict half
+    # (MIN_VISIBLE_SAMPLE, one since 2026-11-17, so it no longer fires).
     suppressed = counts.size < MIN_VISIBLE_SAMPLE
     {
       answers: counts.size,
@@ -253,15 +254,14 @@ class ChatbotRatingAnalytics
     end
   end
 
-  # Same floor as every other statistic on this dashboard. The guard panel had
-  # none, so a period holding a single recorded verdict printed that answer's
-  # exact outcome and retry count.
+  # Same floor as every other statistic on this dashboard (MIN_VISIBLE_SAMPLE,
+  # one since 2026-11-17, so this is unreachable at the current setting).
   #
   # The sample SIZE survives, unlike the overview's: it is a count of the
   # system's own verdicts rather than of anyone's submitted rating, and it is
   # the number an operator needs to answer "is there enough to tune yet" -
   # which is the whole purpose of the panel. What it withholds is every derived
-  # statistic computed from fewer than five answers.
+  # statistic computed from fewer than MIN_VISIBLE_SAMPLE answers.
   def suppressed_guard_outcomes(recorded)
     {
       outcomes_recorded: recorded,
@@ -325,8 +325,7 @@ class ChatbotRatingAnalytics
   def unavailable_bucket
     scores = rated_scope.where(generation_trace_version: nil).pluck(:rating_score).compact
     return nil if scores.empty?
-    # Same floor as everywhere else. This bucket is the easiest one to isolate:
-    # untraced rows are rare, so a period often holds exactly one.
+    # Same floor as everywhere else (one since 2026-11-17).
     return { n: nil, suppressed: true, minimum_sample: MIN_VISIBLE_SAMPLE, mean: nil, median: nil, rankable: false } if scores.size < MIN_VISIBLE_SAMPLE
 
     { n: scores.size, mean: mean(scores), median: median(scores), rankable: false }
@@ -487,9 +486,9 @@ class ChatbotRatingAnalytics
     end
   end
 
-  # Suppressed groups collapse into ONE unlabeled total. This is an
-  # anti-reidentification guard, not deletion: the ratings still count in the
-  # overview.
+  # Groups below MIN_VISIBLE_SAMPLE collapse into ONE unlabeled total. This is
+  # an anti-reidentification guard, not deletion: the ratings still count in
+  # the overview. At the floor of one (2026-11-17) no group falls below it.
   def summarize_suppressed(groups)
     return nil if groups.empty?
 

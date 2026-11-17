@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.58] - 2026-11-17
+
+### Changed
+- Admin > Chatbot analytics shows the rating count, mean and star breakdown from one recorded rating onward, also per model, language and configuration; only a period without ratings shows the empty state. All traffic is counted, as before.
+
 ## [1.1.57] - 2026-11-17
 
 ### Fixed
