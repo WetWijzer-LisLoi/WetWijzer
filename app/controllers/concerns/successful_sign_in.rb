@@ -40,7 +40,8 @@ module SuccessfulSignIn
 
     token = nil
     AccountRecord.transaction do
-      token = user.generate_session_token!
+      # Keeps the account's current token: the owner's other devices stay signed in.
+      token = user.session_token_for_sign_in!
       user.update!(
         last_sign_in_at: Time.current,
         last_sign_in_ip: request.remote_ip,

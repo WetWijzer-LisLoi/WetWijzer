@@ -8,6 +8,15 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.61] - 2026-11-18
+
+### Changed
+- Signing in no longer signs the account out on its other devices. A sign-in keeps the account's current session token instead of replacing it. A copied cookie stays bounded by the signed expiry Rails checks on the server (two hours, or thirty days with "remember me"). A password or second-factor change, signing out, suspension, deactivation and erasure still end the session on every device.
+
+### Added
+- Operations: `ww-faiss-pin.service` holds the served FAISS indexes in memory, smallest first within a 4 GB budget, and releases them all when available memory drops below 2 GB. It is installed by `scripts/ops/install_ops_timers.sh` as root. The parliamentary index (2.8 GB) stays on the five-minute keep-warm, which no longer charges the pinned files against its memory budget (it reads their list from `/run/wetwijzer-faiss-pin/pinned`).
+- CI: the security stage runs each scanner on its own. npm advisories go through `scripts/ops/npm_audit_gate.mjs`, which excepts a listed advisory only while no fixed release exists. The one exception is GHSA-fc5q-39xc-vjpf (picomatch, build time only).
+
 ## [1.1.60] - 2026-11-17
 
 ### Changed

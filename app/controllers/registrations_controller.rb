@@ -305,7 +305,7 @@ class RegistrationsController < ApplicationController
   end
 
   def sign_in(user)
-    token = user.generate_session_token!
+    token = user.session_token_for_sign_in!
     cookies.signed[:session_token] = {
       value: token,
       expires: 30.days.from_now,

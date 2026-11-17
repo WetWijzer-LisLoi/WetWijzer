@@ -217,10 +217,31 @@ class User < AccountRecord
     reset_password_token
   end
 
+  # Replaces the account's session token: every signed-in device is signed out.
   def generate_session_token!
     token = SecureRandom.urlsafe_base64(32)
     update!(session_token: token)
     token
+  end
+
+  # A sign-in (owner, 2026-11-17). The account's current token is KEPT, so the
+  # owner's other devices stay signed in; until then every sign-in replaced it
+  # and signed them all out. Only a missing token is issued here. A copied
+  # cookie is still bounded: the signed cookie carries its expiry (two hours,
+  # or thirty days with "remember me"), which Rails checks on the server, and a
+  # password or second-factor change, sign-out, suspension, deactivation and
+  # erasure still clear or replace the token, ending every device.
+  #
+  # Read from the row, not from this object: a password change or a sign-out
+  # elsewhere may have cleared it since this object was loaded, and a cleared
+  # token is replaced, never revived.
+  def session_token_for_sign_in!
+    stored = self.class.where(id: id).pick(:session_token)
+    return generate_session_token! if stored.blank?
+
+    self.session_token = stored
+    clear_attribute_change(:session_token)
+    stored
   end
 
   def clear_session_token!
