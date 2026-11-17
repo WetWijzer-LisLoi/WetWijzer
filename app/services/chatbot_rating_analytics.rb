@@ -30,6 +30,12 @@ class ChatbotRatingAnalytics
   # The suppression branches below stay as code, unreachable at a floor of one,
   # so raising this constant again restores them without a rewrite.
   MIN_VISIBLE_SAMPLE = 1
+  # The regeneration and guard panels are not ratings: they report the
+  # system's own provider calls, guard verdicts and retries. The owner's
+  # request covered ratings only, so these keep the five-answer display floor
+  # they had before (Sol 2026-11-17 16:48:53Z). Below it only the sample size
+  # is reported; zero is not suppression.
+  MIN_OPERATIONAL_SAMPLE = 5
   # Guard behaviour is a different question from rating quality, and it needs a
   # far larger sample before it can justify changing CITATION_GUARD_MAX_RETRIES.
   # Below this the panel reports the numbers and says plainly that they are not
@@ -184,8 +190,8 @@ class ChatbotRatingAnalytics
 
     regenerated = counts.count { |calls| calls.to_i > 1 }
     # The call-count half takes the same floor as the verdict half
-    # (MIN_VISIBLE_SAMPLE, one since 2026-11-17, so it no longer fires).
-    suppressed = counts.size < MIN_VISIBLE_SAMPLE
+    # (MIN_OPERATIONAL_SAMPLE, five).
+    suppressed = counts.size < MIN_OPERATIONAL_SAMPLE
     {
       answers: counts.size,
       regenerated: suppressed ? nil : regenerated,
@@ -193,8 +199,8 @@ class ChatbotRatingAnalytics
       mean_calls: suppressed ? nil : (counts.sum.to_f / counts.size).round(2),
       max_calls: suppressed ? nil : counts.max,
       suppressed: suppressed,
-      visible_minimum_sample: MIN_VISIBLE_SAMPLE,
-      # Two different floors, deliberately. MIN_VISIBLE_SAMPLE is when a number
+      visible_minimum_sample: MIN_OPERATIONAL_SAMPLE,
+      # Two different floors, deliberately. MIN_OPERATIONAL_SAMPLE is when a number
       # may be SHOWN; MIN_GUARD_SAMPLE is when it may be ACTED ON.
       sufficient: counts.size >= MIN_GUARD_SAMPLE,
       minimum_sample: MIN_GUARD_SAMPLE
@@ -216,7 +222,7 @@ class ChatbotRatingAnalytics
            .pluck(:citation_guard_outcome, :citation_guard_retries)
     return { outcomes_recorded: 0 } if rows.empty?
 
-    return suppressed_guard_outcomes(rows.size) if rows.size < MIN_VISIBLE_SAMPLE
+    return suppressed_guard_outcomes(rows.size) if rows.size < MIN_OPERATIONAL_SAMPLE
 
     outcomes = rows.map(&:first)
     retried = rows.select { |_outcome, retries| retries.to_i.positive? }
@@ -254,19 +260,19 @@ class ChatbotRatingAnalytics
     end
   end
 
-  # Same floor as every other statistic on this dashboard (MIN_VISIBLE_SAMPLE,
-  # one since 2026-11-17, so this is unreachable at the current setting).
+  # The operational floor (MIN_OPERATIONAL_SAMPLE, five), not the ratings
+  # floor.
   #
   # The sample SIZE survives, unlike the overview's: it is a count of the
   # system's own verdicts rather than of anyone's submitted rating, and it is
   # the number an operator needs to answer "is there enough to tune yet" -
   # which is the whole purpose of the panel. What it withholds is every derived
-  # statistic computed from fewer than MIN_VISIBLE_SAMPLE answers.
+  # statistic computed from fewer than MIN_OPERATIONAL_SAMPLE answers.
   def suppressed_guard_outcomes(recorded)
     {
       outcomes_recorded: recorded,
       guard_suppressed: true,
-      guard_minimum_sample: MIN_VISIBLE_SAMPLE,
+      guard_minimum_sample: MIN_OPERATIONAL_SAMPLE,
       delivered: nil,
       sources_fallback: nil,
       refused: nil,

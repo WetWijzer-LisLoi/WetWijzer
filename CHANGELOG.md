@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.59] - 2026-11-17
+
+### Changed
+- Admin > Chatbot analytics keeps a five-answer display floor for the operational figures (provider calls, guard verdicts and retries in the regeneration and guard panels); ratings still show from one recorded rating onward.
+
 ## [1.1.58] - 2026-11-17
 
 ### Changed
