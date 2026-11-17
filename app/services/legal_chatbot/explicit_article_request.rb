@@ -30,13 +30,26 @@ module LegalChatbot
                  \beurop[äa]ische[nr]?\s+menschenrechtskonvention\b/ix
     # The Convention's name right after a protocol ("het Eerste Protocol bij het EVRM", "le Protocole n° 12 à la
     # CEDH", "Protocol No. 1 to the ECHR") names that protocol, a distinct instrument: no Convention article is guessed.
-    PROTOCOL_BEFORE = /(?:\b(?:eerste|premier|first|erste[ns]?|aanvullend\p{L}*|additione\p{L}*|additional)\s+)*\bprotocol\p{L}*\b
-                       (?:(?!\b(?:evrm|echr|cedh|emrk|art\p{L}*|verdrag|convention|treaty|en|et|and|und)\b)[^;?!\n]){0,60}?
+    # Ordinals that name a protocol other than the first ("het tweede aanvullend protocol", "le deuxième protocole").
+    NON_FIRST_ORDINAL = '(?:tweede|derde|vierde|vijfde|zesde|zevende|achtste|negende|tiende|elfde|twaalfde|dertiende|' \
+                        'veertiende|vijftiende|zestiende|deuxi[eè]me|second|troisi[eè]me|third|quatri[eè]me|fourth|' \
+                        'cinqui[eè]me|fifth|sixi[eè]me|sixth|septi[eè]me|seventh|huiti[eè]me|eighth|neuvi[eè]me|ninth|' \
+                        'dixi[eè]me|tenth|onzi[eè]me|eleventh|douzi[eè]me|twelfth|treizi[eè]me|thirteenth|' \
+                        'quatorzi[eè]me|fourteenth|quinzi[eè]me|fifteenth|seizi[eè]me|sixteenth|zweite[nrs]?|' \
+                        'dritte[nrs]?|\d{1,2}(?:e|de|ste|[èe]me|th|nd|rd))'
+    PROTOCOL_QUALIFIER = "(?:\\b(?:eerste|premier|first|erste[nrs]?|#{NON_FIRST_ORDINAL}|aanvullend\\p{L}*|additione\\p{L}*|additional)\\s+)*".freeze
+    # The protocol phrase ends at a sentence break ("Geef artikel 1 van het Eerste Protocol. Geef ook EVRM artikel 10.")
+    # and never crosses another instrument, an article reference or a conjunction.
+    PROTOCOL_BEFORE = /#{PROTOCOL_QUALIFIER}\bprotocol\p{L}*\b
+                       (?:(?!\b(?:evrm|echr|cedh|emrk|art\p{L}*|verdrag|convention|treaty|en|et|and|und)\b|(?-i:\.\s+\p{Lu}))[^;?!\n]){0,60}?
                        (?:\b(?:bij|aan|van|tot|à|a|au|du|de|to|of|zum|zur|zu)\s+(?:(?:het|la|le|l['’]|the|der|dem|de)\s*)?)?\z/ix
-    # "het EVRM-protocol nr. 1", "EVRM protocol 1": the Convention's name qualifies a protocol that follows it.
-    PROTOCOL_AFTER = /\A[\s-]*(?:aanvullend\s+|additionnel\s+)?protocol\p{L}*\b(?:\s*(?:nr|n[°º]|no)\.?\s*\d{1,2}\b)?/i
+    # "het EVRM-protocol nr. 1", "EVRM protocol 1", "EVRM-aanvullend protocol 12": the Convention's name qualifies a
+    # protocol that follows it.
+    PROTOCOL_AFTER = /\A[\s-]*#{PROTOCOL_QUALIFIER}protocol\p{L}*\b(?:\s*(?:(?:nr|n[°º]|no)\.?\s*)?\d{1,2}\b)?/i
+    # A protocol phrase as words of a lookup ("het Eerste Protocol", "Protocol nr. 1"), for ExplicitArticleAnswers.
+    PROTOCOL_PHRASE = /#{PROTOCOL_QUALIFIER}\bprotocol\p{L}*\b(?:\s*(?:(?:nr|n[°º]|no)\.?\s*)?\d{1,2}\b)?/i
     FIRST_PROTOCOL = '1952032050'
-    PROTOCOL_NUMBER = /\b(?:nr|n[°º]|no|nummer|number|num[ée]ro)\.?\s*(\d{1,2})\b/i
+    PROTOCOL_NUMBER = /\b(?:nr|n[°º]|no|nummer|number|num[ée]ro)\.?\s*(\d{1,2})\b|\bprotocol\p{L}*\s+(\d{1,2})\b/i
     FIRST_PROTOCOL_WORD = /\b(?:eerste|premier|first|erste[ns]?|aanvullend|additioneel|additionnel|additional|zusatz\p{L}*)\b/i
     NUMAC = /\b(\d{4}[0-9A-Z]\d{5})\b/i
     FOREIGN = /(?:frans\p{L}*|duits\p{L}*|nederlands\p{L}*|amerikaans\p{L}*|europe?s\p{L}*|spaans\p{L}*|italiaans\p{L}*|
@@ -168,7 +181,11 @@ module LegalChatbot
 
     # The first Protocol by number or by name; any other protocol has no target.
     def protocol_numac(qualifier)
-      number = qualifier[PROTOCOL_NUMBER, 1]
+      # "het tweede aanvullend protocol": a named later protocol is never the first, whatever else it says.
+      return nil if qualifier.match?(/\b#{NON_FIRST_ORDINAL}\b/i)
+
+      found = qualifier.match(PROTOCOL_NUMBER)
+      number = found && (found[1] || found[2])
       return (number == '1' ? FIRST_PROTOCOL : nil) if number
 
       qualifier.match?(FIRST_PROTOCOL_WORD) ? FIRST_PROTOCOL : nil

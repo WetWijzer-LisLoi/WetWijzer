@@ -63,7 +63,7 @@ module LegalChatbot
                       citez citer donnez donner montrez cherchez que dit disent texte complet intégral integral lien
                       officiel officielle source quote cite give show find what does say says full text official direct please belgische belgisch belge belgian numac van het de la le les des du der den
                       een dat die en et and of uit from in voor pour for zijn ses haar ihr zitiere gib zeige
-                      wortlich wörtlich quelle offizielle].to_set.freeze
+                      wortlich wörtlich quelle offizielle bij aan tot].to_set.freeze
 
     # Words that ask for an explanation, a comparison, an application or a choice: more than the requested article.
     WIDER_QUESTION = /\b(?:leg|uitleg\p{L}*|toepass\p{L}*|toegepast|appliqu\p{L}*|apply|applies|applied|anwend\p{L}*|verklaar|vergelijk|waarom|hoe|wanneer|welke|expliqu\p{L}*|compar\p{L}*|pourquoi|comment|quand|quel\p{L}*|explain|compare|why|how|when|which|erkl[äa]r\p{L}*|warum|wie)\b/
@@ -80,6 +80,7 @@ module LegalChatbot
     def explicit_article_request_rest(question)
       question.to_s.downcase.gsub(ExplicitArticleRequest::ARTICLE, ' ').gsub(ExplicitArticleRequest::NUMAC, ' ')
               .gsub(ExplicitArticleRequest::CONSTITUTION_NAME, ' ').gsub(ExplicitArticleRequest::ECHR_NAME, ' ')
+              .gsub(ExplicitArticleRequest::PROTOCOL_PHRASE, ' ')
     end
 
     # Words a bounded task on the requested text uses: summarise it, its first sentence, in plain words, a link to it.
@@ -102,9 +103,11 @@ module LegalChatbot
       rest.scan(/\p{L}{3,}/).none? { |word| !LOOKUP_WORDS.include?(word) && !FOCUS_WORDS.include?(word) }
     end
 
-    # A sentence ending in a question mark that names no article itself: a question of its own.
+    # A sentence ending in a question mark that names no article itself: a question of its own. Article references
+    # are masked first, so the full stops in "Art. 10" or "VI.49" never split a sentence (Sol 2026-11-17 11:36:26Z).
     def explicit_article_separate_question?(question)
-      question.to_s.scan(/[^.?!]+\?/).any? { |sentence| !sentence.match?(ExplicitArticleRequest::ARTICLE) }
+      masked = question.to_s.gsub(ExplicitArticleRequest::ARTICLE, ' ARTREF ')
+      masked.scan(/[^.?!]+\?/).any? { |sentence| !sentence.include?('ARTREF') }
     end
 
     # The legislation rows an answer about requested articles keeps, or nil to keep retrieval as it is.

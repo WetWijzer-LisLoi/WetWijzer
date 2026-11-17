@@ -8,6 +8,18 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.57] - 2026-11-17
+
+### Fixed
+- A question about an article of the first Protocol to the European Convention on Human Rights ("Geef artikel 1 van het Eerste Protocol bij het EVRM") is answered from that article alone, without unrelated laws in the source list.
+- A later protocol named by its ordinal or number ("het tweede aanvullend protocol", "le deuxième protocole additionnel", "protocol 12") is never taken for the first Protocol.
+- A protocol named in one sentence no longer takes the Convention named in the next ("Geef artikel 1 van het Eerste Protocol. Geef ook EVRM artikel 10.").
+- The full stops in an article reference ("Art. 10", "VI.49") no longer split a question into two, so a plain lookup stays a plain lookup.
+- A French question about a cross-reference ("renvoi à l'article 5") in a text published online no longer brings up the consumer withdrawal article.
+
+### Changed
+- The Praxis strip beside the Dutch chatbot is headed "In ontwikkeling" (was "Praxis - In ontwikkeling").
+
 ## [1.1.56] - 2026-11-17
 
 ### Fixed

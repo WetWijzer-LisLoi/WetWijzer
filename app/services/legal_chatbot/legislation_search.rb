@@ -2456,7 +2456,7 @@ module LegalChatbot
       [VEHICLE_HEADLIGHT_LIABILITY_PATTERN, '2024001600', '6.5'],
       [PAYMENT_REFUSAL_PATTERN, '2013A11134', 'VI.7/4'],
       [CASH_PAYMENT_PATTERN, '2013A11134', 'VI.7/5'],
-      [/(?=.*\b(?:online|webshop|internet|op\s+afstand|afstandsovereenkomst|en\s+ligne|vente\s+à\s+distance|contrat\s+à\s+distance|distance\s+(?:contract|sale)|online\s+purchase)\b)(?=.*\b(?:herroepingsrecht|droit\s+de\s+rétractation|retour(?:neren)?|terugsturen|herroepen|rétracter|retourner|renvoy\w*|renvoi|chang\w*\s+d['’]avis|van\s+gedachten\s+verander\w*|change\w*\s+(?:my|his|her|their)\s+mind|withdraw\w*)\b)/i, '2013A11134', 'VI.47'],
+      [/(?=.*\b(?:online|webshop|internet|op\s+afstand|afstandsovereenkomst|en\s+ligne|vente\s+à\s+distance|contrat\s+à\s+distance|distance\s+(?:contract|sale)|online\s+purchase)\b)(?=.*\b(?:herroepingsrecht|droit\s+de\s+rétractation|retour(?:neren)?|terugsturen|herroepen|rétracter|retourner|(?:le|la|les|l['’])\s*renvoy\w*|renvoy\w*\s+(?:le|la|les|un|une|mon|ma|mes|ce|cet|cette|ces|l['’])|chang\w*\s+d['’]avis|van\s+gedachten\s+verander\w*|change\w*\s+(?:my|his|her|their)\s+mind|withdraw\w*)\b)/i, '2013A11134', 'VI.47'],
       [/\bontslagmotivering\b|\bmotiveringsplicht\b.{0,60}\b(?:ontslag|werkgever|werknemer)\b|\b(?:ontslag|werkgever|werknemer)\b.{0,60}\bmotiveringsplicht\b|\b(?:motivering|reden(?:en)?)\s+(?:voor|van)\s+(?:mijn\s+)?ontslag\b/i, '2014A01545', '3'],
       [/\bkennelijk\s+onredelijk\s+ontslag\b.*\b(?:vergoeding|schade|weken)\b|\b(?:vergoeding|schade|weken)\b.*\bkennelijk\s+onredelijk\s+ontslag\b/i, '2014A01545', '9'],
       [/\bkennelijk\s+onredelijk\s+ontslag\b|\blicenciement\s+manifestement\s+déraisonnable\b/i, '2014A01545', '8'],
