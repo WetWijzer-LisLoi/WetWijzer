@@ -92,10 +92,19 @@ module LegalChatbot
                      second last sentence sentences paragraph plain simple language words brief short nur ersten satz
                      einfacher einfachen sprache zusammen zusammenfassen fasse kurz the der die das].to_set.freeze
 
-    def explicit_article_bounded_task?(rest)
+    # A clearly bounded task: no wider-question word, no word outside the lookup and focus vocabularies, and no
+    # question of its own beside the article ("Vat artikel 10 van de Grondwet samen. Is dat discriminatie?" asks a
+    # second question; Sol 2026-11-17 06:53:58Z).
+    def explicit_article_bounded_task?(rest, question = nil)
       return false if rest.match?(WIDER_QUESTION) || rest.count('?') > 1
+      return false if question && explicit_article_separate_question?(question)
 
-      rest.scan(/\p{L}{3,}/).count { |word| !LOOKUP_WORDS.include?(word) && !FOCUS_WORDS.include?(word) } <= 1
+      rest.scan(/\p{L}{3,}/).none? { |word| !LOOKUP_WORDS.include?(word) && !FOCUS_WORDS.include?(word) }
+    end
+
+    # A sentence ending in a question mark that names no article itself: a question of its own.
+    def explicit_article_separate_question?(question)
+      question.to_s.scan(/[^.?!]+\?/).any? { |sentence| !sentence.match?(ExplicitArticleRequest::ARTICLE) }
     end
 
     # The legislation rows an answer about requested articles keeps, or nil to keep retrieval as it is.
@@ -112,7 +121,7 @@ module LegalChatbot
       targets = explicit_article_targets(question)
       return nil if targets.empty? || explicit_article_mixed_request?(question)
 
-      return nil unless explicit_article_bounded_task?(explicit_article_request_rest(question))
+      return nil unless explicit_article_bounded_task?(explicit_article_request_rest(question), question)
 
       pairs = targets.map { |numac, number| [numac, explicit_article_title_key(number)] }.uniq
       exact = explicit_article_exact_sources(targets, sources)

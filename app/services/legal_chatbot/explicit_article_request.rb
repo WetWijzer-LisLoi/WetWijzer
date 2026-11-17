@@ -14,8 +14,10 @@ module LegalChatbot
   # A foreign constitution ("la Constitution française", "de Franse grondwet") is another instrument; an unqualified
   # constitution is the Belgian one. The European Convention on Human Rights is named like the Constitution ("artikel 10
   # EVRM", "l'article 10 de la CEDH"): its consolidated text is held under NUMAC 1950110452 (Sol 2026-11-16 20:34:53Z,
-  # Q7: "artikel 19 van de Belgische Grondwet en artikel 10 EVRM" must retrieve both). Only targets tied to a NUMAC,
-  # the Belgian Constitution or the Convention are returned. Article
+  # Q7: "artikel 19 van de Belgische Grondwet en artikel 10 EVRM" must retrieve both). A protocol named with the
+  # Convention is the protocol, not the Convention: the first Protocol ("het Eerste Protocol bij het EVRM", "Protocol
+  # nr. 1", "le Protocole additionnel à la CEDH") is held under NUMAC 1952032050; another protocol stays unresolved.
+  # Only targets tied to a NUMAC, the Belgian Constitution, the Convention or its first Protocol are returned. Article
   # strings this parser does not support ("artikelen 1 tot 20", "art. 10000") yield no target rather than a mangled
   # one. Pure: no database access.
   module ExplicitArticleRequest
@@ -28,8 +30,14 @@ module LegalChatbot
                  \beurop[äa]ische[nr]?\s+menschenrechtskonvention\b/ix
     # The Convention's name right after a protocol ("het Eerste Protocol bij het EVRM", "le Protocole n° 12 à la
     # CEDH", "Protocol No. 1 to the ECHR") names that protocol, a distinct instrument: no Convention article is guessed.
-    PROTOCOL_BEFORE = /\bprotocol\p{L}*\b[^;?!\n]{0,60}?\b(?:bij|aan|van|tot|à|a|au|du|de|to|of|zum|zur|zu)\s+
-                       (?:(?:het|la|le|l['’]|the|der|dem|de)\s*)?\z/ix
+    PROTOCOL_BEFORE = /(?:\b(?:eerste|premier|first|erste[ns]?|aanvullend\p{L}*|additione\p{L}*|additional)\s+)*\bprotocol\p{L}*\b
+                       (?:(?!\b(?:evrm|echr|cedh|emrk|art\p{L}*|verdrag|convention|treaty|en|et|and|und)\b)[^;?!\n]){0,60}?
+                       (?:\b(?:bij|aan|van|tot|à|a|au|du|de|to|of|zum|zur|zu)\s+(?:(?:het|la|le|l['’]|the|der|dem|de)\s*)?)?\z/ix
+    # "het EVRM-protocol nr. 1", "EVRM protocol 1": the Convention's name qualifies a protocol that follows it.
+    PROTOCOL_AFTER = /\A[\s-]*(?:aanvullend\s+|additionnel\s+)?protocol\p{L}*\b(?:\s*(?:nr|n[°º]|no)\.?\s*\d{1,2}\b)?/i
+    FIRST_PROTOCOL = '1952032050'
+    PROTOCOL_NUMBER = /\b(?:nr|n[°º]|no|nummer|number|num[ée]ro)\.?\s*(\d{1,2})\b/i
+    FIRST_PROTOCOL_WORD = /\b(?:eerste|premier|first|erste[ns]?|aanvullend|additioneel|additionnel|additional|zusatz\p{L}*)\b/i
     NUMAC = /\b(\d{4}[0-9A-Z]\d{5})\b/i
     FOREIGN = /(?:frans\p{L}*|duits\p{L}*|nederlands\p{L}*|amerikaans\p{L}*|europe?s\p{L}*|spaans\p{L}*|italiaans\p{L}*|
                luxemburgs\p{L}*|brits\p{L}*|fran[çc]ais\p{L}*|allemand\p{L}*|n[ée]erlandais\p{L}*|am[ée]ricain\p{L}*|
@@ -114,18 +122,17 @@ module LegalChatbot
 
         mentions << mention(match, CONSTITUTION)
       end
-      echr = text.to_enum(:scan, ECHR_NAME).map do
-        match = Regexp.last_match
-        mention(match, text[[match.begin(0) - 80, 0].max...match.begin(0)].match?(PROTOCOL_BEFORE) ? nil : ECHR)
-      end
+      echr = text.to_enum(:scan, ECHR_NAME).map { echr_mention(text, Regexp.last_match) }
       mentions.concat(echr)
-      numacs = mentions.select { |instrument| instrument[:numac] && ![CONSTITUTION, ECHR].include?(instrument[:numac]) }
+      numacs = mentions.select { |instrument| instrument[:numac] && ![CONSTITUTION, ECHR, FIRST_PROTOCOL].include?(instrument[:numac]) }
       text.to_enum(:scan, OTHER_INSTRUMENT).each do
         named = mention(Regexp.last_match, nil)
         # "EVRM", or "Verdrag" inside the Convention's full name, is the Convention already.
         next if echr.any? { |e| named[:from] >= e[:from] && named[:to] <= e[:to] }
 
-        named[:numac] = labelling_numac(text, named, numacs)
+        # "het Eerste Protocol bij het EVRM": the protocol word names the protocol its Convention name qualifies.
+        qualified = echr.find { |e| e[:span]&.cover?(named[:from]) }
+        named[:numac] = qualified ? qualified[:numac] : labelling_numac(text, named, numacs)
         mentions << named
       end
       mentions
@@ -145,6 +152,27 @@ module LegalChatbot
     end
 
     def mention(match, numac) = { from: match.begin(0), to: match.end(0), numac: numac }
+
+    # The Convention's name, or a protocol it qualifies: the protocol phrase right before it ("het Eerste Protocol bij
+    # het EVRM") or right after it ("het EVRM-protocol nr. 1"). :span covers the protocol phrase and the name.
+    def echr_mention(text, match)
+      start = [match.begin(0) - 80, 0].max
+      before = text[start...match.begin(0)].match(PROTOCOL_BEFORE)
+      after = before ? nil : text[match.end(0)..].to_s.match(PROTOCOL_AFTER)
+      return mention(match, ECHR) unless before || after
+
+      found = mention(match, protocol_numac((before || after)[0]))
+      found[:span] = before ? (start + before.begin(0))...match.end(0) : match.begin(0)...(match.end(0) + after.end(0))
+      found
+    end
+
+    # The first Protocol by number or by name; any other protocol has no target.
+    def protocol_numac(qualifier)
+      number = qualifier[PROTOCOL_NUMBER, 1]
+      return (number == '1' ? FIRST_PROTOCOL : nil) if number
+
+      qualifier.match?(FIRST_PROTOCOL_WORD) ? FIRST_PROTOCOL : nil
+    end
 
     # The instrument named right after the article number with only linking words between, if any.
     def governing(instruments, text, article_end)

@@ -1098,16 +1098,16 @@ module LegalChatbot
     # written (Sol 2026-11-17 03:58:47Z): "Art. <number>" with a bounded article number ("10", "11bis", "VI.49",
     # "5:233", "32quater/2"), an EU unit ("Overweging 12"), or a NUMAC-shaped source id; anything else is only
     # counted. At most five are written.
-    CANONICAL_LOG_ARTICLE = %r{\AArt\.(?:\d{1,5}|[IVXLCDM]{1,6}\.\d{1,5})[a-z]{0,10}(?:[./:-]\d{1,5}[a-z]{0,10}){0,4}\z}
-    CANONICAL_LOG_EU_UNIT = /\A(?:overweging|consid[ée]rant|recital|erw[äa]gungsgrund|randnummer|r\.o\.|punt|point|paragraaf|paragraph|rn\.)\d{1,5}\z/i
-    CANONICAL_LOG_SOURCE = /\A[0-9A-Z_]{4,20}\z/
+    CANONICAL_LOG_SUFFIX = '(?:bis|ter|quater|quinquies|sexies|septies|octies|novies|decies|[a-z])?'
+    CANONICAL_LOG_ARTICLE = %r{\AArt\.\ (?:\d{1,5}|[IVXLCDM]{1,6}\.\d{1,5})#{CANONICAL_LOG_SUFFIX}(?:[./:-]\d{1,5}#{CANONICAL_LOG_SUFFIX}){0,4}\z}
+    CANONICAL_LOG_EU_UNIT = /\A(?:Overweging|consid[ée]rant|recital|Erw[äa]gungsgrund|randnummer|r\.o\.|punt|point|paragraaf|paragraph|Rn\.) \d{1,5}\z/i
+    CANONICAL_LOG_SOURCE = /\A(?:\d{4}[0-9A-Z]\d{5}|FISCONET_\d{1,3})\z/
 
     def citation_guard_log_references(references)
-      compact = Array(references).map { |reference| reference.to_s.gsub(/[[:space:]   ]+/, '') }
-      canonical, other = compact.partition do |reference|
+      canonical, other = Array(references).map(&:to_s).partition do |reference|
         reference.match?(CANONICAL_LOG_ARTICLE) || reference.match?(CANONICAL_LOG_EU_UNIT) || reference.match?(CANONICAL_LOG_SOURCE)
       end
-      written = canonical.first(5).join('|').presence || '-'
+      written = canonical.first(5).map { |reference| reference.delete(' ') }.join('|').presence || '-'
       other.empty? ? written : "#{written}+#{other.size}noncanonical"
     end
 

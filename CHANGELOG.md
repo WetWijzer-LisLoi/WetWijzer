@@ -8,6 +8,17 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.56] - 2026-11-17
+
+### Fixed
+- Answers no longer say "de zoekopdracht was onvolledig" because of the EU lane when nothing failed. A general EU topic (consumer withdrawal, equal treatment, ...) was still sent to the EU acquisition helper, which has discovered no topics since 2026-10-14; it asked EUR-Lex nothing, reported the topic as unavailable, and the next identical question showed the incomplete-search notice. Only a named act or case is sent now, as the helper can act on it.
+- An article of the first Protocol to the European Convention on Human Rights ("artikel 1 van het Eerste Protocol bij het EVRM", "le Protocole additionnel à la CEDH", "Protocol No. 1 to the ECHR") is looked up in that Protocol's consolidated text (NUMAC 1952032050), never in the Convention; another numbered protocol is still not guessed.
+- A protocol named before a Convention reference no longer takes the later Convention reference with it ("artikel 1 van het Eerste Protocol bij het EVRM en artikel 10 van het EVRM").
+- A question that asks something besides the requested article ("Vat artikel 10 van de Grondwet samen. Is dat discriminatie?") keeps its other sources.
+
+### Changed
+- The citation check's log line admits only the exact identifier shapes the check itself produces.
+
 ## [1.1.55] - 2026-11-17
 
 ### Fixed

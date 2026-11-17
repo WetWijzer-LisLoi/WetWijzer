@@ -43,14 +43,22 @@ module LegalChatbot
       /\b(?:erfrecht|succession\p{L}*|erbrecht|inheritance)\b/iu => ['succession']
     }.freeze
     TERMS = TOPICS.values.flatten.uniq.freeze
+    # The topics the acquisition helper actually discovers: scripts/eurlex/live_cache.py DISCOVERY_TOPICS, empty since
+    # 2026-10-14 (title discovery off after a paired run; ledger items 31 and 32). A topic outside it was still queued,
+    # the helper dropped it, asked EUR-Lex nothing and answered 'unavailable' in a quarter of a second, and the next
+    # identical question showed "de zoekopdracht was onvolledig" (Q1 and Q4 of Sol's seven prompts; the owner,
+    # 2026-11-17: "eur lex works for me"). Only these topics are queued; a named act or case still is. Keep this equal
+    # to the helper's set: a test compares them.
+    DISCOVERY_TOPICS = [].freeze
     PAYLOAD_KEYS = %w[operation language source_kinds depth celex ecli terms].freeze
 
     attr_reader :retrieval_degradation
 
-    def initialize(cache: Rails.cache, job: EuCorpusAcquireJob, enabled: nil)
+    def initialize(cache: Rails.cache, job: EuCorpusAcquireJob, enabled: nil, discovery_topics: DISCOVERY_TOPICS)
       @cache = cache
       @job = job
       @enabled = enabled.nil? ? self.class.enabled? : enabled
+      @discovery_topics = discovery_topics
     end
 
     def self.enabled?
@@ -157,7 +165,7 @@ module LegalChatbot
                 plan[:discovery_terms]
               else
                 TOPICS.filter_map { |pattern, vocabulary| vocabulary if normalized.match?(pattern) }.flatten
-              end.uniq.take(MAX_TERMS)
+              end.uniq.select { |term| @discovery_topics.include?(term) }.take(MAX_TERMS)
       # Explicit identities do not silently become an opposite-lane topic query.
       return nil if (identities.any? || q.match?(/\bECLI:EU:/i)) && !celex && !ecli
 
