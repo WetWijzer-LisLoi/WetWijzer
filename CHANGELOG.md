@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.60] - 2026-11-17
+
+### Changed
+- In Admin > Chatbot analytics > Quality, the Retries cell of Ratings by configuration (retry share and mean provider calls) is shown from five answers with a recorded call count; below that it reads "<5" with the sample size. The row and its rating figures stay visible from one rating.
+
 ## [1.1.59] - 2026-11-17
 
 ### Changed

@@ -453,10 +453,23 @@ class ChatbotRatingAnalytics
       # configuration that scores well only because it regenerates constantly
       # has to be readable as such. Null on rows written before the counter
       # existed, so the share is over rows that actually carry it.
-      mean_provider_calls: average_of(group, :provider_calls, precision: 2),
-      retry_share: retry_share(group),
+      # Operational, not a rating: below MIN_OPERATIONAL_SAMPLE answers that
+      # carry a call count, the share and the mean are withheld and only the
+      # sample size stays (Sol 2026-11-17 18:59:22Z). The row and its rating
+      # statistics stay visible from one rating.
+      **retry_figures(group),
       reasons: group_reason_counts(group)
     }
+  end
+
+  def retry_figures(group)
+    counted = group.count { |row| !row[:provider_calls].nil? }
+    if counted.positive? && counted < MIN_OPERATIONAL_SAMPLE
+      return { mean_provider_calls: nil, retry_share: nil, retries_suppressed: true, retries_sample: counted }
+    end
+
+    { mean_provider_calls: average_of(group, :provider_calls, precision: 2), retry_share: retry_share(group),
+      retries_suppressed: false, retries_sample: counted }
   end
 
   def traced_statistics_suppressed?(rows)
