@@ -8,6 +8,12 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.55] - 2026-11-17
+
+### Fixed
+- The chatbot states when a period starts as the law writes it. When a provision lets a period expire a number of days after a given day ("verstrijkt 14 dagen na de dag waarop de consument de goederen fysiek in bezit neemt", "expire 14 jours après le jour où"), the answer says the period starts the day after, not "on the day" or "from the day". In a paired check on the consumer withdrawal question, 5 of 5 answers said so, against 5 of 8 before.
+- A French or English question about returning something bought online ("Puis-je le renvoyer parce que j'ai changé d'avis ?", "Can I send them back because I changed my mind?") finds Art. VI.47 of the Code of Economic Law, so the answer can say when the withdrawal period starts.
+
 ## [1.1.54] - 2026-11-17
 
 ### Fixed

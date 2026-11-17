@@ -20,7 +20,7 @@ module LegalChatbot
     #
     # It is a version label, never a hash of the prompt: a prompt hash would
     # be a content fingerprint, which the privacy contract forbids.
-    PROMPT_VERSION = 'prompt_2026_10_20_r32'
+    PROMPT_VERSION = 'prompt_2026_11_17_r33'
 
     HOUSE_HIDDEN_DEFECT_PRACTICAL_SUBJECT_PATTERN = /\b(?:kosten|kost\w*|ereloon\w*|honorari\w*|honoraire\w*|co[uû]t\w*|tarie\w*|uurtarie\w*|fee\w*|cost\w*|hourly|charg\w*|Gebühr\w*|Honorar\w*|Stundensatz|insurance|\p{L}*verzeker\p{L}*|assurance|Rechtsschutz\w*|\p{L}*Versicher\p{L}*|duur|duurt|duren|termijn\w*|duration|timeline\w*|deadline\w*|durée|délai\w*|Dauer|Frist\w*)\b|\bhoe\s+lang\b|\bhow\s+long\b|\bcombien\s+de\s+temps\b|\bwie\s+lange\b/iu
 
@@ -618,6 +618,7 @@ module LegalChatbot
           4. PRUDENCE CALIBRÉE : si les sources ne couvrent pas la question, dis que les sources ne la règlent pas. N'affirme jamais une règle - même négative - sans source. Montants, taux et délais uniquement avec référence.
           5. EXCEPTIONS : quand tu cites une disposition, lis aussi les exceptions et conditions contenues dans ce même texte et applique-les.
           6. FAITS DÉCISIFS : ne transforme pas une catégorie courante en conclusion juridique absolue lorsque l'âge, la convention ou la décision judiciaire conditionne la disposition consultée. Nomme la condition et applique seulement les faits fournis ; demande les faits manquants. N'invente aucune exception pour combler une lacune.
+          7. POINT DE DÉPART D'UN DÉLAI : reprends le point de départ d'un délai exactement comme la source le formule. Lorsqu'une source fait expirer un délai un nombre de jours « après » un jour ou un événement (« expire 14 jours après le jour où ... »), ce jour n'est pas compté et le calcul commence le lendemain. Écris alors « le délai commence à courir le lendemain du jour où ... » et jamais « à partir du jour où ... » ni « le jour où ... ».
         PROMPT
       else
         <<~PROMPT.strip
@@ -628,6 +629,7 @@ module LegalChatbot
           4. GEKALIBREERDE VOORZICHTIGHEID: dekken de bronnen de vraag niet, zeg dan dat de bronnen dit niet regelen. Stel nooit een regel - ook geen ontkennende - zonder bron. Bedragen, tarieven en termijnen alleen met bronvermelding.
           5. UITZONDERINGEN: citeer je een bepaling, lees dan ook de uitzonderingen en voorwaarden in datzelfde citaat en pas ze toe.
           6. BESLISSENDE FEITEN: maak van een alledaagse categorie geen absolute juridische conclusie als de geraadpleegde bepaling afhangt van leeftijd, overeenkomst of rechterlijke beslissing. Benoem de voorwaarde en pas alleen de gegeven feiten toe; vraag naar ontbrekende feiten. Verzin geen uitzondering om een leemte op te vullen.
+          7. BEGIN VAN EEN TERMIJN: neem het beginpunt van een termijn precies over zoals de bron het formuleert. Laat een bron een termijn een aantal dagen "na" een dag of gebeurtenis verstrijken ("verstrijkt 14 dagen na de dag waarop ..."), dan telt die dag zelf niet mee en begint de telling op de dag erna. Schrijf in dat geval "de termijn begint te lopen op de dag na ..." en nooit "vanaf de dag waarop ..." of "op de dag waarop ...".
         PROMPT
       end
     end
