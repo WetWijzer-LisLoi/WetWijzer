@@ -1852,7 +1852,33 @@ module LegalChatbot
       [/\b(?:integratie|int[ée]gration|Integration)\b.{0,60}\b(?:handicap\w*|gehandicapt\w*|Behinder\w*)\b/i,
        /\b(?:handicap\w*|gehandicapt\w*|Behinder\w*|disabilit\w*)\b/i]
     ].map(&:freeze).freeze
-    CONSTITUTION_EQUALITY_PATTERN = /(?=.*\b(?:gelijkheid|gelijk\p{L}*\s+(?:voor\s+de\s+wet|behandel\p{L}*)|non[-\s]?discriminatie|discriminatie|[ée]galit[ée]|[ée]gaux\s+devant\s+la\s+loi|non[-\s]?discrimination|discrimination|equality|equal\s+treatment|Gleichheit|Diskriminierung)\b)(?=.*\b(?:grondwet\p{L}*|constitution\p{L}*|Verfassung)\b)/iu
+    # The Flemish wijk-werken regulation (2017031373) gives a fourteen-day right
+    # to cancel a purchase of wijk-werk cheques, so a withdrawal question
+    # matched it on words alone: "Herroepingsrecht online aankoop?" showed its
+    # Art. 42 beside the consumer-law answer (Sol 2026-11-18 06:50:03Z). It
+    # stays a source when the question names the scheme or the law.
+    WIJK_WERKEN_TITLE_PATTERN = /\b(?:wijk[-\s]?werk\p{L}*|travail\s+de\s+proximit[ée]|Nachbarschaftsarbeit\p{L}*)\b/iu
+    WIJK_WERKEN_QUERY_PATTERN = /\b(?:wijk[-\s]?werk\p{L}*|travail\s+de\s+proximit[ée]|ch[èe]ques?[-\s]+travail\s+de\s+proximit[ée]|Nachbarschaftsarbeit\p{L}*|neighbou?rhood\s+work\p{L}*)\b/iu
+    WITHDRAWAL_RIGHT_QUERY_PATTERN = /\b(?:herroep\p{L}*|bedenktijd|r[ée]tractation|r[ée]tracter|withdraw\p{L}*|cooling[-\s]off|Widerruf\p{L}*)\b/iu
+
+    def self.withdrawal_borrowed_from_wijk_werken?(article, question)
+      return false unless question.match?(WITHDRAWAL_RIGHT_QUERY_PATTERN)
+      return false if question.match?(WIJK_WERKEN_QUERY_PATTERN)
+
+      title = (article[:law_title] || article[:title] || article['law_title'] || article['title']).to_s
+      (article[:numac] || article['numac']).to_s == '2017031373' || title.match?(WIJK_WERKEN_TITLE_PATTERN)
+    end
+
+    # Inheritance without a will: who inherits is Civil Code Book 4, Arts. 4.10
+    # (the order of heirs), 4.16 (descendants) and 4.17 (surviving spouse). The
+    # built-in sample "Hoe verloopt een nalatenschap zonder testament?" was
+    # answered from the heirship certificate (Art. 4.59) alone (Sol 2026-11-18
+    # 06:50:03Z).
+    INTESTATE_SUCCESSION_PATTERN = /\b(?:zonder\s+(?:een\s+)?testament|geen\s+testament|wie\s+erft|wettelijke\s+erfopvolging|erfopvolging\s+bij\s+versterf|bij\s+versterf|sans\s+(?:de\s+|un\s+)?testament|pas\s+de\s+testament|ab\s+intestat|qui\s+h[ée]rite|succession\s+l[ée]gale|without\s+(?:a\s+)?will|intestate|intestacy|who\s+inherits|ohne\s+(?:ein\s+)?Testament|kein(?:en)?\s+Testament|gesetzliche\s+Erbfolge|wer\s+erbt)\b/iu
+    # The compounds count ("gelijkheidsbeginsel", "Gleichheitsgrundsatz"): the
+    # built-in sample "Gelijkheidsbeginsel grondwet?" missed both pins because
+    # "gelijkheid" had to end the word (Sol 2026-11-18 06:50:03Z).
+    CONSTITUTION_EQUALITY_PATTERN = /(?=.*\b(?:gelijkheid\p{L}*|gelijk\p{L}*\s+(?:voor\s+de\s+wet|behandel\p{L}*)|non[-\s]?discriminatie\p{L}*|discriminatie\p{L}*|[ée]galit[ée]|[ée]gaux\s+devant\s+la\s+loi|non[-\s]?discrimination|discrimination|equality|equal\s+treatment|Gleichheit\p{L}*|Gleichbehandlung\p{L}*|Diskriminierung\p{L}*)\b)(?=.*\b(?:grondwet\p{L}*|constitution\p{L}*|Verfassung\p{L}*)\b)/iu
     WITHDRAWAL_NOTICE_PATTERN = /(?=.*\b(?:verwittig\p{L}*|kennisgev\p{L}*|kennis\s+geven|meedel\p{L}*|op\s+de\s+hoogte\s+(?:stellen|brengen)|laten\s+weten|notifi\p{L}*|informer|avertir|pr[ée]venir|notify\p{L}*|inform\s+the)\b)(?=.*\b(?:herroep\p{L}*|terugsturen|terugzenden|retour\p{L}*|bedenktijd|r[ée]tract\p{L}*|withdraw\p{L}*|termijn|d[ée]lai)\b)(?=.*\b(?:webshop\p{L}*|webwinkel\p{L}*|online|verkoper|handelaar|onderneming|vendeur|commer[çc]ant|entreprise|trader|seller|consument\p{L}*|consommateur\p{L}*|consumer)\b)/iu
     ONLINE_CONSUMER_RIGHTS_PATTERN = /
       \A
@@ -2126,6 +2152,10 @@ module LegalChatbot
       # only boosts the 2007 anti-discrimination acts).
       [CONSTITUTION_EQUALITY_PATTERN, '1994021048', '10'],
       [CONSTITUTION_EQUALITY_PATTERN, '1994021048', '11'],
+      # Who inherits without a will (INTESTATE_SUCCESSION_PATTERN).
+      [INTESTATE_SUCCESSION_PATTERN, '2022B30600', '4.10'],
+      [INTESTATE_SUCCESSION_PATTERN, '2022B30600', '4.16'],
+      [INTESTATE_SUCCESSION_PATTERN, '2022B30600', '4.17'],
 
       # Lay-term aliases (decision D, docs/ops/withheld-answers-2026-08-04.md,
       # measured against config/quality/retrieval_recall_fixture_v1.json):
@@ -4272,6 +4302,7 @@ module LegalChatbot
       return false unless GeneralNoiseScope.source_relevant?(article, question, selected_law: selected_law)
       return false unless MarketplaceCivilClaimIntent.source_relevant?(article, question)
       return false unless PlatformModerationSourceScope.source_relevant?(article, question)
+      return false if withdrawal_borrowed_from_wijk_werken?(article, question)
       # Old Civil Code Art. 1743 (a sale does not end the lease) answers no
       # step of a rental filing (held-out 2432); a sale, a buyer or the
       # article named keeps it, and nothing changes outside a filing question.

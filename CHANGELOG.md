@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.63] - 2026-11-18
+
+### Fixed
+- Chatbot: a question about the equality principle and the Constitution retrieves Constitution Arts. 10 and 11 as pinned sources again when the words are compounds ("Gelijkheidsbeginsel grondwet?", "Gleichheitsgrundsatz", "Non-discriminatiebeginsel"); the built-in example question was answered from a municipal tax circular.
+- Chatbot: a question about an estate without a will (Dutch, French, English and German) retrieves Civil Code Book 4 Arts. 4.10, 4.16 and 4.17, the rules on who inherits, instead of only the certificate of inheritance. Questions about making or contesting a will do not.
+- Chatbot: a question about the right of withdrawal no longer shows the Flemish wijk-werken decree's Art. 42 (withdrawal from a purchase of wijk-werk cheques) as a source, unless the question is about wijk-werken, names that decree's NUMAC, or the row was pinned.
+
 ## [1.1.62] - 2026-11-18
 
 ### Changed
