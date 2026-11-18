@@ -8,6 +8,14 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.66] - 2026-11-18
+
+### Fixed
+- Chatbot: an abstract question about equality and the Constitution no longer shows the Brussels ordinance on paid educational leave and the Experience Fund as a source, unless the question is about leave or training.
+- Chatbot: the sources an equality question may keep are grouped by kind (circulars and taxes, exams and admission tests, international organisations, educational leave), and a question about one kind keeps only that kind: a question about an inspector's admission test no longer brings back a tax circular or the IRENA statute.
+- Chatbot: a German question about "die Verfassung" (unqualified, as on the Grondwet and Constitution side) now adds the Belgian Constitution as a core law. "Verfassung" in the sense of someone's condition ("in guter Verfassung", "seine gesundheitliche Verfassung") does not, and neither does a foreign one.
+- Chatbot: "die Verfassung der Vereinigten Staaten", "von Frankreich", "Deutschlands" and the other German country names are read as a foreign constitution, also for an article number.
+
 ## [1.1.65] - 2026-11-18
 
 ### Fixed

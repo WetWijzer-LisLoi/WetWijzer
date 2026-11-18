@@ -761,6 +761,9 @@ module LegalChatbot
       'grondwettelijk' => ['1994021048'],
       'constitution' => ['1994021048'],
       'constitutionnel' => ['1994021048'],
+      # German: an unqualified Verfassung is the Belgian Constitution (ForeignLegalSystemScope), but
+      # "in guter Verfassung" is someone's condition (LegislationSearch::PERSONAL_CONDITION_VERFASSUNG).
+      'verfassung' => ['1994021048'],
       # Anti-discrimination (NL)
       'discriminatie' => %w[2007002098 2007002099 1994021048],
       'gelijke behandeling' => %w[2007002098 2007002099],

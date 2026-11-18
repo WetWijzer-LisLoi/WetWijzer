@@ -59,9 +59,10 @@ module LegalChatbot
                niederl[äa]ndisch\p{L}*|amerikanisch\p{L}*|europ[äa]isch\p{L}*)/x
     # "de Franse grondwet", "la Constitution française", "la Constitution des États-Unis", "the French constitution".
     FOREIGN_CONSTITUTION = /\b(?:#{FOREIGN.source})\s+(?:grondwet|constitution|verfassung)\b|
-                            \b(?:grondwet|constitution|verfassung)\s+(?:(?:van|de|des|du|der|of)\s+(?:het|de|la|le|l['’]|the|den)?\s*)?
+                            \b(?:grondwet|constitution|verfassung)\s+(?:(?:van|de|des|du|der|of|von)\s+(?:het|de|la|le|l['’]|the|den|dem)?\s*)?
                             (?:#{FOREIGN.source}|[ée]tats[-\s]unis|frankrijk|france|duitsland|allemagne|germany|nederland|
-                            pays[-\s]bas|netherlands|verenigde\s+staten|united\s+states|luxemburg|luxembourg)\b/ix
+                            pays[-\s]bas|netherlands|verenigde\s+staten|united\s+states|luxemburg|luxembourg|
+                            vereinigten\s+staaten|frankreich|deutschlands?|niederlande|spaniens?|italiens?|schweiz)\b/ix
     # Any other qualifier is read as foreign too (Sol 19:02:40Z, "la Constitution suisse"): an adjective right after
     # "Constitution" in French, a nationality adjective right before "grondwet" or "Constitution". The Belgian
     # qualifiers and ordinary words that follow the noun stay Belgian.

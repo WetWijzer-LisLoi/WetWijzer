@@ -45,6 +45,11 @@ module LegalChatbot
     # childcare. It denotes the Aliens Act only alongside an immigration
     # signal; a bare occurrence must not inject the immigration corpus.
     AMBIGUOUS_RESIDENCE_KEYS = Set.new(%w[verblijf séjour aufenthalt visa]).freeze
+    # "Verfassung" is also a person's condition: "in guter Verfassung", "seine
+    # gesundheitliche Verfassung". That sense injects no Constitution.
+    PERSONAL_CONDITION_VERFASSUNG = /\b(?:(?:gesundheitlich|k[öo]rperlich|psychisch|geistig|seelisch|k[öo]rperlich-seelisch|
+                                        gut|schlecht|best|schlechtest|ausgezeichnet|miserabel|labil|stabil)\p{L}{0,3}\s+Verfassung\b|
+                                     \bVerfassung\s+(?:des|der|meines|meiner|seines|seiner|ihres|ihrer)\s+(?:Patient|Kind|Mitarbeiter|Arbeitnehmer|Vater|Mutter|Mann|Frau)\p{L}*)/iux
     IMMIGRATION_CONTEXT_PATTERN = /\b(?:vreemdeling(?:en)?|immigratie|migratie|asiel\w*|visum|verblijfs?(?:vergunning|kaart)|uitwijzing|gezinshereniging|single\s+permit|dublin|étrangers?|immigration|migration|asile|titre\s+de\s+séjour|permis\s+de\s+séjour|aufenthalts(?:titel|erlaubnis)|ausländer\w*|einwanderung|asyl\w*|residence\s+permit|immigrant\w*|foreign\s+national\w*)\b/i.freeze
     # Visa also names a payment card. A bare "Visa" must not inject the
     # Aliens Act; an application/entry/consular phrase establishes that sense.
@@ -1892,29 +1897,39 @@ module LegalChatbot
     # and the IRENA statute (2014A15005 Art. I: "het gelijkheidsbeginsel van al
     # zijn leden", the sovereign equality of member states). The statute of an
     # international organisation stays when the question is about one.
-    EQUALITY_PERIPHERAL_TITLE_PATTERN = /
-      \b(?:omzendbrie\p{L}*|circulaire\p{L}*|Rundschreiben\p{L}*|\p{L}*examen\p{L}*|concours|[ée]preuves?|\p{L}*pr[üu]fung\p{L}*|
-           \p{L}*proef|\p{L}*proeven)\b|
-      \bstatuut\s+van\s+(?:het|de)\s+internationa\p{L}*|\bstatuts?\s+(?:de\s+la|de\s+l['’]|du)\s*\p{L}+\s+internationa\p{L}*|
-      \bstatute\s+of\s+the\s+international\b|\bSatzung\s+de[rs]\s+Internationa\p{L}*|
-      \b(?:akkoord|overeenkomst|verdrag)\s+tot\s+oprichting\b|\baccord\s+portant\s+cr[ée]ation\b|\bagreement\s+establishing\b
-    /iux
-    EQUALITY_PERIPHERAL_QUERY_PATTERN = /
-      \b(?:omzendbrie\p{L}*|circulaire\p{L}*|Rundschreiben\p{L}*|\p{L}*examen\p{L}*|concours|[ée]preuves?|\p{L}*pr[üu]fung\p{L}*|
-           \p{L}*proef\p{L}*|\p{L}*proeven|toelating\p{L}*|admission\p{L}*|
-           \p{L}*belasting\p{L}*|tax\p{L}*|imp[ôo]t\p{L}*|\p{L}*steuer\p{L}*|aanwerving\p{L}*|recrutement\p{L}*|recruit\p{L}*|
-           selectie\p{L}*|s[ée]lection\p{L}*|ambtena\p{L}*|fonctionnaire\p{L}*|Beamt\p{L}*|inspecteur\p{L}*|Inspektor\p{L}*|
-           internationa\p{L}*|agentschap\p{L}*|agence\p{L}*|agency|organisati\p{L}*|organization\p{L}*|statuut|statut|statuts|statute|
-           Satzung|IRENA|verdrag\p{L}*|trait[ée]s?|treat(?:y|ies)|lidsta\p{L}*|Mitgliedsta\p{L}*)\b|
-      \bmember\s+states?\b|\b[ée]tats\s+membres\b
-    /iux
+    #
+    # Sol 2026-11-18 20:05:22Z, live 1.1.65: one more, the Brussels ordinance on
+    # paid educational leave (2015031424 Art. 5, "het gelijkheidsbeginsel" for
+    # leave applicants). Each family has its own exception words, so a question
+    # about one family (an inspector recruitment) keeps no other family (IRENA).
+    EQUALITY_PERIPHERAL_FAMILIES = [
+      # Administrative circulars, such as the municipal tax circular BA-2000/03.
+      [/\b(?:omzendbrie\p{L}*|circulaire\p{L}*|Rundschreiben\p{L}*)\b/iu,
+       /\b(?:omzendbrie\p{L}*|circulaire\p{L}*|Rundschreiben\p{L}*|\p{L}*belasting\p{L}*|tax\p{L}*|imp[ôo]t\p{L}*|\p{L}*steuer\p{L}*|
+            taxe\p{L}*|heffing\p{L}*|redevance\p{L}*|Abgabe\p{L}*)\b/iux],
+      # Exams, competitions and admission tests.
+      [/\b(?:\p{L}*examen\p{L}*|concours|[ée]preuves?|\p{L}*pr[üu]fung\p{L}*|\p{L}*proef|\p{L}*proeven)\b/iu,
+       /\b(?:\p{L}*examen\p{L}*|concours|[ée]preuves?|\p{L}*pr[üu]fung\p{L}*|\p{L}*proef\p{L}*|\p{L}*proeven|toelating\p{L}*|admission\p{L}*|
+            aanwerving\p{L}*|recrutement\p{L}*|recruit\p{L}*|selectie\p{L}*|s[ée]lection\p{L}*|ambtena\p{L}*|fonctionnaire\p{L}*|
+            Beamt\p{L}*|inspecteur\p{L}*|Inspektor\p{L}*)\b/iux],
+      # Statutes and founding agreements of international organisations.
+      [/\bstatuut\s+van\s+(?:het|de)\s+internationa\p{L}*|\bstatuts?\s+(?:de\s+la|de\s+l['’]|du)\s*\p{L}+\s+internationa\p{L}*|
+        \bstatute\s+of\s+the\s+international\b|\bSatzung\s+de[rs]\s+Internationa\p{L}*|
+        \b(?:akkoord|overeenkomst|verdrag)\s+tot\s+oprichting\b|\baccord\s+portant\s+cr[ée]ation\b|\bagreement\s+establishing\b/iux,
+       /\b(?:internationa\p{L}*|agentschap\p{L}*|agence\p{L}*|agency|organisati\p{L}*|organization\p{L}*|statuut|statut|statuts|statute|
+            Satzung|IRENA|verdrag\p{L}*|trait[ée]s?|treat(?:y|ies)|lidsta\p{L}*|Mitgliedsta\p{L}*)\b|
+        \bmember\s+states?\b|\b[ée]tats\s+membres\b/iux],
+      # Paid educational leave and the Experience Fund.
+      [/\beducatief\s+verlof\b|\bervaringsfonds\b|\bcong[ée]-?\s*[ée]ducation\b|\bfonds\s+de\s+l['’]\s*exp[ée]rience\b|\bBildungsurlaub\p{L}*/iu,
+       /\b(?:\p{L}*verlof\p{L}*|educati\p{L}*|opleiding\p{L}*|ervaringsfonds|cong[ée]\p{L}*|formation\p{L}*|Bildungsurlaub\p{L}*|
+            Weiterbildung\p{L}*|Fortbildung\p{L}*|Urlaub\p{L}*|training\p{L}*|leave)\b|\bexp[ée]rience\s+professionnelle\b/iux]
+    ].freeze
 
     def self.equality_question_borrows_peripheral_rule?(article, question)
       return false unless question.match?(CONSTITUTION_EQUALITY_PATTERN)
-      return false if question.match?(EQUALITY_PERIPHERAL_QUERY_PATTERN)
 
       title = (article[:law_title] || article[:title] || article['law_title'] || article['title']).to_s
-      title.match?(EQUALITY_PERIPHERAL_TITLE_PATTERN)
+      EQUALITY_PERIPHERAL_FAMILIES.any? { |title_pattern, query_pattern| title.match?(title_pattern) && !question.match?(query_pattern) }
     end
 
     # The same act as an ordinary retrieved row (Sol 2026-11-18 16:15:53Z: the
@@ -3791,6 +3806,7 @@ module LegalChatbot
         # "verblijf" is ambiguous in family, hospital and childcare
         # questions; only the immigration sense should promote the Aliens Act.
         next if AMBIGUOUS_RESIDENCE_KEYS.include?(kw) && !immigration_context?(question_lower)
+        next if kw == 'verfassung' && question.match?(PERSONAL_CONDITION_VERFASSUNG)
 
         numacs.each do |n|
           # "Terugbetaling" is deliberately mapped to both consumer and
