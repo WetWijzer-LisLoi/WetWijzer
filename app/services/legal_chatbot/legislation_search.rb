@@ -1860,13 +1860,41 @@ module LegalChatbot
     WIJK_WERKEN_TITLE_PATTERN = /\b(?:wijk[-\s]?werk\p{L}*|travail\s+de\s+proximit[ée]|Nachbarschaftsarbeit\p{L}*)\b/iu
     WIJK_WERKEN_QUERY_PATTERN = /\b(?:wijk[-\s]?werk\p{L}*|travail\s+de\s+proximit[ée]|ch[èe]ques?[-\s]+travail\s+de\s+proximit[ée]|Nachbarschaftsarbeit\p{L}*|neighbou?rhood\s+work\p{L}*)\b/iu
     WITHDRAWAL_RIGHT_QUERY_PATTERN = /\b(?:herroep\p{L}*|bedenktijd|r[ée]tractation|r[ée]tracter|withdraw\p{L}*|cooling[-\s]off|Widerruf\p{L}*)\b/iu
+    # The timeshare and long-term holiday products act (2011011331) has its
+    # own withdrawal period, so the same sample also showed its Art. 15 unused
+    # beside the general consumer answer (Sol 2026-11-18 13:42:47Z).
+    TIMESHARE_TITLE_PATTERN = /\b(?:goederen\s+in\s+deeltijd|vakantieproducten?\s+van\s+lange\s+duur|biens\s+[àa]\s+temps\s+partag[ée]s?|produits?\s+de\s+vacances\s+[àa]\s+long\s+terme|timeshare\p{L}*|Teilzeitnutzung\p{L}*|langfristige\p{L}*\s+Urlaubsprodukt\p{L}*)\b/iu
+    TIMESHARE_QUERY_PATTERN = /\b(?:deeltijd\p{L}*|timeshar\p{L}*|vakantieproduct\p{L}*|vakantieclub\p{L}*|temps\s+partag[ée]\p{L}*|multipropri[ée]t[ée]\p{L}*|produits?\s+de\s+vacances|club\s+de\s+vacances|holiday\s+(?:product|club)\p{L}*|vacation\s+(?:club|ownership)\p{L}*|Teilzeitnutzung\p{L}*|Urlaubsprodukt\p{L}*|Ferienclub\p{L}*)\b/iu
+    # A specialist regime with its own right of withdrawal: [NUMAC, title, the words that make it the question's subject].
+    WITHDRAWAL_SPECIALIST_REGIMES = [
+      ['2017031373', WIJK_WERKEN_TITLE_PATTERN, WIJK_WERKEN_QUERY_PATTERN],
+      ['2011011331', TIMESHARE_TITLE_PATTERN, TIMESHARE_QUERY_PATTERN]
+    ].freeze
 
-    def self.withdrawal_borrowed_from_wijk_werken?(article, question)
+    def self.withdrawal_borrowed_from_specialist_regime?(article, question)
       return false unless question.match?(WITHDRAWAL_RIGHT_QUERY_PATTERN)
-      return false if question.match?(WIJK_WERKEN_QUERY_PATTERN)
+
+      numac = (article[:numac] || article['numac']).to_s
+      title = (article[:law_title] || article[:title] || article['law_title'] || article['title']).to_s
+      WITHDRAWAL_SPECIALIST_REGIMES.any? do |regime_numac, title_pattern, query_pattern|
+        (numac == regime_numac || title.match?(title_pattern)) && !question.match?(query_pattern)
+      end
+    end
+
+    # Constitution Arts. 10 and 11 answer an abstract equality question; a
+    # municipal tax circular (BA-2000/03) and an exam regulation for tax
+    # inspectors were still shown beside them on the built-in sample (Sol
+    # 2026-11-18 13:42:47Z). They stay when the question is about a tax, a
+    # circular, an exam or a recruitment.
+    EQUALITY_PERIPHERAL_TITLE_PATTERN = /\b(?:omzendbrie\p{L}*|circulaire\p{L}*|Rundschreiben\p{L}*|\p{L}*examen\p{L}*|concours|[ée]preuves?|\p{L}*pr[üu]fung\p{L}*)\b/iu
+    EQUALITY_PERIPHERAL_QUERY_PATTERN = /\b(?:omzendbrie\p{L}*|circulaire\p{L}*|Rundschreiben\p{L}*|\p{L}*examen\p{L}*|concours|[ée]preuves?|\p{L}*pr[üu]fung\p{L}*|\p{L}*belasting\p{L}*|tax\p{L}*|imp[ôo]t\p{L}*|\p{L}*steuer\p{L}*|aanwerving\p{L}*|recrutement\p{L}*|recruit\p{L}*|selectie\p{L}*|s[ée]lection\p{L}*|ambtena\p{L}*|fonctionnaire\p{L}*|Beamt\p{L}*|inspecteur\p{L}*|Inspektor\p{L}*)\b/iu
+
+    def self.equality_question_borrows_peripheral_rule?(article, question)
+      return false unless question.match?(CONSTITUTION_EQUALITY_PATTERN)
+      return false if question.match?(EQUALITY_PERIPHERAL_QUERY_PATTERN)
 
       title = (article[:law_title] || article[:title] || article['law_title'] || article['title']).to_s
-      (article[:numac] || article['numac']).to_s == '2017031373' || title.match?(WIJK_WERKEN_TITLE_PATTERN)
+      title.match?(EQUALITY_PERIPHERAL_TITLE_PATTERN)
     end
 
     # Inheritance without a will: who inherits is Civil Code Book 4, Arts. 4.10
@@ -1874,6 +1902,12 @@ module LegalChatbot
     # built-in sample "Hoe verloopt een nalatenschap zonder testament?" was
     # answered from the heirship certificate (Art. 4.59) alone (Sol 2026-11-18
     # 06:50:03Z).
+    # A succession question about tax or cost. Without such words, an intestacy
+    # question is civil and gets no regional tax-competence pins: the sample
+    # showed the Special Financing Act Arts. 3 and 4 unused because the bare
+    # word "nalatenschap" is also a succession-duty subject (Sol 2026-11-18
+    # 13:42:47Z).
+    SUCCESSION_TAX_WORDING_PATTERN = /\b(?:\p{L}*belasting\p{L}*|successierecht\p{L}*|schenkingsrecht\p{L}*|registratierecht\p{L}*|droits?\s+(?:de\s+)?(?:succession|donation|enregistrement)|imp[ôo]t\p{L}*|tax\p{L}*|\p{L}*steuer\p{L}*|tarie[fv]\p{L}*|tarif\p{L}*|taux|betal\p{L}*|payer|pay\p{L}*|zahl\p{L}*|kost\p{L}*|co[ûu]t\p{L}*|cost\p{L}*|vrijstelling\p{L}*|exon[ée]r\p{L}*|exempt\p{L}*|Freibetr[äa]g\p{L}*|aangifte\p{L}*|d[ée]claration\p{L}*|Erkl[äa]rung\p{L}*|gewest\p{L}*|r[ée]gion\p{L}*|Region\p{L}*|Vlaanderen|Wallonie|Walloni[ëe]|Brussel|Bruxelles|Flandre)\b/iu
     INTESTATE_SUCCESSION_PATTERN = /\b(?:zonder\s+(?:een\s+)?testament|geen\s+testament|wie\s+erft|wettelijke\s+erfopvolging|erfopvolging\s+bij\s+versterf|bij\s+versterf|sans\s+(?:de\s+|un\s+)?testament|pas\s+de\s+testament|ab\s+intestat|qui\s+h[ée]rite|succession\s+l[ée]gale|without\s+(?:a\s+)?will|intestate|intestacy|who\s+inherits|ohne\s+(?:ein\s+)?Testament|kein(?:en)?\s+Testament|gesetzliche\s+Erbfolge|wer\s+erbt)\b/iu
     # The compounds count ("gelijkheidsbeginsel", "Gleichheitsgrundsatz"): the
     # built-in sample "Gelijkheidsbeginsel grondwet?" missed both pins because
@@ -3732,6 +3766,9 @@ module LegalChatbot
           relevant_core_numacs.add(n)
         end
       end
+      # "de Franse grondwet" or "naar Frans recht" does not ask for the Belgian
+      # Constitution or Book 4 (ForeignLegalSystemScope; Sol 2026-11-18 13:42:47Z).
+      relevant_core_numacs.subtract(ForeignLegalSystemScope.belgian_core_laws_to_skip(question))
 
       # Card-payment questions have no dedicated short catalogue key. The
       # economic code remains the safe consumer-law source for payment-card
@@ -3992,6 +4029,25 @@ module LegalChatbot
       matched.reject { |pattern, numac, article| pattern.equal?(RENTAL_FILING_PATTERN) && !kept.include?([numac, article]) }
     end
 
+    # Belgian equality and intestacy pins stay out of a question asked under a
+    # foreign constitution or legal system (ForeignLegalSystemScope), and a civil
+    # intestacy question gets no regional tax-competence pins (Sol 2026-11-18
+    # 13:42:47Z). An article asked for by number keeps its own pin.
+    def scope_equality_and_intestacy_pins(matched, question)
+      dropped = []
+      if matched.any? { |pattern, _numac, _article| pattern.equal?(CONSTITUTION_EQUALITY_PATTERN) } &&
+         (ForeignLegalSystemScope.foreign_constitution_only?(question) || ForeignLegalSystemScope.foreign_legal_system?(question))
+        dropped << CONSTITUTION_EQUALITY_PATTERN
+      end
+      if question.match?(INTESTATE_SUCCESSION_PATTERN)
+        dropped << INTESTATE_SUCCESSION_PATTERN if ForeignLegalSystemScope.foreign_legal_system?(question)
+        dropped << REGIONAL_TAX_COMPETENCE_PATTERN unless question.match?(SUCCESSION_TAX_WORDING_PATTERN)
+      end
+      return matched if dropped.empty?
+
+      matched.reject { |pattern, _numac, _article| dropped.any? { |gone| pattern.equal?(gone) } }
+    end
+
     # A pattern that runs out of time loses its own pin, not those of the whole question (Rails limits a match to one
     # second). The log names the row and the question's length, never its text.
     def article_pin_matches?(question, matcher, pin)
@@ -4013,6 +4069,7 @@ module LegalChatbot
       matched = (explicit + matched).uniq { |_pattern, numac, article| [numac, article] } if explicit.any?
       matched = scope_peace_judge_rental_pins(matched, question)
       matched = scope_rental_filing_pins(matched, question)
+      matched = scope_equality_and_intestacy_pins(matched, question)
       commercial_targets = CommercialWebsiteIntent.article_targets(question)
       if commercial_targets.any?
         matched = (commercial_targets.map { |numac, number| [CommercialWebsiteIntent::QUESTION_PATTERN, numac, number] } + matched)
@@ -4302,7 +4359,8 @@ module LegalChatbot
       return false unless GeneralNoiseScope.source_relevant?(article, question, selected_law: selected_law)
       return false unless MarketplaceCivilClaimIntent.source_relevant?(article, question)
       return false unless PlatformModerationSourceScope.source_relevant?(article, question)
-      return false if withdrawal_borrowed_from_wijk_werken?(article, question)
+      return false if withdrawal_borrowed_from_specialist_regime?(article, question)
+      return false if equality_question_borrows_peripheral_rule?(article, question)
       # Old Civil Code Art. 1743 (a sale does not end the lease) answers no
       # step of a rental filing (held-out 2432); a sale, a buyer or the
       # article named keeps it, and nothing changes outside a filing question.

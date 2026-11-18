@@ -8,6 +8,15 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.64] - 2026-11-18
+
+### Fixed
+- Chatbot: a question asked under a foreign constitution or a foreign legal system ("de Franse grondwet", "la Constitution américaine", "the US constitution", "das Grundgesetz", "naar Frans recht", "en droit allemand", "under Dutch law", "nach deutschem Erbrecht") no longer gets the Belgian Constitution's Arts. 10 and 11 or Civil Code Book 4's rules on who inherits pinned, and the Belgian Constitution and succession law are no longer added as core laws for it. A question that also names Belgium or Belgian law keeps them. Where someone lived or died changes nothing here.
+- Chatbot: an article number of "de grondwet van de Verenigde Staten" is read as another instrument's, not as an article of the Belgian Constitution.
+- Chatbot: a question about inheritance without a will gets no regional tax-competence provisions (Special Financing Act Arts. 3 and 4) unless it is about tax, cost, a declaration, an exemption or a region.
+- Chatbot: an abstract question about equality and the Constitution no longer shows an administrative circular or an exam regulation as a source, unless the question is about a tax, a circular, an exam or a recruitment.
+- Chatbot: a question about the right of withdrawal no longer shows the timeshare and long-term holiday products act (2011011331) as a source, unless the question is about timeshare or holiday products, names the act's NUMAC, or the row was pinned.
+
 ## [1.1.63] - 2026-11-18
 
 ### Fixed
