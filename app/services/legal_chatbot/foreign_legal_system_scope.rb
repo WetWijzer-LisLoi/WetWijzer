@@ -14,11 +14,14 @@ module LegalChatbot
   # recht") keeps the pins. Where someone lives or died is not a choice of law
   # and changes nothing here. An unqualified "Grondwet" or "Verfassung" is the
   # Belgian one, also on the German-language site.
+  #
+  # Sol 2026-11-18 16:15:53Z: only Belgian law counts as Belgian here, not a
+  # Belgian person ("Ik ben Belg; wie erft naar Frans recht?" asks French law),
+  # and an unqualified Grondwet beside the Grundgesetz is a comparison.
   module ForeignLegalSystemScope
     CONSTITUTION = ExplicitArticleRequest::CONSTITUTION
     # Book 4 and the two old Civil Code parts the succession keywords inject (CoreLawMappings).
     BELGIAN_SUCCESSION_LAWS = %w[2022B30600 1804032152 1804032153].freeze
-    BELGIAN = /\bbelg\p{L}*|\bgrondwettelijk\s+hof\b|\bcour\s+constitutionnelle\b|\bVerfassungsgerichtshof\b/iu
     BASIC_LAW = /\bGrundgesetz\p{L}*\b/iu
     # Nationality words in their exact forms: "Nederlandstalig", "Franstalig"
     # and "Duitstalig" describe a Belgian language, not another country.
@@ -41,11 +44,27 @@ module LegalChatbot
          itali[ëe]|italie|italy|italien|zwitserland|suisse|switzerland|schweiz|marokko|maroc|morocco|turkije|turquie|turkey|t[üu]rkei)
     /ix
     LAW_NOUN = /(?:erfrecht|recht|wet|wetgeving|wetten|law|laws|Erbrecht|Recht|Gesetz\p{L}*)/i
+    # Belgian law, never a Belgian person: the adjective before a law word, also
+    # coordinated with a foreign one ("naar Belgisch en naar Frans recht"), a law
+    # word with "belge" or "van België", an elliptical "het Belgische", or a
+    # Belgian court. "Belg", "Belgen" and "als Belgische" name people.
+    BELGIAN_ADJECTIVE = /(?:belgisch\p{L}*|belgian|belge)/i
+    BELGIAN_LAW_WORD = /(?:#{LAW_NOUN.source}|grondwet|constitution|Verfassung|droit|loi|l[ée]gislation|code|wetboek)/i
+    BELGIAN = /
+      \b#{BELGIAN_ADJECTIVE.source}\s+
+        (?:(?:en|et|and|und|or|ou|of|oder)\s+(?:(?:het|de|le|la|l['’]|the|das|dem|den|naar|nach|under|au)\s+){0,2}#{NATIONALITY.source}\s+)?
+        #{BELGIAN_LAW_WORD.source}\b|
+      \b(?:droit|loi|l[ée]gislation|constitution|code)\s+(?:\p{L}+\s+)?belge\b|
+      \b#{BELGIAN_LAW_WORD.source}\s+(?:van|of|de|du|des|der|in|von|en)\s+(?:(?:het|de|la|le|l['’]|the|den|dem)\s+)?
+        (?:belgi[ëe]|belgique|belgium|belgien)\b|
+      \b(?:het|de|le|la|the|das|dem|den|die)\s+#{BELGIAN_ADJECTIVE.source}\s*(?:[?.!;:]|$)|
+      \bgrondwettelijk\s+hof\b|\bcour\s+constitutionnelle\b|\bVerfassungsgerichtshof\b
+    /ix
     FOREIGN_LEGAL_SYSTEM = /
       #{NATIONALITY.source}\s+(?:(?:inheritance|succession)\s+)?#{LAW_NOUN.source}\b|
       \b(?:droit|loi|l[ée]gislation)\s+(?:successoral\s+|des\s+successions\s+)?#{NATIONALITY.source}|
       \b(?:recht|erfrecht|wetgeving|law|laws|droit|l[ée]gislation|Recht|Erbrecht)\s+(?:van|of|de|du|des|der|in|von|en)\s+
-        (?:(?:het|la|le|l['’]|the|den|dem)\s+)?#{COUNTRY.source}\b
+        (?:(?:het|de|la|le|l['’]|the|den|dem)\s+)?#{COUNTRY.source}\b
     /ix
 
     module_function
@@ -54,10 +73,11 @@ module LegalChatbot
     def foreign_constitution_only?(question)
       text = normalized(question)
       return false if text.match?(BELGIAN)
-      return true if text.match?(BASIC_LAW)
-      return false unless text.match?(ExplicitArticleRequest::CONSTITUTION_NAME)
 
-      ExplicitArticleRequest.instrument_mentions(text).none? { |mention| mention[:numac] == CONSTITUTION }
+      named = text.match?(ExplicitArticleRequest::CONSTITUTION_NAME)
+      return false if named && ExplicitArticleRequest.instrument_mentions(text).any? { |mention| mention[:numac] == CONSTITUTION }
+
+      named || text.match?(BASIC_LAW)
     end
 
     # The question asks under a named foreign legal system, and names no Belgian one.

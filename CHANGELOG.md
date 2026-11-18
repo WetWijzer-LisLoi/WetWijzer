@@ -8,6 +8,15 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.65] - 2026-11-18
+
+### Fixed
+- Chatbot: an abstract question about equality and the Constitution no longer shows an entrance-test regulation whose Dutch title says "proef" (such as the French Community's inspector admission test) or the statute of an international organisation (such as IRENA's, on the sovereign equality of its members) as a source, unless the question is about an exam, an admission test, an international organisation or a treaty.
+- Chatbot: a question about inheritance without a will no longer shows the Special Financing Act (1989021010) as a source when search retrieves it, the same rule that already applied to its pins, unless the question is about tax, cost, a declaration, an exemption or a region.
+- Chatbot: a Belgian person in the question ("Ik ben Belg", "als Belgische onderdaan", "je suis belge") no longer stops a question asked under a foreign law or constitution from being read as foreign; only Belgian law or a Belgian court does.
+- Chatbot: "naar het recht van de Verenigde Staten" is read as a foreign legal system.
+- Chatbot: a question comparing the Grundgesetz with an unqualified Grondwet or Verfassung keeps the Belgian Constitution.
+
 ## [1.1.64] - 2026-11-18
 
 ### Fixed

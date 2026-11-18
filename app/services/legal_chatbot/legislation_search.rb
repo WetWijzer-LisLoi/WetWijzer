@@ -1886,8 +1886,28 @@ module LegalChatbot
     # inspectors were still shown beside them on the built-in sample (Sol
     # 2026-11-18 13:42:47Z). They stay when the question is about a tax, a
     # circular, an exam or a recruitment.
-    EQUALITY_PERIPHERAL_TITLE_PATTERN = /\b(?:omzendbrie\p{L}*|circulaire\p{L}*|Rundschreiben\p{L}*|\p{L}*examen\p{L}*|concours|[ée]preuves?|\p{L}*pr[üu]fung\p{L}*)\b/iu
-    EQUALITY_PERIPHERAL_QUERY_PATTERN = /\b(?:omzendbrie\p{L}*|circulaire\p{L}*|Rundschreiben\p{L}*|\p{L}*examen\p{L}*|concours|[ée]preuves?|\p{L}*pr[üu]fung\p{L}*|\p{L}*belasting\p{L}*|tax\p{L}*|imp[ôo]t\p{L}*|\p{L}*steuer\p{L}*|aanwerving\p{L}*|recrutement\p{L}*|recruit\p{L}*|selectie\p{L}*|s[ée]lection\p{L}*|ambtena\p{L}*|fonctionnaire\p{L}*|Beamt\p{L}*|inspecteur\p{L}*|Inspektor\p{L}*)\b/iu
+    #
+    # Sol 2026-11-18 16:15:53Z, live 1.1.64: two more were shown, an entrance
+    # test for inspectors whose Dutch title says "proef" (2021041983 Art. 11)
+    # and the IRENA statute (2014A15005 Art. I: "het gelijkheidsbeginsel van al
+    # zijn leden", the sovereign equality of member states). The statute of an
+    # international organisation stays when the question is about one.
+    EQUALITY_PERIPHERAL_TITLE_PATTERN = /
+      \b(?:omzendbrie\p{L}*|circulaire\p{L}*|Rundschreiben\p{L}*|\p{L}*examen\p{L}*|concours|[ée]preuves?|\p{L}*pr[üu]fung\p{L}*|
+           \p{L}*proef|\p{L}*proeven)\b|
+      \bstatuut\s+van\s+(?:het|de)\s+internationa\p{L}*|\bstatuts?\s+(?:de\s+la|de\s+l['’]|du)\s*\p{L}+\s+internationa\p{L}*|
+      \bstatute\s+of\s+the\s+international\b|\bSatzung\s+de[rs]\s+Internationa\p{L}*|
+      \b(?:akkoord|overeenkomst|verdrag)\s+tot\s+oprichting\b|\baccord\s+portant\s+cr[ée]ation\b|\bagreement\s+establishing\b
+    /iux
+    EQUALITY_PERIPHERAL_QUERY_PATTERN = /
+      \b(?:omzendbrie\p{L}*|circulaire\p{L}*|Rundschreiben\p{L}*|\p{L}*examen\p{L}*|concours|[ée]preuves?|\p{L}*pr[üu]fung\p{L}*|
+           \p{L}*proef\p{L}*|\p{L}*proeven|toelating\p{L}*|admission\p{L}*|
+           \p{L}*belasting\p{L}*|tax\p{L}*|imp[ôo]t\p{L}*|\p{L}*steuer\p{L}*|aanwerving\p{L}*|recrutement\p{L}*|recruit\p{L}*|
+           selectie\p{L}*|s[ée]lection\p{L}*|ambtena\p{L}*|fonctionnaire\p{L}*|Beamt\p{L}*|inspecteur\p{L}*|Inspektor\p{L}*|
+           internationa\p{L}*|agentschap\p{L}*|agence\p{L}*|agency|organisati\p{L}*|organization\p{L}*|statuut|statut|statuts|statute|
+           Satzung|IRENA|verdrag\p{L}*|trait[ée]s?|treat(?:y|ies)|lidsta\p{L}*|Mitgliedsta\p{L}*)\b|
+      \bmember\s+states?\b|\b[ée]tats\s+membres\b
+    /iux
 
     def self.equality_question_borrows_peripheral_rule?(article, question)
       return false unless question.match?(CONSTITUTION_EQUALITY_PATTERN)
@@ -1895,6 +1915,22 @@ module LegalChatbot
 
       title = (article[:law_title] || article[:title] || article['law_title'] || article['title']).to_s
       title.match?(EQUALITY_PERIPHERAL_TITLE_PATTERN)
+    end
+
+    # The same act as an ordinary retrieved row (Sol 2026-11-18 16:15:53Z: the
+    # rendered card list, not only the pins): a civil intestacy question with
+    # no tax or cost wording does not show the Special Financing Act. Pinned,
+    # or named by NUMAC, it stays.
+    SPECIAL_FINANCING_ACT = '1989021010'
+    SPECIAL_FINANCING_TITLE_PATTERN = /\bfinanciering\s+van\s+de\s+gemeenschappen\s+en\s+de\s+gewesten\b|\bfinancement\s+des\s+communaut[ée]s\s+et\s+des\s+r[ée]gions\b|\bFinanzierung\s+der\s+Gemeinschaften\s+und\s+Regionen\b/iu
+
+    def self.civil_intestacy_borrows_tax_competence?(article, question)
+      return false unless question.match?(INTESTATE_SUCCESSION_PATTERN)
+      return false if question.match?(SUCCESSION_TAX_WORDING_PATTERN)
+
+      numac = (article[:numac] || article['numac']).to_s
+      title = (article[:law_title] || article[:title] || article['law_title'] || article['title']).to_s
+      numac == SPECIAL_FINANCING_ACT || title.match?(SPECIAL_FINANCING_TITLE_PATTERN)
     end
 
     # Inheritance without a will: who inherits is Civil Code Book 4, Arts. 4.10
@@ -4361,6 +4397,7 @@ module LegalChatbot
       return false unless PlatformModerationSourceScope.source_relevant?(article, question)
       return false if withdrawal_borrowed_from_specialist_regime?(article, question)
       return false if equality_question_borrows_peripheral_rule?(article, question)
+      return false if civil_intestacy_borrows_tax_competence?(article, question)
       # Old Civil Code Art. 1743 (a sale does not end the lease) answers no
       # step of a rental filing (held-out 2432); a sale, a buyer or the
       # article named keeps it, and nothing changes outside a filing question.
