@@ -302,10 +302,26 @@ class ApplicationController < ActionController::Base
   def current_user
     return @current_user if defined?(@current_user)
 
-    token = cookies.signed[:session_token]
+    token = session_cookie_account_token
     @current_user = token.present? ? User.find_by(session_token: token, active: true) : nil
-    clear_stale_account_cookie! if token.present? && @current_user.nil?
+    clear_stale_account_cookie! if cookies.signed[:session_token].present? && @current_user.nil?
     @current_user
+  end
+
+  # The account token (users.session_token) the session cookie stands for.
+  # A per-device cookie (UserSession::COOKIE_PREFIX) resolves through its
+  # user_sessions row, and is nil once that device signed out or the account
+  # token changed; a pre-2026-11-18 cookie holds the account token itself.
+  def session_cookie_account_token
+    return @session_cookie_account_token if defined?(@session_cookie_account_token)
+
+    value = cookies.signed[:session_token]
+    device_token = UserSession.device_token(value)
+    @session_cookie_account_token =
+      if value.blank? then nil
+      elsif device_token then UserSession.account_token_for(device_token)
+      else value
+      end
   end
 
   # Every request authenticated by the normal user cookie owns a durable lease
@@ -314,11 +330,10 @@ class ApplicationController < ActionController::Base
   # an unrelated user that happens to be signed in in the same browser.
   def with_account_request_lease
     lease = nil
-    token = cookies.signed[:session_token]
 
-    if token.present? && account_request_lease_applicable?
+    if cookies.signed[:session_token].present? && account_request_lease_applicable?
       begin
-        lease = AccountRequestLease.acquire_for_session!(session_token: token)
+        lease = AccountRequestLease.acquire_for_session!(session_token: session_cookie_account_token)
         if lease
           @account_request_lease = lease
           @current_user = lease.user
@@ -355,6 +370,7 @@ class ApplicationController < ActionController::Base
 
   def clear_stale_account_cookie!
     cookies.delete(:session_token)
+    remove_instance_variable(:@session_cookie_account_token) if defined?(@session_cookie_account_token)
   end
 
   def logged_in?

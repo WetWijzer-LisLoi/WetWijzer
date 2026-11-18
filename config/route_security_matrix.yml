@@ -18,6 +18,7 @@ matrix:
   geo_challenges#create: { auth: none, csrf: required, ownership: n/a, rate_limit: req/ip, billing: false, unauthorized: n/a }
   sessions#create: { auth: none, csrf: required, ownership: n/a, rate_limit: login/ip, billing: false, unauthorized: n/a }
   sessions#destroy: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  sessions#destroy_everywhere: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
   sessions#reactivate: { auth: session, csrf: required, ownership: self, rate_limit: req/ip, billing: false, unauthorized: 302 }
   registrations#create: { auth: none, csrf: required, ownership: n/a, rate_limit: RegistrationAdmissionPolicy + signup/ip, billing: false, unauthorized: n/a }
   registrations#resend_confirmation: { auth: none, csrf: required, ownership: n/a, rate_limit: AuthRateLimiting, billing: false, unauthorized: n/a }

@@ -194,13 +194,44 @@ class SessionsController < ApplicationController
     end
   end
 
+  # Ends the session on every device, this one included (owner, 2026-11-18).
+  # Clearing the account token ends every device session bound to it, and
+  # cookies from before per-device sessions too; the rows go with it. A
+  # signed-out visitor is simply sent to the login page.
+  def destroy_everywhere
+    user = current_user
+    return redirect_to(login_path, status: :see_other) unless user
+
+    AccountRecord.transaction do
+      user.clear_session_token!
+      UserSession.where(user_id: user.id).delete_all
+    end
+    AccountActivity.log(user, 'logout_everywhere', request)
+    cookies.delete(:session_token)
+    cancelled = cancel_pending_sign_in!
+    %i[remember_me pending_otp_secret].each { |name| cookies.delete(name) }
+    if cancelled
+      redirect_to root_path, notice: t('auth.signed_out_everywhere'), status: :see_other
+    else
+      redirect_to root_path, alert: t('auth.pending_sign_in_not_cancelled'), status: :see_other
+    end
+  end
+
   private
 
   # Ends the session, then any pending second-factor challenge, separately:
   # false when the challenge could not be cancelled on the server (the
   # session is still ended, and the caller says so).
   def sign_out
-    current_user&.clear_session_token!
+    # A per-device cookie ends only this device (owner, 2026-11-18). A cookie
+    # from before then holds the account token itself, so clearing that token
+    # is still the only way to end it, and it ends every device.
+    device_token = UserSession.device_token(cookies.signed[:session_token])
+    if device_token
+      UserSession.revoke!(device_token)
+    else
+      current_user&.clear_session_token!
+    end
     cookies.delete(:session_token)
     # WW-SEC-12/13: no half-finished sign-in or 2FA enrolment outlives the
     # session; the pending challenge ends on the server too.

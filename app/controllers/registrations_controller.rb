@@ -305,9 +305,9 @@ class RegistrationsController < ApplicationController
   end
 
   def sign_in(user)
-    token = user.session_token_for_sign_in!
+    cookie_value = AccountRecord.transaction { UserSession.issue!(user, user.session_token_for_sign_in!) }
     cookies.signed[:session_token] = {
-      value: token,
+      value: cookie_value,
       expires: 30.days.from_now,
       httponly: true,
       secure: Rails.env.production?,

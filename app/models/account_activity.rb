@@ -9,6 +9,7 @@ class AccountActivity < AccountRecord
     registered
     login
     logout
+    logout_everywhere
     failed_login
     sso_login
     password_changed

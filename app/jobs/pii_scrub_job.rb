@@ -17,6 +17,7 @@ class PiiScrubJob < ApplicationJob
       "site_brands=#{result[:activity_site_brands]} admin_sessions=#{result[:dead_admin_sessions]} " \
       "starter_clicks=#{result[:expired_starter_clicks]} " \
       "second_factor_challenges=#{result[:expired_second_factor_challenges]} " \
+      "device_sessions=#{result[:expired_device_sessions]} " \
       "history_cleanups=#{result[:history_cleanups_finished]} " \
       "history_cleanups_pending=#{result[:history_cleanups_pending]} " \
       "log_addresses=#{result[:log_addresses_masked]} total=#{result[:total]} " \

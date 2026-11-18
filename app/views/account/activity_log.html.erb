@@ -24,7 +24,7 @@
                       <span class="text-green-500"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
                     <% when 'failed_login' %>
                       <span class="text-red-500"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg></span>
-                    <% when 'logout' %>
+                    <% when 'logout', 'logout_everywhere' %>
                       <span class="text-gray-400">↩</span>
                     <% when 'password_changed', 'password_reset_completed' %>
                       <span class="text-(--accent-500)"><%= account_icon(:key) %></span>

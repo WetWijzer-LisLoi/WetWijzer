@@ -8,6 +8,16 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.62] - 2026-11-18
+
+### Changed
+- Signing out ends the session on this device only; the account's other devices stay signed in. Each sign-in now gets its own server-side session (a `user_sessions` row holding only the SHA-256 digest of the cookie's random token), and signing out deletes that row, so a copy of the signed-out cookie is refused too. Each session is bound to the account's session token, so a password or second-factor change, suspension, deactivation and erasure still end every device at once. The new cookie no longer contains the account token. Cookies issued before this release keep working until their own expiry (at most thirty days); signing out with one still ends every device. Expired sessions are deleted by the daily scrub, account erasure deletes the rest, and the account export lists them without digests.
+- ww-faiss-pin holds all six served search indexes: the budget is 7168 MB (was 4096) and LimitMEMLOCK 7600M, so the parliamentary index (2.8 GB) is no longer left to the five-minute keep-warm, where it was found cold on almost every pass. The 4096 MB floor and the release below 2048 MB are unchanged.
+
+### Added
+- Account page, Security: "Sign out everywhere" (`DELETE /logout/everywhere`, after a confirmation). It clears the account's session token and deletes its device sessions, so every device is signed out, this one and pre-1.1.62 cookies included, and records a `logout_everywhere` entry in the activity log. Texts in Dutch, French, German and English.
+- Database: accounts migration `20261118100000_create_user_sessions`. On production it is applied by hand as `wetwijzer_migrate`, with its grants to `wetwijzer_app`, before the deploy (`docs/ops/analytics-migrations.md`); the deploy hook refuses a push with a pending migration.
+
 ## [1.1.61] - 2026-11-18
 
 ### Changed

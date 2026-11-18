@@ -119,7 +119,12 @@ class AccountController < ApplicationController
       # This device stays signed in, for the short lifetime: the cookie does
       # not record whether "remember me" was chosen, and a longer one would
       # extend a session the reader never asked to keep.
-      write_session_cookie!(rotated_session_token, remember: false) if rotated_session_token
+      if rotated_session_token
+        # The old account token ended every device's session, this one's
+        # included; this device gets a new one bound to the new token.
+        UserSession.revoke!(UserSession.device_token(cookies.signed[:session_token]))
+        write_session_cookie!(UserSession.issue!(@user, rotated_session_token), remember: false)
+      end
       safely_log_account_activity('password_changed') if password_changed
       safely_log_account_activity('profile_updated') if profile_changed
       redirect_to account_path, notice: t('account.updated')

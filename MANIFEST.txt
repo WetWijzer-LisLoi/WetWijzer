@@ -285,6 +285,7 @@ app/models/ui_preference_schema.rb
 app/models/updated_law.rb
 app/models/usage_log.rb
 app/models/user.rb
+app/models/user_session.rb
 app/services/abuse_defence_metrics.rb
 app/services/account_erasure_service.rb
 app/services/account_export_download.rb

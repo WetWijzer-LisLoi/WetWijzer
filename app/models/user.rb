@@ -17,6 +17,8 @@ class User < AccountRecord
   has_many :account_request_leases, dependent: :restrict_with_exception
   # WW-SEC-12: short-lived second-factor challenge rows (digests only).
   has_many :pending_second_factor_challenges, dependent: :delete_all
+  # One row per signed-in device (owner, 2026-11-18); digests only.
+  has_many :user_sessions, dependent: :delete_all
 
   # Cross-database records cannot use dependent associations. Every permanent
   # deletion path must go through AccountErasureService, which fences the

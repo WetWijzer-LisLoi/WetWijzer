@@ -4,7 +4,8 @@
 # completed 2FA used to duplicate this dance line for line (token, projection
 # update, cookie, activity) - two call-sites that could only drift apart.
 #
-# One accounts transaction owns all the database writes: session token, the
+# One accounts transaction owns all the database writes: session token and
+# this device's UserSession row, the
 # last_sign_in_* projection including the brand, and exactly one 'login'
 # activity carrying the same brand. The browser cookie is set only AFTER that
 # transaction commits, so a failed write can never leave a signed-in browser
@@ -29,7 +30,8 @@ module SuccessfulSignIn
     publish_sign_in!(token, remember: remember)
   end
 
-  # The database half; returns the session token. A completed second factor
+  # The database half; returns the session cookie value (this device's
+  # UserSession, created in the same transaction). A completed second factor
   # runs it inside PendingSecondFactor's completion boundary, so the fence
   # below covers password sign-in and 2FA completion alike.
   def persist_successful_sign_in!(user)
@@ -38,10 +40,13 @@ module SuccessfulSignIn
     site_brand = SiteBrand.resolve_request(request)
     Rails.logger.warn('[BRAND-ATTRIBUTION] sign-in on unresolved host; stored NULL') if site_brand.nil?
 
-    token = nil
+    cookie_value = nil
     AccountRecord.transaction do
-      # Keeps the account's current token: the owner's other devices stay signed in.
+      # Keeps the account's current token, and gives this device its own
+      # session: the owner's other devices stay signed in, and signing out
+      # here later ends only this one.
       token = user.session_token_for_sign_in!
+      cookie_value = UserSession.issue!(user, token)
       user.update!(
         last_sign_in_at: Time.current,
         last_sign_in_ip: request.remote_ip,
@@ -50,12 +55,12 @@ module SuccessfulSignIn
       )
       AccountActivity.log(user, 'login', request, site_brand: site_brand)
     end
-    token
+    cookie_value
   end
 
   # The browser half, only after the database half has committed.
-  def publish_sign_in!(token, remember:)
-    write_session_cookie!(token, remember: remember)
+  def publish_sign_in!(cookie_value, remember:)
+    write_session_cookie!(cookie_value, remember: remember)
     # WW-SEC-12/13: signing in, to this account or another, ends any other
     # pending sign-in or 2FA enrolment this browser was holding.
     cancel_pending_sign_in!
@@ -75,9 +80,9 @@ module SuccessfulSignIn
     false
   end
 
-  def write_session_cookie!(token, remember:)
+  def write_session_cookie!(cookie_value, remember:)
     cookies.signed[:session_token] = {
-      value: token,
+      value: cookie_value,
       expires: remember ? 30.days.from_now : 2.hours.from_now,
       httponly: true,
       secure: Rails.env.production?,

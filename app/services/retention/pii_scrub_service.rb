@@ -65,11 +65,13 @@ module Retention
       starter_clicks = SampleQuestionClick.purge_expired!
       # WW-SEC-12: expired second-factor challenge rows (digests only).
       challenges = PendingSecondFactor.purge_expired!
+      # Signed-in device rows past the longest cookie lifetime (digests only).
+      device_sessions = UserSession.purge_expired!
       # WW-PRIV-10: history deletions a revocation could not finish.
       history_cleanups = ConversationHistoryCleanup.sweep!
       # D12: full client addresses left in the application's log files.
       log_addresses = LogAddressRedaction.new.call
-      removed = analytics + feedback + activity + users + brands + admin_sessions + starter_clicks + challenges
+      removed = analytics + feedback + activity + users + brands + admin_sessions + starter_clicks + challenges + device_sessions
 
       {
         analytics_ip_hashes: analytics,
@@ -80,6 +82,7 @@ module Retention
         dead_admin_sessions: admin_sessions,
         expired_starter_clicks: starter_clicks,
         expired_second_factor_challenges: challenges,
+        expired_device_sessions: device_sessions,
         history_cleanups_finished: history_cleanups[:finished],
         history_cleanups_pending: history_cleanups[:pending],
         log_addresses_masked: log_addresses[:addresses],

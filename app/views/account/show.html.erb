@@ -225,6 +225,21 @@
           <% end %>
         </div>
 
+        <!-- Sign out everywhere (owner, 2026-11-18): signing out ends only this device. -->
+        <div id="sign-out-everywhere" class="flex flex-wrap items-center justify-between gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div class="flex items-center min-w-0">
+            <svg class="w-5 h-5 text-gray-500 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <div class="min-w-0">
+              <p class="text-gray-700 dark:text-gray-300"><%= t('account.sign_out_everywhere') %></p>
+              <p class="text-sm text-gray-500 dark:text-gray-400"><%= t('account.sign_out_everywhere_desc') %></p>
+            </div>
+          </div>
+          <%= button_to t('account.sign_out_everywhere'), logout_everywhere_path,
+                        method: :delete,
+                        form: { data: { turbo_confirm: t('account.sign_out_everywhere_confirm') } },
+                        class: "text-red-600 hover:text-red-700 text-sm cursor-pointer" %>
+        </div>
+
         <!-- Activity Log -->
         <%= link_to activity_log_path, class: "flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition" do %>
           <div class="flex items-center">

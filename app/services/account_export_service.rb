@@ -107,6 +107,7 @@ class AccountExportService
       chatbot_reports: chatbot_reports,
       chatbot_feedback: chatbot_feedback,
       admin_sessions: admin_sessions,
+      device_sessions: device_sessions,
       conversations: conversations
     }
   end
@@ -298,6 +299,13 @@ class AccountExportService
 
     collect(AdminSession.where(user_id: user.id)) do |session|
       safe_slice(session, %i[created_at last_seen_at absolute_expires_at revoked_at user_agent])
+    end
+  end
+
+  # The reader's signed-in devices, without the token digests.
+  def device_sessions
+    collect(UserSession.where(user_id: user.id)) do |session|
+      safe_slice(session, %i[created_at expires_at])
     end
   end
 

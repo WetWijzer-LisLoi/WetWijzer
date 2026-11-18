@@ -82,6 +82,7 @@ Rails.application.routes.draw do
   get 'login', to: 'sessions#new', as: 'login'
   post 'login', to: 'sessions#create'
   delete 'logout', to: 'sessions#destroy', as: 'logout'
+  delete 'logout/everywhere', to: 'sessions#destroy_everywhere', as: 'logout_everywhere'
   get 'signup', to: 'registrations#new', as: 'signup'
   post 'signup', to: 'registrations#create'
   get 'confirm/:token', to: 'registrations#confirm', as: 'confirm_email'
