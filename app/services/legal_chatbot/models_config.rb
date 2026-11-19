@@ -509,10 +509,15 @@ module LegalChatbot
     # the related-sources panel by prefix and prune expired entries only
     # (Linkage::JurisprudenceCacheInvalidation, CacheMaintenance), so a live
     # daily counter outlives them.
+    #
+    # Lowered 100 -> 50 on 2026-11-19 at the owner's request (relayed by Sol,
+    # 01:09:47Z). November's ledger at the change: Azure OpenAI EUR 0.55,
+    # Mistral EUR 3.71, AWS Bedrock EUR 1.15, so no provider was near the new
+    # ceiling.
     PROVIDER_MONTHLY_BUDGET_EUR = {
-      openai: 100.0, # Azure OpenAI EU Data Zone
-      mistral: 100.0, # Mistral EU/EFTA regional endpoint
-      bedrock: 100.0 # AWS Bedrock EU geographic profile
+      openai: 50.0, # Azure OpenAI EU Data Zone
+      mistral: 50.0, # Mistral EU/EFTA regional endpoint
+      bedrock: 50.0 # AWS Bedrock EU geographic profile
     }.freeze
 
     # ===========================================

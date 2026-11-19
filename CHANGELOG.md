@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.68] - 2026-11-19
+
+### Changed
+- Chatbot: the application's own monthly spend ceiling for each AI provider (Azure OpenAI, Mistral and AWS Bedrock) is EUR 50, down from EUR 100, so EUR 150 in total; the admin Finance page shows the new ceilings. The monthly spend record and the daily per-model limit are unchanged.
+
 ## [1.1.67] - 2026-11-19
 
 ### Fixed
