@@ -43,12 +43,31 @@ module LegalChatbot
     # pack (GdprBreachSources); the Belgian cards stay data-protection rules.
     DATA_PROTECTION_FAMILY_PATTERN = /\b(?:persoonsgegevens|gegevensbescherming|bescherming\s+van\s+de\s+persoonlijke\s+levenssfeer|donn[ée]es\s+[àa]\s+caract[èe]re\s+personnel|protection\s+des\s+donn[ée]es|personenbezogen\p{L}*\s+Daten|Datenschutz\p{L}*|personal\s+data|data\s+protection|AVG|GDPR|RGPD|DSGVO)\b/iu
 
+    # "Wat is de maximumsnelheid in de bebouwde kom?" (Sol 2026-11-18
+    # 21:35:34Z) led with one national 50 km/h beside the regional Art. 11
+    # cards of the Wegcode (Brussels 30) and showed the Brussels-Scheldt
+    # canal's shipping regulation, whose Art. 9 slows vessels "bij de
+    # doorvaart van de bebouwde kommen". A road speed question is a regional
+    # subject (RegionalSearch.regional_subject_question?, all regions in the
+    # prompt); its other cards stay road-traffic law. Vessels, trains,
+    # aircraft and an internet connection's speed are not road speed.
+    SPEED_LIMIT_PATTERN = /\b(?:maximum\s*snelheid\p{L}*|maximale\s+snelheid|toegelaten\s+snelheid|snelheidsbeperking\p{L}*|snelheidslimiet\p{L}*|snelheidsgrens\p{L}*|hoe\s+snel\s+mag\s+(?:ik|je|men|u)|vitesses?\s+maximales?|limitations?\s+de\s+vitesse|limites?\s+de\s+vitesse|vitesses?\s+autoris[ée]es?|H[öo]chstgeschwindigkeit\p{L}*|Tempolimit\p{L}*|Geschwindigkeitsbegrenzung\p{L}*|zul[äa]ssige\s+Geschwindigkeit|speed\s+limits?|maximum\s+speed)/iu
+    NON_ROAD_PATTERN = /\b(?:vaartuig\p{L}*|schip|schepen|boot|boten|kanaal|kanalen|waterweg\p{L}*|scheepvaart\p{L}*|bateaux?|navires?|canal|canaux|voies?\s+navigables?|Schiff\p{L}*|Boot(?:e|en)?|Kanal|Wasserstra[ßs]e\p{L}*|ships?|boats?|vessels?|waterways?|trein\p{L}*|trains?|Zug|Z[üu]ge|vliegtuig\p{L}*|drones?|avions?|Flugzeug\p{L}*|aircraft|internet\p{L}*|verbinding\p{L}*|breedband\p{L}*|download\p{L}*|upload\p{L}*|wifi|wi-fi|Mbps|Mbit\p{L}*|connexion|d[ée]bit|Verbindung\p{L}*|Breitband\p{L}*|broadband|bandwidth|computer\p{L}*|processor\p{L}*)\b/iu
+    ROAD_TRAFFIC_FAMILY_PATTERN = /\b(?:wegverkeer\p{L}*|verkeersreglement\p{L}*|wegcode|verkeersveiligheid|verkeersbord\p{L}*|snelheidsbeperking\p{L}*|circulation\s+routi[èe]re|code\s+de\s+la\s+route|police\s+de\s+la\s+circulation|s[ée]curit[ée]\s+routi[èe]re|limitations?\s+de\s+vitesse|Stra[ßs]enverkehr\p{L}*|Geschwindigkeitsbegrenzung\p{L}*|road\s+traffic|speed\s+limits?)/iu
+    SHIPPING_TITLE_PATTERN = /\b(?:scheepvaart\p{L}*|navigation|Schifffahrt\p{L}*|shipping)\b/iu
+
     TOPICS = {
       gas_fine_challenge: GAS_FAMILY_PATTERN,
       internet_image: COPYRIGHT_FAMILY_PATTERN,
       workplace_camera: CAMERA_FAMILY_PATTERN,
-      data_breach: DATA_PROTECTION_FAMILY_PATTERN
+      data_breach: DATA_PROTECTION_FAMILY_PATTERN,
+      road_speed: ROAD_TRAFFIC_FAMILY_PATTERN
     }.freeze
+
+    def self.road_speed_question?(question)
+      text = question.to_s
+      text.match?(SPEED_LIMIT_PATTERN) && !text.match?(NON_ROAD_PATTERN)
+    end
 
     # Title words too common to say which instrument the question names.
     GENERIC_TITLE_WORDS = %w[
@@ -65,6 +84,7 @@ module LegalChatbot
       found << :internet_image if text.match?(IMAGE_PATTERN) && text.match?(ONLINE_ORIGIN_PATTERN)
       found << :workplace_camera if text.match?(CAMERA_PATTERN) && text.match?(WORKPLACE_PATTERN)
       found << :data_breach if GdprBreachSources.topic?(text)
+      found << :road_speed if road_speed_question?(text)
       found
     end
 
@@ -78,6 +98,7 @@ module LegalChatbot
       source = [title, field(article, :article_title), field(article, :article_text)].join("\n")
       found.any? do |topic|
         next false if topic == :workplace_camera && title.match?(CAMERA_SPECIALIST_TITLE_PATTERN)
+        next false if topic == :road_speed && title.match?(SHIPPING_TITLE_PATTERN)
 
         source.match?(TOPICS.fetch(topic))
       end

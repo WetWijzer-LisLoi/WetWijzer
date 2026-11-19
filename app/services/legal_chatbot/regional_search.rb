@@ -100,7 +100,11 @@ module LegalChatbot
         LegislationSearch::REGIONAL_TAX_SUBJECT_PATTERN, LegislationSearch::REGIONAL_TAX_GIFT_CONTEXT_PATTERN,
         LegislationSearch::REGIONAL_TAX_SUCCESSION_CONTEXT_PATTERN, LegislationSearch::REGIONAL_FAMILY_BENEFIT_PATTERN,
         LegislationSearch::SHORT_COMMERCIAL_SUBJECT_PATTERN, LegislationSearch::REGIONAL_PLANNING_SUBJECT_PATTERN
-      ].any? { |pattern| text.match?(pattern) } || energy_certificate_question?(text) || regional_agency_service_question?(text)
+      ].any? { |pattern| text.match?(pattern) } || energy_certificate_question?(text) || regional_agency_service_question?(text) ||
+        # Road speed limits are regional: the corpus holds the Wegcode's
+        # Art. 11 per region (Brussels 30 km/h in the bebouwde kom, Flanders
+        # and Wallonia 50). Sol 2026-11-18 21:35:34Z.
+        FocusedTopicSourceScope.road_speed_question?(text)
     end
 
     # Any lease of a dwelling, a student, social or agricultural lease; not a

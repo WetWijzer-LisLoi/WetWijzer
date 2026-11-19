@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.70] - 2026-11-19
+
+### Fixed
+- Chatbot: a question about a road speed limit (for example "Wat is de maximumsnelheid in de bebouwde kom?", in Dutch, French, German or English) is now treated as a regional subject. The answer covers Flanders, Brussels and Wallonia separately, as the traffic code's speed article differs per region (30 km/h in the Brussels bebouwde kom, 50 km/h in Flanders and Wallonia), instead of leading with one national figure. Its other sources stay road-traffic law, so the Brussels-Scheldt canal's shipping regulation no longer appears. Questions about the speed of vessels, trains, aircraft or an internet connection are not affected.
+
 ## [1.1.69] - 2026-11-19
 
 ### Fixed
