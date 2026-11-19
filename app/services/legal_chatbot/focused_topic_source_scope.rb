@@ -1,0 +1,96 @@
+# frozen_string_literal: true
+
+module LegalChatbot
+  # Three built-in questions (Sol 2026-11-18 21:35:34Z, live v1.1.65) missed
+  # the instrument that answers them, and their source cards filled with
+  # unrelated rows:
+  #
+  # - "Kan ik een GAS-boete aanvechten?" had no GAS law; the cards were
+  #   social-penalty, posting, energy and tourism fines.
+  # - "Mag ik een foto van internet gebruiken?" had no copyright article; the
+  #   answer leaned on the immigration tribunal's hearing rules.
+  # - "Mag mijn werkgever camera's plaatsen op de werkplek?" had no CAO nr. 68
+  #   and showed a Maritime Code card.
+  #
+  # The answering articles are pinned in LegislationSearch::ARTICLE_PINS. This
+  # scope keeps the other cards to the topic's own family of instruments
+  # while the question is on that topic. A source the question names by a
+  # distinctive word of its title stays. Pinned and NUMAC-named sources are
+  # admitted earlier by LegislationSearch.contextual_source_relevant?.
+  module FocusedTopicSourceScope
+    # French speakers also write "amende SAC".
+    GAS_FINE_PATTERN = /#{MunicipalSanctionsSourceScope::MUNICIPAL_FINE_PATTERN}|\b(?:amendes?|sanctions?)\s+SAC\b/iu
+    CHALLENGE_PATTERN = /\b(?:aanvecht\p{L}*|aan\s+te\s+vechten|aangevochten|betwist\p{L}*|beroep|bezwaar|verweer|contest\p{L}*|recours|appel|appeal\p{L}*|challeng\p{L}*|dispute\p{L}*|anfecht\p{L}*|Einspruch|Widerspruch|Berufung|Beschwerde)\b/iu
+    # Municipal wording only: "sanctionerend ambtenaar" also names the
+    # officials of regional regimes (the Walloon Tourism Code, Sol 22:09:03Z).
+    GAS_FAMILY_PATTERN = /\b(?:gemeentelijke\s+administratieve\s+sanct\p{L}*|GAS[-\s]?(?:boete|sanctie|wet)\p{L}*|sanctions?\s+administratives?\s+communales?|amendes?\s+administratives?\s+communales?|kommunalen?\s+Verwaltungssanktion\p{L}*)/iu
+
+    IMAGE_PATTERN = /\b(?:foto(?:'s|s)?|afbeelding(?:en)?|plaatjes?|illustratie(?:s)?|images?|photos?|illustrations?|pictures?|Bild(?:er|ern|es)?|Fotos?|Abbildung(?:en)?)\b/iu
+    ONLINE_ORIGIN_PATTERN = /(?:\b(?:van|uit|from|off|de|aus|von)\s+|\bd['’]\s*)(?:(?:het|the|dem)\s+|l['’]\s*)?(?:internet|web|google|een\s+website|a\s+website|un\s+site|einer\s+(?:Webseite|Website)|website|instagram|facebook|pinterest|sociale\s+media|social\s+media)\b|
+                             \b(?:gevonden|found|trouv[ée]e?s?|gefunden)\s+(?:op|on|sur|im)\s+(?:(?:het|the|le)\s+)?(?:internet|web|google|online)\b|
+                             \bonline\s+gevonden\b/iux
+    COPYRIGHT_FAMILY_PATTERN = /\b(?:auteursrecht\p{L}*|naburige\s+rechten|droits?\s+d['’]auteur|droits?\s+voisins|Urheberrecht\p{L}*|copyright|werk(?:en)?\s+van\s+letterkunde\s+of\s+kunst|[œo]e?uvres?\s+litt[ée]raires?\s+ou\s+artistiques?|auteur\s+zich\s+niet\s+verzetten|auteur\s+ne\s+peut\s+interdire|portret\p{L}*|portraits?|Bildnis\p{L}*)/iu
+
+    CAMERA_PATTERN = /\b(?:camera\p{L}*|cam[ée]ra\p{L}*|kamera\p{L}*|videobewaking|vid[ée]osurveillance|Video[üu]berwachung\p{L}*)/iu
+    WORKPLACE_PATTERN = /\b(?:werkgever\p{L}*|werknemer\p{L}*|werkplek\p{L}*|werkvloer|arbeidsplaats\p{L}*|op\s+(?:het|mijn|zijn|haar)\s+werk|personeel\p{L}*|employeur\p{L}*|travailleur\p{L}*|lieu\s+de\s+travail|au\s+travail|employer\p{L}*|employee\p{L}*|workplace|at\s+work|Arbeitgeber\p{L}*|Arbeitnehmer\p{L}*|Arbeitsplatz\p{L}*|Mitarbeiter\p{L}*)/iu
+    CAMERA_FAMILY_PATTERN = /\b(?:camerabewaking|bewakingscamera\p{L}*|videobewaking|cam[ée]ras?\s+de\s+surveillance|surveillance\s+par\s+cam[ée]ras?|vid[ée]osurveillance|Video[üu]berwachung\p{L}*|[ÜU]berwachungskamera\p{L}*|persoonlijke\s+levenssfeer|vie\s+priv[ée]e|Privatsph[äa]re)/iu
+    # Camera regimes of their own (ports and the sea, football grounds, the
+    # police and civil protection, medical imaging) are not the employer's.
+    CAMERA_SPECIALIST_TITLE_PATTERN = /\b(?:scheepvaart\p{L}*|maritie\p{L}*|maritime\p{L}*|Seeschifffahrt\p{L}*|voetbal\p{L}*|football|Fu[ßs]ball\p{L}*|politieambt|politiediensten|fonction\s+de\s+police|services\s+de\s+police|civiele\s+veiligheid|s[ée]curit[ée]\s+civile|gamma[-\s]?cam[ée]ra\p{L}*|scintillation|nucle[aï]\p{L}*|nucl[ée]aire)/iu
+
+    TOPICS = {
+      gas_fine_challenge: GAS_FAMILY_PATTERN,
+      internet_image: COPYRIGHT_FAMILY_PATTERN,
+      workplace_camera: CAMERA_FAMILY_PATTERN
+    }.freeze
+
+    # Title words too common to say which instrument the question names.
+    GENERIC_TITLE_WORDS = %w[
+      administratieve administratives betreffende bepalingen bescherming collectieve communales concernant
+      dispositions gemeentelijke hoofdstedelijke koninklijk modification ordonnantie organisatie
+      persoonlijke toepassing uitvoering vaststelling verordening wijziging arbeidsovereenkomst
+    ].freeze
+    TITLE_WORD_MIN = 10
+
+    def self.topics(question)
+      text = question.to_s
+      found = []
+      found << :gas_fine_challenge if text.match?(GAS_FINE_PATTERN) && text.match?(CHALLENGE_PATTERN)
+      found << :internet_image if text.match?(IMAGE_PATTERN) && text.match?(ONLINE_ORIGIN_PATTERN)
+      found << :workplace_camera if text.match?(CAMERA_PATTERN) && text.match?(WORKPLACE_PATTERN)
+      found
+    end
+
+    def self.source_relevant?(article, question)
+      found = topics(question)
+      return true if found.empty?
+
+      title = field(article, :law_title, :title)
+      return true if named_by_title?(title, question)
+
+      source = [title, field(article, :article_title), field(article, :article_text)].join("\n")
+      found.any? do |topic|
+        next false if topic == :workplace_camera && title.match?(CAMERA_SPECIALIST_TITLE_PATTERN)
+
+        source.match?(TOPICS.fetch(topic))
+      end
+    end
+
+    def self.named_by_title?(title, question)
+      asked = question.to_s.downcase
+      title.downcase.scan(/\p{L}+/).uniq.any? do |word|
+        word.length >= TITLE_WORD_MIN && !GENERIC_TITLE_WORDS.include?(word) && asked.include?(word)
+      end
+    end
+    private_class_method :named_by_title?
+
+    def self.field(article, *keys)
+      keys.each do |key|
+        value = article[key] || article[key.to_s]
+        return value.to_s if value.present?
+      end
+      ''
+    end
+    private_class_method :field
+  end
+end

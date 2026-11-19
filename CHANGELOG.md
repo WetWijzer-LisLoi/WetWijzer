@@ -8,6 +8,14 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.67] - 2026-11-19
+
+### Fixed
+- Chatbot: a question about challenging a GAS fine (municipal administrative sanction) now gets the GAS law's appeal to the police court, the enforceability rule, the decision after the defence and the notice, and its other sources are limited to GAS material: no posting-of-workers, social-penalty, energy-regulator or regional tourism fines.
+- Chatbot: a question about using a photo or image taken from the internet now gets the copyright articles of the Code of Economic Law (the author's exclusive right, quotation and the other exceptions), and its other sources are limited to copyright and portrait rights.
+- Chatbot: a question about cameras at work now gets CAO nr. 68 on camera surveillance at the workplace (conditions, purposes, proportionality, informing the works council) beside the Camera Act, without the Maritime Code, civil security or other specialist camera rules.
+- Chatbot: in those three cases a source the question names by its title, such as the Social Penal Code or the Maritime Code, stays.
+
 ## [1.1.66] - 2026-11-18
 
 ### Fixed

@@ -1733,6 +1733,14 @@ module LegalChatbot
     TELEMARKETING_PRIORITY = [%w[2013A11134 VI.110], %w[2013A11134 VI.112], %w[2013A11134 VI.111]].map(&:freeze).freeze
     MUNICIPAL_SANCTIONS_PATTERN = /\A(?=.*#{MunicipalSanctionsSourceScope::MUNICIPAL_FINE_PATTERN})(?=.*#{MunicipalSanctionsSourceScope::SIDEWALK_NUISANCE_PATTERN})(?=.*#{MunicipalSanctionsSourceScope::MUNICIPALITY_PATTERN}).*\z/imu.freeze
     MUNICIPAL_SANCTIONS_PRIORITY = %w[2 4 25 31].map { |number| ['2013000441', number].freeze }.freeze
+    # Sol 2026-11-18 21:35:34Z: three built-in questions missed the instrument
+    # that answers them (FocusedTopicSourceScope). The appeal to the police
+    # court comes first, then enforceability, the decision after the defence,
+    # and the notice that opens the defence.
+    GAS_FINE_CHALLENGE_PATTERN = /\A(?=.*#{FocusedTopicSourceScope::GAS_FINE_PATTERN})(?=.*#{FocusedTopicSourceScope::CHALLENGE_PATTERN}).*\z/imu.freeze
+    GAS_FINE_CHALLENGE_PRIORITY = %w[31 30 27 25].map { |number| ['2013000441', number].freeze }.freeze
+    INTERNET_IMAGE_PATTERN = /\A(?=.*#{FocusedTopicSourceScope::IMAGE_PATTERN})(?=.*#{FocusedTopicSourceScope::ONLINE_ORIGIN_PATTERN}).*\z/imu.freeze
+    WORKPLACE_CAMERA_PATTERN = /\A(?=.*#{FocusedTopicSourceScope::CAMERA_PATTERN})(?=.*#{FocusedTopicSourceScope::WORKPLACE_PATTERN}).*\z/imu.freeze
     VEHICLE_HEADLIGHT_PATTERN = VehicleHeadlightGlareSourceScope::QUESTION_PATTERN
     VEHICLE_HEADLIGHT_LIABILITY_PATTERN = VehicleHeadlightGlareSourceScope::LIABILITY_QUESTION_PATTERN
     # Exact parent articles contain the numbered road-code clauses. The
@@ -2560,6 +2568,23 @@ module LegalChatbot
       [MUNICIPAL_SANCTIONS_PATTERN, '2013000441', '4'],
       [MUNICIPAL_SANCTIONS_PATTERN, '2013000441', '25'],
       [MUNICIPAL_SANCTIONS_PATTERN, '2013000441', '31'],
+      # Challenging a GAS fine: the appeal, enforceability, the decision after
+      # the defence and the notice (Sol 2026-11-18 21:35:34Z).
+      [GAS_FINE_CHALLENGE_PATTERN, '2013000441', '31'],
+      [GAS_FINE_CHALLENGE_PATTERN, '2013000441', '30'],
+      [GAS_FINE_CHALLENGE_PATTERN, '2013000441', '27'],
+      [GAS_FINE_CHALLENGE_PATTERN, '2013000441', '25'],
+      # A photo or image taken from the internet: the author's exclusive
+      # right, the quotation exception and the other exceptions.
+      [INTERNET_IMAGE_PATTERN, '2013A11134', 'XI.165'],
+      [INTERNET_IMAGE_PATTERN, '2013A11134', 'XI.189'],
+      [INTERNET_IMAGE_PATTERN, '2013A11134', 'XI.190'],
+      # Cameras at work: CAO nr. 68 (conditions, purposes, proportionality,
+      # informing the works council).
+      [WORKPLACE_CAMERA_PATTERN, '1998A12677', '3'],
+      [WORKPLACE_CAMERA_PATTERN, '1998A12677', '4'],
+      [WORKPLACE_CAMERA_PATTERN, '1998A12677', '7'],
+      [WORKPLACE_CAMERA_PATTERN, '1998A12677', '9'],
       [VEHICLE_HEADLIGHT_PATTERN, '2026004490', '58'],
       [VEHICLE_HEADLIGHT_PATTERN, '1975120109', '30'],
       [VEHICLE_HEADLIGHT_PATTERN, '1968031501', '28'],
@@ -4178,6 +4203,8 @@ module LegalChatbot
                    TELEMARKETING_PRIORITY
                  elsif commercial_targets.any?
                    commercial_targets
+                 elsif question.match?(GAS_FINE_CHALLENGE_PATTERN)
+                   GAS_FINE_CHALLENGE_PRIORITY
                  elsif MunicipalSanctionsSourceScope.topic?(question)
                    MUNICIPAL_SANCTIONS_PRIORITY
                  elsif headlight_targets.any?
@@ -4405,6 +4432,7 @@ module LegalChatbot
       return false unless TelemarketingLawEnforcementScope.source_relevant?(article, question, resolver: telemarketing_scope_resolver)
 
       return false unless MunicipalSanctionsSourceScope.source_relevant?(article, question: question)
+      return false unless FocusedTopicSourceScope.source_relevant?(article, question)
       return false unless VehicleHeadlightGlareSourceScope.source_relevant?(article, question)
       return false unless CommercialWebsiteIntent.source_relevant?(article, question)
       return false unless AirPassengerSourceScope.source_relevant?(article, question)

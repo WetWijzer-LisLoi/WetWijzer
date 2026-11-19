@@ -353,6 +353,7 @@ app/services/legal_chatbot/explicit_article_answers.rb
 app/services/legal_chatbot/explicit_article_request.rb
 app/services/legal_chatbot/fisconet_search.rb
 app/services/legal_chatbot/flight_disruption_grounding.rb
+app/services/legal_chatbot/focused_topic_source_scope.rb
 app/services/legal_chatbot/foreign_legal_system_scope.rb
 app/services/legal_chatbot/foreign_succession_civil_devolution_scope.rb
 app/services/legal_chatbot/foreign_succession_tax_source_scope.rb
