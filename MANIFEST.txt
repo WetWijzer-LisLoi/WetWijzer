@@ -402,6 +402,7 @@ app/services/legal_chatbot/reference_sheets.rb
 app/services/legal_chatbot/regional_search.rb
 app/services/legal_chatbot/rental_indexation_grounding.rb
 app/services/legal_chatbot/rental_notice_grounding.rb
+app/services/legal_chatbot/road_speed_sources.rb
 app/services/legal_chatbot/salduz_minor_grounding.rb
 app/services/legal_chatbot/search_fan_out.rb
 app/services/legal_chatbot/semantic_source_freshness.rb

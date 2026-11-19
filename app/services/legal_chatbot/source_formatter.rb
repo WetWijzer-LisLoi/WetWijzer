@@ -51,8 +51,8 @@ module LegalChatbot
           # A site-relative path keeps links on the active brand/environment
           # (including staging) and deep-links to the retrieved article. A
           # binding German original (language 3, gesetzguide only) opens the
-          # German text of the page.
-          url: numac.present? ? "/laws/#{numac}#{german_language_query(language_id)}#{extract_article_anchor(article_title)}" : nil,
+          # German text of the page. A regional version opens its own text.
+          url: numac.present? ? "/laws/#{numac}#{german_language_query(language_id)}#{source_article_anchor(article_title)}" : nil,
           language: SOURCE_LANGUAGE_LABELS[language_id.to_i]
         }.merge(source_metadata(article, source_kind: 'legislation', authority_kind: 'legislation'))
       end

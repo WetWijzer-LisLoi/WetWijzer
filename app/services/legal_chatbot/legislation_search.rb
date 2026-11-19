@@ -908,7 +908,8 @@ module LegalChatbot
       if question.present?
         regional_candidates = regional_short_commercial_candidates(question) +
                               regional_housing_topic_candidates(question) +
-                              general_noise_candidates(question)
+                              general_noise_candidates(question) +
+                              road_speed_candidates(question)
         if regional_candidates.any?
           candidate_ids = regional_candidates.to_set { |article| article[:id] }
           top_articles = regional_candidates + top_articles.reject { |article| candidate_ids.include?(article[:id]) }
@@ -1416,9 +1417,10 @@ module LegalChatbot
     # articles; no other pin, regional row or keyword hit qualifies. The
     # optional breadth quotas keep the group whole and first.
     # Since r48 also the general-noise group (GeneralNoiseScope), whose
-    # regional rows are keyed by their variant titles (591_vlaams_gewest).
+    # regional rows are keyed by their variant titles (591_vlaams_gewest),
+    # and since 1.1.72 the road speed group (RoadSpeedSources, 11_waals_gewest).
     GOVERNING_GROUP_TARGETS = (REGIONAL_HOUSING_TOPIC_TARGETS.flat_map(&:last) + RENTAL_PROCEDURE_TARGETS +
-                               GeneralNoiseScope::GOVERNING_PAIRS)
+                               GeneralNoiseScope::GOVERNING_PAIRS + RoadSpeedSources::GOVERNING_PAIRS)
                               .to_set { |numac, number| [numac, number.downcase].freeze }.freeze
     # New damage while a professional has a movable good for repair is a
     # performance/liability question, even if the original repair is covered
@@ -2700,10 +2702,11 @@ module LegalChatbot
     end
 
     # The readiness targets whose title differs per language (the general
-    # noise group's territorial rows): [numac, language_id, article, phrase],
-    # each checked in its own language only (GeneralNoiseScope::READINESS_TARGETS).
+    # noise group's territorial rows and the road speed group's regional
+    # Art. 11): [numac, language_id, article, phrase], each checked in its own
+    # language only (GeneralNoiseScope and RoadSpeedSources READINESS_TARGETS).
     def self.language_article_pin_targets
-      GeneralNoiseScope::READINESS_TARGETS
+      GeneralNoiseScope::READINESS_TARGETS + RoadSpeedSources::READINESS_TARGETS
     end
 
     # A member of GOVERNING_GROUP_TARGETS that its builder marked for the
@@ -4942,16 +4945,33 @@ module LegalChatbot
       return [] if question.match?(RegionalSearch::UNSUPPORTED_GERMAN_COMMUNITY_PATTERN)
 
       GeneralNoiseScope.targets(question, @language_id, selected_law: @selected_law_numac).filter_map do |numac, number, label|
-        article = fetch_articles_by_number(numacs: [numac], article_numbers: [number], limit: 1).first
-        next if article.nil? || article[:numac] != numac || article[:language_id] != @language_id
-        next unless article_number_key_from_title(article[:article_title]) == normalized_article_key(number)
-        next if article[:article_text].blank? || article[:is_abolished] || article[:is_modification]
-
-        article.merge(
-          law_title: "#{label}: #{article[:law_title]}",
-          regional_candidate: true, pinned: true, similarity: 0.85, governing_group: true
-        )
+        labelled_group_row(numac, number, label)
       end
+    end
+
+    # The three regional versions of the traffic code's speed article for a
+    # road speed question (RoadSpeedSources), each under its region's name.
+    # Live v1.1.70 lost the Brussels version (30 km/h) to ordinary ranking
+    # (Sol 2026-11-19 07:43:14Z); fetched by exact title like the noise group.
+    def road_speed_candidates(question)
+      RoadSpeedSources.targets(question, @language_id).filter_map do |numac, number, label|
+        labelled_group_row(numac, number, label)
+      end
+    end
+
+    # One governing-group row by its exact title in the search language, under
+    # its label. A missing, other-language, repealed or amending row fails
+    # closed rather than standing in for the provision.
+    def labelled_group_row(numac, number, label)
+      article = fetch_articles_by_number(numacs: [numac], article_numbers: [number], limit: 1).first
+      return if article.nil? || article[:numac] != numac || article[:language_id] != @language_id
+      return unless article_number_key_from_title(article[:article_title]) == normalized_article_key(number)
+      return if article[:article_text].blank? || article[:is_abolished] || article[:is_modification]
+
+      article.merge(
+        law_title: "#{label}: #{article[:law_title]}",
+        regional_candidate: true, pinned: true, similarity: 0.85, governing_group: true
+      )
     end
 
     def employment_context_question?(question)

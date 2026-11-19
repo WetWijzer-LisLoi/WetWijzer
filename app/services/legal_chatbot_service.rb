@@ -1071,8 +1071,9 @@ class LegalChatbotService
     numac = article[:numac]
     law_title = ensure_utf8(article[:law_title])
     article_title = ensure_utf8(article[:article_title])
-    # Build exact URL with article anchor (server-side, no LLM guessing)
-    art_anchor = extract_article_anchor(article_title)
+    # Build exact URL with article anchor (server-side, no LLM guessing); a
+    # regional version links to its own text on the law page.
+    art_anchor = source_article_anchor(article_title)
     link = art_anchor ? "/laws/#{numac}#{art_anchor}" : "/laws/#{numac}"
     # The text is the IN-FORCE half; retrieval already removed any not-yet-applicable
     # block. Say so on the header line, so the model can tell the user a change is

@@ -200,25 +200,36 @@ module Rack
       CRAWLER_USER_AGENT.match?(request.user_agent.to_s)
     end
 
-    # Exponential backoff for repeated offenders
-    # Only ban truly abusive behavior (50+ violations in 5 minutes = automated attacks)
-    Rack::Attack.blocklist('block-repeated-offenders') do |req|
+    # Repeated offenders: 50 THROTTLED requests from one address within 5
+    # minutes earn an hour-long ban (Allow2Ban). Only a request a throttle
+    # above refused counts, recorded by the throttled responder below; the
+    # blocklist itself only reads the ban, so ordinary browsing never counts.
+    #
+    # Until 1.1.72 the blocklist called Rack::Attack.cache.count on every
+    # request it saw, so its ":throttled" counter counted ALL of an address's
+    # requests: about 100 ordinary requests in 5 minutes (a reader asking a
+    # few chatbot questions, a page and its frames) earned the hour's 403,
+    # ten times stricter than the general throttle (Sol 2026-11-19 09:40:23Z:
+    # the owner's visible QA run was banned after 24 questions).
+    BAN_MAXRETRY = 50
+    BAN_FINDTIME = 5.minutes
+    BAN_BANTIME = 1.hour
+
+    def self.record_throttled_request(request)
       # Crawlers are exempt from the BAN (they remain throttled) - see above.
-      if Rack::Attack.search_engine_crawler?(req)
-        false
-      else
-        # Block if more than 50 throttled requests in 5 minutes (ban for 1 hour)
-        # This catches bots/scrapers but allows normal human browsing patterns
-        address = RackAttackKeys.ip_discriminator(req)
-        Rack::Attack::Allow2Ban.filter(address, maxretry: 50, findtime: 5.minutes, bantime: 1.hour) do
-          # Return true if request should increment the counter
-          Rack::Attack.cache.count("#{address}:throttled", 5.minutes) > 50
-        end
-      end
+      return if search_engine_crawler?(request)
+
+      Rack::Attack::Allow2Ban.filter(RackAttackKeys.ip_discriminator(request), maxretry: BAN_MAXRETRY,
+                                                                               findtime: BAN_FINDTIME, bantime: BAN_BANTIME) { true }
     end
 
-    # Custom response for throttled requests
+    Rack::Attack.blocklist('block-repeated-offenders') do |req|
+      !Rack::Attack.search_engine_crawler?(req) && Rack::Attack::Allow2Ban.banned?(RackAttackKeys.ip_discriminator(req))
+    end
+
+    # Custom response for throttled requests; each one counts towards the ban.
     self.throttled_responder = lambda do |request|
+      Rack::Attack.record_throttled_request(request)
       match_data = request.env['rack.attack.match_data']
       now = match_data[:epoch_time]
 

@@ -217,5 +217,25 @@ module LegalChatbot
 
       "#art-#{number}"
     end
+
+    # The law page gives each regional version of an article its own id
+    # (#art-11-brussels_hoofdstedelijk_gewest), while extract_article_anchor
+    # collapses every version to #art-11 for citation identity. A source's
+    # LINK line and card use the version's own id, so a Brussels citation
+    # opens the Brussels text (Sol 2026-11-19 07:43:14Z: the Brussels speed
+    # citation linked to the general Art. 11). The id is the page's own
+    # (ApplicationHelper#article_id_from_toc_line); when the page gives the
+    # version no region id, the base anchor stays.
+    REGIONAL_VARIANT_PAGE_ID = /-(?:vlaams_gewest|waals_gewest|brussels_hoofdstedelijk_gewest|region_flamande|region_wallonne|region_bruxelles_capitale)\z/
+
+    def source_article_anchor(article_title)
+      base = extract_article_anchor(article_title)
+      return base if base.nil? || !article_title.to_s.strip.match?(ARTICLE_VARIANT_SUFFIX)
+
+      page_id = ApplicationController.helpers.article_id_from_toc_line(article_title.to_s.strip).to_s
+      return base unless page_id.start_with?("#{base.delete_prefix('#')}-") && page_id.match?(REGIONAL_VARIANT_PAGE_ID)
+
+      "##{page_id}"
+    end
   end
 end

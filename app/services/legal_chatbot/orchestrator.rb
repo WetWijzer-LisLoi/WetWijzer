@@ -1085,6 +1085,8 @@ module LegalChatbot
         policy = policy.merge(legislation: [policy.fetch(:legislation), marketplace_size].max) if marketplace_size.positive?
         noise_size = GeneralNoiseScope.pack_size(question, selected_law: @selected_law_numac)
         policy = policy.merge(legislation: [policy.fetch(:legislation), noise_size].max) if noise_size.positive?
+        speed_size = RoadSpeedSources.pack_size(question)
+        policy = policy.merge(legislation: [policy.fetch(:legislation), speed_size].max) if speed_size.positive?
         pack_size = LegislationSearch.formation_deed_pack_size(question.to_s)
         return pack_size ? policy.merge(legislation: [policy.fetch(:legislation), pack_size].max) : policy
       end
@@ -1135,6 +1137,10 @@ module LegalChatbot
       noise_size = GeneralNoiseScope.pack_size(question, selected_law: @selected_law_numac)
       if policy[:bounded] && noise_size.positive?
         policy = policy.merge(legislation: [policy.fetch(:legislation), noise_size].max)
+      end
+      speed_size = RoadSpeedSources.pack_size(question)
+      if policy[:bounded] && speed_size.positive?
+        policy = policy.merge(legislation: [policy.fetch(:legislation), speed_size].max)
       end
       policy
     end

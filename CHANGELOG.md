@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.72] - 2026-11-19
+
+### Fixed
+- Chatbot: a road speed limit question (for example "Wat is de maximumsnelheid in de bebouwde kom?") now always gets the traffic code's speed article in its Flemish, Walloon and Brussels versions, each labelled with its region, even when search ranks one of the near-identical texts lower. In 1.1.70 the Brussels version could be missing, and the answer then gave Brussels the 50 km/h of the other regions instead of its 30 km/h. A question that names one region gets that region's version.
+- Chatbot: a source that is a regional version of an article now links to that version on the law page (for example `#art-11-brussels_hoofdstedelijk_gewest`) in the answer and on its source card, instead of to the general article.
+- Site: an address is now banned for an hour only after 50 requests within five minutes that a rate limit actually refused, as intended. Until now every request counted, so about 100 ordinary requests in five minutes, for example a reader asking a few chatbot questions, led to the hour-long "Tijdelijk geblokkeerd" page. The rate limits themselves are unchanged, and search engines stay exempt from the ban.
+
 ## [1.1.71] - 2026-11-19
 
 ### Fixed
