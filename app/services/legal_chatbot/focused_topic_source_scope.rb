@@ -56,6 +56,16 @@ module LegalChatbot
     ROAD_TRAFFIC_FAMILY_PATTERN = /\b(?:wegverkeer\p{L}*|verkeersreglement\p{L}*|wegcode|verkeersveiligheid|verkeersbord\p{L}*|snelheidsbeperking\p{L}*|circulation\s+routi[èe]re|code\s+de\s+la\s+route|police\s+de\s+la\s+circulation|s[ée]curit[ée]\s+routi[èe]re|limitations?\s+de\s+vitesse|Stra[ßs]enverkehr\p{L}*|Geschwindigkeitsbegrenzung\p{L}*|road\s+traffic|speed\s+limits?)/iu
     SHIPPING_TITLE_PATTERN = /\b(?:scheepvaart\p{L}*|navigation|Schifffahrt\p{L}*|shipping)\b/iu
 
+    # "Hoe is het recht op onderwijs gewaarborgd in België?" showed advocates'
+    # ethics cards (Sol 2026-11-19 07:20:42Z): the Codex Deontologie's
+    # continuing-education articles say "hoger onderwijs" in their text. The
+    # education family is therefore read from the law's title only: the
+    # Constitution, education law, and human rights and children's rights
+    # treaties (Protocol 1 Art. 2 of the ECHR).
+    EDUCATION_TITLE_FAMILY_PATTERN = /\b(?:grondwet|constitution|Verfassung|\p{L}*onderwijs\p{L}*|enseignement\p{L}*|Unterricht\p{L}*|education|[ée]ducation|\p{L}*school\p{L}*|[ée]coles?|\p{L}*Schul\p{L}*|leerplicht\p{L}*|scolaire\p{L}*|Bildung\p{L}*|universit\p{L}*|rechten\s+van\s+de\s+mens|droits\s+de\s+l['’]\s*homme|Menschenrechte\p{L}*|human\s+rights|rechten\s+van\s+het\s+kind|droits\s+de\s+l['’]\s*enfant|Rechte\s+des\s+Kindes|rights\s+of\s+the\s+child|economische,\s+sociale\s+en\s+culturele\s+rechten|droits\s+[ée]conomiques,\s+sociaux\s+et\s+culturels)\b/iu
+    # Topics whose family is read from the law's title alone.
+    TITLE_TOPICS = { education_right: EDUCATION_TITLE_FAMILY_PATTERN }.freeze
+
     TOPICS = {
       gas_fine_challenge: GAS_FAMILY_PATTERN,
       internet_image: COPYRIGHT_FAMILY_PATTERN,
@@ -85,6 +95,7 @@ module LegalChatbot
       found << :workplace_camera if text.match?(CAMERA_PATTERN) && text.match?(WORKPLACE_PATTERN)
       found << :data_breach if GdprBreachSources.topic?(text)
       found << :road_speed if road_speed_question?(text)
+      found << :education_right if text.match?(LegislationSearch::CONSTITUTION_EDUCATION_PATTERN)
       found
     end
 
@@ -99,6 +110,7 @@ module LegalChatbot
       found.any? do |topic|
         next false if topic == :workplace_camera && title.match?(CAMERA_SPECIALIST_TITLE_PATTERN)
         next false if topic == :road_speed && title.match?(SHIPPING_TITLE_PATTERN)
+        next title.match?(TITLE_TOPICS.fetch(topic)) if TITLE_TOPICS.key?(topic)
 
         source.match?(TOPICS.fetch(topic))
       end

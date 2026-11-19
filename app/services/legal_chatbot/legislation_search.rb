@@ -1971,6 +1971,13 @@ module LegalChatbot
     # The compounds count ("gelijkheidsbeginsel", "Gleichheitsgrundsatz"): the
     # built-in sample "Gelijkheidsbeginsel grondwet?" missed both pins because
     # "gelijkheid" had to end the word (Sol 2026-11-18 06:50:03Z).
+    # Constitution Art. 15 (the home is inviolable) and Art. 24 (freedom of and
+    # the right to education). The built-in samples "Onschendbaarheid woning?"
+    # and "Hoe is het recht op onderwijs gewaarborgd in België?" missed them
+    # (Sol 2026-11-19 07:20:42Z, live v1.1.69). "Onschendbaarheid" alone is
+    # also parliamentary immunity, so the home must be named.
+    CONSTITUTION_HOME_INVIOLABILITY_PATTERN = /(?=.*\bonschendba\p{L}*)(?=.*\b(?:woning\p{L}*|huis|domicilie)\b)|\binviolabilit[ée]\s+du\s+domicile\b|\bdomicile\s+(?:est(?:-il)?\s+)?inviolable\b|\bUnverletzlichkeit\s+der\s+Wohnung\b|\bWohnung\s+ist\s+unverletzlich\b|\binviolability\s+of\s+(?:the\s+)?home\b/iu
+    CONSTITUTION_EDUCATION_PATTERN = /\b(?:recht\s+op\s+(?:\p{L}+\s+)?onderwijs|onderwijsvrijheid|vrijheid\s+van\s+onderwijs|droit\s+[àa]\s+l['’]\s*(?:enseignement|[ée]ducation|instruction)|libert[ée]\s+(?:de\s+l['’]\s*|d['’]\s*)enseignement|Recht\s+auf\s+(?:Unterricht|Bildung)|Unterrichtsfreiheit|right\s+to\s+education|freedom\s+of\s+education)\b/iu
     CONSTITUTION_EQUALITY_PATTERN = /(?=.*\b(?:gelijkheid\p{L}*|gelijk\p{L}*\s+(?:voor\s+de\s+wet|behandel\p{L}*)|non[-\s]?discriminatie\p{L}*|discriminatie\p{L}*|[ée]galit[ée]|[ée]gaux\s+devant\s+la\s+loi|non[-\s]?discrimination|discrimination|equality|equal\s+treatment|Gleichheit\p{L}*|Gleichbehandlung\p{L}*|Diskriminierung\p{L}*)\b)(?=.*\b(?:grondwet\p{L}*|constitution\p{L}*|Verfassung\p{L}*)\b)/iu
     WITHDRAWAL_NOTICE_PATTERN = /(?=.*\b(?:verwittig\p{L}*|kennisgev\p{L}*|kennis\s+geven|meedel\p{L}*|op\s+de\s+hoogte\s+(?:stellen|brengen)|laten\s+weten|notifi\p{L}*|informer|avertir|pr[ée]venir|notify\p{L}*|inform\s+the)\b)(?=.*\b(?:herroep\p{L}*|terugsturen|terugzenden|retour\p{L}*|bedenktijd|r[ée]tract\p{L}*|withdraw\p{L}*|termijn|d[ée]lai)\b)(?=.*\b(?:webshop\p{L}*|webwinkel\p{L}*|online|verkoper|handelaar|onderneming|vendeur|commer[çc]ant|entreprise|trader|seller|consument\p{L}*|consommateur\p{L}*|consumer)\b)/iu
     ONLINE_CONSUMER_RIGHTS_PATTERN = /
@@ -2245,6 +2252,8 @@ module LegalChatbot
       # only boosts the 2007 anti-discrimination acts).
       [CONSTITUTION_EQUALITY_PATTERN, '1994021048', '10'],
       [CONSTITUTION_EQUALITY_PATTERN, '1994021048', '11'],
+      [CONSTITUTION_HOME_INVIOLABILITY_PATTERN, '1994021048', '15'],
+      [CONSTITUTION_EDUCATION_PATTERN, '1994021048', '24'],
       # Who inherits without a will (INTESTATE_SUCCESSION_PATTERN).
       [INTESTATE_SUCCESSION_PATTERN, '2022B30600', '4.10'],
       [INTESTATE_SUCCESSION_PATTERN, '2022B30600', '4.16'],
@@ -4106,15 +4115,19 @@ module LegalChatbot
       matched.reject { |pattern, numac, article| pattern.equal?(RENTAL_FILING_PATTERN) && !kept.include?([numac, article]) }
     end
 
-    # Belgian equality and intestacy pins stay out of a question asked under a
+    BELGIAN_CONSTITUTION_RIGHT_PATTERNS = [
+      CONSTITUTION_EQUALITY_PATTERN, CONSTITUTION_HOME_INVIOLABILITY_PATTERN, CONSTITUTION_EDUCATION_PATTERN
+    ].freeze
+
+    # Belgian equality, home, education and intestacy pins stay out of a question asked under a
     # foreign constitution or legal system (ForeignLegalSystemScope), and a civil
     # intestacy question gets no regional tax-competence pins (Sol 2026-11-18
     # 13:42:47Z). An article asked for by number keeps its own pin.
     def scope_equality_and_intestacy_pins(matched, question)
       dropped = []
-      if matched.any? { |pattern, _numac, _article| pattern.equal?(CONSTITUTION_EQUALITY_PATTERN) } &&
+      if matched.any? { |pattern, _numac, _article| BELGIAN_CONSTITUTION_RIGHT_PATTERNS.any? { |right| pattern.equal?(right) } } &&
          (ForeignLegalSystemScope.foreign_constitution_only?(question) || ForeignLegalSystemScope.foreign_legal_system?(question))
-        dropped << CONSTITUTION_EQUALITY_PATTERN
+        dropped.concat(BELGIAN_CONSTITUTION_RIGHT_PATTERNS)
       end
       if question.match?(INTESTATE_SUCCESSION_PATTERN)
         dropped << INTESTATE_SUCCESSION_PATTERN if ForeignLegalSystemScope.foreign_legal_system?(question)

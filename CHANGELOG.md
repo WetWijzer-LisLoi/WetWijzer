@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.71] - 2026-11-19
+
+### Fixed
+- Chatbot: a question about the inviolability of the home (for example "Onschendbaarheid woning?", in Dutch, French, German or English) now gets Article 15 of the Constitution. A question about parliamentary immunity or a police house search does not.
+- Chatbot: a question about the right to or freedom of education (for example "Hoe is het recht op onderwijs gewaarborgd in België?") now gets Article 24 of the Constitution. Its other sources are limited to the Constitution, education law and human rights treaties, so the lawyers' code of ethics, whose continuing-education rules mention teaching in higher education, no longer appears. A question about lawyers' continuing education keeps that code.
+- Both articles stay out of a question about a foreign constitution or legal system.
+
 ## [1.1.70] - 2026-11-19
 
 ### Fixed
