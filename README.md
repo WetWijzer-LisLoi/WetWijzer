@@ -91,11 +91,6 @@ remain for audit compatibility; Stripe is not an active checkout integration.
 Shared project backup and storage infrastructure is operational capacity, not
 a customer entitlement, account quota, or advertised per-user storage plan.
 
-## Praxis
-
-The codebase contains optional, pre-release desktop-integration surfaces for
-Praxis. They are not an availability promise or a supported product commitment.
-
 ## What this public snapshot omits
 
 To keep the public repository safe and practical to inspect, it deliberately
