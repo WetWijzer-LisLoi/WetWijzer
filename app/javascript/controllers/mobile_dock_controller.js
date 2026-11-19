@@ -1,7 +1,16 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Only this tab's navigation visibility is remembered. No account preference,
-// question, analytics event, or cross-tab/browser persistence is written.
+// The home page's global search field, the destination of the Search link.
+const HOME_SEARCH_INPUT = '#homepage-search-card [data-global-search-target="input"]'
+// A Search tap on another page leaves this one-shot marker for the page it
+// opens. Only a page that shows the home search field takes it; otherwise it
+// lapses after SEARCH_ARRIVAL_MS.
+const SEARCH_ARRIVAL_KEY = "wetwijzer:mobile-dock:search-arrival"
+const SEARCH_ARRIVAL_MS = 15000
+
+// Only this tab's navigation visibility, and for one page the fact that
+// Search was tapped, are remembered. No account preference, question,
+// analytics event, or cross-tab/browser persistence is written.
 export default class extends Controller {
   static targets = ["toggle"]
 
@@ -37,9 +46,13 @@ export default class extends Controller {
       }
     }
     this.sync()
+    this.connected = true
+    this.scheduleSearchArrival()
   }
 
   disconnect() {
+    this.connected = false
+    this.cancelSearchArrival()
     this.element.removeEventListener("toggle", this._toggle)
     window.removeEventListener("resize", this._sync)
     document.removeEventListener("focusin", this._sync)
@@ -89,9 +102,88 @@ export default class extends Controller {
     // reader merely folds the dock or taps Chat to toggle it.
     const control = event.target.closest('a, button')
     if (!control || control.dataset.mobileDockLink === "chat") return
+    this.closeChat()
+  }
+
+  closeChat() {
     const widget = document.getElementById("chatbot-widget-container")
     const controller = widget && this.application?.getControllerForElementAndIdentifier(widget, "chatbot")
     if (controller?.openValue) controller.close()
+  }
+
+  search(event) {
+    // The native href (/laws#homepage-search-card) is the no-JS fallback and
+    // the route from every other page. Where the home search field is already
+    // on the page, stay: bring it into view and focus it, keeping what the
+    // reader typed (Sol 2026-11-19 14:11:38Z: Search did not reach the field).
+    if (event.defaultPrevented || event.button > 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    const input = document.querySelector(HOME_SEARCH_INPUT)
+    if (!input || !input.getClientRects().length) {
+      this.rememberSearchArrival()
+      return
+    }
+    event.preventDefault()
+    // Closing chat returns focus to its launcher, so close it first.
+    this.closeChat()
+    this.focusHomeSearch(input)
+  }
+
+  focusHomeSearch(input) {
+    const card = input.closest("#homepage-search-card") || input
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    input.focus({ preventScroll: true })
+    card.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" })
+    const end = input.value.length
+    try { input.setSelectionRange(end, end) } catch (_error) { /* the caret stays where the browser put it */ }
+  }
+
+  rememberSearchArrival() {
+    const stamp = String(Date.now())
+    window.__wetwijzerDockSearchArrival = stamp
+    try { window.sessionStorage.setItem(SEARCH_ARRIVAL_KEY, stamp) } catch (_error) { /* the window flag covers a Turbo visit */ }
+  }
+
+  takeSearchArrival() {
+    let stamp = window.__wetwijzerDockSearchArrival
+    try {
+      stamp = window.sessionStorage.getItem(SEARCH_ARRIVAL_KEY) || stamp
+      if (stamp) window.sessionStorage.removeItem(SEARCH_ARRIVAL_KEY)
+    } catch (_error) { /* restricted storage: the window flag decides */ }
+    delete window.__wetwijzerDockSearchArrival
+    const age = Date.now() - Number(stamp)
+    return age >= 0 && age <= SEARCH_ARRIVAL_MS
+  }
+
+  scheduleSearchArrival() {
+    // Turbo scrolls to the fragment as it renders the page; focus after that.
+    const frame = typeof window.requestAnimationFrame === "function" ? window.requestAnimationFrame.bind(window) : null
+    if (!frame) return this.completeSearchArrival()
+    this.arrivalFrame = frame(() => {
+      this.arrivalFrame = frame(() => {
+        this.arrivalFrame = null
+        this.completeSearchArrival()
+      })
+    })
+  }
+
+  // The page Turbo replaces must not run its queued arrival after it leaves
+  // (Sol 2026-11-19 14:43:34Z).
+  cancelSearchArrival() {
+    if (this.arrivalFrame != null && typeof window.cancelAnimationFrame === "function") window.cancelAnimationFrame(this.arrivalFrame)
+    this.arrivalFrame = null
+  }
+
+  completeSearchArrival() {
+    if (!this.connected) return
+    // A cached preview is replaced by the page itself; the marker waits for it.
+    if (document.documentElement?.hasAttribute("data-turbo-preview")) return
+    // Only the page that shows the field takes the request. A page without it,
+    // such as the one being left while the visit is pending, leaves it alone
+    // (Sol 2026-11-19 14:43:34Z: a Search tap before this page's frames ran
+    // let the outgoing page consume it).
+    const input = document.querySelector(HOME_SEARCH_INPUT)
+    if (!input || !input.getClientRects().length) return
+    if (this.takeSearchArrival()) this.focusHomeSearch(input)
   }
 
   closeTransientControls() {

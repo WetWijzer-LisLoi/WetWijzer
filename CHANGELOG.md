@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.74] - 2026-11-19
+
+### Fixed
+- Mobile: Search ("Zoeken") in the bottom navigation now opens the home page's search field and puts the cursor in it. From another page it opens the home page at the search field and focuses it once the page has arrived. On the home page itself, also when scrolled down, it brings the field into view and focuses it without reloading the page, keeps any text already typed, and closes an open chat panel first. Until now it opened the home page at the top, at the chat, with nothing focused. Without scripts the link still opens the search page, and its fragment (`#homepage-search-card`) names the search field.
+
 ## [1.1.73] - 2026-11-19
 
 ### Fixed
