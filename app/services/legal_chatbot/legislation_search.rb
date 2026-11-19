@@ -145,8 +145,12 @@ module LegalChatbot
     # or reward an unrelated statute simply because it contains "volgens".
     # Keep compounds (thuiswerk, verblijfsvergunning, ...) intact: only whole
     # conversational tokens are discarded, in all supported query languages.
+    # "hoelang" and the "lang" of "hoe lang" ask for a duration; as search
+    # terms they found a Flemish gas-network article that says how long its
+    # records are kept for "Adoptieverlof hoelang?" (Sol 2026-11-19 11:32:23Z).
     QUERY_STOP_WORDS = Set.new(%w[
                                  wat is de het een op van voor met als in door bij hoe kan mag moet waar wanneer welke welk wie waarom hoeveel
+                                 hoelang lang
                                  zijn mijn ik recht hebben rechten onder aan naar tot dit deze die dat jaar jaren er iemand thuis wil willen
                                  weten graag name namelijk rond volgens niet iedere elke zelf bepaalt tijdens gaat valt om nu ook zo nog
                                  kunnen zou wordt worden geeft bestaat bestaan zeggen vraag vragen eigenlijk dus mij uw je jouw onze

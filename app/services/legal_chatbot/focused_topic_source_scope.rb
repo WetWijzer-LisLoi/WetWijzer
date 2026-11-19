@@ -63,8 +63,16 @@ module LegalChatbot
     # Constitution, education law, and human rights and children's rights
     # treaties (Protocol 1 Art. 2 of the ECHR).
     EDUCATION_TITLE_FAMILY_PATTERN = /\b(?:grondwet|constitution|Verfassung|\p{L}*onderwijs\p{L}*|enseignement\p{L}*|Unterricht\p{L}*|education|[ée]ducation|\p{L}*school\p{L}*|[ée]coles?|\p{L}*Schul\p{L}*|leerplicht\p{L}*|scolaire\p{L}*|Bildung\p{L}*|universit\p{L}*|rechten\s+van\s+de\s+mens|droits\s+de\s+l['’]\s*homme|Menschenrechte\p{L}*|human\s+rights|rechten\s+van\s+het\s+kind|droits\s+de\s+l['’]\s*enfant|Rechte\s+des\s+Kindes|rights\s+of\s+the\s+child|economische,\s+sociale\s+en\s+culturele\s+rechten|droits\s+[ée]conomiques,\s+sociaux\s+et\s+culturels)\b/iu
+    # "Onschendbaarheid woning?" quoted Constitution Art. 15 but also showed
+    # swine brucellosis, African swine fever and the estate agents' code of
+    # ethics (Sol 2026-11-19 10:16:45Z, live 1.1.71): each of those articles
+    # lets an inspector or an agent enter "behoudens de onschendbaarheid van de
+    # woning". The family is read from the law's title only: the Constitution
+    # and human rights treaties, criminal law and procedure with the search
+    # laws, the police function, and diplomatic and consular premises.
+    HOME_TITLE_FAMILY_PATTERN = /\b(?:grondwet|constitution|Verfassung|rechten\s+van\s+de\s+mens|droits\s+de\s+l['’]\s*homme|Menschenrechte\p{L}*|human\s+rights|burgerrechten\s+en\s+politieke\s+rechten|droits\s+civils\s+et\s+politiques|strafwetboek|code\s+p[ée]nal|Strafgesetzbuch|criminal\s+code|strafvordering|instruction\s+criminelle|proc[ée]dure\s+p[ée]nale|Strafprozess\p{L}*|criminal\s+procedure|huiszoeking\p{L}*|opsporing\p{L}*\s+ten\s+huize|visites?\s+domiciliaires?|perquisitions?|Hausdurchsuchung\p{L}*|politieambt|fonction\s+de\s+police|Polizeiamt|diplomati\p{L}*|consul\p{L}*|Konsular\p{L}*)\b/iu
     # Topics whose family is read from the law's title alone.
-    TITLE_TOPICS = { education_right: EDUCATION_TITLE_FAMILY_PATTERN }.freeze
+    TITLE_TOPICS = { education_right: EDUCATION_TITLE_FAMILY_PATTERN, home_inviolability: HOME_TITLE_FAMILY_PATTERN }.freeze
 
     TOPICS = {
       gas_fine_challenge: GAS_FAMILY_PATTERN,
@@ -96,6 +104,7 @@ module LegalChatbot
       found << :data_breach if GdprBreachSources.topic?(text)
       found << :road_speed if road_speed_question?(text)
       found << :education_right if text.match?(LegislationSearch::CONSTITUTION_EDUCATION_PATTERN)
+      found << :home_inviolability if text.match?(LegislationSearch::CONSTITUTION_HOME_INVIOLABILITY_PATTERN)
       found
     end
 
@@ -116,10 +125,16 @@ module LegalChatbot
       end
     end
 
+    # A plural title word also names its singular: "een vastgoedmakelaar"
+    # names the "Beroepsinstituut van Vastgoedmakelaars".
     def self.named_by_title?(title, question)
       asked = question.to_s.downcase
       title.downcase.scan(/\p{L}+/).uniq.any? do |word|
-        word.length >= TITLE_WORD_MIN && !GENERIC_TITLE_WORDS.include?(word) && asked.include?(word)
+        next false if GENERIC_TITLE_WORDS.include?(word)
+
+        [word, word.sub(/(?:en|s)\z/, '')].uniq.any? do |form|
+          form.length >= TITLE_WORD_MIN && !GENERIC_TITLE_WORDS.include?(form) && asked.include?(form)
+        end
       end
     end
     private_class_method :named_by_title?

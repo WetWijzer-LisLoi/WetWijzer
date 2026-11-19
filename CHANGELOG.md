@@ -8,6 +8,16 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.73] - 2026-11-19
+
+### Fixed
+- Chatbot: a question about the inviolability of the home (for example "Onschendbaarheid woning?") keeps Article 15 of the Constitution, and its other sources are now limited to the Constitution, human rights treaties, criminal law and procedure with the search laws, the police function, and diplomatic and consular law. Rules that only let an inspector or an estate agent enter "subject to the inviolability of the home", such as those on swine brucellosis, African swine fever and the estate agents' code of ethics, no longer appear. A question that names such a rule keeps it.
+- Chatbot: "hoelang" and the "lang" of "hoe lang" are no longer search terms, so "Adoptieverlof hoelang?" no longer shows a gas-network article that says how long its records are kept.
+- Law pages: the French text of a Brussels regional version of an article (for example Art. 11 "Région de Bruxelles-Capitale" of the traffic code) now has its own anchor (`#art-11-region_bruxelles_capitale`), so its contents link and the chatbot's source card open the Brussels text instead of the general article.
+
+### Changed
+- Chatbot: the sample question categories are written in sentence case in every language ("Intellectuele eigendom", "Fiscaal recht"), and the sidebar and the category filter list them in one order: general first, miscellaneous last, the others alphabetically by their name in the reader's language. The employment and tax subgroups stay together under their main category, whose own questions are labelled "algemeen".
+
 ## [1.1.72] - 2026-11-19
 
 ### Fixed

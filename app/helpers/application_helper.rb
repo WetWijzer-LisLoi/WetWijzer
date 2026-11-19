@@ -205,7 +205,13 @@ module ApplicationHelper
     return 'vlaams_gewest' if line_upper.include?('VLAAMS') && line_upper.include?('GEWEST')
     return 'brussels_hoofdstedelijk_gewest' if line_upper.include?('BRUSSELS') && line_upper.include?('GEWEST')
 
-    # Regional variants (French)
+    # Regional variants (French). Brussels comes first: its titles say
+    # REGION_DE_BRUXELLES-CAPITALE and its contents lines "Région de
+    # Bruxelles-Capitale", neither of which the BRUXELLOIS rule below reads, so
+    # the French Brussels version shared the general article's id and its
+    # contents link opened the general text (the loose E.*REGION alternative
+    # would also take "ARTICLE ... REGION DE BRUXELLES" for Flanders).
+    return 'region_bruxelles_capitale' if line_upper.include?('BRUXELLES') && line_upper.include?('CAPITALE')
     return 'region_wallonne' if line_upper.match?(/WALLON|NE.*REGION/)
     return 'region_flamande' if line_upper.match?(/FLAMAND|E.*REGION/)
     return 'region_bruxelles_capitale' if line_upper.match?(/BRUXELLOIS.*REGION/)

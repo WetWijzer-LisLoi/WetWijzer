@@ -168,69 +168,81 @@
     // #lang-primary/#tab-nl elements no longer exist. Page language comes from
     // I18n server-side; the chatbot language from data-chatbot-language-value.
 
+    /* ww-category-order-pin:start */
+    // Labels are written as they are shown, in sentence case in every
+    // language: only the first word and proper nouns or abbreviations that
+    // keep their capitals (German nouns, TVA, VAT) start with a capital.
     var categoryInfo = {
       // ── Main categories ──
       'ALGEMEEN':           { nl: 'Algemeen',           en: 'General',              fr: 'Général',                    de: 'Allgemein' },
-      'ARBEIDSRECHT':       { nl: 'Arbeidsrecht',       en: 'Employment Law',       fr: 'Droit du Travail',           de: 'Arbeitsrecht' },
-      'BESTUURSRECHT':      { nl: 'Bestuursrecht',      en: 'Administrative Law',   fr: 'Droit Administratif',        de: 'Verwaltungsrecht' },
-      'BOUWEN':             { nl: 'Bouwrecht',          en: 'Construction Law',     fr: 'Droit de la Construction',   de: 'Baurecht' },
-      'BURENRECHT':         { nl: 'Burenrecht',         en: 'Neighbour Law',        fr: 'Droit de Voisinage',         de: 'Nachbarrecht' },
-      'CONSUMENTENRECHT':   { nl: 'Consumentenrecht',   en: 'Consumer Law',         fr: 'Droit de la Consommation',   de: 'Verbraucherrecht' },
-      'DIEREN':             { nl: 'Dierenrecht',        en: 'Animal Law',           fr: 'Droit des Animaux',          de: 'Tierrecht' },
+      'ARBEIDSRECHT':       { nl: 'Arbeidsrecht',       en: 'Employment law',       fr: 'Droit du travail',           de: 'Arbeitsrecht' },
+      'BESTUURSRECHT':      { nl: 'Bestuursrecht',      en: 'Administrative law',   fr: 'Droit administratif',        de: 'Verwaltungsrecht' },
+      'BOUWEN':             { nl: 'Bouwrecht',          en: 'Construction law',     fr: 'Droit de la construction',   de: 'Baurecht' },
+      'BURENRECHT':         { nl: 'Burenrecht',         en: 'Neighbour law',        fr: 'Droit de voisinage',         de: 'Nachbarrecht' },
+      'CONSUMENTENRECHT':   { nl: 'Consumentenrecht',   en: 'Consumer law',         fr: 'Droit de la consommation',   de: 'Verbraucherrecht' },
+      'DIEREN':             { nl: 'Dierenrecht',        en: 'Animal law',           fr: 'Droit des animaux',          de: 'Tierrecht' },
       'DIVERSE':            { nl: 'Diverse',            en: 'Miscellaneous',        fr: 'Divers',                     de: 'Verschiedenes' },
-      'DRUGS':              { nl: 'Drugs & Alcohol',    en: 'Drugs & Alcohol',      fr: 'Drogues & Alcool',           de: 'Drogen & Alkohol' },
-      'ERFRECHT':           { nl: 'Erfrecht',           en: 'Inheritance Law',      fr: 'Droit des Successions',      de: 'Erbrecht' },
-      'FAMILIERECHT':       { nl: 'Familierecht',       en: 'Family Law',           fr: 'Droit de la Famille',        de: 'Familienrecht' },
-      'FISCAAL':            { nl: 'Fiscaal Recht',      en: 'Tax Law',              fr: 'Droit Fiscal',               de: 'Steuerrecht' },
+      'DRUGS':              { nl: 'Drugs en alcohol',   en: 'Drugs and alcohol',    fr: 'Drogues et alcool',          de: 'Drogen und Alkohol' },
+      'ERFRECHT':           { nl: 'Erfrecht',           en: 'Inheritance law',      fr: 'Droit des successions',      de: 'Erbrecht' },
+      'FAMILIERECHT':       { nl: 'Familierecht',       en: 'Family law',           fr: 'Droit de la famille',        de: 'Familienrecht' },
+      'FISCAAL':            { nl: 'Fiscaal recht',      en: 'Tax law',              fr: 'Droit fiscal',               de: 'Steuerrecht' },
       'GRONDWET':           { nl: 'Grondwet',           en: 'Constitution',         fr: 'Constitution',               de: 'Verfassung' },
-      'HUURRECHT':          { nl: 'Huurrecht',          en: 'Rental Law',           fr: 'Droit du Bail',              de: 'Mietrecht' },
-      'INTELLECTUEEL':      { nl: 'Intellectueel Eigendom', en: 'Intellectual Property', fr: 'Propriété Intellectuelle', de: 'Geistiges Eigentum' },
-      'INTERNET':           { nl: 'Internetrecht',      en: 'Internet Law',         fr: 'Droit de l\'Internet',       de: 'Internetrecht' },
-      'MEDISCH':            { nl: 'Medisch Recht',      en: 'Medical Law',          fr: 'Droit Médical',              de: 'Medizinrecht' },
-      'MILIEU':             { nl: 'Milieurecht',        en: 'Environmental Law',    fr: 'Droit de l\'Environnement',  de: 'Umweltrecht' },
-      'OVERHEID':           { nl: 'Overheidszaken',     en: 'Government Affairs',   fr: 'Affaires Gouvernementales',  de: 'Regierungsangelegenheiten' },
-      'PRIVACY':            { nl: 'Privacy & Data',     en: 'Privacy & Data',       fr: 'Vie Privée & Données',       de: 'Datenschutz & Daten' },
-      'PROCEDURERECHT':     { nl: 'Procedurerecht',     en: 'Procedural Law',       fr: 'Droit Procédural',           de: 'Verfahrensrecht' },
-      'SCHULDEN':           { nl: 'Schuldenrecht',      en: 'Debt Law',             fr: 'Droit des Dettes',           de: 'Schuldenrecht' },
-      'SOCIALE ZEKERHEID':  { nl: 'Sociale Zekerheid',  en: 'Social Security',      fr: 'Sécurité Sociale',           de: 'Sozialversicherung' },
-      'SPORT':              { nl: 'Sportrecht',         en: 'Sports Law',           fr: 'Droit du Sport',             de: 'Sportrecht' },
-      'STRAFRECHT':         { nl: 'Strafrecht',         en: 'Criminal Law',         fr: 'Droit Pénal',                de: 'Strafrecht' },
-      'VASTGOEDRECHT':      { nl: 'Vastgoedrecht',      en: 'Real Estate Law',      fr: 'Droit Immobilier',           de: 'Immobilienrecht' },
-      'VENNOOTSCHAPSRECHT': { nl: 'Vennootschapsrecht', en: 'Company Law',          fr: 'Droit des Sociétés',         de: 'Gesellschaftsrecht' },
-      'VERKEERSRECHT':      { nl: 'Verkeersrecht',      en: 'Traffic Law',          fr: 'Droit de la Circulation',    de: 'Verkehrsrecht' },
-      'VERZEKERINGEN':      { nl: 'Verzekeringsrecht',  en: 'Insurance Law',        fr: 'Droit des Assurances',       de: 'Versicherungsrecht' },
-      'VREEMDELINGENRECHT': { nl: 'Vreemdelingenrecht', en: 'Immigration Law',      fr: 'Droit des Étrangers',        de: 'Ausländerrecht' },
-      'ZAKENRECHT':         { nl: 'Zakenrecht',         en: 'Property Law',         fr: 'Droit des Biens',            de: 'Sachenrecht' },
-      // ── Subcategory qualifiers (for compound "X - Y" categories) ──
-      'INDIVIDUEEL':      { nl: 'Individueel',        en: 'Individual',         fr: 'Individuel',             de: 'Individuell' },
-      'COLLECTIEF':       { nl: 'Collectief',         en: 'Collective',         fr: 'Collectif',              de: 'Kollektiv' },
-      'LOON':             { nl: 'Loon',               en: 'Wages',              fr: 'Salaire',                de: 'Gehalt' },
-      'ONTSLAG':          { nl: 'Ontslag',            en: 'Dismissal',          fr: 'Licenciement',           de: 'Kündigung' },
-      'VAKANTIE':         { nl: 'Vakantie',           en: 'Holiday',            fr: 'Vacances',               de: 'Urlaub' },
-      'ZIEKTE':           { nl: 'Ziekte',             en: 'Illness',            fr: 'Maladie',                de: 'Krankheit' },
-      'BTW':              { nl: 'BTW',                en: 'VAT',                fr: 'TVA',                    de: 'MwSt' },
-      'PERSONENBELASTING':{ nl: 'Personenbelasting',  en: 'Income Tax',         fr: 'Impôt des Personnes',    de: 'Einkommensteuer' },
-      'REGISTRATIE':      { nl: 'Registratierechten', en: 'Registration Fees',  fr: 'Droits d\'Enregistrement', de: 'Registrierungsgebühren' }
+      'HUURRECHT':          { nl: 'Huurrecht',          en: 'Rental law',           fr: 'Droit du bail',              de: 'Mietrecht' },
+      'INTELLECTUEEL':      { nl: 'Intellectuele eigendom', en: 'Intellectual property', fr: 'Propriété intellectuelle', de: 'Geistiges Eigentum' },
+      'INTERNET':           { nl: 'Internetrecht',      en: 'Internet law',         fr: 'Droit de l\'internet',       de: 'Internetrecht' },
+      'MEDISCH':            { nl: 'Medisch recht',      en: 'Medical law',          fr: 'Droit médical',              de: 'Medizinrecht' },
+      'MILIEU':             { nl: 'Milieurecht',        en: 'Environmental law',    fr: 'Droit de l\'environnement',  de: 'Umweltrecht' },
+      'OVERHEID':           { nl: 'Overheidszaken',     en: 'Government affairs',   fr: 'Affaires gouvernementales',  de: 'Regierungsangelegenheiten' },
+      'PRIVACY':            { nl: 'Privacy en gegevensbescherming', en: 'Privacy and data protection', fr: 'Vie privée et protection des données', de: 'Privatsphäre und Datenschutz' },
+      'PROCEDURERECHT':     { nl: 'Procedurerecht',     en: 'Procedural law',       fr: 'Droit procédural',           de: 'Verfahrensrecht' },
+      'SCHULDEN':           { nl: 'Schuldenrecht',      en: 'Debt law',             fr: 'Droit des dettes',           de: 'Schuldenrecht' },
+      'SOCIALE ZEKERHEID':  { nl: 'Sociale zekerheid',  en: 'Social security',      fr: 'Sécurité sociale',           de: 'Sozialversicherung' },
+      'SPORT':              { nl: 'Sportrecht',         en: 'Sports law',           fr: 'Droit du sport',             de: 'Sportrecht' },
+      'STRAFRECHT':         { nl: 'Strafrecht',         en: 'Criminal law',         fr: 'Droit pénal',                de: 'Strafrecht' },
+      'VASTGOEDRECHT':      { nl: 'Vastgoedrecht',      en: 'Real estate law',      fr: 'Droit immobilier',           de: 'Immobilienrecht' },
+      'VENNOOTSCHAPSRECHT': { nl: 'Vennootschapsrecht', en: 'Company law',          fr: 'Droit des sociétés',         de: 'Gesellschaftsrecht' },
+      'VERKEERSRECHT':      { nl: 'Verkeersrecht',      en: 'Traffic law',          fr: 'Droit de la circulation',    de: 'Verkehrsrecht' },
+      'VERZEKERINGEN':      { nl: 'Verzekeringsrecht',  en: 'Insurance law',        fr: 'Droit des assurances',       de: 'Versicherungsrecht' },
+      'VREEMDELINGENRECHT': { nl: 'Vreemdelingenrecht', en: 'Immigration law',      fr: 'Droit des étrangers',        de: 'Ausländerrecht' },
+      'ZAKENRECHT':         { nl: 'Zakenrecht',         en: 'Property law',         fr: 'Droit des biens',            de: 'Sachenrecht' },
+      // ── Subcategory qualifiers (for compound "X - Y" categories), shown
+      // after a dash in the same sentence-case label ──
+      'INDIVIDUEEL':      { nl: 'individueel',        en: 'individual',         fr: 'individuel',             de: 'individuell' },
+      'COLLECTIEF':       { nl: 'collectief',         en: 'collective',         fr: 'collectif',              de: 'kollektiv' },
+      'LOON':             { nl: 'loon',               en: 'wages',              fr: 'salaire',                de: 'Gehalt' },
+      'ONTSLAG':          { nl: 'ontslag',            en: 'dismissal',          fr: 'licenciement',           de: 'Kündigung' },
+      'VAKANTIE':         { nl: 'vakantie',           en: 'holiday',            fr: 'vacances',               de: 'Urlaub' },
+      'ZIEKTE':           { nl: 'ziekte',             en: 'illness',            fr: 'maladie',                de: 'Krankheit' },
+      'BTW':              { nl: 'btw',                en: 'VAT',                fr: 'TVA',                    de: 'MwSt.' },
+      'PERSONENBELASTING':{ nl: 'personenbelasting',  en: 'income tax',         fr: 'impôt des personnes physiques', de: 'Einkommensteuer' },
+      'REGISTRATIE':      { nl: 'registratierechten', en: 'registration duties', fr: 'droits d\'enregistrement', de: 'Registrierungsgebühren' }
     };
-    
+    // A parent's own questions, when the catalogue also gives it subgroups
+    // ("Arbeidsrecht – algemeen" beside "Arbeidsrecht – ontslag").
+    var DIRECT_GROUP_QUALIFIER = { nl: 'algemeen', en: 'general', fr: 'général', de: 'allgemein' };
+    // The parent order of the sidebar and the filter: Algemeen first,
+    // Diverse last, every other parent by its label in the reader's language.
+    var FIRST_PARENT = 'ALGEMEEN';
+    var LAST_PARENT = 'DIVERSE';
+
     function getCategoryDisplay(cat, lang) {
       var catUpper = cat.toUpperCase().replace(/\s*\(\d+\)\s*$/, '').trim();
-      
+
       // Compound categories like "ARBEIDSRECHT - INDIVIDUEEL"
       if (catUpper.includes(' - ')) {
         var parts = catUpper.split(' - ');
         var mainKey = parts[0].trim();
         var subKey = parts[1].trim();
         var mainLabel = categoryInfo[mainKey] ? (categoryInfo[mainKey][lang] || categoryInfo[mainKey].nl) : (mainKey.charAt(0) + mainKey.slice(1).toLowerCase());
-        var subLabel = categoryInfo[subKey] ? (categoryInfo[subKey][lang] || categoryInfo[subKey].nl) : (subKey.charAt(0) + subKey.slice(1).toLowerCase());
+        var subLabel = categoryInfo[subKey] ? (categoryInfo[subKey][lang] || categoryInfo[subKey].nl) : subKey.toLowerCase();
         return mainLabel + ' – ' + subLabel;
       }
-      
+
       // Exact match
       if (categoryInfo[catUpper]) {
         return categoryInfo[catUpper][lang] || categoryInfo[catUpper].nl;
       }
-      
+
       // Longest-key includes match
       var bestKey = null;
       for (var key in categoryInfo) {
@@ -241,14 +253,65 @@
       if (bestKey) {
         return categoryInfo[bestKey][lang] || categoryInfo[bestKey].nl;
       }
-      
-      // Title-case fallback
+
+      // Sentence-case fallback
       return cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase();
     }
-    
+
     function getShortCategory(cat) {
       return cat.replace(/\s*\(\d+\)\s*$/, '').trim();
     }
+
+    function categoryParent(cat) {
+      return getShortCategory(String(cat || '')).split(' - ')[0].trim();
+    }
+
+    // Sol 2026-11-19 08:10:46Z: the sidebar kept the catalogue's insertion
+    // order (the employment groups scattered across the list) while the
+    // filter sorted parents alphabetically. One order serves both.
+    function compareParents(a, b, lang) {
+      var rank = function(key) { return key === FIRST_PARENT ? 0 : (key === LAST_PARENT ? 2 : 1); };
+      var byRank = rank(a) - rank(b);
+      if (byRank !== 0) return byRank;
+      return getCategoryDisplay(a, lang).localeCompare(getCategoryDisplay(b, lang), lang, { sensitivity: 'base' });
+    }
+
+    function sortedParents(parents, lang) {
+      return parents.slice().sort(function(a, b) { return compareParents(a, b, lang); });
+    }
+
+    // The sidebar's groups: by parent, the parent's own group first, then its
+    // subgroups by their label.
+    function sortedGroups(groups, lang) {
+      return groups.slice().sort(function(a, b) {
+        var byParent = compareParents(categoryParent(a), categoryParent(b), lang);
+        if (byParent !== 0) return byParent;
+        var aDirect = a.indexOf(' - ') < 0;
+        var bDirect = b.indexOf(' - ') < 0;
+        if (aDirect !== bDirect) return aDirect ? -1 : 1;
+        return getCategoryDisplay(a, lang).localeCompare(getCategoryDisplay(b, lang), lang, { sensitivity: 'base' });
+      });
+    }
+
+    // The parents with subgroups, read from the whole catalogue so that a
+    // search or a filter never renames a group.
+    function subgroupedParents(questions) {
+      var parents = {};
+      questions.forEach(function(q) {
+        var cat = getShortCategory(String(q.category || ''));
+        if (cat.indexOf(' - ') >= 0) parents[categoryParent(cat)] = true;
+      });
+      return parents;
+    }
+
+    function sidebarGroupLabel(cat, lang, subgrouped) {
+      var label = getCategoryDisplay(cat, lang);
+      if (cat.indexOf(' - ') < 0 && subgrouped[categoryParent(cat)]) {
+        return label + ' – ' + (DIRECT_GROUP_QUALIFIER[lang] || DIRECT_GROUP_QUALIFIER.nl);
+      }
+      return label;
+    }
+    /* ww-category-order-pin:end */
     
     /* ww-question-search-pin:start */
     // The list renders questionText(), so the filter has to search exactly
@@ -386,14 +449,15 @@
         if (!grouped[shortCat]) grouped[shortCat] = [];
         grouped[shortCat].push(q);
       });
-      var catKeys = Object.keys(grouped);
+      var catKeys = sortedGroups(Object.keys(grouped), currentLang);
+      var subgrouped = subgroupedParents(allQuestions.length ? allQuestions : questions);
       // Auto-expand if 3 or fewer categories, collapse if many
       var autoExpand = catKeys.length <= 3;
 
       var html = '';
-      for (var cat in grouped) {
+      catKeys.forEach(function(cat) {
         var icon = getIconForCategory(cat);
-        var display = getCategoryDisplay(cat, currentLang);
+        var display = sidebarGroupLabel(cat, currentLang, subgrouped);
         var expandClass = autoExpand ? '' : ' hidden';
         var chevronClass = autoExpand ? ' rotate-180' : '';
         
@@ -410,7 +474,7 @@
            html += '<li><button type="button" class="w-full text-left px-3 py-2 text-sm text-(--accent-600) dark:text-(--accent-400) hover:bg-(--accent-50,#eff6ff) dark:hover:bg-[#0f172a] sample-question transition-colors duration-150" data-question="' + displayText.replace(/"/g, '&quot;') + '" data-category="' + cat + '"><span class="opacity-40 mr-1.5">→</span>' + displayText + '</button></li>';
         });
         html += '</ul></div>';
-      }
+      });
       container.innerHTML = html;
       
       // Wire up accordion toggles
@@ -498,10 +562,11 @@
           window.allQuestions = data; // sync both references
 
           // Populate category filter with PARENT categories only
-          // e.g. "ARBEIDSRECHT - INDIVIDUEEL" → "ARBEIDSRECHT"
-          var parentCats = [...new Set(data.map(function(q) {
-            return q.category.split(' - ')[0].trim();
-          }))];
+          // e.g. "ARBEIDSRECHT - INDIVIDUEEL" → "ARBEIDSRECHT", in the
+          // sidebar's parent order (sortedParents).
+          var parentCats = sortedParents([...new Set(data.map(function(q) {
+            return categoryParent(q.category);
+          }))], currentLang);
           var select = document.getElementById('category-filter');
           if (!select) return;
 
@@ -510,12 +575,6 @@
             select.remove(select.options.length - 1);
           }
 
-          // Sort categories alphabetically by their translated display name
-          parentCats.sort(function(a, b) {
-            var labelA = getCategoryDisplay(a, currentLang);
-            var labelB = getCategoryDisplay(b, currentLang);
-            return labelA.localeCompare(labelB);
-          });
           parentCats.forEach(function(cat) {
             var opt = document.createElement('option');
             opt.value = cat;
