@@ -626,8 +626,13 @@ module LegalChatbot
       # chain, so nothing is trusted that was not verified.
       unless citation_guard_passed?
         repaired = scope_repair_sources_for_question(repair_cited_articles(@last_citation_guard_result, leg_articles), question)
-        if repaired.any? && enough_request_time?
+        # The tax codes live only in Fisconet; their cited articles are repaired there (CitationRepair).
+        repaired_tax = repair_cited_tax_articles(@last_citation_guard_result, tax_articles).select do |article|
+          LegalChatbot::FisconetSearch.contextual_source_relevant?(article, question)
+        end
+        if (repaired.any? || repaired_tax.any?) && enough_request_time?
           leg_articles += repaired
+          tax_articles += repaired_tax
           regional_docs = without_primary_legislation_duplicates(regional_docs, leg_articles)
           admission = admit_statutory_sources(leg_articles, tax_articles, regional_docs,
                                               authoritative_docs: authoritative_docs, facts_chars: facts_chars)
@@ -660,8 +665,8 @@ module LegalChatbot
             context = repaired_context
             clean_answer = apply_answer_guard_chain(repaired_answer, question, guard_sources)
             Rails.logger.info(
-              "[CitationRepair] regenerated with #{repaired.length} added article(s); " \
-              "verified=#{citation_guard_passed?}"
+              "[CitationRepair] regenerated with #{repaired.length} added article(s) and " \
+              "#{repaired_tax.length} tax article(s); verified=#{citation_guard_passed?}"
             )
           rescue Timeout::Error
             raise

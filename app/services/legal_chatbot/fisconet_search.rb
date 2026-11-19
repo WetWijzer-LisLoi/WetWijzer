@@ -260,6 +260,39 @@ module LegalChatbot
       []
     end
 
+    # Articles by number, only inside the documents a search already returned: citation
+    # repair for the tax codes (CitationRepair#repair_cited_tax_articles). WIB 92 and the VAT
+    # code exist only here, so the main-law repair can never find their articles (Sol
+    # 2026-11-19 15:29:47Z: thirteen general tax samples withheld). The same selection as the
+    # search: real law, the current edition, the number's spellings and aliases, one row per
+    # article unless all three regions are present.
+    def fetch_articles_by_number(legislation_ids:, article_numbers:, limit: 6)
+      ids = Array(legislation_ids).compact.uniq
+      spellings = Array(article_numbers).compact_blank.flat_map { |number| article_number_spellings(number) }.uniq
+      return [] if ids.empty? || spellings.empty?
+
+      db = fisconet_db
+      return [] unless db
+
+      marks = (['LOWER(?)'] * spellings.length).join(', ')
+      clause = "LOWER(a.article_number) IN (#{marks})"
+      params = ids + spellings
+      if aliases_table?(db)
+        clause += " OR a.id IN (SELECT article_id FROM tax_article_aliases WHERE LOWER(alias_number) IN (#{marks}))"
+        params.concat(spellings)
+      end
+      where = ["a.legislation_id IN (#{(['?'] * ids.length).join(', ')})", "(#{clause})",
+               real_law_only_sql(db), current_edition_sql(db)]
+      is_french = @language == 'fr'
+      scored = select_article_rows(db, where, params).map do |row|
+        { article: row_to_article(row, is_french, metadata_offset: 12), integrity: [row[10].to_i, row[11].to_i] }
+      end
+      select_per_article(scored, limit: limit)
+    rescue StandardError => e
+      Rails.logger.error("[Fisconet] repair lookup failed: #{e.class}")
+      []
+    end
+
     # Working laws-page URL for a tax article. The fisconet pages are served
     # at /laws/FISCONET_<legislation_id> (uppercase prefix, LEGISLATION id,
     # NOT article id), and each row has its own id (FisconetArticleAnchors):
@@ -418,9 +451,20 @@ module LegalChatbot
         right_boundary = %w[tax vat btw tva isoc].include?(keyword) ? '(?![[:alnum:]])' : ''
         q_down.match?(/(?<![[:alnum:]])#{Regexp.escape(keyword)}#{right_boundary}/)
       end ||
+        question_text.match?(TAX_COMPOUND_PATTERN) ||
+        question_text.match?(TAX_TERM_PATTERN) ||
         question_text.match?(COMPANY_CAR_TAX_PATTERN) ||
         question_text.match?(CRYPTO_TAX_PATTERN)
     end
+
+    # A Dutch compound names its tax in its last part ("bedrijfsvoorheffing", "speculatiebelasting",
+    # "investeringsaftrek", "effectentaks"), while TAX_KEYWORDS match at the start of a word only, so
+    # such questions never reached the tax codes that answer them: 47 tax samples of the catalogue
+    # were not tax questions (Sol 2026-11-19 15:29:47Z). "overbelasting" (an overload) is the
+    # common compound that is no tax. A "-heffing" compound is left out on purpose: those are regional
+    # levies ("planbatenheffing", "milieuheffing") that Fisconet does not hold.
+    TAX_COMPOUND_PATTERN = /(?<![[:alnum:]])(?!overbelast)\p{L}{3,}(?:belasting(?:en)?|taks(?:en)?|aftrek|voorheffing)(?![[:alnum:]])/iu
+    TAX_TERM_PATTERN = /(?<![[:alnum:]])(?:belastba(?:ar|re)|taks(?:en)?|verkooprecht(?:en)?|klein\s+beschrijf|vereenvoudigde\s+aangifte|aangifte\s+vennootschap\p{L}*)(?![[:alnum:]])/iu
 
     # Shared with final evidence assembly: the keyword/pin/optional semantic
     # lanes must not reintroduce unrelated W.Succ. articles after the main-law
@@ -583,7 +627,23 @@ module LegalChatbot
       where << real_law_only_sql(db)
       where << current_edition_sql(db)
 
-      rows = db.execute(
+      rows = select_article_rows(db, where, params)
+
+      scored = rows.filter_map do |row|
+        art = row_to_article(row, is_french, metadata_offset: 12)
+        next unless self.class.contextual_source_relevant?(art, question)
+
+        art[:similarity] = score_article(art, keywords, explicit_art)
+        { article: art, integrity: [row[10].to_i, row[11].to_i] }
+      end
+
+      select_per_article(scored, limit: limit)
+    end
+
+    # The candidate rows of keyword_search and fetch_articles_by_number: the same columns, in
+    # the same order (row_to_article reads them by position, metadata from index 12).
+    def select_article_rows(db, where, params)
+      db.execute(
         "SELECT a.id, a.legislation_id, a.article_number, a.text_nl, a.text_fr, #{section_path_sql(db)},
                 #{LEGISLATION_TITLE_NL_SQL}, #{LEGISLATION_TITLE_FR_SQL}, l.document_type, #{fisconet_id_sql(db)},
                 #{legislation_current_sql(db)} AS legislation_current,
@@ -597,16 +657,6 @@ module LegalChatbot
                   #{legislation_updated_order_sql(db)}l.id DESC, a.id DESC
          LIMIT 400", params
       )
-
-      scored = rows.filter_map do |row|
-        art = row_to_article(row, is_french, metadata_offset: 12)
-        next unless self.class.contextual_source_relevant?(art, question)
-
-        art[:similarity] = score_article(art, keywords, explicit_art)
-        { article: art, integrity: [row[10].to_i, row[11].to_i] }
-      end
-
-      select_per_article(scored, limit: limit)
     end
 
     # Collapse candidates to what the chatbot should quote. Extracted from

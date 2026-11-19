@@ -37,6 +37,11 @@ module LegalChatbot
       stripped = []
       rewritten = []
       @rejected_article_link_labels = Set.new
+      # The code of each retrieved Fisconet document, for rehome_law_anchor's named-law check.
+      @fisconet_link_codes = tax_articles.each_with_object({}) do |article, codes|
+        numac = retrieved_source_numac(article)
+        codes[numac] = article[:document_type].to_s.downcase.strip if numac.to_s.start_with?('FISCONET_')
+      end
       text = drop_unverified_german_language(text, german_original_pairs(leg_articles), rewritten)
 
       allowed_laws = Set.new
@@ -552,8 +557,12 @@ module LegalChatbot
       # Resolve the named law before consulting which law happens to contain
       # this article. Filtering candidates by article existence first erased
       # a named-but-missing law, and let another law rescue the same number.
+      if numac.start_with?('FISCONET_') && fisconet_label_instrument_conflict?(numac, label)
+        stripped << "/laws/#{numac}#{suffix} (label instrument mismatch)"
+        return label
+      end
       named_laws = label_declared_law_candidates(label)
-      if named_laws.any? && !named_laws.include?(numac)
+      if named_laws.any? && !named_laws.include?(numac) && !fisconet_code_named?(numac, named_laws, label)
         stripped << "/laws/#{numac}#{suffix} (label law mismatch)"
         return label
       end
@@ -861,6 +870,47 @@ module LegalChatbot
     def link_article_region(suffix)
       fragment = suffix.to_s[/#art_([^?&#\s)]+)/i, 1]
       FisconetArticleAnchors.parse_fragment(fragment).last if fragment
+    end
+
+    # WIB 92 and the VAT code have their text only in Fisconet; their Justel pages are empty. So the
+    # code a label names ("Art. 131 WIB 92") resolves to the Justel NUMAC while the link opens the
+    # Fisconet document holding that code: the same law, not a mismatch. Stripping such links left a
+    # bare "Art. 131" that the citation guard rejected, and every answer that named its code was
+    # withheld (Sol 2026-11-19 15:29:47Z: thirteen general tax samples). A royal decree under the
+    # code (KB/WIB 92, KB nr. 20) is a different instrument: its link needs a label that names a royal
+    # decree, and a link to the code itself needs one that does not.
+    FISCONET_CODE_JUSTEL_NUMACS = { wib: '1992041050', vat: '1969070305' }.freeze
+    ROYAL_DECREE_LABEL_SOURCE = '(?<![[:alnum:]])(?:k\.\s?b\.|kb|koninklijk\s+besluit|a\.\s?r\.|ar|arr[êe]t[ée]\s+royal)(?![[:alnum:]])'
+    ROYAL_DECREE_LABEL_PATTERN = /#{ROYAL_DECREE_LABEL_SOURCE}/io
+    # The number of the royal decree a label names: "KB nr. 20", "K.B. 20", "koninklijk besluit nr. 20",
+    # "AR n° 20", "arrêté royal n° 20".
+    ROYAL_DECREE_NUMBER_PATTERN = /#{ROYAL_DECREE_LABEL_SOURCE}\s*(?:nr\.?|nummer|n[°º]|no\.?)?\s*(?<number>\d+)(?![[:alnum:]])/io
+    FISCONET_DECREE_CODE_PATTERN = /\Akb\s*(?:nr\.?\s*)?(\d+)\z/
+
+    def fisconet_code_named?(numac, named_laws, label)
+      code = @fisconet_link_codes.to_h[numac].to_s
+      twin = if code.match?(%r{\A(?:kb\s*/\s*)?wib\s*92\z})
+               FISCONET_CODE_JUSTEL_NUMACS[:wib]
+             elsif code == 'btw' || code.match?(FISCONET_DECREE_CODE_PATTERN)
+               FISCONET_CODE_JUSTEL_NUMACS[:vat]
+             end
+      return false unless twin && named_laws.to_a == [twin]
+
+      code.start_with?('kb') == label.to_s.match?(ROYAL_DECREE_LABEL_PATTERN)
+    end
+
+    # Whether a label names another Fisconet instrument than the one its link opens, whatever law
+    # name it carries: a royal decree on a link to a code, or a numbered VAT royal decree on a link
+    # to a decree with another number, even where the two share the article number (Sol 2026-11-19
+    # 17:31:53Z: "KB nr. 20" on a link to KB nr. 1).
+    def fisconet_label_instrument_conflict?(numac, label)
+      code = @fisconet_link_codes.to_h[numac].to_s
+      return false if code.empty?
+      return true if label.to_s.match?(ROYAL_DECREE_LABEL_PATTERN) && !code.start_with?('kb')
+
+      decree_number = code[FISCONET_DECREE_CODE_PATTERN, 1]
+      named_number = label.to_s[ROYAL_DECREE_NUMBER_PATTERN, :number]
+      !decree_number.nil? && !named_number.nil? && named_number.to_i != decree_number.to_i
     end
 
     def label_article_number(label)

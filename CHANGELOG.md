@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.75] - 2026-11-19
+
+### Fixed
+- Chatbot: a tax answer that names the code it cites, for example "Art. 131 WIB 92", is no longer withheld. Such a citation lost its link because "WIB" pointed to the code's empty Justel page instead of the Fisconet text the link opens, and the guard then rejected the bare article number. This is a cause found for the thirteen general tax sample questions that ended without an answer, among them "Hoeveel bedraagt de belastingvrije som?" and "Roerende voorheffing dividenden?". Their answers were not read, so it is not established that each carried such a label. A label that names another instrument still loses its link: the code on a link to its royal decree, a royal decree on a link to the code, or VAT royal decree nr. 20 on a link to nr. 1.
+- Chatbot: when an answer cites an article of a tax code (WIB 92, the VAT code or their royal decrees) that the search had not returned, that article is now looked up in the code, in each region the code holds it for, and the answer is regenerated with it, as was already done for the other laws.
+- Chatbot: questions that name their tax in a compound word ("bedrijfsvoorheffing", "speculatiebelasting", "investeringsaftrek", "effectentaks"), or ask about taxable ("belastbaar") income, the sale duty or the "klein beschrijf", now search the tax codes. 21 Dutch sample questions did not.
+
 ## [1.1.74] - 2026-11-19
 
 ### Fixed

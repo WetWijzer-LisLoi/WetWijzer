@@ -170,11 +170,52 @@ module LegalChatbot
         expand_article_range(number)
           .reject { |candidate| candidate.blank? || have.include?(normalize_article_number(candidate)) }
       end
-      # Interleave round-robin: a single wide range expansion (up to 41
-      # candidates) used to fill the whole repair budget and starve every
-      # other rejected reference, so one repairable citation stayed broken
-      # because an unrelated one was greedy (2026-08-04 withheld-answer
-      # mining, docs/ops/withheld-answers-2026-08-04.md).
+      numbers = interleave_repair_candidates(per_reference)
+      return [] if numbers.empty?
+
+      legislation_search_svc.fetch_articles_by_number(
+        numacs: numacs, article_numbers: numbers, limit: CITATION_REPAIR_LIMIT
+      )
+    end
+
+    # The same repair for the tax codes. WIB 92 and the VAT code exist only in
+    # Fisconet (Orchestrator: "Tax codes live ONLY in fisconet"), so the repair
+    # above, which reads the main laws database, could never add a cited tax
+    # article: an answer citing Art. 131 WIB 92, which the keyword search had
+    # not returned, stayed rejected through every retry (Sol 2026-11-19
+    # 15:29:47Z: thirteen general tax samples withheld). Same rule: only the
+    # numbers the guard rejected, and only inside the Fisconet documents the
+    # search already returned.
+    def repair_cited_tax_articles(guard_result, tax_articles)
+      rejected = Array(guard_result&.fetch(:unsupported_references, nil))
+      return [] if rejected.empty? || tax_articles.blank?
+
+      legislation_ids = tax_articles.filter_map { |article| article[:legislation_id] }.uniq
+      return [] if legislation_ids.empty?
+
+      # The region is part of a row's identity: W.Reg. and W.Succ. hold one row per region for a number,
+      # and a held Brussels row must not keep the Flemish one out (Sol 2026-11-19 17:31:53Z).
+      held = tax_articles.to_set { |article| tax_row_identity(article) }
+      numbers = interleave_repair_candidates(rejected.map do |reference|
+        expand_article_range(reference.to_s.sub(/\A\s*Art(?:ikel|icle)?s?\.?\s*/i, '')).compact_blank
+      end)
+      return [] if numbers.empty?
+
+      fisconet_search_svc.fetch_articles_by_number(
+        legislation_ids: legislation_ids, article_numbers: numbers, limit: CITATION_REPAIR_LIMIT
+      ).reject { |row| held.include?(tax_row_identity(row)) }
+    end
+
+    def tax_row_identity(article)
+      [article[:legislation_id], article[:article_number].to_s.downcase, (article[:region] || article[:jurisdiction]).to_s.downcase]
+    end
+
+    # Interleave round-robin: a single wide range expansion (up to 41
+    # candidates) used to fill the whole repair budget and starve every
+    # other rejected reference, so one repairable citation stayed broken
+    # because an unrelated one was greedy (2026-08-04 withheld-answer
+    # mining, docs/ops/withheld-answers-2026-08-04.md).
+    def interleave_repair_candidates(per_reference)
       numbers = []
       index = 0
       loop do
@@ -190,12 +231,7 @@ module LegalChatbot
 
         index += 1
       end
-      numbers.uniq!
-      return [] if numbers.empty?
-
-      legislation_search_svc.fetch_articles_by_number(
-        numacs: numacs, article_numbers: numbers, limit: CITATION_REPAIR_LIMIT
-      )
+      numbers.uniq
     end
 
     # Existence in an admitted law does not prove applicability. A late
