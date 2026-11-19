@@ -2,6 +2,7 @@
 
 require 'uri'
 require_relative 'commercial_website_gdpr_sources'
+require_relative 'gdpr_breach_sources'
 
 module LegalChatbot
   # Provides verified legal facts by querying the articles table directly,
@@ -220,6 +221,30 @@ module LegalChatbot
           title: "#{GDPR_COMMERCIAL_WEBSITE_SOURCE_LABELS.fetch(language)} — #{title}".freeze,
           article_title: title, article_number: article_number, language: language.upcase.freeze,
           url: "https://eur-lex.europa.eu/legal-content/#{language.upcase}/TXT/HTML/?uri=CELEX:#{GDPR_COMMERCIAL_WEBSITE_OFFICIAL_EDITION}#art_#{article_number}".freeze,
+          aliases: %w[avg gdpr rgpd dsgvo].freeze, article_text: articles.fetch(article_number)
+        }
+        record[:language_id] = { 'nl' => 1, 'fr' => 2 }[language] if %w[nl fr].include?(language)
+        record.freeze
+      end.freeze
+      [language, records]
+    end.freeze
+
+    GDPR_BREACH_TOPIC_KEY = 'gdpr_breach'
+    GDPR_BREACH_OFFICIAL_EDITION = GdprBreachSources::OFFICIAL_EDITION
+    GDPR_BREACH_REQUIRED_ARTICLES = GdprBreachSources::REQUIRED_ARTICLES
+    GDPR_BREACH_SOURCE_LABELS = GdprBreachSources::SOURCE_LABELS
+    GDPR_BREACH_OFFICIAL_TEXTS = GdprBreachSources::ARTICLE_TEXTS
+    GDPR_BREACH_OFFICIAL_SOURCES = GDPR_BREACH_OFFICIAL_TEXTS.to_h do |language, articles|
+      records = GDPR_BREACH_REQUIRED_ARTICLES.map do |article_number|
+        title = GdprBreachSources::ARTICLE_TITLES.fetch(language).fetch(article_number)
+        record = {
+          source: 'eur_lex', official_source_id: GDPR_PROCESSOR_OFFICIAL_SOURCE_ID, authority: 'EUR-Lex',
+          official_source_topic: GDPR_BREACH_TOPIC_KEY,
+          official_edition: GDPR_BREACH_OFFICIAL_EDITION, verified_on: GdprBreachSources::VERIFIED_ON,
+          law_title: GDPR_RETENTION_LAW_TITLES.fetch(language),
+          title: "#{GDPR_BREACH_SOURCE_LABELS.fetch(language)} — #{title}".freeze,
+          article_title: title, article_number: article_number, language: language.upcase.freeze,
+          url: "https://eur-lex.europa.eu/legal-content/#{language.upcase}/TXT/HTML/?uri=CELEX:#{GDPR_BREACH_OFFICIAL_EDITION}#art_#{article_number}".freeze,
           aliases: %w[avg gdpr rgpd dsgvo].freeze, article_text: articles.fetch(article_number)
         }
         record[:language_id] = { 'nl' => 1, 'fr' => 2 }[language] if %w[nl fr].include?(language)
@@ -487,7 +512,12 @@ module LegalChatbot
       keys << GDPR_RETENTION_TOPIC_KEY if gdpr_retention_question?(question)
       keys << GDPR_DIRECT_MARKETING_TOPIC_KEY if gdpr_direct_marketing_question?(question)
       keys << GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY if gdpr_commercial_website_question?(question)
+      keys << GDPR_BREACH_TOPIC_KEY if gdpr_breach_question?(question)
       keys
+    end
+
+    def self.gdpr_breach_question?(question)
+      GdprBreachSources.topic?(question)
     end
 
     def self.gdpr_direct_marketing_question?(question)
@@ -512,6 +542,8 @@ module LegalChatbot
                                       [GDPR_DIRECT_MARKETING_OFFICIAL_SOURCES, GDPR_DIRECT_MARKETING_REQUIRED_ARTICLES]
                                     when GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY
                                       [GDPR_COMMERCIAL_WEBSITE_OFFICIAL_SOURCES, GDPR_COMMERCIAL_WEBSITE_REQUIRED_ARTICLES]
+                                    when GDPR_BREACH_TOPIC_KEY
+                                      [GDPR_BREACH_OFFICIAL_SOURCES, GDPR_BREACH_REQUIRED_ARTICLES]
                                     else
                                       return []
                                     end
@@ -550,13 +582,20 @@ module LegalChatbot
         uri.query == "uri=CELEX:#{GDPR_COMMERCIAL_WEBSITE_OFFICIAL_EDITION}" &&
         GDPR_COMMERCIAL_WEBSITE_REQUIRED_ARTICLES.include?(article_number) &&
         source[:article_text] == GDPR_COMMERCIAL_WEBSITE_OFFICIAL_TEXTS.fetch(source.fetch(:language).downcase, {})[article_number]
+      corrected_breach_edition =
+        source[:official_source_topic] == GDPR_BREACH_TOPIC_KEY &&
+        source[:official_edition] == GDPR_BREACH_OFFICIAL_EDITION &&
+        uri.query == "uri=CELEX:#{GDPR_BREACH_OFFICIAL_EDITION}" &&
+        GDPR_BREACH_REQUIRED_ARTICLES.include?(article_number) &&
+        source[:article_text] == GDPR_BREACH_OFFICIAL_TEXTS.fetch(source.fetch(:language).downcase, {})[article_number]
 
       source.fetch(:source) == 'eur_lex' &&
         source.fetch(:official_source_id) == GDPR_PROCESSOR_OFFICIAL_SOURCE_ID &&
         source.fetch(:authority) == 'EUR-Lex' &&
         uri.scheme == 'https' && uri.host == 'eur-lex.europa.eu' && uri.userinfo.nil? && uri.port == 443 &&
         uri.path == "/legal-content/#{source.fetch(:language)}/TXT/HTML/" &&
-        (original_edition || corrected_marketing_edition || corrected_website_edition) && uri.fragment == "art_#{article_number}" &&
+        (original_edition || corrected_marketing_edition || corrected_website_edition || corrected_breach_edition) &&
+        uri.fragment == "art_#{article_number}" &&
         source.fetch(:article_text).to_s.strip.present?
     end
     private_class_method :valid_official_source?
@@ -782,6 +821,10 @@ module LegalChatbot
       GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY => {
         official_source_key: GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY,
         labels: GDPR_COMMERCIAL_WEBSITE_SOURCE_LABELS
+      },
+      GDPR_BREACH_TOPIC_KEY => {
+        official_source_key: GDPR_BREACH_TOPIC_KEY,
+        labels: GDPR_BREACH_SOURCE_LABELS
       },
 
       # ── Social Security Contribution ─────────────────────────────────

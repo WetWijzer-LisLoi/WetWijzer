@@ -362,6 +362,7 @@ app/services/legal_chatbot/formation_bv_checklist.rb
 app/services/legal_chatbot/formation_deed_classification.rb
 app/services/legal_chatbot/formation_deed_grounding.rb
 app/services/legal_chatbot/future_law.rb
+app/services/legal_chatbot/gdpr_breach_sources.rb
 app/services/legal_chatbot/general_noise_scope.rb
 app/services/legal_chatbot/generation_trace.rb
 app/services/legal_chatbot/generic_deadline_clarification.rb

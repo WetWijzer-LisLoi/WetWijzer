@@ -406,7 +406,8 @@ module LegalChatbot
       registries = [LegalFactProvider::GDPR_PROCESSOR_OFFICIAL_SOURCES,
                     LegalFactProvider::GDPR_RETENTION_OFFICIAL_SOURCES,
                     LegalFactProvider::GDPR_DIRECT_MARKETING_OFFICIAL_SOURCES,
-                    LegalFactProvider::GDPR_COMMERCIAL_WEBSITE_OFFICIAL_SOURCES]
+                    LegalFactProvider::GDPR_COMMERCIAL_WEBSITE_OFFICIAL_SOURCES,
+                    LegalFactProvider::GDPR_BREACH_OFFICIAL_SOURCES]
       registries.flat_map { |registry| registry.fetch(language, []) }.find do |record|
         record.fetch(:official_source_id) == identity && record.fetch(:url) == url &&
           record.fetch(:article_number) == number && record.fetch(:article_text) == raw

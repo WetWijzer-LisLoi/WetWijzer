@@ -465,7 +465,10 @@ module LegalChatbot
       # concern specialised regimes (including police and intelligence), not
       # the recruiter's/general controller's universal retention policy.
       # Keep domestic retrieval intact for questions about those regimes.
-      if LegalFactProvider.gdpr_retention_question?(question)
+      # The same holds for an ordinary data breach (Sol 2026-11-18 21:35:34Z):
+      # 2018040581 Arts. 61 and 62 are Title 2, which Art. 27 limits to the
+      # authorities competent for criminal matters; GDPR Arts. 33 and 34 apply.
+      if LegalFactProvider.gdpr_retention_question?(question) || LegalFactProvider.gdpr_breach_question?(question)
         leg_articles = leg_articles.reject { |article| domestic_gdpr_retention_substitute?(article, question) }
       end
 

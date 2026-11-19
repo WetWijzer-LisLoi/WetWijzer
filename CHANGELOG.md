@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.69] - 2026-11-19
+
+### Fixed
+- Chatbot: a question about a personal data breach (for example "Wanneer en hoe moet ik een datalek melden?", in Dutch, French, German or English) now gets GDPR Article 33 (notifying the supervisory authority, within 72 hours where feasible) and Article 34 (informing the people concerned) from the official EUR-Lex text, and its other sources are limited to data-protection rules. The Belgian rules for police and criminal-justice authorities (Title 2 of the Act of 30 July 2018) no longer stand in for the GDPR, and unrelated sources such as animal by-products rules are dropped. A question about a breach by the police or the intelligence services keeps the Belgian rules.
+
 ## [1.1.68] - 2026-11-19
 
 ### Changed

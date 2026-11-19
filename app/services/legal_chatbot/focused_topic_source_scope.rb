@@ -38,10 +38,16 @@ module LegalChatbot
     # police and civil protection, medical imaging) are not the employer's.
     CAMERA_SPECIALIST_TITLE_PATTERN = /\b(?:scheepvaart\p{L}*|maritie\p{L}*|maritime\p{L}*|Seeschifffahrt\p{L}*|voetbal\p{L}*|football|Fu[ßs]ball\p{L}*|politieambt|politiediensten|fonction\s+de\s+police|services\s+de\s+police|civiele\s+veiligheid|s[ée]curit[ée]\s+civile|gamma[-\s]?cam[ée]ra\p{L}*|scintillation|nucle[aï]\p{L}*|nucl[ée]aire)/iu
 
+    # "Wanneer en hoe moet ik een datalek melden?" also showed an animal
+    # by-products card. GDPR Arts. 33 and 34 come from the official EUR-Lex
+    # pack (GdprBreachSources); the Belgian cards stay data-protection rules.
+    DATA_PROTECTION_FAMILY_PATTERN = /\b(?:persoonsgegevens|gegevensbescherming|bescherming\s+van\s+de\s+persoonlijke\s+levenssfeer|donn[ée]es\s+[àa]\s+caract[èe]re\s+personnel|protection\s+des\s+donn[ée]es|personenbezogen\p{L}*\s+Daten|Datenschutz\p{L}*|personal\s+data|data\s+protection|AVG|GDPR|RGPD|DSGVO)\b/iu
+
     TOPICS = {
       gas_fine_challenge: GAS_FAMILY_PATTERN,
       internet_image: COPYRIGHT_FAMILY_PATTERN,
-      workplace_camera: CAMERA_FAMILY_PATTERN
+      workplace_camera: CAMERA_FAMILY_PATTERN,
+      data_breach: DATA_PROTECTION_FAMILY_PATTERN
     }.freeze
 
     # Title words too common to say which instrument the question names.
@@ -58,6 +64,7 @@ module LegalChatbot
       found << :gas_fine_challenge if text.match?(GAS_FINE_PATTERN) && text.match?(CHALLENGE_PATTERN)
       found << :internet_image if text.match?(IMAGE_PATTERN) && text.match?(ONLINE_ORIGIN_PATTERN)
       found << :workplace_camera if text.match?(CAMERA_PATTERN) && text.match?(WORKPLACE_PATTERN)
+      found << :data_breach if GdprBreachSources.topic?(text)
       found
     end
 

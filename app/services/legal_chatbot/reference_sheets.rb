@@ -320,6 +320,7 @@ module LegalChatbot
       return LegalFactProvider.gdpr_retention_question?(question) if key == LegalFactProvider::GDPR_RETENTION_TOPIC_KEY
       return LegalFactProvider.gdpr_direct_marketing_question?(question) if key == LegalFactProvider::GDPR_DIRECT_MARKETING_TOPIC_KEY
       return CommercialWebsiteIntent.topic?(question) if key == LegalFactProvider::GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY
+      return LegalFactProvider.gdpr_breach_question?(question) if key == LegalFactProvider::GDPR_BREACH_TOPIC_KEY
 
       # "opzeg(termijn)" is shared by employment, leases, insurance, telecom,
       # and subscriptions. Do not inject the employment ladder into a
