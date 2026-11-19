@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.76] - 2026-11-19
+
+### Fixed
+- Sample questions: 155 questions filed under the wrong subject now sit under their own, and the sidebar, the category filter and the search follow. They include the immigration, criminal, consumer, company and education questions that a bulk addition in January 2026 had put under general tax; for example, "Welke soorten visa bestaan er voor België?" is now under immigration law. They also include inheritance questions that sat under family law, social security questions under employment law, and GDPR questions under consumer law.
+- Sample questions: "Kan ik getuigen weigeren?" could mean refusing to testify or objecting to a witness. It now asks the latter, as its French, German and English versions already did: "Kan ik als partij bezwaar maken tegen het horen van een getuige?". The witness's own duty to testify is a new question. The French, German and English versions of "Welke soorten visa bestaan er voor België?" now ask the same question as the Dutch one.
+- Chatbot: a tax citation that names a numbered royal decree ("KB nr. 20", "K.B. 20", "AR n° 20") now verifies only on a link to the decree with that number, no longer on a link to the royal decree implementing WIB 92. A date in a label ("KB 20 juli 1970", "KB 20.07.1970") is not read as a decree number.
+
 ## [1.1.75] - 2026-11-19
 
 ### Fixed

@@ -631,21 +631,21 @@
   },
   {
     "nl": "Wat is uitzendarbeid?",
-    "category": "ARBEIDSRECHT - COLLECTIEF",
+    "category": "ARBEIDSRECHT - INDIVIDUEEL",
     "en": "What is temporary agency work?",
     "fr": "Qu'est-ce que le travail intérimaire ?",
     "de": "Was ist Arbeitnehmerüberlassung (Zeitarbeit)?"
   },
   {
     "nl": "Maximumduur uitzendarbeid?",
-    "category": "ARBEIDSRECHT - COLLECTIEF",
+    "category": "ARBEIDSRECHT - INDIVIDUEEL",
     "en": "Maximum duration of temporary agency work?",
     "fr": "Quelle est la durée maximale du travail intérimaire ?",
     "de": "Was ist die Höchstdauer der Arbeitnehmerüberlassung?"
   },
   {
     "nl": "Gelijke behandeling uitzendkracht?",
-    "category": "ARBEIDSRECHT - COLLECTIEF",
+    "category": "ARBEIDSRECHT - INDIVIDUEEL",
     "en": "Equal treatment of agency workers?",
     "fr": "Quelle est la règle d'égalité de traitement pour les travailleurs intérimaires ?",
     "de": "Welche Gleichbehandlungsregeln gelten für Zeitarbeitnehmer?"
@@ -659,7 +659,7 @@
   },
   {
     "nl": "Contract uitzendkracht?",
-    "category": "ARBEIDSRECHT - COLLECTIEF",
+    "category": "ARBEIDSRECHT - INDIVIDUEEL",
     "en": "Contract for agency worker?",
     "fr": "Quel est le type de contrat applicable aux travailleurs intérimaires ?",
     "de": "Welchen Vertrag hat ein Zeitarbeitnehmer?"
@@ -694,7 +694,7 @@
   },
   {
     "nl": "Arbeidsongeval melden?",
-    "category": "ARBEIDSRECHT - COLLECTIEF",
+    "category": "ARBEIDSRECHT - ZIEKTE",
     "en": "Report workplace accidents?",
     "fr": "Faut-il déclarer un accident du travail ?",
     "de": "Wie ist ein Arbeitsunfall zu melden?"
@@ -722,14 +722,14 @@
   },
   {
     "nl": "Re-integratie langdurig zieken?",
-    "category": "ARBEIDSRECHT - COLLECTIEF",
+    "category": "ARBEIDSRECHT - ZIEKTE",
     "en": "Reintegration of long-term sick?",
     "fr": "Quelles sont les règles de réintégration pour les travailleurs en incapacité de longue durée ?",
     "de": "Wie erfolgt die Wiedereingliederung langzeiterkrankter Arbeitnehmer?"
   },
   {
     "nl": "Wat is discriminatie op werk?",
-    "category": "ARBEIDSRECHT - COLLECTIEF",
+    "category": "ARBEIDSRECHT",
     "en": "What is discrimination at work?",
     "fr": "Qu'est-ce que la discrimination au travail ?",
     "de": "Was ist Diskriminierung am Arbeitsplatz?"
@@ -750,14 +750,14 @@
   },
   {
     "nl": "Discriminatie bij sollicitatie?",
-    "category": "ARBEIDSRECHT - COLLECTIEF",
+    "category": "ARBEIDSRECHT - INDIVIDUEEL",
     "en": "Discrimination in job applications?",
     "fr": "Quelles sont les règles relatives à la discrimination lors d'une candidature ?",
     "de": "Wie verhält es sich mit Diskriminierung bei Bewerbungen?"
   },
   {
     "nl": "Leeftijdsdiscriminatie werk?",
-    "category": "ARBEIDSRECHT - COLLECTIEF",
+    "category": "ARBEIDSRECHT - INDIVIDUEEL",
     "en": "Age discrimination at work?",
     "fr": "Quelle est la réglementation sur la discrimination fondée sur l'âge au travail ?",
     "de": "Wie ist Altersdiskriminierung am Arbeitsplatz geregelt?"
@@ -1590,7 +1590,7 @@
   },
   {
     "nl": "Wie zijn wettelijke erfgenamen?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Who are legal heirs?",
     "fr": "Qui sont les héritiers légaux ?",
     "de": "Wer sind die gesetzlichen Erben?"
@@ -1618,14 +1618,14 @@
   },
   {
     "nl": "Hoeveel bedraagt het reservatair erfdeel van de erfgenamen?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Reserved heirs?",
     "fr": "Héritiers réservataires ?",
     "de": "Pflichtteilsberechtigte Erben?"
   },
   {
     "nl": "Beschikbaar deel nalatenschap?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Available part of the estate?",
     "fr": "Quotité disponible de la succession ?",
     "de": "Verfügbarer Teil des Nachlasses?"
@@ -1639,35 +1639,35 @@
   },
   {
     "nl": "Erfenis aanvaarden of verwerpen?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Accepting or rejecting an inheritance?",
     "fr": "Accepter ou renoncer à une succession ?",
     "de": "Erbschaft annehmen oder ausschlagen?"
   },
   {
     "nl": "Hoe testament opmaken?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "How to draft a will?",
     "fr": "Comment rédiger un testament ?",
     "de": "Wie verfasst man ein Testament?"
   },
   {
     "nl": "Eigenhandig testament?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Handwritten will?",
     "fr": "Testament olographe ?",
     "de": "Eigenhändiges Testament?"
   },
   {
     "nl": "Notarieel testament?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Notarial will?",
     "fr": "Testament notarié ?",
     "de": "Notarielles Testament?"
   },
   {
     "nl": "Testament herroepen?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Revoking a will?",
     "fr": "Révoquer un testament ?",
     "de": "Testament widerrufen?"
@@ -3144,7 +3144,7 @@
   },
   {
     "nl": "SWT werkloosheid met bedrijfstoeslag?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "SWT unemployment with company supplement?",
     "fr": "Régime de chômage avec complément d'entreprise (SWT) ?",
     "de": "SWT: Arbeitslosigkeit mit Betriebzulage?"
@@ -3158,28 +3158,28 @@
   },
   {
     "nl": "Brugpensioen leeftijd?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "Bridge pension age?",
     "fr": "Âge de la pré-pension ?",
     "de": "Alter für den Vorruhestand?"
   },
   {
     "nl": "Anciënniteitsvoorwaarde SWT?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "Seniority requirement for SWT?",
     "fr": "Condition d'ancienneté pour le SWT ?",
     "de": "Dienstaltersvoraussetzung für SWT?"
   },
   {
     "nl": "Bedrijfstoeslag berekening?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "Company supplement calculation?",
     "fr": "Calcul du complément d'entreprise ?",
     "de": "Berechnung der Betriebzulage?"
   },
   {
     "nl": "Vrijstelling beschikbaarheid SWT?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "Exemption from availability for SWT?",
     "fr": "Exemption de disponibilité pour le SWT ?",
     "de": "Befreiung von der Verfügbarkeit beim SWT?"
@@ -3473,7 +3473,7 @@
   },
   {
     "nl": "Ouderschapsverlof uitkering?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "Parental leave benefits?",
     "fr": "Allocation pendant le congé parental ?",
     "de": "Elternzeit: Leistung?"
@@ -3494,7 +3494,7 @@
   },
   {
     "nl": "Thematisch verlof premie?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "Thematic leave bonus?",
     "fr": "Prime pour congé thématique ?",
     "de": "Thematische Freistellung: Prämie?"
@@ -3571,14 +3571,14 @@
   },
   {
     "nl": "Maaltijdcheques fiscaal?",
-    "category": "ARBEIDSRECHT",
+    "category": "FISCAAL - PERSONENBELASTING",
     "en": "Meal vouchers tax?",
     "fr": "Chèques-repas : fiscalité ?",
     "de": "Steuerliche Behandlung von Mahlzeitenschecks?"
   },
   {
     "nl": "Ecocheques belasting?",
-    "category": "ARBEIDSRECHT",
+    "category": "FISCAAL - PERSONENBELASTING",
     "en": "Eco vouchers tax?",
     "fr": "Écochèques : fiscalité ?",
     "de": "Besteuerung von Öko-Schecks?"
@@ -3697,14 +3697,14 @@
   },
   {
     "nl": "Studentenarbeid vakantie?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT - VAKANTIE",
     "en": "Student work vacation?",
     "fr": "Travail des étudiants pendant les vacances ?",
     "de": "Ferienarbeit von Studierenden?"
   },
   {
     "nl": "Jobstudent leeftijd?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT - INDIVIDUEEL",
     "en": "Student age?",
     "fr": "Âge du jobiste ?",
     "de": "Alter von Jobstudierenden?"
@@ -3718,14 +3718,14 @@
   },
   {
     "nl": "Flexi-job voorwaarden?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT - INDIVIDUEEL",
     "en": "Flexi-job conditions?",
     "fr": "Conditions du flexi-job ?",
     "de": "Bedingungen für Flexi-Jobs?"
   },
   {
     "nl": "Platform werker statuut?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT - INDIVIDUEEL",
     "en": "Platform worker status?",
     "fr": "Statut du travailleur de plateforme ?",
     "de": "Status von Plattformarbeitern?"
@@ -4180,7 +4180,7 @@
   },
   {
     "nl": "Elektronisch voorschrift?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "MEDISCH",
     "en": "Electronic prescription?",
     "fr": "Ordonnance électronique ?",
     "de": "Elektronisches Rezept?"
@@ -4194,14 +4194,14 @@
   },
   {
     "nl": "Voorschrijven op stofnaam?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "MEDISCH",
     "en": "Prescribing by substance name?",
     "fr": "Prescrire sous dénomination commune internationale (DCI) ?",
     "de": "Verschreibung nach Wirkstoffname?"
   },
   {
     "nl": "Magistrale bereiding?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "MEDISCH",
     "en": "Magistral preparation?",
     "fr": "Préparation magistrale ?",
     "de": "Magistrale Zubereitung?"
@@ -4544,77 +4544,77 @@
   },
   {
     "nl": "Plaatsvervanging erfrecht?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Substitution in inheritance law?",
     "fr": "Substitution successorale?",
     "de": "Ersatzberufung im Erbrecht?"
   },
   {
     "nl": "Erfrecht per hoofd of per staak?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Inheritance law per head or per stake?",
     "fr": "Droit successoral par tête ou par branche?",
     "de": "Erbrecht per capita oder per stirpes?"
   },
   {
     "nl": "Onwaardigheid erfgenaam?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Disqualification of heir?",
     "fr": "Indignité de l'héritier?",
     "de": "Unwürdigkeit des Erben?"
   },
   {
     "nl": "Uitsluiting erfgenaam?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Exclusion of heir?",
     "fr": "Exclusion d'un héritier?",
     "de": "Ausschluss eines Erben?"
   },
   {
     "nl": "Verklaring erfrecht aanvaarding?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Declaration of acceptance of inheritance?",
     "fr": "Déclaration d'acceptation de la succession?",
     "de": "Feststellung des Erbrechts und Annahme?"
   },
   {
     "nl": "Termijn aanvaarding erfenis?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Deadline for acceptance of inheritance?",
     "fr": "Délai d'acceptation de la succession?",
     "de": "Frist für die Annahme der Erbschaft?"
   },
   {
     "nl": "Verwerping nalatenschap?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Rejection of inheritance?",
     "fr": "Renonciation à la succession?",
     "de": "Ausschlagung der Erbschaft?"
   },
   {
     "nl": "Zuivere aanvaarding erfenis?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Pure acceptance of inheritance?",
     "fr": "Acceptation pure et simple de la succession?",
     "de": "Unbeschränkte Annahme der Erbschaft?"
   },
   {
     "nl": "Beneficiaire aanvaarding?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Beneficial acceptance?",
     "fr": "Acceptation sous bénéfice d'inventaire?",
     "de": "Annahme der Erbschaft unter dem Vorbehalt der Inventarerrichtung?"
   },
   {
     "nl": "Vereffening nalatenschap?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Settlement of estate?",
     "fr": "Liquidation de la succession?",
     "de": "Abwicklung des Nachlasses?"
   },
   {
     "nl": "Verdeling nalatenschap?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Distribution of estate?",
     "fr": "Partage de la succession?",
     "de": "Verteilung des Nachlasses?"
@@ -4642,14 +4642,14 @@
   },
   {
     "nl": "Inbreng schenking erfenis?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Contribution of gift to inheritance?",
     "fr": "Rapport d'une donation à la succession?",
     "de": "Einbringung von Schenkungen in die Erbschaft?"
   },
   {
     "nl": "Inkorting schenking?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Reduction of gift?",
     "fr": "Réduction d'une donation?",
     "de": "Kürzung einer Schenkung?"
@@ -4670,21 +4670,21 @@
   },
   {
     "nl": "Wanneer is een erfovereenkomst geldig?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Inheritance agreement?",
     "fr": "Convention successorale?",
     "de": "Erbvertrag?"
   },
   {
     "nl": "Globale erfovereenkomst?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Global inheritance agreement?",
     "fr": "Convention successorale globale?",
     "de": "Globaler Erbvertrag?"
   },
   {
     "nl": "Punctuele erfovereenkomst?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Punctual inheritance agreement?",
     "fr": "Convention successorale ponctuelle?",
     "de": "Punktuelle Erbvereinbarung?"
@@ -4705,35 +4705,35 @@
   },
   {
     "nl": "Legaat algemene titel?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Legacy general title?",
     "fr": "Légat à titre universel?",
     "de": "Allgemeines Vermächtnis?"
   },
   {
     "nl": "Wat is een bijzonder legaat in een testament?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Special legacy?",
     "fr": "Légat particulier?",
     "de": "Besonderes Vermächtnis?"
   },
   {
     "nl": "Hoe werkt een legaat onder last in een testament?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Legacy under burden?",
     "fr": "Légat sous charge?",
     "de": "Vermächtnis unter Auflage?"
   },
   {
     "nl": "Testamentuitvoerder?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Executor of the will?",
     "fr": "Exécuteur testamentaire?",
     "de": "Testamentsvollstrecker?"
   },
   {
     "nl": "Herroeping testament automatisch?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Automatic revocation of will?",
     "fr": "Révocation automatique du testament?",
     "de": "Wird ein Testament automatisch widerrufen?"
@@ -4747,21 +4747,21 @@
   },
   {
     "nl": "Internationaal testament?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "International will?",
     "fr": "Testament international?",
     "de": "Internationales Testament?"
   },
   {
     "nl": "Olografisch testament?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Holographic will?",
     "fr": "Testament olographe?",
     "de": "Eigenhändiges Testament?"
   },
   {
     "nl": "Aanvullend testament?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "en": "Supplementary will?",
     "fr": "Testament complémentaire?",
     "de": "Ergänzendes Testament?"
@@ -6576,7 +6576,7 @@
     "nl": "Wat zijn de regels voor ziekteverlof in België?",
     "en": "What are the rules for sick leave in Belgium?",
     "fr": "Quelles sont les règles pour le congé maladie en Belgique?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT - ZIEKTE",
     "de": "Welche Regelungen gelten für den Krankenstand in Belgien?"
   },
   {
@@ -6646,7 +6646,7 @@
     "nl": "Mag mijn werkgever mijn e-mails lezen?",
     "en": "Can my employer read my emails?",
     "fr": "Mon employeur peut-il lire mes e-mails?",
-    "category": "ARBEIDSRECHT",
+    "category": "PRIVACY",
     "de": "Darf mein Arbeitgeber meine E-Mails lesen?"
   },
   {
@@ -6688,7 +6688,7 @@
     "nl": "Wat is het leefloon?",
     "en": "What is the minimum income?",
     "fr": "Qu'est-ce que le revenu d'intégration sociale?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Was ist die Mindestsicherung?"
   },
   {
@@ -6709,14 +6709,14 @@
     "nl": "Heb ik recht op moederschapsverlof?",
     "en": "Am I entitled to maternity leave?",
     "fr": "Ai-je droit au congé de maternité?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT - VAKANTIE",
     "de": "Habe ich Anspruch auf Mutterschaftsurlaub?"
   },
   {
     "nl": "Wat is ouderschapsverlof?",
     "en": "What is parental leave?",
     "fr": "Qu'est-ce que le congé parental?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT - VAKANTIE",
     "de": "Was ist Elternzeit?"
   },
   {
@@ -6821,7 +6821,7 @@
     "nl": "Wat zijn de regels voor co-ouderschap?",
     "en": "What are the rules for co-parenting?",
     "fr": "Quelles sont les règles pour la garde alternée?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "FAMILIERECHT",
     "de": "Welche Regelungen gelten für das gemeinsame Sorgerecht (Co-Parenting)?"
   },
   {
@@ -6947,7 +6947,7 @@
     "nl": "Hoe lang is de opzegtermijn voor een huurcontract?",
     "en": "How long is the notice period for a rental contract?",
     "fr": "Quel est le délai de préavis pour un contrat de bail?",
-    "category": "ARBEIDSRECHT",
+    "category": "HUURRECHT",
     "de": "Wie lang ist die Kündigungsfrist für einen Mietvertrag?"
   },
   {
@@ -7262,7 +7262,7 @@
     "nl": "Mag mijn werkgever camera's plaatsen?",
     "en": "Can my employer install cameras?",
     "fr": "Mon employeur peut-il installer des caméras?",
-    "category": "ARBEIDSRECHT",
+    "category": "PRIVACY",
     "de": "Darf mein Arbeitgeber Überwachungskameras installieren?"
   },
   {
@@ -7500,7 +7500,7 @@
     "nl": "Als ik ontslagen word tijdens mijn ziekte, heb ik dan recht op werkloosheid?",
     "en": "If I am dismissed while I am ill, am I entitled to unemployment benefits?",
     "fr": "Si je suis licencié pendant ma maladie, ai-je droit au chômage?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Wenn ich während meiner Krankheit gekündigt werde, habe ich dann Anspruch auf Arbeitslosengeld?"
   },
   {
@@ -7521,14 +7521,14 @@
     "nl": "Hoe beïnvloedt mijn pensioen mijn erfenis?",
     "en": "How does my pension affect my estate?",
     "fr": "Comment ma pension affecte-t-elle ma succession?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ERFRECHT",
     "de": "Wie beeinflusst meine Rente meine Erbschaft?"
   },
   {
     "nl": "Kan mijn werkgever mijn GDPR-rechten beperken?",
     "en": "Can my employer restrict my GDPR rights?",
     "fr": "Mon employeur peut-il limiter mes droits RGPD?",
-    "category": "ARBEIDSRECHT",
+    "category": "PRIVACY",
     "de": "Kann mein Arbeitgeber meine DSGVO-Rechte einschränken?"
   },
   {
@@ -7974,7 +7974,7 @@
   },
   {
     "nl": "Wat is schijnzelfstandigheid?",
-    "category": "ARBEIDSRECHT - ONTSLAG",
+    "category": "ARBEIDSRECHT - INDIVIDUEEL",
     "en": "What is false self-employment?",
     "fr": "Qu'est-ce que la pseudo-indépendance ?",
     "de": "Was versteht man unter Scheinselbstständigkeit?"
@@ -8037,14 +8037,14 @@
   },
   {
     "nl": "Hoe bepaal ik welk paritair comité van toepassing is?",
-    "category": "ARBEIDSRECHT - LOON",
+    "category": "ARBEIDSRECHT - COLLECTIEF",
     "en": "How is the joint committee determined?",
     "fr": "Comment déterminer le comité paritaire compétent ?",
     "de": "Wie bestimmt man den zuständigen paritätischen Ausschuss?"
   },
   {
     "nl": "Wat regelt paritair comité 200 voor bedienden?",
-    "category": "ARBEIDSRECHT - LOON",
+    "category": "ARBEIDSRECHT - COLLECTIEF",
     "en": "What is Joint Committee 200?",
     "fr": "Qu'est-ce que le comité paritaire 200 ?",
     "de": "Was ist das Paritätische Komitee (PC 200)?"
@@ -8170,7 +8170,7 @@
   },
   {
     "nl": "Wat zijn de voorwaarden om als flexi-jobber te werken?",
-    "category": "ARBEIDSRECHT - LOON",
+    "category": "ARBEIDSRECHT - INDIVIDUEEL",
     "en": "What is a flexi-job?",
     "fr": "Qu'est-ce que le flexi-job ?",
     "de": "Was versteht man unter einem Flexi-Job?"
@@ -9717,7 +9717,7 @@
   },
   {
     "nl": "Hoe wordt de opzegvergoeding berekend bij ontslag?",
-    "category": "HUURRECHT",
+    "category": "ARBEIDSRECHT - ONTSLAG",
     "en": "Compensation on termination?",
     "fr": "Indemnité de congé ?",
     "de": "Kündigungsentschädigung?"
@@ -10270,14 +10270,14 @@
   },
   {
     "nl": "Wanneer is de GDPR van toepassing op mijn bedrijf?",
-    "category": "CONSUMENTENRECHT",
+    "category": "PRIVACY",
     "en": "Does the GDPR apply?",
     "de": "Anwendbarkeit der DSGVO?",
     "fr": "Application du RGPD ?"
   },
   {
     "nl": "Hoe oefen ik mijn recht op vergetelheid uit onder de GDPR?",
-    "category": "CONSUMENTENRECHT",
+    "category": "PRIVACY",
     "en": "What is the right to be forgotten?",
     "de": "Recht auf Vergessenwerden?",
     "fr": "Droit à l'effacement (droit à l'oubli) ?"
@@ -10326,7 +10326,7 @@
   },
   {
     "nl": "Wat moet ik weten over de Belgische cookiewetgeving?",
-    "category": "CONSUMENTENRECHT",
+    "category": "PRIVACY",
     "en": "Cookie legislation?",
     "de": "Cookie-Gesetzgebung?",
     "fr": "Législation relative aux cookies ?"
@@ -11462,7 +11462,7 @@
     "nl": "Mag mijn werkgever mijn e-mails controleren?",
     "fr": "Mon employeur est-il autorisé à contrôler mes e-mails ?",
     "en": "May my employer monitor my e-mails?",
-    "category": "ARBEIDSRECHT",
+    "category": "PRIVACY",
     "de": "Darf mein Arbeitgeber meine E-Mails kontrollieren?"
   },
   {
@@ -11637,7 +11637,7 @@
     "nl": "Wat zijn de voorwaarden voor hospitalisatieverzekering?",
     "fr": "Quelles sont les conditions pour une assurance hospitalisation ?",
     "en": "What are the conditions for hospitalisation insurance?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "VERZEKERINGEN",
     "de": "Welche Voraussetzungen gelten für eine Krankenhausversicherung?"
   },
   {
@@ -11665,7 +11665,7 @@
     "nl": "Wat kost hoger onderwijs?",
     "fr": "Combien coûte l'enseignement supérieur ?",
     "en": "How much does higher education cost?",
-    "category": "FISCAAL",
+    "category": "ALGEMEEN",
     "de": "Was kostet das Hochschulstudium?"
   },
   {
@@ -11677,10 +11677,10 @@
   },
   {
     "nl": "Welke soorten visa bestaan er voor België?",
-    "fr": "Qu'est-ce qu'un visa ?",
-    "en": "What is a visa?",
-    "category": "FISCAAL",
-    "de": "Was ist ein Visum?"
+    "fr": "Quels types de visa existent pour la Belgique ?",
+    "en": "What types of visa are there for Belgium?",
+    "category": "VREEMDELINGENRECHT",
+    "de": "Welche Arten von Visa gibt es für Belgien?"
   },
   {
     "nl": "Wat is een globaal medisch dossier?",
@@ -11697,31 +11697,31 @@
     "de": "Kann ich eine GAS-Sanktion anfechten?"
   },
   {
-    "nl": "Kan ik getuigen weigeren?",
-    "fr": "Puis-je refuser des témoins ?",
-    "en": "Can I refuse witnesses?",
-    "category": "FISCAAL",
-    "de": "Kann ich Zeugen ablehnen?"
+    "nl": "Kan ik als partij bezwaar maken tegen het horen van een getuige?",
+    "fr": "Puis-je, en tant que partie, m'opposer à l'audition d'un témoin ?",
+    "en": "Can I, as a party, object to a witness being heard?",
+    "category": "PROCEDURERECHT",
+    "de": "Kann ich als Partei der Vernehmung eines Zeugen widersprechen?"
   },
   {
     "nl": "Wat is subsidiaire bescherming?",
     "fr": "Qu'est-ce que la protection subsidiaire ?",
     "en": "What is subsidiary protection?",
-    "category": "FISCAAL",
+    "category": "VREEMDELINGENRECHT",
     "de": "Was ist subsidiärer Schutz?"
   },
   {
     "nl": "Kan ik ontslag nemen als ik verdacht word van geweld?",
     "fr": "Puis-je démissionner si je suis soupçonné de violences ?",
     "en": "Can I resign if I am suspected of violence?",
-    "category": "STRAFRECHT",
+    "category": "ARBEIDSRECHT - ONTSLAG",
     "de": "Kann ich meinen Arbeitsvertrag kündigen, wenn ich des Gewaltdelikts verdächtigt werde?"
   },
   {
     "nl": "Hoeveel kost een woning kopen in Vlaanderen?",
     "fr": "Combien coûte l'achat d'un logement en Flandre ?",
     "en": "How much does it cost to buy a house in Flanders?",
-    "category": "FISCAAL",
+    "category": "VASTGOEDRECHT",
     "de": "Was kostet der Kauf einer Immobilie in Flandern?"
   },
   {
@@ -11812,7 +11812,7 @@
     "nl": "Wat is de wachttijd voor hospitalisatieverzekering?",
     "fr": "Quel est le délai d'attente pour une assurance hospitalisation ?",
     "en": "What is the waiting period for hospitalisation insurance?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "VERZEKERINGEN",
     "de": "Wie hoch ist die Wartezeit für eine Krankenhausversicherung?"
   },
   {
@@ -11847,7 +11847,7 @@
     "nl": "Kan ik een studiejaar herkansen?",
     "fr": "Puis-je repasser une année d'études ?",
     "en": "Can I repeat an academic year?",
-    "category": "FISCAAL",
+    "category": "ALGEMEEN",
     "de": "Kann ich ein Studienjahr wiederholen?"
   },
   {
@@ -12043,7 +12043,7 @@
     "nl": "Wat is een eenmanszaak?",
     "fr": "Qu'est-ce qu'une entreprise individuelle ?",
     "en": "What is a sole proprietorship?",
-    "category": "FISCAAL",
+    "category": "VENNOOTSCHAPSRECHT",
     "de": "Was ist ein Einzelunternehmen?"
   },
   {
@@ -12057,7 +12057,7 @@
     "nl": "Wat gebeurt er met mijn hospitalisatieverzekering bij burn-out?",
     "fr": "Que devient mon assurance hospitalisation en cas de burn-out ?",
     "en": "What happens to my hospitalisation insurance in the event of burnout?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "VERZEKERINGEN",
     "de": "Was geschieht mit meiner Krankenhausversicherung bei einem Burn-out?"
   },
   {
@@ -12085,14 +12085,14 @@
     "nl": "Hoelang heb ik recht op hospitalisatieverzekering?",
     "fr": "Combien de temps ai-je droit à une assurance hospitalisation ?",
     "en": "How long am I entitled to hospitalisation insurance?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "VERZEKERINGEN",
     "de": "Wie lange habe ich Anspruch auf eine Krankenhausversicherung?"
   },
   {
     "nl": "Wat is een enkelband?",
     "fr": "Qu'est-ce qu'un bracelet électronique ?",
     "en": "What is an electronic ankle monitor?",
-    "category": "FISCAAL",
+    "category": "STRAFRECHT",
     "de": "Was ist eine elektronische Fußfessel?"
   },
   {
@@ -12155,7 +12155,7 @@
     "nl": "Hoe vraag ik een firmawagen aan?",
     "fr": "Comment demander une voiture de société ?",
     "en": "How do I apply for a company car?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT - LOON",
     "de": "Wie beantrage ich einen Firmenwagen?"
   },
   {
@@ -12204,7 +12204,7 @@
     "nl": "Hoelang heb ik recht op een firmawagen?",
     "fr": "Pendant combien de temps ai-je droit à une voiture de société ?",
     "en": "How long am I entitled to a company car?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT - LOON",
     "de": "Wie lange habe ich Anspruch auf einen Firmenwagen?"
   },
   {
@@ -12232,7 +12232,7 @@
     "nl": "Kan ik ontslag nemen als ik verdacht word van oplichting?",
     "fr": "Puis-je démissionner si je suis soupçonné d'escroquerie ?",
     "en": "Can I resign if I am suspected of fraud?",
-    "category": "STRAFRECHT",
+    "category": "ARBEIDSRECHT - ONTSLAG",
     "de": "Kann ich kündigen, wenn ich des Betrugs verdächtigt werde?"
   },
   {
@@ -12246,7 +12246,7 @@
     "nl": "Wat is een arbeidskaart?",
     "fr": "Qu'est-ce qu'une carte de travail ?",
     "en": "What is a work permit?",
-    "category": "FISCAAL",
+    "category": "VREEMDELINGENRECHT",
     "de": "Was ist eine Arbeitskarte?"
   },
   {
@@ -12260,14 +12260,14 @@
     "nl": "Wat is een administratief beroep?",
     "fr": "Qu'est-ce que le recours administratif ?",
     "en": "What is an administrative appeal?",
-    "category": "FISCAAL",
+    "category": "BESTUURSRECHT",
     "de": "Was ist ein administratives Rechtsmittel?"
   },
   {
     "nl": "Hoe stel ik een testament op voor mijn kinderen?",
     "fr": "Comment rédiger un testament en faveur de mes enfants ?",
     "en": "How do I draw up a will for my children?",
-    "category": "FAMILIERECHT",
+    "category": "ERFRECHT",
     "de": "Wie verfasse ich ein Testament für meine Kinder?"
   },
   {
@@ -12337,7 +12337,7 @@
     "nl": "Kan ik studeren en werken combineren?",
     "fr": "Puis-je concilier études et travail ?",
     "en": "Can I combine studying with employment?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Kann ich Studium und Berufstätigkeit kombinieren?"
   },
   {
@@ -12386,7 +12386,7 @@
     "nl": "Kan ik medicatie terugbetaald krijgen?",
     "fr": "Puis-je obtenir le remboursement de médicaments ?",
     "en": "Can I obtain reimbursement for medication?",
-    "category": "FISCAAL",
+    "category": "SOCIALE ZEKERHEID",
     "de": "Kann ich Medikamente erstattet bekommen?"
   },
   {
@@ -12435,7 +12435,7 @@
     "nl": "Mag mijn werkgever mijn telefoon controleren?",
     "fr": "Mon employeur est-il autorisé à contrôler mon téléphone ?",
     "en": "May my employer inspect my phone?",
-    "category": "ARBEIDSRECHT",
+    "category": "PRIVACY",
     "de": "Darf mein Arbeitgeber mein Telefon kontrollieren?"
   },
   {
@@ -12477,7 +12477,7 @@
     "nl": "Welke opzeggingstermijn geldt als ik zelf ontslag neem?",
     "fr": "Quel délai de préavis s'applique si je démissionne ?",
     "en": "What notice period applies if I resign?",
-    "category": "BESTUURSRECHT",
+    "category": "ARBEIDSRECHT - ONTSLAG",
     "de": "Welche Kündigungsfrist gilt, wenn ich selbst kündige?"
   },
   {
@@ -12547,7 +12547,7 @@
     "nl": "Kan ik ontslag nemen als ik verdacht word van belastingfraude?",
     "fr": "Puis-je démissionner si je suis soupçonné de fraude fiscale ?",
     "en": "Can I tender my resignation if I am suspected of tax fraud?",
-    "category": "STRAFRECHT",
+    "category": "ARBEIDSRECHT - ONTSLAG",
     "de": "Kann ich kündigen, wenn gegen mich der Verdacht auf Steuerbetrug besteht?"
   },
   {
@@ -12582,7 +12582,7 @@
     "nl": "Hoeveel mag ik drinken achter het stuur?",
     "fr": "Quelle quantité d'alcool puis-je consommer au volant ?",
     "en": "How much alcohol am I permitted to consume while driving?",
-    "category": "FISCAAL",
+    "category": "VERKEERSRECHT",
     "de": "Wie viel darf ich hinter dem Steuer trinken?"
   },
   {
@@ -12743,7 +12743,7 @@
     "nl": "Hoe vraag ik hospitalisatieverzekering aan?",
     "fr": "Comment demander une assurance hospitalisation ?",
     "en": "How do I apply for hospitalisation insurance?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "VERZEKERINGEN",
     "de": "Wie beantrage ich eine Hospitalisationsversicherung?"
   },
   {
@@ -12764,7 +12764,7 @@
     "nl": "Kan ik een product terugsturen?",
     "fr": "Puis-je renvoyer un produit ?",
     "en": "Can I return a product?",
-    "category": "FISCAAL",
+    "category": "CONSUMENTENRECHT",
     "de": "Kann ich ein Produkt zurücksenden?"
   },
   {
@@ -12869,7 +12869,7 @@
     "nl": "Hoe vraag ik een studiebeurs aan?",
     "fr": "Comment demander une bourse d'études ?",
     "en": "How do I apply for a study grant?",
-    "category": "FISCAAL",
+    "category": "ALGEMEEN",
     "de": "Wie beantrage ich eine Studienbeihilfe?"
   },
   {
@@ -12953,7 +12953,7 @@
     "nl": "Hoe werkt pleegzorg en welke rechten heb ik?",
     "fr": "Qu'est-ce que le placement en famille d'accueil ?",
     "en": "What is foster care?",
-    "category": "FISCAAL",
+    "category": "FAMILIERECHT",
     "de": "Was versteht man unter Pflegefamilienbetreuung?"
   },
   {
@@ -12981,7 +12981,7 @@
     "nl": "Kan ik ontslag nemen als ik verdacht word van diefstal?",
     "fr": "Puis-je donner ma démission si je fais l'objet de soupçons de vol ?",
     "en": "Can I resign if I am suspected of theft?",
-    "category": "STRAFRECHT",
+    "category": "ARBEIDSRECHT - ONTSLAG",
     "de": "Kann ich kündigen, wenn ich des Diebstahls verdächtigt werde?"
   },
   {
@@ -13072,7 +13072,7 @@
     "nl": "Kan ik alleen een BV oprichten?",
     "fr": "Puis-je constituer seul une SRL ?",
     "en": "Can I establish a private limited company (BV) on my own?",
-    "category": "FISCAAL",
+    "category": "VENNOOTSCHAPSRECHT",
     "de": "Kann ich allein eine BV gründen?"
   },
   {
@@ -13093,7 +13093,7 @@
     "nl": "Kan ik twee jobs combineren?",
     "fr": "Puis-je cumuler deux emplois ?",
     "en": "Can I hold two jobs simultaneously?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Kann ich zwei Arbeitsverhältnisse gleichzeitig ausüben?"
   },
   {
@@ -13128,7 +13128,7 @@
     "nl": "Wat is een leerkrediet?",
     "fr": "Qu'est-ce qu'un leerkrediet ?",
     "en": "What is a learning credit?",
-    "category": "FISCAAL",
+    "category": "ALGEMEEN",
     "de": "Was ist ein Leerkrediet?"
   },
   {
@@ -13317,7 +13317,7 @@
     "nl": "Mag mijn werkgever mijn computer controleren?",
     "fr": "Mon employeur peut-il contrôler mon ordinateur ?",
     "en": "May my employer inspect my computer?",
-    "category": "ARBEIDSRECHT",
+    "category": "PRIVACY",
     "de": "Darf mein Arbeitgeber meinen Computer kontrollieren?"
   },
   {
@@ -13331,7 +13331,7 @@
     "nl": "Kan ik onterfd worden?",
     "fr": "Puis-je être déshérité ?",
     "en": "Can I be disinherited?",
-    "category": "FISCAAL",
+    "category": "ERFRECHT",
     "de": "Kann ich enterbt werden?"
   },
   {
@@ -13345,7 +13345,7 @@
     "nl": "Hoelang mag ik in België blijven als toerist?",
     "fr": "Combien de temps puis-je séjourner en Belgique en tant que touriste ?",
     "en": "How long may I stay in Belgium as a tourist?",
-    "category": "FISCAAL",
+    "category": "VREEMDELINGENRECHT",
     "de": "Wie lange darf ich als Tourist in Belgien bleiben?"
   },
   {
@@ -13359,7 +13359,7 @@
     "nl": "Wat zijn mijn rechten bij pesterijen op het werk?",
     "fr": "Quels sont mes droits en cas de harcèlement au travail ?",
     "en": "What are my rights in case of bullying at work?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Welche Rechte habe ich bei Mobbing am Arbeitsplatz?"
   },
   {
@@ -13436,7 +13436,7 @@
     "nl": "Wat is de derdebetalersregeling?",
     "fr": "Qu'est-ce que le régime du tiers payant ?",
     "en": "What is the third-party payer arrangement?",
-    "category": "FISCAAL",
+    "category": "MEDISCH",
     "de": "Was ist die Drittzahlerregelung?"
   },
   {
@@ -13513,7 +13513,7 @@
     "nl": "Kan ik ontslag nemen als ik verdacht word van drugs?",
     "fr": "Puis-je démissionner si je suis suspecté(e) d'infractions en matière de stupéfiants ?",
     "en": "Can I resign if I am suspected of drug use?",
-    "category": "STRAFRECHT",
+    "category": "ARBEIDSRECHT - ONTSLAG",
     "de": "Kann ich kündigen, wenn ich des Umgangs mit Drogen verdächtigt werde?"
   },
   {
@@ -13625,7 +13625,7 @@
     "nl": "Wat zijn mijn rechten bij arrestatie?",
     "fr": "Quels sont mes droits en cas d'arrestation ?",
     "en": "What are my rights upon arrest?",
-    "category": "FISCAAL",
+    "category": "STRAFRECHT",
     "de": "Welche Rechte habe ich bei einer Festnahme?"
   },
   {
@@ -13730,28 +13730,28 @@
     "nl": "Hoeveel uren mag ik maximaal werken per week?",
     "fr": "Combien d'heures puis-je travailler au maximum par semaine ?",
     "en": "What is the maximum number of hours I may work per week?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Wie viele Stunden darf ich höchstens pro Woche arbeiten?"
   },
   {
     "nl": "Hoe wordt het huis verdeeld bij scheiding?",
     "fr": "Comment la maison est-elle répartie en cas de divorce ?",
     "en": "How is the house divided upon divorce?",
-    "category": "FISCAAL",
+    "category": "FAMILIERECHT",
     "de": "Wie wird das Haus bei einer Scheidung aufgeteilt?"
   },
   {
     "nl": "Wat is een maatschappelijke zetel?",
     "fr": "Qu'est-ce qu'un siège social ?",
     "en": "What is a registered office?",
-    "category": "FISCAAL",
+    "category": "VENNOOTSCHAPSRECHT",
     "de": "Was ist der Gesellschaftssitz?"
   },
   {
     "nl": "Wat kost een doktersbezoek?",
     "fr": "Combien coûte une consultation médicale ?",
     "en": "How much does a doctor's visit cost?",
-    "category": "FISCAAL",
+    "category": "MEDISCH",
     "de": "Was kostet ein Arztbesuch?"
   },
   {
@@ -13828,7 +13828,7 @@
     "nl": "Heb ik recht op opleidingsverlof?",
     "fr": "Ai-je droit au congé de formation ?",
     "en": "Do I have the right to training leave?",
-    "category": "FISCAAL",
+    "category": "ARBEIDSRECHT",
     "de": "Habe ich Anspruch auf Bildungsfreistellung?"
   },
   {
@@ -13856,7 +13856,7 @@
     "nl": "Kan de verkoper retour weigeren?",
     "fr": "Le vendeur peut-il refuser le retour ?",
     "en": "Can the seller refuse a return?",
-    "category": "FISCAAL",
+    "category": "CONSUMENTENRECHT",
     "de": "Kann der Verkäufer die Rückgabe verweigern?"
   },
   {
@@ -13898,7 +13898,7 @@
     "nl": "Kan ik mijn BV omzetten naar eenmanszaak?",
     "fr": "Puis-je transformer ma SRL en entreprise individuelle ?",
     "en": "Can I convert my BV into a sole proprietorship?",
-    "category": "FISCAAL",
+    "category": "VENNOOTSCHAPSRECHT",
     "de": "Kann ich meine BV in ein Einzelunternehmen umwandeln?"
   },
   {
@@ -13961,7 +13961,7 @@
     "nl": "Hoe richt ik een BV op?",
     "fr": "Comment constituer une SRL ?",
     "en": "How do I incorporate a BV?",
-    "category": "FISCAAL",
+    "category": "VENNOOTSCHAPSRECHT",
     "de": "Wie gründe ich eine BV?"
   },
   {
@@ -14164,7 +14164,7 @@
     "nl": "Kan ik een dienst annuleren?",
     "fr": "Puis-je annuler un service ?",
     "en": "Can I cancel a service?",
-    "category": "FISCAAL",
+    "category": "CONSUMENTENRECHT",
     "de": "Kann ich eine Dienstleistung stornieren?"
   },
   {
@@ -14227,7 +14227,7 @@
     "nl": "Wat als mijn pakket niet aankomt?",
     "fr": "Que faire si mon colis n'arrive pas ?",
     "en": "What if my parcel does not arrive?",
-    "category": "FISCAAL",
+    "category": "CONSUMENTENRECHT",
     "de": "Was geschieht, wenn mein Paket nicht ankommt?"
   },
   {
@@ -14255,7 +14255,7 @@
     "nl": "Wat zijn de voorwaarden voor een firmawagen?",
     "fr": "Quelles sont les conditions pour obtenir une voiture de société ?",
     "en": "What are the conditions for a company car?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "ARBEIDSRECHT - LOON",
     "de": "Welche Voraussetzungen gelten für die Gewährung eines Firmenwagens?"
   },
   {
@@ -14332,21 +14332,21 @@
     "nl": "Kan ik Belgisch staatsburger worden?",
     "fr": "Puis-je devenir citoyen belge ?",
     "en": "Can I become a Belgian citizen?",
-    "category": "FISCAAL",
+    "category": "VREEMDELINGENRECHT",
     "de": "Kann ich belgischer Staatsbürger werden?"
   },
   {
     "nl": "Hoelang duurt naturalisatie?",
     "fr": "Combien de temps dure la naturalisation ?",
     "en": "How long does naturalisation take?",
-    "category": "FISCAAL",
+    "category": "VREEMDELINGENRECHT",
     "de": "Wie lange dauert die Einbürgerung?"
   },
   {
     "nl": "Wat is voorwaardelijke vrijlating?",
     "fr": "Qu'est-ce que la libération conditionnelle ?",
     "en": "What is conditional release?",
-    "category": "FISCAAL",
+    "category": "STRAFRECHT",
     "de": "Was ist bedingte Entlassung?"
   },
   {
@@ -14388,14 +14388,14 @@
     "nl": "Hoeveel bedraagt de studietoelage?",
     "fr": "Quel est le montant de l'allocation d'études ?",
     "en": "How much is the study grant?",
-    "category": "FISCAAL",
+    "category": "ALGEMEEN",
     "de": "Wie hoch ist die Studienbeihilfe?"
   },
   {
     "nl": "Wat is een bindend studieadvies?",
     "fr": "Qu'est-ce qu'un avis d'orientation contraignant ?",
     "en": "What is a binding study advice?",
-    "category": "FISCAAL",
+    "category": "ALGEMEEN",
     "de": "Was versteht man unter einem verbindlichen Studienentscheid?"
   },
   {
@@ -14409,7 +14409,7 @@
     "nl": "Wat gebeurt er met mijn hospitalisatieverzekering bij een ongeval?",
     "fr": "Que se passe-t-il avec mon assurance hospitalisation en cas d'accident ?",
     "en": "What happens to my hospitalisation insurance in the event of an accident?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "VERZEKERINGEN",
     "de": "Was passiert mit meiner Krankenhausversicherung bei einem Unfall?"
   },
   {
@@ -14547,7 +14547,7 @@
   },
   {
     "nl": "Hoe werkt brugpensioen/SWT?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "How does bridge pension/SWT work?",
     "fr": "Comment fonctionne la prépension / le régime « SWT » (chômage avec complément d'entreprise) ?",
     "de": "Wie funktioniert die Brückenpension/SWT?"
@@ -14624,7 +14624,7 @@
   },
   {
     "nl": "Wat is de 600-urenregel voor studenten?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "What is the 600-hour rule for students?",
     "fr": "Qu'est-ce que la règle des 600 heures pour les étudiants ?",
     "de": "Was ist die 600-Stundenregel für Studierende?"
@@ -14813,7 +14813,7 @@
   },
   {
     "nl": "Wat is een bedrijfswagen fiscaal?",
-    "category": "ARBEIDSRECHT",
+    "category": "FISCAAL - PERSONENBELASTING",
     "en": "What is a company car for tax purposes?",
     "fr": "Qu'est-ce qu'une voiture de société sur le plan fiscal ?",
     "de": "Wie wird ein Firmenwagen steuerlich behandelt?"
@@ -14827,7 +14827,7 @@
   },
   {
     "nl": "Hoe wordt een bonus belast?",
-    "category": "ARBEIDSRECHT",
+    "category": "FISCAAL - PERSONENBELASTING",
     "en": "How is a bonus taxed?",
     "fr": "Comment une prime est-elle imposée ?",
     "de": "Wie wird ein Bonus besteuert?"
@@ -17403,7 +17403,7 @@
   },
   {
     "nl": "Wat is de vrederechter?",
-    "category": "BURENRECHT",
+    "category": "PROCEDURERECHT",
     "en": "What is the justice of the peace?",
     "fr": "Qu'est-ce que le juge de paix ?",
     "de": "Was ist der Friedensrichter?"
@@ -17704,7 +17704,7 @@
   },
   {
     "nl": "Wat zijn de regels voor drones vliegen?",
-    "category": "SPORT",
+    "category": "OVERHEID",
     "en": "What are the rules for flying drones?",
     "fr": "Quelles sont les règles pour piloter des drones ?",
     "de": "Welche Regeln gelten für das Fliegen von Drohnen?"
@@ -17725,7 +17725,7 @@
   },
   {
     "nl": "Mag ik overal kamperen in België?",
-    "category": "SPORT",
+    "category": "DIVERSE",
     "en": "May I camp anywhere in Belgium?",
     "fr": "Puis-je camper partout en Belgique ?",
     "de": "Darf ich überall in Belgien campen?"
@@ -17760,7 +17760,7 @@
   },
   {
     "nl": "Hoe krijg ik een wapenvergunning?",
-    "category": "SPORT",
+    "category": "OVERHEID",
     "en": "How do I obtain a firearms licence?",
     "fr": "Comment obtenir une autorisation de détention d'arme ?",
     "de": "Wie erhalte ich eine Waffenerlaubnis?"
@@ -18369,42 +18369,42 @@
   },
   {
     "nl": "Wat is de RSZ en hoeveel sociale bijdragen betaal ik?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "What is the RSZ?",
     "fr": "Qu'est-ce que l'ONSS ?",
     "de": "Was ist die RSZ?"
   },
   {
     "nl": "Hoeveel RSZ-bijdragen moet ik als werknemer betalen?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "How much RSZ do I pay?",
     "fr": "Combien dois-je payer à l'ONSS ?",
     "de": "Wie viel RSZ bezahle ich?"
   },
   {
     "nl": "Wat is de werkgeversbijdrage RSZ?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "What is the employer's RSZ contribution?",
     "fr": "Qu'est-ce que la cotisation patronale à l'ONSS ?",
     "de": "Was ist der Arbeitgeberbeitrag zur RSZ?"
   },
   {
     "nl": "Wat is de werknemersbijdrage RSZ?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "What is the employee's RSZ contribution?",
     "fr": "Qu'est-ce que la cotisation salariale à l'ONSS ?",
     "de": "Was ist der Arbeitnehmerbeitrag zur RSZ?"
   },
   {
     "nl": "Wat is een dimona-aangifte?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "What is a DIMONA declaration?",
     "fr": "Qu'est-ce qu'une déclaration Dimona ?",
     "de": "Was ist eine DIMONA-Meldung?"
   },
   {
     "nl": "Wanneer moet ik dimona doen?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "When must I submit a DIMONA declaration?",
     "fr": "Quand dois-je effectuer une déclaration Dimona ?",
     "de": "Wann muss ich eine DIMONA-Meldung machen?"
@@ -18565,14 +18565,14 @@
   },
   {
     "nl": "Wat is SWT stelsel werkloosheid met bedrijfstoeslag?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "What is the SWT (system of unemployment with company supplement)?",
     "fr": "Qu'est-ce que le régime de chômage avec complément d'entreprise (SWT) ?",
     "de": "Was ist das SWT-System (Arbeitslosigkeit mit Unternehmenszuschlag)?"
   },
   {
     "nl": "Wanneer heb ik recht op SWT?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "When am I entitled to SWT?",
     "fr": "Quand ai-je droit au SWT ?",
     "de": "Wann habe ich Anspruch auf SWT?"
@@ -18586,14 +18586,14 @@
   },
   {
     "nl": "Mag ik werken na pensioen?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "May I work after retirement?",
     "fr": "Puis-je travailler après la pension ?",
     "de": "Darf ich nach der Pensionierung arbeiten?"
   },
   {
     "nl": "Hoeveel mag ik bijverdienen als gepensioneerde?",
-    "category": "ARBEIDSRECHT",
+    "category": "SOCIALE ZEKERHEID",
     "en": "How much may I earn in addition as a pensioner?",
     "fr": "Combien puis-je percevoir en revenus complémentaires en tant que pensionné ?",
     "de": "Wie viel darf ich als Pensionierter hinzuverdienen?"
@@ -19762,21 +19762,21 @@
   },
   {
     "nl": "Wat is schuldbemiddeling?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "SCHULDEN",
     "en": "What is debt mediation?",
     "fr": "Qu'est-ce que la médiation de dettes ?",
     "de": "Was ist Schuldenmediation?"
   },
   {
     "nl": "Hoe vraag ik schuldbemiddeling aan?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "SCHULDEN",
     "en": "How do I apply for debt mediation?",
     "fr": "Comment demander une médiation de dettes ?",
     "de": "Wie beantrage ich Schuldenmediation?"
   },
   {
     "nl": "Wat is een erkend schuldbemiddelaar?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "SCHULDEN",
     "en": "What is a recognised debt mediator?",
     "fr": "Qu'est-ce qu'un médiateur de dettes agréé ?",
     "de": "Was ist ein anerkannter Schuldenmediator?"
@@ -19790,7 +19790,7 @@
   },
   {
     "nl": "Waarvoor is de arbeidsrechtbank bevoegd bij schulden?",
-    "category": "SOCIALE ZEKERHEID",
+    "category": "SCHULDEN",
     "en": "What is the jurisdiction of the Labour Court with regard to debts?",
     "fr": "Quelle est la compétence du tribunal du travail en matière de dettes ?",
     "de": "Wofür ist das Arbeitsgericht in Schuldenangelegenheiten zuständig?"
@@ -20130,5 +20130,12 @@
     "fr": "Quelles sont les règles concernant la période d'essai dans un contrat de travail ?",
     "nl": "Wat zijn de regels rond proeftijd in een arbeidsovereenkomst?",
     "de": "Welche Regeln gelten für die Probezeit in einem Arbeitsvertrag?"
+  },
+  {
+    "nl": "Moet ik getuigen als ik word opgeroepen, of mag ik weigeren?",
+    "category": "PROCEDURERECHT",
+    "en": "Do I have to testify when summoned as a witness, or can I refuse?",
+    "fr": "Dois-je témoigner si je suis convoqué, ou puis-je refuser ?",
+    "de": "Muss ich als geladener Zeuge aussagen, oder darf ich die Aussage verweigern?"
   }
 ]

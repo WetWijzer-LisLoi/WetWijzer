@@ -882,9 +882,13 @@ module LegalChatbot
     FISCONET_CODE_JUSTEL_NUMACS = { wib: '1992041050', vat: '1969070305' }.freeze
     ROYAL_DECREE_LABEL_SOURCE = '(?<![[:alnum:]])(?:k\.\s?b\.|kb|koninklijk\s+besluit|a\.\s?r\.|ar|arr[êe]t[ée]\s+royal)(?![[:alnum:]])'
     ROYAL_DECREE_LABEL_PATTERN = /#{ROYAL_DECREE_LABEL_SOURCE}/io
-    # The number of the royal decree a label names: "KB nr. 20", "K.B. 20", "koninklijk besluit nr. 20",
-    # "AR n° 20", "arrêté royal n° 20".
-    ROYAL_DECREE_NUMBER_PATTERN = /#{ROYAL_DECREE_LABEL_SOURCE}\s*(?:nr\.?|nummer|n[°º]|no\.?)?\s*(?<number>\d+)(?![[:alnum:]])/io
+    # The number of the royal decree a label names: "KB nr. 20", "koninklijk besluit nr. 20", "AR n° 20",
+    # "arrêté royal n° 20", and the short forms "K.B. 20" and "A.R. 20" (Sol 2026-11-19 20:14:25Z). A number
+    # followed by a month or by the rest of a numeric date is a day, as in "KB 20 juli 1970" or "KB 20.07.1970".
+    DATE_MONTH_SOURCE = '(?:januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december|' \
+                        'janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[ûu]t|septembre|octobre|novembre|d[ée]cembre|' \
+                        'januar|februar|m[äa]rz|august|dezember|january|february|march|may|june|july|october)'
+    ROYAL_DECREE_NUMBER_PATTERN = %r{#{ROYAL_DECREE_LABEL_SOURCE}\s*(?:(?:nr\.?|nummer|n[°º]|no\.?)\s*(?<number>\d+)(?![[:alnum:]])|(?<bare_number>\d+)(?![[:alnum:]])(?!\s*(?:[./-]\s*\d|#{DATE_MONTH_SOURCE}(?![[:alpha:]]))))}io
     FISCONET_DECREE_CODE_PATTERN = /\Akb\s*(?:nr\.?\s*)?(\d+)\z/
 
     def fisconet_code_named?(numac, named_laws, label)
@@ -908,9 +912,14 @@ module LegalChatbot
       return false if code.empty?
       return true if label.to_s.match?(ROYAL_DECREE_LABEL_PATTERN) && !code.start_with?('kb')
 
+      # A label naming a decree number names a numbered decree: KB/WIB 92 has no number, so "KB nr. 20" on a
+      # KB/WIB 92 link is another instrument too (Sol 2026-11-19 17:58:40Z).
+      match = label.to_s.match(ROYAL_DECREE_NUMBER_PATTERN)
+      named_number = match && (match[:number] || match[:bare_number])
+      return false if named_number.nil?
+
       decree_number = code[FISCONET_DECREE_CODE_PATTERN, 1]
-      named_number = label.to_s[ROYAL_DECREE_NUMBER_PATTERN, :number]
-      !decree_number.nil? && !named_number.nil? && named_number.to_i != decree_number.to_i
+      decree_number.nil? || named_number.to_i != decree_number.to_i
     end
 
     def label_article_number(label)
