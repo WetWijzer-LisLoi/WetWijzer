@@ -54,11 +54,57 @@ module LegalChatbot
       stale_after: Date.new(2027, 10, 1)
     }.freeze
 
-    # The leefloon amounts follow every pivot-index crossing (December 2025 and
-    # June 2026 gave the amounts of 1 March and 1 September 2026), so the note
-    # expires nine months after the last indexation: a forgotten update
-    # degrades to the statutory text, never to an old amount shown as current.
-    LEEFLOON_NOTE_STALE_AFTER = Date.new(2027, 6, 1)
+    # The leefloon schedules of Art. 14, § 1 as the POD MI circulars index them,
+    # oldest first. Each was read in full (page 3 of each circular, 2026-11-19);
+    # a new circular is one more entry. The note gives every schedule its period
+    # and calls the newest the last CONFIRMED one: a later pivot index can come
+    # before any date set here, so it never asserts an amount for a period no
+    # schedule covers, and the dated schedules stay for questions about their
+    # own periods (Sol 2026-11-20 01:17:34Z).
+    LEEFLOON_SCHEDULES = [
+      { from: Date.new(2026, 3, 1), circular: '25 februari 2026', coefficient: '1,7758',
+        url: 'https://www.mi-is.be/nl/wetgeving/omzendbrief-inzake-de-aanpassing-van-de-bedragen-die-tot-de-federale-wetgeving-met-9',
+        amounts: [%w[893,65 10.723,75], %w[1.340,47 16.085,64], %w[1.811,57 21.738,88]] },
+      { from: Date.new(2026, 9, 1), circular: '11 augustus 2026', coefficient: '1,8114',
+        url: 'https://www.mi-is.be/nl/wetgeving/omzendbrief-inzake-de-aanpassing-van-de-bedragen-die-tot-de-federale-wetgeving-met-11',
+        amounts: [%w[911,56 10.938,74], %w[1.367,34 16.408,11], %w[1.847,89 22.174,69]] }
+    ].freeze
+    LEEFLOON_CHECKED_ON = Date.new(2026, 11, 20)
+    LEEFLOON_CATEGORIES = ['Categorie 1, samenwonende', 'Categorie 2, alleenstaande',
+                           'Categorie 3, persoon die samenwoont met een gezin ten laste'].freeze
+    LEEFLOON_MONTHS = %w[januari februari maart april mei juni juli augustus september oktober november december].freeze
+
+    def self.leefloon_date(date)
+      "#{date.day} #{LEEFLOON_MONTHS[date.month - 1]} #{date.year}"
+    end
+
+    def self.leefloon_note(schedules = LEEFLOON_SCHEDULES, checked_on: LEEFLOON_CHECKED_ON)
+      ordered = schedules.sort_by { |schedule| schedule[:from] }
+      blocks = ordered.each_with_index.map do |schedule, index|
+        following = ordered[index + 1]
+        period = if following
+                   "VAN #{leefloon_date(schedule[:from])} TOT EN MET #{leefloon_date(following[:from] - 1)}".upcase
+                 else
+                   "VANAF #{leefloon_date(schedule[:from])} (LAATST BEVESTIGD SCHEMA)".upcase
+                 end
+        lines = ["Geïndexeerde bedragen #{period} (omzendbrief van #{schedule[:circular]}, coëfficiënt #{schedule[:coefficient]}):"]
+        schedule[:amounts].each_with_index do |(month, year), category|
+          lines << "- #{LEEFLOON_CATEGORIES[category]}: €#{month}/maand (€#{year}/jaar)"
+        end
+        lines << "  Bron: #{schedule[:url]}"
+        lines.join("\n")
+      end
+      newest = ordered.last
+      <<~NOTE.strip
+        OPGELET: De bedragen in Art. 14 zijn de wettelijke basisbedragen (2002). De omzendbrieven van de POD Maatschappelijke Integratie indexeren ze.
+        #{blocks.reverse.join("\n")}
+        TOEPASSING: kies het schema van de periode waarover de vraag gaat, met zijn begindatum en omzendbrief. Voor een periode vanaf #{leefloon_date(newest[:from])} zijn dit de laatst bevestigde bedragen (gecontroleerd op #{leefloon_date(checked_on)}): noem ze zo en zeg dat een latere indexering ze kan hebben vervangen. Noem nooit een bedrag dat hier niet staat.
+        Categorie 3 (Art. 14, § 1, 3°): het recht wordt geopend zodra er ten minste één minderjarig ongehuwd kind is,
+        en het dekt meteen het recht van de eventuele echtgeno(o)t(e) of levenspartner. Ook een alleenstaande ouder die
+        samenwoont met een minderjarig ongehuwd kind ten laste valt onder categorie 3.
+        Vermeld altijd de geïndexeerde bedragen, niet de basisbedragen uit de wet.
+      NOTE
+    end
 
     def self.ggmmi_stale?
       Date.current > CURRENT_GGMMI[:stale_after]
@@ -667,7 +713,30 @@ module LegalChatbot
       'ziekte_uitkering' => {
         numac: '1978070303',
         article_patterns: ['Art. 52', 'Art. 53', 'Art. 54', 'Art. 70', 'Art. 71'],
-        label: 'Gewaarborgd loon bij ziekte - Art. 52-71 Arbeidsovereenkomstenwet'
+        label: 'Gewaarborgd loon bij ziekte - Art. 52-71 Arbeidsovereenkomstenwet',
+        # Sol 2026-11-19 22:47:08Z (#1732): an answer blended the worker categories. Read in full on 2026-11-20: arts. 52,
+        # 70 and 71 (1978070303), cao nr. 12bis (1979022660, workers) and cao nr. 13bis (1979022661, employees hired
+        # for less than three months; its "op proef" predates the 2014 abolition of the trial clause, which also took
+        # those words out of art. 71), arts. 2 to 4 of each.
+        indexation_note: <<~NOTE.strip
+          GEWAARBORGD LOON BIJ ZIEKTE OF ONGEVAL VAN GEMEEN RECHT: HOUD DE CATEGORIEËN UIT ELKAAR.
+          - Bediende aangeworven voor onbepaalde tijd, voor een bepaalde tijd van ten minste drie maanden of voor een
+            duidelijk omschreven werk van ten minste drie maanden (art. 70): het normale loon gedurende de eerste 30
+            dagen.
+          - Arbeider (art. 52, § 1, en cao nr. 12bis): dag 1 tot 7 het normale loon. Dag 8 tot 14: 60% van het loon onder
+            de loongrens van de ziekte- en invaliditeitsverzekering (art. 52) plus 25,88% (cao nr. 12bis), samen 85,88%,
+            en 85,88% van het deel boven die grens, alles ten laste van de werkgever. Vanaf dag 15 betaalt het
+            ziekenfonds zijn uitkering en betaalt de werkgever tot dag 30 het aanvullende bedrag van de cao: 25,88%
+            onder de loongrens en 85,88% erboven.
+          - Bediende aangeworven voor een bepaalde tijd van minder dan drie maanden of voor een duidelijk omschreven werk
+            van minder dan drie maanden (art. 71 en cao nr. 13bis): dag 1 tot 7 het normale loon. Dag 8 tot 14: 60% plus 26,93%, samen 86,93% onder de loongrens, en 86,93% erboven. Vanaf dag 15
+            de uitkering van het ziekenfonds plus tot dag 30 het aanvullende bedrag van de werkgever: 26,93% onder de
+            loongrens en 86,93% erboven.
+          - Voor de arbeider en voor de bediende van art. 71 gaat het recht pas in na een maand ononderbroken dienst bij
+            dezelfde onderneming (art. 52, § 1). Voor de arbeider is het niet opnieuw verschuldigd bij een nieuwe
+            ongeschiktheid binnen de eerste acht weken na het einde van de vorige, behalve voor het restant van de
+            eerste veertien dagen of bij een andere ziekte of een ander ongeval (art. 52, § 2, sinds 1 januari 2026).
+        NOTE
       },
       # Sol 2026-11-19 22:47:08Z (#1737): an answer required both the hours and
       # the value of Art. 22bis, § 4. training_clause_directive states the "or"
@@ -683,32 +752,10 @@ module LegalChatbot
         numac: '2002022559',
         article_patterns: ['Art. 14'],
         label: 'Leefloon - Art. 14 Leefloonwet',
-        note_stale_after: LEEFLOON_NOTE_STALE_AFTER,
-        # The indexed amounts come from the POD MI circulars (page 3 of each,
-        # read in full on 2026-11-19), never from the corpus: the consolidated
-        # Art. 14 holds the 2002 amounts and indexation notes that stop in 2016.
+        # The indexed amounts come from the POD MI circulars (LEEFLOON_SCHEDULES).
         # Sol 2026-11-19 22:59:36Z (#1704): until 1.1.78 this note still gave
         # the amounts of 1 March 2026 as current.
-        indexation_note: <<~NOTE.strip
-          OPGELET: De bedragen in Art. 14 zijn de wettelijke basisbedragen (2002).
-          De actuele bedragen worden aangepast via het spilindexmechanisme (omzendbrieven van de POD Maatschappelijke Integratie).
-          Geïndexeerde bedragen VANAF 1 SEPTEMBER 2026 (omzendbrief van 11 augustus 2026, indexeringscoëfficiënt 1,8114):
-          - Categorie 1, samenwonende: €911,56/maand (€10.938,74/jaar)
-          - Categorie 2, alleenstaande: €1.367,34/maand (€16.408,11/jaar)
-          - Categorie 3, persoon die samenwoont met een gezin ten laste: €1.847,89/maand (€22.174,69/jaar)
-          Geïndexeerde bedragen VAN 1 MAART 2026 TOT EN MET 31 AUGUSTUS 2026 (omzendbrief van 25 februari 2026, coëfficiënt 1,7758):
-          - Categorie 1, samenwonende: €893,65/maand (€10.723,75/jaar)
-          - Categorie 2, alleenstaande: €1.340,47/maand (€16.085,64/jaar)
-          - Categorie 3, persoon die samenwoont met een gezin ten laste: €1.811,57/maand (€21.738,88/jaar)
-          VERPLICHTE TEMPORALE TOEPASSING: vergelijk deze datums met de CURRENT DATE uit de systeeminstructie, of met de
-          datum waarover de vraag gaat. Op of na 1 september 2026 zijn de bedragen vanaf 1 september 2026 de actuele;
-          presenteer de bedragen van 1 maart 2026 dan niet als actueel.
-          Categorie 3 (Art. 14, § 1, 3°): het recht wordt geopend zodra er ten minste één minderjarig ongehuwd kind is,
-          en het dekt meteen het recht van de eventuele echtgeno(o)t(e) of levenspartner. Ook een alleenstaande ouder die
-          samenwoont met een minderjarig ongehuwd kind ten laste valt onder categorie 3.
-          Vermeld altijd de geïndexeerde bedragen, niet de basisbedragen uit de wet.
-          Officiële bron: https://www.mi-is.be/nl/wetgeving/omzendbrief-inzake-de-aanpassing-van-de-bedragen-die-tot-de-federale-wetgeving-met-11
-        NOTE
+        indexation_note: leefloon_note
       },
       'werkloosheid' => {
         numac: '1991013192',
@@ -1194,13 +1241,22 @@ module LegalChatbot
 
     # Art. 5 of the law of 3 June 2026: its brackets below six months' seniority
     # apply only to contracts whose execution starts from 1 August 2026 (art. 6:
-    # its entry into force); an earlier contract keeps the 2018 brackets below six
-    # months. From 1 February 2027 nobody below six months' seniority can hold
-    # such a contract, and the note stops naming those brackets.
-    NOTICE_TRANSITION_ENDS = Date.new(2027, 2, 1)
+    # its entry into force); an earlier contract keeps the 2018 brackets below
+    # six months. Sol 2026-11-20 01:17:34Z: a start date in the question decides
+    # exactly; a seniority alone is counted up to the notice (today unless the
+    # question dates it) and names both brackets only while an earlier start
+    # is possible.
+    NOTICE_AMENDMENT_DATE = Date.new(2026, 8, 1)
 
     NOTICE_WEEK_WORDS = {
       'nl' => %w[week weken], 'fr' => %w[semaine semaines], 'de' => %w[Woche Wochen], 'en' => %w[week weeks]
+    }.freeze
+
+    NOTICE_MONTH_NAMES = {
+      'nl' => %w[januari februari maart april mei juni juli augustus september oktober november december],
+      'fr' => %w[janvier février mars avril mai juin juillet août septembre octobre novembre décembre],
+      'de' => %w[Januar Februar März April Mai Juni Juli August September Oktober November Dezember],
+      'en' => %w[January February March April May June July August September October November December]
     }.freeze
 
     NOTICE_TRANSITION_COPY = {
@@ -1218,50 +1274,207 @@ module LegalChatbot
               '%<employer>s, by the employee %<employee>s.'
     }.freeze
 
+    NOTICE_EARLIER_BRACKETS_COPY = {
+      'nl' => 'Art. 5 wet van 3 juni 2026: deze arbeidsovereenkomst begon vóór 1 augustus 2026, dus gelden onder zes maanden ' \
+              'anciënniteit de vroegere termijnen; de waarden hierboven zijn die termijnen.',
+      'fr' => "Art. 5 de la loi du 3 juin 2026 : ce contrat a commencé avant le 1er août 2026 ; en dessous de six mois " \
+              "d'ancienneté, les anciens délais s'appliquent donc, et les valeurs ci-dessus sont ces délais.",
+      'de' => 'Art. 5 des Gesetzes vom 3. Juni 2026: Dieser Arbeitsvertrag hat vor dem 1. August 2026 begonnen; bei weniger ' \
+              'als sechs Monaten Betriebszugehörigkeit gelten daher die früheren Fristen, und die obigen Werte sind diese Fristen.',
+      'en' => 'Art. 5 of the Law of 3 June 2026: this contract began before 1 August 2026, so below six months of seniority ' \
+              'the earlier periods apply, and the figures above are those periods.'
+    }.freeze
+
     # Arts. 67 to 69 of the law of 26 December 2013 (2013012289): a dismissal by
     # the employer of a worker whose contract began before 1 January 2014 has a
     # notice that is the sum of two parts, the first for the seniority on
     # 31 December 2013 under the rules of that date, the second for the
-    # seniority from 1 January 2014 under Art. 37/2. A seniority counted up to
-    # today that reaches back before that date implies such a contract
-    # (Sol 2026-11-19 23:34:21Z: #1752, #1770 and #1792 gave one figure).
+    # seniority from 1 January 2014 under Art. 37/2 (Sol 2026-11-19 23:34:21Z:
+    # #1752, #1770 and #1792 gave one figure). Whole months of seniority can
+    # leave the start on either side of that date (Sol 2026-11-20 01:17:34Z: on
+    # 2026-11-20, 154 months covers 21 December 2013 to 20 January 2014); the
+    # note then gives both conditions and asks for the start date.
     SINGLE_STATUS_DATE = Date.new(2014, 1, 1)
 
-    NOTICE_PRE_2014_COPY = {
-      'nl' => 'Art. 67-69 wet van 26 december 2013: deze anciënniteit wijst op een arbeidsovereenkomst die vóór 1 januari ' \
-              '2014 begon. Bij ontslag door de werkgever is de opzeggingstermijn dan de som van twee delen: deel 1 voor de ' \
-              'anciënniteit op 31 december 2013, volgens de regels die op die datum golden (voor een bediende met een jaarloon ' \
-              'boven €32.254 op die datum: één maand per begonnen jaar anciënniteit, minimum drie maanden, tenzij er toen een ' \
-              'geldige clausule over de opzeggingstermijn bestond); deel 2 voor de anciënniteit vanaf 1 januari 2014, volgens ' \
-              'art. 37/2 (bij een opzegging die vandaag wordt gegeven: %<part_two>s). De waarde voor de werkgever hierboven is ' \
-              'dan niet het totaal: noem beide delen en vraag zo nodig naar de datum van indiensttreding, het statuut ' \
-              '(arbeider of bediende) en het loon op 31 december 2013.',
-      'fr' => "Art. 67 à 69 de la loi du 26 décembre 2013 : cette ancienneté indique un contrat qui a commencé avant le " \
-              "1er janvier 2014. En cas de licenciement par l'employeur, le préavis est alors la somme de deux parties : la " \
-              "première pour l'ancienneté acquise au 31 décembre 2013, selon les règles applicables à cette date (pour un " \
-              "employé dont la rémunération annuelle dépassait 32.254 euros à cette date : un mois par année d'ancienneté " \
-              'entamée, avec un minimum de trois mois, sauf clause valable relative au délai de préavis existant alors) ; la ' \
-              "seconde pour l'ancienneté acquise à partir du 1er janvier 2014, selon l'article 37/2 (pour un préavis notifié " \
-              "aujourd'hui : %<part_two>s). La valeur indiquée ci-dessus pour l'employeur n'est alors pas le total : " \
-              "mentionnez les deux parties et demandez au besoin la date d'entrée en service, le statut (ouvrier ou employé) " \
-              'et la rémunération au 31 décembre 2013.',
-      'de' => 'Art. 67 bis 69 des Gesetzes vom 26. Dezember 2013: Diese Betriebszugehörigkeit deutet auf einen Arbeitsvertrag ' \
-              'hin, der vor dem 1. Januar 2014 begonnen hat. Bei einer Kündigung durch den Arbeitgeber ist die Kündigungsfrist ' \
-              'dann die Summe zweier Teile: Teil 1 für die Betriebszugehörigkeit am 31. Dezember 2013 nach den an diesem Tag ' \
-              'geltenden Regeln (für einen Angestellten mit einem Jahreslohn über 32.254 Euro an diesem Tag: ein Monat je ' \
-              'angefangenes Dienstjahr, mindestens drei Monate, sofern damals keine gültige Klausel zur Kündigungsfrist ' \
-              'bestand); Teil 2 für die Betriebszugehörigkeit ab dem 1. Januar 2014 nach Art. 37/2 (bei einer heute ' \
-              'mitgeteilten Kündigung: %<part_two>s). Der oben genannte Wert für den Arbeitgeber ist dann nicht die Summe: ' \
-              'beide Teile nennen und gegebenenfalls nach dem Eintrittsdatum, dem Status (Arbeiter oder Angestellter) und ' \
-              'dem Lohn am 31. Dezember 2013 fragen.',
-      'en' => 'Arts. 67 to 69 of the Law of 26 December 2013: this seniority points to an employment contract that began ' \
-              'before 1 January 2014. For a dismissal by the employer the notice is then the sum of two parts: part 1 for the ' \
-              'seniority on 31 December 2013, under the rules that applied on that date (for an employee whose annual pay ' \
-              'exceeded EUR 32,254 on that date: one month per started year of seniority, at least three months, unless a ' \
-              'valid notice clause existed then); part 2 for the seniority from 1 January 2014, under Article 37/2 (for ' \
-              'notice given today: %<part_two>s). The employer figure above is then not the total: state both parts and, ' \
-              'where needed, ask for the start date, the status (blue- or white-collar) and the pay on 31 December 2013.'
+    NOTICE_PRE_2014_PARTS = {
+      'nl' => 'de opzeggingstermijn bij ontslag door de werkgever de som van twee delen: deel 1 voor de anciënniteit op ' \
+              '31 december 2013, volgens de regels die op die datum golden (voor een bediende met een jaarloon boven €32.254 ' \
+              'op die datum: één maand per begonnen jaar anciënniteit, minimum drie maanden, tenzij er toen een geldige ' \
+              'clausule over de opzeggingstermijn bestond); deel 2 voor de anciënniteit vanaf 1 januari 2014, volgens ' \
+              'art. 37/2 (%<when>s: %<part_two>s)',
+      'fr' => "le préavis en cas de licenciement par l'employeur est la somme de deux parties : la première pour l'ancienneté " \
+              'acquise au 31 décembre 2013, selon les règles applicables à cette date (pour un employé dont la rémunération ' \
+              "annuelle dépassait 32.254 euros à cette date : un mois par année d'ancienneté entamée, avec un minimum de trois " \
+              "mois, sauf clause valable relative au délai de préavis existant alors) ; la seconde pour l'ancienneté acquise " \
+              "à partir du 1er janvier 2014, selon l'article 37/2 (%<when>s : %<part_two>s)",
+      'de' => 'die Kündigungsfrist bei einer Kündigung durch den Arbeitgeber die Summe zweier Teile: Teil 1 für die ' \
+              'Betriebszugehörigkeit am 31. Dezember 2013 nach den an diesem Tag geltenden Regeln (für einen Angestellten mit ' \
+              'einem Jahreslohn über 32.254 Euro an diesem Tag: ein Monat je angefangenes Dienstjahr, mindestens drei Monate, ' \
+              'sofern damals keine gültige Klausel zur Kündigungsfrist bestand); Teil 2 für die Betriebszugehörigkeit ab dem ' \
+              '1. Januar 2014 nach Art. 37/2 (%<when>s: %<part_two>s)',
+      'en' => 'the notice for a dismissal by the employer is the sum of two parts: part 1 for the seniority on 31 December ' \
+              '2013, under the rules that applied on that date (for an employee whose annual pay exceeded EUR 32,254 on that ' \
+              'date: one month per started year of seniority, at least three months, unless a valid notice clause existed ' \
+              'then); part 2 for the seniority from 1 January 2014, under Article 37/2 (%<when>s: %<part_two>s)'
     }.freeze
+
+    # The line opens the note: the contract began before 2014 (stated or implied), or it may have (open). The Art. 37/2
+    # employer figure below it is then not the total (Sol 2026-11-20 03:14:30Z, #1792: a live answer opened with it).
+    NOTICE_PRE_2014_COPY = {
+      'nl' => {
+        stated: 'Art. 67-69 wet van 26 december 2013: deze arbeidsovereenkomst begon vóór 1 januari 2014. Daarom is %<parts>s. ' \
+                'Begin het antwoord met deze regel van twee delen. Geef geen totaal zolang deel 1 niet vaststaat, en noem de ' \
+                'gegevens die daarvoor nodig zijn: het statuut (arbeider of bediende) en het loon op 31 december 2013.',
+        implied: 'Art. 67-69 wet van 26 december 2013: deze anciënniteit wijst op een arbeidsovereenkomst die vóór 1 januari ' \
+                 '2014 begon. Daarom is %<parts>s. Begin het antwoord met deze regel van twee delen. Geef geen totaal zolang ' \
+                 'deel 1 niet vaststaat, en noem de gegevens die daarvoor nodig zijn: de datum van indiensttreding, het ' \
+                 'statuut (arbeider of bediende) en het loon op 31 december 2013.',
+        open: 'Art. 67-69 wet van 26 december 2013: deze anciënniteit laat niet uitmaken of de arbeidsovereenkomst vóór of ' \
+              'vanaf 1 januari 2014 begon (indiensttreding tussen %<earliest>s en %<latest>s). Begon ze vóór 1 januari 2014, ' \
+              'dan is %<parts>s. Begon ze op of na 1 januari 2014, dan geldt art. 37/2 voor de volledige anciënniteit (zie ' \
+              'hieronder). Begin het antwoord met deze twee voorwaarden en vraag naar de datum van indiensttreding.'
+      },
+      'fr' => {
+        stated: 'Art. 67 à 69 de la loi du 26 décembre 2013 : ce contrat a commencé avant le 1er janvier 2014. Dès lors, ' \
+                '%<parts>s. Commencez la réponse par cette règle des deux parties. Ne donnez pas de total tant que la ' \
+                "première partie n'est pas établie, et indiquez les données nécessaires : le statut (ouvrier ou employé) et " \
+                'la rémunération au 31 décembre 2013.',
+        implied: 'Art. 67 à 69 de la loi du 26 décembre 2013 : cette ancienneté indique un contrat qui a commencé avant le ' \
+                 '1er janvier 2014. Dès lors, %<parts>s. Commencez la réponse par cette règle des deux parties. Ne donnez ' \
+                 "pas de total tant que la première partie n'est pas établie, et indiquez les données nécessaires : la date " \
+                 "d'entrée en service, le statut (ouvrier ou employé) et la rémunération au 31 décembre 2013.",
+        open: 'Art. 67 à 69 de la loi du 26 décembre 2013 : cette ancienneté ne permet pas de savoir si le contrat a commencé ' \
+              "avant ou à partir du 1er janvier 2014 (entrée en service entre le %<earliest>s et le %<latest>s). S'il a " \
+              "commencé avant le 1er janvier 2014, %<parts>s. S'il a commencé le 1er janvier 2014 ou après, l'article 37/2 " \
+              "s'applique à toute l'ancienneté (voir ci-dessous). Commencez la réponse par ces deux conditions et " \
+              "demandez la date d'entrée en service."
+      },
+      'de' => {
+        stated: 'Art. 67 bis 69 des Gesetzes vom 26. Dezember 2013: Dieser Arbeitsvertrag hat vor dem 1. Januar 2014 ' \
+                'begonnen. Daher ist %<parts>s. Die Antwort mit dieser Regel der zwei Teile beginnen. Keine Summe nennen, ' \
+                'solange Teil 1 nicht feststeht, und die dafür nötigen Angaben nennen: den Status (Arbeiter oder ' \
+                'Angestellter) und den Lohn am 31. Dezember 2013.',
+        implied: 'Art. 67 bis 69 des Gesetzes vom 26. Dezember 2013: Diese Betriebszugehörigkeit deutet auf einen ' \
+                 'Arbeitsvertrag hin, der vor dem 1. Januar 2014 begonnen hat. Daher ist %<parts>s. Die Antwort mit dieser ' \
+                 'Regel der zwei Teile beginnen. Keine Summe nennen, solange Teil 1 nicht feststeht, und die dafür nötigen ' \
+                 'Angaben nennen: das Eintrittsdatum, den Status (Arbeiter oder Angestellter) und den Lohn am 31. Dezember 2013.',
+        open: 'Art. 67 bis 69 des Gesetzes vom 26. Dezember 2013: Diese Betriebszugehörigkeit lässt offen, ob der ' \
+              'Arbeitsvertrag vor oder ab dem 1. Januar 2014 begonnen hat (Eintritt zwischen dem %<earliest>s und dem ' \
+              '%<latest>s). Hat er vor dem 1. Januar 2014 begonnen, ist %<parts>s. Hat er am 1. Januar 2014 oder später ' \
+              'begonnen, gilt Art. 37/2 für die gesamte Betriebszugehörigkeit (siehe unten). Die Antwort mit diesen zwei ' \
+              'Bedingungen beginnen und nach dem Eintrittsdatum fragen.'
+      },
+      'en' => {
+        stated: 'Arts. 67 to 69 of the Law of 26 December 2013: this employment contract began before 1 January 2014, so ' \
+                '%<parts>s. Open the answer with this two-part rule. Give no total while part 1 is not established, and ' \
+                'name the data it needs: the status (blue- or white-collar) and the pay on 31 December 2013.',
+        implied: 'Arts. 67 to 69 of the Law of 26 December 2013: this seniority points to an employment contract that began ' \
+                 'before 1 January 2014, so %<parts>s. Open the answer with this two-part rule. Give no total while part 1 ' \
+                 'is not established, and name the data it needs: the start date, the status (blue- or white-collar) and ' \
+                 'the pay on 31 December 2013.',
+        open: 'Arts. 67 to 69 of the Law of 26 December 2013: this seniority leaves open whether the employment contract ' \
+              'began before or from 1 January 2014 (a start between %<earliest>s and %<latest>s). If it began before ' \
+              '1 January 2014, %<parts>s. If it began on or after 1 January 2014, Article 37/2 applies to the whole ' \
+              'seniority (see below). Open the answer with these two conditions and ask for the start date.'
+      }
+    }.freeze
+
+    # The Art. 37/2 employer figure beside a two-part case: for the whole seniority, never the total.
+    NOTICE_EMPLOYER_QUALIFIER = {
+      'nl' => { before: '%<weeks>s volgens art. 37/2 voor de volledige anciënniteit; dat is NIET het totaal bij een ' \
+                        'overeenkomst van vóór 2014 (zie de twee delen hierboven)',
+                open: '%<weeks>s als de overeenkomst op of na 1 januari 2014 begon; anders geldt de regel van twee delen ' \
+                      'hierboven' },
+      'fr' => { before: "%<weeks>s selon l'article 37/2 pour toute l'ancienneté ; ce n'est PAS le total pour un contrat " \
+                        'antérieur à 2014 (voir les deux parties ci-dessus)',
+                open: "%<weeks>s si le contrat a commencé le 1er janvier 2014 ou après ; sinon, la règle des deux parties " \
+                      "ci-dessus s'applique" },
+      'de' => { before: '%<weeks>s nach Art. 37/2 für die gesamte Betriebszugehörigkeit; das ist NICHT die Summe bei einem ' \
+                        'Vertrag von vor 2014 (siehe die zwei Teile oben)',
+                open: '%<weeks>s, wenn der Vertrag am 1. Januar 2014 oder später begonnen hat; sonst gilt die Regel der ' \
+                      'zwei Teile oben' },
+      'en' => { before: '%<weeks>s under Article 37/2 for the whole seniority; this is NOT the total for a contract from ' \
+                        'before 2014 (see the two parts above)',
+                open: '%<weeks>s if the contract began on or after 1 January 2014; otherwise the two-part rule above applies' }
+    }.freeze
+
+    # A notice question without a seniority (an overview or a table) still carries the transitional rules: the earlier
+    # brackets below six months while a contract begun before 1 August 2026 can still be there, and the two parts of a
+    # contract begun before 2014 (Sol 2026-11-20 03:14:30Z, #1753: a live table printed "minder dan 6 maanden | 1 week"
+    # without its start-date condition). The earlier brackets, read in full: employer, Art. 37/2, § 1 as replaced by the
+    # law of 26 March 2018 (2018011490, art. 2); employee, § 2 as inserted by the law of 26 December 2013 (2013012289,
+    # art. 3).
+    NOTICE_GENERAL_COPY = {
+      'nl' => {
+        head: '[Overgangsregels bij art. 37/2: vermeld ze bij elk overzicht van de opzeggingstermijnen]',
+        under_six: 'Minder dan zes maanden anciënniteit: één week voor beide partijen geldt alleen voor ' \
+                   'arbeidsovereenkomsten waarvan de uitvoering vanaf 1 augustus 2026 begon (art. 5 wet van 3 juni 2026). ' \
+                   'Voor een overeenkomst die vóór die datum begon, gelden nog de vroegere termijnen: opzegging door de ' \
+                   'werkgever 1 week (minder dan 3 maanden), 3 weken (3 tot 4 maanden), 4 weken (4 tot 5 maanden) en 5 weken ' \
+                   '(5 tot 6 maanden); door de werknemer 1 week (minder dan 3 maanden) en 2 weken (3 tot 6 maanden). Geef ' \
+                   'in een tabel of overzicht beide groepen weer.',
+        pre_2014: 'Ontslag door de werkgever van een werknemer wiens arbeidsovereenkomst vóór 1 januari 2014 begon ' \
+                  '(art. 67-69 wet van 26 december 2013): dan is %<parts>s. Vermeld die regel vóór een totaal bij een ' \
+                  'lange anciënniteit.'
+      },
+      'fr' => {
+        head: "[Dispositions transitoires de l'article 37/2 : à mentionner dans tout aperçu des délais de préavis]",
+        under_six: "Moins de six mois d'ancienneté : une semaine pour les deux parties ne vaut que pour les contrats dont " \
+                   "l'exécution a commencé à partir du 1er août 2026 (art. 5 de la loi du 3 juin 2026). Pour un contrat qui " \
+                   "a commencé avant cette date, les anciens délais s'appliquent encore : préavis donné par l'employeur " \
+                   '1 semaine (moins de 3 mois), 3 semaines (3 à 4 mois), 4 semaines (4 à 5 mois) et 5 semaines (5 à 6 mois) ; ' \
+                   'par le travailleur 1 semaine (moins de 3 mois) et 2 semaines (3 à 6 mois). Dans un tableau ou un ' \
+                   'aperçu, indiquez les deux groupes.',
+        pre_2014: "Licenciement par l'employeur d'un travailleur dont le contrat a commencé avant le 1er janvier 2014 " \
+                  '(art. 67 à 69 de la loi du 26 décembre 2013) : %<parts>s. Mentionnez cette règle avant tout total pour ' \
+                  'une longue ancienneté.'
+      },
+      'de' => {
+        head: '[Übergangsregeln zu Art. 37/2: bei jeder Übersicht der Kündigungsfristen nennen]',
+        under_six: 'Weniger als sechs Monate Betriebszugehörigkeit: eine Woche für beide Parteien gilt nur für ' \
+                   'Arbeitsverträge, deren Ausführung ab dem 1. August 2026 begonnen hat (Art. 5 des Gesetzes vom 3. Juni ' \
+                   '2026). Für einen Vertrag, der vor diesem Datum begonnen hat, gelten noch die früheren Fristen: ' \
+                   'Kündigung durch den Arbeitgeber 1 Woche (weniger als 3 Monate), 3 Wochen (3 bis 4 Monate), 4 Wochen ' \
+                   '(4 bis 5 Monate) und 5 Wochen (5 bis 6 Monate); durch den Arbeitnehmer 1 Woche (weniger als 3 Monate) ' \
+                   'und 2 Wochen (3 bis 6 Monate). In einer Tabelle oder Übersicht beide Gruppen nennen.',
+        pre_2014: 'Kündigung durch den Arbeitgeber eines Arbeitnehmers, dessen Arbeitsvertrag vor dem 1. Januar 2014 ' \
+                  'begonnen hat (Art. 67 bis 69 des Gesetzes vom 26. Dezember 2013): dann ist %<parts>s. Diese Regel bei ' \
+                  'langer Betriebszugehörigkeit vor einer Summe nennen.'
+      },
+      'en' => {
+        head: '[Transitional rules of Article 37/2: state them in every overview of notice periods]',
+        under_six: 'Below six months of seniority: one week for both parties applies only to employment contracts whose ' \
+                   'performance began on or after 1 August 2026 (Art. 5 of the Law of 3 June 2026). For a contract that ' \
+                   'began before that date the earlier periods still apply: notice by the employer 1 week (under 3 ' \
+                   'months), 3 weeks (3 to 4 months), 4 weeks (4 to 5 months) and 5 weeks (5 to 6 months); by the employee ' \
+                   '1 week (under 3 months) and 2 weeks (3 to 6 months). In a table or overview, show both groups.',
+        pre_2014: 'Dismissal by the employer of an employee whose contract began before 1 January 2014 (Arts. 67 to 69 of ' \
+                  'the Law of 26 December 2013): %<parts>s. State that rule before any total for a long seniority.'
+      }
+    }.freeze
+
+    NOTICE_WHEN_COPY = {
+      'nl' => { today: 'bij een opzegging die vandaag wordt gegeven', dated: 'bij een opzegging op %<date>s' },
+      'fr' => { today: "pour un préavis notifié aujourd'hui", dated: 'pour un préavis notifié le %<date>s' },
+      'de' => { today: 'bei einer heute mitgeteilten Kündigung', dated: 'bei einer am %<date>s mitgeteilten Kündigung' },
+      'en' => { today: 'for notice given today', dated: 'for notice given on %<date>s' }
+    }.freeze
+
+    # A date in the question counts as the start only beside an employment word, as the notice only beside a dismissal
+    # word: "sinds 1 september ziek" is neither. Day-month-year in the four languages, month-day-year in English, and
+    # numeric day/month/year or ISO dates.
+    NOTICE_DATE_PATTERN = /
+      (?<day>\d{1,2})(?:er|ste|de|e|\.)?\s+(?<month>[[:alpha:]]+)\s+(?<year>(?:19|20)\d{2})
+      | (?<month2>[[:alpha:]]+)\s+(?<day2>\d{1,2}),?\s+(?<year2>(?:19|20)\d{2})
+      | (?<day3>\d{1,2})[\/.-](?<month3>\d{1,2})[\/.-](?<year3>(?:19|20)\d{2})
+      | (?<year4>(?:19|20)\d{2})-(?<month4>\d{1,2})-(?<day4>\d{1,2})
+    /xi
+    # The word right after a date decides first, then an act word before it ("ontslagen op"), then an employment verb
+    # before it ("werk sinds"). Verb forms only: "werkgever" and "opzegtermijn" place no date.
+    NOTICE_START_AFTER = /\A\s*(?:\p{L}+\s+){0,2}(?:in\s+dienst|aangeworven|begonnen|gestart|werk(?:e|t|en|te|ten)?|engag[ée]e?s?|embauch[ée]e?s?|besch[äa]ftigt|eingestellt|hired|started|employed)\b/i
+    NOTICE_GIVEN_AFTER = /\A\s*(?:\p{L}+\s+){0,2}(?:ontslagen|opgezegd|licenci[ée]e?s?|gek[üu]ndigt|dismissed|fired)\b/i
+    NOTICE_GIVEN_BEFORE = /\b(?:ontslagen|opgezegd|opzegging\s+(?:gekregen|ontvangen|gegeven)|licenci[ée]e?s?|pr[ée]avis\s+(?:notifi[ée]|re[çc]u|donn[ée])|gek[üu]ndigt|dismissed|fired|given\s+notice|notice\s+(?:was\s+)?(?:given|served))\b[^.?!;]{0,12}\b(?:op|le|am|on)\s+\z/i
+    NOTICE_START_BEFORE = /\b(?:werk(?:e|t|en|te|ten)?|werkzaam|tewerkgesteld|aangeworven|begonnen|gestart|in\s+dienst|travaill\p{L}*|engag[ée]e?s?|embauch[ée]e?s?|en\s+service|besch[äa]ftigt|eingestellt|arbeite\p{L}*|work(?:s|ed|ing)?|employed|hired|started|joined)\b[^.?!;]{0,40}\b(?:sinds|vanaf|op|in|depuis(?:\s+le)?|le|seit(?:\s+dem)?|am|since|on)\s+\z/i
 
     # Cache TTL for DB lookups (1 hour)
     CACHE_TTL = 1.hour
@@ -1272,7 +1485,9 @@ module LegalChatbot
     # language, never anything derived from the question. r48 (1.1.78): the
     # leefloon note gives the amounts of 1 September 2026, and a warm cache
     # must not serve the note of 1 March 2026 after the deploy.
-    FACT_CACHE_VERSION = 'r48'
+    # r49 (1.1.79): the guaranteed-pay block opens with the note on the categories,
+    # and the leefloon note dates every schedule.
+    FACT_CACHE_VERSION = 'r49'
 
     # FisconetPlus DB path (same as FisconetSearch)
     FISCONET_DB = ENV.fetch('FISCONET_DB', '/mnt/HC_Volume_104299669/embeddings/fisconet.sqlite3')
@@ -1422,6 +1637,9 @@ module LegalChatbot
         vorming geen duur van 80 uren bereikt of een waarde gelijk aan het dubbel van het gemiddeld minimum
         maandinkomen". Die voorwaarde is dus vervuld als de vorming OFWEL minstens 80 uren duurt, OFWEL die waarde
         bereikt: één van beide volstaat, eis ze nooit allebei. De andere voorwaarden van § 4 gelden daarnaast.
+        Bij een waarde precies gelijk aan het dubbel: de wet zegt "gelijk aan" (de voorwaarde is dan vervuld),
+        de FOD Werkgelegenheid schrijft "hoger dan"; vermeld dat verschil met beide bronnen en stel geen
+        andere drempel voor.
       DIRECTIVE
       unless self.class.ggmmi_stale?
         lines << "Het dubbel van het gemiddeld minimum maandinkomen bedraagt sinds #{CURRENT_GGMMI[:effective_nl]} " \
@@ -1470,23 +1688,63 @@ module LegalChatbot
     # requested bracket deterministically, but only while the live source text
     # still contains the statutory fingerprints this calculation implements.
     def notice_period_calculation(question)
-      months = seniority_months(question)
-      return nil unless months
+      dates = notice_question_dates(question)
+      reference = dates[:notice] || Date.current
+      months = dates[:start] ? completed_months(dates[:start], reference) : seniority_months(question)
+      return notice_period_general_note(notice_period_source_text) unless months
 
-      article = Article.where(content_numac: '1978070303', language_id: @language_id)
-                       .where("LOWER(REPLACE(article_title, ' ', '')) = 'art.37/2'")
-                       .first
-      notice_period_note(months, article&.article_text.to_s)
+      notice_period_note(months, notice_period_source_text, start_date: dates[:start], notice_date: dates[:notice])
+    end
+
+    def notice_period_source_text
+      Article.where(content_numac: '1978070303', language_id: @language_id)
+             .where("LOWER(REPLACE(article_title, ' ', '')) = 'art.37/2'")
+             .first&.article_text.to_s
     end
 
     # The note for a detected seniority, or nil unless source_text is the
-    # audited Art. 37/2 (NOTICE_PERIOD_TIERS).
-    def notice_period_note(months, source_text)
+    # audited Art. 37/2 (NOTICE_PERIOD_TIERS). start_date and notice_date are
+    # the dates the question states; the notice is otherwise today.
+    def notice_period_note(months, source_text, start_date: nil, notice_date: nil)
       return nil unless current_notice_period_source?(source_text)
 
-      text = notice_period_text(notice_weeks_label(employer_notice_weeks(months)),
-                                notice_weeks_label(employee_notice_weeks(months)), months / 12, months % 12)
-      [text, *notice_period_exceptions(months)].join("\n")
+      known = known_contract_date(start_date, notice_date)
+      earlier = months < 6 && !known.nil? && known < NOTICE_AMENDMENT_DATE
+      reference = notice_date || Date.current
+      earliest = (reference << (months + 1)) + 1
+      latest = reference << months
+      basis = pre_2014_basis(start_date, earliest, latest)
+      employer = notice_weeks_label(employer_notice_weeks(months, before_amendment: earlier))
+      if basis
+        qualifier = NOTICE_EMPLOYER_QUALIFIER.fetch(@language, NOTICE_EMPLOYER_QUALIFIER['nl'])
+        employer = format(qualifier.fetch(basis == :open ? :open : :before), weeks: employer)
+      end
+      text = notice_period_text(employer, notice_weeks_label(employee_notice_weeks(months, before_amendment: earlier)),
+                                months / 12, months % 12)
+      lead = basis ? [pre_2014_line(basis, reference, !notice_date.nil?, earliest, latest)] : []
+      [*lead, text, *notice_period_exceptions(months, start_date: start_date, notice_date: notice_date)].join("\n")
+    end
+
+    # A notice question without a seniority: the transitional rules every overview of Art. 37/2 must carry
+    # (NOTICE_GENERAL_COPY), the earlier brackets only while a contract begun before 1 August 2026 can still be
+    # below six months.
+    def notice_period_general_note(source_text)
+      return nil unless current_notice_period_source?(source_text)
+
+      copy = NOTICE_GENERAL_COPY.fetch(@language, NOTICE_GENERAL_COPY['nl'])
+      lines = [copy[:head]]
+      lines << copy[:under_six] if Date.current < (NOTICE_AMENDMENT_DATE >> 6)
+      when_copy = NOTICE_WHEN_COPY.fetch(@language, NOTICE_WHEN_COPY['nl'])
+      part_two = notice_weeks_label(employer_notice_weeks(completed_months(SINGLE_STATUS_DATE, Date.current)))
+      parts = format(NOTICE_PRE_2014_PARTS.fetch(@language, NOTICE_PRE_2014_PARTS['nl']), when: when_copy[:today], part_two: part_two)
+      lines << format(copy[:pre_2014], parts: parts)
+      lines.join("\n")
+    end
+
+    # A date by which the contract had certainly begun: the stated start, or a
+    # notice given before 1 August 2026 (no contract could begin after it).
+    def known_contract_date(start_date, notice_date)
+      start_date || (notice_date if notice_date && notice_date < NOTICE_AMENDMENT_DATE)
     end
 
     def notice_period_text(employer_weeks, employee_weeks, years, remainder_months)
@@ -1531,28 +1789,109 @@ module LegalChatbot
       "#{weeks} #{weeks == 1 ? singular : plural}"
     end
 
-    # The transitional rules the detected seniority can meet: the earlier
-    # periods below six months (NOTICE_TRANSITION_ENDS) and the two parts of a
-    # contract that began before 1 January 2014 (SINGLE_STATUS_DATE).
-    def notice_period_exceptions(months)
-      lines = []
-      if months < 6 && Date.current < NOTICE_TRANSITION_ENDS
-        lines << format(NOTICE_TRANSITION_COPY.fetch(@language, NOTICE_TRANSITION_COPY['nl']),
-                        employer: notice_weeks_label(employer_notice_weeks(months, before_amendment: true)),
-                        employee: notice_weeks_label(employee_notice_weeks(months, before_amendment: true)))
+    # The rules below six months' seniority, decided by the start date when the
+    # question gives one (or by a notice before 1 August 2026) and otherwise by
+    # the starts the seniority allows, counted back from the notice. The two
+    # parts of a contract begun before 2014 open the note (notice_period_note).
+    def notice_period_exceptions(months, start_date: nil, notice_date: nil)
+      return [] unless months < 6
+
+      reference = notice_date || Date.current
+      earliest = (reference << (months + 1)) + 1
+      known = known_contract_date(start_date, notice_date)
+      if known
+        known < NOTICE_AMENDMENT_DATE ? [NOTICE_EARLIER_BRACKETS_COPY.fetch(@language, NOTICE_EARLIER_BRACKETS_COPY['nl'])] : []
+      elsif earliest < NOTICE_AMENDMENT_DATE
+        [format(NOTICE_TRANSITION_COPY.fetch(@language, NOTICE_TRANSITION_COPY['nl']),
+                employer: notice_weeks_label(employer_notice_weeks(months, before_amendment: true)),
+                employee: notice_weeks_label(employee_notice_weeks(months, before_amendment: true)))]
+      else
+        []
       end
-      since_single_status = months_since_single_status
-      if months > since_single_status
-        lines << format(NOTICE_PRE_2014_COPY.fetch(@language, NOTICE_PRE_2014_COPY['nl']),
-                        part_two: notice_weeks_label(employer_notice_weeks(since_single_status)))
-      end
-      lines
     end
 
-    # Whole months from SINGLE_STATUS_DATE to today.
-    def months_since_single_status
-      today = Date.current
-      ((today.year - SINGLE_STATUS_DATE.year) * 12) + (today.month - SINGLE_STATUS_DATE.month)
+    def pre_2014_basis(start_date, earliest, latest)
+      return (start_date < SINGLE_STATUS_DATE ? :stated : nil) if start_date
+      return :implied if latest < SINGLE_STATUS_DATE
+
+      :open if earliest < SINGLE_STATUS_DATE
+    end
+
+    def pre_2014_line(basis, reference, dated, earliest, latest)
+      when_copy = NOTICE_WHEN_COPY.fetch(@language, NOTICE_WHEN_COPY['nl'])
+      notice_when = dated ? format(when_copy[:dated], date: notice_date_label(reference)) : when_copy[:today]
+      part_two = notice_weeks_label(employer_notice_weeks(completed_months(SINGLE_STATUS_DATE, reference)))
+      parts = format(NOTICE_PRE_2014_PARTS.fetch(@language, NOTICE_PRE_2014_PARTS['nl']), when: notice_when, part_two: part_two)
+      format(NOTICE_PRE_2014_COPY.fetch(@language, NOTICE_PRE_2014_COPY['nl']).fetch(basis),
+             parts: parts, earliest: notice_date_label(earliest), latest: notice_date_label(latest))
+    end
+
+    # Whole months from start to reference: a start of 31 December 2013 and one
+    # of 1 January 2014 both have 154 on 20 November 2026.
+    def completed_months(start, reference)
+      months = ((reference.year - start.year) * 12) + (reference.month - start.month)
+      months -= 1 if (start >> months) > reference
+      [months, 0].max
+    end
+
+    def notice_date_label(date)
+      month = NOTICE_MONTH_NAMES.fetch(@language, NOTICE_MONTH_NAMES['nl'])[date.month - 1]
+      case @language
+      when 'fr' then "#{date.day == 1 ? '1er' : date.day} #{month} #{date.year}"
+      when 'de' then "#{date.day}. #{month} #{date.year}"
+      else "#{date.day} #{month} #{date.year}"
+      end
+    end
+
+    # The start and notice dates a question states, by the words beside them
+    # (NOTICE_START_*, NOTICE_GIVEN_*). A start after the notice is dropped.
+    def notice_question_dates(question)
+      text = question.to_s
+      found = {}
+      text.to_enum(:scan, NOTICE_DATE_PATTERN).each do
+        match = Regexp.last_match
+        date = notice_match_date(match)
+        next unless date
+
+        role = notice_date_role(text[[match.begin(0) - 60, 0].max...match.begin(0)], text[match.end(0), 40].to_s)
+        found[role] ||= date if role
+      end
+      found.delete(:start) if found[:start] && found[:start] > (found[:notice] || Date.current)
+      found
+    end
+
+    def notice_date_role(before, after)
+      return :start if after.match?(NOTICE_START_AFTER)
+      return :notice if after.match?(NOTICE_GIVEN_AFTER) || before.match?(NOTICE_GIVEN_BEFORE)
+
+      :start if before.match?(NOTICE_START_BEFORE)
+    end
+
+    def notice_match_date(match)
+      year, month, day =
+        if match[:year] then [match[:year], notice_month_number(match[:month]), match[:day]]
+        elsif match[:year2] then [match[:year2], notice_month_number(match[:month2]), match[:day2]]
+        elsif match[:year3] then [match[:year3], match[:month3], match[:day3]]
+        else [match[:year4], match[:month4], match[:day4]]
+        end
+      return nil unless month
+
+      Date.new(year.to_i, month.to_i, day.to_i)
+    rescue Date::Error
+      nil
+    end
+
+    def notice_month_number(name)
+      wanted = notice_fold(name)
+      NOTICE_MONTH_NAMES.each_value do |names|
+        index = names.index { |month| notice_fold(month) == wanted }
+        return index + 1 if index
+      end
+      nil
+    end
+
+    def notice_fold(word)
+      word.to_s.unicode_normalize(:nfkd).gsub(/\p{Mn}/, '').downcase
     end
 
     def seniority_months(question)

@@ -2172,6 +2172,21 @@ module LegalChatbot
       (?:(?=.*#{NV_FORM_PATTERN})|(?=#{GENERIC_COMPANY_CAPITAL_PATTERN})(?!.*#{BV_FORM_PATTERN}))
     }imx.freeze
 
+    # Sol 2026-11-19 22:47:08Z (#1696, #1711, #1723): annual-leave answers gave the day scale of workers without the
+    # monthly regime of employees. The duration of the ordinary leave is in the Royal Decree of 30 March 1967
+    # (1967033001): art. 35 under Title II (workers), art. 60 under Title III (employees); the coordinated laws'
+    # art. 3 gives the right itself.
+    ANNUAL_LEAVE_DURATION_PATTERN = /(?=.*\b(?:jaarlijkse\s+vakantie|vakantiedagen|betaald\s+verlof|wettelijke\s+vakantie|congés?\s+payés?)\b)(?=.*\b(?:hoeveel|aantal|dagen|duur|per\s+jaar|combien|nombre|jours|durée)\b)/i
+
+    # Sol 2026-11-19 22:47:08Z (#1666): palliative leave is one month, renewable twice by one month (Herstelwet of
+    # 22 January 1985, 1985021271, art. 100bis, § 3, as amended in 2017). Palliative CARE alone is another law.
+    PALLIATIVE_LEAVE_PATTERN = /(?<![[:alpha:]])(?:palliatie(?:f|ve)\s+verlof|cong[ée]s?\s+(?:pour\s+(?:des\s+)?soins\s+)?palliatifs?|palliative\s+(?:care\s+)?leave|palliativurlaub)(?![[:alpha:]])/i
+
+    # Sol 2026-11-19 19:52:56Z (#687 "BTW-aangifte frequentie?"): the answer relied on the import regime of
+    # art. 58sexies. Royal Decree no. 1 on VAT (1992003823), art. 17: the monthly return by the 20th of the next month,
+    # the quarterly return (by the 25th) up to 2.500.000 EUR turnover.
+    VAT_RETURN_PERIOD_PATTERN = /\A(?=.*\b(?:btw|tva|vat|mwst|mehrwertsteuer)\b)(?=.*\b(?:aangifte\w*|d[ée]clarations?|returns?|erkl[äa]rung\w*|voranmeldung\w*)\b)(?=.*\b(?:frequent\w*|fr[ée]quence|maand\w*|kwarta\w*|hoe\s+vaak|mensuel\w*|trimestr\w*|monthly|quarterly|how\s+often|monatlich\w*|viertelj[äa]hrlich\w*|wanneer|uiterlijk|termijn\w*|deadline|d[ée]lai\w*|frist\w*|when)\b)/im
+
     # retrieval_degradation when a pattern could not be asked, or the pins were lost altogether.
     ARTICLE_PINS_UNAVAILABLE = 'article_pins_unavailable'
 
@@ -2391,7 +2406,11 @@ module LegalChatbot
       [/(?:zwanger(?:schap|e)?|grossesse).{0,40}(?:ontslag|licenciement)|(?:ontslag|licenciement).{0,40}(?:zwanger(?:schap|e)?|grossesse)/i, '1971031602', '40'],
       [/\bprofylactisch\s+verlof\b|\bpreventieve\s+werkverwijdering\b|\bwerkverwijdering\b.*\b(?:zwangere?|zwangerschap|werkneemster)\b|\b(?:zwangere?|zwangerschap|werkneemster)\b.*\bwerkverwijdering\b/i, '1971031602', '42'],
       [/\b(?:zwangere?|zwangerschap|werkneemster)\b.*\bnacht(?:arbeid|werk|prestaties)\b|\bnacht(?:arbeid|werk|prestaties)\b.*\b(?:zwangere?|zwangerschap|werkneemster)\b/i, '1971031602', '43'],
-      [/(?=.*\b(?:jaarlijkse\s+vakantie|vakantiedagen|betaald\s+verlof|wettelijke\s+vakantie|congés?\s+payés?)\b)(?=.*\b(?:hoeveel|aantal|dagen|duur|per\s+jaar|combien|nombre|jours|durée)\b)/i, '1971062850', '3'],
+      [ANNUAL_LEAVE_DURATION_PATTERN, '1971062850', '3'],
+      [ANNUAL_LEAVE_DURATION_PATTERN, '1967033001', '35'],        # workers: the day scale (Title II)
+      [ANNUAL_LEAVE_DURATION_PATTERN, '1967033001', '60'],        # employees: two days per month (Title III)
+      [PALLIATIVE_LEAVE_PATTERN, '1985021271', '100bis'],         # one month, renewable twice
+      [VAT_RETURN_PERIOD_PATTERN, '1992003823', '17'],            # monthly or quarterly VAT return
 
       # German answers v5, grader 1: the guaranteed-pay question reasoned on
       # Art. 72 (the employee hired for under three months) and the pension

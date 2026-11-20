@@ -45,6 +45,10 @@ module LegalChatbot
     FOREIGN_SUCCESSION_SPECIFIC_SUBJECT_PATTERN = /\b(?:aangift\w*|declar\w*|déclar\p{L}*|filing|file\s+(?:an?\s+)?(?:(?:inheritance|estate)(?:\s+tax)?|tax)\s+return|waarder\w*|waardebepal\w*|schatting\w*|estimat\w*|évalu\p{L}*|valuat\w*|apprais\w*|Bewert\w*|Wertbestimm\w*|Erklärung\w*)\b/iu
     COMPANY_CAR_TAX_PATTERN = /\A(?=.*(?:\bbedrijfswagen\b|\bvoiture\s+de\s+société\b|\bfirmenwagen\b|\bcompany\s+car\b|\bvoordeel\s+alle\s+aard\b.{0,40}\b(?:wagen|auto|voertuig)\b|\bavantage\s+de\s+toute\s+nature\b.{0,40}\b(?:véhicule|voiture)\b))(?=.*\b(?:belast\w*|belasting\w*|fisca\w*|voordeel\s+alle\s+aard|imp[oô]t\w*|fiscal\w*|avantage\s+de\s+toute\s+nature|steuer\w*|versteuer\w*|geldwerter\s+vorteil|tax\w*|benefit\s+in\s+kind)\b).*\z/im
     CRYPTO_TAX_PATTERN = /\A(?=.*\b(?:crypto|cryptomunten?|cryptovaluta|cryptowinst(?:en)?|cryptomonnaies?|cryptocurrenc(?:y|ies)|kryptowährung(?:en)?|bitcoin)\b)(?=.*(?:\b(?:belast\w*|belasting\w*|fisca\w*|diverse\s+inkomsten|meerwaard\w*|winsten?|inkomsten|imp[oô]t\w*|fiscal\w*|revenus?\s+divers|plus[-\s]?value\w*|gains?|tax\w*|income|steuer\w*|gewinn\w*)\b|\bcryptowinst(?:en)?\b)).*\z/im
+    # Sol 2026-11-19 19:52:56Z (#679 "Aangifte personenbelasting deadline?"): the answer gave only the art. 308/1
+    # exceptions. WIB 92 art. 308, § 1 holds the ordinary deadlines (30 June on paper, 15 July electronically); art. 308/1
+    # the later ones. A company's return is another article.
+    PERSONAL_TAX_RETURN_DEADLINE_PATTERN = /\A(?!.*\b(?:vennootschap\w*|rechtspersonen\w*|soci[ée]t[ée]s?|isoc|corporate|körperschaft\w*)\b)(?=.*(?:\bbelastingaangifte\w*|\baangifte\w*\s+(?:in\s+de\s+)?(?:personen|inkomsten)belasting|\b(?:personen|inkomsten)belasting\b.{0,40}\baangifte\w*|\btax[-\s]?on[-\s]?web\b|\bd[ée]claration\s+(?:d.imp[ôo]t|fiscale)|\bimp[ôo]t\s+des\s+personnes\s+physiques\b|\beinkommensteuererkl[äa]rung\b|\bincome\s+tax\s+return\b))(?=.*\b(?:deadline|termijn\w*|wanneer|uiterlijk|indien\w*|date\s+limite|d[ée]lai\w*|quand|rentrer|frist\w*|wann|when|due)\b)/im
     DIVERSE_INCOME_PATTERN = /\b(?:diverse\s+inkomsten|revenus\s+divers|sonstige\s+einkünfte|miscellaneous\s+income)\b/i
 
     # Question-token → tax-code filter (LIKE patterns applied to
@@ -119,7 +123,8 @@ module LegalChatbot
       { question: /\b(?:dubbele\s+belasting|double\s+imposition)\b.{0,60}\b(?:erfenis|nalatenschap|successie|succession)\b|\b(?:erfenis|nalatenschap|successie|succession)\b.{0,60}\b(?:buitenland|étranger|dubbele\s+belasting|double\s+imposition)\b/i,
         document_types: ['w.succ.'], articles: %w[17] },
       { question: /\b(?:erfbelasting(?:tarieven)?|successierecht(?:tarieven)?|droits?\s+de\s+succession)\b.{0,60}\b(?:brussel|bruxelles|walloni[eë]|waals|wallon)\b|\b(?:brussel|bruxelles|walloni[eë]|waals|wallon)\b.{0,60}\b(?:erfbelasting(?:tarieven)?|successierecht(?:tarieven)?|droits?\s+de\s+succession)\b/i,
-        document_types: ['w.succ.'], articles: %w[48] }
+        document_types: ['w.succ.'], articles: %w[48] },
+      { question: PERSONAL_TAX_RETURN_DEADLINE_PATTERN, document_types: ['wib 92'], articles: %w[308 308/1] }
     ].freeze
 
     STOP_WORDS = %w[

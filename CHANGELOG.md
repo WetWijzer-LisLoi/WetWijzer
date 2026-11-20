@@ -8,6 +8,15 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.79] - 2026-11-20
+
+### Fixed
+- Notice periods: when a question gives the start date of the contract, the notice period is calculated from it, so a contract begun on 31 December 2013 gets the two-part calculation and one begun on 1 January 2014 does not. A seniority alone that cannot tell on which side of 1 January 2014 the contract began now gives both conditions and asks for the start date, and a stated date of a past dismissal replaces today. For a contract begun before 2014 the answer now opens with the two-part rule and gives no total while the first part is unknown, instead of opening with a single figure. A question without a seniority, such as a request for the table of notice periods, now carries the periods that still apply to contracts begun before 1 August 2026 and the two-part rule. Below six months' seniority, a start date or an earlier dismissal decides whether the periods from before 1 August 2026 apply.
+- Leefloon: each set of amounts is shown with its period and its circular, and the newest as the last confirmed amounts, so a later indexation cannot make an older amount look current.
+- Training clause: at a value exactly equal to twice the average minimum monthly income, the chatbot names the difference between the law ("gelijk aan") and the FOD guidance ("hoger dan").
+- Guaranteed pay during illness: workers, employees, and employees hired for less than three months each get their own days, percentages and shares (85,88% or 86,93% from day 8, the sickness fund from day 15).
+- Sources: an annual-leave question gets the rules for workers and for employees, a palliative-leave question the article on its duration (one month, renewable twice), a question about how often to file the VAT return Royal Decree no. 1, art. 17, and a question about the deadline of the personal income-tax return WIB 92 art. 308 beside its exceptions in art. 308/1.
+
 ## [1.1.78] - 2026-11-20
 
 ### Fixed
