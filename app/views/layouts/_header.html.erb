@@ -2,7 +2,7 @@
   <div class="container mx-auto px-4 py-2">
     <div class="flex justify-between items-center gap-x-4 gap-y-1">
       <%# Left: always-visible items %>
-      <div class="flex items-center gap-1 sm:gap-2 text-sm">
+      <div class="flex min-w-0 items-center gap-1 sm:gap-2 text-sm">
         <%# Dark mode toggle - shown once scripts run (js-only: without them it
             could not work). A 32px target around the 20px icon (the negative
             margin keeps the row's layout) and a visible keyboard focus ring
@@ -54,7 +54,7 @@
         </div>
 
         <%# Desktop nav items - hidden on mobile %>
-        <div class="hidden sm:flex sm:items-center sm:gap-1 sm:gap-2">
+        <div class="hidden min-w-0 sm:flex sm:items-center sm:gap-1 sm:gap-2">
           <%= link_to bookmarks_path, class: %w[text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) transition-colors duration-150 ease-out motion-reduce:transition-none].join(" "), title: t('bookmarks.title'), data: { tour: 'bookmarks' } do %>
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -100,16 +100,16 @@
             <span class="text-[7px] font-bold leading-none text-amber-600 dark:text-amber-400 -ml-0.5 -mt-2 self-start">α</span>
           <% end %>
 
-          <%# Keep tablet navigation compact; full domains return on wide desktop. %>
-          <span class="inline-flex items-center gap-1 sm:gap-2 whitespace-nowrap" data-tour="languages">
-          <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to language_switch_url(:nl), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>NL<span class="hidden xl:inline"> (wetwijzer.be)</span><% end %>
-          <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to language_switch_url(:fr), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>FR<span class="hidden xl:inline"> (lisloi.be)</span><% end %>
-          <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to language_switch_url(:de), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>DE<span class="hidden xl:inline"> (gesetzguide.be)</span><% end %>
-          <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to language_switch_url(:en), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") do %>EN/INT<span class="hidden xl:inline"> (lexlibera.be)</span><% end %>
+          <%# Every language code carries its site's domain, the current site's too, with the existing bars and
+              their spacing (the owner, 2026-11-20). Each bar stays with its link, and the group wraps at tablet
+              widths instead of overflowing the bar. %>
+          <span class="inline-flex min-w-0 flex-wrap items-center gap-1 sm:gap-2" data-tour="languages">
+            <% %i[nl fr de en].each do |locale| %>
+              <span class="inline-flex items-center gap-1 whitespace-nowrap sm:gap-2">
+                <span class="text-gray-300 dark:text-navy" aria-hidden="true">|</span>
+                <%= link_to language_switch_label(locale), language_switch_url(locale), class: %w[font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none].join(" ") %>
+              </span>
+            <% end %>
           </span>
         </div>
       </div>
@@ -254,15 +254,14 @@
           <% end %>
         </div>
 
-        <%# Domain links %>
+        <%# Domain links: each code with its site's domain (the owner, 2026-11-20); each separator stays with its link. %>
         <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700" data-tour="languages">
-          <%= link_to language_switch_url(:nl), class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>NL<% end %>
-          <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to language_switch_url(:fr), class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>FR<% end %>
-          <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to language_switch_url(:de), class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>DE<% end %>
-          <span class="text-gray-300 dark:text-navy">|</span>
-          <%= link_to language_switch_url(:en), class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" do %>EN/INT<% end %>
+          <% %i[nl fr de en].each_with_index do |locale, index| %>
+            <span class="inline-flex items-center gap-2 whitespace-nowrap">
+              <% if index.positive? %><span class="text-gray-300 dark:text-navy" aria-hidden="true">|</span><% end %>
+              <%= link_to language_switch_label(locale), language_switch_url(locale), class: "text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-(--accent-600) dark:hover:text-(--accent-500) hover:underline transition-colors" %>
+            </span>
+          <% end %>
         </div>
 
         <%# Login/Signup (mobile) %>

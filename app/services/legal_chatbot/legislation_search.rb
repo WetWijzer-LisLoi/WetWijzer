@@ -139,6 +139,19 @@ module LegalChatbot
     MEDICAL_CONTEXT_PATTERN = /\b(?:medisch|medische|geneesmiddel|geneesmiddelen|arts|dokter|pati[eë]nt|recept|voorschrift|médical|médecin|patient|ordonnance|prescription\s+médicale|medizinisch|arzt|rezept|verschreibung)\w*\b/i.freeze
     RENTAL_CONTEXT_PATTERN = /\b(?:huur|huurder|verhuurder|huurcontract|woning|bail|locataire|propriétaire|loyer|location|miet(?:e|er)|vermieter|mietvertrag)\w*\b/i.freeze
     PATIENT_RIGHTS_CONTEXT_PATTERN = /(?=.*\b(?:pati[eë]nt(?:en)?|patient(?:s)?|patients?|patienten)\b)(?=.*\b(?:recht(?:en)?|dossier|toestemming|consent|privacy|inzage|informatie|droits?|dossier\s+médical|consentement|einwilligung|rechte|akte)\b)/i.freeze
+    # Refusing a medical treatment or withdrawing consent: the patient rights
+    # act, Arts. 8/1 (the right to refuse or withdraw) and 8/2 (a refusal in an
+    # advance directive). "Hoe weiger ik een behandeling?" names no patient and
+    # no right, so PATIENT_RIGHTS_CONTEXT_PATTERN missed it and the paraphrase
+    # went unanswered (Sol 2026-11-20 04:12:53Z). A data-processing or
+    # equal-treatment question is not a medical refusal.
+    TREATMENT_REFUSAL_PATTERN = /
+      \A
+      (?!.*(?<![[:alnum:]])(?:gegevens|persoonsgegevens|donn[ée]es|Daten|data|gelijke\s+behandeling|[ée]galit[ée]\s+de\s+traitement|Gleichbehandlung|equal\s+treatment)(?![[:alnum:]]))
+      (?=.*(?<![[:alnum:]])(?:behandeling\p{L}*|ingreep|ingrepen|operatie\p{L}*|vaccin\p{L}*|medicatie|bloedtransfusie\p{L}*|reanimatie\p{L}*|chemo\p{L}*|traitements?|soins|op[ée]ration\p{L}*|transfusion\p{L}*|r[ée]animation|Behandlung\p{L}*|Eingriff\p{L}*|Operation\p{L}*|Therapie\p{L}*|Impfung\p{L}*|treatments?|surgery|therapy|vaccination\p{L}*)(?![[:alnum:]]))
+      (?=.*(?<![[:alnum:]])(?:weiger\p{L}*|geweigerd|toestemming\s+in(?:trekken|getrokken|te\s+trekken)|refus\p{L}*|retirer\s+(?:mon\s+|son\s+|le\s+)?consentement|lehn\p{L}*|abgelehnt|verweiger\p{L}*|Einwilligung\s+widerruf\p{L}*|declin\p{L}*|withdraw\p{L}*\s+(?:my\s+|the\s+)?consent)(?![[:alnum:]]))
+      .*\z
+    /imxu.freeze
 
     # Legal questions often start with a forum introduction or end with a
     # personal opinion. Such scaffolding must not consume the lexical budget
@@ -1746,6 +1759,8 @@ module LegalChatbot
     GAS_FINE_CHALLENGE_PATTERN = /\A(?=.*#{FocusedTopicSourceScope::GAS_FINE_PATTERN})(?=.*#{FocusedTopicSourceScope::CHALLENGE_PATTERN}).*\z/imu.freeze
     GAS_FINE_CHALLENGE_PRIORITY = %w[31 30 27 25].map { |number| ['2013000441', number].freeze }.freeze
     INTERNET_IMAGE_PATTERN = /\A(?=.*#{FocusedTopicSourceScope::IMAGE_PATTERN})(?=.*#{FocusedTopicSourceScope::ONLINE_ORIGIN_PATTERN}).*\z/imu.freeze
+    PORTRAIT_USE_PATTERN = FocusedTopicSourceScope::PORTRAIT_USE_PATTERN
+    GUARANTEED_PAY_PATTERN = FocusedTopicSourceScope::GUARANTEED_PAY_PATTERN
     WORKPLACE_CAMERA_PATTERN = /\A(?=.*#{FocusedTopicSourceScope::CAMERA_PATTERN})(?=.*#{FocusedTopicSourceScope::WORKPLACE_PATTERN}).*\z/imu.freeze
     VEHICLE_HEADLIGHT_PATTERN = VehicleHeadlightGlareSourceScope::QUESTION_PATTERN
     VEHICLE_HEADLIGHT_LIABILITY_PATTERN = VehicleHeadlightGlareSourceScope::LIABILITY_QUESTION_PATTERN
@@ -1947,15 +1962,26 @@ module LegalChatbot
     end
 
     # The same act as an ordinary retrieved row (Sol 2026-11-18 16:15:53Z: the
-    # rendered card list, not only the pins): a civil intestacy question with
-    # no tax or cost wording does not show the Special Financing Act. Pinned,
-    # or named by NUMAC, it stays.
+    # rendered card list, not only the pins): a civil succession question
+    # (civil_succession_question?) does not show the Special Financing Act.
+    # Pinned, or named by NUMAC, it stays.
     SPECIAL_FINANCING_ACT = '1989021010'
     SPECIAL_FINANCING_TITLE_PATTERN = /\bfinanciering\s+van\s+de\s+gemeenschappen\s+en\s+de\s+gewesten\b|\bfinancement\s+des\s+communaut[ée]s\s+et\s+des\s+r[ée]gions\b|\bFinanzierung\s+der\s+Gemeinschaften\s+und\s+Regionen\b/iu
 
+    # A succession or gift question without tax or cost wording is civil: it
+    # gets neither the Special Financing Act pins nor its cards. First limited
+    # to intestacy (Sol 2026-11-18 13:42:47Z and 16:15:53Z); the same two
+    # articles then filled the cards of renunciation, reserve and other civil
+    # inheritance questions (Sol 2026-11-20 04:12:53Z). A named tax subject
+    # ("droits d'enregistrement", "verkooprecht") is tax wording too.
+    def self.civil_succession_question?(question)
+      text = question.to_s
+      text.match?(REGIONAL_TAX_COMPETENCE_PATTERN) &&
+        !text.match?(SUCCESSION_TAX_WORDING_PATTERN) && !text.match?(REGIONAL_TAX_SUBJECT_PATTERN)
+    end
+
     def self.civil_intestacy_borrows_tax_competence?(article, question)
-      return false unless question.match?(INTESTATE_SUCCESSION_PATTERN)
-      return false if question.match?(SUCCESSION_TAX_WORDING_PATTERN)
+      return false unless civil_succession_question?(question)
 
       numac = (article[:numac] || article['numac']).to_s
       title = (article[:law_title] || article[:title] || article['law_title'] || article['title']).to_s
@@ -1974,6 +2000,19 @@ module LegalChatbot
     # 13:42:47Z).
     SUCCESSION_TAX_WORDING_PATTERN = /\b(?:\p{L}*belasting\p{L}*|successierecht\p{L}*|schenkingsrecht\p{L}*|registratierecht\p{L}*|droits?\s+(?:de\s+)?(?:succession|donation|enregistrement)|imp[ôo]t\p{L}*|tax\p{L}*|\p{L}*steuer\p{L}*|tarie[fv]\p{L}*|tarif\p{L}*|taux|betal\p{L}*|payer|pay\p{L}*|zahl\p{L}*|kost\p{L}*|co[ûu]t\p{L}*|cost\p{L}*|vrijstelling\p{L}*|exon[ée]r\p{L}*|exempt\p{L}*|Freibetr[äa]g\p{L}*|aangifte\p{L}*|d[ée]claration\p{L}*|Erkl[äa]rung\p{L}*|gewest\p{L}*|r[ée]gion\p{L}*|Region\p{L}*|Vlaanderen|Wallonie|Walloni[ëe]|Brussel|Bruxelles|Flandre)\b/iu
     INTESTATE_SUCCESSION_PATTERN = /\b(?:zonder\s+(?:een\s+)?testament|geen\s+testament|wie\s+erft|wettelijke\s+erfopvolging|erfopvolging\s+bij\s+versterf|bij\s+versterf|sans\s+(?:de\s+|un\s+)?testament|pas\s+de\s+testament|ab\s+intestat|qui\s+h[ée]rite|succession\s+l[ée]gale|without\s+(?:a\s+)?will|intestate|intestacy|who\s+inherits|ohne\s+(?:ein\s+)?Testament|kein(?:en)?\s+Testament|gesetzliche\s+Erbfolge|wer\s+erbt)\b/iu
+    # Refusing an inheritance: Civil Code Book 4, Arts. 4.44 (renunciation by a
+    # declaration before a notary, entered in the central inheritance
+    # register), 4.34 (nobody has to accept), 4.37 (three months for the
+    # inventory and forty days to deliberate), 4.39 (the renouncer is deemed
+    # never to have been an heir) and 4.45 (where the share goes). "Kan ik een
+    # erfenis weigeren?" got none of them and failed to answer (Sol 2026-11-20
+    # 04:12:53Z).
+    INHERITANCE_RENUNCIATION_PATTERN = /
+      \A
+      (?=.*(?<![[:alnum:]])(?:erfenis\p{L}*|nalatenschap\p{L}*|erfdeel|successions?|h[ée]ritages?|Erbschaft\p{L}*|Erbe|Erbteil\p{L}*|Nachlass\p{L}*|inheritance\p{L}*)(?![[:alnum:]]))
+      (?=.*(?<![[:alnum:]])(?:weiger\p{L}*|geweigerd|verwerp\p{L}*|verworpen|afstand\s+(?:doen|te\s+doen|gedaan)|renonc\p{L}*|refus\p{L}*|ausschlag\p{L}*|ausgeschlagen|Ausschlagung|verzicht\p{L}*|ablehn\p{L}*|abgelehnt|renounc\p{L}*|disclaim\p{L}*|reject\p{L}*|declin\p{L}*)(?![[:alnum:]]))
+      .*\z
+    /imxu.freeze
     # The compounds count ("gelijkheidsbeginsel", "Gleichheitsgrundsatz"): the
     # built-in sample "Gelijkheidsbeginsel grondwet?" missed both pins because
     # "gelijkheid" had to end the word (Sol 2026-11-18 06:50:03Z).
@@ -2279,6 +2318,12 @@ module LegalChatbot
       [INTESTATE_SUCCESSION_PATTERN, '2022B30600', '4.10'],
       [INTESTATE_SUCCESSION_PATTERN, '2022B30600', '4.16'],
       [INTESTATE_SUCCESSION_PATTERN, '2022B30600', '4.17'],
+      # Refusing an inheritance (INHERITANCE_RENUNCIATION_PATTERN).
+      [INHERITANCE_RENUNCIATION_PATTERN, '2022B30600', '4.44'],
+      [INHERITANCE_RENUNCIATION_PATTERN, '2022B30600', '4.34'],
+      [INHERITANCE_RENUNCIATION_PATTERN, '2022B30600', '4.37'],
+      [INHERITANCE_RENUNCIATION_PATTERN, '2022B30600', '4.39'],
+      [INHERITANCE_RENUNCIATION_PATTERN, '2022B30600', '4.45'],
 
       # Lay-term aliases (decision D, docs/ops/withheld-answers-2026-08-04.md,
       # measured against config/quality/retrieval_recall_fixture_v1.json):
@@ -2613,12 +2658,23 @@ module LegalChatbot
       [INTERNET_IMAGE_PATTERN, '2013A11134', 'XI.165'],
       [INTERNET_IMAGE_PATTERN, '2013A11134', 'XI.189'],
       [INTERNET_IMAGE_PATTERN, '2013A11134', 'XI.190'],
+      # A picture of a person: the portrait right (PORTRAIT_USE_PATTERN).
+      [PORTRAIT_USE_PATTERN, '2013A11134', 'XI.174'],
       # Cameras at work: CAO nr. 68 (conditions, purposes, proportionality,
       # informing the works council).
       [WORKPLACE_CAMERA_PATTERN, '1998A12677', '3'],
       [WORKPLACE_CAMERA_PATTERN, '1998A12677', '4'],
       [WORKPLACE_CAMERA_PATTERN, '1998A12677', '7'],
       [WORKPLACE_CAMERA_PATTERN, '1998A12677', '9'],
+      # Refusing a treatment (TREATMENT_REFUSAL_PATTERN): the right to refuse
+      # or withdraw consent, and a refusal in an advance directive.
+      [TREATMENT_REFUSAL_PATTERN, '2002022737', '8/1'],
+      [TREATMENT_REFUSAL_PATTERN, '2002022737', '8/2'],
+      # Guaranteed pay for each category (GUARANTEED_PAY_PATTERN; #1732): the worker (Art. 52), the employee
+      # (Art. 70) and the employee hired for less than three months (Art. 71).
+      [GUARANTEED_PAY_PATTERN, '1978070303', '52'],
+      [GUARANTEED_PAY_PATTERN, '1978070303', '70'],
+      [GUARANTEED_PAY_PATTERN, '1978070303', '71'],
       [VEHICLE_HEADLIGHT_PATTERN, '2026004490', '58'],
       [VEHICLE_HEADLIGHT_PATTERN, '1975120109', '30'],
       [VEHICLE_HEADLIGHT_PATTERN, '1968031501', '28'],
@@ -4006,7 +4062,7 @@ module LegalChatbot
     end
 
     def patient_rights_context?(question)
-      question.match?(PATIENT_RIGHTS_CONTEXT_PATTERN)
+      question.match?(PATIENT_RIGHTS_CONTEXT_PATTERN) || question.match?(TREATMENT_REFUSAL_PATTERN)
     end
 
     def rental_context?(question)
@@ -4145,20 +4201,22 @@ module LegalChatbot
       CONSTITUTION_EQUALITY_PATTERN, CONSTITUTION_HOME_INVIOLABILITY_PATTERN, CONSTITUTION_EDUCATION_PATTERN
     ].freeze
 
-    # Belgian equality, home, education and intestacy pins stay out of a question asked under a
-    # foreign constitution or legal system (ForeignLegalSystemScope), and a civil
-    # intestacy question gets no regional tax-competence pins (Sol 2026-11-18
-    # 13:42:47Z). An article asked for by number keeps its own pin.
+    # Belgian equality, home, education, intestacy and renunciation pins stay out of a question asked
+    # under a foreign constitution or legal system (ForeignLegalSystemScope), and a civil
+    # succession question (civil_succession_question?) gets no regional
+    # tax-competence pins (Sol 2026-11-18 13:42:47Z and 2026-11-20 04:12:53Z).
+    # An article asked for by number keeps its own pin.
     def scope_equality_and_intestacy_pins(matched, question)
       dropped = []
       if matched.any? { |pattern, _numac, _article| BELGIAN_CONSTITUTION_RIGHT_PATTERNS.any? { |right| pattern.equal?(right) } } &&
          (ForeignLegalSystemScope.foreign_constitution_only?(question) || ForeignLegalSystemScope.foreign_legal_system?(question))
         dropped.concat(BELGIAN_CONSTITUTION_RIGHT_PATTERNS)
       end
-      if question.match?(INTESTATE_SUCCESSION_PATTERN)
-        dropped << INTESTATE_SUCCESSION_PATTERN if ForeignLegalSystemScope.foreign_legal_system?(question)
-        dropped << REGIONAL_TAX_COMPETENCE_PATTERN unless question.match?(SUCCESSION_TAX_WORDING_PATTERN)
-      end
+      succession = []
+      succession << INTESTATE_SUCCESSION_PATTERN if question.match?(INTESTATE_SUCCESSION_PATTERN)
+      succession << INHERITANCE_RENUNCIATION_PATTERN if question.match?(INHERITANCE_RENUNCIATION_PATTERN)
+      dropped.concat(succession) if succession.any? && ForeignLegalSystemScope.foreign_legal_system?(question)
+      dropped << REGIONAL_TAX_COMPETENCE_PATTERN if self.class.civil_succession_question?(question)
       return matched if dropped.empty?
 
       matched.reject { |pattern, _numac, _article| dropped.any? { |gone| pattern.equal?(gone) } }

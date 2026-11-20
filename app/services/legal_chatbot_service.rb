@@ -418,6 +418,21 @@ class LegalChatbotService
     end
   end
 
+  # The rate of a VAT schedule rubric (FisconetSearch.vat_schedule_rate), on the
+  # header line in the language of the text it heads (the answer's language when
+  # the source does not say).
+  def vat_schedule_note(source)
+    table, rate = LegalChatbot::FisconetSearch.vat_schedule_rate(source[:document_type], source[:article_number])
+    return '' unless table
+
+    french = source[:source_language].present? ? source[:source_language].to_s == 'fr' : @language == 'fr'
+    if french
+      " [tableau #{table} : taux de #{rate} p.c. (AR n° 20, art. 1er)]"
+    else
+      " [tabel #{table}: tarief van #{rate} pct. (KB nr. 20, art. 1)]"
+    end
+  end
+
   # Build combined context from legislation, jurisprudence, parliamentary
   # works, tax legislation, regional legislation, and sealed official EU
   # sources admitted by LegalFactProvider.
@@ -1110,9 +1125,10 @@ class LegalChatbotService
     # to attach a figure to.
     scope = LegalChatbot::FisconetSearch.context_region_label(art[:region], language: @language)
     pending = future_amendment_note(art)
+    schedule = vat_schedule_note(art)
     metadata = source_context_metadata(art, kind: 'tax_code')
     "[Bron #{number} - #{tax_label}]\n#{art[:document_type]} - #{art[:legislation_title]}\n" \
-      "Artikel #{art[:article_number]}#{section}#{scope ? " [#{scope}]" : ''}#{pending}\n#{metadata}" \
+      "Artikel #{art[:article_number]}#{section}#{scope ? " [#{scope}]" : ''}#{schedule}#{pending}\n#{metadata}" \
       "#{"\nLINK: #{link}" if link}\n\n#{text}"
   end
 

@@ -8,6 +8,20 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.80] - 2026-11-20
+
+### Changed
+- Header: every language link shows its site's domain beside its code, for the current site too, in the desktop bar and in the mobile menu: NL (wetwijzer.be), FR (lisloi.be), DE (gesetzguide.be) and EN/INT (lexlibera.be). On narrower screens the links wrap instead of hiding the domains.
+
+### Fixed
+- Notice periods: for a contract that began before 2014 the chatbot is no longer given the period of the current law for the whole seniority, which an answer still put first. It gets the rule of the two parts with the second part, and the employee's own notice, which since October 2023 follows the current law alone.
+- Guaranteed pay during illness: the answer starts with each category's own rules, with the totals from day 8 to 14 of 85.88% for workers and 86.93% for employees hired for less than three months, and explains what the sickness fund and the employer pay from day 15. A question about pay in the first month of illness gets these facts too, the articles for each category are always among the sources, and the other cards come from the employment contracts law, collective agreements and the sickness insurance.
+- Inheritance: a question about refusing an inheritance gets the Civil Code articles on renouncing it (a declaration before a notary, entered in the central inheritance register), on the time to decide (three months for the inventory and forty days to deliberate), on its effect and on where the share goes. Civil inheritance and gift questions without tax wording no longer show the Special Financing Act, which only concerns the regions' tax powers.
+- Medical treatment: a question about refusing a treatment or withdrawing consent gets the patient rights act's articles on that right and on a refusal in an advance directive, even when it does not say "patient".
+- Image rights: a question about the use of a person's photo or about the right to one's image gets the portrait right of the Code of Economic Law, and its other sources stay within copyright, data protection and private life instead of unrelated decrees that mention an image.
+- Admin: the Set credits and Change tier buttons on a user's page submit their form again. Their confirmation was attached to the button in a way that left it without a form, so a click did nothing. Set credits now takes a whole number from 0 to 10,000: a higher or malformed value is refused with a message and the balance stays as it was, instead of being clamped.
+- VAT: questions on the rate for medicines, mains water and electricity get their own rubric of the rate schedule, and each schedule rubric now tells the chatbot its table's rate (6, 12 or 0 percent) from the decree's first article. German VAT questions ("Umsatzsteuer") get the schedule rubrics too.
+
 ## [1.1.79] - 2026-11-20
 
 ### Fixed

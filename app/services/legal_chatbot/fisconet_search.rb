@@ -65,18 +65,43 @@ module LegalChatbot
         legislation: ['%successie%', '%succession%', '%w.succ%'] }
     ].freeze
 
+    # A rubric of the VAT rate schedule (KB nr. 20, tables A, B and C) lists
+    # its supplies but not its rate, and a table B rubric's own title does not
+    # name it either: art. 1 sets table A at 6 pct., table B at 12 pct. and
+    # table C at 0 pct. (read in full 2026-11-20). The block of a rubric says
+    # which, so an answer can state the rate (Sol 2026-11-20 05:28:15Z).
+    VAT_SCHEDULE_RATES = { 'A' => '6', 'B' => '12', 'C' => '0' }.freeze
+
+    # [table, rate] for a KB nr. 20 rubric ("A-XIII" -> ["A", "6"]), else nil.
+    def self.vat_schedule_rate(document_type, article_number)
+      return nil unless document_type.to_s.strip.casecmp?('kb 20')
+
+      table = article_number.to_s[/\A([ABC])-/, 1]
+      table && [table, VAT_SCHEDULE_RATES.fetch(table)]
+    end
+
     # High-confidence tax concepts whose governing articles are otherwise
     # easily displaced by a different code containing the same vocabulary.
     ARTICLE_HINTS = [
-      { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer)\b)(?=.*\b(?:renovati\w*|verbouw\w*|rénovation\w*|renovation\w*)\b).*\z/im,
+      { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer|umsatzsteuer)\b)(?=.*\b(?:renovati\w*|verbouw\w*|rénovation\w*|renovation\w*)\b).*\z/im,
         document_types: ['kb 20'], articles: %w[A-XXXI A-XXXVIII] },
-      { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer)\b)(?=.*\b(?:afbraak|heropbouw|démolition|reconstruction)\w*\b).*\z/im,
+      { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer|umsatzsteuer)\b)(?=.*\b(?:afbraak|heropbouw|démolition|reconstruction)\w*\b).*\z/im,
         document_types: ['kb 20'], articles: %w[A-XXXVII] },
-      { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer)\b)(?=.*\b(?:restaurant|catering|horeca|maaltijd|repas)\w*\b).*\z/im,
+      { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer|umsatzsteuer)\b)(?=.*\b(?:restaurant|catering|horeca|maaltijd|repas)\w*\b).*\z/im,
         document_types: ['kb 20'], articles: %w[B-I] },
-      { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer)\b)(?=.*\b(?:voeding\w*|levensmiddel\w*|alimentation\w*|food)\b).*\z/im,
+      { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer|umsatzsteuer)\b)(?=.*\b(?:voeding\w*|levensmiddel\w*|alimentation\w*|food)\b).*\z/im,
         document_types: ['kb 20'], articles: %w[1 A-X] },
-      { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer)\b)(?=.*(?:\b(?:tarief|taux|rate|steuersatz|percentage|procent)\w*\b|(?:0|6|12|21)\s*%)).*\z/im,
+      # Medicines, mains water, and electricity with heating gas and heat are
+      # Table A rubrics XVII, XIII and XIV (6 pct.); an answer needs the
+      # rubric's own qualifying words, and art. 1 gives the table its rate
+      # (Sol 2026-11-20 05:28:15Z: three answers omitted the rate).
+      { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer|umsatzsteuer)\b)(?=.*(?<![[:alnum:]])(?:geneesmiddel\p{L}*|medicijn\p{L}*|m[ée]dicaments?|medicines?|medications?|pharmaceuticals?|Arzneimittel\p{L}*|Medikament\p{L}*)(?![[:alnum:]])).*\z/imu,
+        document_types: ['kb 20'], articles: %w[A-XVII 1] },
+      { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer|umsatzsteuer)\b)(?=.*(?<![[:alnum:]])(?:water|leidingwater|kraanwater|drinkwater|waterdistributie|waterlevering|eau|eaux|Wasser|Leitungswasser|Trinkwasser)(?![[:alnum:]])).*\z/imu,
+        document_types: ['kb 20'], articles: %w[A-XIII 1] },
+      { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer|umsatzsteuer)\b)(?=.*(?<![[:alnum:]])(?:elektriciteit|stroom|energie(?:factuur|rekening|levering)?|aardgas|warmtenet\p{L}*|[ée]lectricit[ée]|[ée]nergie|gaz(?:\s+naturel)?|r[ée]seaux?\s+de\s+chaleur|electricity|energy|natural\s+gas|Strom|Elektrizit[äa]t|Erdgas|Fernw[äa]rme)(?![[:alnum:]])).*\z/imu,
+        document_types: ['kb 20'], articles: %w[A-XIV 1] },
+      { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer|umsatzsteuer)\b)(?=.*(?:\b(?:tarief|taux|rate|steuersatz|percentage|procent)\w*\b|(?:0|6|12|21)\s*%)).*\z/im,
         document_types: ['kb 20'], articles: %w[1] },
       { question: /\bwerkelijke\s+beroepskosten\b|(?<!forfaitaire )\bberoepskosten\b|\bfrais\s+professionnels\b/i,
         document_types: ['wib 92'], articles: %w[49] },

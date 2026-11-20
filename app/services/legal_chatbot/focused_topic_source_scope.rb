@@ -31,6 +31,26 @@ module LegalChatbot
                              \bonline\s+gevonden\b/iux
     COPYRIGHT_FAMILY_PATTERN = /\b(?:auteursrecht\p{L}*|naburige\s+rechten|droits?\s+d['’]auteur|droits?\s+voisins|Urheberrecht\p{L}*|copyright|werk(?:en)?\s+van\s+letterkunde\s+of\s+kunst|[œo]e?uvres?\s+litt[ée]raires?\s+ou\s+artistiques?|auteur\s+zich\s+niet\s+verzetten|auteur\s+ne\s+peut\s+interdire|portret\p{L}*|portraits?|Bildnis\p{L}*)/iu
 
+    # "Wanneer mag mijn foto of afbeelding gebruikt worden?" (Sol 2026-11-20
+    # 04:12:53Z, #2450) showed scratch-card lottery decrees, whose tickets
+    # carry an "afbeelding", and an immigration badge. Using a picture of a
+    # person is the portrait right (WER Art. XI.174, pinned): the question
+    # names the right itself ("droit à l'image", "Recht am eigenen Bild") or a
+    # picture of a person ("mijn foto", "une photo de moi") with its use.
+    PORTRAIT_IMAGE_WORD = "(?:foto(?:'s|s)?|afbeelding(?:en)?|beeltenis(?:sen)?|portret(?:ten)?|photos?|images?|portraits?|Fotos?|Bild(?:er|nis)?|Bildnisse?|pictures?|photographs?)"
+    PORTRAIT_USE_PATTERN = /
+      (?<![[:alnum:]])(?:portretrecht\p{L}*|recht\s+op\s+(?:de\s+|het\s+|zijn\s+|mijn\s+)?(?:eigen\s+)?(?:afbeelding|beeld|portret|beeltenis)|droit\s+[àa]\s+l['’]\s*image|Recht\s+am\s+eigenen\s+Bild|right\s+to\s+(?:one['’]s|my|your|his|her|their)\s+(?:own\s+)?image|image\s+rights?)(?![[:alnum:]])
+      |
+      \A
+      (?=.*(?:
+          (?<![[:alnum:]])(?:mijn|zijn|haar|onze|iemands|ma|mon|mes|sa|son|ses|notre|nos|mein[emnrs]?|sein[emnrs]?|ihr[emnrs]?|my|his|her|our|their|someone['’]s)\s+(?:eigen\s+|own\s+|propres?\s+|eigen[emnrs]?\s+)?#{PORTRAIT_IMAGE_WORD}(?![[:alnum:]])
+        |
+          (?<![[:alnum:]])#{PORTRAIT_IMAGE_WORD}\s+(?:van|de|d['’]|von|of)\s+(?:mij|mezelf|iemand|een\s+persoon|personen|mijn\s+\p{L}+|moi|quelqu['’]un|une\s+personne|mon\s+\p{L}+|ma\s+\p{L}+|mir|mich|jemand\p{L}*|einer\s+Person|meine[mnrs]?\s+\p{L}+|me|myself|someone|a\s+person|people|my\s+\p{L}+)(?![[:alnum:]])
+      ))
+      (?=.*(?<![[:alnum:]])(?:gebruik\p{L}*|publice\p{L}*|gepubliceerd|verspreid\p{L}*|online|delen|deelt|gedeeld|posten|gepost|plaatsen|geplaatst|zetten|gezet|toestemming|utilis\p{L}*|publi\p{L}*|diffus\p{L}*|partag\p{L}*|poster|consentement|autoris\p{L}*|verwend\p{L}*|ver[öo]ffentlich\p{L}*|teilen|geteilt|Einwilligung|use[ds]?|using|publish\p{L}*|share[ds]?|sharing|post(?:ed|ing)?|consent)(?![[:alnum:]]))
+      .*\z
+    /imxu
+
     CAMERA_PATTERN = /\b(?:camera\p{L}*|cam[ée]ra\p{L}*|kamera\p{L}*|videobewaking|vid[ée]osurveillance|Video[üu]berwachung\p{L}*)/iu
     WORKPLACE_PATTERN = /\b(?:werkgever\p{L}*|werknemer\p{L}*|werkplek\p{L}*|werkvloer|arbeidsplaats\p{L}*|op\s+(?:het|mijn|zijn|haar)\s+werk|personeel\p{L}*|employeur\p{L}*|travailleur\p{L}*|lieu\s+de\s+travail|au\s+travail|employer\p{L}*|employee\p{L}*|workplace|at\s+work|Arbeitgeber\p{L}*|Arbeitnehmer\p{L}*|Arbeitsplatz\p{L}*|Mitarbeiter\p{L}*)/iu
     CAMERA_FAMILY_PATTERN = /\b(?:camerabewaking|bewakingscamera\p{L}*|videobewaking|cam[ée]ras?\s+de\s+surveillance|surveillance\s+par\s+cam[ée]ras?|vid[ée]osurveillance|Video[üu]berwachung\p{L}*|[ÜU]berwachungskamera\p{L}*|persoonlijke\s+levenssfeer|vie\s+priv[ée]e|Privatsph[äa]re)/iu
@@ -42,6 +62,27 @@ module LegalChatbot
     # by-products card. GDPR Arts. 33 and 34 come from the official EUR-Lex
     # pack (GdprBreachSources); the Belgian cards stay data-protection rules.
     DATA_PROTECTION_FAMILY_PATTERN = /\b(?:persoonsgegevens|gegevensbescherming|bescherming\s+van\s+de\s+persoonlijke\s+levenssfeer|donn[ée]es\s+[àa]\s+caract[èe]re\s+personnel|protection\s+des\s+donn[ée]es|personenbezogen\p{L}*\s+Daten|Datenschutz\p{L}*|personal\s+data|data\s+protection|AVG|GDPR|RGPD|DSGVO)\b/iu
+    # A portrait question keeps the copyright family (it carries "portret"),
+    # data protection and the right to private life.
+    PORTRAIT_FAMILY_PATTERN = Regexp.union(
+      COPYRIGHT_FAMILY_PATTERN, DATA_PROTECTION_FAMILY_PATTERN,
+      /\b(?:persoonlijke\s+levenssfeer|priv[ée]leven|vie\s+priv[ée]e|Privatsph[äa]re|Privatleben|private\s+life|privacy)\b/iu
+    )
+
+    # Guaranteed pay during illness (Sol 2026-11-20 07:32:27Z, #1732): the answers headlined Art. 52's 60% and the
+    # cards showed broadcaster and public-staff statutes, whose texts also say "gewaarborgd loon". The question names
+    # guaranteed pay, or pay together with illness; a sick child is another subject. The other cards stay in the
+    # family read from the law's title: employment contracts, collective agreements and the sickness insurance.
+    GUARANTEED_PAY_PATTERN = /
+      (?<![[:alnum:]])(?:gewaarborgd\p{L}*\s+(?:week|maand)?loon|salaire\s+garanti|r[ée]mun[ée]ration\s+garantie|garantiert\p{L}*\s+(?:Lohn|Gehalt|Entgelt|Entlohnung)|Lohnfortzahlung\p{L}*|guaranteed\s+(?:pay|salary|wages?|remuneration)|sick\s+pay)(?![[:alnum:]])
+      |
+      \A
+      (?!.*(?<![[:alnum:]])(?:kind\p{L}*|zoon|dochter|enfants?|fils|fille|Kind\p{L}*|Sohn|Tochter|child\p{L}*|daughter)(?![[:alnum:]]))
+      (?=.*(?<![[:alnum:]])(?:loon|salaris|wedde|salaire|r[ée]mun[ée]ration|Lohn|Gehalt|pay|salary|wages?)(?![[:alnum:]]))
+      (?=.*(?<![[:alnum:]])(?:ziek\p{L}*|arbeidsongeschikt\p{L}*|maladie|malade|incapacit[ée]\p{L}*|krank\p{L}*|arbeitsunf[äa]hig\p{L}*|sick\p{L}*|illness)(?![[:alnum:]]))
+      .*\z
+    /imxu
+    GUARANTEED_PAY_TITLE_FAMILY_PATTERN = /(?:arbeidsovereenkomst\p{L}*|contrats?\s+de\s+travail|Arbeitsvertr[äa]g\p{L}*|employment\s+contracts?|conventions?\s+collectives?\s+de\s+travail|kollektive\p{L}*\s+Arbeitsabkommen|geneeskundige\s+verzorging\s+en\s+uitkeringen|soins\s+de\s+sant[ée]\s+et\s+(?:d['’]\s*)?indemnit[ée]s|ziekte-\s*en\s+invaliditeitsverzekering|assurance\s+maladie-invalidit[ée]|Kranken-\s*und\s+Invalidit[äa]tsversicherung)/iu
 
     # "Wat is de maximumsnelheid in de bebouwde kom?" (Sol 2026-11-18
     # 21:35:34Z) led with one national 50 km/h beside the regional Art. 11
@@ -72,11 +113,13 @@ module LegalChatbot
     # laws, the police function, and diplomatic and consular premises.
     HOME_TITLE_FAMILY_PATTERN = /\b(?:grondwet|constitution|Verfassung|rechten\s+van\s+de\s+mens|droits\s+de\s+l['’]\s*homme|Menschenrechte\p{L}*|human\s+rights|burgerrechten\s+en\s+politieke\s+rechten|droits\s+civils\s+et\s+politiques|strafwetboek|code\s+p[ée]nal|Strafgesetzbuch|criminal\s+code|strafvordering|instruction\s+criminelle|proc[ée]dure\s+p[ée]nale|Strafprozess\p{L}*|criminal\s+procedure|huiszoeking\p{L}*|opsporing\p{L}*\s+ten\s+huize|visites?\s+domiciliaires?|perquisitions?|Hausdurchsuchung\p{L}*|politieambt|fonction\s+de\s+police|Polizeiamt|diplomati\p{L}*|consul\p{L}*|Konsular\p{L}*)\b/iu
     # Topics whose family is read from the law's title alone.
-    TITLE_TOPICS = { education_right: EDUCATION_TITLE_FAMILY_PATTERN, home_inviolability: HOME_TITLE_FAMILY_PATTERN }.freeze
+    TITLE_TOPICS = { education_right: EDUCATION_TITLE_FAMILY_PATTERN, home_inviolability: HOME_TITLE_FAMILY_PATTERN,
+                     guaranteed_pay: GUARANTEED_PAY_TITLE_FAMILY_PATTERN }.freeze
 
     TOPICS = {
       gas_fine_challenge: GAS_FAMILY_PATTERN,
       internet_image: COPYRIGHT_FAMILY_PATTERN,
+      portrait_use: PORTRAIT_FAMILY_PATTERN,
       workplace_camera: CAMERA_FAMILY_PATTERN,
       data_breach: DATA_PROTECTION_FAMILY_PATTERN,
       road_speed: ROAD_TRAFFIC_FAMILY_PATTERN
@@ -100,6 +143,8 @@ module LegalChatbot
       found = []
       found << :gas_fine_challenge if text.match?(GAS_FINE_PATTERN) && text.match?(CHALLENGE_PATTERN)
       found << :internet_image if text.match?(IMAGE_PATTERN) && text.match?(ONLINE_ORIGIN_PATTERN)
+      found << :portrait_use if text.match?(PORTRAIT_USE_PATTERN)
+      found << :guaranteed_pay if text.match?(GUARANTEED_PAY_PATTERN)
       found << :workplace_camera if text.match?(CAMERA_PATTERN) && text.match?(WORKPLACE_PATTERN)
       found << :data_breach if GdprBreachSources.topic?(text)
       found << :road_speed if road_speed_question?(text)

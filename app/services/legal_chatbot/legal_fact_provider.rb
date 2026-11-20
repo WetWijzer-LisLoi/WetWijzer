@@ -565,8 +565,16 @@ module LegalChatbot
     TRAINING_CLAUSE_TOPIC_KEY = 'scholingsbeding'
     TRAINING_CLAUSE_PATTERN = /(?<![[:alpha:]])(?:scholingsbeding\p{L}*|opleidingsbeding\p{L}*|clauses?\s+d['’]\s*[ée]colage|training\s+(?:repayment\s+)?clauses?|ausbildungsklausel\p{L}*)(?![[:alpha:]])/i
 
+    # "Loon ziekte eerste maand?" matched no keyword topic (Sol 2026-11-20 07:32:27Z, #1732); a deterministic key
+    # adds the guaranteed-pay facts without touching the embedded topic descriptors.
+    GUARANTEED_PAY_TOPIC_KEY = 'ziekte_uitkering'
+
     def self.deterministic_topic_keys(question)
-      question.to_s.match?(TRAINING_CLAUSE_PATTERN) ? [TRAINING_CLAUSE_TOPIC_KEY] : []
+      text = question.to_s
+      keys = []
+      keys << TRAINING_CLAUSE_TOPIC_KEY if text.match?(TRAINING_CLAUSE_PATTERN)
+      keys << GUARANTEED_PAY_TOPIC_KEY if text.match?(FocusedTopicSourceScope::GUARANTEED_PAY_PATTERN)
+      keys
     end
 
     def self.required_official_topic_keys(question)
@@ -718,8 +726,14 @@ module LegalChatbot
         # 70 and 71 (1978070303), cao nr. 12bis (1979022660, workers) and cao nr. 13bis (1979022661, employees hired
         # for less than three months; its "op proef" predates the 2014 abolition of the trial clause, which also took
         # those words out of art. 71), arts. 2 to 4 of each.
+        # Sol 2026-11-20 07:32:27Z: the live answer still headlined a capped 60% for days 8 to 14, the employer's
+        # statutory part, so the note now opens with what the answer must give first.
         indexation_note: <<~NOTE.strip
           GEWAARBORGD LOON BIJ ZIEKTE OF ONGEVAL VAN GEMEEN RECHT: HOUD DE CATEGORIEËN UIT ELKAAR.
+          Begin het antwoord met de regels per categorie hieronder. Voor de arbeider is het bedrag van dag 8 tot 14
+          samen 85,88% (60% volgens art. 52 plus 25,88% volgens cao nr. 12bis): geef de 60% van art. 52 nooit als het
+          percentage dat de arbeider krijgt. Leg voor dag 15 tot 30 de verdeling uit: het ziekenfonds betaalt zijn
+          uitkering en de werkgever het aanvullende bedrag van de cao.
           - Bediende aangeworven voor onbepaalde tijd, voor een bepaalde tijd van ten minste drie maanden of voor een
             duidelijk omschreven werk van ten minste drie maanden (art. 70): het normale loon gedurende de eerste 30
             dagen.
@@ -1379,23 +1393,33 @@ module LegalChatbot
       }
     }.freeze
 
-    # The Art. 37/2 employer figure beside a two-part case: for the whole seniority, never the total.
+    # The employer line of a two-part case. A contract that certainly began before 2014 gets no figure: the
+    # Art. 37/2 period for the whole seniority is not its notice, and an answer led with it all the same
+    # (#1792, "67 weken" at 25 years, Sol 2026-11-20 07:32:27Z). In the boundary month the Art. 37/2 figure is
+    # the answer for one of the two possible start dates, so it stays, with its condition.
     NOTICE_EMPLOYER_QUALIFIER = {
-      'nl' => { before: '%<weeks>s volgens art. 37/2 voor de volledige anciënniteit; dat is NIET het totaal bij een ' \
-                        'overeenkomst van vóór 2014 (zie de twee delen hierboven)',
+      'nl' => { before: 'geen totaal zolang deel 1 niet vaststaat; het is de som van deel 1 en deel 2 hierboven (art. 67)',
                 open: '%<weeks>s als de overeenkomst op of na 1 januari 2014 begon; anders geldt de regel van twee delen ' \
                       'hierboven' },
-      'fr' => { before: "%<weeks>s selon l'article 37/2 pour toute l'ancienneté ; ce n'est PAS le total pour un contrat " \
-                        'antérieur à 2014 (voir les deux parties ci-dessus)',
+      'fr' => { before: "pas de total tant que la partie 1 n'est pas établie ; c'est la somme des parties 1 et 2 ci-dessus " \
+                        '(article 67)',
                 open: "%<weeks>s si le contrat a commencé le 1er janvier 2014 ou après ; sinon, la règle des deux parties " \
                       "ci-dessus s'applique" },
-      'de' => { before: '%<weeks>s nach Art. 37/2 für die gesamte Betriebszugehörigkeit; das ist NICHT die Summe bei einem ' \
-                        'Vertrag von vor 2014 (siehe die zwei Teile oben)',
+      'de' => { before: 'keine Summe, solange Teil 1 nicht feststeht; es ist die Summe von Teil 1 und Teil 2 oben (Art. 67)',
                 open: '%<weeks>s, wenn der Vertrag am 1. Januar 2014 oder später begonnen hat; sonst gilt die Regel der ' \
                       'zwei Teile oben' },
-      'en' => { before: '%<weeks>s under Article 37/2 for the whole seniority; this is NOT the total for a contract from ' \
-                        'before 2014 (see the two parts above)',
+      'en' => { before: 'no total until part 1 is established; it is the sum of parts 1 and 2 above (Article 67)',
                 open: '%<weeks>s if the contract began on or after 1 January 2014; otherwise the two-part rule above applies' }
+    }.freeze
+
+    # The employee line of a two-part case: since the law of 20 March 2023 (in force 28 October 2023) Art. 67
+    # adds the two parts only when the employer gives notice ("in geval van ontslag door de werkgever", "en cas
+    # de licenciement"; read in full 2026-11-20), so the employee's own notice is Art. 37/2, § 2.
+    NOTICE_EMPLOYEE_QUALIFIER = {
+      'nl' => '%<weeks>s (art. 37/2, § 2; de twee delen van art. 67 gelden alleen bij ontslag door de werkgever)',
+      'fr' => "%<weeks>s (article 37/2, § 2 ; les deux parties de l'article 67 ne valent qu'en cas de licenciement)",
+      'de' => '%<weeks>s (Art. 37/2 § 2; die zwei Teile von Art. 67 gelten nur bei Kündigung durch den Arbeitgeber)',
+      'en' => '%<weeks>s (Article 37/2(2); the two parts of Article 67 apply only when the employer gives notice)'
     }.freeze
 
     # A notice question without a seniority (an overview or a table) still carries the transitional rules: the earlier
@@ -1487,7 +1511,9 @@ module LegalChatbot
     # must not serve the note of 1 March 2026 after the deploy.
     # r49 (1.1.79): the guaranteed-pay block opens with the note on the categories,
     # and the leefloon note dates every schedule.
-    FACT_CACHE_VERSION = 'r49'
+    # r50 (1.1.80): the guaranteed-pay note opens with what the answer must give
+    # first, and a two-part notice case shows no full-seniority employer figure.
+    FACT_CACHE_VERSION = 'r50'
 
     # FisconetPlus DB path (same as FisconetSearch)
     FISCONET_DB = ENV.fetch('FISCONET_DB', '/mnt/HC_Volume_104299669/embeddings/fisconet.sqlite3')
@@ -1715,12 +1741,13 @@ module LegalChatbot
       latest = reference << months
       basis = pre_2014_basis(start_date, earliest, latest)
       employer = notice_weeks_label(employer_notice_weeks(months, before_amendment: earlier))
+      employee = notice_weeks_label(employee_notice_weeks(months, before_amendment: earlier))
       if basis
         qualifier = NOTICE_EMPLOYER_QUALIFIER.fetch(@language, NOTICE_EMPLOYER_QUALIFIER['nl'])
-        employer = format(qualifier.fetch(basis == :open ? :open : :before), weeks: employer)
+        employer = basis == :open ? format(qualifier.fetch(:open), weeks: employer) : qualifier.fetch(:before)
+        employee = format(NOTICE_EMPLOYEE_QUALIFIER.fetch(@language, NOTICE_EMPLOYEE_QUALIFIER['nl']), weeks: employee)
       end
-      text = notice_period_text(employer, notice_weeks_label(employee_notice_weeks(months, before_amendment: earlier)),
-                                months / 12, months % 12)
+      text = notice_period_text(employer, employee, months / 12, months % 12)
       lead = basis ? [pre_2014_line(basis, reference, !notice_date.nil?, earliest, latest)] : []
       [*lead, text, *notice_period_exceptions(months, start_date: start_date, notice_date: notice_date)].join("\n")
     end

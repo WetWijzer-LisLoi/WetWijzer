@@ -78,6 +78,17 @@ module BrandingHelper
     "#{origin}/"
   end
 
+  # The visible label of a header language link: the code and its site's
+  # domain, "NL (wetwijzer.be)", in both header layouts and for the current
+  # site too (the owner, 2026-11-20, via Sol 05:55:05Z). The domain comes from
+  # the same brand mapping as the link's destination.
+  LANGUAGE_SWITCH_CODES = { 'nl' => 'NL', 'fr' => 'FR', 'de' => 'DE', 'en' => 'EN/INT' }.freeze
+
+  def language_switch_label(locale)
+    locale = locale.to_s
+    "#{LANGUAGE_SWITCH_CODES.fetch(locale)} (#{SiteBrand.canonical_domain_for(LOCALE_BRANDS.fetch(locale))})"
+  end
+
   # @return [String] OpenGraph image URL
   def site_og_image
     OG_IMAGES.fetch(site_brand)
