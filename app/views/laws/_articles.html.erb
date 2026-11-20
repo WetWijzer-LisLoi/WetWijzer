@@ -439,6 +439,8 @@
                     kept for the NL/FR switch. %>
                 <% history = history_article_state(article.article_title.to_s.strip, live_body: article.article_text.to_s) %>
                 <% if history %>
+                  <%# The pilot key (region included) the chat widget sends with a dated question (chatbot_controller.js). %>
+                  <span hidden data-history-article="<%= history.key %>"></span>
                   <% counterpart = history_permalink(HistoryPilotHelper.history_key_for(history.key, @history_language == 'nl' ? 'fr' : 'nl'), '') %>
                   <% if counterpart != permalink && emitted_article_ids.add?(counterpart) %><span id="<%= counterpart %>" class="block h-0 overflow-hidden scroll-mt-24 mt-0!" aria-hidden="true"></span><% end %>
                   <%= render 'laws/history_article', history: history, permalink: permalink, numac: article.content_numac,

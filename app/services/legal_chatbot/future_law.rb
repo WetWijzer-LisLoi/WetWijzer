@@ -102,6 +102,33 @@ module LegalChatbot
       '2026A05775' => Date.new(2027, 9, 1)
     }.freeze
 
+    # Justel's consolidation lags behind commencement, in both directions (measured read-only on the
+    # production corpus, 2026-11-20). Of 3,102 rows filed as future law, 1,144 named only commencement
+    # dates that had passed. For 652 of them the plain row is older (fewer footnotes, an earlier newest
+    # commencement), so it still held the text the amendment replaced: the road traffic law's Art. 33,
+    # "Inwerkingtreding : 01-09-2026", answered with the superseded penalties (Sol #2058). 362 have no
+    # plain row at all. 70 carry the same footnotes as their plain row and 60 are older than it: those stay
+    # future law. And 206 ordinary rows were inserted with an undetermined commencement: "Art. 65ter.
+    # <Ingevoegd bij W 2003-02-07/38, art. 31; Inwerkingtreding : onbepaald >" (Sol #2231); a note such as
+    # "indéterminée et au plus tard : 01-07-2007" counts its last day.
+    COMMENCEMENT_NOTE = /(?:Inwerkingtreding|En[[:blank:]]+vigueur)[[:blank:]]*:[[:blank:]]*([^>;\n]*)/i
+    COMMENCEMENT_DATE = /\A[[:blank:]]*(\d{1,2})-(\d{1,2})-(\d{4})/
+    LATEST_DATE = /(?:uiterlijk(?:[[:blank:]]+op)?|au[[:blank:]]+plus[[:blank:]]+tard)[[:blank:]]*:?[[:blank:]]*(\d{1,2})-(\d{1,2})-(\d{4})/i
+    # "(5)<W 2026-05-25/12, art. 13, 063; Inwerkingtreding : 01-09-2026>"
+    FOOTNOTE = /^[[:blank:]]*\((\d+)\)[[:blank:]]*<([^>]*)>/
+    # The note right after an article's heading: "Art. 65ter. <Ingevoegd bij ...>".
+    HEAD_NOTE = /\A[[:space:]]*Art[^<\n]{0,40}<([^>]*)>/i
+    INSERTION = /\A[[:blank:]]*(?:Ingevoegd[[:blank:]]+bij|Ins[ée]r[ée]e?[[:blank:]]+par)/i
+    HEADING_MARKER = /\A([^\n]*?)[[:blank:]_]*(?:TOEKOMSTIG[[:blank:]_]+RECHT|DROIT[[:blank:]_]+FUTUR)(?![[:alpha:]])/
+    # Every observed title shape: "Art.33 TOEKOMSTIG RECHT", "Art. 2/6 DROIT FUTUR.", "Art.2_33/11.DROIT_FUTUR",
+    # "Art.12/3_REGION_FLAMANDE_ DROIT FUTUR".
+    TITLE_SUFFIX = /[[:blank:]_]*(?:TOEKOMSTIG[[:blank:]_.\-]*RECHT|DROIT[[:blank:]_.\-]*FUTUR)(?![[:alpha:]]).*\z/i
+
+    # A commenced version standing in for its plain row in the verified-fact channel.
+    CommencedVersion = Struct.new(:article_title, :article_text, :content_numac, :commenced_on, keyword_init: true) do
+      def article_variant = nil
+    end
+
     module_function
 
     # The commencement of a whole consolidated code listed above, else nil.
@@ -122,10 +149,15 @@ module LegalChatbot
       TITLE_MARKER.match?(title.to_s)
     end
 
-    # The classifier. A row is future law when ANY signal says so: its variant,
-    # its title, or the listed commencement of its whole code.
-    def row_future?(variant: nil, title: nil, numac: nil, as_of: Date.current)
-      variant_future?(variant) || title_future?(title) || law_future?(numac, as_of: as_of)
+    # The classifier. A row is future law when its whole code has not commenced
+    # (LAW_COMMENCEMENTS), or its variant or title says so and, given its text,
+    # its commencement has not passed (commenced_on). Without a text the variant
+    # and title decide, as before.
+    def row_future?(variant: nil, title: nil, numac: nil, text: nil, as_of: Date.current)
+      return true if law_future?(numac, as_of: as_of)
+      return false unless variant_future?(variant) || title_future?(title)
+
+      text.nil? || commenced_on(text, as_of: as_of).nil?
     end
 
     # Does this body carry a future-law block at all?
@@ -155,6 +187,136 @@ module LegalChatbot
     # The part a "what is the rule today" answer is allowed to see.
     def in_force(text)
       split(text).first
+    end
+
+    # Every commencement note in a text: a Date (the note's own date, or the last day of "uiterlijk op" /
+    # "au plus tard"), or :undetermined when it names neither.
+    def commencements(text)
+      text.to_s.scan(COMMENCEMENT_NOTE).map do |(note)|
+        match = COMMENCEMENT_DATE.match(note) || LATEST_DATE.match(note)
+        next :undetermined unless match
+
+        begin
+          Date.new(match[3].to_i, match[2].to_i, match[1].to_i)
+        rescue Date::Error
+          :undetermined
+        end
+      end
+    end
+
+    # The highest-numbered footnote, [number, body], or nil.
+    def newest_footnote(text)
+      text.to_s.scan(FOOTNOTE).max_by { |number, _| number.to_i }
+    end
+
+    def newest_footnote_number(text)
+      newest_footnote(text)&.first.to_i
+    end
+
+    # The day a row filed as future law took effect: every commencement it names has passed, none is
+    # undetermined, its newest footnote is dated, and a date in its marker ("TOEKOMSTIG RECHT (vanaf
+    # 01.01.2028)") has passed. Else nil: the row is still future law.
+    def commenced_on(text, as_of: Date.current)
+      notes = commencements(text)
+      return nil if notes.empty? || notes.include?(:undetermined) || notes.any? { |day| day > as_of }
+
+      newest = newest_footnote(text)
+      return nil unless newest && commencements(newest.last).first.is_a?(Date)
+
+      marker = marker_date(text)
+      return nil if effective_date(text) && (marker.nil? || marker > as_of)
+
+      notes.max
+    end
+
+    # The marker's own date as a Date, else nil.
+    def marker_date(text)
+      raw = effective_date(text)
+      return nil unless raw
+
+      day, month, year = raw.split(%r{[.\-/]}).map(&:to_i)
+      year += 2000 if year < 100
+      Date.new(year, month, day)
+    rescue ArgumentError # Date::Error included
+      nil
+    end
+
+    # A commenced version replaces its plain row only when it is newer: more footnotes, and a commencement
+    # not older than the plain row's newest. Otherwise it is a stale copy and stays future law.
+    def newer_than_plain?(future_text, plain_text, day)
+      return false if newest_footnote_number(future_text) <= newest_footnote_number(plain_text)
+
+      plain_days = commencements(plain_text).grep(Date)
+      plain_days.empty? || day >= plain_days.max
+    end
+
+    # An ordinary row whose own head note inserts it with an undetermined commencement and no last day.
+    def uncommenced_insertion?(text)
+      note = HEAD_NOTE.match(text.to_s)&.captures&.first
+      return false unless note&.match?(INSERTION)
+
+      commencements(note) == [:undetermined]
+    end
+
+    # "Art.33 TOEKOMSTIG RECHT" -> "Art.33": the plain row's title.
+    def base_title(title)
+      title.to_s.sub(TITLE_SUFFIX, '').strip
+    end
+
+    # A title compared without its spaces, dots or case: "Art. 56" is the plain row "Art.56".
+    def title_key(title)
+      title.to_s.delete(' .').downcase
+    end
+
+    # The heading without its marker: "Art. 33 TOEKOMSTIG RECHT. " -> "Art. 33. "
+    def without_heading_marker(text)
+      text.to_s.sub(HEADING_MARKER, '\1')
+    end
+
+    # What a "rule today" answer uses from one body: [text, the day a commenced future block took effect,
+    # the pending future block]. A future block whose commencement has passed is the text in force.
+    def in_force_text(text, as_of: Date.current)
+      in_force, future_block = split(text)
+      return [in_force, nil, future_block] unless future_block
+
+      day = commenced_on(future_block, as_of: as_of)
+      return [in_force, nil, future_block] unless day
+
+      current, = split(without_heading_marker(future_block))
+      [current.to_s.strip, day, nil]
+    end
+
+    # The rows of one law and language a verified fact may use. A commenced future version newer than its
+    # plain row takes that row's place, one without a plain row stands in its own; a future row that has not
+    # commenced, an insertion without a commencement and a listed code before its day are left out.
+    def in_force_versions(rows, as_of: Date.current)
+      rows = Array(rows)
+      future, plain = rows.partition { |row| variant_future?(row.try(:article_variant)) || title_future?(row.article_title) }
+      plain_by_key = plain.to_h { |row| [title_key(row.article_title), row] }
+      replacements = {}
+      extra = []
+      future.each do |row|
+        next if law_future?(row.try(:content_numac), as_of: as_of)
+
+        day = commenced_on(row.article_text, as_of: as_of)
+        next unless day
+
+        base = base_title(row.article_title)
+        version = CommencedVersion.new(article_title: base, article_text: without_heading_marker(row.article_text),
+                                       content_numac: row.try(:content_numac), commenced_on: day)
+        own = plain_by_key[title_key(base)]
+        if own.nil?
+          extra << version
+        elsif newer_than_plain?(row.article_text, own.article_text, day)
+          replacements[own] = version
+        end
+      end
+      kept = plain.filter_map do |row|
+        next if law_future?(row.try(:content_numac), as_of: as_of) || uncommenced_insertion?(row.article_text)
+
+        replacements.fetch(row, row)
+      end
+      kept + extra
     end
 
     # One real shape opens the future block with a bare "[" on the line ABOVE the marker,

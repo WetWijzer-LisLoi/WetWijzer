@@ -1,0 +1,28 @@
+nl:
+  dated_reader:
+    current: "Huidige tekst, niet die van %{date}."
+    dated_link: "Lees de tekst van %{date} in de moderne versie"
+    text_link: "De tekst van %{date}:"
+    compare: "Deze vergelijking toont de huidige teksten, niet die van %{date}."
+    back: "Terug naar %{date}"
+fr:
+  dated_reader:
+    current: "Texte actuel, et non celui du %{date}."
+    dated_link: "Lire le texte du %{date} dans la version moderne"
+    text_link: "Le texte du %{date} :"
+    compare: "Cette comparaison montre les textes actuels, et non ceux du %{date}."
+    back: "Retour au %{date}"
+de:
+  dated_reader:
+    current: "Aktueller Text, nicht der vom %{date}."
+    dated_link: "Den Text vom %{date} in der modernen Version lesen"
+    text_link: "Der Text vom %{date}:"
+    compare: "Dieser Vergleich zeigt die aktuellen Texte, nicht die vom %{date}."
+    back: "Zurück zum %{date}"
+en:
+  dated_reader:
+    current: "Current text, not the text of %{date}."
+    dated_link: "Read the text of %{date} in the modern version"
+    text_link: "The text of %{date}:"
+    compare: "This comparison shows the current texts, not those of %{date}."
+    back: "Back to %{date}"

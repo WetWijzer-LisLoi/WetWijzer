@@ -569,11 +569,122 @@ module LegalChatbot
     # adds the guaranteed-pay facts without touching the embedded topic descriptors.
     GUARANTEED_PAY_TOPIC_KEY = 'ziekte_uitkering'
 
+    # Capital gains on financial assets, crypto included (Sol 2026-11-20 05:41:41Z, #2675): a deterministic key, so the
+    # embedded topic descriptors are unchanged. The amounts are the FOD Financiën figures for income 2026 (page read in
+    # full 2026-11-20); the law holds only the base amounts (art. 96/2) and the indexation rule (art. 178).
+    # NEXT INDEXATION: replace the amounts and years and push stale_after out.
+    CAPITAL_GAINS_TOPIC_KEY = 'meerwaardebelasting'
+    CAPITAL_GAINS_INDEXED = {
+      income_year: 2026, assessment_year: 2027,
+      exemption: '10.000', carry_forward: '1.000', five_year_total: '15.000',
+      source_url: 'https://fin.belgium.be/fr/particuliers/declaration-impot/revenus/taxe-plus-values',
+      stale_after: Date.new(2027, 6, 30)
+    }.freeze
+
+    def self.capital_gains_indexed_current?
+      Date.current <= CAPITAL_GAINS_INDEXED[:stale_after]
+    end
+
+    # The rental income of a built property (Sol 2026-11-20 05:41:41Z, #2673): a deterministic key. WIB 92 art. 7, 8, 13
+    # and 518 were read in full in Fisconet on 2026-11-20; the coefficients and the return codes come from the two FOD
+    # Financiën pages read in full the same day. NEXT YEAR: add the new coefficients and push stale_after out.
+    RENTAL_INCOME_TOPIC_KEY = 'huurinkomsten'
+    RENTAL_INCOME_FIGURES = {
+      index: '2,2446 voor inkomstenjaar 2025 (aanslagjaar 2026) en 2,3000 voor inkomstenjaar 2026 (aanslagjaar 2027)',
+      revaluation: '5,63 voor aanslagjaar 2026 en 5,75 voor aanslagjaar 2027',
+      example: 'aangegeven niet-geïndexeerd kadastraal inkomen 450 euro; geïndexeerd 450 x 2,2446 = 1.010 euro; ' \
+               'belastbaar 1.010 x 1,4 = 1.414 euro (inkomstenjaar 2025)',
+      source_urls: %w[https://fin.belgium.be/nl/particulieren/woning/huren-verhuren/huurinkomsten/verhuur-particulieren
+                      https://fin.belgium.be/nl/particulieren/woning/huren-verhuren/huurinkomsten/professioneel],
+      stale_after: Date.new(2027, 6, 30)
+    }.freeze
+
+    def self.rental_income_figures_current?
+      Date.current <= RENTAL_INCOME_FIGURES[:stale_after]
+    end
+
+    # Contesting a pension decision (Sol 2026-11-20 00:21:18Z, #1934): a deterministic key.
+    PENSION_APPEAL_TOPIC_KEY = 'pensioen_beroep'
+    # The Raad voor Vergunningsbetwistingen (Sol 2026-11-20 10:13:42Z, #2065): a deterministic key.
+    PERMIT_COUNCIL_TOPIC_KEY = 'raad_vergunningsbetwistingen'
+    # Recidivism under the new Criminal Code (Sol 2026-11-20 01:05:24Z, #1988): a deterministic key.
+    RECIDIVISM_TOPIC_KEY = 'herhaling_strafrecht'
+    # Receiving a state secret (Sol 2026-11-20 13:46:27Z): a deterministic key.
+    STATE_SECRET_TOPIC_KEY = 'staatsgeheim_ontvangen'
+    # Witnesses (Sol 2026-11-20 01:05:24Z, catalogue 1671 and 2876): a deterministic key.
+    WITNESS_TOPIC_KEY = 'getuigen'
+
+    # The maximumfactuur (MAF) per calendar year (Sol 2026-11-20 02:26:50Z: #131, #293, #821, #2183 gave the statutory
+    # bases of 450 and 100 euro as current). The GVU-wet (1994071451) art. 37octies, 37undecies, 37duodecies and
+    # 37quaterdecies hold base amounts that are indexed yearly; the amounts per year come from the RIZIV table
+    # maximumfactuur-inkomensschijven-plafonds.docx (read in full on 2026-11-20; it states no publication date).
+    # NEXT YEAR: add the new year's row from the RIZIV table and move MAF_CHECKED_ON.
+    MAF_TOPIC_KEY = 'maximumfactuur'
+    MAF_SOURCE_URL = 'https://www.riziv.fgov.be/SiteCollectionDocuments/maximumfactuur-inkomensschijven-plafonds.docx'
+    MAF_CHECKED_ON = Date.new(2026, 11, 20)
+    MAF_SCHEDULES = {
+      2026 => { bands: [['tot 13.402,43', '270,60'], ['13.402,44 tot 23.977,39', '548,55'], ['23.977,40 tot 36.860,74', '792,35'],
+                        ['36.860,75 tot 49.744,15', '1.219,00'], ['49.744,16 tot 62.090,73', '1.706,60'], ['vanaf 62.090,74', '2.194,20']],
+                social: '548,55', child: '792,35', chronic_reduction: '121,90', chronic_shares: { 2025 => '527,27', 2024 => '516,92' } },
+      2025 => { bands: [['tot 13.079,37', '260,10'], ['13.079,38 tot 23.399,42', '527,27'], ['23.399,43 tot 35.972,23', '761,61'],
+                        ['35.972,24 tot 48.545,09', '1.171,70'], ['48.545,10 tot 60.594,06', '1.640,38'], ['vanaf 60.594,07', '2.109,06']],
+                social: '527,27', child: '761,61', chronic_reduction: '117,17', chronic_shares: { 2024 => '516,92', 2023 => '506,79' } },
+      2024 => { bands: [['tot 12.681,18', '254,99'], ['12.681,19 tot 22.687,05', '516,92'], ['22.687,06 tot 34.877,09', '746,66'],
+                        ['34.877,10 tot 47.067,18', '1.148,70'], ['47.067,19 tot 58.749,33', '1.608,18'], ['vanaf 58.749,34', '2.067,66']],
+                social: '516,92', child: '746,66', chronic_reduction: '114,87', chronic_shares: nil }
+    }.freeze
+    # Health-care MAF only: the Flemish school "maximumfactuur" is another regime (catalogue 880).
+    MAF_PATTERN = /\A(?!.*(?<![[:alnum:]])(?:onderwijs\p{L}*|school\p{L}*|enseignement|scolaire\p{L}*|[ée]coles?|schul\p{L}*|education|tuition)(?![[:alnum:]]))(?=.*(?<![[:alnum:]])(?:maximumfactuur\p{L}*|maf|maximum\s+[àa]\s+facturer|factures?\s+maximales?|maximum\s+(?:billing|invoices?)|h(?:ö|oe)chstrechnung\p{L}*|h(?:ö|oe)chstgrenze\s+f(?:ü|ue)r\s+(?:krankheits|gesundheits)\p{L}*)(?![[:alnum:]])).*\z/imu
+
+    def self.maf_year_block(year, schedule)
+      bands = schedule[:bands].map { |band, amount| "#{band} EUR: #{amount} EUR" }.join('; ')
+      shares = schedule[:chronic_shares]&.map { |share_year, amount| "#{share_year}: #{amount} EUR" }&.join('; ')
+      condition = if shares
+                    '; voorwaarde: eenzelfde gezinslid droeg in elk van de twee voorgaande jaren ten minste het bedrag van ' \
+                      "dat jaar aan persoonlijke aandelen (#{shares}), of heeft het statuut chronische aandoening " \
+                      '(art. 37undecies, § 2, en 37vicies/1)'
+                  end
+      ["MAXIMUMFACTUUR #{year} (RIZIV):",
+       "- Inkomens-MAF, maximumbedrag aan persoonlijke aandelen per gezin volgens het gezinsinkomen: #{bands}.",
+       "- Sociale MAF (gezin van rechthebbenden op de verhoogde tegemoetkoming): #{schedule[:social]} EUR.",
+       "- Kind jonger dan 19 jaar, ongeacht het gezinsinkomen: #{schedule[:child]} EUR.",
+       "- Chronisch zieken: het maximumbedrag daalt met #{schedule[:chronic_reduction]} EUR (een vermindering, geen " \
+       "plafond)#{condition}."].join("\n")
+    end
+
+    def self.maf_note(schedules = MAF_SCHEDULES, checked_on: MAF_CHECKED_ON)
+      newest = schedules.keys.max
+      <<~NOTE.strip
+        OPGELET: de bedragen in art. 37octies (450 euro voor de sociale MAF), 37undecies (250 tot 1.800 euro, inkomensgrenzen
+        van 11.120 tot 34.700 euro, 650 euro voor een kind) en de vermindering van 100 euro zijn wettelijke basisbedragen;
+        ze worden elk jaar aangepast (art. 37quaterdecies). Noem ze nooit als de bedragen van een bepaald jaar.
+        #{schedules.sort.reverse.map { |year, schedule| maf_year_block(year, schedule) }.join("\n")}
+        Het gezinsinkomen is dat van het tweede jaar vóór het jaar van de MAF (art. 37duodecies, § 1).
+        TOEPASSING: kies het jaar waarover de vraag gaat en noem het. #{newest} is het laatst bevestigde jaar (gecontroleerd op
+        #{leefloon_date(checked_on)}): voor een later jaar staan de bedragen niet in deze bronnen; zeg dat en geef de bedragen
+        van #{newest} als laatst bevestigde. Een maximumbedrag (plafond) en de vermindering voor chronisch zieken zijn
+        verschillende dingen. Noem nooit een bedrag dat hier niet staat.
+        Bron: #{MAF_SOURCE_URL}
+      NOTE
+    end
+    # Contesting a traffic fine (Sol 2026-11-20 10:14:49Z, #2231): a deterministic key.
+    TRAFFIC_FINE_TOPIC_KEY = 'verkeersboete_betwisten'
+
     def self.deterministic_topic_keys(question)
       text = question.to_s
       keys = []
       keys << TRAINING_CLAUSE_TOPIC_KEY if text.match?(TRAINING_CLAUSE_PATTERN)
       keys << GUARANTEED_PAY_TOPIC_KEY if text.match?(FocusedTopicSourceScope::GUARANTEED_PAY_PATTERN)
+      keys << CAPITAL_GAINS_TOPIC_KEY if text.match?(FisconetSearch::CAPITAL_GAINS_TAX_PATTERN)
+      keys << RENTAL_INCOME_TOPIC_KEY if text.match?(FisconetSearch::RENTAL_INCOME_TAX_PATTERN)
+      keys << PENSION_APPEAL_TOPIC_KEY if text.match?(LegislationSearch::PENSION_APPEAL_PATTERN)
+      keys << PERMIT_COUNCIL_TOPIC_KEY if text.match?(LegislationSearch::PERMIT_COUNCIL_PATTERN)
+      keys << RECIDIVISM_TOPIC_KEY if text.match?(LegislationSearch::RECIDIVISM_PATTERN)
+      keys << STATE_SECRET_TOPIC_KEY if text.match?(LegislationSearch::STATE_SECRET_PATTERN)
+      keys << WITNESS_TOPIC_KEY if text.match?(LegislationSearch::PARTY_WITNESS_OBJECTION_PATTERN) ||
+                                   text.match?(LegislationSearch::WITNESS_DUTY_PATTERN)
+      keys << MAF_TOPIC_KEY if text.match?(MAF_PATTERN)
+      keys << TRAFFIC_FINE_TOPIC_KEY if text.match?(LegislationSearch::TRAFFIC_FINE_CONTEST_PATTERN)
       keys
     end
 
@@ -821,6 +932,50 @@ module LegalChatbot
         article_patterns: ['Art. 145/1', 'Art. 1451', 'Art. 145'],
         label: 'Pensioensparen - Art. 145/1 WIB92',
         fisconet_document_type: 'WIB 92'
+      },
+      # Capital gains on financial assets, crypto included (#2675): the exemptions and the assets; the
+      # directive (capital_gains_directive) adds the rate, the computation and the indexed amounts.
+      'meerwaardebelasting' => {
+        numac: '1992041050',
+        article_patterns: ['Art. 96/2', 'Art. 92'],
+        label: 'Meerwaarden op financiële activa - Art. 92 en 96/2 WIB92',
+        fisconet_document_type: 'WIB 92'
+      },
+      # Rental income of a built property (#2673); the directive (rental_income_directive) separates the
+      # figures on the return from the taxable base.
+      'huurinkomsten' => {
+        numac: '1992041050',
+        article_patterns: ['Art. 7', 'Art. 13', 'Art. 518'],
+        label: 'Huurinkomsten - Art. 7, 13 en 518 WIB92',
+        fisconet_document_type: 'WIB 92'
+      },
+      # Contesting a pension decision (#1934): the Charter's period; the directive
+      # (pension_appeal_directive) sets it against KB nr. 50 art. 66.
+      'pensioen_beroep' => {
+        numac: '1995022286',
+        article_patterns: ['Art. 23'],
+        label: 'Beroepstermijn - Art. 23 Handvest van de sociaal verzekerde'
+      },
+      # Witnesses (catalogue 1671, 2876): the civil rules; the directive (witness_directive) adds the
+      # investigating judge's summons (Sv. art. 80-81, pinned).
+      'getuigen' => {
+        numac: '1967101055',
+        article_patterns: ['Art. 915', 'Art. 916', 'Art. 925', 'Art. 926', 'Art. 928', 'Art. 929'],
+        label: 'Getuigen in burgerlijke zaken - Art. 915-929 Gerechtelijk Wetboek'
+      },
+      # The health-care maximumfactuur: the statutory rules, and the RIZIV amounts per year (MAF_SCHEDULES).
+      'maximumfactuur' => {
+        numac: '1994071451',
+        article_patterns: ['Art. 37octies', 'Art. 37undecies'],
+        label: 'Maximumfactuur - Art. 37octies en 37undecies GVU-wet',
+        indexation_note: maf_note
+      },
+      # Contesting a traffic fine (#2231): the payment order; the directive (traffic_fine_directive) adds the
+      # earlier stages and art. 65ter, which never came into force.
+      'verkeersboete_betwisten' => {
+        numac: '1968031601',
+        article_patterns: ['Art. 65/1'],
+        label: 'Bevel tot betalen - Art. 65/1 Wegverkeerswet'
       },
       'registratierechten' => {
         numac: '2013036154',
@@ -1114,6 +1269,27 @@ module LegalChatbot
         article_patterns: ['Art. 5', 'Art. 6', 'Art. 7', 'Art. 8',
                            'Art. 15', 'Art. 32', 'Art. 52', 'Art. 53'],
         label: 'Omgevingsvergunning - Omgevingsvergunningsdecreet 25 april 2014'
+      },
+      # The Raad voor Vergunningsbetwistingen (#2065): art. 105; the directive (permit_council_directive) keeps the
+      # objection requirement GwH 46/2019 annulled out of the answer.
+      'raad_vergunningsbetwistingen' => {
+        numac: '2014036510',
+        article_patterns: ['Art. 105'],
+        label: 'Raad voor Vergunningsbetwistingen - Art. 105 Omgevingsvergunningsdecreet'
+      },
+      # Recidivism (#1988): Book I art. 60; the directive (recidivism_directive) gives the subparagraphs in force
+      # since 1 September 2026, which the consolidated text and its note do not show.
+      'herhaling_strafrecht' => {
+        numac: '2024002052',
+        article_patterns: ['Art. 60'],
+        label: 'Herhaling - Art. 60 Strafwetboek (boek I)'
+      },
+      # Receiving a state secret: Book II art. 586; the directive (state_secret_directive) gives the article in
+      # force since 1 September 2026, which the consolidated text does not show.
+      'staatsgeheim_ontvangen' => {
+        numac: '2024002088',
+        article_patterns: ['Art. 586'],
+        label: 'Onbevoegd ontvangen van een staatsgeheim - Art. 586 Strafwetboek (boek II)'
       },
 
       # EPC: the certificate and transfer/rental duties are governed by the
@@ -1437,6 +1613,11 @@ module LegalChatbot
                    'werkgever 1 week (minder dan 3 maanden), 3 weken (3 tot 4 maanden), 4 weken (4 tot 5 maanden) en 5 weken ' \
                    '(5 tot 6 maanden); door de werknemer 1 week (minder dan 3 maanden) en 2 weken (3 tot 6 maanden). Geef ' \
                    'in een tabel of overzicht beide groepen weer.',
+        cap: 'Art. 37/2, § 1/1 (wet van 18 mei 2026, sinds 1 juni 2026): voor elke arbeidsovereenkomst waarvan de ' \
+             'uitvoering vanaf 1 juni 2026 begint, ook in augustus 2026 of later, bedraagt de opzeggingstermijn bij ' \
+             'opzegging door de werkgever voor een werknemer met zeventien jaar of meer anciënniteit 52 weken en wordt ' \
+             'hij niet meer verder opgebouwd. De datum van 1 augustus 2026 (art. 5 wet van 3 juni 2026) gaat alleen ' \
+             'over de termijnen bij minder dan zes maanden anciënniteit.',
         pre_2014: 'Ontslag door de werkgever van een werknemer wiens arbeidsovereenkomst vóór 1 januari 2014 begon ' \
                   '(art. 67-69 wet van 26 december 2013): dan is %<parts>s. Vermeld die regel vóór een totaal bij een ' \
                   'lange anciënniteit.'
@@ -1449,6 +1630,11 @@ module LegalChatbot
                    '1 semaine (moins de 3 mois), 3 semaines (3 à 4 mois), 4 semaines (4 à 5 mois) et 5 semaines (5 à 6 mois) ; ' \
                    'par le travailleur 1 semaine (moins de 3 mois) et 2 semaines (3 à 6 mois). Dans un tableau ou un ' \
                    'aperçu, indiquez les deux groupes.',
+        cap: "Art. 37/2, § 1er/1 (loi du 18 mai 2026, depuis le 1er juin 2026) : pour tout contrat dont l'exécution " \
+             "débute à partir du 1er juin 2026, y compris en août 2026 ou plus tard, le délai de préavis donné par " \
+             "l'employeur à un travailleur comptant dix-sept ans d'ancienneté ou plus est de 52 semaines et il " \
+             "n'augmente plus. La date du 1er août 2026 (art. 5 de la loi du 3 juin 2026) ne concerne que les délais " \
+             "pour moins de six mois d'ancienneté.",
         pre_2014: "Licenciement par l'employeur d'un travailleur dont le contrat a commencé avant le 1er janvier 2014 " \
                   '(art. 67 à 69 de la loi du 26 décembre 2013) : %<parts>s. Mentionnez cette règle avant tout total pour ' \
                   'une longue ancienneté.'
@@ -1461,6 +1647,11 @@ module LegalChatbot
                    'Kündigung durch den Arbeitgeber 1 Woche (weniger als 3 Monate), 3 Wochen (3 bis 4 Monate), 4 Wochen ' \
                    '(4 bis 5 Monate) und 5 Wochen (5 bis 6 Monate); durch den Arbeitnehmer 1 Woche (weniger als 3 Monate) ' \
                    'und 2 Wochen (3 bis 6 Monate). In einer Tabelle oder Übersicht beide Gruppen nennen.',
+        cap: 'Art. 37/2 § 1/1 (Gesetz vom 18. Mai 2026, seit dem 1. Juni 2026): Für jeden Arbeitsvertrag, dessen ' \
+             'Ausführung ab dem 1. Juni 2026 beginnt, auch im August 2026 oder später, beträgt die Kündigungsfrist bei ' \
+             'Kündigung durch den Arbeitgeber für einen Arbeitnehmer mit siebzehn Jahren Betriebszugehörigkeit oder mehr ' \
+             '52 Wochen und steigt nicht weiter. Das Datum 1. August 2026 (Art. 5 des Gesetzes vom 3. Juni 2026) ' \
+             'betrifft nur die Fristen bei weniger als sechs Monaten Betriebszugehörigkeit.',
         pre_2014: 'Kündigung durch den Arbeitgeber eines Arbeitnehmers, dessen Arbeitsvertrag vor dem 1. Januar 2014 ' \
                   'begonnen hat (Art. 67 bis 69 des Gesetzes vom 26. Dezember 2013): dann ist %<parts>s. Diese Regel bei ' \
                   'langer Betriebszugehörigkeit vor einer Summe nennen.'
@@ -1472,6 +1663,10 @@ module LegalChatbot
                    'began before that date the earlier periods still apply: notice by the employer 1 week (under 3 ' \
                    'months), 3 weeks (3 to 4 months), 4 weeks (4 to 5 months) and 5 weeks (5 to 6 months); by the employee ' \
                    '1 week (under 3 months) and 2 weeks (3 to 6 months). In a table or overview, show both groups.',
+        cap: 'Art. 37/2 § 1/1 (Law of 18 May 2026, since 1 June 2026): for every employment contract whose performance ' \
+             'begins on or after 1 June 2026, including in August 2026 or later, the notice given by the employer to an ' \
+             "employee with seventeen years' seniority or more is 52 weeks and does not grow further. The date of " \
+             '1 August 2026 (Art. 5 of the Law of 3 June 2026) concerns only the periods below six months of seniority.',
         pre_2014: 'Dismissal by the employer of an employee whose contract began before 1 January 2014 (Arts. 67 to 69 of ' \
                   'the Law of 26 December 2013): %<parts>s. State that rule before any total for a long seniority.'
       }
@@ -1513,7 +1708,9 @@ module LegalChatbot
     # and the leefloon note dates every schedule.
     # r50 (1.1.80): the guaranteed-pay note opens with what the answer must give
     # first, and a two-part notice case shows no full-seniority employer figure.
-    FACT_CACHE_VERSION = 'r50'
+    # r51 (1.1.82): a verified article whose newer version Justel still files as
+    # future law is given in that version, with the day it took effect.
+    FACT_CACHE_VERSION = 'r51'
 
     # FisconetPlus DB path (same as FisconetSearch)
     FISCONET_DB = ENV.fetch('FISCONET_DB', '/mnt/HC_Volume_104299669/embeddings/fisconet.sqlite3')
@@ -1557,6 +1754,24 @@ module LegalChatbot
         [base_result, calculation].compact.join("\n")
       when TRAINING_CLAUSE_TOPIC_KEY
         prepend_fact_directive(base_result, training_clause_directive)
+      when CAPITAL_GAINS_TOPIC_KEY
+        prepend_fact_directive(base_result, capital_gains_directive)
+      when RENTAL_INCOME_TOPIC_KEY
+        prepend_fact_directive(base_result, rental_income_directive)
+      when PENSION_APPEAL_TOPIC_KEY
+        prepend_fact_directive(base_result, pension_appeal_directive)
+      when PERMIT_COUNCIL_TOPIC_KEY
+        prepend_fact_directive(base_result, permit_council_directive)
+      when RECIDIVISM_TOPIC_KEY
+        prepend_fact_directive(base_result, recidivism_directive)
+      when STATE_SECRET_TOPIC_KEY
+        prepend_fact_directive(base_result, state_secret_directive)
+      when WITNESS_TOPIC_KEY
+        prepend_fact_directive(base_result, witness_directive)
+      when TRAFFIC_FINE_TOPIC_KEY
+        prepend_fact_directive(base_result, traffic_fine_directive)
+      when 'herroepingsrecht'
+        prepend_fact_directive(base_result, withdrawal_period_directive)
       else
         base_result
       end
@@ -1657,6 +1872,298 @@ module LegalChatbot
     # writes "hoger dan"). Twice CURRENT_GGMMI is the 4.467,22 EUR the FOD page
     # gives from 1 July 2026, and it follows the next indexation and its
     # staleness.
+    # Sol 2026-11-20 05:41:41Z (#2675): a crypto answer missed the 2026 capital gains regime. Every statement below was
+    # read in full on 2026-11-20 in the corpus (W 06.04.2026, 2026002780, 35 articles, and its two KB of 18.05.2026)
+    # and in Fisconet WIB 92 (art. 90, 92, 96/2, 102, 171, 178, 313). The indexed amounts for income 2026 are in
+    # neither: they come from the FOD Financiën page read in full the same day, and lapse after stale_after, leaving
+    # the statutory base amounts and the rule that they are indexed.
+    def capital_gains_directive
+      lines = [<<~DIRECTIVE.strip]
+        MEERWAARDEN OP FINANCIËLE ACTIVA, CRYPTO INBEGREPEN: van toepassing vanaf 1 januari 2026 (art. 35 W 06.04.2026);
+        de inkomsten van 2026 vormen aanslagjaar 2027.
+        - Belastbaar als divers inkomen: meerwaarden die buiten het uitoefenen van een beroepswerkzaamheid en in het
+          kader van normale verrichtingen van het beheer van een privévermogen zijn verwezenlijkt bij de overdracht
+          onder bezwarende titel van financiële activa (art. 90, eerste lid, 9°, c), WIB 92). Cryptoactiva zijn
+          financiële activa (art. 92, § 1, c)).
+        - Tarief: 10 % (art. 171, 2°, e)), afzonderlijk belast, behalve wanneer de belasting volgens de artikelen 130
+          tot 145 en 146 tot 156 op het geheel van de inkomsten lager is (art. 171, inleidende zin).
+        - Vrijstelling: de eerste schijf van 4.855 euro (art. 96/2, eerste lid, 2°). Dat is het basisbedrag uit de wet;
+          het wordt jaarlijks geïndexeerd (art. 178, § 1).
+      DIRECTIVE
+      if self.class.capital_gains_indexed_current?
+        indexed = CAPITAL_GAINS_INDEXED
+        lines << "- Geïndexeerd voor de inkomsten van #{indexed[:income_year]} (aanslagjaar #{indexed[:assessment_year]}): " \
+                 "#{indexed[:exemption]} euro per persoon. Wie in een jaar minder meerwaarden verwezenlijkt, mag het niet " \
+                 "gebruikte deel van de eerste schijf van #{indexed[:carry_forward]} euro (aanslagjaar " \
+                 "#{indexed[:assessment_year]}) naar het volgende jaar overdragen, tot een vrijstelling van ten hoogste " \
+                 "#{indexed[:five_year_total]} euro na vijf jaar (art. 96/2, eerste lid, 3°, en derde lid; bedragen van de " \
+                 "FOD Financiën, #{indexed[:source_url]})."
+      else
+        lines << '- Overdracht: een aanvullende vrijgestelde schijf gelijk aan 480 euro min de vrijstelling die in een ' \
+                 'vorig belastbaar tijdperk werd gebruikt, voor elke periode van 12 maanden waarin minder dan 480 euro werd ' \
+                 'gebruikt, met ten hoogste 2.426 euro per belastbaar tijdperk (art. 96/2, eerste lid, 3°, en derde lid; ' \
+                 'basisbedragen). De geïndexeerde bedragen voor het gevraagde jaar staan niet in deze bronnen: geef een ' \
+                 'basisbedrag nooit als het geïndexeerde bedrag.'
+      end
+      lines << <<~DIRECTIVE.strip
+        - Berekening: de ontvangen prijs min de aanschaffingswaarde (art. 102, § 1). Bij identieke activa geldt het eerst
+          verkregen actief als eerst overgedragen; wordt de aanschaffingswaarde niet met bewijskrachtige gegevens
+          bepaald, dan is de ontvangen prijs volledig belastbaar. Voor activa verkregen vóór 1 januari 2026 geldt de
+          waarde op 31 december 2025 (art. 102, § 4); voor overdrachten tot 31 december 2030 mag de belastingplichtige
+          op verzoek de door hem aangetoonde aanschaffingswaarde gebruiken. Minderwaarden uit hetzelfde belastbaar
+          tijdperk binnen dezelfde categorie worden afgetrokken (art. 102, § 5).
+        - Aangifte: meerwaarden op crypto moeten in de aangifte in de personenbelasting worden vermeld; de vrijstelling
+          van aangifte voor inkomsten waarop roerende voorheffing werd ingehouden, geldt er niet voor (art. 313, eerste
+          lid, 7°).
+        - Andere gevallen: winst uit speculatie of uit verrichtingen buiten het normale beheer van een privévermogen
+          valt onder art. 90, eerste lid, 1°, en wordt belast aan 33 % (art. 171, 1°, a)); voor financiële activa geldt
+          het onweerlegbare vermoeden van normaal beheer (art. 90, eerste lid, 1°, tweede zin) niet. Art. 90, eerste
+          lid, 9°, geldt alleen buiten het uitoefenen van een beroepswerkzaamheid.
+        Noem bij elk bedrag het inkomstenjaar of aanslagjaar. Geef 4.855 euro nooit als de vrijstelling voor de
+        inkomsten van 2026.
+      DIRECTIVE
+      lines.join("\n")
+    end
+
+    # Sol 2026-11-20 05:41:41Z (#2673): the figures a landlord enters on the return are not the taxable base. Read in
+    # full on 2026-11-20: Fisconet WIB 92 art. 7, 8, 13 and 518, and the FOD Financiën pages on letting to a person who
+    # does not use the property for a profession and on professional use. The coefficients lapse after stale_after.
+    def rental_income_directive
+      lines = [<<~DIRECTIVE.strip]
+        HUURINKOMSTEN VAN EEN GEBOUWD ONROEREND GOED: onderscheid het bedrag dat op de aangifte komt van het bedrag
+        waarop belast wordt.
+        - Verhuur aan een natuurlijke persoon die het goed noch geheel noch gedeeltelijk voor zijn beroepswerkzaamheid
+          gebruikt (art. 7, § 1, 2°, a), WIB 92): belastbaar is het kadastraal inkomen verhoogd met 40 %, en dat
+          kadastraal inkomen is het geïndexeerde (art. 518). Op de aangifte vermeldt de verhuurder het niet-geïndexeerde
+          kadastraal inkomen (code 1106/2106); het belastbare bedrag (geïndexeerd kadastraal inkomen x 1,4) wordt bij de
+          aanslag berekend (FOD Financiën). Dezelfde grondslag (kadastraal inkomen verhoogd met 40 %) geldt voor de
+          verhuur aan een rechtspersoon die geen vennootschap is, aan een gewestelijke huisvestingsmaatschappij of aan
+          een erkende maatschappij voor sociale huisvesting, om het goed ter beschikking te stellen van een of meer
+          natuurlijke personen die het uitsluitend als woning gebruiken (art. 7, § 1, 2°, bbis)).
+        - Verhuur aan een natuurlijke persoon die het goed voor zijn beroep gebruikt, aan een rechtspersoon of aan een
+          vennootschap (art. 7, § 1, 2°, c); FOD Financiën): het totale bedrag van de huurprijs en de huurvoordelen,
+          niet lager dan het kadastraal inkomen verhoogd met 40 %. Op de huurprijs en de huurvoordelen gaat 40 %
+          forfaitaire onderhouds- en herstellingskosten af, voor deze goederen ten hoogste twee derde van het kadastraal
+          inkomen gerevaloriseerd met een coëfficiënt (art. 13). Op de aangifte: het niet-geïndexeerde kadastraal
+          inkomen (code 1109/2109) en de brutohuur, dat is de huurprijs plus de huurvoordelen (code 1110/2110). Volgens
+          de FOD Financiën wordt belast op het hoogste van de nettohuur (brutohuur min de begrensde 40 % kosten) en het
+          geïndexeerde kadastraal inkomen x 1,4.
+        - Stelt een geregistreerde huurovereenkomst de huur afzonderlijk vast voor het beroepsgedeelte en het andere
+          gedeelte, dan worden de inkomsten van elk gedeelte afzonderlijk bepaald (art. 8).
+      DIRECTIVE
+      if self.class.rental_income_figures_current?
+        figures = RENTAL_INCOME_FIGURES
+        lines << "- Coëfficiënten volgens de FOD Financiën: indexatie van het kadastraal inkomen #{figures[:index]}; " \
+                 "revalorisatie voor de begrenzing van de kosten #{figures[:revaluation]}. Voorbeeld van de FOD: " \
+                 "#{figures[:example]}. Bronnen: #{figures[:source_urls].join(' en ')}."
+      else
+        lines << '- De indexatiecoëfficiënt van het kadastraal inkomen wordt elk jaar berekend (art. 518); de ' \
+                 'coëfficiënt voor het gevraagde jaar staat niet in deze bronnen.'
+      end
+      lines << <<~DIRECTIVE.strip
+        - De onroerende inkomsten worden belast volgens de progressieve tarieven. Gemeubelde verhuur en bijkomende
+          diensten volgen afzonderlijke regels (de meubels als roerend inkomen, de diensten als divers inkomen), en een
+          verhuur die een beroepswerkzaamheid is, levert beroepsinkomsten op (FOD Financiën).
+        Zeg bij elk bedrag of het een aangiftebedrag of een belastbaar bedrag is, en voor welk inkomstenjaar.
+      DIRECTIVE
+      lines.join("\n")
+    end
+
+    # Sol 2026-11-20 00:21:18Z (#1934): an employee was given one month to contest a pension decision. Read in full on
+    # 2026-11-20, NL and FR: Charter of the socially insured (1995022286) art. 23 and KB nr. 50 (1967102410) art. 66;
+    # and the Federal Pensions Service page on contesting a decision (sfpd.fgov.be/nl/vraag/klachten).
+    def pension_appeal_directive
+      <<~DIRECTIVE.strip
+        BEROEP TEGEN EEN PENSIOENBESLISSING: geef de termijn van drie maanden.
+        - Art. 23, eerste lid, van het Handvest van de sociaal verzekerde (W 11.04.1995; dit lid sinds 1 januari 1997):
+          het beroep tegen een beslissing van een instelling van sociale zekerheid over de toekenning, de betaling of de
+          terugvordering van prestaties moet op straffe van verval worden ingesteld binnen drie maanden na de
+          kennisgeving van de beslissing, of na de kennisneming ervan door de sociaal verzekerde als er geen kennisgeving
+          was. Gunstiger termijnen uit specifieke wetgeving blijven gelden ("onverminderd gunstiger termijnen").
+        - Art. 66 van het KB nr. 50 (rust- en overlevingspensioen voor werknemers) vermeldt nog "binnen de maand na de
+          kennisgeving". Die kortere termijn is geen gunstiger termijn: geef nooit één maand als de termijn. De Federale
+          Pensioendienst vermeldt eveneens 3 maanden.
+        - Werknemerspensioen (en, volgens de Federale Pensioendienst, een pensioen van de Belgische spoorwegen): beroep
+          bij de arbeidsrechtbank (art. 66 KB nr. 50), volgens de Federale Pensioendienst die van de hoofdverblijfplaats,
+          met een verzoekschrift dat aangetekend wordt verstuurd, ter griffie wordt neergelegd of via e-Deposit wordt
+          ingediend. Het beroep schorst de beslissing niet (art. 66, derde lid).
+        - Ambtenarenpensioen: volgens de Federale Pensioendienst bij de rechtbank van eerste aanleg, per dagvaarding,
+          zonder vaste termijn; achterstallen worden dan alleen terugbetaald voor de 10 jaar vóór het verzoek.
+        - Vóór het beroep kan de betrokkene contact opnemen met de Pensioendienst, een klacht indienen of de
+          Ombudsdienst Pensioenen inschakelen (Federale Pensioendienst).
+        Officiële bron: https://www.sfpd.fgov.be/nl/vraag/klachten
+      DIRECTIVE
+    end
+
+    # Sol 2026-11-20 01:32:31Z (#2116): an answer counted the withdrawal period from the day of the event itself. WER
+    # art. VI.47, § 2 (read in full NL and FR on 2026-11-20): the period "verstrijkt 14 dagen na" the day of conclusion
+    # (services; water, gas, electricity and district heating) or of physical possession (sales), so that day does not
+    # count. The example date is plain arithmetic on that wording.
+    # Sol 2026-11-20 13:52:21Z (#2117, #1114): an answer let the trader withhold the refund without the collection
+    # exception, and another gave the digital-content conditions as conditions in every case. WER art. VI.50 and VI.53
+    # (read in full NL and FR on 2026-11-20): § 3 of VI.50 opens "Behoudens wanneer de onderneming heeft aangeboden de
+    # goederen zelf af te halen"; VI.53, 1° and 13°, attach the conditions to a contract that obliges the consumer to pay.
+    def withdrawal_period_directive
+      <<~DIRECTIVE.strip
+        HERROEPINGSTERMIJN TELLEN (art. VI.47, § 2, WER): de termijn van 14 dagen "verstrijkt 14 dagen na" de dag waarop
+        de overeenkomst wordt gesloten (diensten; levering van water, gas, elektriciteit en stadsverwarming) of de dag
+        waarop de consument, of een door hem aangewezen derde die niet de vervoerder is, de goederen fysiek in bezit neemt
+        (verkoop; bij meerdere goederen of zendingen het laatste goed of de laatste zending, bij een regelmatige levering
+        het eerste goed). Die dag zelf telt niet mee: de eerste dag van de termijn is de dag erna. Voorbeeld: neemt de
+        consument het goed op 3 maart in bezit, dan is 4 maart de eerste dag en verstrijkt de termijn op 17 maart. Tel bij
+        een verkoop niet vanaf de bestelling.
+        TERUGBETALING (art. VI.50, § 3, WER): bij een verkoopovereenkomst mag de onderneming met de terugbetaling wachten
+        tot zij alle goederen heeft teruggekregen of tot de consument heeft aangetoond dat hij ze heeft teruggezonden, naar
+        gelang wat eerst valt, BEHALVE wanneer de onderneming heeft aangeboden de goederen zelf af te halen: dan mag zij
+        niet wachten. Noem die uitzondering wanneer u het wachten met de terugbetaling vermeldt.
+        DIGITALE INHOUD EN DIENSTEN (art. VI.53, 13° en 1°, WER): voor digitale inhoud die niet op een materiële drager
+        wordt geleverd, kan de consument niet herroepen als de uitvoering is begonnen. De drie bijkomende voorwaarden
+        (a) vooraf uitdrukkelijk ingestemd met de aanvang van de uitvoering tijdens de herroepingstermijn, b) erkend dat hij
+        daarmee zijn herroepingsrecht verliest, c) bevestiging door de onderneming overeenkomstig art. VI.46, § 7) gelden
+        alleen ingeval de overeenkomst de consument een betalingsverplichting oplegt. Voor een dienst vervalt het recht na
+        de volledige uitvoering; legt de overeenkomst een betalingsverplichting op, dan alleen als de uitvoering begon met
+        de voorafgaande uitdrukkelijke toestemming van de consument en hij erkende zijn herroepingsrecht te verliezen. Stel
+        die voorwaarden nooit voor als voorwaarden die in elk geval gelden.
+      DIRECTIVE
+    end
+
+    # Sol 2026-11-20 10:14:49Z (#2231): the answer must say which stage the reader is at. Read in full on 2026-11-20: Road
+    # Traffic Act (1968031601) art. 65, 65/1 (NL and FR, with its future-law text) and 65ter, and Code of Criminal
+    # Procedure (1808111901) art. 216bis.
+    def traffic_fine_directive
+      <<~DIRECTIVE.strip
+        VERKEERSBOETE BETWISTEN: de regel hangt af van het stuk dat de lezer kreeg. Onderscheid de drie stadia en vraag
+        welk stuk het is als dat niet uit de vraag blijkt.
+        - Onmiddellijke inning (art. 65 Wegverkeerswet): bij een door de Koning aangewezen overtreding kan, als het feit
+          geen schade aan derden veroorzaakte en met instemming van de overtreder, een som worden geheven. Door de betaling
+          vervalt de strafvordering, tenzij het openbaar ministerie binnen een maand na de betaling kennis geeft van zijn
+          voornemen die vordering in te stellen (art. 65, § 2).
+        - Minnelijke schikking (art. 216bis Wetboek van strafvordering): de procureur des Konings kan de dader verzoeken
+          een bepaalde geldsom te storten binnen de termijn die hij bepaalt: ten minste vijftien dagen en ten hoogste drie
+          maanden. Betaling binnen die termijn doet de strafvordering vervallen.
+        - Bevel tot betalen (art. 65/1 Wegverkeerswet): wordt de som van art. 216bis niet binnen de bepaalde termijn
+          betaald, dan kan de procureur des Konings bevel geven tot betalen van de op de overtreding toepasselijke geldsom,
+          verhoogd met 35 %. Wie het bevel ontving, of diens advocaat, kan binnen dertig dagen volgend op de dag van
+          ontvangst betalen of beroep aantekenen bij de politierechtbank die bevoegd is volgens de plaats van de
+          overtreding. Het bevel wordt geacht te zijn ontvangen de tiende werkdag na de dagtekening ervan (art. 65/1, § 1
+          en § 2). Wie aantoont dat hij het bevel niet binnen die termijn kon kennen, kan nog beroep aantekenen binnen
+          vijftien dagen na de dag waarop hij er kennis van kreeg of na de eerste daad van invordering (art. 65/1, § 8).
+        - Art. 65ter Wegverkeerswet (ingevoegd in 2003) is niet in werking getreden; de geconsolideerde tekst vermeldt
+          "Inwerkingtreding : onbepaald". Geef de termijn van veertien dagen en de kennisgeving op de tweede dag uit dat
+          artikel nooit als geldende regel.
+      DIRECTIVE
+    end
+
+    # Sol 2026-11-20 01:05:24Z (catalogue 1671 and 2876): keep the party's objection, the civil witness's duty and the
+    # criminal summons apart. Judicial Code art. 915-916, 925-926, 928-929 and Code of Criminal Procedure art. 80-81, read
+    # in full NL and FR on 2026-11-20.
+    def witness_directive
+      <<~DIRECTIVE.strip
+        GETUIGEN: onderscheid wie de vraag stelt en in welke procedure.
+        - Een partij die bezwaar heeft tegen het horen van een getuige (burgerlijke zaak): de rechter kan het
+          getuigenbewijs toestaan als een partij aanbiedt een bepaald en ter zake dienend feit te bewijzen en het bewijs
+          toelaatbaar is (art. 915 Ger.W.); hij kan ook ambtshalve getuigen laten horen (art. 916). De partij kan dus
+          aanvoeren dat het feit niet bepaald of niet ter zake dienend is of dat het bewijs niet toelaatbaar is; de
+          rechter beslist. Maak er geen bezwaar van tegen een weigering van de rechter om een getuige te horen.
+        - Een opgeroepen getuige in een burgerlijke zaak: wie na een oproeping door de griffier niet verschijnt, kan op
+          verzoek van een partij bij deurwaardersexploot worden gedagvaard (art. 925); een gedagvaarde getuige die niet
+          verschijnt, wordt tot een geldboete veroordeeld (art. 926), en dezelfde geldboete geldt voor wie zonder wettige
+          reden weigert de eed af te leggen of te getuigen (art. 928). Voert de getuige een wettige reden aan, zoals het
+          beroepsgeheim, dan beslist de rechter (art. 929).
+        - Een getuige die door de onderzoeksrechter is gedagvaard (strafonderzoek): hij moet verschijnen en aan de
+          dagvaarding voldoen; anders kan de onderzoeksrechter de bij de wet bepaalde straf uitspreken en bevelen dat hij
+          lichamelijk wordt gedwongen zijn getuigenis te komen afleggen (art. 80 Sv.). Wie na een tweede dagvaarding
+          wettige redenen van verschoning voorlegt, kan van die straf worden ontheven (art. 81 Sv.).
+        Blijkt niet uit de vraag of het om een burgerlijke zaak of een strafzaak gaat, zeg dan dat het antwoord daarvan
+        afhangt en geef beide.
+      DIRECTIVE
+    end
+
+    # Sol 2026-11-20 10:13:42Z (#2065). Read in full on 2026-11-20: Omgevingsvergunningsdecreet (2014036510) art. 105
+    # (NL and FR) and art. 53 (NL), and GwH 14 March 2019, nr. 46/2019 (ECLI:BE:GHCC:2019:ARR.046).
+    def permit_council_directive
+      <<~DIRECTIVE.strip
+        RAAD VOOR VERGUNNINGSBETWISTINGEN (omgevingsvergunning):
+        - Beroep tegen een beslissing in laatste administratieve aanleg: art. 105 van het Omgevingsvergunningsdecreet.
+          Wie beroep kan instellen staat in § 2, eerste lid (onder meer de vergunningsaanvrager en het betrokken publiek).
+          Termijn: 45 dagen, op straffe van onontvankelijkheid, vanaf de dag na de betekening of, in de overige
+          gevallen, na de eerste dag van de aanplakking (§ 3).
+        - Geldende voorwaarde (§ 2, tweede lid): wie een voor hem nadelige vergunningsbeslissing niet heeft bestreden met
+          het openstaande georganiseerd administratief beroep (art. 52), wordt geacht te hebben verzaakt aan zijn recht
+          om zich tot de Raad voor Vergunningsbetwistingen te wenden.
+        - Vernietigd: de geconsolideerde tekst van art. 105, § 2, en van art. 53 (administratief beroep) vermeldt nog
+          dat het betrokken publiek alleen beroep kan instellen als het tijdens het openbaar onderzoek een standpunt,
+          opmerking of bezwaar indiende. Het Grondwettelijk Hof heeft de bepalingen die dat invoegden (art. 133, 2°, en
+          art. 151, 3°, van het decreet van 8 december 2017) vernietigd bij arrest nr. 46/2019 van 14 maart 2019
+          (B.S. 9 april 2019) en de gevolgen niet gehandhaafd. Geef een bezwaar tijdens het openbaar onderzoek nooit
+          als ontvankelijkheidsvoorwaarde.
+        Bron: GwH 14 maart 2019, nr. 46/2019, /jurisprudence/ECLI:BE:GHCC:2019:ARR.046
+      DIRECTIVE
+    end
+
+    # Sol 2026-11-20 01:05:24Z (#1988). Read in full on 2026-11-20, NL and FR unless noted: GwH 29 January 2026,
+    # nr. 14/2026 (ECLI:BE:GHCC:2026:ARR.014, NL); Book I act (2024002052) art. 60 of the Code, art. 2 of the Code
+    # (stored as Art.2.2) and the act's own art. 38 (stored as Art.38.2); Book II act (2024002088) art. 119 (stored as
+    # Art.119.2, NL); law of 16 March 2026 (2026002189) arts. 19 and 127. The consolidated text of art. 60 (Justel, text
+    # update through 2 April 2026) still prints both original subparagraphs and a note that the whole article was
+    # annulled, and shows neither change made by art. 19.
+    def recidivism_directive
+      <<~DIRECTIVE.strip
+        HERHALING, ART. 60 STRAFWETBOEK (BOEK I, IN WERKING SINDS 1 SEPTEMBER 2026):
+        - De geconsolideerde tekst van art. 60 hieronder is verouderd. Zijn NOTA zegt dat het Grondwettelijk Hof "dit
+          artikel" vernietigde, maar het beschikkend gedeelte van arrest nr. 14/2026 van 29 januari 2026 vernietigt
+          alleen het tweede lid. Zeg nooit dat het hele artikel 60 vernietigd is of dat herhaling niet meer tot een
+          zwaardere straf kan leiden.
+        - Eerste lid (geldt): wordt de dader vervolgd voor een misdrijf waarop een straf van niveau 1 tot 6 staat, dan
+          kan de rechter die straf verhogen naar het onmiddellijk hogere niveau als bij het plegen van het misdrijf nog
+          geen vijf jaar verlopen waren sinds de dag waarop een vorige veroordeling in kracht van gewijsde is getreden.
+          Die termijn wordt verlengd met de tijd waarin de gevangenisstraf of de behandeling onder vrijheidsberoving
+          wordt uitgevoerd, behalve de periode onder elektronisch toezicht en de periodes van voorwaardelijke
+          invrijheidsstelling, voorlopige invrijheidsstelling met het oog op verwijdering van het grondgebied of met
+          het oog op overlevering en de invrijheidsstelling onder toezicht (die opsomming sinds art. 19, 1°, van de wet
+          van 16 maart 2026). Het Hof oordeelde dat dit lid de artikelen 10 en 11 van de Grondwet niet schendt (B.56).
+        - Tweede lid: het oorspronkelijke tweede lid gold alleen voor natuurlijke personen en is daarom vernietigd
+          (B.58.1). Art. 19, 2°, van de wet van 16 maart 2026 heeft in de plaats een nieuw tweede lid ingevoegd: wordt
+          de dader vervolgd voor een misdrijf waarop een straf van niveau 7 staat en werd hij eerder veroordeeld tot een
+          straf van niveau 7 of 8, dan wordt de minimumstraf gebracht op een gevangenisstraf van tweeëntwintig jaar of
+          een behandeling onder vrijheidsberoving van zeventien jaar voor natuurlijke personen en op een geldboete van
+          2.080.000 euro voor rechtspersonen.
+        - Feiten gepleegd vóór 1 september 2026: art. 2 van het Strafwetboek staat geen zwaardere straf toe dan die
+          waarin de wet ten tijde van het misdrijf voorzag; bij een latere wijziging gelden de voor de dader meest
+          gunstige bepalingen.
+        Bronnen: GwH 29 januari 2026, nr. 14/2026, /jurisprudence/ECLI:BE:GHCC:2026:ARR.014; wet van 16 maart 2026,
+        art. 19, /laws/2026002189
+      DIRECTIVE
+    end
+
+    # Sol 2026-11-20 13:46:27Z. Read in full on 2026-11-20, NL and FR unless noted: GwH 29 January 2026, nr. 14/2026
+    # (ECLI:BE:GHCC:2026:ARR.014, NL: B.103, B.112, dictum); Book II act (2024002088) art. 586 of the Code and the act's own
+    # art. 119 (stored as Art.119.2); law of 16 March 2026 (2026002189) arts. 110 and 127; the 1867 Criminal Code
+    # (1867060850) art. 120, which our corpus still prints in the wording of art. 71 of the act of 28 March 2024 without a
+    # note, although the same dictum annuls that art. 71.
+    def state_secret_directive
+      <<~DIRECTIVE.strip
+        STAATSGEHEIM ONBEVOEGD ONTVANGEN, ART. 586 STRAFWETBOEK (BOEK II, IN WERKING SINDS 1 SEPTEMBER 2026):
+        - De geconsolideerde tekst van art. 586 hieronder is verouderd: hij geeft de tekst die het Grondwettelijk Hof
+          vernietigde bij arrest nr. 14/2026 van 29 januari 2026. Die tekst stelde het ontvangen strafbaar met enkel een
+          algemeen opzet ("opzettelijk"), wat volgens het Hof de vrijheid van meningsuiting en de persvrijheid onevenredig
+          beperkte (B.112.2 en B.112.3).
+        - Art. 110 van de wet van 16 maart 2026 heeft in de plaats een nieuw art. 586 ingevoegd: "Onbevoegd ontvangen van
+          een staatsgeheim is het met het oogmerk afbreuk te doen aan de essentiële belangen van België of van een Staat
+          waarmee België met het oog op een gemeenschappelijke verdediging door een internationale overeenkomst is
+          verbonden, geheel of ten dele, in origineel of reproductie, aanschaffen of ontvangen, zonder bevoegd te zijn dit in
+          ontvangst te nemen of er kennis van te nemen, van een staatsgeheim, alsook de poging om dit te doen." Straf van
+          niveau 3. Noem beide: de essentiële belangen van België en die van een Staat waarmee België door zo'n
+          overeenkomst verbonden is.
+        - Feiten gepleegd vóór 1 september 2026: hetzelfde arrest vernietigde ook art. 71 van de wet van 28 maart 2024, dat
+          art. 120 van het Strafwetboek van 1867 had vervangen. Art. 2 van het Strafwetboek staat geen zwaardere straf toe
+          dan die waarin de wet ten tijde van het misdrijf voorzag; bij een latere wijziging gelden de voor de dader meest
+          gunstige bepalingen.
+        Bronnen: GwH 29 januari 2026, nr. 14/2026, /jurisprudence/ECLI:BE:GHCC:2026:ARR.014; wet van 16 maart 2026,
+        art. 110, /laws/2026002189
+      DIRECTIVE
+    end
+
     def training_clause_directive
       lines = [<<~DIRECTIVE.strip]
         SCHOLINGSBEDING, ART. 22BIS, § 4, VIERDE STREEPJE: LEES DIT ALS "OF". Het beding is onbestaande "wanneer de
@@ -1761,6 +2268,7 @@ module LegalChatbot
       copy = NOTICE_GENERAL_COPY.fetch(@language, NOTICE_GENERAL_COPY['nl'])
       lines = [copy[:head]]
       lines << copy[:under_six] if Date.current < (NOTICE_AMENDMENT_DATE >> 6)
+      lines << copy[:cap]
       when_copy = NOTICE_WHEN_COPY.fetch(@language, NOTICE_WHEN_COPY['nl'])
       part_two = notice_weeks_label(employer_notice_weeks(completed_months(SINGLE_STATUS_DATE, Date.current)))
       parts = format(NOTICE_PRE_2014_PARTS.fetch(@language, NOTICE_PRE_2014_PARTS['nl']), when: when_copy[:today], part_two: part_two)
@@ -2071,11 +2579,11 @@ module LegalChatbot
       # "Art.3 TOEKOMSTIG RECHT" matches a request for Art. 3: a space follows the 3 and
       # the boundary test passes. Injecting that as a verified fact would state a rule that
       # is not in force yet through the channel the prompt says overrides everything.
-      matching = matching.reject do |article|
-        FutureLaw.row_future?(variant: article.try(:article_variant),
-                              title: article.article_title,
-                              numac: article.try(:content_numac))
-      end
+      # A version Justel still files as future law whose commencement has passed takes
+      # the place of its plain row when it is newer (FutureLaw.in_force_versions, Sol
+      # #2058); one that has not commenced, an article inserted without a commencement
+      # (Sol #2231) and a listed code before its day are no facts.
+      matching = FutureLaw.in_force_versions(matching)
 
       return nil if matching.empty?
 
@@ -2107,13 +2615,14 @@ module LegalChatbot
         next if text.blank?
 
         # Cut a trailing future-law block off first, so the in-force text is what is
-        # emitted and the pending change is only named. Rows that are ENTIRELY future law
-        # were already rejected by the caller.
-        in_force, future_block = FutureLaw.split(text)
-        next if in_force.nil?
+        # emitted and the pending change is only named; a block whose commencement has
+        # passed is the text (FutureLaw.in_force_text). Rows that are ENTIRELY future law
+        # were already settled by the caller (FutureLaw.in_force_versions).
+        text, commenced, future_block = FutureLaw.in_force_text(text)
+        next if text.blank?
 
-        text = in_force
         pending = future_block && FutureLaw.effective_date(future_block)
+        commenced ||= article.commenced_on if article.respond_to?(:commenced_on)
 
         # r47 (root 2026-10-19 18:59:40): the in-force text is emitted complete. This
         # channel overrides the retrieved evidence, so a cut here could drop a condition
@@ -2122,6 +2631,10 @@ module LegalChatbot
         if future_block
           text += @language_id == 2 ? " [modification pas encore en vigueur#{pending ? " (#{pending})" : ''}]"
                                     : " [wijziging nog niet in werking#{pending ? " (vanaf #{pending})" : ''}]"
+        end
+        if commenced
+          stamp = commenced.strftime('%d-%m-%Y')
+          text += @language_id == 2 ? " [version en vigueur depuis le #{stamp}]" : " [versie in werking sinds #{stamp}]"
         end
 
         article_lines << "#{title}: #{text}"

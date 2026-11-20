@@ -26,7 +26,9 @@ module LegalChatbot
     FAISS_ENABLED = ENV.fetch('FISCONET_FAISS_ENABLED', 'false') == 'true'
     # Metadata is deliberately separate from eligibility. In particular, a
     # Fisconet version date is NOT the date the provision entered into force.
-    ARTICLE_METADATA_COLUMNS = %w[article_type source_type version_date publication_date end_date is_abolished region].freeze
+    # article_title: a slug row's card label (row_to_article); every other row keeps "Art. N".
+    ARTICLE_METADATA_COLUMNS = %w[article_type source_type version_date publication_date end_date is_abolished region
+                                  article_title].freeze
     EDITION_METADATA_COLUMNS = %w[base_code edition_year edition_role].freeze
 
     # Tax-related keywords for question classification
@@ -45,10 +47,49 @@ module LegalChatbot
     FOREIGN_SUCCESSION_SPECIFIC_SUBJECT_PATTERN = /\b(?:aangift\w*|declar\w*|déclar\p{L}*|filing|file\s+(?:an?\s+)?(?:(?:inheritance|estate)(?:\s+tax)?|tax)\s+return|waarder\w*|waardebepal\w*|schatting\w*|estimat\w*|évalu\p{L}*|valuat\w*|apprais\w*|Bewert\w*|Wertbestimm\w*|Erklärung\w*)\b/iu
     COMPANY_CAR_TAX_PATTERN = /\A(?=.*(?:\bbedrijfswagen\b|\bvoiture\s+de\s+société\b|\bfirmenwagen\b|\bcompany\s+car\b|\bvoordeel\s+alle\s+aard\b.{0,40}\b(?:wagen|auto|voertuig)\b|\bavantage\s+de\s+toute\s+nature\b.{0,40}\b(?:véhicule|voiture)\b))(?=.*\b(?:belast\w*|belasting\w*|fisca\w*|voordeel\s+alle\s+aard|imp[oô]t\w*|fiscal\w*|avantage\s+de\s+toute\s+nature|steuer\w*|versteuer\w*|geldwerter\s+vorteil|tax\w*|benefit\s+in\s+kind)\b).*\z/im
     CRYPTO_TAX_PATTERN = /\A(?=.*\b(?:crypto|cryptomunten?|cryptovaluta|cryptowinst(?:en)?|cryptomonnaies?|cryptocurrenc(?:y|ies)|kryptowährung(?:en)?|bitcoin)\b)(?=.*(?:\b(?:belast\w*|belasting\w*|fisca\w*|diverse\s+inkomsten|meerwaard\w*|winsten?|inkomsten|imp[oô]t\w*|fiscal\w*|revenus?\s+divers|plus[-\s]?value\w*|gains?|tax\w*|income|steuer\w*|gewinn\w*)\b|\bcryptowinst(?:en)?\b)).*\z/im
+    # Sol 2026-11-20 05:41:41Z (#2675): a crypto question got art. 90 only. Since 1 January 2026 (W 06.04.2026,
+    # 2026002780) a capital gain on financial assets, crypto included (art. 92, § 1, c)), is a miscellaneous income of
+    # art. 90, 9°, c), exempt up to the first slice of art. 96/2 and computed under art. 102. Matched: a crypto tax
+    # question (also "imposition", "Besteuerung", which CRYPTO_TAX_PATTERN misses), a capital gain together with a
+    # financial asset, or the tax named outright. A gain on land or a building is another regime (art. 90, 8° and
+    # 10°), so the named tax alone does not match beside a real-estate word.
+    CAPITAL_GAIN_WORD = /(?<![[:alnum:]])(?:meerwaarde\p{L}*|plus[-\s]?values?|capital\s+gains?|kursgewinn\p{L}*|ver(?:ä|ae)u(?:ß|ss)erungsgewinn\p{L}*|kapitalgewinn\p{L}*)/iu
+    FINANCIAL_ASSET_WORD = /(?<![[:alnum:]])(?:aandel\p{L}*|beleggingsfonds\p{L}*|fonds(?:en)?|etfs?|trackers?|obligaties|effecten\p{L}*|financi[eë]le\s+activa|beleggingen|portefeuille\p{L}*|actions?|obligations?|actifs?\s+financiers?|shares?|stocks?|bonds?|funds?|financial\s+assets?|aktien|anleihen|wertpapier\p{L}*|finanzanlagen?|crypto\p{L}*|bitcoin\p{L}*|krypto\p{L}*)(?![[:alnum:]])/iu
+    CAPITAL_GAINS_TAX_NAME = /(?<![[:alnum:]])(?:meerwaarden?belasting|meerwaardetaks|(?:taxe|imp[oô]t|imposition)\s+(?:sur|des)\s+(?:les|la)\s+plus[-\s]values?|capital\s+gains?\s+tax|kapitalgewinnsteuer|(?:be)?steuer\p{L}*\s+(?:von|auf)\s+(?:den\s+)?kapitalgewinn\p{L}*)(?![[:alnum:]])/iu
+    CRYPTO_ASSET_WORD = /(?<![[:alnum:]])(?:crypto\p{L}*|bitcoin\p{L}*|krypto\p{L}*)/iu
+    CRYPTO_TAX_EXTRA_WORD = /(?<![[:alnum:]])(?:impos(?:ition|able|ée?s?)|(?:be|ver)steuer\p{L}*)(?![[:alnum:]])/iu
+    REAL_ESTATE_WORD = /(?<![[:alnum:]])(?:woning\p{L}*|huis|huizen|appartement\p{L}*|bouwgrond\p{L}*|grond(?:en)?|onroerend\p{L}*|vastgoed\p{L}*|maisons?|immeubles?|immobili\p{L}*|terrains?|houses?|property|real\s+estate|immobilie\p{L}*|haus|grundst(?:ü|ue)ck\p{L}*|wohnung\p{L}*)(?![[:alnum:]])/iu
+    CAPITAL_GAINS_TAX_PATTERN = Regexp.union(
+      CRYPTO_TAX_PATTERN,
+      /\A(?=.*#{CRYPTO_ASSET_WORD.source})(?=.*#{CRYPTO_TAX_EXTRA_WORD.source}).*\z/imu,
+      /\A(?=.*#{CAPITAL_GAIN_WORD.source})(?=.*#{FINANCIAL_ASSET_WORD.source}).*\z/imu,
+      /\A(?!.*#{REAL_ESTATE_WORD.source})(?=.*#{CAPITAL_GAINS_TAX_NAME.source}).*\z/imu
+    )
+    # Sol 2026-11-20 05:41:41Z (#2673): a rental income answer mixed the figures on the return with the taxable base.
+    # The landlord's income is WIB 92 art. 7 (and 8 for a split lease), the cost deduction art. 13 and the indexed
+    # cadastral income art. 518. Strict form (fact note, tax detection): a landlord's income or letting together with a
+    # tax word, or the indexation of the cadastral income. "revenus locatifs" and "Vermietung" were not matched before.
+    RENTAL_INCOME_WORD = /(?<![[:alnum:]])(?:huurinkomst\p{L}*|huuropbrengst\p{L}*|inkomsten\s+uit\s+(?:de\s+)?verhuur\p{L}*|verhuur(?:t|en|ing|ingen)?|revenus?\s+locatifs?|revenus?\s+immobiliers?|revenus?\s+de\s+(?:la\s+)?location|donner\s+en\s+location|mettre\s+en\s+location|mieteinnahmen|mieteink(?:ü|ue)nfte|eink(?:ü|ue)nfte\s+aus\s+vermietung|vermiet(?:e|en|est|et|ung|ungen)|rental\s+income|income\s+from\s+(?:letting|renting)|letting\s+out|renting\s+out)(?![[:alnum:]])/iu
+    RENTAL_TAX_WORD = /(?<![[:alnum:]])(?:belast\p{L}*|aangifte\p{L}*|aangeven|fisca\p{L}*|imp[oô]ts?|impos\p{L}*|taxe?s?|taxed|taxable|taxation|d[ée]clar\p{L}*|steuer\p{L}*|besteuer\p{L}*|versteuer\p{L}*|kadastra\p{L}*|cadastra\p{L}*|kataster\p{L}*)(?![[:alnum:]])/iu
+    CADASTRAL_INDEX_PATTERN = /\A(?=.*(?<![[:alnum:]])(?:kadastra(?:al|le)\s+inkomen\p{L}*|revenus?\s+cadastra(?:l|ux)|katastereinkommen\p{L}*|kadastrale[nms]?\s+einkommens?|cadastral\s+income))(?=.*(?<![[:alnum:]])(?:index\p{L}*|ge(?:ï|i)ndexeerd\p{L}*|indexier\p{L}*|co(?:ë|e)ffici(?:ë|e)nt\p{L}*|koeffizient\p{L}*)).*\z/imu
+    RENTAL_INCOME_TAX_PATTERN = Regexp.union(
+      /\A(?=.*#{RENTAL_INCOME_WORD.source})(?=.*#{RENTAL_TAX_WORD.source}).*\z/imu,
+      CADASTRAL_INDEX_PATTERN
+    )
     # Sol 2026-11-19 19:52:56Z (#679 "Aangifte personenbelasting deadline?"): the answer gave only the art. 308/1
     # exceptions. WIB 92 art. 308, § 1 holds the ordinary deadlines (30 June on paper, 15 July electronically); art. 308/1
     # the later ones. A company's return is another article.
     PERSONAL_TAX_RETURN_DEADLINE_PATTERN = /\A(?!.*\b(?:vennootschap\w*|rechtspersonen\w*|soci[ée]t[ée]s?|isoc|corporate|körperschaft\w*)\b)(?=.*(?:\bbelastingaangifte\w*|\baangifte\w*\s+(?:in\s+de\s+)?(?:personen|inkomsten)belasting|\b(?:personen|inkomsten)belasting\b.{0,40}\baangifte\w*|\btax[-\s]?on[-\s]?web\b|\bd[ée]claration\s+(?:d.imp[ôo]t|fiscale)|\bimp[ôo]t\s+des\s+personnes\s+physiques\b|\beinkommensteuererkl[äa]rung\b|\bincome\s+tax\s+return\b))(?=.*\b(?:deadline|termijn\w*|wanneer|uiterlijk|indien\w*|date\s+limite|d[ée]lai\w*|quand|rentrer|frist\w*|wann|when|due)\b)/im
+    # The corporate income-tax rate and a small company's reduced rate: WIB 92 art. 215. Its third paragraph, 4°, sets the
+    # director-remuneration condition: from assessment year 2027 at least EUR 51,000 (the indexed form of the EUR 25,000
+    # of the Act of 15 July 2026, art. 80), unless a lower remuneration is not below the taxable income (read in full
+    # 2026-11-20; the answer to #2668 stated the amount without that exception, Sol 2026-11-20 05:41:41Z).
+    CORPORATE_TAX_RATE_PATTERN = /
+      \A
+      (?=.*(?:vennootschapsbelasting|imp[ôo]t\s+des\s+soci[ée]t[ée]s|K[öo]rperschaftsteuer|corporat(?:e|ion)\s+(?:income\s+)?tax|\bisoc\b|kleine\s+vennootschap\p{L}*|petites?\s+soci[ée]t[ée]s?|kleine\p{L}*\s+Gesellschaft\p{L}*|small\s+compan\p{L}*))
+      (?=.*(?:tarie[fv]\p{L}*|\btarifs?\b|\btaux\b|\brate\b|satz\b|\bverlaagd|r[ée]duit|reduced|erm[äa][ßs]igt\p{L}*|\b(?:20|25)\s*%|bezoldiging\p{L}*|r[ée]mun[ée]ration|Verg[üu]tung|remuneration))
+      .*\z
+    /imxu
     DIVERSE_INCOME_PATTERN = /\b(?:diverse\s+inkomsten|revenus\s+divers|sonstige\s+einkünfte|miscellaneous\s+income)\b/i
 
     # Question-token → tax-code filter (LIKE patterns applied to
@@ -136,13 +177,19 @@ module LegalChatbot
         document_types: ['wib 92'], articles: %w[145/1 145/8] },
       { question: /\b(?:roerende\s+voorheffing|précompte\s+mobilier|kapitalertragsteuer|withholding\s+tax\s+on\s+(?:dividends?|interest))\b/i,
         document_types: ['wib 92'], articles: %w[269] },
+      { question: CORPORATE_TAX_RATE_PATTERN, document_types: ['wib 92'], articles: %w[215] },
       { question: COMPANY_CAR_TAX_PATTERN,
         document_types: ['wib 92', 'kb/wib 92'], articles: %w[36 18],
         targets: { 'wib 92' => %w[36], 'kb/wib 92' => %w[18] } },
+      # The capital gains articles (#2675); the 10 % rate of art. 171, 2°, e) is in the fact note.
+      { question: CAPITAL_GAINS_TAX_PATTERN,
+        document_types: ['wib 92'], articles: %w[90 92 96/2 102] },
       { question: Regexp.union(DIVERSE_INCOME_PATTERN, CRYPTO_TAX_PATTERN),
         document_types: ['wib 92'], articles: %w[90] },
-      { question: /\b(?:huurinkomsten|onroerende\s+inkomsten?.{0,30}(?:huur|verhuur)|revenus?\s+immobiliers?.{0,30}(?:location|louer)|rental\s+income|mieteinnahmen)\b/i,
-        document_types: ['wib 92'], articles: %w[7] },
+      # Rental income (#2673): art. 7 and 8 (the income), 13 (the cost deduction), 518 (the indexed cadastral
+      # income). The earlier wording stays matched, so no question loses the hint.
+      { question: Regexp.union(/\b(?:huurinkomsten|onroerende\s+inkomsten?.{0,30}(?:huur|verhuur)|revenus?\s+immobiliers?.{0,30}(?:location|louer)|rental\s+income|mieteinnahmen)\b/i, RENTAL_INCOME_TAX_PATTERN),
+        document_types: ['wib 92'], articles: %w[7 8 13 518] },
       { question: /\b(?:belastingvermindering.{0,60}kinderopvang(?:kosten)?|kinderopvang(?:kosten)?.{0,60}(?:fiscaal|belasting|aftrek\w*)|aftrek\w*.{0,60}kinderopvang(?:kosten)?|frais\s+de\s+garde.{0,60}(?:réduction|impôt)|childcare.{0,60}(?:tax|deduct)|kinderbetreuungskosten.{0,60}steuer)\b/i,
         document_types: ['wib 92'], articles: %w[145/35] },
       { question: /\b(?:dubbele\s+belasting|double\s+imposition)\b.{0,60}\b(?:erfenis|nalatenschap|successie|succession)\b|\b(?:erfenis|nalatenschap|successie|succession)\b.{0,60}\b(?:buitenland|étranger|dubbele\s+belasting|double\s+imposition)\b/i,
@@ -484,7 +531,8 @@ module LegalChatbot
         question_text.match?(TAX_COMPOUND_PATTERN) ||
         question_text.match?(TAX_TERM_PATTERN) ||
         question_text.match?(COMPANY_CAR_TAX_PATTERN) ||
-        question_text.match?(CRYPTO_TAX_PATTERN)
+        question_text.match?(CAPITAL_GAINS_TAX_PATTERN) ||
+        question_text.match?(RENTAL_INCOME_TAX_PATTERN)
     end
 
     # A Dutch compound names its tax in its last part ("bedrijfsvoorheffing", "speculatiebelasting",
@@ -1089,6 +1137,9 @@ module LegalChatbot
       metadata_names = ARTICLE_METADATA_COLUMNS + EDITION_METADATA_COLUMNS
       metadata = metadata_offset ? metadata_names.zip(row[metadata_offset, metadata_names.length]).to_h.symbolize_keys.compact : {}
       jurisdiction = metadata.delete(:region)
+      # A slug row's stored title names its article ("W.Btw, art. 58sexies. Bijzondere regeling ..."), and its card
+      # showed "Artikel doc:w-btw-art-58sexies-..." instead (#687). The number, anchor and link keep the slug.
+      stored_title = metadata.delete(:article_title).to_s.strip
       # Cut the not-yet-in-force block off BEFORE the 3000-char slice below. tax_articles
       # has no variant column, so a marker in the body is the only signal there has ever
       # been that a row carries future law - and slicing first can delete the marker while
@@ -1106,7 +1157,7 @@ module LegalChatbot
         article_id: article_id,
         legislation_id: leg_id,
         article_number: art_num,
-        article_title: "Art. #{art_num}",
+        article_title: slug_number?(art_num) && stored_title.present? ? stored_title : "Art. #{art_num}",
         text: in_force.to_s[0..3000],
         future_amendment: !future_block.nil?,
         future_effective_date: future_block && LegalChatbot::FutureLaw.effective_date(future_block),

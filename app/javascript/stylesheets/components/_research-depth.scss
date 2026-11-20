@@ -20,7 +20,7 @@
   .research-depth-help > summary::-webkit-details-marker { display: none; }
   .research-depth-help[open] > summary { border-color: var(--border-color, #cbd5e1); color: inherit; }
   .research-depth-help > summary:focus-visible { outline: 2px solid var(--accent-500, #2563eb); outline-offset: 3px; }
-  .research-depth-help-body { max-height: 9rem; overflow-y: auto; font-size: 11px; line-height: 1.5; padding: 10px; margin: 4px 0 8px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 6px; }
+  .research-depth-help-body { max-height: 12rem; overflow-y: auto; font-size: 11px; line-height: 1.5; padding: 10px; margin: 4px 0 8px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 6px; }
   .research-depth-help-body p + p { margin-top: 6px; }
   .research-depth-help-body p:empty { display: none; }
   &--compact .research-depth-preview { font-size: 11px; }

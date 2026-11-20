@@ -1,0 +1,33 @@
+<%# The judgment's reference (Sol 2026-11-20 10:07:46Z, 10:10:15Z, 10:18:30Z, 11:57:26Z; JurisprudenceReferenceHelper).
+    Locals: reference ({ heading:, text:, aria:, copied:, failed: } in the interface language: Referentie (V&A) on the
+    Dutch interface where RS1 gives a form, else the plain Referentie / Référence / Fundstelle / Citation; or nil),
+    source_title (the source's own title with subject wording, or nil), source_host. The reference is one button with
+    its copy icon: clicking it, or Enter or Space, copies exactly the text shown (citation_copy_controller.js), never
+    the heading or the icon. %>
+<% if reference || source_title %>
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24" data-jurisprudence-reference>
+    <div class="p-4 md:p-6">
+      <% if reference %>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-3"><%= reference[:heading] %></h2>
+        <div data-controller="citation-copy" data-citation-copy-copied-value="<%= reference[:copied] %>"
+             data-citation-copy-failed-value="<%= reference[:failed] %>">
+          <button type="button" data-citation-copy-target="button" aria-label="<%= reference[:aria] %>"
+                  aria-describedby="jurisprudence-citation-text"
+                  class="inline-flex items-start gap-2 max-w-full text-left rounded-lg px-3 py-2 border border-(--accent-500)/20 hover:bg-(--accent-500)/10 text-gray-800 dark:text-gray-200 [overflow-wrap:anywhere]">
+            <span id="jurisprudence-citation-text" data-citation-copy-target="text" data-jurisprudence-citation><%= reference[:text] %></span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+          </button>
+          <p data-citation-copy-target="manual" hidden class="mt-2 select-all text-sm text-gray-800 dark:text-gray-200 [overflow-wrap:anywhere]"><%= reference[:text] %></p>
+          <span data-citation-copy-target="status" role="status" aria-live="polite" class="sr-only"></span>
+        </div>
+      <% end %>
+      <% if source_title %>
+        <p class="<%= 'mt-3 ' if reference %>text-sm text-gray-600 dark:text-gray-300" data-jurisprudence-source-title>
+          <span class="font-medium"><%= jurisprudence_source_title_label %></span> <%= source_title %><% if source_host %> (<%= source_host %>)<% end %>
+        </p>
+      <% end %>
+    </div>
+  </div>
+<% end %>

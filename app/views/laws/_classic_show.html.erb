@@ -16,6 +16,9 @@
   <span><%= t(:details).capitalize %></span>
 </nav>
 
+<%# ── A dated address: Classic shows today's text and says so (Sol 2026-11-20 13:47:06Z) ── %>
+<%= render 'laws/classic_dated_notice' if dated_request_day %>
+
 <%# ── Law title ── %>
 <h1 class="classic-law-title" <%= tag.attributes(lang: text_lang) %>>
   <%= strip_tags(@law.title.to_s) %>

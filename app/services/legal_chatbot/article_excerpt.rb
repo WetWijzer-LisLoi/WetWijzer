@@ -113,6 +113,7 @@ module LegalChatbot
       diese dieser dieses auch nicht kein keine dann noch aber unter zwischen während ohne wenn
       what which when where who whom how this that these those with from into about than then
       also have does been being shall should must could would will your their there here
+      zegt zeggen zei zeiden disent sagt sagen sagte says said
     ].to_set.freeze
 
     module_function

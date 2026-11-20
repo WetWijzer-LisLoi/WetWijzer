@@ -223,7 +223,8 @@ module LegalChatbot
     def build_context(cases, question: nil, max_chars: 2000)
       cases.map.with_index do |c, index|
         lang_label = { 1 => 'NL', 2 => 'FR', 3 => 'DE' }[c[:language_id].to_i] || 'unknown'
-        text = SourcePassageExcerpt.excerpt(c[:full_text], question, max_chars: max_chars, summary: c[:summary])
+        text = SourcePassageExcerpt.excerpt(c[:full_text], question, max_chars: max_chars, summary: c[:summary],
+                                                                     court: c[:court])
         metadata = self.class.source_metadata(case_number: c[:case_number], court: c[:court])
         kind_notice = "Source kind: #{metadata[:judicial_kind] || 'unclassified case-law collection record'}"
         kind_notice += '; advice, not a judgment or binding legislation.' if metadata[:authority_kind] == 'advisory'
@@ -343,6 +344,9 @@ module LegalChatbot
       return false unless MarketplaceCivilClaimIntent.secondary_source_relevant?(case_record, question)
 
       text = [case_record[:summary], case_record[:full_text], case_record[:case_number], case_record[:court]].compact.join("\n")
+      # "Raad voor Vergunningsbetwistingen?" showed 1998 Council of State rulings, from before the council
+      # existed (Sol 2026-11-20 10:13:42Z, #2065): a case-law card must name the council.
+      return false if question.match?(LegislationSearch::PERMIT_COUNCIL_PATTERN) && !text.match?(LegislationSearch::PERMIT_COUNCIL_PATTERN)
       return false unless self.class.foreign_succession_source_relevant?(text, question, source_subject: case_record[:summary])
 
       if question.match?(LegislationSearch::OFFICE_COMMUTE_WORK_PATTERN)

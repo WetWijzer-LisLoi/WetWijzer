@@ -63,17 +63,19 @@
       <p id="<%= prefix %>-depth-explanation"><%= t('chatbot.research_depth.explanation') %></p>
       <p id="<%= prefix %>-depth-description" data-research-depth-description><%= t('chatbot.research_depth.options.balanced.description') %></p>
       <p data-research-depth-capability></p>
+      <p id="<%= prefix %>-depth-quality-model"><strong class="block font-semibold"><%= t('chatbot.research_depth.quality_model_label') %></strong><%= t('chatbot.research_depth.quality_model_note') %></p>
+      <p id="<%= prefix %>-depth-quality-sources"><strong class="block font-semibold"><%= t('chatbot.research_depth.quality_sources_label') %></strong><%= t('chatbot.research_depth.quality_sources_note') %></p>
       <p><%= t('chatbot.research_depth.model_explanation') %></p>
       <p><%= t('chatbot.research_depth.access_note') %></p>
+      <p><%= t('chatbot.research_depth.help_cost_note') %></p>
+      <p><%= t('chatbot.research_depth.help_verification_note') %></p>
       <p><%= t('chatbot.research_depth.credit_tick_explanation') %></p>
-      <p><%= t('chatbot.research_depth.cost_note') %></p>
-      <p><%= t('chatbot.research_depth.verification_note') %></p>
     </div>
   </details>
   <div class="research-depth-scale">
     <span class="research-depth-unavailable-track" aria-hidden="true"></span>
     <input type="range" id="<%= prefix %>-research-depth" min="0" max="<%= last_step %>" step="1" value="<%= initial_step_index %>" <%= 'disabled' if step_choices.length <= 1 %>
-         aria-describedby="<%= prefix %>-depth-explanation <%= prefix %>-depth-description"
+         aria-describedby="<%= prefix %>-depth-explanation <%= prefix %>-depth-description <%= prefix %>-depth-quality-model"
          aria-valuetext="<%= t("chatbot.research_depth.options.#{initial_depth}.label") %>"
          data-research-depth-range
          data-action="input-><%= controller_name %>#updateResearchDepth change-><%= controller_name %>#commitResearchDepth keydown-><%= controller_name %>#handleResearchDepthKeydown"

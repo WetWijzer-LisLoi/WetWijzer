@@ -75,6 +75,103 @@ module References
         valid_article_numbers.filter_map { |number| fisconet_article_anchor_id(number) }.to_set
     end
 
+    # An article of another act is that act's article, never this code's. Sol, on live 1.1.75 (2026-11-20 14:33:02Z,
+    # #663): the applicability note of WIB 92 art. 131, "(art. 2, 1°, en 4, 1ste lid, W 15.07.2026 - B.S. 29.07.2026;
+    # Numac: 2026005724)", linked its "art. 2" to article 2 of WIB 92. Such a reference stays text, and the note's
+    # NUMAC link still opens the act. A reference is another act's when it stands
+    #   - in a source note: a parenthesis whose own text cites a publication (B.S., M.B., Numac), as Fisconet's notes
+    #     on where a provision comes from and since when it applies do;
+    #   - before a dated act, with nothing in between but its own parts and further numbers: "art. 2, 1°, en 4, 1ste
+    #     lid, W 15.07.2026", "art. 22, al. 2; Lprog 18.07.2025", "art. 38 et 44, AR 09.12.2019";
+    #   - before the name of another kind of act, the same way: "artikel 38 van de wet van 29.02.2024", "art. 3, 6°,
+    #     7° et 8° de la loi spéciale du 16 janv. 1989", "art. 31 van het Vlaams Decreet van 19 dec. 2014", a
+    #     directive, a regulation, a treaty, the Constitution, a code that is never a Fisconet page here (the Civil,
+    #     Judicial and Criminal Codes, the companies code, the Flemish tax codex). A "(...)" between counts as a part.
+    # "Dit besluit", "la présente loi", "hetzelfde besluit", "voormeld besluit" and the like can name the page's own act,
+    # and a code ("Wetboek", "Code") can be this one: those references are linked as before. Measured on every
+    # Fisconet row on 2026-11-20 (10,707 provision texts): 19,279 of 65,703 article links named another act's article.
+    TAX_INVISIBLE_SPACES = [0x00a0, 0x200b].pack('U*').freeze # no-break space, zero-width space
+    TAX_SOURCE_NOTE_MARK = /B\.[[:space:]]?S\.|M\.[[:space:]]?B\.|(?<![[:alpha:]])N(?:umac|UMAC)(?![[:alpha:]])/
+    TAX_REF_PARTS = %r{
+      \A(?>(?:[[:space:],]*
+        (?:\((?:\.{3}|…)\)|alinéa|al\.|al|lid|en|et|tot|à|of|ou|t/m|§+
+          |\d+(?:[./]\d+)*(?:[[:space:]]?(?:°|er|ère)|ste|de|e)?
+          |[a-z]\)|eerste|tweede|derde|vierde|vijfde|zesde|premier|première|deuxième|troisième|quatrième|cinquième|sixième
+          |inleidende[[:space:]]+zin|phrase[[:space:]]+liminaire)
+        (?![[:alnum:]]))*)
+    }ix
+    TAX_DATED_ACT = /
+      \A[[:space:],;]*[[:upper:]][[:alpha:]]{0,9}(?:\.?[[:space:]]?[[:upper:]][[:alpha:]]{0,9}){0,2}\.?
+      [[:space:]]*\d{1,2}\.\d{1,2}\.\d{4}(?!\d)
+    /x
+    # Codes that are never a Fisconet page here.
+    TAX_OTHER_CODE = [
+      'burgerlijk[[:space:]]+wetboek', 'gerechtelijk[[:space:]]+wetboek', 'strafwetboek',
+      'wetboek[[:space:]]+van[[:space:]]+(?:strafvordering|vennootschappen|economisch[[:space:]]+recht|koophandel)', 'codex',
+      "code[[:space:]]+(?:civil|judiciaire|pénal|d['’]instruction[[:space:]]+criminelle|des[[:space:]]+sociétés|de[[:space:]]+droit[[:space:]]+" \
+      'économique|de[[:space:]]+commerce|flamand[[:space:]]+de[[:space:]]+la[[:space:]]+fiscalité)'
+    ].join('|').freeze
+    TAX_ACT_NAME = %r{
+      \A[[:space:],]*(?<lead>(?:van|de|du|des|der)(?:[[:space:]]+[[:alpha:]-]+|[[:space:]]+l['’]){0,3}?)[[:space:]]*(?<![[:alpha:]])
+      (?:[[:alpha:]]*(?:wet|besluit|decreet)|wetten|loi|lois|arrêté|décret|ordonnantie|ordonnance|richtlijn|directive|verordening|règlement
+        |verdrag|convention|constitution|samenwerkingsakkoord|accord|kb|ar|k\.b\.|a\.r\.|#{TAX_OTHER_CODE})
+      (?![[:alpha:]/])
+    }ix
+    TAX_OWN_ACT_WORD = /
+      (?<![[:alpha:]])
+      (?:dit|deze|huidige?|onderhavige?|présente?|cette|cet|ce|hetzelfde|dezelfde|zelfde|même|ledit|ladite|dudit|voormelde?|voornoemde?)
+      (?![[:alpha:]])
+    /ix
+
+    # Which rule makes the reference at match (a TAX_ART_REF_PATTERN match in html) another act's: :source_note,
+    # :dated_act or :act_name; nil when it may be this page's own article. notes: tax_source_notes(html).
+    def tax_other_act_reference(html, match, notes)
+      start = match.begin(0)
+      return :source_note if notes.any? { |note| note.cover?(start) }
+
+      rest = tax_reference_rest(html, match.end(0))
+      return :dated_act if rest.match?(TAX_DATED_ACT)
+
+      named = rest.match(TAX_ACT_NAME)
+      :act_name if named && !named[:lead].match?(TAX_OWN_ACT_WORD)
+    end
+
+    # The text after a reference, without tags or entities, from the end of its own parts.
+    def tax_reference_rest(html, from)
+      text = html[from, 400].to_s.gsub(/<[^>]*>?/, '')
+      text = CGI.unescapeHTML(text) if text.include?('&')
+      text.tr(TAX_INVISIBLE_SPACES, '  ').squeeze(' ').sub(TAX_REF_PARTS, '')[0, 160]
+    end
+
+    # The ranges of html's source notes: each parenthesis whose own text, nested parentheses left out, cites a
+    # publication. Unbalanced parentheses (the "a)" of an enumeration) open or close nothing.
+    # A publication mark belongs to the innermost parenthesis open where it stands. Two fast scans, merged in order:
+    # the marks, then the parentheses (none when the text has no mark).
+    def tax_source_notes(html)
+      marks = []
+      html.scan(TAX_SOURCE_NOTE_MARK) { marks << Regexp.last_match.begin(0) }
+      return [] if marks.empty?
+
+      notes = []
+      opened = [] # [position, cites a publication]
+      mark = 0
+      html.scan(/[()]/) do
+        paren = Regexp.last_match
+        position = paren.begin(0)
+        while mark < marks.size && marks[mark] < position
+          opened.last[1] = true if opened.any?
+          mark += 1
+        end
+        if paren[0] == '('
+          opened << [position, false]
+        else
+          open, cites = opened.pop
+          notes << (open..position) if cites
+        end
+      end
+      notes
+    end
+
     # Converts tax article references in HTML text to clickable anchor links.
     # Only links to articles that actually exist on the current page.
     #
@@ -91,16 +188,18 @@ module References
       # suffix case and so slash/dot forms point at their dashed DOM id.
       valid_set = tax_anchor_set(valid_article_numbers)
 
+      notes = nil
       html.gsub(TAX_ART_REF_PATTERN) do
-        art_num = Regexp.last_match(3)
+        match = Regexp.last_match
+        art_num = match[3]
         # A numeric superscript is part of the number: 145 with superscript 1 is stored as 145/1. With no such article
         # on the page the reference stays text rather than lead to article 145.
-        art_num = "#{art_num}/#{Regexp.last_match(4)}" if Regexp.last_match(4)
-        full_match = Regexp.last_match(0)
+        art_num = "#{art_num}/#{match[4]}" if match[4]
+        full_match = match[0]
 
-        # Only link if the article exists on this page
+        # Only link if the article exists on this page and is this page's own: another act's article stays text
         anchor_id = fisconet_article_anchor_id(art_num)
-        if anchor_id && valid_set.include?(anchor_id)
+        if anchor_id && valid_set.include?(anchor_id) && !tax_other_act_reference(html, match, notes ||= tax_source_notes(html))
           link_classes = 'text-(--link-color) hover:text-(--link-hover-color) hover:underline'
           target = anchors ? anchors.target(anchor_id, region, number: art_num) : anchor_id
           %(<a href="##{target}" class="#{link_classes}" title="Art. #{art_num}">#{full_match}</a>)

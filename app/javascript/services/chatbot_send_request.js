@@ -14,7 +14,7 @@ import { answerMetaOf } from './answer_meta.js'
 // (a plaintext conversation must not send a revision).
 export function buildAskPayload({
   question, language, source, sources, intelligence, reasoningEffort, researchDepth, linkedResearch,
-  modelOverride, profile, lawNumac, conversationId, zkReady, zkKeyGeneration,
+  modelOverride, profile, lawNumac, lawHistory, conversationId, zkReady, zkKeyGeneration,
   zkConversation, conversationRevision, contextMessages
 }) {
   return {
@@ -29,6 +29,9 @@ export function buildAskPayload({
     model_override: modelOverride || null,
     profile,
     law_numac: lawNumac || null,
+    // The article-history pilot's reader context (local only), sent only when the law page shows a date.
+    ...(lawHistory?.asOf ? { law_article: lawHistory.article || null, law_as_of: lawHistory.asOf,
+                             law_language: lawHistory.language || null } : {}),
     conversation_id: conversationId,
     ...(zkReady ? { key_generation: zkKeyGeneration } : {}),
     ...(conversationId && zkConversation ? { conversation_revision: conversationRevision ?? null } : {}),

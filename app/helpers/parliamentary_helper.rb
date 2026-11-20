@@ -480,7 +480,9 @@ module ParliamentaryHelper
   #
   # @param summary [String, nil] Raw summary from DB
   # @return [String] Cleaned summary
-  def clean_jurisprudence_summary(summary)
+  # truncate: false keeps the summary whole (the judgment page shows a supplied summary in its original
+  # wording, Sol 2026-11-20 10:18:30Z); result cards keep the 300-character cut.
+  def clean_jurisprudence_summary(summary, truncate: true)
     return '' if summary.blank?
 
     s = summary.to_s.strip
@@ -498,7 +500,7 @@ module ParliamentaryHelper
       content = match[1].strip
       content = content.sub(/\s*Thesaurus\s+CAS\s*:.*\z/im, '').strip
       content = content.sub(/\s*UTU-thesaurus\s*:.*\z/im, '').strip
-      return content.truncate(300) if content.length > 10
+      return (truncate ? content.truncate(300) : content) if content.length > 10
     end
 
     # Strip leading thesaurus tags
@@ -512,10 +514,10 @@ module ParliamentaryHelper
     if s.match?(/\ADatum van uitspraak\s*:/i)
       lines = s.split("\n")
       meaningful = lines.find { |l| l.strip.length > 50 && !l.match?(/\A(Datum|Rolnummer|Kamer|woonplaats|met als)/i) }
-      return meaningful.to_s.strip.truncate(300) if meaningful
+      return (truncate ? meaningful.to_s.strip.truncate(300) : meaningful.to_s.strip) if meaningful
     end
 
-    s.truncate(300)
+    truncate ? s.truncate(300) : s
   end
 
   JURISPRUDENCE_PAGE_FOOTER = %r{\A[IVXLC]+[a-z]{0,2}\s*[-–]\s*\d[\d.]*\s*[-–]\s*\d{1,3}\s*[/\\]\s*\d{1,3}\z}

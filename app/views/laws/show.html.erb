@@ -26,7 +26,7 @@
 <% end %>
 
 <% if @law.present? %>
-  <meta name="chatbot-context" data-context-type="law" data-law-title="<%= html_to_plain_text(@law.title).truncate(200) %>" data-law-numac="<%= @law.numac %>" data-law-url="<%= law_path(@law) %>">
+  <meta name="chatbot-context" data-context-type="law" data-law-title="<%= html_to_plain_text(@law.title).truncate(200) %>" data-law-numac="<%= @law.numac %>" data-law-url="<%= law_path(@law) %>"<%= tag.attributes('data-law-as-of': @history_as_of, 'data-law-language': (@history_language if @history_as_of)) %>>
 <% end %>
 <%# Outside every fragment cache, so the head gets the rules on a cache hit too. %>
 <%= render 'shared/reading_styles' %>
@@ -71,9 +71,11 @@
         <%# Language versions: on the German site one pill per other language
             the law is served in (German, French, Dutch), as on the case-law
             page; a law without a German text has no DE pill. %>
+        <%# The article-history pilot's date and chosen versions carry over, as on the NL/FR switch below (Sol
+            2026-11-20 13:47:06Z). %>
         <% Array(@language_versions).reject { |id| id == @language_id }.each do |version_id| %>
           <% version_label = law_language_label(version_id) %>
-          <%= link_to law_path(@law, language_id: version_id),
+          <%= link_to law_path(@law, **(@history_pilot ? history_state_params.merge(language_id: version_id) : { language_id: version_id })),
                       class: "source-detail-action inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
                       data: { law_language_version: version_label, controller: 'language-version', action: 'language-version#follow' },
                       title: t('german_text.show_version', language: version_label) do %>
@@ -102,7 +104,8 @@
         <% if !german_site? || Array(@language_versions).intersect?(HasLanguage::SITE_LANGUAGE_IDS) %>
         <%# The article in the address bar goes to the comparison and back (language_version_controller.js; Sol
             14:02:16Z: Vergelijk then Terug left Art. 8.34 some 10,900 px below). %>
-        <%= link_to compare_law_path(@law, return_language: @law.language_id),
+        <%# From a dated page the comparison says it shows the current texts and leads back to the date. %>
+        <%= link_to compare_law_path(@law, return_language: @law.language_id, **{ return_as_of: dated_request_day&.iso8601 }.compact),
                     data: { controller: 'language-version', action: 'language-version#follow' },
                     class: "source-detail-action inline-flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-xs md:text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150",
                     title: case I18n.locale when :fr then "Comparer NL et FR côte à côte" when :de then "NL und FR nebeneinander vergleichen" when :en then "Compare NL and FR side by side" else "NL en FR naast elkaar vergelijken" end do %>

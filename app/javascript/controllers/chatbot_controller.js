@@ -852,6 +852,7 @@ class ChatbotController extends Controller {
           modelOverride: this.modelOverrideValue,
           profile: this.profileValue,
           lawNumac: document.querySelector('meta[name="chatbot-context"]')?.dataset?.lawNumac,
+          lawHistory: this._lawHistoryContext(),
           conversationId: this.conversationId,
           zkReady: this._isZkReady(),
           zkKeyGeneration: this._zkKeyGeneration,
@@ -2814,6 +2815,22 @@ class ChatbotController extends Controller {
     }
 
     return question
+  }
+
+  // The article-history pilot (local only): on a law page showing a date (meta chatbot-context data-law-as-of), the
+  // reader's date, the law text's language and the article the address names (its data-history-article key, region
+  // included), so a question asked from that page is answered for that wording (LegalChatbot::DatedArticleAnswer).
+  // Nothing without a date on the page: an undated page keeps the current law.
+  _lawHistoryContext() {
+    const meta = document.querySelector('meta[name="chatbot-context"]')
+    const asOf = meta?.dataset?.lawAsOf
+    if (!asOf) return null
+    let id = String(window.location.hash || '').replace(/^#/, '')
+    try { id = decodeURIComponent(id) } catch (_) { /* the id as written */ }
+    const target = id ? document.getElementById(id) : null
+    const scope = target ? target.closest('article') : null
+    const key = scope?.dataset?.historyArticle || scope?.querySelector('[data-history-article]')?.dataset?.historyArticle
+    return { article: key || null, asOf, language: meta.dataset.lawLanguage || null }
   }
 
   _consumeHashQuestion() {

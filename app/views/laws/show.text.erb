@@ -27,6 +27,15 @@ Justel: <%= @law.justel %>
 <%= t('german_text.french_fallback') %>
 <%- end -%>
 
+<%- if (dated_day = dated_request_day) -%>
+
+<%= raw t('dated_reader.current', date: dated_day_label(dated_day)) %>
+<%- if (dated_url = dated_reader_url) -%>
+<%= raw "#{t('dated_reader.text_link', date: dated_day_label(dated_day))} #{dated_url}" %>
+<%- else -%>
+<%= raw t('dated_link_notice.body', date: dated_day_label(dated_day), site: site_name) %>
+<%- end -%>
+<%- end -%>
 <%- if @articles.present? -%>
 <%- @articles.each do |article| -%>
 <%- art_type = determine_article_type(article.article_title, article.article_text, article.article_type) -%>

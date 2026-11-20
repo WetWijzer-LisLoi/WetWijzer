@@ -294,16 +294,30 @@
     </div>
   </div>
 
-  <!-- Summary -->
-  <% if @case[:summary].present? %>
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24">
+  <%# The reference and the summary (JurisprudenceReferenceHelper; Sol 2026-11-20 10:07:46Z to 10:18:30Z). The
+      Samenvatting is a summary the source supplies, in full and naming its source: never a bare title, a placeholder
+      or the source's own title, which the reference card keeps as such. The source is named, not linked: its one link
+      is in the External links card, and a host is named only when that card links to it. The judgment stays under
+      Volledige tekst. %>
+  <% summary_kind, summary_text = jurisprudence_summary_kind(@case[:summary]) %>
+  <% source_host = jurisprudence_listed_source_host(@case[:url], [juportal_url, juportal_pdf, raadvst_url, ghcc_url]) %>
+  <%= render 'jurisprudence/reference', reference: jurisprudence_reference(@case),
+                                        source_title: (summary_text if summary_kind == :source_title), source_host: source_host %>
+  <% if summary_kind == :summary %>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg scroll-mt-24" data-jurisprudence-summary-card>
       <div class="p-4 md:p-6">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-(--accent-500) mb-3">
           <% case I18n.locale when :fr %>Résumé<% when :de %>Zusammenfassung<% when :en %>Summary<% else %>Samenvatting<% end %>
         </h2>
-        <div class="p-4 bg-(--accent-500)/5 dark:bg-gray-900 rounded-lg text-gray-700 dark:text-gray-300 border-l-4 border-(--accent-400) text-justify">
-          <%= clean_jurisprudence_summary(@case[:summary]) %>
+        <div class="p-4 bg-(--accent-500)/5 dark:bg-gray-900 rounded-lg text-gray-700 dark:text-gray-300 border-l-4 border-(--accent-400) text-justify"
+             data-jurisprudence-summary <%= tag.attributes(lang: { 1 => 'nl', 2 => 'fr', 3 => 'de' }[@page_language_id.to_i]) %>>
+          <%= summary_text %>
         </div>
+        <% if source_host %>
+          <p class="mt-2 text-xs text-gray-600 dark:text-gray-300" data-jurisprudence-summary-source>
+            <%= jurisprudence_source_label %> <%= source_host %>
+          </p>
+        <% end %>
       </div>
     </div>
   <% end %>

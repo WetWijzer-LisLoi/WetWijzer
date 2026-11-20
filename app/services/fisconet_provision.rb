@@ -83,12 +83,27 @@ module FisconetProvision
 
     fragment = Loofah.html5_fragment(source)
     fragment.scrub!(scrubber)
+    unlink_dead_links!(fragment)
     strip_leading_headings!(fragment, Identity.new(number, title, code_names))
     fragment.children.to_a.each { |child| clean!(child) }
     prune_fragment_breaks!(fragment)
     fragment.to_html(encoding: 'UTF-8').strip.presence
   rescue ArgumentError
     nil
+  end
+
+  # Fisconet links its other documents through two hosts that do not exist, fisconet.direct and fisconet.compare
+  # (both "Non-existent domain" on 2026-11-20). Sol, on live 1.1.75 (2026-11-20 14:33:02Z, #663): the indexation
+  # link of WIB 92 art. 131 failed to resolve. Such a link becomes its text: 12,423 links on 2026-11-20.
+  DEAD_LINK = %r{\Ahttps?://fisconet\.(?:direct|compare)(?:[/?#:]|\z)}i
+
+  def unlink_dead_links!(fragment)
+    fragment.css('a[href]').each do |anchor|
+      next unless anchor['href'].to_s.strip.match?(DEAD_LINK)
+
+      anchor.before(anchor.children)
+      anchor.remove
+    end
   end
 
   # The plain-text fallback: the same rule on the leading lines; a blank line between them is skipped.

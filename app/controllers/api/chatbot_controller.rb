@@ -452,7 +452,7 @@ module Api
           # ZK mode: client provides conversation context (server cannot read stored messages)
           context_override = client_context_messages
           quality_provenance_before = quality_capture_provenance
-          chatbot = LegalChatbotService.new(language: language, conversation: conversation, model: model, domain: request.host, reasoning_effort: reasoning_effort, research_depth: research_depth, profile: requested_profile, context_messages_override: context_override, law_numac: params[:law_numac].to_s.presence, include_quality_evidence: quality_evidence_requested?, german_lane: german_lane_request?, answer_language_override: explicit_answer_language_request, site_language_policy: !@service_bypass, request_deadline_at: Process.clock_gettime(Process::CLOCK_MONOTONIC) + streaming_timeout_seconds - 5.0, **mistral_credential_options)
+          chatbot = LegalChatbotService.new(language: language, conversation: conversation, model: model, domain: request.host, reasoning_effort: reasoning_effort, research_depth: research_depth, profile: requested_profile, context_messages_override: context_override, law_numac: params[:law_numac].to_s.presence, law_context: dated_article_context, include_quality_evidence: quality_evidence_requested?, german_lane: german_lane_request?, answer_language_override: explicit_answer_language_request, site_language_policy: !@service_bypass, request_deadline_at: Process.clock_gettime(Process::CLOCK_MONOTONIC) + streaming_timeout_seconds - 5.0, **mistral_credential_options)
           chatbot.provider_work_receipt = provider_work_receipt if provider_work_receipt && chatbot.respond_to?(:provider_work_receipt=)
 
           # Send immediate progress event so client knows connection is alive
@@ -829,7 +829,7 @@ module Api
         provider_work_receipt = build_browser_provider_work_receipt(
           reservation, claim: zk_claim, storage_generation: zk_claim ? conversation_storage_admitted : nil
         )
-        chatbot = LegalChatbotService.new(language: language, conversation: conversation, model: model, domain: request.host, reasoning_effort: reasoning_effort, research_depth: research_depth, profile: requested_profile, context_messages_override: context_override, law_numac: params[:law_numac].to_s.presence, include_quality_evidence: quality_evidence_requested?, german_lane: german_lane_request?, answer_language_override: explicit_answer_language_request, site_language_policy: !@service_bypass, **mistral_credential_options)
+        chatbot = LegalChatbotService.new(language: language, conversation: conversation, model: model, domain: request.host, reasoning_effort: reasoning_effort, research_depth: research_depth, profile: requested_profile, context_messages_override: context_override, law_numac: params[:law_numac].to_s.presence, law_context: dated_article_context, include_quality_evidence: quality_evidence_requested?, german_lane: german_lane_request?, answer_language_override: explicit_answer_language_request, site_language_policy: !@service_bypass, **mistral_credential_options)
         chatbot.provider_work_receipt = provider_work_receipt if provider_work_receipt && chatbot.respond_to?(:provider_work_receipt=)
 
         json_started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
@@ -1746,6 +1746,17 @@ module Api
     # Read the original typed question, before the German question translator
     # or the legacy deep-analysis wrapper can rewrite it. The UI language
     # parameter is not an explicit request to change the answer language.
+    # The law reader's article-history context for the pilot's dated answers (local only;
+    # LegalChatbot::DatedArticleAnswer): the article key the address names (with its region), the reader's date and the
+    # law text's language. A malformed value is dropped.
+    def dated_article_context
+      {
+        article: params[:law_article].to_s[%r{\AArt\.[0-9A-Za-z/_. -]{1,60}\z}],
+        as_of: params[:law_as_of].to_s[/\A\d{4}-\d{2}-\d{2}\z/],
+        language: params[:law_language].to_s[/\A(?:nl|fr)\z/]
+      }.compact
+    end
+
     def explicit_answer_language_request
       return nil unless instance_variable_get(:@_params) || request.respond_to?(:parameters)
 

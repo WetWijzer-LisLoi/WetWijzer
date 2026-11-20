@@ -155,7 +155,8 @@
       <div class="flex items-center gap-3">
         <%# Back to the language the reader came from, which on one domain need not be the site's. %>
         <% return_language = params[:return_language].to_i %>
-        <%= link_to law_path(@law, language_id: HasLanguage::LANGUAGE_IDS.value?(return_language) ? return_language : current_language_id),
+        <%= link_to law_path(@law, language_id: HasLanguage::LANGUAGE_IDS.value?(return_language) ? return_language : current_language_id,
+                             **{ as_of: compare_return_day&.iso8601 }.compact),
                     data: { controller: 'language-version', action: 'language-version#follow', compare_return: true },
                     class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-(--accent-700) dark:text-(--accent-400) hover:bg-(--accent-500)/10 border border-(--accent-500)/20 transition-colors duration-150" do %>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -168,6 +169,11 @@
   </div>
 </div>
 
+<%# Opened from a dated page: the columns hold the current texts (Sol 2026-11-20 13:47:06Z). %>
+<% if (return_day = compare_return_day) %>
+  <p class="mb-2 p-2 bg-yellow-50 dark:bg-amber-900/20 rounded-lg border border-yellow-200 dark:border-amber-800/50 text-xs text-yellow-800 dark:text-amber-200"
+     role="note" data-testid="compare-dated-note"><%= t('dated_reader.compare', date: dated_day_label(return_day)) %></p>
+<% end %>
 <!-- Column Headers -->
 <div class="flex gap-2 mb-2">
   <div class="flex-1 bg-(--accent-500)/20 dark:bg-(--accent-500)/30 px-3 py-2 rounded-lg">

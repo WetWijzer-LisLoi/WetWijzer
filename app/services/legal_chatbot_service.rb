@@ -45,7 +45,7 @@ class LegalChatbotService
   # never writes question text, hashes, or vectors to a shared cache.
   ARTICLE_EMBEDDING_CACHE_TTL = 1.hour
 
-  def initialize(language: 'nl', conversation: nil, model: nil, domain: nil, concise: false, case_context: nil, reasoning_effort: nil, research_depth: nil, profile: 'general', context_messages_override: nil, law_numac: nil, include_quality_evidence: false, mistral_api_key_env: 'MISTRAL_API_KEY', german_lane: false, request_deadline_at: nil, answer_language_override: nil, site_language_policy: true)
+  def initialize(language: 'nl', conversation: nil, model: nil, domain: nil, concise: false, case_context: nil, reasoning_effort: nil, research_depth: nil, profile: 'general', context_messages_override: nil, law_numac: nil, include_quality_evidence: false, mistral_api_key_env: 'MISTRAL_API_KEY', german_lane: false, request_deadline_at: nil, answer_language_override: nil, site_language_policy: true, law_context: nil)
     @language = language
     @configured_language = language
     @answer_language_override = answer_language_override.to_s.downcase.presence
@@ -65,6 +65,8 @@ class LegalChatbotService
     # That page is also an explicit selection, unlike conversation context:
     # topic groups such as GeneralNoiseScope leave a selected law's path alone.
     @selected_law_numac = law_numac.to_s.strip.presence
+    # The law reader's article-history context (local pilot; LegalChatbot::DatedArticleAnswer).
+    @law_context = law_context.to_h
     @model_override = model # Allow testing different models
     @concise = concise # WhatsApp/API: brief strict answers, no hedging
     @case_context = case_context # firm-specific case context injection (no live producer)
@@ -236,6 +238,8 @@ class LegalChatbotService
   def ask(question, source: :all, max_length: MAX_QUESTION_LENGTH)
     start_time = Time.current
     resolve_answer_language!(question)
+    dated = dated_article_pilot_answer(question)
+    return dated if dated
 
     # Timeout wrapper to prevent hanging requests
     # Reasoning models need more time for chain-of-thought, and some
@@ -280,6 +284,9 @@ class LegalChatbotService
   def ask_with_sources(question, sources: [:legislation])
     start_time = Time.current
     resolve_answer_language!(question)
+    dated = dated_article_pilot_answer(question)
+    return dated if dated
+
     # Reasoning-aware timeout (matches ask() method logic, incl. the
     # slow-completion class - see SLOW_COMPLETION_MODELS).
     reasoning_model = REASONING_CAPABLE_MODELS.include?(@model_override) ||
@@ -299,6 +306,20 @@ class LegalChatbotService
       response_time: (Time.current - start_time).round(2),
       error: 'timeout'
     }
+  end
+
+  # The article-history pilot's dated answer (Sol 2026-11-20 10:21:43Z; LegalChatbot::DatedArticleAnswer): local only,
+  # nil in production (ArticleHistoryPilot.available?), for an undated question, or for a law and article the pilot does
+  # not hold. The question's own day comes first; else the law reader's day (law_context).
+  def dated_article_pilot_answer(question)
+    return unless ArticleHistoryPilot.available?
+
+    context = @law_context.merge(numac: @law_context[:numac].presence || @selected_law_numac).compact
+    LegalChatbot::DatedArticleAnswer.call(question, language: @language, context: context,
+                                                    site_name: SiteBrand::LABELS.fetch(SiteBrand.resolve_host(@domain), 'WetWijzer'))
+  rescue StandardError => e
+    Rails.logger.warn("[DatedArticlePilot] #{e.class}")
+    nil
   end
 
   # Localized timeout message (previously NL/FR only - DE/EN users got Dutch)
@@ -418,6 +439,23 @@ class LegalChatbotService
     end
   end
 
+  # A version Justel still files as future law although its commencement has passed
+  # (FutureLaw.commenced_on): the block holds the text in force since that day.
+  def commenced_amendment_note(source)
+    day = source[:commenced_on]
+    return '' unless source[:commenced_amendment] && day
+
+    date = day.respond_to?(:strftime) ? day.strftime('%d-%m-%Y') : day.to_s
+    @language == 'fr' ? " [version en vigueur depuis le #{date}]" : " [versie in werking sinds #{date}]"
+  end
+
+  # An article inserted with an undetermined commencement (FutureLaw.uncommenced_insertion?).
+  def uncommenced_insertion_note(source)
+    return '' unless source[:uncommenced_insertion]
+
+    @language == 'fr' ? ' [pas encore en vigueur : entrée en vigueur indéterminée]' : ' [nog niet in werking: inwerkingtreding onbepaald]'
+  end
+
   # The rate of a VAT schedule rubric (FisconetSearch.vat_schedule_rate), on the
   # header line in the language of the text it heads (the answer's language when
   # the source does not say).
@@ -465,7 +503,8 @@ class LegalChatbotService
     cases.each_with_index do |c, index|
       lang_label = source_context_language(c)
       text = LegalChatbot::SourcePassageExcerpt.excerpt(
-        ensure_utf8(c[:full_text]), question, max_chars: max_article_chars, summary: ensure_utf8(c[:summary])
+        ensure_utf8(c[:full_text]), question, max_chars: max_article_chars, summary: ensure_utf8(c[:summary]),
+                                              court: c[:court]
       )
       judicial_kind = if LegalChatbot::AdvisoryOpinions.advisory?(c[:case_number])
                         'legislative_opinion'
@@ -542,6 +581,9 @@ class LegalChatbotService
 
     formation_notice = formation_deed_context_notice(articles, question)
     parts << formation_notice if formation_notice
+
+    rental_notice = rental_termination_context_notice(articles, question)
+    parts << rental_notice if rental_notice
 
     parts.join("\n\n---\n\n")
   end
@@ -978,6 +1020,77 @@ class LegalChatbotService
     notices.join("\n\n").presence
   end
 
+  # Sol 2026-11-20 13:56:05Z (#991 and #970, answers of 1.1.74): one answer limited the tenant's one-month notice after
+  # a landlord's notice, free of compensation, to Flanders and Brussels although Walloon art. 55 was among its sources;
+  # another gave the Walloon student route without its 15 March limit and the exception that lifts it. Read in full (NL
+  # and FR) on 2026-11-20: Flemish decree (2018015087) arts. 17 and 20, Brussels Housing Code (2013A31614) art. 237,
+  # Walloon decree (2018201408) arts. 55 and 81. Each line stands only when its own articles are among the sources.
+  RENTAL_TENANT_NOTICE_TARGETS = [%w[2018015087 #art-20], %w[2013A31614 #art-237], %w[2018201408 #art-55]].freeze
+  WALLOON_STUDENT_LEASE_TARGET = %w[2018201408 #art-81].freeze
+  # LegislationSearch.rental_regime: an ordinary home lease (its default) or a student lease, not a social, commercial or
+  # agricultural lease or a rented object.
+  RENTAL_TENANT_NOTICE_REGIMES = %i[residential student].freeze
+
+  def rental_termination_context_notice(articles, question)
+    question = question.to_s.gsub(/[[:space:]]+/, ' ')
+    return nil unless LegalChatbot::LegislationSearch.rental_termination_question?(question)
+    return nil unless RENTAL_TENANT_NOTICE_REGIMES.include?(LegalChatbot::LegislationSearch.rental_regime(question))
+
+    present = articles.map { |article| [article[:numac].to_s, extract_article_anchor(article[:article_title])] }
+    french = @language == 'fr'
+    lines = []
+    if RENTAL_TENANT_NOTICE_TARGETS.all? { |target| present.include?(target) }
+      lines << (french ? RENTAL_TENANT_NOTICE_FR : RENTAL_TENANT_NOTICE_NL)
+    end
+    lines << (french ? WALLOON_STUDENT_NOTICE_FR : WALLOON_STUDENT_NOTICE_NL) if present.include?(WALLOON_STUDENT_LEASE_TARGET)
+    return nil if lines.empty?
+
+    heading = french ? 'INSTRUCTION SUR LE CONGÉ DU PRENEUR (pas une source) :' : 'INSTRUCTIE OPZEGGING DOOR DE HUURDER (geen bron):'
+    ([heading] + lines).join("\n")
+  end
+
+  RENTAL_TENANT_NOTICE_NL = <<~TEXT.strip
+    - Noem alle drie de gewesten. De huurder kan te allen tijde opzeggen met een opzeggingstermijn van drie maanden;
+      eindigt de huur tijdens de eerste driejarige periode, dan heeft de verhuurder recht op een vergoeding van drie, twee
+      of één maand huur naargelang het eerste, het tweede of het derde jaar (Vlaanderen art. 20, § 1; Brussel art. 237,
+      § 5; Wallonië art. 55, § 5). In Vlaanderen gelden die opzeggingstermijn en die vergoeding niet zolang de
+      huurovereenkomst na de termijn van twee maanden niet geregistreerd is (art. 20, § 1, derde lid).
+    - Heeft de verhuurder opgezegd (Vlaanderen art. 17 tot 19; Brussel art. 237, § 2 tot 4; Wallonië art. 55, § 2 tot 4),
+      dan kan de huurder in alle drie de gewesten te allen tijde opzeggen met een opzeggingstermijn van één maand, en is hij
+      die vergoeding niet verschuldigd (Vlaanderen art. 20, § 2; Brussel art. 237, § 5, derde lid; Wallonië art. 55, § 5,
+      derde lid).
+  TEXT
+  RENTAL_TENANT_NOTICE_FR = <<~TEXT.strip
+    - Citez les trois Régions. Le preneur peut mettre fin au bail à tout moment moyennant un préavis de trois mois ; si le
+      bail prend fin au cours du premier triennat, le bailleur a droit à une indemnité de trois, deux ou un mois de loyer
+      selon la première, la deuxième ou la troisième année (Flandre art. 20, § 1er ; Bruxelles art. 237, § 5 ; Wallonie
+      art. 55, § 5). En Flandre, ce délai de préavis et cette indemnité ne s'appliquent pas tant que le bail n'est pas
+      enregistré après le délai de deux mois (art. 20, § 1er, alinéa 3).
+    - Lorsque le bailleur a donné congé (Flandre art. 17 à 19 ; Bruxelles art. 237, § 2 à 4 ; Wallonie art. 55, § 2 à 4),
+      le preneur peut, dans les trois Régions, mettre fin au bail à tout moment moyennant un congé d'un mois, sans devoir
+      cette indemnité (Flandre art. 20, § 2 ; Bruxelles art. 237, § 5, alinéa 3 ; Wallonie art. 55, § 5, alinéa 3).
+  TEXT
+  WALLOON_STUDENT_NOTICE_NL = <<~TEXT.strip
+    - Alleen bij een studentenwoninghuur in Wallonië (art. 81): de huurder kan opzeggen met een opzeggingstermijn van twee
+      maanden en een vergoeding van drie maanden huur, maar die opzegging mag niet na 15 maart worden gegeven; de
+      opzeggingstermijn begint op de eerste dag van de maand die volgt op de maand van de opzegging (§ 2). De vergoeding
+      is niet verschuldigd: 1° als de student binnen de maand na de opzegging de documenten bezorgt over de
+      niet-ontvankelijkheid of weigering van de inschrijving of over het stopzetten van de studies; 2° bij overdracht van
+      de huur na schriftelijke toestemming van de verhuurder; 3° bij het overlijden van een ouder of van een andere
+      verantwoordelijke die instaat voor het onderhoud van de student, mits bewijs van dat overlijden en van de
+      onderhoudskosten die op die persoon rustten. In geval 3° geldt de grens van 15 maart niet.
+  TEXT
+  WALLOON_STUDENT_NOTICE_FR = <<~TEXT.strip
+    - Uniquement pour un bail d'habitation pour étudiant en Wallonie (art. 81) : le preneur peut mettre fin au bail
+      moyennant un préavis de deux mois et une indemnité de trois mois de loyer, mais ce préavis ne peut être donné après
+      le 15 mars ; le délai de préavis prend cours le premier jour du mois qui suit le mois du congé (§ 2). L'indemnité
+      n'est pas due : 1° si l'étudiant communique, dans le mois suivant la notification du congé, les documents justifiant
+      l'irrecevabilité ou le refus d'inscription ou un abandon d'études ; 2° en cas de cession du bail après accord écrit
+      du bailleur ; 3° en cas de décès d'un des parents de l'étudiant ou d'un autre responsable qui pourvoit à son
+      entretien, moyennant preuve de ce décès et de la charge d'entretien qui pesait sur la personne décédée. Dans le cas
+      3°, la limite du 15 mars ne s'applique pas.
+  TEXT
+
   def article_budget(index, max_article_chars)
     index.zero? ? (max_article_chars * FIRST_ARTICLE_BUDGET_FACTOR).to_i : max_article_chars
   end
@@ -1093,7 +1206,7 @@ class LegalChatbotService
     # The text is the IN-FORCE half; retrieval already removed any not-yet-applicable
     # block. Say so on the header line, so the model can tell the user a change is
     # coming instead of silently omitting it.
-    pending = future_amendment_note(article)
+    pending = commenced_amendment_note(article) + uncommenced_insertion_note(article) + future_amendment_note(article)
     # A pin whose governing provision sits deep in a long article names it
     # here; the text itself stays complete from its first character.
     governing = article[:context_excerpt_anchor].to_s
@@ -1624,6 +1737,7 @@ class LegalChatbotService
             Federal topics (arbeidsrecht, strafrecht, BTW) → no regional section
 
             TOEKOMSTIG RECHT: a source header marked [wijziging nog niet in werking] carries the text that is IN FORCE TODAY — the not-yet-applicable version has already been removed from it. Answer from the text you were given. You may say a change is coming, and give its date when the marker states one, but NEVER present it as the current rule and never quote text you were not given. If the user asks specifically about the future version, say the corpus holds it but that it is not yet in force, and point to the /laws/ link.
+            A source header marked [versie in werking sinds DD-MM-JJJJ] carries the version in force since that day, although the /laws/ page may still file it as future law: answer from it as the current rule, and you may say since when it applies. A source header marked [nog niet in werking: inwerkingtreding onbepaald] carries an article that was inserted but never brought into force: never present it as the current rule.
 
             GEWESTELIJKE FISCALE BEVOEGDHEID (successierechten, schenkbelasting, registratierechten):
             Apply this block ONLY when the Bijzondere wet van 16 januari 1989 betreffende de financiering van de Gemeenschappen en de Gewesten is among the sources above. If it is not, state none of this and cite these articles nowhere.
@@ -1898,6 +2012,7 @@ class LegalChatbotService
         Utilisez seulement la base légale réellement présente dans les sources; si les sources ne permettent pas la distinction, dites-le au lieu d'appliquer le mauvais régime.
 
       - DROIT FUTUR: un en-tête de source portant [modification pas encore en vigueur] contient le texte EN VIGUEUR AUJOURD'HUI — la version pas encore applicable en a déjà été retirée. Répondez à partir du texte fourni. Vous pouvez signaler qu'une modification est prévue, et en donner la date lorsque le marqueur l'indique, mais ne la présentez JAMAIS comme la règle actuelle et ne citez jamais un texte qui ne vous a pas été fourni. Si la question porte précisément sur la version future, dites que le corpus la contient mais qu'elle n'est pas encore en vigueur, et renvoyez au lien /laws/.
+        Un en-tête portant [version en vigueur depuis le JJ-MM-AAAA] contient la version en vigueur depuis ce jour, même si la page /laws/ la présente encore comme droit futur : répondez-en comme de la règle actuelle, et vous pouvez dire depuis quand elle s'applique. Un en-tête portant [pas encore en vigueur : entrée en vigueur indéterminée] contient un article inséré mais jamais mis en vigueur : ne le présentez jamais comme la règle actuelle.
 
       - COMPÉTENCE FISCALE RÉGIONALE (droits de succession, de donation, d'enregistrement):
         N'appliquez ce bloc que si la loi spéciale du 16 janvier 1989 relative au financement des Communautés et des Régions figure parmi les sources ci-dessus. Sinon, n'affirmez rien de ce qui suit et ne citez pas ces articles.

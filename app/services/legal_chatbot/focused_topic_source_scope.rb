@@ -122,7 +122,10 @@ module LegalChatbot
       portrait_use: PORTRAIT_FAMILY_PATTERN,
       workplace_camera: CAMERA_FAMILY_PATTERN,
       data_breach: DATA_PROTECTION_FAMILY_PATTERN,
-      road_speed: ROAD_TRAFFIC_FAMILY_PATTERN
+      road_speed: ROAD_TRAFFIC_FAMILY_PATTERN,
+      # "Hoe betwist ik een verkeersboete?" showed filiation cards (Sol 2026-11-20 10:14:49Z, #2231): art. 332bis of
+      # the old Civil Code and the co-maternity act, which contest paternity. The fine's own articles are pinned.
+      traffic_fine_challenge: ROAD_TRAFFIC_FAMILY_PATTERN
     }.freeze
 
     def self.road_speed_question?(question)
@@ -148,6 +151,7 @@ module LegalChatbot
       found << :workplace_camera if text.match?(CAMERA_PATTERN) && text.match?(WORKPLACE_PATTERN)
       found << :data_breach if GdprBreachSources.topic?(text)
       found << :road_speed if road_speed_question?(text)
+      found << :traffic_fine_challenge if text.match?(LegislationSearch::TRAFFIC_FINE_CONTEST_PATTERN)
       found << :education_right if text.match?(LegislationSearch::CONSTITUTION_EDUCATION_PATTERN)
       found << :home_inviolability if text.match?(LegislationSearch::CONSTITUTION_HOME_INVIOLABILITY_PATTERN)
       found

@@ -501,7 +501,13 @@ module LegalChatbot
     # Canonicalize malformed internal law paths without trusting them. The
     # caller's LinkGuard validation then checks both Markdown and bare paths
     # against retrieved/known sources before they reach the renderer.
+    # Whitespace between "](" and an internal path: the page renderer then shows the whole citation as literal
+    # Markdown, and LinkGuard's patterns, which expect "](/", never see it (Sol 2026-11-20 09:23:11Z: 1086 and 1714
+    # BOTH, "]( /jurisprudence/...)"). Closing the gap hands the link to LinkGuard like any other.
+    INTERNAL_LINK_GAP = %r{(?<!!)(\[[^\]]+\])\([[:space:]]+(/(?:jurisprudence|laws|wetgeving|wetten|parliamentary)/)}
+
     def normalize_internal_law_links(text)
+      text = text.gsub(INTERNAL_LINK_GAP, '\1(\2')
       normalized = text.gsub(%r{(?<!!)\[([^\]]+)\]\(\s*https?://(?:www\.)?wetwijzer\.be/jurisprudence/([^)\s?#]+)([^)]*)\)}) do
         label = Regexp.last_match(1)
         id = Regexp.last_match(2)

@@ -21,7 +21,8 @@ module LegalChatbot
     FAISS_URL = ENV.fetch('FAISS_PARLIAMENTARY_URL', 'http://localhost:8769')
     # Older chamber snapshots have only the six base columns. Missing
     # metadata stays unknown, rather than failing all parliamentary retrieval.
-    METADATA_COLUMNS = %w[document_type status document_date publication_date language language_id legislature legislation_numac].freeze
+    METADATA_COLUMNS = %w[document_type status document_date publication_date language language_id legislature legislation_numac
+                          pdf_url].freeze
 
     LIBERATING_PAYMENT_SOURCE_PATTERN = /\b(?:bevrijdende\s+betaling|paiement\s+lib[ée]ratoire|(?:liberating|discharging)\s+payment|schuldbefreiende\s+Zahlung)\b/iu
     SURVIVOR_PAYMENT_SUBJECT_PATTERN = /\b(?:langstlevende\p{L}*|overlevende\s+echtgeno\p{L}*|wettelijk\p{L}*\s+samenwonend\p{L}*|conjoint\p{L}*\s+survivant\p{L}*|cohabitant\p{L}*\s+l[ée]gal\p{L}*|surviving\s+(?:spouse|cohabitant)|überlebend\p{L}*\s+(?:Ehegatte\p{L}*|Lebenspartner\p{L}*))\b/iu
@@ -142,7 +143,12 @@ module LegalChatbot
     # Give the model and the source card the same real, unique document page
     # rather than inviting a guessed slug based on a non-unique dossier number.
     def source_url(doc)
-      return doc[:url] if doc[:url].present?
+      if doc[:url].present?
+        # A Chamber link stored with parameters dekamer.be does not have opens the document's official PDF
+        # or a working dossier page instead (ChamberDocumentUrl, Sol 2026-11-20 08:06:10Z).
+        return ChamberDocumentUrl.repair(doc[:url], pdf_url: doc[:pdf_url], legislature: doc[:legislature],
+                                                    dossier: doc[:dossier], document: doc[:document_number])
+      end
 
       document_id = doc[:document_id].to_s
       return nil unless document_id.match?(/\A[1-9]\d*\z/)

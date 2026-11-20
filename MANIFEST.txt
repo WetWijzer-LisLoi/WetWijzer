@@ -75,11 +75,13 @@ app/helpers/article_references_helper.rb
 app/helpers/branding_helper.rb
 app/helpers/cache_version_helper.rb
 app/helpers/classic_helper.rb
+app/helpers/dated_reader_helper.rb
 app/helpers/fisconet_provision_helper.rb
 app/helpers/german_text_helper.rb
 app/helpers/history_pilot_helper.rb
 app/helpers/invoices_helper.rb
 app/helpers/jurisprudence_helper.rb
+app/helpers/jurisprudence_reference_helper.rb
 app/helpers/laws_helper.rb
 app/helpers/legal_pages_helper.rb
 app/helpers/parliamentary_helper.rb
@@ -108,6 +110,7 @@ app/javascript/controllers/chatbot/layout_mixin.js
 app/javascript/controllers/chatbot/rating_mixin.js
 app/javascript/controllers/chatbot/settings_mixin.js
 app/javascript/controllers/chatbot_controller.js
+app/javascript/controllers/citation_copy_controller.js
 app/javascript/controllers/clipboard_controller.js
 app/javascript/controllers/collapse_controller.js
 app/javascript/controllers/collapsible_filters_controller.js
@@ -298,6 +301,7 @@ app/services/atomic_cache_counter.rb
 app/services/audited_registration_suspension.rb
 app/services/belgian_court_service.rb
 app/services/brand_mailer_identity.rb
+app/services/chamber_document_url.rb
 app/services/chatbot_answer_safety.rb
 app/services/chatbot_api/ask_admission.rb
 app/services/chatbot_api/model_selection.rb
@@ -343,6 +347,7 @@ app/services/legal_chatbot/commercial_website_scope_grounding.rb
 app/services/legal_chatbot/consumer_withdrawal_grounding.rb
 app/services/legal_chatbot/context_builder.rb
 app/services/legal_chatbot/core_law_mappings.rb
+app/services/legal_chatbot/dated_article_answer.rb
 app/services/legal_chatbot/embedding_service.rb
 app/services/legal_chatbot/eu_article_dependencies.rb
 app/services/legal_chatbot/eu_corpus.rb
@@ -502,11 +507,13 @@ app/views/invoice_mailer/send_invoice.html.erb
 app/views/invoice_mailer/send_invoice.text.erb
 app/views/invoices/index.html.erb
 app/views/jurisprudence/_external_links.html.erb
+app/views/jurisprudence/_reference.html.erb
 app/views/jurisprudence/_results.html.erb
 app/views/jurisprudence/index.html.erb
 app/views/jurisprudence/show.html.erb
 app/views/laws/_article_exdec_section.html.erb
 app/views/laws/_articles.html.erb
+app/views/laws/_classic_dated_notice.html.erb
 app/views/laws/_classic_index.html.erb
 app/views/laws/_classic_show.html.erb
 app/views/laws/_dated_link_notice.html.erb
@@ -707,6 +714,7 @@ config/initializers/trusted_proxies.rb
 config/initializers/wrap_parameters.rb
 config/locales/billing_profile.yml
 config/locales/dated_link_notice.yml
+config/locales/dated_reader.yml
 config/locales/de.yml
 config/locales/en.yml
 config/locales/fr.yml
@@ -916,6 +924,7 @@ public/vite/assets/application-CO0dL6Pn.js
 public/vite/assets/application-COM5XECo.css
 public/vite/assets/application-CRH5sO66.js
 public/vite/assets/application-CXtzfpCz.css
+public/vite/assets/application-CYGyPn3I.css
 public/vite/assets/application-CYth1P3V.css
 public/vite/assets/application-CZ0BllcU.js
 public/vite/assets/application-C_9vDH8i.css
@@ -923,6 +932,7 @@ public/vite/assets/application-Cb7_8Pgu.css
 public/vite/assets/application-CcCEGaTi.js
 public/vite/assets/application-CcLxC4GL.css
 public/vite/assets/application-CnTvLShx.css
+public/vite/assets/application-Co6lhnkz.js
 public/vite/assets/application-CqcCHVTp.js
 public/vite/assets/application-CsUHHBNJ.js
 public/vite/assets/application-CzAPG3zX.js
@@ -975,6 +985,7 @@ public/vite/assets/application-SgCoZMrL.js
 public/vite/assets/application-Vrn3PDH8.js
 public/vite/assets/application-VrnMrANY.js
 public/vite/assets/application-WyXijs_E.js
+public/vite/assets/application-Z2xBXQqY.js
 public/vite/assets/application-bWLWw_JU.css
 public/vite/assets/application-btLrvqaC.js
 public/vite/assets/application-gMP1fhAG.css

@@ -1,0 +1,14 @@
+<%# A dated address on Classic, which shows today's text (Sol 2026-11-20 13:47:06Z). Sticky, so a deep link
+    (#art-19) still sees it; no JavaScript, like the rest of Classic. Where the archive serves the law, the dated
+    reader on the standard site is one link away; elsewhere the notice says that the wording of that day is not
+    verified. %>
+<% day = dated_day_label(dated_request_day) %>
+<% url = dated_reader_url %>
+<div class="classic-flash" role="note" data-testid="classic-dated-notice" style="position:sticky;top:0;z-index:5">
+  <strong><%= t('dated_reader.current', date: day) %></strong>
+  <% if url %>
+    <a href="<%= url %>"><%= t('dated_reader.dated_link', date: day) %></a>
+  <% else %>
+    <%= t('dated_link_notice.body', date: day, site: site_name) %>
+  <% end %>
+</div>

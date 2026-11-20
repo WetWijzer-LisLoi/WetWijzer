@@ -2229,6 +2229,91 @@ module LegalChatbot
     # retrieval_degradation when a pattern could not be asked, or the pins were lost altogether.
     ARTICLE_PINS_UNAVAILABLE = 'article_pins_unavailable'
 
+    # Sol 2026-11-20 00:21:18Z (#1934): an employee contesting a pension decision was given one month (KB nr. 50 art.
+    # 66). Art. 23 of the Charter of the socially insured (1995022286, from 1 January 1997) gives three months after
+    # the notification, keeping only more favourable periods, so both articles are pinned and the fact note says which
+    # applies. Matched: a pension (not FR "pension alimentaire", maintenance) together with contesting it or a court.
+    PENSION_WORD = /(?<![[:alnum:]])(?:\p{L}*pensioen\p{L}*|pensions?(?!\s+alimentaires?)(?:\s+de\s+(?:retraite|survie))?|retraite|renten(?:bescheid|antrag|versicherung)\p{L}*|altersrente\p{L}*|ruhegehalt\p{L}*)(?![[:alnum:]])/iu
+    PENSION_CONTEST_WORD = /(?<![[:alnum:]])(?:betwist\p{L}*|bezwaar\p{L}*|aanvecht\p{L}*|aan\s+te\s+vechten|in\s+beroep|hoger\s+beroep|beroep\s+(?:aan)?tekenen|beroep\s+instellen|beroepstermijn\p{L}*|niet\s+akkoord|het\s+niet\s+eens|oneens|arbeidsrechtbank\p{L}*|contest\p{L}*|recours|faire\s+appel|tribunal\s+du\s+travail|appeal\p{L}*|dispute\p{L}*|challeng\p{L}*|labou?r\s+court|widerspruch\p{L}*|einspruch\p{L}*|anfecht\p{L}*|klage\p{L}*|arbeitsgericht\p{L}*)(?![[:alnum:]])/iu
+    PENSION_APPEAL_PATTERN = /\A(?=.*#{PENSION_WORD.source})(?=.*#{PENSION_CONTEST_WORD.source}).*\z/imu
+
+    # Sol 2026-11-20 01:32:31Z (#2109): a Black Friday question got casino and lottery cards and no WER art. VI.18, the
+    # previous price of an announced price reduction (the lowest price of the 30 days before; 7 days for goods on the
+    # market for less than 30 days; not for perishable goods). Matched: a sales event, or a price reduction together
+    # with the previous or reference price, or with whether it is genuine.
+    SALES_EVENT_WORD = /(?<![[:alnum:]])(?:black[-\s]+friday|cyber[-\s]+monday|solden|soldenperiode\p{L}*|soldes|sales?\s+season|schlussverk(?:ä|ae|a)uf\p{L}*)(?![[:alnum:]])/iu
+    PRICE_REDUCTION_WORD = /(?<![[:alnum:]])(?:korting\p{L}*|kortingscode\p{L}*|codes?\s+(?:de\s+)?r[ée]duction|rabattcode\p{L}*|discount\s+codes?|prijsvermindering\p{L}*|prijsverlaging\p{L}*|promoties?|actieprijs\p{L}*|r[ée]ductions?\s+de\s+prix|promotions?|rabais|remises?|discounts?|price\s+reductions?|rabatt\p{L}*|preisnachl(?:ä|ae)ss\p{L}*|preiserm(?:ä|ae)(?:ß|ss)igung\p{L}*)(?![[:alnum:]])/iu
+    PREVIOUS_PRICE_WORD = /(?<![[:alnum:]])(?:vorige\s+prijs|referentieprijs\p{L}*|doorstreept\p{L}*|oude\s+prijs|laagste\s+prijs|30\s+dagen|echt|nep|misleid\p{L}*|prix\s+(?:ant[ée]rieur|barr[ée]|de\s+r[ée]f[ée]rence)|30\s+jours|vraie?s?|fausses?|trompeu\p{L}*|previous\s+price|reference\s+price|was\s+price|struck[-\s]through|30\s+days|genuine|real|fake|misleading|streichpreis\p{L}*|vorheriger\s+preis|referenzpreis\p{L}*|30\s+tage|echt\p{L}*|irref(?:ü|ue)hr\p{L}*)(?![[:alnum:]])/iu
+    PRICE_REDUCTION_PATTERN = Regexp.union(
+      SALES_EVENT_WORD,
+      /\A(?=.*#{PRICE_REDUCTION_WORD.source})(?=.*#{PREVIOUS_PRICE_WORD.source}).*\z/imu
+    )
+
+    # Sol 2026-11-20 02:46:51Z and 10:14:49Z (#2231 "Hoe betwist ik een verkeersboete?", with #1259): the live answer quoted
+    # art. 65ter, which is not in force ("Inwerkingtreding : onbepaald"), with its 14 days. Contesting a traffic fine depends
+    # on the stage (read in full on 2026-11-20): immediate collection with the offender's consent (Road Traffic Act art. 65),
+    # the prosecutor's settlement (Code of Criminal Procedure art. 216bis) and, when that sum is not paid in time, the
+    # prosecutor's payment order (art. 65/1: 30 days from receipt to pay or to appeal to the police court). Matched: a payment
+    # order with a traffic word, or a named traffic fine with contesting it. A bailiff's order to pay for a civil debt, a
+    # parking or GAS fine (municipal regimes) and a GDPR fine ("Bußgeld" alone) do not match.
+    PAYMENT_ORDER_WORD = /(?<![[:alnum:]])(?:bevel\s+tot\s+betal\p{L}*|betalingsbevel\p{L}*|ordres?\s+de\s+paiement|zahlungsbefehl\p{L}*|zahlungsaufforderung\p{L}*|payment\s+orders?)(?![[:alnum:]])/iu
+    TRAFFIC_WORD = /(?<![[:alnum:]])(?:verkeer\p{L}*|snelheid\p{L}*|\p{L}*flits\p{L}*|\p{L}*boete\p{L}*|politierechtbank\p{L}*|proces-verbaal|pv|parket|amendes?|infractions?\s+routi[eè]res?|exc[eè]s\s+de\s+vitesse|radar\p{L}*|tribunal\s+de\s+police|parquet|traffic|speeding|speed\s+camera|fines?|police\s+court|verkehr\p{L}*|bu(?:ß|ss)geld\p{L}*|strafzettel\p{L}*|geschwindigkeit\p{L}*|blitzer\p{L}*|polizeigericht\p{L}*)(?![[:alnum:]])/iu
+    TRAFFIC_FINE_WORD = /(?<![[:alnum:]])(?:verkeersboete\p{L}*|flitsboete\p{L}*|snelheids\p{L}+|verkeersovertreding\p{L}*|geflitst|flitspa(?:al|len)|trajectcontrole\p{L}*|te\s+snel\s+(?:rijden|gereden|reed|reden)|onmiddellijke\s+inning|amendes?\s+(?:de\s+(?:roulage|circulation)|routi[eè]res?|pour\s+exc[eè]s\s+de\s+vitesse)|exc[eè]s\s+de\s+vitesse|perception\s+imm[ée]diate|verkehrsbu(?:ß|ss)\p{L}*|geschwindigkeitsbu(?:ß|ss)\p{L}*|geschwindigkeitsüberschreitung\p{L}*|strafzettel\p{L}*|blitzer\p{L}*|sofortige\s+erhebung|speeding|speed\s+camera|(?:traffic|speeding)\s+(?:fines?|tickets?))(?![[:alnum:]])/iu
+    FINE_CONTEST_WORD = /(?<![[:alnum:]])(?:betwist\p{L}*|bezwaar\p{L}*|aanvecht\p{L}*|beroep|niet\s+akkoord|het\s+niet\s+eens|oneens|contest\p{L}*|recours|appeal\p{L}*|dispute\p{L}*|challeng\p{L}*|fight(?:ing)?|einspruch\p{L}*|widerspruch\p{L}*|anfecht\p{L}*|wehre\p{L}*)(?![[:alnum:]])/iu
+    TRAFFIC_FINE_CONTEST_PATTERN = Regexp.union(
+      /\A(?=.*#{PAYMENT_ORDER_WORD.source})(?=.*#{TRAFFIC_WORD.source}).*\z/imu,
+      /\A(?=.*#{TRAFFIC_FINE_WORD.source})(?=.*#{FINE_CONTEST_WORD.source}).*\z/imu
+    )
+
+    # Sol 2026-11-20 01:05:24Z (catalogue 1671 and 2876): the party's objection came back as an objection to the judge's
+    # refusal, with EU AI Act cards; the summoned witness got no duty to appear, with military aircrew cards. Positive
+    # authorities (read in full NL and FR, 2026-11-20): Judicial Code (1967101055) art. 915-916 (witness proof of a
+    # precise, relevant fact, if admissible; the court's own motion), 925-926 and 928-929 (a civil summons, failure to
+    # appear, refusal to testify, a lawful reason such as professional secrecy); Code of Criminal Procedure (1808111701)
+    # art. 80-81 (a summons by the investigating judge, lawful excuse).
+    WITNESS_WORD = /(?<![[:alnum:]])(?:getuig\p{L}*|t[ée]moi(?:n|gn)\p{L}*|zeug(?:e|en|in)\p{L}*|aussag\p{L}*|witness\p{L}*|testif\p{L}*)(?![[:alnum:]])/iu
+    PARTY_OBJECTION_WORD = /(?<![[:alnum:]])(?:als\s+partij|tegenpartij|en\s+tant\s+que\s+partie|partie\s+adverse|als\s+partei|gegenpartei|as\s+a\s+party|opposing\s+party)(?![[:alnum:]])/iu
+    OBJECTION_WORD = /(?<![[:alnum:]])(?:bezwaar\p{L}*|verzet\p{L}*|m['’]\s*opposer|s['’]\s*opposer|opposition|widersprech\p{L}*|widerspruch\p{L}*|object\p{L}*|oppos\p{L}*)(?![[:alnum:]])/iu
+    SUMMONED_OR_REFUSE_WORD = /(?<![[:alnum:]])(?:opgeroepen|oproeping\p{L}*|gedagvaard|dagvaarding\p{L}*|weiger\p{L}*|convoqu\p{L}*|cit[ée]e?s?|citation\p{L}*|refus\p{L}*|geladen|ladung\p{L}*|vorgeladen|verweiger\p{L}*|summon\p{L}*|subpoena\p{L}*|refuse\p{L}*)(?![[:alnum:]])/iu
+    PARTY_WITNESS_OBJECTION_PATTERN = /\A(?=.*#{WITNESS_WORD.source})(?=.*#{PARTY_OBJECTION_WORD.source})(?=.*#{OBJECTION_WORD.source}).*\z/imu
+    WITNESS_DUTY_PATTERN = /\A(?!.*#{PARTY_OBJECTION_WORD.source})(?=.*#{WITNESS_WORD.source})(?=.*#{SUMMONED_OR_REFUSE_WORD.source}).*\z/imu
+
+    # Sol 2026-11-20 00:21:18Z (#1884): an answer on contesting a collective dismissal linked "artikel 67" to the
+    # Employment Contracts Act, the only article 67 retrieved, while art. 69 of the act of 13 February 1998 (1998012088)
+    # means its own art. 67, third paragraph: the registered letter within 30 days. Art. 62 and 66 to 69 (read in full
+    # NL and FR, 2026-11-20) give the definition, the information and consultation conditions, the contest, the
+    # suspended notice and the reinstatement, so the linker finds the right article 67 or, with both present and no law
+    # named, leaves the reference unlinked. "Renault" alone is a car brand and does not match.
+    COLLECTIVE_DISMISSAL_PATTERN = /(?<![[:alnum:]])(?:collectie(?:f|ve)\s+ontslag\p{L}*|collectieve\s+ontslagen|renault[-\s]?(?:wet|procedure)|wet[-\s]renault|licenciements?\s+collectifs?|loi[-\s]renault|proc[ée]dure[-\s]renault|massenentlassung\p{L}*|kollektive[nmrs]?\s+entlassung\p{L}*|renault[-\s](?:verfahren|gesetz)|renault\s+(?:procedure|law)|collective\s+(?:dismissals?|redundanc\p{L}*|layoffs?))(?![[:alnum:]])/iu
+
+    # Sol 2026-11-20 10:13:42Z (#2065 "Raad voor Vergunningsbetwistingen?", catalogue 863): both live answers gave an
+    # objection during the public inquiry as a normal precondition. The Omgevingsvergunningsdecreet (2014036510) art. 105
+    # (read in full NL and FR, 2026-11-20) still prints that paragraph, but footnote (5) records that GwH 46/2019 of 14
+    # March 2019 annulled the inserting art. 151, 3° (judgment read in full: the dictum annuls arts. 133, 2°, and 151,
+    # 3°, effects not maintained, B.7.3). The exhaustion of the organised administrative appeal (art. 105, § 2, second
+    # subparagraph) still applies. "Conseil des litiges relatifs aux permis" is the catalogue's French wording (row 863).
+    PERMIT_COUNCIL_PATTERN = /(?<![[:alnum:]])(?:raad\s+voor\s+vergunningsbetwistingen|rvvb|conseil\s+(?:pour\s+les|des)\s+contestations\s+des\s+autorisations|conseil\s+des\s+litiges\s+relatifs\s+aux\s+permis|rat\s+f(?:ü|ue)r\s+genehmigungsstreitigkeiten|council\s+for\s+permit\s+disputes)(?![[:alnum:]])/i
+
+    # Sol 2026-11-20 01:05:24Z (#1988): a recidivism answer said that the whole of Book I art. 60 was annulled, after
+    # the Justel note "dit artikel vernietigd". Read in full on 2026-11-20: GwH 29 January 2026, nr. 14/2026, whose
+    # dictum annuls only the second subparagraph (B.56: the first stands), and the law of 16 March 2026 (2026002189)
+    # art. 19, in force with Book I on 1 September 2026 (its art. 127), which amended the first subparagraph and put a new
+    # second subparagraph in the place of the annulled one. Matched: recidivism in criminal law in four languages; not
+    # traffic recidivism (the road traffic law has its own rules) and not the relapse of an illness. The context and
+    # exclusion words are plain substrings ("wegverkeer", "gevangenisstraf"), which keeps the match linear.
+    RECIDIVISM_TERM = /(?<![[:alnum:]])(?:r[eé]cidiv\p{L}*|wettelijke\s+herhaling|staat\s+van\s+herhaling|r(?:ü|ue)ckf(?:ä|ae)llig\p{L}*|r(?:ü|ue)ckfallt(?:ä|ae)ter\p{L}*|wiederholungst(?:ä|ae)ter\p{L}*|repeat\s+offen(?:ces?|ses?|ders?|ding)|re-?offend\p{L}*)(?![[:alnum:]])/iu
+    # "Herhaling" and "Rückfall" also mean a repetition or a relapse: they count with a criminal-law word only.
+    RECIDIVISM_WEAK_TERM = /(?<![[:alnum:]])(?:herhaling|r(?:ü|ue)ckfall)(?![[:alnum:]])/iu
+    RECIDIVISM_CRIMINAL_CONTEXT = /straf|misdri|veroordel|delict|dader|verurteil|delikt|t(?:ä|ae)ter/iu
+    RECIDIVISM_EXCLUDED = /verkeer|rijbewijs|rijverbod|circulation|routi[eè]r|permis\s+de\s+conduire|verkehr|f(?:ü|ue)hrerschein|fahrverbot|traffic|driving|ziekte|kanker|tumou?r|medisch|maladie|cancer|m[ée]dical|krankheit|krebs|medizin|illness|disease|medical/iu
+    RECIDIVISM_PATTERN = /\A(?!.*(?:#{RECIDIVISM_EXCLUDED.source}))(?:(?=.*#{RECIDIVISM_TERM.source})|(?=.*#{RECIDIVISM_WEAK_TERM.source})(?=.*(?:#{RECIDIVISM_CRIMINAL_CONTEXT.source})))/imu
+
+    # Sol 2026-11-20 13:46:27Z (with #1988): Book II art. 586, receiving a state secret without authority. The consolidated
+    # text (Justel, update through 2 April 2026) still prints the wording GwH 14/2026 annulled; art. 110 of the law of
+    # 16 March 2026 (2026002189, read in full NL and FR) put a new art. 586 in its place, in force with Book II on
+    # 1 September 2026. Matched: a state secret in four languages.
+    STATE_SECRET_PATTERN = /(?<![[:alnum:]])(?:staatsgeheim\p{L}*|secrets?\s+d['’]\s*[ée]tat|staatsgeheimnis\p{L}*|state\s+secrets?)(?![[:alnum:]])/iu
+
     ARTICLE_PINS = [
       # Criminal / civil procedure
       [LEGACY_CRIMINAL_FACT_PATTERN,                                  '2024002052', '2'],        # Book I: more-favourable-law transition
@@ -2675,6 +2760,42 @@ module LegalChatbot
       [GUARANTEED_PAY_PATTERN, '1978070303', '52'],
       [GUARANTEED_PAY_PATTERN, '1978070303', '70'],
       [GUARANTEED_PAY_PATTERN, '1978070303', '71'],
+      # Contesting a pension decision (#1934): the Charter's three months and the one month KB nr. 50 still
+      # prints, side by side, with the fact note saying which applies.
+      [PENSION_APPEAL_PATTERN, '1995022286', '23'],
+      [PENSION_APPEAL_PATTERN, '1967102410', '66'],
+      # The previous price of an announced price reduction (#2109).
+      [PRICE_REDUCTION_PATTERN, '2013A11134', 'VI.18'],
+      # Contesting a traffic fine (#2231): the immediate collection, the settlement and the payment order.
+      [TRAFFIC_FINE_CONTEST_PATTERN, '1968031601', '65/1'],
+      [TRAFFIC_FINE_CONTEST_PATTERN, '1968031601', '65'],
+      [TRAFFIC_FINE_CONTEST_PATTERN, '1808111901', '216bis'],
+      # Witnesses (catalogue 1671, 2876): the party's objection, and the summoned witness's duty in a civil
+      # case and before the investigating judge.
+      [PARTY_WITNESS_OBJECTION_PATTERN, '1967101055', '915'],
+      [PARTY_WITNESS_OBJECTION_PATTERN, '1967101055', '916'],
+      [WITNESS_DUTY_PATTERN, '1967101055', '925'],
+      [WITNESS_DUTY_PATTERN, '1967101055', '926'],
+      [WITNESS_DUTY_PATTERN, '1967101055', '928'],
+      [WITNESS_DUTY_PATTERN, '1967101055', '929'],
+      [WITNESS_DUTY_PATTERN, '1808111701', '80'],
+      [WITNESS_DUTY_PATTERN, '1808111701', '81'],
+      # Collective dismissal (#1884): the act of 13 February 1998, chapter VII.
+      [COLLECTIVE_DISMISSAL_PATTERN, '1998012088', '62'],
+      [COLLECTIVE_DISMISSAL_PATTERN, '1998012088', '66'],
+      [COLLECTIVE_DISMISSAL_PATTERN, '1998012088', '67'],
+      [COLLECTIVE_DISMISSAL_PATTERN, '1998012088', '68'],
+      [COLLECTIVE_DISMISSAL_PATTERN, '1998012088', '69'],
+      # The Raad voor Vergunningsbetwistingen (#2065): who may appeal, the exhaustion rule and the 45 days.
+      [PERMIT_COUNCIL_PATTERN, '2014036510', '105'],
+      # Recidivism (#1988): Book I art. 60, whose consolidated text is out of date, and art. 19 of the law of
+      # 16 March 2026, which amended it and replaced the second subparagraph that GwH 14/2026 annulled.
+      [RECIDIVISM_PATTERN, '2024002052', '60'],
+      [RECIDIVISM_PATTERN, '2026002189', '19'],
+      # Receiving a state secret: Book II art. 586, whose consolidated text is out of date, and art. 110 of the law
+      # of 16 March 2026, which replaced it after GwH 14/2026.
+      [STATE_SECRET_PATTERN, '2024002088', '586'],
+      [STATE_SECRET_PATTERN, '2026002189', '110'],
       [VEHICLE_HEADLIGHT_PATTERN, '2026004490', '58'],
       [VEHICLE_HEADLIGHT_PATTERN, '1975120109', '30'],
       [VEHICLE_HEADLIGHT_PATTERN, '1968031501', '28'],
@@ -3064,23 +3185,134 @@ module LegalChatbot
     # citation-repair key. And validate_answer_quotes would then certify a blockquote taken
     # from it, because verification is verbatim presence in the source text.
     #
+    # Justel keeps filing a version as future law after its commencement has passed
+    # (FutureLaw.commenced_on). Such a version, when it is newer than the plain row, is the
+    # text in force: it takes the plain row's place under the plain title (the road traffic
+    # law's Art. 33, Sol #2058); without a plain row it stands in its own. A future block
+    # inside a row whose commencement has passed is that row's text (FutureLaw.in_force_text).
+    # An article inserted with an undetermined commencement stays, marked as not in force
+    # (Sol #2231).
+    #
     # See docs/ops/future-law-in-retrieval-2026-08-07.md.
     def sanitize_future_law(articles)
-      Array(articles).filter_map do |article|
-        next if LegalChatbot::FutureLaw.row_future?(variant: article[:article_variant],
-                                                    title: article[:article_title],
-                                                    numac: article[:numac])
+      rows = Array(articles)
+      as_of = Date.current
+      versions = commenced_versions_for(rows, as_of: as_of)
+      emitted = Set.new
+      rows.filter_map do |article|
+        key = future_law_key(article)
+        version = versions[key]
+        if LegalChatbot::FutureLaw.variant_future?(article[:article_variant]) ||
+           LegalChatbot::FutureLaw.title_future?(article[:article_title])
+          next unless version && emitted.add?(key)
 
-        in_force, future_block = LegalChatbot::FutureLaw.split(article[:article_text])
-        next if in_force.nil?          # the marker opens the text: the whole row is future law
-        next article if future_block.nil?
+          next commenced_version(article, version[:title], version)
+        end
+        next if LegalChatbot::FutureLaw.law_future?(article[:numac], as_of: as_of)
 
-        article.merge(
-          article_text: in_force,
-          future_amendment: true,
-          future_effective_date: LegalChatbot::FutureLaw.effective_date(future_block)
-        )
+        if version && version[:status] == :newer
+          next unless emitted.add?(key)
+
+          next commenced_version(article, article[:article_title], version)
+        end
+        next if emitted.include?(key)
+
+        in_force_article(article, as_of)
       end
+    end
+
+    # One row's text in force: its in-force half with the pending block flagged, a future block whose
+    # commencement has passed as its text, and an insertion without a commencement flagged.
+    def in_force_article(article, as_of)
+      text, day, pending = LegalChatbot::FutureLaw.in_force_text(article[:article_text], as_of: as_of)
+      return nil if text.blank?
+
+      result = article
+      result = result.merge(article_text: text, commenced_amendment: true, commenced_on: day) if day
+      if pending
+        result = result.merge(article_text: text, future_amendment: true,
+                              future_effective_date: LegalChatbot::FutureLaw.effective_date(pending))
+      end
+      result = result.merge(uncommenced_insertion: true) if LegalChatbot::FutureLaw.uncommenced_insertion?(article[:article_text])
+      result
+    end
+
+    # [numac, language_id, title key of the plain article] for a plain or a future row.
+    def future_law_key(article)
+      base = LegalChatbot::FutureLaw.base_title(article[:article_title])
+      [article[:numac].to_s, article[:language_id], LegalChatbot::FutureLaw.title_key(base)]
+    end
+
+    # The version in force of an article whose newer text Justel still files as future law:
+    # the given title, the newer text without its marker heading, and the day it took effect.
+    # A further future block in it stays a pending change.
+    def commenced_version(article, title, version)
+      text, _day, pending = LegalChatbot::FutureLaw.in_force_text(
+        LegalChatbot::FutureLaw.without_heading_marker(version[:text])
+      )
+      article.merge(
+        article_title: title, article_text: text.to_s, article_variant: nil,
+        commenced_amendment: true, commenced_on: version[:day],
+        future_amendment: !pending.nil?,
+        future_effective_date: pending && LegalChatbot::FutureLaw.effective_date(pending)
+      )
+    end
+
+    # { future_law_key => { title:, text:, day:, status: :newer | :standalone } } for the commenced
+    # future versions of the articles among the rows. One query per law and language, bounded by the
+    # title index (future_rows_for); a plain row not among the rows is read for the comparison.
+    def commenced_versions_for(rows, as_of:)
+      wanted = Hash.new { |hash, law| hash[law] = Set.new }
+      rows.each do |article|
+        next if article[:numac].to_s.start_with?('FISCONET') || article[:article_title].blank?
+
+        numac, language, key = future_law_key(article)
+        wanted[[numac, language]] << key
+      end
+      wanted.each_with_object({}) do |((numac, language), keys), found|
+        future_rows_for(numac, language).each do |title, text|
+          base = LegalChatbot::FutureLaw.base_title(title)
+          key = LegalChatbot::FutureLaw.title_key(base)
+          next unless keys.include?(key) && LegalChatbot::FutureLaw.title_future?(title)
+
+          day = LegalChatbot::FutureLaw.commenced_on(text, as_of: as_of)
+          next unless day
+
+          plain = plain_text_among(rows, numac, language, key) || plain_row_text_for(numac, language, key)
+          status = if plain.nil? then :standalone
+                   elsif LegalChatbot::FutureLaw.newer_than_plain?(text, plain, day) then :newer
+                   end
+          found[[numac, language, key]] = { title: base, text: text, day: day, status: status } if status
+        end
+      end
+    rescue StandardError => e
+      Rails.logger.warn("[FutureLaw] commenced versions skipped: #{e.class}")
+      {}
+    end
+
+    FUTURE_TITLE_QUERY = 'article_title : (toekomstig OR futur)'
+
+    # [[title, text], ...] of the law's rows filed as future law, through the title index: the
+    # subquery stands on its own (the FTS join trap), and article_variant has no index.
+    def future_rows_for(numac, language)
+      ::Article.where(content_numac: numac, language_id: language)
+               .where('articles.rowid IN (SELECT rowid FROM articles_fts WHERE articles_fts MATCH ?)', FUTURE_TITLE_QUERY)
+               .pluck(:article_title, :article_text)
+    end
+
+    # The plain row's text by its title key, or nil.
+    def plain_row_text_for(numac, language, key)
+      ::Article.where(content_numac: numac, language_id: language)
+               .where("LOWER(REPLACE(REPLACE(article_title, ' ', ''), '.', '')) = ?", key)
+               .pick(:article_text)
+    end
+
+    def plain_text_among(rows, numac, language, key)
+      rows.find do |article|
+        article[:numac].to_s == numac && article[:language_id] == language &&
+          !LegalChatbot::FutureLaw.title_future?(article[:article_title]) &&
+          LegalChatbot::FutureLaw.title_key(article[:article_title]) == key
+      end&.dig(:article_text)
     end
 
     # The governing group (governing_source?) is kept whole and once each. It
