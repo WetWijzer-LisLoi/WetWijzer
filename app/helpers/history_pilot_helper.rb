@@ -167,7 +167,8 @@ module HistoryPilotHelper
     def unresolved? = dispute.present? || gap.present? || ambiguous || undetermined
   end
 
-  # page / page_text_id: the archive view's structure page and its wording for the key (evidence, history_resolve).
+  # page / page_text_id: the archive view's structure page and its wording for the key (evidence for
+  # ArticleHistoryPilot#day_state, the day resolver the chatbot shares).
   # live_body: the live row's text on the current-law page.
   def history_article_state(key, page: nil, page_text_id: nil, live_body: nil)
     return unless @history_pilot && key.to_s.match?(LawsController::HISTORY_KEY)
@@ -187,10 +188,12 @@ module HistoryPilotHelper
       state.chosen = true
       state.off_date = @history_as_of.present? && !state.selected.covers?(@history_as_of)
     elsif @history_as_of.present?
-      resolution = @history_pilot.resolve(numac, @history_language, key, @history_as_of)
-      return state.tap { state.absent = true } unless resolution
+      day = @history_pilot.day_state(numac, @history_language, key, @history_as_of,
+                                     page: page, page_text_id: page_text_id)
+      return state.tap { state.absent = true } if day.absent
 
-      found, state.ambiguous = history_resolve(resolution, page, page_text_id)
+      found = day.found
+      state.ambiguous = day.ambiguous
       case found.status
       when 'text' then state.selected = found
       when 'disputed'
@@ -217,31 +220,6 @@ module HistoryPilotHelper
       state.compare_base = previous
     end
     state
-  end
-
-  # The period that applies on the archive date, and whether the archive leaves it ambiguous. In order: a disputed
-  # stretch; a stretch the archive does not show (checked before any wording is shown with certainty); a change with
-  # a known start after the structure page's own acts all apply (a later-published act that applies by the date);
-  # the page's own wording when a covering period holds it; else ArticleHistoryPilot#version_on. Ambiguous when the
-  # covering periods disagree on the text and the page is not exactly the law on the date.
-  def history_resolve(resolution, page, page_text_id)
-    candidates = resolution.candidates
-    disputed = candidates.find(&:disputed?)
-    return [disputed, false] if disputed
-
-    gap = candidates.find { |c| c.status == 'unknown' }
-    return [gap, false] if gap
-
-    exact = page&.covers?(@history_as_of)
-    ambiguous = !exact && resolution.ambiguous?
-    if page&.window_from.present?
-      later = candidates.select { |c| c.text? && c.valid_from.present? && c.valid_from > page.window_from }
-      return [later.max_by(&:valid_from), ambiguous] if later.any?
-    end
-    from_page = candidates.select { |c| c.text? && c.text_id == page_text_id }
-    return [from_page.max_by { |c| c.valid_from.to_s }, ambiguous] if page_text_id && from_page.any?
-
-    [resolution.version, ambiguous]
   end
 
   def history_open?(key) = history_focus?(key) && @history_focus[1] != 'close'

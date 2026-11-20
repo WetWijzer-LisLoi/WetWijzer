@@ -114,6 +114,7 @@ app/javascript/controllers/collapsible_filters_controller.js
 app/javascript/controllers/cookie_consent_controller.js
 app/javascript/controllers/copy_reference_controller.js
 app/javascript/controllers/dark_mode_controller.js
+app/javascript/controllers/dated_link_notice_controller.js
 app/javascript/controllers/dropdown_controller.js
 app/javascript/controllers/export_feedback_controller.js
 app/javascript/controllers/filters_toggle_controller.js
@@ -508,6 +509,7 @@ app/views/laws/_article_exdec_section.html.erb
 app/views/laws/_articles.html.erb
 app/views/laws/_classic_index.html.erb
 app/views/laws/_classic_show.html.erb
+app/views/laws/_dated_link_notice.html.erb
 app/views/laws/_document_metadata.html.erb
 app/views/laws/_exdec_card.html.erb
 app/views/laws/_exdecs.html.erb
@@ -704,6 +706,7 @@ config/initializers/sqlite_wal.rb
 config/initializers/trusted_proxies.rb
 config/initializers/wrap_parameters.rb
 config/locales/billing_profile.yml
+config/locales/dated_link_notice.yml
 config/locales/de.yml
 config/locales/en.yml
 config/locales/fr.yml
@@ -869,6 +872,7 @@ public/vite/assets/application-BELQxtqB.css
 public/vite/assets/application-BFk3wwTL.js
 public/vite/assets/application-BIfRnGfl.js
 public/vite/assets/application-BJmR8QsU.js
+public/vite/assets/application-BM5H_Ijm.js
 public/vite/assets/application-BMEVFBu-.js
 public/vite/assets/application-BMip9UU6.js
 public/vite/assets/application-BNy_mebb.js

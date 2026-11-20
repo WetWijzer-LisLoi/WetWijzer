@@ -124,9 +124,12 @@ class LawsController < ApplicationController
   # before_action halts (e.g. the geo challenge), since after_action callbacks
   # only run for completed chains.
   after_action :set_classic_cache_headers, only: %i[index show]
-  # The article-history pilot (ArticleHistoryPilot): local only, for the laws its database covers.
+  # Article history (ArticleHistoryPilot): on production Judicial Code Part I in Dutch and French; locally any law the
+  # database covers.
   before_action :set_history_pilot, only: %i[show articles]
   after_action :close_history_pilot, only: %i[show articles]
+  # A dated link (?as_of=) that no archive view serves gets a notice, never the current wording silently.
+  before_action :set_unsupported_as_of, only: :show
 
   # GET /laws
   # GET /laws.json
@@ -710,13 +713,16 @@ class LawsController < ApplicationController
   def set_history_pilot
     @history_versions = {}
     @history_compare = []
-    return unless ArticleHistoryPilot.available?
+    # Checked before the database is opened: Part I in Dutch or French on production, never another law or the
+    # German text (a German page used to count as Dutch here).
+    language = ArticleHistoryPilot.reader_language(params[:numac], @language_id)
+    return unless language
 
     pilot = ArticleHistoryPilot.new
-    return pilot.close unless pilot.covers?(params[:numac].to_s)
+    return pilot.close unless pilot.covers?(params[:numac].to_s, language)
 
     @history_pilot = pilot
-    @history_language = @language_id.to_i == 2 ? 'fr' : 'nl'
+    @history_language = language
     @history_as_of = params[:as_of].to_s if params[:as_of].to_s.match?(HISTORY_DAY) && valid_history_day?(params[:as_of])
     # A variant's key differs by language (Art.42_WAALS_GEWEST / Art.42_REGION_WALLONNE): read either as this page's.
     to_page = ->(key) { HistoryPilotHelper.history_key_for(key, @history_language) }
@@ -736,6 +742,18 @@ class LawsController < ApplicationController
   # articles as the base (laws/_articles).
   def history_snapshot_requested?
     @history_pilot.present? && @history_as_of.present?
+  end
+
+  # Sol 2026-11-20 10:21:43Z: /laws/1967101052?language_id=1&as_of=2014-02-02#art-19 showed the current wording,
+  # with a clause from 2017 and no date label. A valid day that no archive view serves (on production every law
+  # but Judicial Code Part I in Dutch or French; locally any law the database does not hold) is kept for the
+  # notice (laws/_dated_link_notice); the canonical address stays undated.
+  def set_unsupported_as_of
+    day = params[:as_of].to_s
+    return unless day.match?(HISTORY_DAY) && valid_history_day?(day)
+    return if history_snapshot_requested?
+
+    @unsupported_as_of = Date.iso8601(day)
   end
 
   def history_hash(value)

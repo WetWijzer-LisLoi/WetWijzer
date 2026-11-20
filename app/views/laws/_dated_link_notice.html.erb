@@ -1,0 +1,21 @@
+<%# A law opened with ?as_of=<day> that this site cannot show as of that day (Sol 2026-11-20 10:21:43Z: the live reader
+    showed the current wording for a dated link, with no date label). The page says so, names the day and points to the
+    official source; a deep link (#art-19) gets a short copy at the top of that article, outside its copied text (dated_link_notice_controller.js).
+    No data-action here: print CSS hides [data-action], and this notice must print with the text. %>
+<% day = l(@unsupported_as_of, format: t('dated_link_notice.date_format')) %>
+<% justel = @law&.justel.to_s.strip %>
+<div class="mb-4 p-4 bg-yellow-50 dark:bg-amber-900/20 rounded-lg border border-yellow-200 dark:border-amber-800/50"
+     role="note" data-controller="dated-link-notice" data-testid="dated-link-notice">
+  <p class="text-sm font-medium text-yellow-800 dark:text-amber-200 mb-2"><%= t('dated_link_notice.title', date: day) %></p>
+  <p class="text-xs text-yellow-700 dark:text-amber-300"><%= t('dated_link_notice.body', date: day, site: site_name) %></p>
+  <% if justel.start_with?('https://www.ejustice.just.fgov.be/') && !@is_fisconet %>
+    <p class="text-xs text-yellow-700 dark:text-amber-300 mt-2">
+      <%= t('dated_link_notice.source') %>
+      <%= link_to 'Justel', justel, class: 'underline font-medium', target: '_blank', rel: 'nofollow noopener noreferrer' %>
+    </p>
+  <% end %>
+  <template data-dated-link-notice-target="inline">
+    <p class="mt-2 p-2 bg-yellow-50 dark:bg-amber-900/20 rounded-lg border border-yellow-200 dark:border-amber-800/50 text-xs text-yellow-700 dark:text-amber-300"
+       role="note" data-testid="dated-link-notice-inline"><%= t('dated_link_notice.inline', date: day, site: site_name) %></p>
+  </template>
+</div>

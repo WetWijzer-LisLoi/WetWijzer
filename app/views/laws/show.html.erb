@@ -30,6 +30,8 @@
 <% end %>
 <%# Outside every fragment cache, so the head gets the rules on a cache hit too. %>
 <%= render 'shared/reading_styles' %>
+<%# A dated link this page cannot serve as of its day says so above the law (Sol 2026-11-20 10:21:43Z). %>
+<%= render 'laws/dated_link_notice' if @unsupported_as_of %>
 <% if @is_fisconet %>
   <%= render 'laws/fisconet_show' %>
 <% else %>

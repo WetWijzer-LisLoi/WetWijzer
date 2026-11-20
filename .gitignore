@@ -222,3 +222,8 @@ tools/sqlmap_results.log
 # Local TOTP enrolment QR (contains the shared secret) - never commit
 qr.svg
 qr.png
+
+# The article-history dataset of Judicial Code Part I, served by the law reader on production (1.1.81): versioned
+# with the code, so a rollback takes it back too. Never in the public tree (pub_refresh copies app/, config/,
+# public/ and bin/ only).
+!/db/article_history/article_history_pilot.sqlite3

@@ -8,6 +8,17 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.81] - 2026-11-20
+
+### Added
+
+- Judicial Code Part I: article history on the law page, in Dutch and French. An article's Versions link opens its earlier wordings in place, each with its period and the archived Justel page that shows it. Archief op datum shows the whole law as Justel's archived editions give it on a chosen day. Composed views, missing editions and disputed effective dates (Walloon article 42) are labelled as such. The dataset holds Justel's archived editions 001 to 030 and the current page, of which 25 are complete pages in each language. It is versioned with the code, and no other law or text gets history: not Judicial Code Part II, not any other law, not the German text.
+
+### Fixed
+
+- Dated law links: a link that opens a law for a given day (`?as_of=`) that WetWijzer cannot show as of that day now says so above the law. It names the day, says that the text shown is the current consolidated text, and links the official Justel text. A deep-linked article gets the same note at its own top, outside the text its copy menu copies. The address stays undated for search engines.
+- Article history: every archived Justel page is looked up for the article's own law and language, also where another law has an edition with the same number.
+
 ## [1.1.80] - 2026-11-20
 
 ### Changed

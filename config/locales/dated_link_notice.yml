@@ -1,0 +1,28 @@
+nl:
+  dated_link_notice:
+    date_format: "%-d %B %Y"
+    title: "Tekst op %{date} niet geverifieerd"
+    body: "U opende deze wet met de datum %{date}. %{site} kan de tekst die op die datum gold niet verifiëren. Hieronder staat de huidige geconsolideerde tekst, niet de tekst van die datum."
+    source: "Controleer de tekst van die datum in de officiële bron:"
+    inline: "Huidige tekst, niet die van %{date}: %{site} kan de tekst op die datum niet verifiëren."
+fr:
+  dated_link_notice:
+    date_format: "%-d %B %Y"
+    title: "Texte au %{date} non vérifié"
+    body: "Vous avez ouvert cette loi à la date du %{date}. %{site} ne peut pas vérifier le texte en vigueur à cette date. Le texte ci-dessous est le texte consolidé actuel, et non celui de cette date."
+    source: "Vérifiez le texte de cette date dans la source officielle :"
+    inline: "Texte actuel, et non celui du %{date} : %{site} ne peut pas vérifier le texte à cette date."
+de:
+  dated_link_notice:
+    date_format: "%-d. %B %Y"
+    title: "Text vom %{date} nicht überprüft"
+    body: "Sie haben dieses Gesetz mit dem Datum %{date} geöffnet. %{site} kann den an diesem Tag geltenden Text nicht überprüfen. Unten steht der aktuelle konsolidierte Text, nicht der Text dieses Datums."
+    source: "Prüfen Sie den Text dieses Datums in der amtlichen Quelle:"
+    inline: "Aktueller Text, nicht der vom %{date}: %{site} kann den Text an diesem Tag nicht überprüfen."
+en:
+  dated_link_notice:
+    date_format: "%B %-d, %Y"
+    title: "Wording on %{date} not verified"
+    body: "You opened this law for %{date}. %{site} cannot verify the wording in force on that date. Below is the current consolidated text, not the text of that date."
+    source: "Check the wording on that date in the official source:"
+    inline: "Current text, not the text of %{date}: %{site} cannot verify the wording on that date."

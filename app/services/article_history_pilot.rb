@@ -3,7 +3,8 @@
 # Reads the article-history pilot database built by lib/wetwijzer_updater/article_history_pilot.py from Justel's
 # archived versions (Sol 2026-11-16 11:23:30Z: Judicial Code part I, articles 18, 19, 20 and 42, Dutch and French).
 #
-# A local pilot: never in production, and only when the database file is present. Each distinct wording is stored
+# The law reader serves it on production for Judicial Code Part I in Dutch and French only (reader_language); the
+# diagnostic page stays local (available?). Each distinct wording is stored
 # once (texts); each period points at a wording or is an explicit gap (status 'unknown'). A period's start is the day
 # Justel's listing gives as the previous wording's end (exclusive), or unknown; its end is the day before the next
 # wording's listed start, or open. Publication (of the amending act), effective dates and capture time are kept
@@ -27,11 +28,31 @@ class ArticleHistoryPilot
   end
 
   def self.db_path
-    ENV.fetch('ARTICLE_HISTORY_PILOT_DB') { Rails.root.join('storage', 'article_history_pilot.sqlite3').to_s }
+    ENV.fetch('ARTICLE_HISTORY_PILOT_DB') { Rails.root.join('db', 'article_history', 'article_history_pilot.sqlite3').to_s }
   end
 
+  # The diagnostic page (ArticleHistoryPilotsController): local only.
   def self.available?
     !Rails.env.production? && File.file?(db_path)
+  end
+
+  # The law reader (LawsController#set_history_pilot), production included (Sol 2026-11-20 12:04:51Z and 12:06:26Z, at
+  # the owner's request): on production only Judicial Code Part I, and only its Dutch and French texts. Part II
+  # (1967101053), any other law and the German text never reach the archive there. Removing the NUMAC below turns the
+  # reader off on production; nothing else can turn on another law.
+  PRODUCTION_NUMACS = %w[1967101052].freeze
+  READER_LANGUAGES = { 1 => 'nl', 2 => 'fr' }.freeze
+
+  def self.production_numacs = PRODUCTION_NUMACS
+
+  # The archive language of a law page ('nl' or 'fr'), or nil when the reader serves no history for it. Decided before
+  # the database is opened.
+  def self.reader_language(numac, language_id)
+    language = READER_LANGUAGES[language_id.to_i]
+    return if language.nil? || !File.file?(db_path)
+    return if Rails.env.production? && !production_numacs.include?(numac.to_s)
+
+    language
   end
 
   def initialize(path = self.class.db_path)
@@ -78,8 +99,11 @@ class ArticleHistoryPilot
 
   def close = @db.close
 
-  def covers?(numac)
-    @db.get_first_value('SELECT 1 FROM sources WHERE numac = ? LIMIT 1', [numac]).present?
+  # True when the database holds the law, in the given document language when one is named.
+  def covers?(numac, language = nil)
+    return @db.get_first_value('SELECT 1 FROM sources WHERE numac = ? LIMIT 1', [numac]).present? unless language
+
+    @db.get_first_value('SELECT 1 FROM sources WHERE numac = ? AND language = ? LIMIT 1', [numac, language]).present?
   end
 
   # The full pages, oldest archived version first and the current page last.
@@ -128,6 +152,68 @@ class ArticleHistoryPilot
     return if candidates.empty?
 
     Resolution.new(version: version_on(numac, language, article, variant, day), candidates: candidates)
+  end
+
+  # One article key on one ISO day, as the law reader's archive view and the chatbot both state it (Sol 2026-11-20
+  # 10:21:43Z: one date resolver for both). found: the period that applies (status 'text', 'disputed' or 'unknown');
+  # ambiguous: covering periods disagree on the text and no page settles it; absent: no period covers the day;
+  # structure: the page that gives the day its order (structure_on); exact: that page IS the law on the day;
+  # page_text_id: that page's wording for the key.
+  DayState = Struct.new(:day, :key, :found, :ambiguous, :absent, :structure, :exact, :page_text_id, keyword_init: true) do
+    def wording = (found if found&.text?)
+    def dispute = (found if found&.disputed?)
+    def gap = (found if found&.status == 'unknown')
+    def undetermined? = !wording.nil? && wording.valid_from_basis == 'undetermined'
+
+    # The wording is established for the day: its own start is known, or a page that is exactly the law on the day
+    # shows it. A disputed or unshown stretch, an ambiguous day and an undetermined commencement never are.
+    def verified?
+      return false if wording.nil? || ambiguous || undetermined?
+
+      wording.start_known? || (exact && page_text_id.present? && page_text_id == wording.text_id)
+    end
+  end
+
+  # The day's state of one key. The reader's archive view passes its structure page and the page's wording for the key
+  # (an explicit nil is kept); by default they come from structure_on, the page that view uses for the same day.
+  def day_state(numac, language, key, day, page: :structure, page_text_id: :from_page)
+    page = structure_on(numac, language, day) if page == :structure
+    page_text_id = page && items(page).find { |item| item.key == key }&.text_id if page_text_id == :from_page
+    exact = page&.covers?(day) || false
+    resolution = resolve(numac, language, key, day)
+    unless resolution
+      return DayState.new(day: day, key: key, absent: true, ambiguous: false, structure: page, exact: exact,
+                          page_text_id: page_text_id)
+    end
+
+    found, ambiguous = self.class.resolve_on_page(resolution, page, page_text_id, day)
+    DayState.new(day: day, key: key, found: found, ambiguous: ambiguous, absent: false, structure: page, exact: exact,
+                 page_text_id: page_text_id)
+  end
+
+  # The period that applies on the day, and whether the archive leaves it ambiguous. In order: a disputed stretch; a
+  # stretch the archive does not show (checked before any wording is shown with certainty); a change with a known
+  # start after the structure page's own acts all apply (a later-published act that applies by the day); the page's
+  # own wording when a covering period holds it; else version_on. Ambiguous when the covering periods disagree on the
+  # text and the page is not exactly the law on the day.
+  def self.resolve_on_page(resolution, page, page_text_id, day)
+    candidates = resolution.candidates
+    disputed = candidates.find(&:disputed?)
+    return [disputed, false] if disputed
+
+    gap = candidates.find { |c| c.status == 'unknown' }
+    return [gap, false] if gap
+
+    exact = page&.covers?(day)
+    ambiguous = !exact && resolution.ambiguous?
+    if page&.window_from.present?
+      later = candidates.select { |c| c.text? && c.valid_from.present? && c.valid_from > page.window_from }
+      return [later.max_by(&:valid_from), ambiguous] if later.any?
+    end
+    from_page = candidates.select { |c| c.text? && c.text_id == page_text_id }
+    return [from_page.max_by { |c| c.valid_from.to_s }, ambiguous] if page_text_id && from_page.any?
+
+    [resolution.version, ambiguous]
   end
 
   def current_snapshot(numac, language) = snapshots(numac, language).find(&:current?)
@@ -231,7 +317,7 @@ class ArticleHistoryPilot
   private
 
   def version_from(row, language)
-    source = source_for(language, row['first_version'], row['source_id'])
+    source = source_for(row['numac'], language, row['first_version'], row['source_id'])
     Version.new(id: row['id'], status: row['status'], body: row['body'], valid_from: row['valid_from'],
                 valid_from_basis: row['valid_from_basis'], valid_until: row['valid_until'],
                 valid_until_basis: row['valid_until_basis'], inline_effective: row['inline_effective'],
@@ -242,14 +328,18 @@ class ArticleHistoryPilot
   end
 
   # The page that shows the wording: the period's own source, else the archived version it names, else the current
-  # consolidated page.
-  def source_for(language, version, source_id)
+  # consolidated page; always of the period's own law and language, also where another law has the same archive
+  # number (Sol 2026-11-20 12:06:26Z).
+  def source_for(numac, language, version, source_id)
     if source_id
-      @db.get_first_row('SELECT url, captured_at FROM sources WHERE id = ?', [source_id])
+      @db.get_first_row('SELECT url, captured_at FROM sources WHERE id = ? AND numac = ? AND language = ?',
+                        [source_id, numac, language])
     elsif version
-      @db.get_first_row('SELECT url, captured_at FROM sources WHERE language = ? AND version = ?', [language, version])
+      @db.get_first_row('SELECT url, captured_at FROM sources WHERE numac = ? AND language = ? AND version = ?',
+                        [numac, language, version])
     else
-      @db.get_first_row('SELECT url, captured_at FROM sources WHERE language = ? AND version IS NULL', [language])
+      @db.get_first_row('SELECT url, captured_at FROM sources WHERE numac = ? AND language = ? AND version IS NULL',
+                        [numac, language])
     end
   end
 end
