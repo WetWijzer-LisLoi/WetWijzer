@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.78] - 2026-11-20
+
+### Fixed
+- Notice periods: the chatbot again calculates the notice period for the seniority a question states. The law of 3 June 2026 changed the periods below six months' seniority from 1 August 2026. Since the corpus took in that text on 16 October 2026, the calculation compared it with the earlier periods and stayed silent, and answers worked the period out themselves (for example 21 weeks instead of 24 for a dismissal by the employer after seven years). The calculation now follows the current text in Dutch and French. It gives the earlier periods for contracts begun before 1 August 2026 while those can still be below six months' seniority. When the seniority reaches back before 1 January 2014, it states that a dismissal by the employer adds two parts (the rules of 31 December 2013 for the seniority up to then, and the current scale from 2014) instead of presenting one figure as the total.
+- Leefloon: the chatbot gives the amounts that apply from 1 September 2026 (€911,56, €1.367,34 and €1.847,89 per month for the three categories), and the amounts of 1 March 2026 for the months before, instead of presenting the March amounts as current. Category 3 covers a single parent with an unmarried minor child.
+- Training clause: the chatbot reads the training condition of a training clause as an "or": at least 80 hours or a value of twice the average minimum monthly income (€4.467,22 since 1 July 2026) is enough, where an answer had required both. It also gives the annual pay the clause requires in 2026 (more than €44.447).
+
 ## [1.1.77] - 2026-11-20
 
 ### Fixed

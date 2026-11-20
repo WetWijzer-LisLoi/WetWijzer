@@ -460,7 +460,8 @@ module LegalChatbot
       # Descriptor keywords are not a second admission rule: otherwise normal
       # phrasings such as "mijn bedrijf kan CV's bewaren" could be classified as
       # retention while failing to receive any of its mandatory sources.
-      (keys + LegalFactProvider.required_official_topic_keys(q_down)).uniq
+      official = LegalFactProvider.required_official_topic_keys(q_down)
+      (keys + official + LegalFactProvider.deterministic_topic_keys(q_down)).uniq
     end
 
     def keyword_pattern(keyword)
