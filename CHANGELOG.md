@@ -8,6 +8,11 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.77] - 2026-11-20
+
+### Fixed
+- Sample questions: the chatbot sidebar, the category filter and the home page's question pills now load the current sample catalogue. The catalogue file was fetched from a fixed address that browsers keep for a year, so a reader who had opened the chatbot before still saw the old questions and subjects, including after 1.1.76 moved 155 of them. The pages now fetch the catalogue from an address that changes whenever its content changes. When the catalogue changes while a reader moves between pages, a slower answer for the previous catalogue no longer replaces the current one in the sidebar.
+
 ## [1.1.76] - 2026-11-19
 
 ### Fixed

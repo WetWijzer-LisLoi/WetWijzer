@@ -551,15 +551,31 @@
       // Only act on pages that actually render the questions sidebar
       if (!document.getElementById('questions-list')) return;
 
-      // Load questions - reuse Stimulus-loaded data if available, else fetch
-      var loadPromise = window.allQuestions && window.allQuestions.length > 0
-        ? Promise.resolve(window.allQuestions)
-        : fetch('/chatbot_questions.json').then(function(r) { return r.json(); });
+      // Load questions - reuse Stimulus-loaded data if it came from this page's catalogue URL, else fetch
+      var questionsUrl = <%= raw StarterQuestionCatalog.versioned_url.to_json %>;
+      /* ww-questions-held-pin:start */
+      // The questions held in this window belong to the URL they came from (window.allQuestionsUrl). A Turbo
+      // visit keeps the window, so after a catalogue-only deploy a held list must not stand in for the URL this
+      // page advertises, and a slower response for an older URL must not replace it (Sol 2026-11-19 22:43:05Z).
+      function heldQuestionsFor(url) {
+        return window.allQuestions && window.allQuestions.length > 0 && window.allQuestionsUrl === url ? window.allQuestions : null;
+      }
+      function advertisesQuestionsUrl(url) {
+        var meta = document.querySelector('meta[name="ww-chatbot-questions-url"]');
+        return !meta || meta.getAttribute('content') === url;
+      }
+      /* ww-questions-held-pin:end */
+      var held = heldQuestionsFor(questionsUrl);
+      var loadPromise = held
+        ? Promise.resolve(held)
+        : fetch(questionsUrl).then(function(r) { return r.json(); });
 
       loadPromise
         .then(function(data) {
+          if (!advertisesQuestionsUrl(questionsUrl)) return;
           allQuestions = data;
           window.allQuestions = data; // sync both references
+          window.allQuestionsUrl = questionsUrl;
 
           // Populate category filter with PARENT categories only
           // e.g. "ARBEIDSRECHT - INDIVIDUEEL" → "ARBEIDSRECHT", in the

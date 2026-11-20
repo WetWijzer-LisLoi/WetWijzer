@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 import { proTooltipCopy } from "../services/chatbot_locked_tier"
 import { prefs as prefsStore } from "../services/preferences_store"
+import { chatbotQuestionsUrl } from "../services/chatbot_questions_url"
 import { migrateChatbotModelPreference } from "../services/chatbot_model_preference_migration"
 import { researchDepthMethods } from "./chatbot/settings_mixin"
 import {
@@ -634,7 +635,7 @@ class HeroChatbotController extends Controller {
     container.style.transition = 'opacity 0.25s ease'
     container.style.opacity = '1'
 
-    fetch('/chatbot_questions.json')
+    fetch(chatbotQuestionsUrl())
       .then(r => r.json())
       .then(data => {
         // Prefer questions with a native translation; fall back to nl if too few exist

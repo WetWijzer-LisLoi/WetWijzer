@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 import { prefs as prefsStore } from "../services/preferences_store"
 import { ConversationCrypto } from "../services/conversation_crypto"
+import { chatbotQuestionsUrl, holdQuestions } from "../services/chatbot_questions_url"
 import {
   sanitizeRestoredMessages,
   sanitizeVisibleAssistantAnswer
@@ -574,15 +575,17 @@ class ChatbotController extends Controller {
       }
     }, 8000)
 
-    fetch('/chatbot_questions.json', { cache: 'default' })
+    const questionsUrl = chatbotQuestionsUrl()
+    fetch(questionsUrl, { cache: 'default' })
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         return r.json()
       })
       .then(data => {
         clearTimeout(loadingTimeout)
-        // Store globally for the inline script's renderQuestions/filterQuestions
-        window.allQuestions = data
+        // Store globally for the inline script's renderQuestions/filterQuestions,
+        // only while this page still advertises the catalogue it was fetched from.
+        if (!holdQuestions(window, questionsUrl, data)) return
         if (typeof window.filterQuestions === 'function') {
           window.filterQuestions()
         }

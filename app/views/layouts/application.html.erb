@@ -104,6 +104,8 @@
 
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <%# The sample catalogue's content-versioned URL (StarterQuestionCatalog.versioned_url): a fixed URL stayed cached for a year. %>
+    <meta name="ww-chatbot-questions-url" content="<%= StarterQuestionCatalog.versioned_url %>">
 
     <%= turbo_refreshes_with method: :morph, scroll: :preserve  %>
     <%= favicon_link_tag "#{t(:favicon)}?v=20251112" %>

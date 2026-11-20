@@ -170,6 +170,7 @@ app/javascript/services/chatbot_message_safety.js
 app/javascript/services/chatbot_model_preference_migration.js
 app/javascript/services/chatbot_progress.js
 app/javascript/services/chatbot_question_length.js
+app/javascript/services/chatbot_questions_url.js
 app/javascript/services/chatbot_rating_copy.js
 app/javascript/services/chatbot_send_request.js
 app/javascript/services/chatbot_stream_events.js
@@ -940,6 +941,7 @@ public/vite/assets/application-DQZJgscu.css
 public/vite/assets/application-DQgxQ4cU.js
 public/vite/assets/application-DRC8r2NI.js
 public/vite/assets/application-DUHs-b9K.js
+public/vite/assets/application-DW-RxVKr.js
 public/vite/assets/application-DWN-weTi.css
 public/vite/assets/application-DY-C4m8P.js
 public/vite/assets/application-DZVf9TOW.css
@@ -964,6 +966,7 @@ public/vite/assets/application-LffN2UK_.js
 public/vite/assets/application-MAGPDVhj.css
 public/vite/assets/application-PNGzPlOp.js
 public/vite/assets/application-SgCoZMrL.js
+public/vite/assets/application-Vrn3PDH8.js
 public/vite/assets/application-VrnMrANY.js
 public/vite/assets/application-WyXijs_E.js
 public/vite/assets/application-bWLWw_JU.css

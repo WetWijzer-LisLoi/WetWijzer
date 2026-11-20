@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'digest'
 require 'json'
 
 # WW-PRIV-01: the starter questions a reader can click, and so the only texts
@@ -42,6 +43,20 @@ module StarterQuestionCatalog
   class << self
     def canonical?(language, text)
       catalogue.fetch(language.to_s, NONE).include?(text.to_s.strip)
+    end
+
+    # The URL the pages fetch the catalogue from. Public files are cached for a year
+    # (config.public_file_server.headers), so the fixed URL kept a reader's first copy for a year: the
+    # 155 moves of 1.1.76 did not reach a browser that had opened the chatbot before (Sol 2026-11-19
+    # 22:18:11Z). The digest of the file makes a changed catalogue a new URL that every browser fetches once.
+    def versioned_url(path = SOURCE)
+      "/chatbot_questions.json?v=#{source_digest(path)}"
+    end
+
+    def source_digest(path = SOURCE)
+      key = [path.to_s, File.mtime(path).to_f, File.size(path)]
+      @digests ||= {}
+      @digests[key] ||= Digest::SHA256.file(path).hexdigest[0, 16]
     end
 
     private
