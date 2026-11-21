@@ -1,7 +1,8 @@
-<%# Article-history pilot: the words removed and added from old_body to new_body, labelled for screen readers, led by
-    the article's number when both wordings start with it (HistoryPilotHelper#history_diff_parts): the number opens
-    the article's menu, as in the text. %>
-<% number, old_words, new_words = history_diff_parts(old_body, new_body) %>
+<%# Article-history pilot: the words removed and added from old_body to new_body, labelled for screen readers, after
+    the article's identifier, which stands outside the compared words as the button that opens the article's menu
+    (HistoryPilotHelper#history_diff_parts, laws/_history_identifier). Locals: key, old_body, new_body. %>
+<% identifier, old_words, new_words = history_diff_parts(key, old_body, new_body) %>
+<%= render 'laws/history_identifier', identifier: identifier %>
 <div class="not-prose rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-sm whitespace-pre-line" data-history-diff>
-  <% if number %><span class="article-number not-prose cursor-pointer"><%= number %></span> <% end %><% ArticleHistoryPilot.word_diff(old_words, new_words).each do |kind, text| %><% if kind == :removed %><del class="bg-red-100 dark:bg-red-900/40"><span class="sr-only">[<%= history_label(:removed) %>] </span><%= text %></del><% elsif kind == :added %><ins class="bg-green-100 dark:bg-green-900/40 no-underline"><span class="sr-only">[<%= history_label(:added) %>] </span><%= text %></ins><% else %><%= text %><% end %><% end %>
+  <% ArticleHistoryPilot.word_diff(old_words, new_words).each do |kind, text| %><% if kind == :removed %><del class="bg-red-100 dark:bg-red-900/40"><span class="sr-only">[<%= history_label(:removed) %>] </span><%= text %></del><% elsif kind == :added %><ins class="bg-green-100 dark:bg-green-900/40 no-underline"><span class="sr-only">[<%= history_label(:added) %>] </span><%= text %></ins><% else %><%= text %><% end %><% end %>
 </div>

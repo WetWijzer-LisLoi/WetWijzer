@@ -10,6 +10,20 @@ export default class extends Controller {
     // On page load, if URL has a fragment, ensure articles are loaded
     this.handleInitialFragment()
   }
+
+  disconnect() {
+    this.cancelPendingNavigation()
+  }
+
+  // A jump still waiting for the articles is dropped when the reader leaves the law: Turbo renders the next page in its
+  // place, and the jump would write this law's anchor into that page's address as a history entry of its own (Sol
+  // 2026-11-21 10:58:04Z, found going Back and Forward through another page: "/faq#art-2" kept Back on that page).
+  cancelPendingNavigation() {
+    if (this.pendingLoad) this.pendingLoad.frame.removeEventListener('turbo:frame-load', this.pendingLoad.handler)
+    if (this.pendingFrameId) globalThis.cancelAnimationFrame?.(this.pendingFrameId)
+    this.pendingLoad = null
+    this.pendingFrameId = null
+  }
   
   handleInitialFragment() {
     const hash = window.location.hash
@@ -64,20 +78,29 @@ export default class extends Controller {
     if (!this.hasFrameTarget) return
     
     const frame = this.frameTarget
-    
+    const address = window.location.pathname + window.location.search
+    this.cancelPendingNavigation()
+
     // First scroll to the loading section to show articles are loading
     this.scrollToLoadingSection()
-    
+
     // Set up one-time listener for frame load
     const handleLoad = () => {
       frame.removeEventListener('turbo:frame-load', handleLoad)
-      
-      // Wait a tick for DOM to settle, then navigate to target
-      requestAnimationFrame(() => {
+      this.pendingLoad = null
+
+      // Wait a tick for DOM to settle, then navigate to target, unless the law has left the page meanwhile, or its
+      // address already has: a Back or Forward moves the address before Turbo replaces the page, also to another
+      // archive date or language of the same law (Sol 2026-11-21 11:28:09Z: a query, not only a path)
+      this.pendingFrameId = requestAnimationFrame(() => {
+        this.pendingFrameId = null
+        if (frame.isConnected === false || this.element?.isConnected === false) return
+        if (window.location.pathname + window.location.search !== address) return
         this.navigateToHash(this.currentHash(hash, link))
       })
     }
-    
+
+    this.pendingLoad = { frame, handler: handleLoad }
     frame.addEventListener('turbo:frame-load', handleLoad)
     
     // Trigger frame load by setting src (if not already set)

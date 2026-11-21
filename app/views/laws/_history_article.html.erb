@@ -5,8 +5,8 @@
     History item follows the hidden step link). The legal text, #article-text-<permalink> (what the copy actions read),
     is print_article's output untouched: the live row on the current-law page (live: [text, title, type]), else the
     wording the archive gives or the reader chose. With a comparison, the words changed against the wording before
-    are shown in its place, led by the article's number so its menu stays at hand, and the chosen wording stays the
-    copied text; at the oldest wording there is none, so the text stays visible with a short note. Right after Close,
+    are shown in its place, after the article's identifier so its menu stays at hand, and the chosen wording stays
+    the copied text; at the oldest wording there is none, so the text stays visible with a short note. Right after Close,
     data-history-return-focus asks for the focus back on the number (history_links_controller.js).
     Locals: history (HistoryPilotHelper::ArticleState), permalink, numac, live (optional). %>
 <% key = history.key %>
@@ -28,9 +28,13 @@
 <div data-history-row="<%= key %>" data-history-state="<%= history_rendered_state(key) %>" <%= tag.attributes(data: { history_return_focus: ('' if history_focus?(key, 'close')) }) %>>
   <%= render 'laws/history_link', history: history, permalink: permalink %>
   <% if comparing && history.compare_base %>
-    <%= render 'laws/history_diff', old_body: history.compare_base.body, new_body: history.shown_body %>
+    <%= render 'laws/history_diff', key: key, old_body: history.compare_base.body, new_body: history.shown_body %>
     <div id="article-text-<%= permalink %>" hidden data-history-copy-text><%= printed %></div>
   <% elsif printed %>
     <div id="article-text-<%= permalink %>"><%= printed %></div>
+  <% else %>
+    <%# No wording on the archive date (a gap): the identifier alone keeps History at hand; the menu then offers no copy
+        of a wording that is not there (Sol 2026-11-21 10:09:36Z). %>
+    <%= render 'laws/history_identifier', identifier: history_identifier(key) %>
   <% end %>
 </div>

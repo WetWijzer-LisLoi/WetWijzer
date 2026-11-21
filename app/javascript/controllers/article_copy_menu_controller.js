@@ -12,12 +12,16 @@ import { citationText, displayedText, fragmentUrl, runCopy } from "../utils/arti
 // Fisconet codes. Its number becomes a button here (role, tabindex, aria-haspopup, aria-expanded), on connect and on
 // every frame load, so the cached article HTML (CacheVersionHelper::RENDER_CODE_FILES) and the words the copies read
 // stay as they were. Until 1.1.84 a click on the number copied the link at once, before the menu opened.
+//
+// The menu shows the article it is open for (its label), offers the text and citation only when the article has a
+// wording (an archive date can have none), and closes when its article's frame is rendered again: a copy right after
+// a fast switch took the next article (Sol 2026-11-21 10:09:36Z).
 const NUMBER = ".article-number"
 const ARTICLE = "[data-permalink]"
 const MARGIN = 4
 
 export default class extends Controller {
-  static targets = ["item", "history"]
+  static targets = ["item", "history", "label", "wording"]
   static values = { linkCopied: String, textCopied: String, citationCopied: String, numberLabel: String }
 
   connect() {
@@ -25,7 +29,10 @@ export default class extends Controller {
     this.trigger = null
     this.onClick = this.click.bind(this)
     this.onKeydown = this.keydown.bind(this)
-    this.onFrameLoad = event => this.enhance(event.target)
+    this.onFrameLoad = event => {
+      this.enhance(event.target)
+      if (this.isOpen() && this.trigger && !this.trigger.isConnected) this.close()
+    }
     document.addEventListener("click", this.onClick)
     document.addEventListener("keydown", this.onKeydown)
     // Capture: before a history frame's own load listener puts the focus back on its number (history_links).
@@ -113,7 +120,11 @@ export default class extends Controller {
     this.trigger = number
     this.article = article
     if (this.hasHistoryTarget) this.historyTarget.hidden = !this.historyLink()
-    this.element.setAttribute("aria-label", (number.textContent || "").trim())
+    const wording = Boolean(this.sourceElement())
+    this.wordingTargets.forEach(item => { item.hidden = !wording })
+    const name = (number.textContent || "").trim()
+    this.element.setAttribute("aria-label", name)
+    if (this.hasLabelTarget) this.labelTarget.textContent = name
     this.element.classList.remove("hidden")
     this.place(number)
     number.setAttribute("aria-expanded", "true")

@@ -257,19 +257,26 @@ module HistoryPilotHelper
 
   def history_open?(key) = history_focus?(key) && @history_focus[1] != 'close'
 
-  # A comparison's leading article number ("Art. 20.", "Art. 42_REGION_WALLONNE."), when both wordings start with it,
-  # and the two wordings after it: laws/_history_diff shows the number once, as the button that opens the article's
-  # menu (Sol 2026-11-21 06:56:33Z: comparing hid it), and compares the words after it. Otherwise the wordings are
-  # compared whole and there is no number.
-  HISTORY_LEADING_NUMBER = /\A[[:space:]]*(Art(?:ikel|icle)?\.?[[:space:]]*[^[:space:]]+?\.)(?=[[:space:]]|\z)/i
+  # The article's visible identifier, from its key, as the law's text writes it: "Art. 20.", "Art. 53bis.",
+  # "Art. 42_REGION_WALLONNE." (Sol 2026-11-21 10:09:36Z: one menu trigger from the known article key). It stands
+  # outside the compared words in a comparison (laws/_history_diff), and alone where the archive date has no wording
+  # (a gap), so the article's menu, with its History, is always at hand.
+  def history_identifier(key) = "#{key.to_s.sub(/\AArt\.?[[:space:]]*/i, 'Art. ')}."
 
-  def history_diff_parts(old_body, new_body)
-    old_text = old_body.to_s
-    new_text = new_body.to_s
-    number = old_text[HISTORY_LEADING_NUMBER, 1]
-    return [nil, old_text, new_text] unless number && new_text[HISTORY_LEADING_NUMBER, 1] == number
+  # The two wordings of a comparison without the article's identifier, each taken off on its own when that wording
+  # starts with exactly it, with or without a space after its dot ("Art. 20.Les", "Art. 20. Les": live 1.1.85 kept
+  # both and showed the number as a changed word), and in the full forms "Artikel 20." and "Article 20." too. A longer
+  # number ("Art. 20/1.", "Art. 20.1.") or any other leading text is kept whole. [identifier, old words, new words].
+  def history_diff_parts(key, old_body, new_body)
+    identifier = history_identifier(key)
+    [identifier, history_without_identifier(old_body, identifier), history_without_identifier(new_body, identifier)]
+  end
 
-    [number, old_text.sub(HISTORY_LEADING_NUMBER, '').lstrip, new_text.sub(HISTORY_LEADING_NUMBER, '').lstrip]
+  def history_without_identifier(body, identifier)
+    text = body.to_s
+    number = Regexp.escape(identifier.delete_suffix('.').delete_prefix('Art. '))
+    match = /\A[[:space:]\u00A0\u202F]*Art(?:ikel|icle)?\.?[[:space:]\u00A0\u202F]*#{number}[[:space:]\u00A0\u202F]*\.(?![0-9])/i.match(text)
+    match ? text[match.end(0)..].to_s.lstrip : text
   end
 
   # What an article's frame shows, in the form the address asks for it (utils/history_links.js

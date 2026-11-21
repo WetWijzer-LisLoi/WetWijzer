@@ -16,6 +16,13 @@
 //    the same address takes the prefetched response whatever it asked for. On Forward the pointer rested on the pager
 //    link of the restored page, so the page visit received the bare frame and Turbo reloaded the whole page
 //    ("tracked_element_mismatch"). A prefetched response now serves only a request for the same frame, or for none.
+//
+// One more, outside those three: the law's article history (history_links_controller.js) settles the address of a page
+// that keeps no snapshot (turbo-cache-control no-cache), and Turbo 8.0.23 takes no restoration for the same page. A
+// Back or Forward that changed the fragment alone therefore fetched the address and rendered the page again, which
+// closed a second open picker (Sol 2026-11-21 10:09:36Z). keepFragmentRestorationsInPlace lets such a restoration keep
+// the page: Turbo still records the entry, and the window goes where Turbo would put it (the entry's saved position,
+// else the fragment's element).
 
 function frameOf (headers) {
   if (!headers) return null
@@ -33,6 +40,22 @@ export function syncRenderedLocation (turbo) {
   const location = turbo?.session?.history?.location
   if (!view || !location?.href) return
   if (view.lastRenderedLocation?.href !== location.href) view.lastRenderedLocation = new URL(location.href)
+}
+
+export function keepFragmentRestorationsInPlace (turbo, fragmentOnly, win = globalThis.window) {
+  const session = turbo?.session
+  const original = session?.historyPoppedToLocationWithRestorationIdentifierAndDirection
+  if (typeof original !== 'function' || original.keepsFragments) return
+  const guarded = function (location, restorationIdentifier, direction) {
+    if (!fragmentOnly(location)) return original.call(this, location, restorationIdentifier, direction)
+    const position = session.history?.getRestorationDataForIdentifier?.(restorationIdentifier)?.scrollPosition
+    if (position) return win?.scrollTo(position.x, position.y)
+    let id = String(location.hash || '').replace(/^#/, '')
+    try { id = decodeURIComponent(id) } catch (_) { /* the id as written */ }
+    win?.document?.getElementById(id)?.scrollIntoView()
+  }
+  guarded.keepsFragments = true
+  session.historyPoppedToLocationWithRestorationIdentifierAndDirection = guarded
 }
 
 export function dropMismatchedPrefetch (event) {

@@ -8,6 +8,17 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.86] - 2026-11-21
+
+### Fixed
+
+- Law pages, article history (Judicial Code Part I): in a comparison the article's identifier ("Art. 20.") stands on its own line above the compared words and opens the article's menu. 1.1.85 looked for the number inside both wordings and needed a space after its dot, which Justel's texts do not have ("Art. 20.Les voies ..."), so on the live Judicial Code the comparison of article 20 had neither a number nor a menu. The identifier now comes from the article itself, and each wording loses it only when it starts with exactly that number, also written in full ("Artikel 20.", "Article 20."), so the number no longer shows as a changed word; a longer number such as "Art. 20/1." is never taken for it.
+- Law pages, article history: on an archive date where an article's wording is unknown (a gap), the article's identifier is shown, and its menu offers the history and the link; there is no wording to copy.
+- Law pages, articles: the menu names the article it is open for and closes when that article is shown again after a step. In a live check a copy right after switching article 20's wording once took article 21; that has not been reproduced since.
+- Law pages, article history: after quick steps in two articles, the address names the reader's latest step, as its fragment already did, so a fresh visit opens that article's picker.
+- Law pages, article history: a Back or Forward that changes only the fragment (an anchor) keeps the page as it is, with every open picker, and returns to the reader's place on that entry. Before, the page was loaded or rendered again and kept only the picker the address names.
+- Law pages: when a reader left a law before a deep link's articles had loaded, the jump to the article could still run and write its anchor into the next page's address as a history entry of its own, so Back stayed on that page. The jump now runs only while the law is still on screen at the same address, so not after a move to another page, archive date or language.
+
 ## [1.1.85] - 2026-11-21
 
 ### Changed

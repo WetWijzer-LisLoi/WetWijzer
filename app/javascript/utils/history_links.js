@@ -44,10 +44,13 @@ export function requestedHistoryState(href, keys = []) {
 // address, a reload and Back give what is on the screen, whatever order the frames' answers came back in (Sol
 // 2026-11-21 06:56:33Z: two quick steps in two articles left the address with the first article's old wording, since
 // the second step was sent before the first one had landed). frames: [{ keys, key, state }], the frame's keys in both
-// languages, its row's key (data-history-row) and what it shows (data-history-state: day|version|compare|open). The
-// date, the step (history_focus) and the choices for articles without a frame on the page stay as they are.
-export function settledHistoryUrl(currentHref, frames = []) {
+// languages, its row's key (data-history-row) and what it shows (data-history-state: day|version|compare|open). focus:
+// the reader's latest step (history_focus), which names that step's picker as the fragment names its article (Sol
+// 2026-11-21 10:09:36Z: crossed answers left the earlier step's focus beside the latest step's fragment); an
+// unreadable one is left out. The date and the choices for articles without a frame on the page stay as they are.
+export function settledHistoryUrl(currentHref, frames = [], focus = null) {
   const url = new URL(currentHref)
+  if (focus && FOCUS.test(focus)) url.searchParams.set("history_focus", focus)
   for (const { keys = [], key, state } of frames) {
     if (!key) continue
     const [, version = "", compare = ""] = String(state || "").split("|")

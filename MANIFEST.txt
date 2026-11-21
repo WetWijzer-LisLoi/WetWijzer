@@ -532,6 +532,7 @@ app/views/laws/_history_archive_control.html.erb
 app/views/laws/_history_article.html.erb
 app/views/laws/_history_diff.html.erb
 app/views/laws/_history_frame.html.erb
+app/views/laws/_history_identifier.html.erb
 app/views/laws/_history_link.html.erb
 app/views/laws/_history_notes.html.erb
 app/views/laws/_history_picker.html.erb
@@ -920,6 +921,7 @@ public/vite/assets/application-CBormHI8.js
 public/vite/assets/application-CDdQnrxc.js
 public/vite/assets/application-CFcQDgA2.js
 public/vite/assets/application-CH3bDzQA.css
+public/vite/assets/application-CIF_wD9L.js
 public/vite/assets/application-CIngSIbw.js
 public/vite/assets/application-CJKP9SDV.js
 public/vite/assets/application-CKSngAOE.css
