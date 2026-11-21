@@ -430,20 +430,20 @@
             <% end %>
             <% top_pad = prev_was_heading ? 'pt-2' : 'pt-4' %>
             <% bottom_pad = next_is_heading ? 'pb-2' : 'pb-4' %>
+            <%# Article-history pilot: a covered article keeps its live row as the text. Its history control, picker and
+                notes stand beside that text, which then carries the #article-text id itself (laws/_history_article); the
+                other language's anchor of a variant is kept for the NL/FR switch. %>
+            <% history = history_article_state(article.article_title.to_s.strip, live_body: article.article_text.to_s) %>
             <div class="<%= [top_pad, bottom_pad].join(' ') %> flex items-start"
                  data-permalink="<%= permalink %>"
                  data-source="#article-text-<%= permalink %>">
-              <div class="flex-1 min-w-0" id="article-text-<%= permalink %>">
-                <%# Article-history pilot (local only): a covered article keeps its live row as the text, with one quiet
-                    Versions link after its number (laws/_history_article); the other language's anchor of a variant is
-                    kept for the NL/FR switch. %>
-                <% history = history_article_state(article.article_title.to_s.strip, live_body: article.article_text.to_s) %>
+              <div class="flex-1 min-w-0" <%= tag.attributes(id: ("article-text-#{permalink}" unless history)) %>>
                 <% if history %>
                   <%# The pilot key (region included) the chat widget sends with a dated question (chatbot_controller.js). %>
                   <span hidden data-history-article="<%= history.key %>"></span>
                   <% counterpart = history_permalink(HistoryPilotHelper.history_key_for(history.key, @history_language == 'nl' ? 'fr' : 'nl'), '') %>
                   <% if counterpart != permalink && emitted_article_ids.add?(counterpart) %><span id="<%= counterpart %>" class="block h-0 overflow-hidden scroll-mt-24 mt-0!" aria-hidden="true"></span><% end %>
-                  <%= render 'laws/history_article', history: history, permalink: permalink, numac: article.content_numac,
+                  <%= render 'laws/history_frame', history: history, permalink: permalink, numac: article.content_numac,
                              live: [article.article_text, article.article_title, article.article_type] %>
                 <% else %>
                   <%= print_article(article.article_text, article.article_title, article.article_type, source_numac: article.content_numac) %>

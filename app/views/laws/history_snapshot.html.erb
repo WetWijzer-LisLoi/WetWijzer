@@ -66,9 +66,7 @@
               <% counterpart = history_permalink(HistoryPilotHelper.history_key_for(key, @history_language == 'nl' ? 'fr' : 'nl'), '') %>
               <article id="<%= permalink %>" class="scroll-mt-24 border-t border-gray-200 dark:border-gray-700 py-4" data-history-article="<%= key %>">
                 <% if counterpart != permalink %><span id="<%= counterpart %>" class="block h-0 overflow-hidden scroll-mt-24" aria-hidden="true"></span><% end %>
-                <div id="article-text-<%= permalink %>">
-                  <%= render 'laws/history_article', history: history, permalink: permalink, numac: numac %>
-                </div>
+                <%= render 'laws/history_frame', history: history, permalink: permalink, numac: numac %>
               </article>
             <% end %>
           <% end %>

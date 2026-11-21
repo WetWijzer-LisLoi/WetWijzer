@@ -2101,8 +2101,25 @@ module LegalChatbot
       (?=.*\b(?:cash|contant(?:e)?|esp[eè]ces|bar|bargeld)\b)
       (?=.*\b(?:weig(?:er|eren|ert)|aanvaard(?:en)?|accepteren|verplicht|refus(?:er|e)|accepter|obligatoire|refuse|accept|must\s+accept|required|ablehnen|akzeptieren)\b)
       .*\z}ix.freeze
+    # Sol 2026-11-20 16:20:33Z (#2148, "Hoe lang mag de politie mij vasthouden?"): the question named neither "garde à
+    # vue" nor "politiearrest", so the answer had the 48 hours of a judicial arrest but no limit for an administrative
+    # one. The police holding someone, in either order, counts too; it pins Art. 31 of the Police Function Act beside
+    # Art. 1 of the pre-trial detention act (both read in full NL and FR on 2026-11-20).
+    # Sol 2026-11-20 16:20:33Z (#2706, "Aangifte nalatenschap termijn?"): the answer gave no number of months. A question on
+    # the estate declaration deadline pins VCF art. 3.3.1.0.5 (Flanders: four months from a death in Belgium, five in
+    # another EEA country, six outside the EEA) and W.Succ. art. 40 (Brussels and Wallonia: four, five elsewhere in
+    # Europe, six outside Europe), both read in full on 2026-11-20.
+    SUCCESSION_DECLARATION_DEADLINE_PATTERN = %r{
+      (?=.*\b(?:aangifte\s+(?:van\s+(?:de\s+)?)?nalatenschap|nalatenschapsaangifte|successieaangifte|d[ée]claration\s+de\s+succession
+             |Erbschaft(?:steuer)?erkl[äa]rung|Nachlasserkl[äa]rung|estate\s+declaration|inheritance\s+tax\s+return)\b)
+      (?=.*\b(?:termijn|binnen\s+hoeveel\s+tijd|wanneer|uiterlijk|deadline|d[ée]lai|quand|Frist|wann|when|how\s+long|within)\b)
+    }ix.freeze
+    POLICE_HOLD_VERB = '(?:vasthouden|vastgehouden|vast\\s+houden|aanhouden|aangehouden|opsluiten|opgesloten|arrest\\w*|retenir|' \
+                       'd[ée]tenir|garder|arr[êe]ter|festhalten|festgehalten|festnehmen|hold|held|detain\\w*)'
     POLICE_CUSTODY_DURATION_PATTERN = %r{
-      (?=.*\b(?:garde\s+[àa]\s+vue|politiearrest|police\s+custody|polizeigewahrsam)\b)
+      (?=.*(?:\b(?:garde\s+[àa]\s+vue|politiearrest|police\s+custody|polizeigewahrsam)\b
+             |\b(?:politie|police|polizei)\b.{0,60}?\b#{POLICE_HOLD_VERB}
+             |\b#{POLICE_HOLD_VERB}.{0,40}?\b(?:politie|police|polizei)\b))
       (?=.*\b(?:hoe\s+lang|hoelang|duur|termijn|combien\s+de\s+temps|dur[eé]e|how\s+long|duration|wie\s+lange|dauer)\b)
     }ix.freeze
     # An employee asking whether they may resign while ill, or whether illness
@@ -2330,6 +2347,9 @@ module LegalChatbot
       [/(?=.*\b(?:minnelijke\s+schikking|verval\s+van\s+strafvordering|transaction\s+pénale)\b)(?=.*\b(?:straf|misdrijf|parket|procureur|pénal|infraction|ministère\s+public)\b)/i, '1808111901', '216bis'],
       [/(?:\bsalduz\b|(?=.*\b(?:verhoor|politieverhoor|ondervraging|audition|interrogatoire)\b)(?=.*\b(?:advocaat|rechtsbijstand|rechten|avocat|assistance|droits)\b))/i, '1808111701', '47bis'],
       [POLICE_CUSTODY_DURATION_PATTERN, '1990099963', '1'],
+      [POLICE_CUSTODY_DURATION_PATTERN, '1992000606', '31'],
+      [SUCCESSION_DECLARATION_DEADLINE_PATTERN, '2013036154', '3.3.1.0.5'],
+      [SUCCESSION_DECLARATION_DEADLINE_PATTERN, '1936033102', '40'],
       [/\b(?:burgerlijke\s+partijstelling|zich\s+burgerlijke\s+partij\s+stellen|constitution\s+de\s+partie\s+civile)\b/i, '1808111701', '63'],
       [/\b(?:diefstal|stelen|gestolen)\b|\b(?:le|du|au|un|ce|des|pour)\s+vol\b|\bvol\s+(?:simple|qualifi[eé]|avec|commis|constitue|puni|passible)\b/i, '2024002088', '463'],
       [/(?=.*(?:\b(?:diefstal|stelen|gestolen)\b|\b(?:le|du|au|un|ce|des|pour)\s+vol\b|\bvol\s+(?:simple|qualifi[eé]|avec|commis|constitue|puni|passible)\b))(?=.*\b(?:straf|bestraft|gevangenis|boete|peine)\b)/i, '2024002088', '465'],

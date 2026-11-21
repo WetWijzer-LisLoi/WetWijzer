@@ -206,6 +206,7 @@ module LegalChatbot
         'Former-customer status alone is not a retention justification, but an erasure request alone does not override all lawful necessary processing. ' \
         'Apply an actual Article 17(1) ground and the necessary Article 17(3) exceptions, rather than promising deletion whenever a request is made. ' \
         'Consent withdrawal requires absence of another legal basis. Distinguish Article 21(1) objection from direct-marketing objection under Article 21(2). ' \
+        'Article 17(2): where the controller has made the data public and must erase them, it takes reasonable steps, including technical measures, to inform the OTHER CONTROLLERS processing those personal data that the data subject asked them to erase any links to, or copies or replications of, the data; name them as controllers (verwerkingsverantwoordelijken, responsables du traitement), not processors (verwerkers, sous-traitants). ' \
         'Article 17(1)(f) concerns the child-related collection referred to in Article 8(1), NOT every information-society service or every website customer. ' \
         'Article 17(3) exceptions apply only to the extent the processing is NECESSARY. For archiving/research/statistics preserve the supplied condition ' \
         'about erasure making the objectives impossible or seriously impairing them; safeguards alone are not a blanket retention exemption. ' \

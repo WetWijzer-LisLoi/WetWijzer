@@ -26,13 +26,21 @@ module FisconetProvisionHelper
     (FisconetProvision.code_names(stored) + FisconetCodeRegistry.names(code)).uniq
   end
 
+  # The page's own tax code for the linker (References::TaxCrossLinking::TAX_CODE_FAMILIES): the stored base code of an
+  # edition ('WIB 92' for 'WIB 92 (inkomsten 2027)'), else the document type.
+  def fisconet_page_code(law, info = {})
+    info[:base_code].presence || info[:document_type].presence || law.try(:document_type)
+  end
+
   # nil when the row has no usable HTML or the source exceeds the parser's depth limit: the caller renders the text.
-  def fisconet_provision_body(article, valid_article_numbers, code_names: [], anchors: nil)
+  def fisconet_provision_body(article, valid_article_numbers, code_names: [], anchors: nil, code: nil)
     body = FisconetProvision.body_html(fisconet_reduce_inline_styles(article[:html].to_s.strip),
                                        number: article[:article_number], title: article[:article_title], code_names: code_names)
     return nil if body.blank?
 
-    body = linkify_tax_article_refs(body, valid_article_numbers, anchors: anchors, region: article[:region]) if fisconet_numbered_provision?(article)
+    if fisconet_numbered_provision?(article)
+      body = linkify_tax_article_refs(body, valid_article_numbers, anchors: anchors, region: article[:region], code: code)
+    end
     body.html_safe # sanitized by FisconetProvision with the view's own allowlists
   end
 

@@ -50,6 +50,12 @@ module LegalChatbot
     # 2026-11-17: "eur lex works for me"). Only these topics are queued; a named act or case still is. Keep this equal
     # to the helper's set: a test compares them.
     DISCOVERY_TOPICS = [].freeze
+    # A flight-disruption question names no act, and no topic is discovered, so once the live-cache entry of
+    # Regulation 261/2004 expired nothing brought it back (Sol 2026-11-20 14:07:06Z, #1137: none of the 17 served
+    # artifacts held it). When EuTopicIntent plans that topic, the same test the flight checks use, and the question
+    # names nothing, the legislation lane queues the Regulation itself, the bounded path a named act takes; the helper
+    # resolves a base act to its latest consolidation (scripts/eurlex/live_cache.py, latest_nonfuture).
+    TOPIC_ANCHORS = { flight_disruption: { 'legislation' => '32004R0261' } }.freeze
     PAYLOAD_KEYS = %w[operation language source_kinds depth celex ecli terms].freeze
 
     attr_reader :retrieval_degradation
@@ -161,6 +167,7 @@ module LegalChatbot
       ecli = q[/\bECLI:EU:[A-Z]{1,8}:\d{4}:\d{1,8}\b/i]&.upcase if judicial
       normalized = q.unicode_normalize(:nfd).gsub(/\p{Mn}/, '')
       plan = EuTopicIntent.plan(q) unless celex || ecli || identities.any?
+      celex = TOPIC_ANCHORS.dig(plan[:topic], source.to_s) if plan
       terms = if plan
                 plan[:discovery_terms]
               else

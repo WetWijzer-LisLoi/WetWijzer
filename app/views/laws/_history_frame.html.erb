@@ -1,0 +1,14 @@
+<%# Article-history pilot: one covered article's history and text in a frame of its own (the owner, via Sol 2026-11-20
+    17:10:56Z), so opening its picker, a step to another wording, a period, the way back and a comparison change this
+    article alone: the rest of the page, the law-level archive control and the other articles keep their state. A step
+    names this frame (data-turbo-frame) and its address is the law's own, which the frame advances in the browser, so
+    the step stays shareable and Back and Forward restore it; LawsController#render_history_frame answers it with this
+    frame alone. Every other link here, in the legal text too, still leaves the frame (target _top). Before a step is
+    followed it takes the other articles' current choices from the address (history_links_controller.js); the keys
+    are this article's in both languages (Art.42_WAALS_GEWEST, Art.42_REGION_WALLONNE).
+    Locals: history (HistoryPilotHelper::ArticleState), permalink, numac, live (optional). %>
+<% keys = %w[nl fr].map { |language| HistoryPilotHelper.history_key_for(history.key, language) }.uniq %>
+<%= turbo_frame_tag "history-#{permalink}", target: '_top',
+                    data: { turbo_action: 'advance', controller: 'history-links', history_keys: keys.join('|') } do %>
+  <%= render 'laws/history_article', history: history, permalink: permalink, numac: numac, live: local_assigns[:live] %>
+<% end %>

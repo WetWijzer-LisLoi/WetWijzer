@@ -8,6 +8,22 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.84] - 2026-11-20
+
+### Changed
+
+- Law pages, article history (Judicial Code Part I): the history control is now an icon before the article number, a clock with a counterclockwise arrow, named after its article ("Versies van artikel 20", "Versions de l'article 20"). The article reads as the law does ("Art. 20. Middelen van nietigheid..."), with its own amendment markers and source links. Copying the article or its citation gives that wording alone, whether the picker is closed or open: the picker, the chosen version's period and the date notes stand beside the text, outside what is copied. In a comparison, the changed words are shown and the chosen wording is what is copied. The icon has a visible keyboard focus and a 32-pixel target, opens the article's picker, and gets the focus back when the picker closes. On a phone it keeps its own room beside the text.
+- Law pages, article history (Judicial Code Part I): a step in one article's history, whether opening its picker, an older or newer wording, a period, the way back or a comparison, now changes that article alone, in place. The rest of the page, the law-wide archive by date and the other articles keep their state, and no other part of the law is loaded again. The address still records every choice, so a link restores the wording and Back and Forward step through the choices; choosing a wording in one article keeps the choices made in the others.
+
+### Fixed
+
+- Chatbot, flight delays and cancellations: a question about a delayed or cancelled flight that names no act now has Regulation 261/2004 fetched from EUR-Lex, as a question naming it already did. Since 14 October no question topic is fetched, so once the cached copy of the Regulation expired nothing brought it back. The one answer that triggers the fetch carries the existing note that EU sources are being fetched and checked in the background and that the question can be asked again later.
+- Chatbot, flight delays and air baggage: the Montreal Convention's limits are now given as ICAO revised them with effect from 28 December 2024: 6,303 special drawing rights per passenger for delay and 1,519 for baggage. The 4,150 and 1,000 in the Convention's published text are the original 1999 amounts.
+- Chatbot, police custody: a question on how long the police may hold someone ("Hoe lang mag de politie mij vasthouden?") now gets Article 31 of the Police Function Act beside the 48 hours of a judicial arrest: an administrative arrest lasts no longer than the circumstances require and in no case more than twelve hours, unless another national or binding international rule provides a different term.
+- Chatbot, estate declaration: a question on the deadline for the declaration of succession now gets both regional rules. In Flanders it is four months from a death in Belgium, five in another country of the European Economic Area and six outside it (Vlaamse Codex Fiscaliteit, art. 3.3.1.0.5). In Brussels and Wallonia it is four months, five elsewhere in Europe and six outside Europe (Wetboek der successierechten, art. 40).
+- Fisconet code pages: an article reference that names another tax code is no longer linked to this code's article of that number. On the WIB 92 pages, "artikel 4, KB/WIB 92" and "article 179, AR/CIR 92" stay text; on the KB/WIB 92 pages, "art. 202, WIB 1992" and "artikel 13, WIB 92" do. A reference naming the page's own code keeps its link. Measured on every numbered provision, the rows the pages link: 36 such links in Dutch and French on both codes and their 2027 editions, no link added and no visible text changed.
+- Chatbot, the right to erasure: when a controller has made the data public and must erase them, the answer now says that Article 17(2) GDPR has it inform the other controllers processing those data, not processors.
+
 ## [1.1.83] - 2026-11-20
 
 ### Fixed

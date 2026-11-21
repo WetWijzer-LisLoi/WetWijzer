@@ -376,8 +376,49 @@
       "user_input": "(Unresolved Model).new.fisconet_url",
       "confidence": "Weak",
       "note": "Dead branch: the guard `law.respond_to?(:fisconet?) && law.fisconet?` is false for every object rendered by this partial (Legislation has no fisconet column, and FisconetResult intentionally does not define fisconet? - see the design comment at fisconet_search_service.rb:26), and fisconet_url is not defined on any class in the codebase, so this href can never render. Revisit this ignore if fisconet_url is ever actually implemented; at that point the URL should come from the corpus source_url with a scheme allowlist. [FBL-022 triage, verified against code 2026-08-17. Owner: Fable hardening branch. Review: 2027-02.]"
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 2,
+      "fingerprint": "cbd98ddd8093aa29272209127d84b5cf9dbb37b464616b43f39da7745549d604",
+      "check_name": "CrossSiteScripting",
+      "message": "Unescaped parameter value",
+      "file": "app/views/laws/_fisconet_show.html.erb",
+      "line": 548,
+      "link": "https://brakemanscanner.org/docs/warning_types/cross_site_scripting",
+      "code": "linkify_tax_article_refs(\"</p><p>#{\"<br><small class=\\\"text-gray-500 dark:text-gray-400\\\">#{ERB::Util.html_escape(line.strip.sub(/\\A-+\\s*/, \"\"))}</small>\"}<br><hr class=\\\"my-2 border-gray-300 dark:border-gray-600\\\">#{(\"<br><hr class=\\\"my-2 border-gray-300 dark:border-gray-600\\\"><em class=\\\"text-gray-500 dark:text-gray-400 text-xs\\\">\" + ERB::Util.html_escape(line.strip.sub(/\\A-+\\s*/, \"\")))}#{(\"</p><p>\" + ERB::Util.html_escape(line.strip))}#{(\"<br>\" + ERB::Util.html_escape(line.strip))}\".sub(/\\A<br>/, \"\").gsub(/(?:<\\/p><p>)+/, \"</p><p>\").sub(/\\A<\\/p><p>/, \"\"), (Set.new << article[:article_number].to_s), :anchors => fisconet_article_anchors(@fisconet_articles.select do\n FisconetSearchService.printable_on_page?(article)\n end), :region => article[:region], :code => fisconet_page_code(served_legislation.find_by!(:numac => params[:numac], :language_id => params[:language_id]), (@fisconet_info or {})))",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "LawsController",
+          "method": "show",
+          "line": 255,
+          "file": "app/controllers/laws_controller.rb",
+          "rendered": {
+            "name": "laws/show",
+            "file": "app/views/laws/show.html.erb"
+          }
+        },
+        {
+          "type": "template",
+          "name": "laws/show",
+          "line": 36,
+          "file": "app/views/laws/show.html.erb",
+          "rendered": {
+            "name": "laws/_fisconet_show",
+            "file": "app/views/laws/_fisconet_show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "laws/_fisconet_show"
+      },
+      "user_input": "params[:numac]",
+      "confidence": "Weak",
+      "note": "The parameter never reaches the output. params[:numac] only selects the legislation row (served_legislation.find_by! raises otherwise); fisconet_page_code(@law, @fisconet_info) returns that row's stored base code or document type ('WIB 92', 'KB/WIB 92', 'BTW'), and TaxCrossLinking#linkify_tax_article_refs only compares it with the code a reference names (tax_other_act_reference: named_code != code) to keep another code's article as text. The output is the sanitized row HTML plus in-page anchors built from the page's own article numbers, as before the code: argument. [1.1.84, #663 follow-up, verified against code 2026-11-21. Review: 2027-02.]"
     }
   ],
-  "updated": "2026-09-27",
+  "updated": "2026-11-21",
   "brakeman_version": "8.0.5"
 }

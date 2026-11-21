@@ -670,6 +670,42 @@ module LegalChatbot
     # Contesting a traffic fine (Sol 2026-11-20 10:14:49Z, #2231): a deterministic key.
     TRAFFIC_FINE_TOPIC_KEY = 'verkeersboete_betwisten'
 
+    # The Montreal Convention's limits (Sol 2026-11-20 16:20:33Z, #1137: "Wat zijn mijn rechten bij een
+    # vliegtuigvertraging?" gave 4,150 SDR as the current limit for delay). The published text (2003A15226, art. 21 and
+    # 22) keeps the 1999 amounts; art. 24 has the depositary (ICAO) review them every five years. ICAO's notice "2024
+    # Revised Limits of Liability Under the Montreal Convention 1999" (read in full on 2026-11-20) gives the limits in
+    # force as of 28 December 2024. NEXT REVIEW (art. 24, 1, five years after 2024): read ICAO's new notice, update the
+    # amounts and MONTREAL_LIMITS_CHECKED_ON.
+    MONTREAL_LIMITS_TOPIC_KEY = 'montreal_aansprakelijkheid'
+    MONTREAL_LIMITS_SOURCE_URL = 'https://www.icao.int/sites/default/files/secretariat/legal/LEB%20Treaty%20Collection%20' \
+                                 'Documents/2024_Revised_Limits_of_Liability_Under_the_Montreal_Convention_of_1999_en.pdf'
+    MONTREAL_LIMITS_CHECKED_ON = Date.new(2026, 11, 20)
+    # A flight together with a delay, a flight together with baggage, or the Convention by name. Not a train, a hotel
+    # theft ("vol de bagages" names no flight) or a refugee ("vluchteling"). Also matched on the downcased question.
+    MONTREAL_FLIGHT_WORD = /(?<![[:alnum:]])(?:vlucht(?:en|vertraging\p{L}*|annul\p{L}*)?|vliegtuig\p{L}*|luchtvaart\p{L}*|flights?|airlines?|planes?|avions?|compagnies?\s+a[ée]riennes?|fl[üu]g\p{L}*)(?![[:alnum:]])/iu
+    MONTREAL_PATTERN = Regexp.union(
+      /(?<![[:alnum:]])(?:verdrag\s+van\s+montr[ée]al|montr[ée]al[-\s]?verdrag|convention\s+de\s+montr[ée]al|montreal(?:er)?\s+(?:convention|[üu]bereinkommen))(?![[:alnum:]])/iu,
+      /\A(?=.*(?:#{MONTREAL_FLIGHT_WORD.source}|(?<![[:alnum:]])vols?(?![[:alnum:]])))(?=.*(?:vertraging|vertraagd|te\s+laat|(?<![[:alnum:]])late(?![[:alnum:]])|delay|retard|versp[äa]t)).*\z/imu,
+      /\A(?=.*#{MONTREAL_FLIGHT_WORD.source})(?=.*(?:bagage|baggage|luggage|valises?|gep[äa]ck)).*\z/imu
+    )
+
+    def self.montreal_limits_note(checked_on: MONTREAL_LIMITS_CHECKED_ON)
+      <<~NOTE.strip
+        OPGELET: de bedragen in de gepubliceerde tekst van het Verdrag van Montreal zijn de oorspronkelijke bedragen van 1999
+        (art. 21: 100.000; art. 22, 1: 4.150; art. 22, 2: 1.000; art. 22, 3: 17 per kilogram, in bijzondere trekkingsrechten,
+        BTR). De depositaris (ICAO) herziet ze volgens art. 24. Sinds 28 december 2024 gelden:
+        - vertraging bij het vervoer van passagiers (art. 22, 1): 6.303 BTR per passagier;
+        - bagage, bij vernieling, verlies, beschadiging of vertraging (art. 22, 2): 1.519 BTR per passagier;
+        - goederen (art. 22, 3): 26 BTR per kilogram;
+        - dood of letsel (art. 21): 151.880 BTR per passagier, het bedrag tot waar de vervoerder zijn aansprakelijkheid
+          niet kan beperken of uitsluiten.
+        TOEPASSING: noem bij een aansprakelijkheidsgrens het bedrag dat sinds 28 december 2024 geldt
+        (gecontroleerd op #{leefloon_date(checked_on)}) en noem de bedragen van 1999 nooit als de huidige grenzen.
+        Noem nooit een bedrag dat hier niet staat.
+        Bron: ICAO, 2024 Revised Limits of Liability Under the Montreal Convention 1999, #{MONTREAL_LIMITS_SOURCE_URL}
+      NOTE
+    end
+
     def self.deterministic_topic_keys(question)
       text = question.to_s
       keys = []
@@ -685,6 +721,7 @@ module LegalChatbot
                                    text.match?(LegislationSearch::WITNESS_DUTY_PATTERN)
       keys << MAF_TOPIC_KEY if text.match?(MAF_PATTERN)
       keys << TRAFFIC_FINE_TOPIC_KEY if text.match?(LegislationSearch::TRAFFIC_FINE_CONTEST_PATTERN)
+      keys << MONTREAL_LIMITS_TOPIC_KEY if text.match?(MONTREAL_PATTERN)
       keys
     end
 
@@ -976,6 +1013,14 @@ module LegalChatbot
         numac: '1968031601',
         article_patterns: ['Art. 65/1'],
         label: 'Bevel tot betalen - Art. 65/1 Wegverkeerswet'
+      },
+      # The Montreal Convention (#1137): art. 19 (delay) and 22 (the limits of its published text); the limits in
+      # force since 28 December 2024 are in montreal_limits_note, before the articles.
+      MONTREAL_LIMITS_TOPIC_KEY => {
+        numac: '2003A15226',
+        article_patterns: ['Art. 19', 'Art. 22'],
+        label: 'Verdrag van Montreal - Art. 19 en 22',
+        indexation_note: montreal_limits_note
       },
       'registratierechten' => {
         numac: '2013036154',

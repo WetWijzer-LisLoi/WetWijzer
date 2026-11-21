@@ -128,6 +128,7 @@ app/javascript/controllers/global_search_controller.js
 app/javascript/controllers/hemicycle_controller.js
 app/javascript/controllers/hemicycle_hover_controller.js
 app/javascript/controllers/hero_chatbot_controller.js
+app/javascript/controllers/history_links_controller.js
 app/javascript/controllers/img_fallback_controller.js
 app/javascript/controllers/index.js
 app/javascript/controllers/js_only_controller.js
@@ -206,6 +207,7 @@ app/javascript/utils/article_copy.js
 app/javascript/utils/article_fragment.js
 app/javascript/utils/focus_trap.js
 app/javascript/utils/frame_missing_fallback.js
+app/javascript/utils/history_links.js
 app/javascript/utils/locale.js
 app/javascript/utils/reveal_target.js
 app/javascript/utils/settle_scroll.js
@@ -528,6 +530,7 @@ app/views/laws/_german_text_notice.html.erb
 app/views/laws/_history_archive_control.html.erb
 app/views/laws/_history_article.html.erb
 app/views/laws/_history_diff.html.erb
+app/views/laws/_history_frame.html.erb
 app/views/laws/_history_link.html.erb
 app/views/laws/_history_notes.html.erb
 app/views/laws/_history_picker.html.erb
@@ -891,6 +894,7 @@ public/vite/assets/application-BQEpLP25.js
 public/vite/assets/application-BRiTEtoR.css
 public/vite/assets/application-BRpe1pe1.css
 public/vite/assets/application-BTE2I1Gk.js
+public/vite/assets/application-B_63vS2-.css
 public/vite/assets/application-BaAHO30A.js
 public/vite/assets/application-BbF8z8QX.css
 public/vite/assets/application-BfJ3aVeg.js
@@ -964,6 +968,7 @@ public/vite/assets/application-DZwDCCOo.js
 public/vite/assets/application-Dc1GM41R.js
 public/vite/assets/application-DdQwCuwY.js
 public/vite/assets/application-DgBGIIBh.css
+public/vite/assets/application-DgsDupa0.js
 public/vite/assets/application-DjXJUpuh.css
 public/vite/assets/application-DlSYa1EL.js
 public/vite/assets/application-Do5GkheR.css

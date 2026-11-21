@@ -108,6 +108,11 @@
     <meta name="ww-chatbot-questions-url" content="<%= StarterQuestionCatalog.versioned_url %>">
 
     <%= turbo_refreshes_with method: :morph, scroll: :preserve  %>
+    <%# Article history (laws/_history_frame): a step changes one article's frame and advances the address. Turbo's
+        snapshot of such a page could come back on Back or Forward under another step's address (CI-1.1.84b on
+        2026-11-21: Back after the way back showed no older wording), so these pages are never cached: Back and Forward
+        fetch the address, which records every choice. %>
+    <% if @history_pilot %><meta name="turbo-cache-control" content="no-cache"><% end %>
     <%= favicon_link_tag "#{t(:favicon)}?v=20251112" %>
 
     <%# PWA: installable to the home screen, launches full-screen (no browser chrome) %>

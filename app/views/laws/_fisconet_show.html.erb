@@ -26,6 +26,8 @@
   # (found 2026-11-03).
   has_toc = fisconet_toc_sections.size > 1
   fisconet_code_names = fisconet_code_names(@law, info || {})
+  # A reference naming another tax code ("artikel 4, KB/WIB 92" on the WIB 92 page) is not linked here.
+  fisconet_page_code = fisconet_page_code(@law, info || {})
 %>
 <!-- Page Header (matches Justel show.html.erb) -->
 <div class="mb-6" data-controller="articles-loading" data-articles-loading-frame-value="law_articles">
@@ -486,7 +488,8 @@
                         # limit) degrades this one article to the plain-text path, never 500s
                         # the page.
                         provision_label = fisconet_provision_label(article)
-                        provision_body = fisconet_provision_body(article, fisconet_valid_art_nums, code_names: fisconet_code_names, anchors: fisconet_anchors)
+                        provision_body = fisconet_provision_body(article, fisconet_valid_art_nums, code_names: fisconet_code_names, anchors: fisconet_anchors,
+                                                                 code: fisconet_page_code)
                       %>
                       <% if provision_body %>
                         <p class="article-heading"><span class="article-number not-prose font-bold text-gray-900 dark:text-white"><%= provision_label %></span></p>
@@ -542,7 +545,7 @@
                           # the inline marker
                           article_html = rendered_parts.join.sub(/\A<br>/, '').gsub(%r{(?:</p><p>)+}, '</p><p>').sub(%r{\A</p><p>}, '')
                         %>
-                        <div class="fisconet-provision"><p><span class="article-number not-prose font-bold text-gray-900 dark:text-white"><%= provision_label %></span> <%= (fisconet_numbered_provision?(article) ? linkify_tax_article_refs(article_html, fisconet_valid_art_nums, anchors: fisconet_anchors, region: article[:region]) : article_html).html_safe %></p></div>
+                        <div class="fisconet-provision"><p><span class="article-number not-prose font-bold text-gray-900 dark:text-white"><%= provision_label %></span> <%= (fisconet_numbered_provision?(article) ? linkify_tax_article_refs(article_html, fisconet_valid_art_nums, anchors: fisconet_anchors, region: article[:region], code: fisconet_page_code) : article_html).html_safe %></p></div>
                       <% else %>
                         <p><span class="article-number not-prose font-bold text-gray-900 dark:text-white"><%= provision_label %></span> <span class="text-gray-400">…</span></p>
                       <% end %>

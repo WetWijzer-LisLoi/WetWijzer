@@ -13,7 +13,7 @@ module HistoryPilotHelper
       undetermined: 'Inwerkingtreding niet bepaald: Justel vermeldt de wijziging, maar niet wanneer ze in werking treedt.',
       caveat_composed: 'Samengestelde weergave: geen bewaarde versie van Justel is op deze datum de volledige wet. Volgorde en opschriften komen uit %{page}.',
       caveat_unresolved: 'Onopgeloste data voor:', return_current: 'Huidige wet',
-      archive: 'Archief op datum', versions: 'Versies', older: 'Ouder', newer: 'Nieuwer',
+      archive: 'Archief op datum', versions: 'Versies', versions_of: 'Versies van artikel %{article}', older: 'Ouder', newer: 'Nieuwer',
       back_to_law: 'Terug naar de versie van de wet', back_to_current: 'Terug naar de huidige wet',
       compare: 'Vergelijk met de vorige versie', hide_compare: 'Vergelijking verbergen',
       from: 'van', until: 'tot en met', open: 'nog van kracht', start_unknown: 'begin niet vermeld',
@@ -41,7 +41,7 @@ module HistoryPilotHelper
       undetermined: "Entrée en vigueur non fixée : Justel mentionne la modification, mais pas sa date d'entrée en vigueur.",
       caveat_composed: "Vue composée : aucune version conservée de Justel n'est la loi complète à cette date. L'ordre et les intitulés viennent de %{page}.",
       caveat_unresolved: 'Dates non résolues pour :', return_current: 'Loi actuelle',
-      archive: 'Archives par date', versions: 'Versions', older: 'Plus ancienne', newer: 'Plus récente',
+      archive: 'Archives par date', versions: 'Versions', versions_of: "Versions de l'article %{article}", older: 'Plus ancienne', newer: 'Plus récente',
       back_to_law: 'Revenir à la version de la loi', back_to_current: 'Revenir à la loi actuelle',
       compare: 'Comparer avec la version précédente', hide_compare: 'Masquer la comparaison',
       from: 'du', until: 'au', open: 'toujours en vigueur', start_unknown: 'début non mentionné',
@@ -69,7 +69,7 @@ module HistoryPilotHelper
       undetermined: 'Commencement not fixed: Justel names the change but not when it takes effect.',
       caveat_composed: 'Composed view: no saved Justel version is the complete law on this date. Order and headings come from %{page}.',
       caveat_unresolved: 'Unresolved dates for:', return_current: 'Current law',
-      archive: 'Archive by date', versions: 'Versions', older: 'Older', newer: 'Newer',
+      archive: 'Archive by date', versions: 'Versions', versions_of: 'Versions of article %{article}', older: 'Older', newer: 'Newer',
       back_to_law: 'Return to the law version', back_to_current: 'Return to current law',
       compare: 'Compare with the previous version', hide_compare: 'Hide the comparison',
       from: 'from', until: 'to', open: 'still in force', start_unknown: 'start not stated',
@@ -91,10 +91,27 @@ module HistoryPilotHelper
     }
   }.freeze
 
+  # The regions of the pilot's variant keys, by the names their own language gives them.
+  HISTORY_REGION_NAMES = {
+    'WAALS_GEWEST' => 'Waals Gewest', 'VLAAMS_GEWEST' => 'Vlaams Gewest',
+    'BRUSSELS_HOOFDSTEDELIJK_GEWEST' => 'Brussels Hoofdstedelijk Gewest', 'REGION_WALLONNE' => 'Région wallonne',
+    'REGION_FLAMANDE' => 'Région flamande', 'REGION_DE_BRUXELLES-CAPITALE' => 'Région de Bruxelles-Capitale',
+    'REGION_BRUXELLES-CAPITALE' => 'Région de Bruxelles-Capitale'
+  }.freeze
+
   # The interface language: Dutch and French as on those sites, English for the English and German interfaces.
   def history_label(key)
     labels = HISTORY_LABELS.fetch(I18n.locale.to_sym) { HISTORY_LABELS[:en] }
     labels.fetch(key)
+  end
+
+  # The history control's name and tooltip (the owner, via Sol 2026-11-20 16:42:25Z): "Versies van artikel 20",
+  # "Versions de l'article 3 (Région wallonne)".
+  def history_control_label(key)
+    article, variant = ArticleHistoryPilot.split_variant(key)
+    number = article.to_s.sub(/\AArt\.?[[:space:]]*/i, '')
+    region = HISTORY_REGION_NAMES[variant]
+    format(history_label(:versions_of), article: region ? "#{number} (#{region})" : number)
   end
 
   def history_day(iso)
@@ -224,11 +241,11 @@ module HistoryPilotHelper
 
   def history_open?(key) = history_focus?(key) && @history_focus[1] != 'close'
 
-  # The article's printed text with the quiet Versions link put right after its number (span.article-number).
-  def history_with_link(article_html, link_html)
-    html = article_html.to_s
-    placed = html.sub(%r{(<span class="article-number[^"]*"[^>]*>.*?</span>)}m) { "#{Regexp.last_match(1)} #{link_html}" }
-    (placed == html ? "#{link_html}#{html}" : placed).html_safe
+  # What an article's frame shows, in the form the address asks for it (utils/history_links.js
+  # requestedHistoryState): the archive date, the chosen wording, a comparison, the picker open. After Back or Forward
+  # a frame showing something else than its address asks is visited again (history_links_controller.js).
+  def history_rendered_state(key)
+    [@history_as_of.to_s, @history_versions[key].to_s, @history_compare.include?(key) ? '1' : '', history_open?(key) ? '1' : ''].join('|')
   end
 
   # "01-06-2022 (gearchiveerde versie 024) of 30-04-2023 (gearchiveerde versie 027)": a disputed stretch's days, each
@@ -264,6 +281,25 @@ module HistoryPilotHelper
 
       [key, kind, body, history_article_state(key, page: structure, page_text_id: page_text_id)]
     end
+  end
+
+  # The one article a history frame request asks for (LawsController#render_history_frame), as the full view gives
+  # it: on an archive date its state from the date's structure page (as history_snapshot_rows), on the current law
+  # its live row ([history, live]); nil when the page holds no such article. One row is read, not the law's articles.
+  def history_frame_state(key)
+    numac = params[:numac].to_s
+    return history_frame_state_on_date(numac, key) if @history_as_of.present?
+
+    row = Article.where(content_numac: numac, language_id: @language_id).where('TRIM(article_title) = ?', key).first
+    history = row && history_article_state(key, live_body: row.article_text.to_s)
+    [history, [row.article_text, row.article_title, row.article_type]] if history
+  end
+
+  def history_frame_state_on_date(numac, key)
+    structure = @history_pilot.structure_on(numac, @history_language, @history_as_of)
+    entry = structure && history_snapshot_entries(structure).find { |entry_key, kind, _| entry_key == key && kind == 'article' }
+    history = entry && history_article_state(key, page: structure, page_text_id: entry[3])
+    [history, nil] if history && (!history.absent || history.chosen)
   end
 
   def history_order(key)

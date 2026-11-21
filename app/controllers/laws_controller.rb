@@ -236,6 +236,9 @@ class LawsController < ApplicationController
   # @note The view uses the 'laws/show' template
   # @raise [ActiveRecord::RecordNotFound] if the law is not found
   def show
+    # A step in one covered article's history answers with that article's frame alone (render_history_frame).
+    return render_history_frame if history_frame_request?
+
     @title = @law.present? ? helpers.print_multiline(@law.title, skip_paragraphs: true) : t(:details).capitalize
 
     # SEO: Set canonical URL explicitly to include language_id.
@@ -742,6 +745,27 @@ class LawsController < ApplicationController
   # articles as the base (laws/_articles).
   def history_snapshot_requested?
     @history_pilot.present? && @history_as_of.present?
+  end
+
+  # A step in one covered article's history, from that article's frame (laws/_history_frame; the owner, via Sol
+  # 2026-11-20 17:10:56Z): the frame id names the article's anchor and history_focus its key. Never on the classic
+  # host, whose pages are cached publicly for hours (set_classic_cache_headers): a fragment must not be cached there.
+  HISTORY_FRAME = /\Ahistory-([a-z0-9_-]{1,100})\z/
+
+  def history_frame_request?
+    @history_pilot.present? && @history_focus.present? && !classic_host? && request.format.html? &&
+      request.headers['Turbo-Frame'].to_s.match?(HISTORY_FRAME)
+  end
+
+  # That article's frame alone, never the law page or its article list, so the rest of the page, the law-level
+  # archive control and the other articles keep their state; the address the frame advances is the law's own.
+  def render_history_frame
+    response.headers['Cache-Control'] = 'no-store'
+    history, live = helpers.history_frame_state(@history_focus.first)
+    return head(:not_found) unless history
+
+    render partial: 'laws/history_frame', locals: { history: history, live: live, numac: params[:numac].to_s,
+                                                    permalink: request.headers['Turbo-Frame'][HISTORY_FRAME, 1] }
   end
 
   # Sol 2026-11-20 10:21:43Z: /laws/1967101052?language_id=1&as_of=2014-02-02#art-19 showed the current wording,
