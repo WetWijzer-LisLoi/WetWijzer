@@ -1,10 +1,13 @@
 <%# Article-history pilot: one covered article, in reading order (the owner, via Sol 2026-11-20 16:42:25Z). Its picker
     when the reader opened it, the notes the archive date needs (none on the live page) and the chosen wording's
-    period stand outside the legal text; then the history control and the legal text side by side. The legal text,
-    #article-text-<permalink> (what the copy actions read), is print_article's output untouched: the live row on the
-    current-law page (live: [text, title, type]), else the wording the archive gives or the reader chose. With a
-    comparison, the words changed against the wording before are shown in its place and the chosen wording stays the
-    copied text; at the oldest wording there is none, so the text stays visible with a short note.
+    period stand outside the legal text; then the legal text, at the full width of the article (the owner's design of
+    2026-11-21, via Sol 07:00:09Z: no icon and no column of its own; the number opens the article's menu, and its
+    History item follows the hidden step link). The legal text, #article-text-<permalink> (what the copy actions read),
+    is print_article's output untouched: the live row on the current-law page (live: [text, title, type]), else the
+    wording the archive gives or the reader chose. With a comparison, the words changed against the wording before
+    are shown in its place, led by the article's number so its menu stays at hand, and the chosen wording stays the
+    copied text; at the oldest wording there is none, so the text stays visible with a short note. Right after Close,
+    data-history-return-focus asks for the focus back on the number (history_links_controller.js).
     Locals: history (HistoryPilotHelper::ArticleState), permalink, numac, live (optional). %>
 <% key = history.key %>
 <% live = local_assigns[:live] %>
@@ -22,14 +25,12 @@
 <% if comparing && !history.compare_base %>
   <p class="not-prose mb-1 text-xs text-gray-600 dark:text-gray-300" data-history-no-previous><%= history_label(:no_previous) %></p>
 <% end %>
-<div class="flex items-start gap-1" data-history-row="<%= key %>" data-history-state="<%= history_rendered_state(key) %>">
+<div data-history-row="<%= key %>" data-history-state="<%= history_rendered_state(key) %>" <%= tag.attributes(data: { history_return_focus: ('' if history_focus?(key, 'close')) }) %>>
   <%= render 'laws/history_link', history: history, permalink: permalink %>
-  <div class="flex-1 min-w-0">
-    <% if comparing && history.compare_base %>
-      <%= render 'laws/history_diff', old_body: history.compare_base.body, new_body: history.shown_body %>
-      <div id="article-text-<%= permalink %>" hidden data-history-copy-text><%= printed %></div>
-    <% elsif printed %>
-      <div id="article-text-<%= permalink %>"><%= printed %></div>
-    <% end %>
-  </div>
+  <% if comparing && history.compare_base %>
+    <%= render 'laws/history_diff', old_body: history.compare_base.body, new_body: history.shown_body %>
+    <div id="article-text-<%= permalink %>" hidden data-history-copy-text><%= printed %></div>
+  <% elsif printed %>
+    <div id="article-text-<%= permalink %>"><%= printed %></div>
+  <% end %>
 </div>

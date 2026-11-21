@@ -13,7 +13,7 @@ module HistoryPilotHelper
       undetermined: 'Inwerkingtreding niet bepaald: Justel vermeldt de wijziging, maar niet wanneer ze in werking treedt.',
       caveat_composed: 'Samengestelde weergave: geen bewaarde versie van Justel is op deze datum de volledige wet. Volgorde en opschriften komen uit %{page}.',
       caveat_unresolved: 'Onopgeloste data voor:', return_current: 'Huidige wet',
-      archive: 'Archief op datum', versions: 'Versies', versions_of: 'Versies van artikel %{article}', older: 'Ouder', newer: 'Nieuwer',
+      archive: 'Archief op datum', history: 'Geschiedenis', history_of: 'Geschiedenis van artikel %{article}', older: 'Ouder', newer: 'Nieuwer',
       back_to_law: 'Terug naar de versie van de wet', back_to_current: 'Terug naar de huidige wet',
       compare: 'Vergelijk met de vorige versie', hide_compare: 'Vergelijking verbergen',
       from: 'van', until: 'tot en met', open: 'nog van kracht', start_unknown: 'begin niet vermeld',
@@ -41,7 +41,7 @@ module HistoryPilotHelper
       undetermined: "Entrée en vigueur non fixée : Justel mentionne la modification, mais pas sa date d'entrée en vigueur.",
       caveat_composed: "Vue composée : aucune version conservée de Justel n'est la loi complète à cette date. L'ordre et les intitulés viennent de %{page}.",
       caveat_unresolved: 'Dates non résolues pour :', return_current: 'Loi actuelle',
-      archive: 'Archives par date', versions: 'Versions', versions_of: "Versions de l'article %{article}", older: 'Plus ancienne', newer: 'Plus récente',
+      archive: 'Archives par date', history: 'Historique', history_of: "Historique de l'article %{article}", older: 'Plus ancienne', newer: 'Plus récente',
       back_to_law: 'Revenir à la version de la loi', back_to_current: 'Revenir à la loi actuelle',
       compare: 'Comparer avec la version précédente', hide_compare: 'Masquer la comparaison',
       from: 'du', until: 'au', open: 'toujours en vigueur', start_unknown: 'début non mentionné',
@@ -69,7 +69,7 @@ module HistoryPilotHelper
       undetermined: 'Commencement not fixed: Justel names the change but not when it takes effect.',
       caveat_composed: 'Composed view: no saved Justel version is the complete law on this date. Order and headings come from %{page}.',
       caveat_unresolved: 'Unresolved dates for:', return_current: 'Current law',
-      archive: 'Archive by date', versions: 'Versions', versions_of: 'Versions of article %{article}', older: 'Older', newer: 'Newer',
+      archive: 'Archive by date', history: 'History', history_of: 'History of Article %{article}', older: 'Older', newer: 'Newer',
       back_to_law: 'Return to the law version', back_to_current: 'Return to current law',
       compare: 'Compare with the previous version', hide_compare: 'Hide the comparison',
       from: 'from', until: 'to', open: 'still in force', start_unknown: 'start not stated',
@@ -105,13 +105,13 @@ module HistoryPilotHelper
     labels.fetch(key)
   end
 
-  # The history control's name and tooltip (the owner, via Sol 2026-11-20 16:42:25Z): "Versies van artikel 20",
-  # "Versions de l'article 3 (Région wallonne)".
+  # The history control's name and tooltip (the owner, via Sol 2026-11-20 16:42:25Z; History since the owner's wording,
+  # via Sol 2026-11-21 06:57:27Z): "Geschiedenis van artikel 20", "Historique de l'article 3 (Région wallonne)".
   def history_control_label(key)
     article, variant = ArticleHistoryPilot.split_variant(key)
     number = article.to_s.sub(/\AArt\.?[[:space:]]*/i, '')
     region = HISTORY_REGION_NAMES[variant]
-    format(history_label(:versions_of), article: region ? "#{number} (#{region})" : number)
+    format(history_label(:history_of), article: region ? "#{number} (#{region})" : number)
   end
 
   def history_day(iso)
@@ -176,10 +176,15 @@ module HistoryPilotHelper
   #   disputes   its disputed stretches; dispute: the one holding the archive date (not presented as in force);
   #   gap        an 'unknown' period holding the date; ambiguous: covering periods disagree and no page settles it;
   #   undetermined the shown wording's commencement is 'onbepaald'; off_date: a chosen wording does not apply on the
-  #              archive date; absent: no period covers the date.
+  #              archive date; absent: no period covers the date;
+  #   date_unresolved the archive date itself is unresolved for the key (a dispute, a gap, an ambiguous date, an
+  #              undetermined commencement), whatever wording the reader chose: the caveat above the archive states
+  #              the law's dates, and a reader's choice does not settle them (Sol 2026-11-21 06:56:33Z: the caveat
+  #              kept an article after an inline choice and dropped it on a fresh visit of the same address).
   # A choice that names no wording is ignored, so the date's own state, dispute included, still shows.
   ArticleState = Struct.new(:key, :versions, :selected, :chosen, :disputes, :dispute, :gap, :ambiguous, :absent,
-                            :undetermined, :off_date, :live_body, :shown_body, :compare_base, keyword_init: true) do
+                            :undetermined, :off_date, :live_body, :shown_body, :compare_base, :date_unresolved,
+                            keyword_init: true) do
     def live? = !live_body.nil? && !chosen
     def unresolved? = dispute.present? || gap.present? || ambiguous || undetermined
   end
@@ -204,6 +209,7 @@ module HistoryPilotHelper
     if state.selected
       state.chosen = true
       state.off_date = @history_as_of.present? && !state.selected.covers?(@history_as_of)
+      state.date_unresolved = history_date_unresolved?(numac, key, page, page_text_id) if @history_as_of.present?
     elsif @history_as_of.present?
       day = @history_pilot.day_state(numac, @history_language, key, @history_as_of,
                                      page: page, page_text_id: page_text_id)
@@ -222,7 +228,17 @@ module HistoryPilotHelper
       state.selected = versions.find(&:current?) || versions.last
     end
     state.undetermined = state.selected&.valid_from_basis == 'undetermined' && !state.chosen
+    state.date_unresolved = state.unresolved? unless state.chosen
     history_texts(state)
+  end
+
+  # The archive date's own state for the key, as history_article_state reads it when no wording is chosen.
+  def history_date_unresolved?(numac, key, page, page_text_id)
+    day = @history_pilot.day_state(numac, @history_language, key, @history_as_of, page: page, page_text_id: page_text_id)
+    return false if day.absent
+
+    found = day.found
+    day.ambiguous || found.status != 'text' || found.valid_from_basis == 'undetermined'
   end
 
   def history_texts(state)
@@ -240,6 +256,21 @@ module HistoryPilotHelper
   end
 
   def history_open?(key) = history_focus?(key) && @history_focus[1] != 'close'
+
+  # A comparison's leading article number ("Art. 20.", "Art. 42_REGION_WALLONNE."), when both wordings start with it,
+  # and the two wordings after it: laws/_history_diff shows the number once, as the button that opens the article's
+  # menu (Sol 2026-11-21 06:56:33Z: comparing hid it), and compares the words after it. Otherwise the wordings are
+  # compared whole and there is no number.
+  HISTORY_LEADING_NUMBER = /\A[[:space:]]*(Art(?:ikel|icle)?\.?[[:space:]]*[^[:space:]]+?\.)(?=[[:space:]]|\z)/i
+
+  def history_diff_parts(old_body, new_body)
+    old_text = old_body.to_s
+    new_text = new_body.to_s
+    number = old_text[HISTORY_LEADING_NUMBER, 1]
+    return [nil, old_text, new_text] unless number && new_text[HISTORY_LEADING_NUMBER, 1] == number
+
+    [number, old_text.sub(HISTORY_LEADING_NUMBER, '').lstrip, new_text.sub(HISTORY_LEADING_NUMBER, '').lstrip]
+  end
 
   # What an article's frame shows, in the form the address asks for it (utils/history_links.js
   # requestedHistoryState): the archive date, the chosen wording, a comparison, the picker open. After Back or Forward

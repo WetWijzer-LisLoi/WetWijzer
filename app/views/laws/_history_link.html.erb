@@ -1,18 +1,12 @@
-<%# Article-history pilot: the history control before the article number (the owner, via Sol 2026-11-20 16:42:25Z): a
-    clock with a counterclockwise arrow, a control of its own beside the start of the article's first line and outside
-    its legal text, so copying the article gives the wording alone. It opens this article's picker in place
-    (history_focus=<key>:open) or closes it (:close, the focus then back on this control); the address keeps every
-    other choice, so Back restores the previous state. Its name and tooltip name the article ("Versies van artikel 20").
+<%# Article-history pilot: the step that opens this article's picker in place (history_focus=<key>:open) or closes it
+    (:close). Since the owner's design of 2026-11-21 (via Sol 07:00:09Z) there is no control of its own beside the text:
+    the article number opens the article's menu, whose History item follows this link (article_copy_menu_controller.js),
+    so the link stays hidden and the menu is how a reader reaches it. The address keeps every other choice, so Back
+    restores the previous state. Its name and tooltip name the article ("Geschiedenis van artikel 20").
     Locals: history (HistoryPilotHelper::ArticleState), permalink. %>
 <% key = history.key %>
 <% open = history_open?(key) %>
 <% label = history_control_label(key) %>
-<%= link_to history_law_path(@law, anchor: permalink, focus: [key, open ? 'close' : 'open']),
-            data: { turbo_frame: "history-#{permalink}", history_link: key }, aria: { expanded: open, label: label }, title: label,
-            autofocus: history_focus?(key, 'close'),
-            class: 'not-prose print:hidden shrink-0 -mt-1 inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 ' \
-                   'hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 ' \
-                   'focus-visible:outline-(--accent-500) aria-expanded:text-(--accent-600) dark:text-gray-400 ' \
-                   'dark:hover:bg-gray-700 dark:hover:text-gray-100' do %>
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12a8 8 0 1 0 1.07-4"/><path d="M5.07 4v4h4"/><path d="M12 8v4l3 2"/></svg>
-<% end %>
+<%= link_to '', history_law_path(@law, anchor: permalink, focus: [key, open ? 'close' : 'open']),
+            hidden: true, data: { turbo_frame: "history-#{permalink}", history_link: key }, aria: { expanded: open, label: label },
+            title: label %>

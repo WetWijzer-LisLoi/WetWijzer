@@ -9,7 +9,8 @@
                 data: { turbo_frame: '_top', history_step: 'current' }, class: 'underline',
                 aria: { label: history_label(:back_to_current) } %>
   <% end %>
-  <details class="max-w-full">
+  <%# Tekst → History opens this (law-history-archive, history_archive_open_controller.js). %>
+  <details class="max-w-full" id="law-history-archive">
     <summary class="inline-flex cursor-pointer items-center rounded-lg border border-(--accent-500)/30 px-2 py-1 text-(--accent-700) dark:text-(--accent-400) focus-visible:outline-2 focus-visible:outline-(--accent-500)"><%= history_label(:archive) %></summary>
     <div class="mt-2 rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-3 max-w-full">
       <%= form_with url: law_path(@law), method: :get, local: true, data: { turbo_frame: '_top' }, class: 'flex flex-wrap items-end gap-2' do %>

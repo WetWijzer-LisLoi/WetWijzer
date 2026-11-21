@@ -14,9 +14,9 @@
 <% newer = index && index < versions.size - 1 %>
 <% comparing = @history_compare.include?(key) %>
 <% present = { 'older' => older, 'newer' => newer, 'law' => chosen.present?, 'item' => !index.nil?, 'compare' => true }[step] %>
-<section class="not-prose my-2 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-sm max-w-full" data-history-picker="<%= key %>" aria-label="<%= history_label(:versions) %> <%= key %>">
+<section class="not-prose my-2 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-sm max-w-full" data-history-picker="<%= key %>" aria-label="<%= history_label(:history) %> <%= key %>">
   <div class="flex flex-wrap items-center justify-between gap-2">
-    <h4 class="font-semibold" tabindex="-1" <%= 'autofocus' unless present %>><%= history_label(:versions) %></h4>
+    <h4 class="font-semibold" tabindex="-1" <%= 'autofocus' unless present %>><%= history_label(:history) %></h4>
     <%= link_to history_label(:close), history_law_path(@law, anchor: permalink, focus: [key, 'close']), data: { turbo_frame: "history-#{permalink}", history_step: 'close' }, class: 'underline' %>
   </div>
   <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1">
@@ -28,7 +28,7 @@
                   data: { turbo_frame: "history-#{permalink}", history_step: 'law' }, class: 'underline', autofocus: step == 'law') %>
     <% end %>
   </div>
-  <ol class="mt-2 space-y-1" aria-label="<%= history_label(:versions) %>">
+  <ol class="mt-2 space-y-1" aria-label="<%= history_label(:history) %>">
     <% versions.each do |version| %>
       <li>
         <% if version == selected %>

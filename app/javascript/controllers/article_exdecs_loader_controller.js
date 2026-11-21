@@ -362,11 +362,13 @@ export default class extends Controller {
       return;
     }
 
-    if (sectionsVisible) {
+    // In the law text's Display menu the switch is a plain menu row: its words change, its look does not.
+    const plainRow = Boolean(this.toggleButtonTarget.closest?.('[data-view-menu]'));
+    if (!plainRow && sectionsVisible) {
       // Now showing, so button should say "Hide"
       this.toggleButtonTarget.classList.remove('btn-toggle-inactive');
       this.toggleButtonTarget.classList.add('btn-toggle-active', 'btn-toggle-exdecs');
-    } else {
+    } else if (!plainRow) {
       // Now hiding, so button should say "Show"
       this.toggleButtonTarget.classList.remove('btn-toggle-active', 'btn-toggle-exdecs');
       this.toggleButtonTarget.classList.add('btn-toggle-inactive');

@@ -39,3 +39,24 @@ export function requestedHistoryState(href, keys = []) {
   const open = focus !== null && keys.includes(focus[1]) && focus[2] !== "close" ? "1" : ""
   return [DAY.test(day) ? day : "", VERSION.test(version) ? version : "", compare, open].join("|")
 }
+
+// The address once an article's step has landed: every article frame on the page in it as the frame shows it, so the
+// address, a reload and Back give what is on the screen, whatever order the frames' answers came back in (Sol
+// 2026-11-21 06:56:33Z: two quick steps in two articles left the address with the first article's old wording, since
+// the second step was sent before the first one had landed). frames: [{ keys, key, state }], the frame's keys in both
+// languages, its row's key (data-history-row) and what it shows (data-history-state: day|version|compare|open). The
+// date, the step (history_focus) and the choices for articles without a frame on the page stay as they are.
+export function settledHistoryUrl(currentHref, frames = []) {
+  const url = new URL(currentHref)
+  for (const { keys = [], key, state } of frames) {
+    if (!key) continue
+    const [, version = "", compare = ""] = String(state || "").split("|")
+    for (const name of new Set([...keys, key])) {
+      url.searchParams.delete(`art_version[${name}]`)
+      url.searchParams.delete(`art_compare[${name}]`)
+    }
+    if (VERSION.test(version)) url.searchParams.append(`art_version[${key}]`, version)
+    if (compare === "1") url.searchParams.append(`art_compare[${key}]`, "1")
+  }
+  return url.toString()
+}

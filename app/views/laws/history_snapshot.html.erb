@@ -6,7 +6,9 @@
     history_article_state). Articles no period covers on the date are left out; articles that apply but are not on
     that page are put in number order. Reading stays quiet: the date is in the banner above, and a short caveat
     appears here only when the view is composed or a date is unresolved (a dispute, a gap, an ambiguous date, an
-    undetermined commencement); each article carries one Versions link and only the notes it needs. %>
+    undetermined commencement); each article carries its menu (its number, as on the current law: the article's
+    scope, permalink and text, article_copy_menu_controller.js; Sol 2026-11-21 06:56:33Z found the number dead here)
+    and only the notes it needs. %>
 <% numac = params[:numac].to_s %>
 <% structure = @history_pilot.structure_on(numac, @history_language, @history_as_of) %>
 <% exact = structure&.covers?(@history_as_of) %>
@@ -30,7 +32,7 @@
       <% else %>
         <% page_name = structure.current? ? history_label(:current) : "#{history_label(:version)} #{structure.label}" %>
         <% rows = history_snapshot_rows(structure) %>
-        <% unresolved = rows.filter_map { |key, kind, _, history| key if kind == 'article' && history && !history.absent && history.unresolved? } %>
+        <% unresolved = rows.filter_map { |key, kind, _, history| key if kind == 'article' && history && !history.absent && history.date_unresolved } %>
         <% if !exact || unresolved.any? %>
           <div class="not-prose mb-4 rounded-lg border-l-4 border-amber-400 bg-amber-50 dark:bg-amber-900/30 px-3 py-2 text-sm" role="note" data-history-caveat>
             <% unless exact %><p data-history-composed><%= history_label(:caveat_composed) % { page: page_name } %></p><% end %>
@@ -58,13 +60,15 @@
               <%# No period in the pilot for this key: the structure page's own text, without history. %>
               <% next unless body %>
               <% plain_link = history_permalink(key, body) %>
-              <article id="<%= plain_link %>" class="scroll-mt-24 border-t border-gray-200 dark:border-gray-700 py-4" data-history-article="<%= key %>">
+              <article id="<%= plain_link %>" class="scroll-mt-24 border-t border-gray-200 dark:border-gray-700 py-4" data-history-article="<%= key %>"
+                       data-article-scope data-permalink="<%= plain_link %>" data-source="#article-text-<%= plain_link %>">
                 <div id="article-text-<%= plain_link %>"><%= print_article(body, key, 'ART', source_numac: numac) %></div>
               </article>
             <% elsif !history.absent || history.chosen %>
               <% permalink = history_permalink(key, history.shown_body || key) %>
               <% counterpart = history_permalink(HistoryPilotHelper.history_key_for(key, @history_language == 'nl' ? 'fr' : 'nl'), '') %>
-              <article id="<%= permalink %>" class="scroll-mt-24 border-t border-gray-200 dark:border-gray-700 py-4" data-history-article="<%= key %>">
+              <article id="<%= permalink %>" class="scroll-mt-24 border-t border-gray-200 dark:border-gray-700 py-4" data-history-article="<%= key %>"
+                       data-article-scope data-permalink="<%= permalink %>" data-source="#article-text-<%= permalink %>">
                 <% if counterpart != permalink %><span id="<%= counterpart %>" class="block h-0 overflow-hidden scroll-mt-24" aria-hidden="true"></span><% end %>
                 <%= render 'laws/history_frame', history: history, permalink: permalink, numac: numac %>
               </article>

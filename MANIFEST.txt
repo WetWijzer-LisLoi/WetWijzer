@@ -128,6 +128,7 @@ app/javascript/controllers/global_search_controller.js
 app/javascript/controllers/hemicycle_controller.js
 app/javascript/controllers/hemicycle_hover_controller.js
 app/javascript/controllers/hero_chatbot_controller.js
+app/javascript/controllers/history_archive_open_controller.js
 app/javascript/controllers/history_links_controller.js
 app/javascript/controllers/img_fallback_controller.js
 app/javascript/controllers/index.js
@@ -948,8 +949,10 @@ public/vite/assets/application-D39EdJKS.css
 public/vite/assets/application-D5IORe4o.css
 public/vite/assets/application-D5oEptVa.js
 public/vite/assets/application-D6iDaEmU.js
+public/vite/assets/application-D7TuB1pu.css
 public/vite/assets/application-D9JiV3Xz.css
 public/vite/assets/application-DAMLj1vG.js
+public/vite/assets/application-DCwWm_ii.js
 public/vite/assets/application-DEP0LCsQ.js
 public/vite/assets/application-DETPY4Kh.js
 public/vite/assets/application-DGOmgdBG.js

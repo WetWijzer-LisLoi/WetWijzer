@@ -8,6 +8,21 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.85] - 2026-11-21
+
+### Changed
+
+- Law pages, articles: the article number now opens the article's menu, by a click, a tap, Enter or Space, and nothing is copied until a copy item is chosen: the article's link, its text or its citation. Until now a click on the number copied the article's link at once, before the menu opened, on the Justel laws and on the Fisconet codes. Escape, Tab and a copy put the focus back on the number. The number shows that it is a control, with a dotted underline and a keyboard focus ring.
+- Law pages, article history (Judicial Code Part I): the history icon before the article number is gone, and the text has the article's full width again. For an article with history, the article's menu holds "Geschiedenis" ("Historique", "History"), which opens that article's history in place; closing it puts the focus back on the number. The history is now named "Geschiedenis van artikel 20" ("Historique de l'article 20"); single wordings and comparisons keep "versie".
+- Law pages, the Tekst toolbar: one row of four plain controls, Geschiedenis, Weergave, Kopieer and Exporteer. Geschiedenis, on a law with published history, opens the law's archive by date at the top of the page, with the focus in its date field. Weergave holds the switches for colours, highlighting and amendments, the implementing decrees and the three reading widths. The yellow "Uitvoeringsbesluiten niet geladen" banner is gone: the decrees load from Weergave, with the estimated time, and their loading, a failure and the retry show beside that action. On a phone the row wraps without horizontal scrolling.
+
+### Fixed
+
+- Law pages, article history: two articles changed quickly no longer lose a choice. When the step in the second article was sent before the first article's step had come back, the address kept the first article's old wording, so a reload or a shared link showed something else than the screen. The address is now rebuilt from what every article shows each time a step lands, whatever order the answers come back in. Every article's step links carry the other articles' choices, so copying or opening one gives what is on the screen.
+- Law pages, article history: in a comparison the article number is shown again, and with it the article's menu; on the archive by date the article number opens the same menu as on the current law. Both copy the wording shown or chosen.
+- Law pages, article history: the "Onopgeloste data voor" note on an archive date lists the same articles after a reader picks a wording in one of them as on a fresh visit of that address. The note states the law's dates on that day, which a reader's choice does not settle; a fresh visit used to drop the article whose wording the reader had picked.
+- Law pages, article history: Back and Forward keep the law's archive by date open when the reader had opened it.
+
 ## [1.1.84] - 2026-11-20
 
 ### Changed

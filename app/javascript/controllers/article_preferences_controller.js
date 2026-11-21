@@ -226,6 +226,14 @@ export default class extends Controller {
     }
   }
 
+  // A switch in the law text's Display menu is a plain menu row (the owner, via Sol 2026-11-21 07:01:30Z): its words
+  // say what it does, and the coloured on/off button look stays with switches outside that menu.
+  markToggle(button, on) {
+    if (button.closest?.('[data-view-menu]')) return
+    button.classList.remove(on ? 'btn-toggle-inactive' : 'btn-toggle-active')
+    button.classList.add(on ? 'btn-toggle-active' : 'btn-toggle-inactive')
+  }
+
   syncColorsButton() {
     const button = this.element.querySelector('[data-colors-toggle]')
     if (!button) return
@@ -233,8 +241,7 @@ export default class extends Controller {
     const showColors = this.showColorsValue
     
     if (showColors) {
-      button.classList.remove('btn-toggle-inactive')
-      button.classList.add('btn-toggle-active')
+      this.markToggle(button, true)
       button.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
           <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
@@ -243,8 +250,7 @@ export default class extends Controller {
         ${uiText('hideColors')}
       `
     } else {
-      button.classList.remove('btn-toggle-active')
-      button.classList.add('btn-toggle-inactive')
+      this.markToggle(button, false)
       button.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd"/>
@@ -263,8 +269,7 @@ export default class extends Controller {
     
     
     if (showHighlight) {
-      button.classList.remove('btn-toggle-inactive')
-      button.classList.add('btn-toggle-active')
+      this.markToggle(button, true)
       button.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
           <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/>
@@ -272,8 +277,7 @@ export default class extends Controller {
         ${uiText('hideHighlight')}
       `
     } else {
-      button.classList.remove('btn-toggle-active')
-      button.classList.add('btn-toggle-inactive')
+      this.markToggle(button, false)
       button.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
           <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
@@ -375,8 +379,7 @@ export default class extends Controller {
     const showReferences = this.showReferencesValue
     
     if (showReferences) {
-      button.classList.remove('btn-toggle-inactive')
-      button.classList.add('btn-toggle-active')
+      this.markToggle(button, true)
       button.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
@@ -384,8 +387,7 @@ export default class extends Controller {
         ${uiText('hideChanges')}
       `
     } else {
-      button.classList.remove('btn-toggle-active')
-      button.classList.add('btn-toggle-inactive')
+      this.markToggle(button, false)
       button.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>

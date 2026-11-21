@@ -470,7 +470,10 @@
               <article id="<%= article_anchor_id %>" data-article-scope class="group relative scroll-mt-24 -mx-2 px-2 sm:-mx-3 sm:px-3 <%= (index.zero? || prev_was_heading) ? '' : 'border-t border-gray-200 dark:border-(--accent-500)/40' %>">
                 <span id="section-<%= article_anchor_id %>" class="block h-0 overflow-hidden scroll-mt-24 mt-0!" aria-hidden="true"></span>
                 <% top_pad = prev_was_heading ? 'pt-2' : 'pt-4' %>
-                <div class="<%= top_pad %> pb-4 flex items-start">
+                <%# The row the article's menu reads, as on a Justel law: its number opens the menu and nothing is copied
+                    until a copy item is chosen (article_copy_menu_controller.js; until 1.1.84 a click on the number
+                    copied the link at once). %>
+                <div class="<%= top_pad %> pb-4 flex items-start" data-permalink="<%= article_anchor_id %>" data-source="#article-text-<%= article_anchor_id %>">
                   <div class="flex-1 min-w-0" id="article-text-<%= article_anchor_id %>">
                     <div class="max-w-none article-content overflow-x-auto [&_table]:w-full [&_table]:max-w-full [&_table]:table-auto [&_td]:wrap-break-word [&_th]:wrap-break-word [&_p:last-child]:mb-0" <%= tag.attributes(lang: legal_text_lang) %>>
                       <% if article[:end_date].present? %>

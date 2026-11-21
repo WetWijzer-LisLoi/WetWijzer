@@ -23,291 +23,301 @@
              data-article-exdecs-loader-hide-label-value="<%= t('articles.hide_exdecs') %>"
              data-article-exdecs-loader-incomplete-message-value="<%= t('articles.exdecs_incomplete') %>"
              data-article-exdecs-loader-invalid-message-value="<%= t('articles.exdecs_invalid') %>">
-        <%# View preference toggles %>
-        <div class="mt-4 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center sm:justify-between gap-2">
-          <%# Left side: view toggles %>
-          <div class="source-detail-toolbar source-detail-toolbar--article flex flex-wrap items-center gap-2">
-            <%# Toggle colored references %>
-            <% show_colors = defined?(@show_colors) ? @show_colors : true %>
-            <% show_exdecs = defined?(@show_exdecs) ? @show_exdecs : true %>
-            <% has_references = any_articles_have_references?(articles) %>
-            
-            <%# Loading spinner %>
-            <div data-article-preferences-target="spinner" class="hidden">
-              <svg class="animate-spin h-5 w-5 text-(--accent-600)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        <%# The text's actions in one row (the owner, via Sol 2026-11-21 07:01:30Z): History, where the law has published
+            history, opens the law's archive by date near the top of the page (laws/_history_archive_control) with the focus
+            in its date field; Display is a menu holding the three display switches, the implementing decrees on demand
+            (their loading, failure and retry beside the action, no bright banner) and the reading width; then Copy and
+            Export. The menus stay direct children of the toolbar: on a phone they anchor to it
+            (components/_source-detail-controls). The switches in the menu keep their words and drop the coloured
+            on/off look (article_preferences_controller.js, article_exdecs_loader_controller.js: [data-view-menu]). %>
+        <% show_colors = defined?(@show_colors) ? @show_colors : true %>
+        <% show_exdecs = defined?(@show_exdecs) ? @show_exdecs : true %>
+        <% has_references = any_articles_have_references?(articles) %>
+        <% exdec_count = defined?(@exdec_count) ? @exdec_count : (defined?(@exdecs) ? @exdecs.size : 0) %>
+        <% exdecs_on_demand = defined?(@article_exdecs_disabled) && @article_exdecs_disabled && exdec_count > 0 %>
+        <% menu_row = 'source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2' %>
+        <div class="mt-4 source-detail-toolbar source-detail-toolbar--article flex flex-wrap items-center gap-2">
+          <% if @history_pilot %>
+            <% law_name = @law.respond_to?(:display_title) ? @law.display_title.to_s.squish.truncate(120) : '' %>
+            <button type="button"
+                  class="source-detail-action btn-toggle-inactive"
+                  data-controller="history-archive-open"
+                  data-action="history-archive-open#open"
+                  data-law-history
+                  aria-controls="law-history-archive"
+                  aria-expanded="false"
+                  aria-label="<%= [history_label(:history), law_name.presence].compact.join(': ') %>">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12a8 8 0 1 0 1.07-4"/><path d="M5.07 4v4h4"/><path d="M12 8v4l3 2"/></svg>
+              <%= history_label(:history) %>
+            </button>
+          <% end %>
+
+          <%# Display: switches, decrees and width. On a phone the width has no choices (below 48rem), so a law with
+              neither switches nor decrees shows no Display menu there (law-view-width-only). %>
+          <div class="relative<%= ' law-view-width-only' unless has_references || exdecs_on_demand %>" data-controller="dropdown" data-dropdown-viewport-fit-value="true">
+            <button type="button"
+                  class="source-detail-action btn-toggle-inactive"
+                  data-action="click->dropdown#toggle"
+                  data-dropdown-target="button"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  title="<%= t('articles.view_options') %>">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
               </svg>
-            </div>
-            
-            <%# Toggle colored references (only show if articles have references) %>
-            <% if has_references %>
-              <button type="button"
-                    class="source-detail-action btn-toggle-active"
-                    data-action="click->article-preferences#toggleColors"
-                    data-colors-toggle
-                    title="<%= t('articles.hide_colors_tooltip') %>">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                  <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
-                </svg>
-                <%= t('articles.hide_colors') %>
-              </button>
-              
-              <%# Toggle reference highlighting (client-side, persisted via prefsStore) %>
-              <button type="button"
-                    class="source-detail-action btn-toggle-active"
-                    data-action="click->article-preferences#toggleHighlight"
-                    data-highlight-toggle
-                    title="<%= t('articles.hide_highlight_tooltip') %>">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M15.243 3.343a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-9 9a1 1 0 01-.39.242l-3.5 1.167a1 1 0 01-1.264-1.264l1.167-3.5a1 1 0 01.242-.39l9-9zM14 6.414L6.414 14l-.667 2 .253.253 2-.667L15.586 8 14 6.414zM16 5l1.586 1.586L19 5.172 17.414 3.586 16 5z"/>
-                  <path d="M3 19h6v2H3v-2z"/>
-                </svg>
-                <%= t('articles.hide_highlight') %>
-              </button>
-              
-              <%# Toggle references visibility (hides all reference markup) %>
-              <button type="button"
-                    class="source-detail-action btn-toggle-active"
-                    data-action="click->article-preferences#toggleReferences"
-                    data-references-toggle
-                    title="<%= t('articles.hide_references_tooltip') %>">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
-                </svg>
-                <%= t('articles.hide_references') %>
-              </button>
-            <% end %>
-            
-            <%# Warning box and toggle button for disabled exdecs (only when they're not loaded AND exdecs exist) %>
-            <% exdec_count = defined?(@exdec_count) ? @exdec_count : (defined?(@exdecs) ? @exdecs.size : 0) %>
-            <% if defined?(@article_exdecs_disabled) && @article_exdecs_disabled && exdec_count > 0 %>
-              <%# Hidden toggle button for AJAX-loaded exdecs (will be shown by JS after load) %>
-              <button type="button"
-                    class="hidden source-detail-action btn-toggle-active btn-toggle-exdecs"
-                    data-action="click->article-exdecs-loader#toggleExdecs"
-                    data-exdec-toggle
-                    data-article-exdecs-loader-target="toggleButton"
-                    title="<%= t('articles.hide_exdecs_tooltip') %>">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
-                </svg>
-                <span data-article-exdecs-loader-target="toggleButtonText"><%= t('articles.hide_exdecs') %></span>
-              </button>
-              
-              <%
-                estimated_seconds = LawOptimization.estimate_load_time(exdec_count)
-                estimated_time = LawOptimization.format_load_time(estimated_seconds)
-                load_time_text = "~#{estimated_time}"
-              %>
-              <%# flex, not inline-flex, on the three pills the loader hides: Tailwind 4
-                  sorts inline-flex after hidden, so a hidden pill stayed on screen (the
-                  spinner and an empty error box at rest, this warning after a load).
-                  They are flex items of the toolbar, so flex renders them the same. %>
-              <div class="flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-yellow-700 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700" 
-                   data-exdec-warning
-                   data-article-exdecs-loader-target="warning">
-                <svg class="w-4 h-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                </svg>
-                <span><%= t('articles.exdecs_disabled') %></span>
-                <span class="mx-2 text-yellow-400 dark:text-yellow-600">|</span>
-                <button type="button"
-                        class="source-detail-action underline hover:no-underline cursor-pointer"
-                        data-action="click->article-exdecs-loader#load"
-                        data-article-exdecs-loader-target="button">
-                  <%= t('articles.load_anyway') %> (<%= load_time_text %>)
+              <%= t('articles.view_menu') %>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 ml-0.5 opacity-60" viewBox="0 0 20 20" fill="currentColor" data-dropdown-target="arrow">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            <div data-dropdown-target="menu" data-view-menu
+                 class="hidden absolute right-0 top-full mt-1 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+              <% if has_references %>
+                <button type="button" class="<%= menu_row %>" data-action="click->article-preferences#toggleColors" data-colors-toggle
+                        title="<%= t('articles.hide_colors_tooltip') %>">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                  </svg>
+                  <%= t('articles.hide_colors') %>
                 </button>
-              </div>
-              
-              <%# Loading indicator %>
-              <div class="hidden flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-(--accent-700) bg-(--accent-100,#dbeafe) dark:bg-(--accent-900,#1e3a5f)/30 dark:text-(--accent-400) border border-(--accent-300) dark:border-(--accent-700)" 
-                   data-article-exdecs-loader-target="loadingIndicator">
-                <svg class="animate-spin h-4 w-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <%= t('articles.loading_exdecs', default: 'Artikelverwijzingen laden...') %>
-              </div>
-              
-              <%# Error message (hidden by default, shown by JS on error) %>
-              <div class="hidden flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-300 border border-red-300 dark:border-red-700"
-                   data-article-exdecs-loader-target="errorMessage">
-              </div>
-            <% end %>
+                <%# Reference highlighting (client-side, persisted via prefsStore) %>
+                <button type="button" class="<%= menu_row %>" data-action="click->article-preferences#toggleHighlight" data-highlight-toggle
+                        title="<%= t('articles.hide_highlight_tooltip') %>">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M15.243 3.343a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-9 9a1 1 0 01-.39.242l-3.5 1.167a1 1 0 01-1.264-1.264l1.167-3.5a1 1 0 01.242-.39l9-9zM14 6.414L6.414 14l-.667 2 .253.253 2-.667L15.586 8 14 6.414zM16 5l1.586 1.586L19 5.172 17.414 3.586 16 5z"/>
+                    <path d="M3 19h6v2H3v-2z"/>
+                  </svg>
+                  <%= t('articles.hide_highlight') %>
+                </button>
+                <%# The amendments (all reference markup) %>
+                <button type="button" class="<%= menu_row %>" data-action="click->article-preferences#toggleReferences" data-references-toggle
+                        title="<%= t('articles.hide_references_tooltip') %>">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                  </svg>
+                  <%= t('articles.hide_references') %>
+                </button>
+              <% end %>
+              <% if exdecs_on_demand %>
+                <% if has_references %><div class="border-t border-gray-100 dark:border-gray-700 my-1"></div><% end %>
+                <%# After a load, this switch shows or hides the decrees (hidden until then). %>
+                <button type="button" class="hidden <%= menu_row %>" data-action="click->article-exdecs-loader#toggleExdecs" data-exdec-toggle
+                        data-article-exdecs-loader-target="toggleButton" title="<%= t('articles.hide_exdecs_tooltip') %>">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                  </svg>
+                  <span data-article-exdecs-loader-target="toggleButtonText"><%= t('articles.hide_exdecs') %></span>
+                </button>
+                <%
+                  estimated_seconds = LawOptimization.estimate_load_time(exdec_count)
+                  estimated_time = LawOptimization.format_load_time(estimated_seconds)
+                  load_time_text = "~#{estimated_time}"
+                %>
+                <%# The decrees on demand: a plain row with the action and its estimate. flex, not inline-flex, on the
+                    rows the loader hides: Tailwind 4 sorts inline-flex after hidden. %>
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 text-sm text-gray-700 dark:text-gray-200"
+                     data-exdec-warning
+                     data-article-exdecs-loader-target="warning">
+                  <span><%= t(:exdecs_title).strip %></span>
+                  <button type="button"
+                          class="source-detail-action underline hover:no-underline cursor-pointer"
+                          data-action="click->article-exdecs-loader#load"
+                          data-article-exdecs-loader-target="button">
+                    <%= t('articles.load_anyway') %> (<%= load_time_text %>)
+                  </button>
+                </div>
+                <div class="hidden flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-300"
+                     data-article-exdecs-loader-target="loadingIndicator">
+                  <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <%= t('articles.loading_exdecs', default: 'Artikelverwijzingen laden...') %>
+                </div>
+                <div class="hidden flex items-center px-3 py-2 text-sm text-red-700 dark:text-red-300"
+                     data-article-exdecs-loader-target="errorMessage">
+                </div>
+              <% end %>
+              <%# The reading width, as on judgments and parliamentary documents (owner's requirement of 2026-11-07). %>
+              <% if has_references || exdecs_on_demand %><div class="border-t border-gray-100 dark:border-gray-700 my-1 law-view-width-rule"></div><% end %>
+              <div class="px-3 py-2 law-view-width"><%= render 'shared/reading_width_control' %></div>
+            </div>
           </div>
-          
-          <%# Right side: copy & export dropdowns %>
-          <div class="source-detail-toolbar source-detail-toolbar--article flex flex-wrap items-center gap-2">
-            <%# Copy dropdown %>
-            <div class="relative" data-controller="dropdown" data-dropdown-viewport-fit-value="true">
+
+          <%# Copy dropdown %>
+          <div class="relative" data-controller="dropdown" data-dropdown-viewport-fit-value="true">
+            <button type="button"
+                  class="source-detail-action btn-toggle-inactive"
+                  data-action="click->dropdown#toggle"
+                  data-dropdown-target="button"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  title="<%= t('articles.copy_options', default: 'Kopieeropties') %>">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"/>
+                <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2a1 1 0 110 2h-2v-2z"/>
+              </svg>
+              <%= t('articles.copy_all_short', default: case I18n.locale when :fr then 'Copier' when :de then 'Kopieren' when :en then 'Copy' else 'Kopieer' end) %>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 ml-0.5 opacity-60" viewBox="0 0 20 20" fill="currentColor" data-dropdown-target="arrow">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            <div data-dropdown-target="menu"
+                 class="hidden absolute right-0 top-full mt-1 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
               <button type="button"
-                    class="source-detail-action btn-toggle-inactive"
-                    data-action="click->dropdown#toggle"
-                    data-dropdown-target="button"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                    title="<%= t('articles.copy_options', default: 'Kopieeropties') %>">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                    class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    data-controller="clipboard"
+                    data-action="click->clipboard#copyAllArticles click->dropdown#close"
+                    data-clipboard-copied-label-value="<%= t('articles.all_copied') %>">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"/>
                   <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2a1 1 0 110 2h-2v-2z"/>
                 </svg>
-                <%= t('articles.copy_all_short', default: case I18n.locale when :fr then 'Copier' when :de then 'Kopieren' when :en then 'Copy' else 'Kopieer' end) %>
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 ml-0.5 opacity-60" viewBox="0 0 20 20" fill="currentColor" data-dropdown-target="arrow">
-                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
-                </svg>
+                <%= t('articles.copy_all') %>
               </button>
-              <div data-dropdown-target="menu"
-                   class="hidden absolute right-0 top-full mt-1 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
-                <button type="button"
-                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                      data-controller="clipboard"
-                      data-action="click->clipboard#copyAllArticles click->dropdown#close"
-                      data-clipboard-copied-label-value="<%= t('articles.all_copied') %>">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"/>
-                    <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2a1 1 0 110 2h-2v-2z"/>
-                  </svg>
-                  <%= t('articles.copy_all') %>
-                </button>
-                <button type="button"
-                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                      data-controller="clipboard"
-                      data-action="click->clipboard#copyAllArticlesCitation click->dropdown#close"
-                      data-clipboard-copied-label-value="<%= t('articles.all_citation_copied') %>">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
-                  </svg>
-                  <%= t('articles.copy_all_citation') %>
-                </button>
-              </div>
-            </div>
-
-            <%# Export dropdown %>
-            <div class="relative" data-controller="dropdown" data-dropdown-viewport-fit-value="true">
               <button type="button"
-                    class="source-detail-action btn-toggle-inactive"
-                    data-action="click->dropdown#toggle"
-                    data-dropdown-target="button"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                    title="<%= t('articles.export_options', default: 'Exporteeropties') %>">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    data-controller="clipboard"
+                    data-action="click->clipboard#copyAllArticlesCitation click->dropdown#close"
+                    data-clipboard-copied-label-value="<%= t('articles.all_citation_copied') %>">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
                 </svg>
-                <%= case I18n.locale when :fr then 'Exporter' when :de then 'Exportieren' when :en then 'Export' else 'Exporteer' end %>
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 ml-0.5 opacity-60" viewBox="0 0 20 20" fill="currentColor" data-dropdown-target="arrow">
-                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
-                </svg>
+                <%= t('articles.copy_all_citation') %>
               </button>
-              <div data-dropdown-target="menu"
-                   class="hidden absolute right-0 top-full mt-1 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
-                <%# Word exports %>
-                <div class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Word</div>
-                <button type="button"
-                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                      data-controller="export-feedback"
-                      data-action="click->export-feedback#download click->dropdown#close"
-                      data-export-feedback-url-value="<%= export_word_law_path(params[:numac], language_id: @language_id) %>"
-                      data-export-feedback-filename-value="<%= @legislation&.short_title&.parameterize || params[:numac] %>.doc">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor" data-export-feedback-target="icon">
-                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                  </svg>
-                  <svg class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-export-feedback-target="spinner">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span data-export-feedback-target="label"><%= t('articles.export_word') %></span>
-                </button>
-                <button type="button"
-                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                      data-controller="export-feedback"
-                      data-action="click->export-feedback#download click->dropdown#close"
-                      data-export-feedback-url-value="<%= export_word_law_path(params[:numac], language_id: @language_id, citation: true) %>"
-                      data-export-feedback-filename-value="<%= @legislation&.short_title&.parameterize || params[:numac] %>-citaat.doc">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor" data-export-feedback-target="icon">
-                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
-                  </svg>
-                  <svg class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-export-feedback-target="spinner">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span data-export-feedback-target="label"><%= t('articles.export_word_citation') %></span>
-                </button>
-                <%# Typst exports %>
-                <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
-                <div class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Typst</div>
-                <button type="button"
-                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                      data-controller="export-feedback"
-                      data-action="click->export-feedback#download click->dropdown#close"
-                      data-export-feedback-url-value="<%= export_typst_law_path(params[:numac], language_id: @language_id) %>"
-                      data-export-feedback-filename-value="<%= @legislation&.short_title&.parameterize || params[:numac] %>.typ">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor" data-export-feedback-target="icon">
-                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                  </svg>
-                  <svg class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-export-feedback-target="spinner">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span data-export-feedback-target="label"><%= t('articles.export_typst') %></span>
-                </button>
-                <button type="button"
-                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                      data-controller="export-feedback"
-                      data-action="click->export-feedback#download click->dropdown#close"
-                      data-export-feedback-url-value="<%= export_typst_law_path(params[:numac], language_id: @language_id, citation: true) %>"
-                      data-export-feedback-filename-value="<%= @legislation&.short_title&.parameterize || params[:numac] %>-citaat.typ">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor" data-export-feedback-target="icon">
-                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
-                  </svg>
-                  <svg class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-export-feedback-target="spinner">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span data-export-feedback-target="label"><%= t('articles.export_typst_citation') %></span>
-                </button>
-                <%# ODT exports %>
-                <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
-                <div class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">ODT</div>
-                <button type="button"
-                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                      data-controller="export-feedback"
-                      data-action="click->export-feedback#download click->dropdown#close"
-                      data-export-feedback-url-value="<%= export_odt_law_path(params[:numac], language_id: @language_id) %>"
-                      data-export-feedback-filename-value="<%= @legislation&.short_title&.parameterize || params[:numac] %>.odt">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor" data-export-feedback-target="icon">
-                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                  </svg>
-                  <svg class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-export-feedback-target="spinner">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span data-export-feedback-target="label"><%= t('articles.export_odt') %></span>
-                </button>
-                <button type="button"
-                      class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                      data-controller="export-feedback"
-                      data-action="click->export-feedback#download click->dropdown#close"
-                      data-export-feedback-url-value="<%= export_odt_law_path(params[:numac], language_id: @language_id, citation: true) %>"
-                      data-export-feedback-filename-value="<%= @legislation&.short_title&.parameterize || params[:numac] %>-citaat.odt">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor" data-export-feedback-target="icon">
-                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
-                  </svg>
-                  <svg class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-export-feedback-target="spinner">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span data-export-feedback-target="label"><%= t('articles.export_odt_citation') %></span>
-                </button>
-              </div>
             </div>
           </div>
+
+          <%# Export dropdown %>
+          <div class="relative" data-controller="dropdown" data-dropdown-viewport-fit-value="true">
+            <button type="button"
+                  class="source-detail-action btn-toggle-inactive"
+                  data-action="click->dropdown#toggle"
+                  data-dropdown-target="button"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  title="<%= t('articles.export_options', default: 'Exporteeropties') %>">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+              </svg>
+              <%= case I18n.locale when :fr then 'Exporter' when :de then 'Exportieren' when :en then 'Export' else 'Exporteer' end %>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 ml-0.5 opacity-60" viewBox="0 0 20 20" fill="currentColor" data-dropdown-target="arrow">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            <div data-dropdown-target="menu"
+                 class="hidden absolute right-0 top-full mt-1 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+              <%# Word exports %>
+              <div class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Word</div>
+              <button type="button"
+                    class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    data-controller="export-feedback"
+                    data-action="click->export-feedback#download click->dropdown#close"
+                    data-export-feedback-url-value="<%= export_word_law_path(params[:numac], language_id: @language_id) %>"
+                    data-export-feedback-filename-value="<%= @legislation&.short_title&.parameterize || params[:numac] %>.doc">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor" data-export-feedback-target="icon">
+                  <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+                <svg class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-export-feedback-target="spinner">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span data-export-feedback-target="label"><%= t('articles.export_word') %></span>
+              </button>
+              <button type="button"
+                    class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    data-controller="export-feedback"
+                    data-action="click->export-feedback#download click->dropdown#close"
+                    data-export-feedback-url-value="<%= export_word_law_path(params[:numac], language_id: @language_id, citation: true) %>"
+                    data-export-feedback-filename-value="<%= @legislation&.short_title&.parameterize || params[:numac] %>-citaat.doc">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor" data-export-feedback-target="icon">
+                  <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                </svg>
+                <svg class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-export-feedback-target="spinner">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span data-export-feedback-target="label"><%= t('articles.export_word_citation') %></span>
+              </button>
+              <%# Typst exports %>
+              <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+              <div class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Typst</div>
+              <button type="button"
+                    class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    data-controller="export-feedback"
+                    data-action="click->export-feedback#download click->dropdown#close"
+                    data-export-feedback-url-value="<%= export_typst_law_path(params[:numac], language_id: @language_id) %>"
+                    data-export-feedback-filename-value="<%= @legislation&.short_title&.parameterize || params[:numac] %>.typ">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor" data-export-feedback-target="icon">
+                  <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+                <svg class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-export-feedback-target="spinner">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span data-export-feedback-target="label"><%= t('articles.export_typst') %></span>
+              </button>
+              <button type="button"
+                    class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    data-controller="export-feedback"
+                    data-action="click->export-feedback#download click->dropdown#close"
+                    data-export-feedback-url-value="<%= export_typst_law_path(params[:numac], language_id: @language_id, citation: true) %>"
+                    data-export-feedback-filename-value="<%= @legislation&.short_title&.parameterize || params[:numac] %>-citaat.typ">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor" data-export-feedback-target="icon">
+                  <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                </svg>
+                <svg class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-export-feedback-target="spinner">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span data-export-feedback-target="label"><%= t('articles.export_typst_citation') %></span>
+              </button>
+              <%# ODT exports %>
+              <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+              <div class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">ODT</div>
+              <button type="button"
+                    class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    data-controller="export-feedback"
+                    data-action="click->export-feedback#download click->dropdown#close"
+                    data-export-feedback-url-value="<%= export_odt_law_path(params[:numac], language_id: @language_id) %>"
+                    data-export-feedback-filename-value="<%= @legislation&.short_title&.parameterize || params[:numac] %>.odt">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor" data-export-feedback-target="icon">
+                  <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+                <svg class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-export-feedback-target="spinner">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span data-export-feedback-target="label"><%= t('articles.export_odt') %></span>
+              </button>
+              <button type="button"
+                    class="source-detail-action source-detail-menu-action w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    data-controller="export-feedback"
+                    data-action="click->export-feedback#download click->dropdown#close"
+                    data-export-feedback-url-value="<%= export_odt_law_path(params[:numac], language_id: @language_id, citation: true) %>"
+                    data-export-feedback-filename-value="<%= @legislation&.short_title&.parameterize || params[:numac] %>-citaat.odt">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60 shrink-0" viewBox="0 0 20 20" fill="currentColor" data-export-feedback-target="icon">
+                  <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                </svg>
+                <svg class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" data-export-feedback-target="spinner">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span data-export-feedback-target="label"><%= t('articles.export_odt_citation') %></span>
+              </button>
+            </div>
+          </div>
+
+          <%# While the articles frame reloads with a new preference %>
+          <div data-article-preferences-target="spinner" class="hidden">
+            <svg class="animate-spin h-5 w-5 text-(--accent-600)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
         </div>
-        
-        <%# The reading width, as on judgments and parliamentary documents (owner's requirement of 2026-11-07). %>
-        <div class="mt-2 flex justify-end"><%= render 'shared/reading_width_control' %></div>
 
         <%# Success message - Only shown by JavaScript after successful AJAX load %>
         <div class="hidden mt-4 p-3 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-400 dark:border-green-500 rounded-r"
