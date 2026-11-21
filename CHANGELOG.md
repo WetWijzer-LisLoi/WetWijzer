@@ -8,6 +8,21 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.87] - 2026-11-21
+
+### Fixed
+
+- Law pages, articles: a copy right after switching an article's wording takes that article's chosen wording. When the article was shown again under its open menu, 1.1.86 closed the menu; Turbo then scrolled to the article, and a press meant for a copy item reached the page instead, where it could open the next article's menu and copy that article (a live check on the Judicial Code: article 20 in French, copied as article 21). The menu now stays open, in its place, for the article's new number, and a copy chosen while the switch is still on its way waits for it and copies the wording switched to. A switch that fails, or has not arrived within five seconds, copies nothing and says so.
+- Law pages, article history: in a comparison, the copied wording keeps its paragraph breaks and the line before its amendments ("Wijzigingen"), as the plain view's copy does; it ran together as "bepaald.Wijzigingen[1]".
+
+### Changed
+
+- Home page, frequently used laws: an abbreviation ("ZIV-wet", "Loi AMI") follows the last word of the law's name, one space after it, and moves to the next line whole. It no longer stands apart at the right of a long name or breaks at its hyphen; the row is still one link.
+
+### Removed
+
+- Chatbot: the unused marks that once called a reasoning level recommended, or not recommended, for a model: the reasoning levels' lists, the settings script that looked for them, and an unused "recommended" card style on the legal pages. No model, depth or reasoning choice is called recommended; GPT-6 Luna stays the default and saved choices are kept. A test checks the choices on all four sites.
+
 ## [1.1.86] - 2026-11-21
 
 ### Fixed

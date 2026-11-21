@@ -883,6 +883,7 @@ public/vite/assets/application-BBm2cgIV.js
 public/vite/assets/application-BE2eHk8s.js
 public/vite/assets/application-BELQxtqB.css
 public/vite/assets/application-BFk3wwTL.js
+public/vite/assets/application-BHMAiMGX.js
 public/vite/assets/application-BIfRnGfl.js
 public/vite/assets/application-BJmR8QsU.js
 public/vite/assets/application-BM5H_Ijm.js

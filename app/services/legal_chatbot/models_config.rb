@@ -219,9 +219,7 @@ module LegalChatbot
         estimated_seconds: 15,
         labels: { nl: 'Snel', fr: 'Rapide', de: 'Schnell', en: 'Fast' },
         cost_labels: { nl: '+0 credits', fr: '+0 crédit', de: '+0 Credits', en: '+0 credits' },
-        descriptions: { nl: 'Snelle antwoorden', fr: 'Réponses rapides', de: 'Schnelle Antworten', en: 'Quick answers' },
-        recommended_for: %w[smart],
-        warning_for: []
+        descriptions: { nl: 'Snelle antwoorden', fr: 'Réponses rapides', de: 'Schnelle Antworten', en: 'Quick answers' }
       },
       'medium' => {
         surcharge: 1,  # +1 credit for moderate chain-of-thought reasoning
@@ -229,9 +227,7 @@ module LegalChatbot
         estimated_seconds: 25,
         labels: { nl: 'Gebalanceerd', fr: 'Équilibré', de: 'Ausgewogen', en: 'Balanced' },
         cost_labels: { nl: '+1 credit', fr: '+1 crédit', de: '+1 Credit', en: '+1 credit' },
-        descriptions: { nl: 'Meer nadenken', fr: 'Plus de réflexion', de: 'Mehr Nachdenken', en: 'More thinking' },
-        recommended_for: %w[genius mastermind],
-        warning_for: %w[smart]
+        descriptions: { nl: 'Meer nadenken', fr: 'Plus de réflexion', de: 'Mehr Nachdenken', en: 'More thinking' }
       },
       'high' => {
         surcharge: 2,  # +2 credits for maximum reasoning depth
@@ -239,9 +235,7 @@ module LegalChatbot
         estimated_seconds: 45,
         labels: { nl: 'Diepgaand', fr: 'Approfondi', de: 'Tiefgehend', en: 'Deep' },
         cost_labels: { nl: '+2 credits', fr: '+2 crédits', de: '+2 Credits', en: '+2 credits' },
-        descriptions: { nl: 'Maximaal redeneren', fr: 'Raisonnement maximal', de: 'Maximales Denken', en: 'Maximum reasoning' },
-        recommended_for: %w[mastermind],
-        warning_for: %w[smart]
+        descriptions: { nl: 'Maximaal redeneren', fr: 'Raisonnement maximal', de: 'Maximales Denken', en: 'Maximum reasoning' }
       }
     }.freeze
 

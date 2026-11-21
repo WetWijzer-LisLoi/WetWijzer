@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { citationText, displayedText, fragmentUrl, runCopy } from "../utils/article_copy.js"
+import { citationText, displayedText, fragmentUrl, reportCopyFailure, runCopy } from "../utils/article_copy.js"
 
 // The menu of a law's articles (WW-COPY-01; the owner's design, via Sol 2026-11-21 07:00:09Z). The article number
 // opens it, by a click, Enter or Space. Opening it, closing it, Escape and History write nothing to the clipboard:
@@ -13,12 +13,19 @@ import { citationText, displayedText, fragmentUrl, runCopy } from "../utils/arti
 // every frame load, so the cached article HTML (CacheVersionHelper::RENDER_CODE_FILES) and the words the copies read
 // stay as they were. Until 1.1.84 a click on the number copied the link at once, before the menu opened.
 //
-// The menu shows the article it is open for (its label), offers the text and citation only when the article has a
-// wording (an archive date can have none), and closes when its article's frame is rendered again: a copy right after
-// a fast switch took the next article (Sol 2026-11-21 10:09:36Z).
+// The menu shows the article it is open for (its label) and offers the text and citation only when the article has a
+// wording (an archive date can have none). When that article's own frame renders again under it (a step, a period, a
+// comparison), the menu stays open and where it is, for the article's new number, so a press already on its way lands
+// on the item it was aimed at. In 1.1.86 it closed then, Turbo scrolled to the step's anchor, and on the live Judicial
+// Code the press meant for the text copy reached the page instead, opened Art. 21's menu, and the copy took Art. 21
+// (Sol 2026-11-21 10:09:36Z and 13:23:21Z). A copy chosen while the article's step is still on its way waits for that
+// step and copies the wording the reader switched to, not the one leaving the screen.
 const NUMBER = ".article-number"
 const ARTICLE = "[data-permalink]"
 const MARGIN = 4
+// How long such a copy waits for its step. A step that failed, or has not arrived by then, copies nothing and says so.
+const STEP_WAIT_MS = 5000
+const STEP_ENDS = ["turbo:frame-load", "turbo:fetch-request-error", "turbo:frame-missing"]
 
 export default class extends Controller {
   static targets = ["item", "history", "label", "wording"]
@@ -27,14 +34,30 @@ export default class extends Controller {
   connect() {
     this.article = null
     this.trigger = null
+    this.focusIndex = -1
+    this.stepWaitMs = STEP_WAIT_MS
+    // The articles' own frames with a step on its way: from its request until the frame has rendered, or failed.
+    this.steps = new WeakSet()
     this.onClick = this.click.bind(this)
     this.onKeydown = this.keydown.bind(this)
+    this.onStepStart = event => { if (this.articleFrame(event.target)) this.steps.add(event.target) }
+    this.onStepEnd = event => this.steps.delete(event.target)
+    this.onBeforeRender = event => {
+      if (this.isOpen() && this.trigger && event.target?.contains?.(this.trigger)) {
+        this.focusIndex = this.visibleItems().indexOf(document.activeElement)
+      }
+    }
     this.onFrameLoad = event => {
+      this.steps.delete(event.target)
       this.enhance(event.target)
-      if (this.isOpen() && this.trigger && !this.trigger.isConnected) this.close()
+      if (this.isOpen() && this.trigger && !this.trigger.isConnected && !this.rebind()) this.close()
     }
     document.addEventListener("click", this.onClick)
     document.addEventListener("keydown", this.onKeydown)
+    document.addEventListener("turbo:before-fetch-request", this.onStepStart, true)
+    document.addEventListener("turbo:fetch-request-error", this.onStepEnd, true)
+    document.addEventListener("turbo:frame-missing", this.onStepEnd, true)
+    document.addEventListener("turbo:before-frame-render", this.onBeforeRender, true)
     // Capture: before a history frame's own load listener puts the focus back on its number (history_links).
     document.addEventListener("turbo:frame-load", this.onFrameLoad, true)
     this.enhance(document)
@@ -43,6 +66,10 @@ export default class extends Controller {
   disconnect() {
     document.removeEventListener("click", this.onClick)
     document.removeEventListener("keydown", this.onKeydown)
+    document.removeEventListener("turbo:before-fetch-request", this.onStepStart, true)
+    document.removeEventListener("turbo:fetch-request-error", this.onStepEnd, true)
+    document.removeEventListener("turbo:frame-missing", this.onStepEnd, true)
+    document.removeEventListener("turbo:before-frame-render", this.onBeforeRender, true)
     document.removeEventListener("turbo:frame-load", this.onFrameLoad, true)
   }
 
@@ -119,16 +146,38 @@ export default class extends Controller {
     if (this.isOpen()) this.close()
     this.trigger = number
     this.article = article
+    this.showItems(number)
+    this.element.classList.remove("hidden")
+    this.place(number)
+    number.setAttribute("aria-expanded", "true")
+    this.visibleItems()[0]?.focus({ preventScroll: true })
+  }
+
+  // The items the article offers, and the article the menu names.
+  showItems(number) {
     if (this.hasHistoryTarget) this.historyTarget.hidden = !this.historyLink()
     const wording = Boolean(this.sourceElement())
     this.wordingTargets.forEach(item => { item.hidden = !wording })
     const name = (number.textContent || "").trim()
     this.element.setAttribute("aria-label", name)
     if (this.hasLabelTarget) this.labelTarget.textContent = name
-    this.element.classList.remove("hidden")
-    this.place(number)
+  }
+
+  // Its article's frame rendered again under the open menu: the menu stays open and where it is (see the top), now
+  // for the article's new number, with the items its new wording offers and the focus back on the item it was on
+  // (Turbo gave it to the step's own autofocus). False when the article itself left the page, as its whole list does
+  // on another archive date.
+  rebind() {
+    const number = this.article?.isConnected ? this.article.querySelector(NUMBER) : null
+    const focusIndex = this.focusIndex
+    this.focusIndex = -1
+    if (!number) return false
+    this.trigger = number
     number.setAttribute("aria-expanded", "true")
-    this.visibleItems()[0]?.focus({ preventScroll: true })
+    this.showItems(number)
+    const items = this.visibleItems()
+    if (focusIndex >= 0 && items.length) items[Math.min(focusIndex, items.length - 1)].focus({ preventScroll: true })
+    return true
   }
 
   // Below the number, or above it when the screen ends first; never past either side of the screen.
@@ -178,25 +227,65 @@ export default class extends Controller {
   }
 
   copyLink() {
-    this.copyWith(() => fragmentUrl(window.location, this.article?.dataset.permalink), this.linkCopiedValue)
+    this.copyWith(article => fragmentUrl(window.location, article?.dataset.permalink), this.linkCopiedValue)
   }
 
   copyText() {
-    this.copyWith(() => displayedText(this.sourceElement()), this.textCopiedValue)
+    this.copyWith(article => displayedText(this.sourceOf(article)), this.textCopiedValue)
   }
 
   copyCitation() {
-    this.copyWith(() => citationText(this.sourceElement()), this.citationCopiedValue)
+    this.copyWith(article => citationText(this.sourceOf(article)), this.citationCopiedValue)
   }
 
-  // The text is taken and written within the reader's press (runCopy reads it before its first await).
+  // The text is taken and written within the reader's press (runCopy reads it before its first await), unless the
+  // article's own step is still on its way: then the copy waits for that step, takes the wording the reader switched
+  // to and puts the focus on the article's new number. Either way it is the article the menu named at the press.
   copyWith(produce, copied) {
-    runCopy(null, produce, { copied })
-    this.close({ focus: true })
+    const article = this.article
+    const step = this.pendingStep(article)
+    if (!step) {
+      runCopy(null, () => produce(article), { copied })
+      this.close({ focus: true })
+      return
+    }
+    this.close()
+    this.afterStep(step, () => {
+      runCopy(null, () => produce(article), { copied })
+      article.querySelector(NUMBER)?.focus({ preventScroll: true })
+    })
+  }
+
+  // A frame inside an article (its history frame), or null; the law's own frames are not an article's step.
+  articleFrame(target) {
+    return target?.matches?.("turbo-frame") && target.closest(ARTICLE) ? target : null
+  }
+
+  pendingStep(article) {
+    const frame = article?.querySelector("turbo-frame")
+    return frame && this.steps.has(frame) ? frame : null
+  }
+
+  // `then` runs once the step's frame has rendered, after the frame's own load listeners have settled the address;
+  // a failed step, or one not there within stepWaitMs, copies nothing and the reader is told.
+  afterStep(frame, then) {
+    let timer = null
+    const finish = event => {
+      clearTimeout(timer)
+      STEP_ENDS.forEach(name => frame.removeEventListener(name, finish))
+      if (event?.type === "turbo:frame-load") setTimeout(then, 0)
+      else reportCopyFailure()
+    }
+    STEP_ENDS.forEach(name => frame.addEventListener(name, finish))
+    timer = setTimeout(finish, this.stepWaitMs)
   }
 
   sourceElement() {
-    const source = this.article?.dataset.source
+    return this.sourceOf(this.article)
+  }
+
+  sourceOf(article) {
+    const source = article?.dataset.source
     if (!source) return null
     try {
       return document.querySelector(source)

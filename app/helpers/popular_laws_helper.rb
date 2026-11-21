@@ -30,10 +30,13 @@ module PopularLawsHelper
     {}.freeze
   end
 
+  # The badge follows the title's last word in the link's own text flow, one space after it, and moves to the next line
+  # whole: in 1.1.86 the title and badge were flex items, so a long title left "ZIV-wet" stranded at the right edge and
+  # broken at its hyphen (the owner, via Sol 2026-11-21 12:48:20Z).
   POPULAR_LAW_ABBREVIATION_CLASSES =
-    'font-mono text-xs text-(--accent-text) dark:text-(--accent-400) font-semibold'
+    'font-mono text-xs text-(--accent-text) dark:text-(--accent-400) font-semibold whitespace-nowrap'
   POPULAR_LAW_ABBREVIATION_UNAVAILABLE_CLASSES =
-    'font-mono text-xs text-gray-500 dark:text-gray-400 font-semibold'
+    'font-mono text-xs text-gray-500 dark:text-gray-400 font-semibold whitespace-nowrap'
 
   # Catalogue card titles are kept separate from the abbreviation map: a
   # translated title is UI copy, not a legal citation.  EN/DE are explicit

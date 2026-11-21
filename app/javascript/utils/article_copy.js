@@ -70,10 +70,32 @@ export function citationText(element) {
   return cleanCitationText(clone.textContent)
 }
 
-// The text of a rendered element as the reader sees it.
+// The text of a rendered element as the reader sees it. An element kept hidden
+// for the copy (a comparison shows the changed words in its place and keeps the
+// chosen wording hidden, laws/_history_article) is laid out out of sight for
+// the moment of the read: the innerText of an element that is not rendered is
+// its bare textContent, which ran the body into the amendments' heading
+// ("bepaald.Wijzigingen[1]", Sol 2026-11-21 13:23:21Z).
 export function displayedText(element) {
   if (!element) return ''
-  return String(element.innerText ?? element.textContent ?? '').replace(/\n{3,}/g, '\n\n').trim()
+  const read = () => element.innerText ?? element.textContent ?? ''
+  return String(element.hidden ? laidOutForAMoment(element, read) : read()).replace(/\n{3,}/g, '\n\n').trim()
+}
+
+const OUT_OF_SIGHT = { position: 'fixed', left: '-100000px', top: '0' }
+
+// Shown out of sight, read and hidden again within the same task, so nothing
+// is painted in between; its own inline styles are put back as they were.
+function laidOutForAMoment(element, read) {
+  const saved = Object.fromEntries(Object.keys(OUT_OF_SIGHT).map(name => [name, element.style[name] ?? '']))
+  Object.assign(element.style, OUT_OF_SIGHT)
+  element.hidden = false
+  try {
+    return read()
+  } finally {
+    element.hidden = true
+    Object.assign(element.style, saved)
+  }
 }
 
 // The [data-article-scope] elements under root in page order. A scope inside
@@ -212,6 +234,12 @@ export async function runCopy(control, produce, { copied, label = null } = {}) {
   }
   succeed(control, copied || label || messages.copied, label)
   return true
+}
+
+// A copy that could not be made after all (the article menu's copy waited for
+// a step that failed or did not come): nothing is claimed, the reader is told.
+export function reportCopyFailure(control = null) {
+  return fail(control, clipboardMessages().copyFailed)
 }
 
 function succeed(control, message, label) {

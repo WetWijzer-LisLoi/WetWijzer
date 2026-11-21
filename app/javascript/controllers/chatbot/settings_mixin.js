@@ -1050,9 +1050,6 @@ export const settingsMethods = {
     // Update button styles
     this._updateReasoningButtons(level)
 
-    // Update warning/recommended indicators
-    this._updateReasoningIndicators(this.intelligenceValue, level)
-
     // Update total credits display
     this._updateTotalCreditsDisplay()
   },
@@ -1090,27 +1087,6 @@ export const settingsMethods = {
         btn.classList.add('bg-gray-50', 'dark:bg-gray-900', 'text-gray-500', 'dark:text-gray-400', 'hover:bg-gray-100', 'dark:hover:bg-gray-700')
       }
     })
-  },
-
-  // Update warning/recommended indicators based on current intelligence + reasoning
-
-  _updateReasoningIndicators(intelligence, reasoning) {
-    const warningEl = document.getElementById('reasoning-warning')
-    const recommendedEl = document.getElementById('reasoning-recommended')
-    if (!warningEl || !recommendedEl) return
-
-    // Find the active reasoning button to check its data attributes
-    const activeBtn = document.querySelector(`.reasoning-btn[data-reasoning-level="${reasoning}"]`)
-    if (!activeBtn) return
-
-    const warningFor = (activeBtn.dataset.warningFor || '').split(',')
-    const recommendedFor = (activeBtn.dataset.recommendedFor || '').split(',')
-
-    const showWarning = warningFor.includes(intelligence)
-    const showRecommended = recommendedFor.includes(intelligence)
-
-    warningEl.classList.toggle('hidden', !showWarning)
-    recommendedEl.classList.toggle('hidden', !showRecommended)
   },
 
   // Update total credit cost display
