@@ -1481,12 +1481,40 @@ module LegalChatbot
       result
     end
 
+    # A point or paragraph of an article in a label: "(8)", ", punt 8", " Nr. 8", ", lid 2", ", 8)"
+    LABEL_UNIT_SOURCE = '(?:(?:punt(?:en)?|points?|nrn?\.?|nummern?|lid|leden|paragraphs?|abs\.?|absatz)[[:space:]]*' \
+                        '\(?(?:\d{1,2}|[a-z])\)?|\((?:\d{1,2}|[a-z])\)|\d{1,2}\))'
+    # A point written as in the text of the GDPR, right after the article: "artikel 4, 7) AVG". Unmasked, the scan
+    # reads "artikel 4, 7" as a second article.
+    LABEL_POINT_AFTER_COMMA = /\A(,[[:space:]]*)(\d{1,2})(\))/
+    # Between two citations of one article in one label: the first one's point, then a list connector
+    LABEL_SAME_ARTICLE_GAP = /\A[[:space:],]*(?:#{LABEL_UNIT_SOURCE})?[[:space:]]*
+                              (?:,|;|&|(?<![[:alpha:]])(?:en|et|und|and)(?![[:alpha:]]))[[:space:]]*\z/ix
+    LABEL_UNIT_AFTER = /\A[[:space:],]*#{LABEL_UNIT_SOURCE}(?![[:alnum:]])/i
+
+    # The label's first citation is the verified one. #1582 (Sol 2026-11-22 14:53:13Z): one label can name two points
+    # of that article, each with its prefix ("Art. 4(7) and Art. 4(8)"); a later citation of the same number is masked
+    # too when it continues the list and names its own point. A point written ", 7)" right after a masked citation is
+    # the point, not an article (Sol 17:42:33Z: valid art. 4(7) labels). Any other citation in the label stays visible.
     def mask_verified_article_number(label, verified_sentinel)
       match = label.match(SINGLE_ARTICLE_CITATION_PATTERN)
       return label unless match
 
-      masked_match = match[0].sub(match[:number], verified_sentinel)
-      "#{match.pre_match}#{masked_match}#{match.post_match}"
+      number = normalize_article_number(match[:number])
+      parts = [match.pre_match, match[0].sub(match[:number], verified_sentinel)]
+      rest = match.post_match
+      while (following = rest.match(SINGLE_ARTICLE_CITATION_PATTERN)) &&
+            normalize_article_number(following[:number]) == number &&
+            following.pre_match.match?(LABEL_SAME_ARTICLE_GAP) && following.post_match.match?(LABEL_UNIT_AFTER)
+        parts << mask_label_point(following.pre_match, verified_sentinel) << following[0].sub(following[:number], verified_sentinel)
+        rest = following.post_match
+      end
+      parts << mask_label_point(rest, verified_sentinel)
+      parts.join
+    end
+
+    def mask_label_point(text, verified_sentinel)
+      text.sub(LABEL_POINT_AFTER_COMMA) { "#{Regexp.last_match(1)}#{verified_sentinel}#{Regexp.last_match(3)}" }
     end
 
     def unsupported_article_citation_message

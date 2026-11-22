@@ -468,7 +468,12 @@ module LegalChatbot
       # The same holds for an ordinary data breach (Sol 2026-11-18 21:35:34Z):
       # 2018040581 Arts. 61 and 62 are Title 2, which Art. 27 limits to the
       # authorities competent for criminal matters; GDPR Arts. 33 and 34 apply.
-      if LegalFactProvider.gdpr_retention_question?(question) || LegalFactProvider.gdpr_breach_question?(question)
+      # #1582 (Sol 2026-11-22 17:38:10Z, 1.1.91 live): every topic sealed from the GDPR forbids these rows as its
+      # citation (TopicCitations, forbidden_internal_numacs). Asked what a controller is, the model read six of them,
+      # based its answer on them, and the reader got the citation guard's refusal; it no longer reads them, unless the
+      # reader asks about that act too (Sol 19:11:40Z), which retention and breach questions never allowed.
+      if LegalFactProvider.gdpr_retention_question?(question) || LegalFactProvider.gdpr_breach_question?(question) ||
+         (LegalFactProvider.official_source_question?(question) && !LegalFactProvider.belgian_privacy_act_asked?(question))
         leg_articles = leg_articles.reject { |article| domestic_gdpr_retention_substitute?(article, question) }
       end
 

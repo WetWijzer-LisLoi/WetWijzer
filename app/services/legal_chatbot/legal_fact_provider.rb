@@ -817,6 +817,18 @@ module LegalChatbot
       required_official_topic_keys(question).any?
     end
 
+    # Sol 2026-11-22 19:11:40Z: a reader who asks about the Belgian act of 30 July 2018 beside the GDPR may get that act
+    # cited for its own clauses; the GDPR's definition still comes from the GDPR
+    BELGIAN_PRIVACY_ACT = /(?<![[:alpha:]])(?:belgisch\p{L}*|belges?|belgian|belgischen?)[[:space:]]+(?:\p{L}+[[:space:]]+){0,3}?
+                            (?:wet|wetgeving|privacywet|kaderwet|loi|act|law|legislation|gesetz\p{L}*)(?![[:alpha:]])|
+                            wet[[:space:]]+van[[:space:]]+30[[:space:]]+juli[[:space:]]+2018|loi[[:space:]]+du[[:space:]]+30[[:space:]]+juillet[[:space:]]+2018|
+                            gesetz\p{L}*[[:space:]]+vom[[:space:]]+30\.?[[:space:]]+juli[[:space:]]+2018|act[[:space:]]+of[[:space:]]+30[[:space:]]+july[[:space:]]+2018|
+                            kaderwet[[:space:]]+gegevensbescherming|loi-cadre|2018040581/iux
+
+    def self.belgian_privacy_act_asked?(question)
+      question.to_s.match?(BELGIAN_PRIVACY_ACT)
+    end
+
     def self.official_sources_for(topic_key, language:)
       registry, required_articles = case topic_key.to_s
                                     when GDPR_PROCESSOR_TOPIC_KEY

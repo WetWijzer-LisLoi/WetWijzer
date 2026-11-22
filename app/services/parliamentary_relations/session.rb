@@ -19,6 +19,11 @@ module ParliamentaryRelations
   # reference as it was: automatically linked and unverified. A corpus that cannot be read establishes nothing, so a
   # caller links no dossier it could not check (Verdict :unreadable). A later legislature than the law's own is no
   # evidence either way: a legislature alone cannot tell whether that dossier amended the law.
+  #
+  # Sol 2026-11-22 09:33:40Z: the Chamber also files lists that prepare nothing under the budget types ("Taalgroepen.",
+  # its political composition, the order of precedence), so a budget-type dossier is a budget document only by its
+  # own title; a law title that is missing is no evidence against one (55K1579, a budget justification); and 56K0002
+  # stays unrelated whatever the corpus holds or fails to hold.
   module Session
     # The elections that opened each numbered legislature, as art. 1 of the royal decree convening the electoral
     # colleges sets them: 1995000294, 1999000344, 2003021083, 2007000387, 2010021063, 2014021051, 2019012696 and
@@ -33,6 +38,10 @@ module ParliamentaryRelations
     # Types that accompany a budget bill: a law that is no budget law has none of them as its preparation
     BUDGET_TYPES = ['TABELLEN OF LIJSTEN', 'BELEIDSNOTA', 'ALGEMENE TOELICHTING', 'VERSLAG'].freeze
     BUDGET_LAW = /begroting|rijksmiddelen|budget/i
+    # A budget document's own title (dossiers.titel): the budget, its justification or its policy notes
+    BUDGET_DOCUMENT = /begroting|rijksmiddelen|budget|verantwoording|beleidsnota/i
+    # Dossiers established to prepare no law, whatever the corpus holds: 56K0002 "Taalgroepen."
+    KNOWN_NO_LAW = { 56 => [2] }.freeze
 
     module_function
 
@@ -50,17 +59,23 @@ module ParliamentaryRelations
     def numbered?(parliament, legislature) = !period(parliament, legislature).nil?
 
     # What the Chamber corpus db establishes about a Chamber dossier for the law titled law_title:
-    #   :no_law     a type that prepares no law, or a budget type for a law that is no budget law
-    #   :open       nothing against it: a bill, a dossier it does not hold, a blank or unlisted type
+    #   :no_law     a dossier known to prepare no law, a type that prepares no law, a budget type whose own title is no
+    #               budget document, or a budget document for a law whose title says it is no budget law
+    #   :open       nothing against it: a bill, a dossier it does not hold, a blank or unlisted type, a budget document
+    #               for a budget law or a law without a title
     #   :unreadable no corpus; a corpus that fails raises SQLite3::Exception, for the caller to report (the panel shows
     #               its part unavailable, the metadata links nothing it could not check)
     def verdict(db, legislature, number, law_title)
+      return :no_law if KNOWN_NO_LAW.fetch(legislature.to_i, []).include?(number.to_i)
       return :unreadable if db.nil?
 
-      type = db.get_first_value('SELECT type FROM dossiers WHERE legislature = ? AND nummer = ? LIMIT 1',
-                                [legislature.to_i, number.to_i]).to_s.strip.upcase
+      type, title = db.get_first_row('SELECT type, titel FROM dossiers WHERE legislature = ? AND nummer = ? LIMIT 1',
+                                     [legislature.to_i, number.to_i])
+      type = type.to_s.strip.upcase
       return :no_law if NO_LAW_TYPES.include?(type)
-      return :no_law if BUDGET_TYPES.include?(type) && !law_title.to_s.match?(BUDGET_LAW)
+      return :open unless BUDGET_TYPES.include?(type)
+      return :no_law unless title.to_s.match?(BUDGET_DOCUMENT)
+      return :no_law if law_title.present? && !law_title.to_s.match?(BUDGET_LAW)
 
       :open
     end

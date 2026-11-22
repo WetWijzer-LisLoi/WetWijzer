@@ -32,8 +32,10 @@ module LegalChatbot
     # The adjunct's words: never a conjunction or question word, which open a second question
     GAP = '(?:[[:space:]]+(?!(?:en|and|et|und|of|or|ou|oder|wat|what|que|was|wie|who|qui|wer|which|that|dat|dont|' \
           'welche[nrs]?)(?![[:alpha:]]))[[:alnum:]]+){0,3}'
-    # The term ends at its word, is no possessive ("the controller's obligations") and is followed by no duty
-    TERM_END = "(?![[:alpha:]])(?!['’]s(?![[:alpha:]]))(?!#{GAP}[[:space:],]+#{DUTY}(?![[:alpha:]]))".freeze
+    # The term ends at its word, is no possessive ("the controller's obligations", and the plural "data controllers'
+    # obligations", Sol 14:53:13Z) and is followed by no duty
+    TERM_END = "(?![[:alpha:]])(?!['’]s(?![[:alpha:]]))(?!(?<=s)['’](?![[:alpha:]]))" \
+               "(?!#{GAP}[[:space:],]+#{DUTY}(?![[:alpha:]]))".freeze
     DEFINITION = /
       (?<![[:alpha:]])(?:wat|wie)\s+(?:is|zijn|wordt|worden)\s+#{ARTICLE}(?:#{TERM})#{TERM_END}|
       (?<![[:alpha:]])(?:definitie|begrip|betekenis|omschrijving)\s+(?:van\s+)?#{ARTICLE}(?:begrip\s+)?(?:#{TERM})#{TERM_END}|
@@ -53,13 +55,15 @@ module LegalChatbot
       (?<![[:alpha:]])(?:verschil|onderscheid|diff[ée]rence|Unterschied|difference)(?![[:alpha:]])[^?.!]{0,80}(?:#{TERM})|
       (?:#{TERM})[^?.!]{0,80}(?<![[:alpha:]])(?:verschil|onderscheid|diff[ée]rence|Unterschied|difference)(?![[:alpha:]])
     /iux
-    # "controller" and "Verantwortlicher" are also ordinary words: they need a data-protection context
+    # "controller" and "Verantwortlicher" are also ordinary words: they need a data-protection context, which the
+    # processor's own name gives ("a controller and a data processor", "Auftragsverarbeiter"; Sol 14:53:13Z)
     GENERIC_TERM = /(?<![[:alpha:]])(?:(?:gemeinsam(?:e|en|er)?\s+)?Verantwortliche[nr]?|(?:joint\s+)?controllers?)(?![[:alpha:]])/iu
     SPECIFIC_TERM = /(?<![[:alpha:]])(?:(?:gezamenlijke|gemeenschappelijke)\s+)?verwerkingsverantwoordelijken?|
                      responsables?\s+(?:conjoints?\s+)?du\s+traitement|data\s+controllers?/iux
     DATA_CONTEXT = /(?<![[:alpha:]])(?:avg|gdpr|rgpd|dsgvo|privacy|persoonsgegevens|gegevensbescherming|personal\s+data|
                     data\s+protection|donn[ée]es\s+(?:à\s+caract[èe]re\s+)?personnelles|protection\s+des\s+donn[ée]es|
-                    personenbezogen\p{L}*|datenschutz\p{L}*|verarbeitung)(?![[:alpha:]])/iux
+                    personenbezogen\p{L}*|datenschutz\p{L}*|verarbeitung|
+                    data\s+processors?|auftragsverarbeiter\p{L}*)(?![[:alpha:]])/iux
     SOURCE_LABELS = {
       'nl' => 'AVG, definitie van de verwerkingsverantwoordelijke',
       'fr' => 'RGPD, définition du responsable du traitement',

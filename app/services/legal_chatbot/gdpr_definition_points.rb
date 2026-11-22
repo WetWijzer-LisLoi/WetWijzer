@@ -9,10 +9,14 @@ module LegalChatbot
   # no source holds at that URL misattributes the text behind the link.
   module GdprDefinitionPoints
     # The points a label names right after the article number: "punt 7", "punten 7 en 8", "point 7", "Nr. 7 und 8",
-    # "Nummer 7", "(7) and (8)", "(7) and 4(8)", ", 7)"
-    POINT_LIST = /\A[[:space:],]*(?:(?:punt(?:en)?|points?|nrn?\.?|nummern?|ziff(?:ern?|\.)|lid|leden)[[:space:]]*)?
-                  (?<list>\(?\d{1,2}\)?(?!\d)(?:[[:space:]]*(?:,|en|et|und|and|&)[[:space:]]*(?:4[[:space:]]*)?\(?\d{1,2}\)?(?!\d))*)/ix
-    POINT_ITEM = /(?:(?<!\d)4[[:space:]]*(?=\())?\(?(\d{1,2})\)?/
+    # "Nummer 7", "(7) and (8)", "(7) and 4(8)", ", 7)", and each point with its own article prefix: "(7) and
+    # Art. 4(8)", "punt 7 en art. 4, punt 8" (Sol 14:53:13Z: the second article prefix ended the list), and after a
+    # semicolon, as the citation check masks it (Sol 19:11:40Z: "Art. 4(7); Art. 4(8)" hid point 8)
+    POINT_PREFIX = '(?:punt(?:en)?|points?|nrn?\.?|nummern?|ziff(?:ern?|\.)|lid|leden)'
+    POINT_ITEM = '\(?(\d{1,2})\)?(?!\d)'
+    FIRST_POINT = /\A[[:space:],]*(?:#{POINT_PREFIX}[[:space:]]*)?#{POINT_ITEM}/i
+    NEXT_POINT = /\A[[:space:]]*(?:,|;|en|et|und|and|&)[[:space:]]*(?:(?:art(?:ikel|icle)?\.?[[:space:]]*)?4[[:space:]]*,?[[:space:]]*)?
+                  (?:#{POINT_PREFIX}[[:space:]]*)?#{POINT_ITEM}/ix
     LABELS = {
       'nl' => { %w[7] => 'Art. 4, punt 7 — AVG (definitie verwerkingsverantwoordelijke)',
                 %w[8] => 'Art. 4, punt 8 — AVG (definitie verwerker)',
@@ -75,8 +79,17 @@ module LegalChatbot
     end
 
     def named_points(rest)
-      list = rest.to_s.match(POINT_LIST)
-      list ? list[:list].scan(POINT_ITEM).flatten.uniq : []
+      rest = rest.to_s
+      found = rest.match(FIRST_POINT)
+      return [] unless found
+
+      points = [found[1]]
+      rest = rest[found.end(0)..]
+      while (found = rest.match(NEXT_POINT))
+        points << found[1]
+        rest = rest[found.end(0)..]
+      end
+      points.uniq
     end
 
     # The label of an appended art. 4 link naming points

@@ -2357,9 +2357,13 @@ module LegalChatbot
     # of a benefit, not contract terms: a question about a benefit, a permit or what it takes to obtain one is left out.
     # Sol 2026-11-22 06:35:42Z: "... and want to obtain a refund?" is relief sought from the seller: obtaining alone
     # excludes nothing, only the benefit and permit words do.
-    GENERAL_TERMS_EXCLUDED = /(?<![[:alnum:]])(?:uitkering\p{L}*|werkloosheid\p{L}*|subsidie\p{L}*|toelage\p{L}*|kinderbijslag|groeipakket|leefloon|tegemoetkoming\p{L}*|vergunning\p{L}*|toelating\p{L}*|allocation\p{L}*|ch[ôo]mage|subside\p{L}*|subvention\p{L}*|revenu\s+d.int[ée]gration|permis|arbeitslos\p{L}*|zulage\p{L}*|beihilfe\p{L}*|f(?:ö|oe)rder\p{L}*|genehmigung\p{L}*|benefit\p{L}*|allowance\p{L}*|subsid\p{L}*|permits?(?![[:alnum:]])(?!\s+(?:me|us|you|him|her|them|buyers?|customers?|consumers?|the\s+(?:buyer|customer|consumer)s?|to)(?![[:alnum:]]))|eligib\p{L}*)(?![[:alnum:]])/iu
+    GENERAL_TERMS_EXCLUDED = /(?<![[:alnum:]])(?:werkloosheid\p{L}*|subsidie\p{L}*|toelage\p{L}*|kinderbijslag|groeipakket|leefloon|tegemoetkoming\p{L}*|vergunning\p{L}*|toelating\p{L}*|allocation\p{L}*|ch[ôo]mage|subside\p{L}*|subvention\p{L}*|revenu\s+d.int[ée]gration|permis|arbeitslos\p{L}*|zulage\p{L}*|beihilfe\p{L}*|f(?:ö|oe)rder\p{L}*|genehmigung\p{L}*|allowance\p{L}*|subsid\p{L}*|permits?(?![[:alnum:]])(?!\s+(?:me|us|you|him|her|them|buyers?|customers?|consumers?|the\s+(?:buyer|customer|consumer)s?|to)(?![[:alnum:]]))|eligib\p{L}*)(?![[:alnum:]])/iu
     GENERAL_TERMS_CORE = /(?<![[:alnum:]])(?:algemene\s+(?:verkoops?|leverings?|contract)?voorwaarden|conditions\s+g[ée]n[ée]rales|allgemeinen?\s+gesch(?:ä|ae)ftsbedingungen|general\s+terms(?:\s+and\s+conditions)?|standard\s+terms(?:\s+and\s+conditions)?|terms\s+and\s+conditions)(?![[:alnum:]])/iu
-    GENERAL_TERMS_PATTERN = /\A(?!.*#{GENERAL_TERMS_EXCLUDED.source})(?=.*#{GENERAL_TERMS_CORE.source})/imu
+    # Sol 2026-11-22 09:33:40Z: an insurer's contractual payout ("uitkering", "benefit") is what its general terms
+    # govern, not a social benefit; the payout words leave a question out only when no private insurer is named.
+    GENERAL_TERMS_PAYOUT = /(?<![[:alnum:]])(?:uitkering\p{L}*|benefit\p{L}*)(?![[:alnum:]])/iu
+    GENERAL_TERMS_INSURER = /(?<![[:alnum:]])(?:verzekeraar\p{L}*|verzekeringsmaatschappij\p{L}*|(?:verzekerings)?polis\p{L}*|verzekeringsovereenkomst\p{L}*|assureur\p{L}*|compagnies?\s+d.assurances?|polices?\s+d.assurances?|contrats?\s+d.assurances?|versicherer\p{L}*|versicherungsgesellschaft\p{L}*|versicherungsvertr(?:a|ä)g\p{L}*|insurer\p{L}*|insurance\s+(?:company|companies|policy|policies|contract)s?)(?![[:alnum:]])/iu
+    GENERAL_TERMS_PATTERN = /\A(?!.*#{GENERAL_TERMS_EXCLUDED.source})(?!(?!.*#{GENERAL_TERMS_INSURER.source}).*#{GENERAL_TERMS_PAYOUT.source})(?=.*#{GENERAL_TERMS_CORE.source})/imu
 
     # Sol 2026-11-21 10:54:53Z (#1151, doorstep sales): the answer gave the deadline to return the goods and missed the
     # 14 days to notify the withdrawal. Code of Economic Law (2013A11134) arts. VI.67, VI.69 and VI.71 (read in full NL and
@@ -2377,7 +2381,40 @@ module LegalChatbot
     # Sol 2026-11-22 09:08:02Z: a seller who called first and concluded the sale at the buyer's door made a doorstep
     # sale; the telephone leaves a question out only as canvassing without a door ("démarchage téléphonique").
     OFF_PREMISES_CANVASS = /(?<![[:alnum:]])d[ée]marchage(?![[:alnum:]])/iu
-    OFF_PREMISES_PATTERN = /\A(?:(?=.*#{OFF_PREMISES_STRONG.source})|(?=.*#{OFF_PREMISES_WEAK.source})(?=.*#{OFF_PREMISES_SALE.source})|(?!.*#{OFF_PREMISES_PHONE.source})(?=.*#{OFF_PREMISES_CANVASS.source})(?=.*#{OFF_PREMISES_SALE.source}))/imu
+    # Sol 2026-11-22 09:33:40Z: where the contract was formed decides; a door named only as the place the goods were
+    # delivered says nothing about it ("telefonisch gekocht en aan de deur geleverd"). A door counts unless a delivery
+    # word comes before it in its clause or follows it within 25 characters.
+    OFF_PREMISES_DELIVERY = /(?<![[:alnum:]])(?:(?:ge|af|thuis)?lever(?:d|de|den|en|t|ing|ingen)?|bezorg\p{L}*|koerier\p{L}*|pakket\p{L}*|postbode\p{L}*|livr(?:é|ée|és|ées|er|aison|eur|ait)|colis|facteur|(?:ge)?liefer(?:n|t|te|ten|ung)?|zustell\p{L}*|zugestellt|paket\p{L}*|deliver\p{L}*|courier\p{L}*|parcel\p{L}*|postman|shipped|shipping)(?![[:alnum:]])/iu
+    OFF_PREMISES_DOOR = /(?:\A|[.;!?\n])(?:(?!#{OFF_PREMISES_DELIVERY.source})[^.;!?\n])*?#{OFF_PREMISES_WEAK.source}(?![^.;!?\n]{0,25}?#{OFF_PREMISES_DELIVERY.source})/iu
+    OFF_PREMISES_PATTERN = /\A(?:(?=.*#{OFF_PREMISES_STRONG.source})|(?=.*?#{OFF_PREMISES_DOOR.source})(?=.*#{OFF_PREMISES_SALE.source})|(?!.*#{OFF_PREMISES_PHONE.source})(?=.*#{OFF_PREMISES_CANVASS.source})(?=.*#{OFF_PREMISES_SALE.source}))/imu
+    # Sol 19:11:40Z: who died decides. A landlord's death leaves the lease in place (Woninghuurdecreet art. 42, § 1;
+    # Walloon decree of 15 March 2018 art. 36, since that decree repealed art. 1742 for a Walloon residential lease; old
+    # Civil Code art. 1742, which the Brussels Housing Code departs from only at the tenant's death); the tenant's death
+    # is what ends it in each region.
+    LANDLORD_DIED = /(?<![[:alpha:]])(?:verhuurder|huisbaas|eigenaar|bailleur|propri[ée]taire|vermieter\p{L}*|landlord|owner)\p{L}*[^.?!]{0,40}?(?:overl(?:ij|e)\p{L}*|gestorven|sterft|stierf|d[ée]c[èe]s|d[ée]c[ée]d\p{L}*|(?:dood|meurt|mort|stirbt|gestorben|verstorben|died|dies|death)(?![[:alpha:]]))|(?:overlijden|d[ée]c[èe]s|tod|death)\s+(?:van\s+(?:de|mijn|onze)\s+|du\s+|de\s+(?:mon|notre)\s+|des\s+|of\s+(?:the|my|our)\s+)(?:verhuurder|huisbaas|eigenaar|bailleur|propri[ée]taire|vermieter\p{L}*|landlord|owner)/iu
+    TENANT_DIED = /(?<![[:alpha:]])(?:huurder|locataire|mieter\p{L}*|tenant)\p{L}*[^.?!]{0,40}?(?:overl(?:ij|e)\p{L}*|gestorven|sterft|stierf|d[ée]c[èe]s|d[ée]c[ée]d\p{L}*|(?:dood|meurt|mort|stirbt|gestorben|verstorben|died|dies|death)(?![[:alpha:]]))|(?:overlijden|d[ée]c[èe]s|tod|death)\s+(?:van\s+(?:de|mijn|onze)\s+|du\s+|de\s+(?:mon|notre)\s+|des\s+|of\s+(?:the|my|our)\s+)(?:huurder|locataire|mieter\p{L}*|tenant)/iu
+    LANDLORD_DEATH_PATTERN = /\A(?=.*(?:#{LANDLORD_DIED.source}))(?!.*(?:#{TENANT_DIED.source}))/imu
+    # #978 (Sol 2026-11-22 13:20:48Z and 17:42:33Z): the tenant's death ends a residential lease differently in each
+    # region, and the answer gave Brussels only a Housing Fund scheme. The ordinary rule of each region: Flanders,
+    # Woninghuurdecreet art. 42; Wallonia, decree of 15 March 2018 art. 46; Brussels, Housing Code art. 232, which departs
+    # from old Civil Code art. 1742 (a lease does not end at the death of either party).
+    TENANT_DEATH_PATTERN = /\A(?!(?=.*(?:#{LANDLORD_DIED.source}))(?!.*(?:#{TENANT_DIED.source})))(?=.*(?<![[:alpha:]])(?:(?:ver)?huur\p{L}*|bail|baux|locataire\p{L}*|bailleur\p{L}*|(?:ver)?miet\p{L}*|lease\p{L}*|tenan\p{L}*|landlord\p{L}*|rent(?:al|ed|ing)?(?![[:alpha:]])))(?=.*(?<![[:alpha:]])(?:overl(?:ij|e)\p{L}*|sterf\p{L}*|stierf|gestorven|d[ée]c[èe]s|d[ée]c[ée]d\p{L}*|verstorben\p{L}*|deceased|(?:dood|meurt|mort|tod|stirbt|gestorben|dies|died|death)(?![[:alpha:]])))/imu
+    # #2746 (Sol 2026-11-22 13:20:48Z): "Wanneer heb ik rechtsbijstand nodig?", a sample of the insurance category, got
+    # six cards on legal aid before specialised courts. Legal-expenses insurance in the Insurance Act of 4 April 2014:
+    # art. 154 (its scope), 156 (the free choice of a lawyer, also in a conflict of interests) and 157 (a disagreement
+    # with the insurer). A bare "rechtsbijstand" counts unless the question speaks of state legal aid.
+    LEGAL_EXPENSES_INSURANCE_PATTERN = /(?<![[:alpha:]])(?:rechtsbijstands?verzekering\p{L}*|verzekering\p{L}*\s+(?:voor\s+)?rechtsbijstand|assurances?\s+(?:de\s+)?protection\s+juridique|protection\s+juridique|rechtsschutz\p{L}*|legal\s+(?:expenses|protection)\s+(?:insurance|cover)\p{L}*)(?![[:alpha:]])|\A(?!.*(?<![[:alpha:]])(?:juridische|tweedelijns\p{L}*|eerstelijns\p{L}*|pro\s+deo|kosteloze?|gratis|bureau\p{L}*|bjb|verhoor\p{L}*|politieverhoor\p{L}*|ondervraging\p{L}*|audition\p{L}*|interrogatoire\p{L}*|vernehmung\p{L}*|interrogation\p{L}*|salduz|politie\p{L}*|police\p{L}*|polizei\p{L}*|aanhouding\p{L}*|arrestatie\p{L}*|garde\s+[àa]\s+vue|verdachte\p{L}*|suspect\p{L}*)(?![[:alpha:]]))(?=.*(?<![[:alpha:]])rechtsbijstand(?![[:alpha:]]))/imu
+    # #72 (Sol 2026-11-22, the twenty catalogue questions): "Wat is een collectieve arbeidsovereenkomst en wanneer geldt
+    # die?" got sector agreements, not whom a CAO binds. The act of 5 December 1968: art. 5 (the definition), 19 (whom it
+    # binds), 26 (its individual clauses bind the sector's other employers and workers) and 31 (the effect of a
+    # declaration of general binding force). A question about one joint committee's agreement keeps its own sources.
+    # #2496 (Sol 2026-11-22 13:20:48Z): "Hoe worden warrants fiscaal behandeld in België?" got excise decrees and no tax
+    # rule. The act of 26 March 1999 taxes an option granted for professional work at its grant (art. 42) and values it
+    # by the option's last closing price when the option itself is listed (art. 43, § 2), otherwise at a percentage of
+    # the shares' value (§§ 3 to 6). It does not govern options bought as an investment: such a question gets no pin.
+    # Sol 19:11:40Z: a question that also names the employment keeps the act for that branch, beside an investment
+    WARRANTS_PATTERN = /\A(?:(?=.*(?<![[:alpha:]])(?:werkgever\p{L}*|employ\p{L}*|arbeitgeber\p{L}*|werknemer\p{L}*|arbeitnehmer\p{L}*|travailleur\p{L}*|loon|salaris\p{L}*|salaire\p{L}*|bezoldig\p{L}*|r[ée]mun[ée]ration\p{L}*|verloning)(?![[:alpha:]]))|(?!.*(?<![[:alpha:]])(?:gekocht|kocht|koop|bought|buy|achet\p{L}*|gekauft|kaufe\p{L}*|belegg\p{L}*|invest\p{L}*|anleger\p{L}*)(?![[:alpha:]])))(?=.*(?<![[:alpha:]])(?:warrants?|aandelenopties?|stock\s+options?|share\s+options?|options?\s+sur\s+actions|aktienoption\p{L}*)(?![[:alpha:]]))(?=.*(?<![[:alpha:]])(?:fisca\p{L}*|fiscaa?l\p{L}*|belast\p{L}*|tax\p{L}*|imp[ôo]\p{L}*|imposi\p{L}*|steuer\p{L}*|voordeel\p{L}*|avantage\p{L}*|benefit\p{L}*|werkgever\p{L}*|employ\p{L}*|arbeitgeber\p{L}*|loon|salaris\p{L}*|salaire\p{L}*|bezoldig\p{L}*|r[ée]mun[ée]ration\p{L}*|verloning)(?![[:alpha:]]))/imu
+    CAO_GENERAL_PATTERN = /\A(?!.*(?<![[:alpha:]])(?:pc|cp)\.?\s*\d|.*paritair\p{L}*\s+(?:sub)?comit\p{L}*\s+(?:nr\.?\s*)?\d|.*commission\s+paritaire\s+(?:n°\s*)?\d)(?=.*(?<![[:alpha:]])(?:collectieve\s+arbeidsovereenkomst\p{L}*|cao(?:'s|s)?|conventions?\s+collectives?(?:\s+de\s+travail)?|cct|kollektive[ns]?\s+arbeitsabkommen\p{L}*|collective\s+(?:labour\s+|labor\s+|bargaining\s+)?agreements?)(?![[:alpha:]]))(?=.*(?<![[:alpha:]])(?:wat\s+is|wat\s+zijn|wanneer\s+geld\p{L}*|voor\s+wie|gebonden|bindend\p{L}*|verbindend\p{L}*|qu.est-ce|s.appliqu\p{L}*|li[ée]e?s?|obligatoire\p{L}*|was\s+ist|wann\s+gilt|f[üu]r\s+wen|gebunden|verbindlich\p{L}*|what\s+is|when\s+does|who\s+is\s+bound|bound|binding|applies|apply)(?![[:alpha:]]))/imu
 
     ARTICLE_PINS = [
       # Criminal / civil procedure
@@ -2792,6 +2829,22 @@ module LegalChatbot
       [OFF_PREMISES_PATTERN, '2013A11134', 'VI.69'],
       [OFF_PREMISES_PATTERN, '2013A11134', 'VI.71'],
       [GENERAL_TERMS_PATTERN, '2022A32058', '5.23'],
+      [TENANT_DEATH_PATTERN, '2018015087', '42'],
+      [TENANT_DEATH_PATTERN, '2018201408', '46'],
+      [TENANT_DEATH_PATTERN, '2013A31614', '232'],
+      [TENANT_DEATH_PATTERN, '1804032154', '1742'],
+      [LANDLORD_DEATH_PATTERN, '2018015087', '42'],
+      [LANDLORD_DEATH_PATTERN, '2018201408', '36'],
+      [LANDLORD_DEATH_PATTERN, '1804032154', '1742'],
+      [LEGAL_EXPENSES_INSURANCE_PATTERN, '2014011239', '154'],
+      [LEGAL_EXPENSES_INSURANCE_PATTERN, '2014011239', '156'],
+      [LEGAL_EXPENSES_INSURANCE_PATTERN, '2014011239', '157'],
+      [WARRANTS_PATTERN, '1999012205', '42'],
+      [WARRANTS_PATTERN, '1999012205', '43'],
+      [CAO_GENERAL_PATTERN, '1968120503', '5'],
+      [CAO_GENERAL_PATTERN, '1968120503', '19'],
+      [CAO_GENERAL_PATTERN, '1968120503', '26'],
+      [CAO_GENERAL_PATTERN, '1968120503', '31'],
       [INDUSTRIAL_ACCIDENT_REPORT_PATTERN, '2003022292', '2'],
       [DISTANCE_CONTRACT_DEFINITION_PATTERN, '2013A11134', 'I.8'],
       [RENTAL_DISPUTE_PEACE_JUDGE_PATTERN, '1967101054', '591'],
@@ -4814,7 +4867,8 @@ module LegalChatbot
       return true if article[:pinned] || article['pinned'] || @context_numacs.map(&:to_s).include?(numac)
 
       self.class.contextual_source_relevant?(article, question, telemarketing_scope_resolver: telemarketing_scope_resolver,
-                                                                selected_law: @selected_law_numac)
+                                                                selected_law: @selected_law_numac,
+                                                                viewing: @context_numacs.present?)
     end
 
     def telemarketing_scope_resolver
@@ -4824,7 +4878,7 @@ module LegalChatbot
     # Shared by the federal candidate routes and the regional-result boundary.
     # RegionalSearch emits :title rather than :law_title; neither lane should
     # acquire a specialist exception just because its adapter uses another key.
-    def self.contextual_source_relevant?(article, question, telemarketing_scope_resolver: nil, selected_law: nil)
+    def self.contextual_source_relevant?(article, question, telemarketing_scope_resolver: nil, selected_law: nil, viewing: false)
       question = question.to_s
       numac = article[:numac] || article['numac']
       # Before the selection shortcuts: a named law does not make its
@@ -4843,6 +4897,8 @@ module LegalChatbot
       return false unless GeneralNoiseScope.source_relevant?(article, question, selected_law: selected_law)
       return false unless MarketplaceCivilClaimIntent.source_relevant?(article, question)
       return false unless PlatformModerationSourceScope.source_relevant?(article, question)
+      # Card relevance (Sol 2026-11-22 13:15:02Z): a law of a narrow subject the question does not raise
+      return false unless SpecialistSubjectScope.source_relevant?(article, question, viewing: viewing || selected_law.present?)
       return false if withdrawal_borrowed_from_specialist_regime?(article, question)
       return false if equality_question_borrows_peripheral_rule?(article, question)
       return false if civil_intestacy_borrows_tax_competence?(article, question)

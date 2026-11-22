@@ -285,6 +285,17 @@ module LegalChatbot
           Do not mention this correction or the rejected attempt in your answer.
         FEEDBACK
       end
+      # #1582 (Sol 2026-11-22 17:38:10Z): a Belgian provision cited for what the GDPR itself governs left the retry
+      # without any correction, so none was made; only the NUMACs travel back
+      domestic = Array(guard_result&.fetch(:misattributed_domestic_sources, nil)).uniq.sort
+      if domestic.any?
+        sections << <<~FEEDBACK.strip
+          CORRECTION - your previous answer was rejected by the citation check and was NOT shown to the user.
+          It cited the Belgian law with NUMAC #{domestic.join(', ')} for a rule the GDPR itself lays down. That Belgian law supplements the GDPR and cannot stand in for it.
+          Write the complete answer again from the GDPR article(s) in the numbered sources above, each cited as a markdown link with its exact LINK value, and do not cite or link the Belgian law with NUMAC #{domestic.join(', ')}.
+          Do not mention this correction or the rejected attempt in your answer.
+        FEEDBACK
+      end
       childcare_feedback = ChildcareExpenseGrounding.corrective_feedback(
         guard_result&.fetch(:missing_childcare_conditions, nil)
       )

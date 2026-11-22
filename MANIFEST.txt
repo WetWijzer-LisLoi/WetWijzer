@@ -424,6 +424,7 @@ app/services/legal_chatbot/serious_cause_dismissal_grounding.rb
 app/services/legal_chatbot/source_fields.rb
 app/services/legal_chatbot/source_formatter.rb
 app/services/legal_chatbot/source_passage_excerpt.rb
+app/services/legal_chatbot/specialist_subject_scope.rb
 app/services/legal_chatbot/system_prompt_builder.rb
 app/services/legal_chatbot/telemarketing_law_enforcement_scope.rb
 app/services/legal_chatbot/telemarketing_privacy_intent.rb

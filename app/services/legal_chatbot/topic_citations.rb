@@ -90,7 +90,8 @@ module LegalChatbot
 
       @required_gdpr_processor_citations = {
         required_external_pairs: required_pairs.to_a,
-        forbidden_internal_numacs: ['2018040581'],
+        # Sol 2026-11-22 19:11:40Z: a reader who asks about the Belgian act too may get it cited for its own clauses
+        forbidden_internal_numacs: LegalFactProvider.belgian_privacy_act_asked?(question) ? [] : ['2018040581'],
         # The Belgian cookie rule is genuinely domestic legislation, not a
         # substitute citation for the EU GDPR. Permit only this exact pair;
         # CitationGuard still requires its real retrieved row and matching link.
