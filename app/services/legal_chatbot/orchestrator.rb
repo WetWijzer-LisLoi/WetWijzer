@@ -1213,6 +1213,8 @@ module LegalChatbot
       grounded_answer = validate_rental_indexation_answer(grounded_answer, question, retained_legislation, candidate: clean_answer)
       grounded_answer = validate_withdrawal_function_status_answer(grounded_answer, question, retained_legislation, candidate: clean_answer)
       grounded_answer = validate_commercial_website_scope_answer(grounded_answer, question, retained_legislation, candidate: clean_answer)
+      # #337: an unemployment answer gets the applicable indexed amounts instead of the decree's base amounts.
+      grounded_answer = apply_indexed_amounts(grounded_answer, question, retained_legislation)
       validate_office_commute_answer(grounded_answer, question, statutory_sources)
     end
 
@@ -1225,11 +1227,12 @@ module LegalChatbot
     # Each requested sealed topic must be complete. A mixed retention /
     # processor question cannot use one available pack to conceal another
     # pack that is unavailable in the answer language.
+    # #1582: by unit, so the controller's art. 4, point 7, cannot stand in for the processor's point 8 at the same URL
     def required_official_sources_available?(question, documents)
-      available = Array(documents).to_set { |source| [source[:url], source[:article_number].to_s] }
+      available = Array(documents).to_set { |source| [source[:url], source[:article_number].to_s, source[:point]] }
       LegalFactProvider.required_official_topic_keys(question).all? do |topic|
-        required = LegalFactProvider.required_official_citations_for(topic, language: @language)
-        required.any? && required.all? { |pair| available.include?(pair) }
+        required = LegalFactProvider.required_official_units_for(topic, language: @language)
+        required.any? && required.all? { |unit| available.include?(unit) }
       end
     end
 

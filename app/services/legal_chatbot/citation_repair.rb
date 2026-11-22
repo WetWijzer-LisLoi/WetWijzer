@@ -275,6 +275,16 @@ module LegalChatbot
           - Do not mention this correction or the rejected attempt in your answer.
         FEEDBACK
       end
+      # #1582: a GDPR art. 4 label named a point no source gives at that link; only point numbers travel back
+      wrong_points = Array(guard_result&.fetch(:misattributed_definition_points, nil)).map(&:last).uniq.sort
+      if wrong_points.any?
+        sections << <<~FEEDBACK.strip
+          CORRECTION - your previous answer was rejected by the citation check and was NOT shown to the user.
+          A link to Article 4 of the GDPR named point(s) #{wrong_points.join(', ')}, but no numbered source above gives that point at that LINK. Article 4 holds every definition at one LINK, so the label is what tells the reader which definition is cited.
+          Write the complete answer again: name in the label of an Article 4 link only the point whose text a numbered source above gives, and do not attribute another definition to that link.
+          Do not mention this correction or the rejected attempt in your answer.
+        FEEDBACK
+      end
       childcare_feedback = ChildcareExpenseGrounding.corrective_feedback(
         guard_result&.fetch(:missing_childcare_conditions, nil)
       )

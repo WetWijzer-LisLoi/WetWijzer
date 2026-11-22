@@ -250,8 +250,9 @@ module LegalChatbot
       official = keyword_matched_keys(question.downcase).select do |key|
         contextually_applicable?(key, question)
       end.flat_map { |key| @fact_provider.authoritative_sources_for(key) }
+      # Art. 4's points 7 (controller) and 8 (processor) share one article URL: keep each by its title.
       (official + MortgageFinanceSources.sources_for(question) + CivilClaimGuidanceSources.sources_for(question))
-        .uniq { |source| source[:url] }
+        .uniq { |source| [source[:url], source[:article_title]] }
     rescue StandardError => e
       Rails.logger.warn("[REFSHEET] Official source selection failed: #{e.class}")
       []
@@ -321,6 +322,7 @@ module LegalChatbot
       return LegalFactProvider.gdpr_direct_marketing_question?(question) if key == LegalFactProvider::GDPR_DIRECT_MARKETING_TOPIC_KEY
       return CommercialWebsiteIntent.topic?(question) if key == LegalFactProvider::GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY
       return LegalFactProvider.gdpr_breach_question?(question) if key == LegalFactProvider::GDPR_BREACH_TOPIC_KEY
+      return LegalFactProvider.gdpr_controller_question?(question) if key == LegalFactProvider::GDPR_CONTROLLER_TOPIC_KEY
 
       # "opzeg(termijn)" is shared by employment, leases, insurance, telecom,
       # and subscriptions. Do not inject the employment ladder into a

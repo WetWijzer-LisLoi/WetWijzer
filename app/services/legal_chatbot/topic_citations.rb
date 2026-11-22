@@ -83,6 +83,11 @@ module LegalChatbot
       end.to_set
       return text if required_pairs.empty?
 
+      # #1582: art. 4's points 7 and 8 share the URL and the article number; each is required by its point
+      required_points = topics.flat_map do |topic|
+        LegalFactProvider.required_official_units_for(topic, language: @language)
+      end.select { |unit| unit.last.present? }.uniq
+
       @required_gdpr_processor_citations = {
         required_external_pairs: required_pairs.to_a,
         forbidden_internal_numacs: ['2018040581'],
@@ -94,7 +99,8 @@ module LegalChatbot
                                 else
                                   []
                                 end,
-        version: 1
+        required_definition_points: required_points,
+        version: 2
       }
       allowed_pairs = sources.filter_map do |source|
         next unless (source[:official_source_id] || source['official_source_id']) ==
@@ -106,9 +112,19 @@ module LegalChatbot
         pair if required_pairs.include?(pair)
       end.to_set
       cited_pairs = verified_external_article_citation_pairs(text, allowed_pairs)
-      missing_pairs = required_pairs - cited_pairs
-      links = missing_pairs.filter_map do |url, article_number|
+      held_points = GdprDefinitionPoints.units(sources)
+      cited_points = GdprDefinitionPoints.cited(text, allowed_pairs, method(:normalize_article_number))
+      # A pair with points is complete when a label names each required point the sources hold (Sol 13:14:02Z: a
+      # difference answer citing only point 8 lacked point 7); the appended link names exactly the missing ones.
+      links = required_pairs.filter_map do |url, article_number|
         next unless allowed_pairs.include?([url, article_number])
+
+        points = required_points.select do |unit|
+          unit.first(2) == [url, article_number] && held_points.include?(unit) && !cited_points.include?(unit)
+        end.map(&:last)
+        pointed = required_points.any? { |unit| unit.first(2) == [url, article_number] }
+        next "[#{GdprDefinitionPoints.label(points, @language)}](#{url})" if points.any?
+        next if pointed || cited_pairs.include?([url, article_number])
 
         "[#{gdpr_processor_citation_label(article_number)}](#{url})"
       end
@@ -126,22 +142,13 @@ module LegalChatbot
       end
     end
 
+    # Art. 4's links name their points (GdprDefinitionPoints.label); these are the other required articles
     def gdpr_processor_citation_label(article_number)
-      unless %w[4 28].include?(article_number)
-        acronym = { 'fr' => 'RGPD', 'de' => 'DSGVO', 'en' => 'GDPR' }.fetch(@language, 'AVG')
-        return "Art. #{article_number} — #{acronym}"
-      end
+      acronym = { 'fr' => 'RGPD', 'de' => 'DSGVO', 'en' => 'GDPR' }.fetch(@language, 'AVG')
+      return "Art. #{article_number} — #{acronym}" unless article_number == '28'
 
-      case @language
-      when 'fr'
-        article_number == '4' ? 'Art. 4, point 8 — RGPD (définition)' : 'Art. 28 — RGPD (sous-traitant)'
-      when 'de'
-        article_number == '4' ? 'Art. 4 Nr. 8 — DSGVO (Definition)' : 'Art. 28 — DSGVO (Auftragsverarbeiter)'
-      when 'en'
-        article_number == '4' ? 'Art. 4(8) — GDPR (definition)' : 'Art. 28 — GDPR (processor)'
-      else
-        article_number == '4' ? 'Art. 4, lid 8 — AVG (definitie)' : 'Art. 28 — AVG (verwerker)'
-      end
+      { 'fr' => 'Art. 28 — RGPD (sous-traitant)', 'de' => 'Art. 28 — DSGVO (Auftragsverarbeiter)',
+        'en' => 'Art. 28 — GDPR (processor)' }.fetch(@language, 'Art. 28 — AVG (verwerker)')
     end
 
     VAT_FOOD_TOPIC_PATTERN = /
@@ -671,7 +678,8 @@ module LegalChatbot
       return false unless verdict.is_a?(Hash) && verdict[:passed] == false
 
       reference_faults = %i[unsupported_references misattributed_domestic_sources missing_required_external_citations
-                            missing_required_regimes].any? { |key| Array(verdict[key]).any? }
+                            missing_required_regimes missing_required_definition_points
+                            misattributed_definition_points].any? { |key| Array(verdict[key]).any? }
       conditions = verdict.any? { |key, value| key.to_s.match?(/\Amissing_\w+_conditions\z/) && Array(value).any? }
       !reference_faults && conditions
     end

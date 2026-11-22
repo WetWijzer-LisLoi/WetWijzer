@@ -373,6 +373,9 @@ app/services/legal_chatbot/formation_deed_classification.rb
 app/services/legal_chatbot/formation_deed_grounding.rb
 app/services/legal_chatbot/future_law.rb
 app/services/legal_chatbot/gdpr_breach_sources.rb
+app/services/legal_chatbot/gdpr_controller_sources.rb
+app/services/legal_chatbot/gdpr_definition_points.rb
+app/services/legal_chatbot/gdpr_processor_sources.rb
 app/services/legal_chatbot/general_noise_scope.rb
 app/services/legal_chatbot/generation_trace.rb
 app/services/legal_chatbot/generic_deadline_clarification.rb
@@ -383,6 +386,7 @@ app/services/legal_chatbot/german_legal_glossary.rb
 app/services/legal_chatbot/german_question_translation.rb
 app/services/legal_chatbot/grounding_scope.rb
 app/services/legal_chatbot/house_hidden_defect_practical_grounding.rb
+app/services/legal_chatbot/indexed_amounts.rb
 app/services/legal_chatbot/jurisprudence_search.rb
 app/services/legal_chatbot/language_detection.rb
 app/services/legal_chatbot/legal_fact_provider.rb

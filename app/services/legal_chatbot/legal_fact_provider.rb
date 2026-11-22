@@ -3,6 +3,8 @@
 require 'uri'
 require_relative 'commercial_website_gdpr_sources'
 require_relative 'gdpr_breach_sources'
+require_relative 'gdpr_controller_sources'
+require_relative 'gdpr_processor_sources'
 
 module LegalChatbot
   # Provides verified legal facts by querying the articles table directly,
@@ -113,6 +115,7 @@ module LegalChatbot
     GDPR_PROCESSOR_TOPIC_KEY = 'gdpr_processor'
     GDPR_PROCESSOR_OFFICIAL_SOURCE_ID = 'eu_gdpr_2016_679'
     GDPR_PROCESSOR_REQUIRED_ARTICLES = %w[4 28].freeze
+    GDPR_PROCESSOR_OFFICIAL_EDITION = '02016R0679-20160504'
     GDPR_PROCESSOR_QUESTION_PATTERN =
       /(?<![[:alpha:]])(?:verwerker(?:s|sovereenkomst(?:en)?)?|gegevensverwerker(?:s|sovereenkomst(?:en)?)?|subverwerker(?:s)?|data processor(?:s)?|auftragsverarbeiter(?:s)?)(?![[:alpha:]])/iu
     GDPR_PROCESSOR_CONTEXTUAL_QUESTION_PATTERN =
@@ -305,6 +308,31 @@ module LegalChatbot
       [language, records]
     end.freeze
 
+    GDPR_CONTROLLER_TOPIC_KEY = 'gdpr_controller'
+    GDPR_CONTROLLER_OFFICIAL_EDITION = GdprControllerSources::OFFICIAL_EDITION
+    GDPR_CONTROLLER_REQUIRED_ARTICLES = GdprControllerSources::REQUIRED_ARTICLES
+    GDPR_CONTROLLER_SOURCE_LABELS = GdprControllerSources::SOURCE_LABELS
+    GDPR_CONTROLLER_OFFICIAL_TEXTS = GdprControllerSources::ARTICLE_TEXTS
+    GDPR_CONTROLLER_OFFICIAL_SOURCES = GDPR_CONTROLLER_OFFICIAL_TEXTS.to_h do |language, articles|
+      records = GDPR_CONTROLLER_REQUIRED_ARTICLES.map do |article_number|
+        title = GdprControllerSources::ARTICLE_TITLES.fetch(language).fetch(article_number)
+        record = {
+          source: 'eur_lex', official_source_id: GDPR_PROCESSOR_OFFICIAL_SOURCE_ID, authority: 'EUR-Lex',
+          official_source_topic: GDPR_CONTROLLER_TOPIC_KEY,
+          official_edition: GDPR_CONTROLLER_OFFICIAL_EDITION, verified_on: GdprControllerSources::VERIFIED_ON,
+          law_title: GDPR_RETENTION_LAW_TITLES.fetch(language),
+          title: "#{GDPR_CONTROLLER_SOURCE_LABELS.fetch(language)} — #{title}".freeze,
+          article_title: title, article_number: article_number, language: language.upcase.freeze,
+          url: "https://eur-lex.europa.eu/legal-content/#{language.upcase}/TXT/HTML/?uri=CELEX:#{GDPR_CONTROLLER_OFFICIAL_EDITION}#art_#{article_number}".freeze,
+          aliases: %w[avg gdpr rgpd dsgvo].freeze, article_text: articles.fetch(article_number),
+          point: GdprControllerSources::POINTS[article_number]
+        }.compact
+        record[:language_id] = { 'nl' => 1, 'fr' => 2 }[language] if %w[nl fr].include?(language)
+        record.freeze
+      end.freeze
+      [language, records]
+    end.freeze
+
     GDPR_PROCESSOR_SOURCE_LABELS = {
       'nl' => 'AVG — definitie en verplichtingen van de verwerker',
       'fr' => 'RGPD — définition et obligations du sous-traitant',
@@ -312,6 +340,10 @@ module LegalChatbot
       'en' => 'GDPR — processor definition and duties'
     }.freeze
 
+    # #1582 (2026-11-22): the corrected consolidation 02016R0679-20160504, as the other packs. Its Dutch art. 4,
+    # point 8, reads "namens de verwerkingsverantwoordelijke", marked as corrected by corrigendum C2 (PB L 74 of
+    # 4 March 2021, p. 35); this pack had "ten behoeve van". Art. 28, paragraphs 1 to 3, reads in the consolidation as
+    # here.
     GDPR_PROCESSOR_OFFICIAL_SOURCES = {
       'nl' => [
         {
@@ -319,15 +351,19 @@ module LegalChatbot
           official_source_id: GDPR_PROCESSOR_OFFICIAL_SOURCE_ID,
           authority: 'EUR-Lex',
           law_title: 'Algemene verordening gegevensbescherming (EU) 2016/679',
-          title: 'AVG — Artikel 4, lid 8 (definitie verwerker)',
-          article_title: 'Artikel 4, lid 8',
+          title: 'AVG — Artikel 4, punt 8 (definitie verwerker)',
+          article_title: 'Artikel 4, punt 8',
           article_number: '4',
+          point: '8',
           language: 'NL',
           language_id: 1,
-          url: 'https://eur-lex.europa.eu/legal-content/NL/TXT/HTML/?uri=CELEX:32016R0679#art_4',
+          official_source_topic: GDPR_PROCESSOR_TOPIC_KEY,
+          official_edition: GDPR_PROCESSOR_OFFICIAL_EDITION,
+          verified_on: '2026-11-22',
+          url: 'https://eur-lex.europa.eu/legal-content/NL/TXT/HTML/?uri=CELEX:02016R0679-20160504#art_4',
           aliases: %w[avg gdpr gegevensbescherming].freeze,
           article_text: <<~TEXT.strip.freeze
-            8) „verwerker”: een natuurlijke persoon of rechtspersoon, een overheidsinstantie, een dienst of een ander orgaan die/dat ten behoeve van de verwerkingsverantwoordelijke persoonsgegevens verwerkt;
+            8) „verwerker” : een natuurlijke persoon of rechtspersoon, een overheidsinstantie, een dienst of een ander orgaan die/dat namens de verwerkingsverantwoordelijke persoonsgegevens verwerkt;
           TEXT
         }.freeze,
         {
@@ -340,7 +376,10 @@ module LegalChatbot
           article_number: '28',
           language: 'NL',
           language_id: 1,
-          url: 'https://eur-lex.europa.eu/legal-content/NL/TXT/HTML/?uri=CELEX:32016R0679#art_28',
+          official_source_topic: GDPR_PROCESSOR_TOPIC_KEY,
+          official_edition: GDPR_PROCESSOR_OFFICIAL_EDITION,
+          verified_on: '2026-11-22',
+          url: 'https://eur-lex.europa.eu/legal-content/NL/TXT/HTML/?uri=CELEX:02016R0679-20160504#art_28',
           aliases: %w[avg gdpr gegevensbescherming].freeze,
           article_text: <<~TEXT.strip.freeze
             1. Wanneer een verwerking namens een verwerkingsverantwoordelijke wordt verricht, doet de verwerkingsverantwoordelijke uitsluitend een beroep op verwerkers die afdoende garanties met betrekking tot het toepassen van passende technische en organisatorische maatregelen bieden opdat de verwerking aan de vereisten van deze verordening voldoet en de bescherming van de rechten van de betrokkene is gewaarborgd.
@@ -358,7 +397,29 @@ module LegalChatbot
           TEXT
         }.freeze
       ].freeze
-    }.freeze
+    }.merge(
+      # #1582 (Sol 2026-11-22 13:14:02Z): without these, a French, German or English processor question, or a
+      # difference question, was refused as lacking its official source. See GdprProcessorSources.
+      GdprProcessorSources::ARTICLE_TEXTS.to_h do |language, articles|
+        records = GDPR_PROCESSOR_REQUIRED_ARTICLES.map do |article_number|
+          record = {
+            source: 'eur_lex', official_source_id: GDPR_PROCESSOR_OFFICIAL_SOURCE_ID, authority: 'EUR-Lex',
+            law_title: GDPR_RETENTION_LAW_TITLES.fetch(language),
+            title: GdprProcessorSources::RECORD_TITLES.fetch(language).fetch(article_number),
+            article_title: GdprProcessorSources::ARTICLE_TITLES.fetch(language).fetch(article_number),
+            article_number: article_number, language: language.upcase.freeze,
+            official_source_topic: GDPR_PROCESSOR_TOPIC_KEY, official_edition: GDPR_PROCESSOR_OFFICIAL_EDITION,
+            verified_on: GdprProcessorSources::VERIFIED_ON,
+            url: "https://eur-lex.europa.eu/legal-content/#{language.upcase}/TXT/HTML/?uri=CELEX:#{GDPR_PROCESSOR_OFFICIAL_EDITION}#art_#{article_number}".freeze,
+            aliases: %w[avg gdpr rgpd dsgvo].freeze, article_text: articles.fetch(article_number),
+            point: GdprProcessorSources::POINTS[article_number]
+          }.compact
+          record[:language_id] = 2 if language == 'fr'
+          record.freeze
+        end.freeze
+        [language, records]
+      end
+    ).freeze
 
     GDPR_DIRECT_MARKETING_TOPIC_KEY = 'gdpr_direct_marketing'
     GDPR_DIRECT_MARKETING_REQUIRED_ARTICLES = %w[12 14 15 17 21].freeze
@@ -732,11 +793,16 @@ module LegalChatbot
       keys << GDPR_DIRECT_MARKETING_TOPIC_KEY if gdpr_direct_marketing_question?(question)
       keys << GDPR_COMMERCIAL_WEBSITE_TOPIC_KEY if gdpr_commercial_website_question?(question)
       keys << GDPR_BREACH_TOPIC_KEY if gdpr_breach_question?(question)
+      keys << GDPR_CONTROLLER_TOPIC_KEY if gdpr_controller_question?(question)
       keys
     end
 
     def self.gdpr_breach_question?(question)
       GdprBreachSources.topic?(question)
+    end
+
+    def self.gdpr_controller_question?(question)
+      GdprControllerSources.topic?(question)
     end
 
     def self.gdpr_direct_marketing_question?(question)
@@ -763,6 +829,8 @@ module LegalChatbot
                                       [GDPR_COMMERCIAL_WEBSITE_OFFICIAL_SOURCES, GDPR_COMMERCIAL_WEBSITE_REQUIRED_ARTICLES]
                                     when GDPR_BREACH_TOPIC_KEY
                                       [GDPR_BREACH_OFFICIAL_SOURCES, GDPR_BREACH_REQUIRED_ARTICLES]
+                                    when GDPR_CONTROLLER_TOPIC_KEY
+                                      [GDPR_CONTROLLER_OFFICIAL_SOURCES, GDPR_CONTROLLER_REQUIRED_ARTICLES]
                                     else
                                       return []
                                     end
@@ -774,6 +842,15 @@ module LegalChatbot
       # source records. All nested values are frozen scalars/arrays.
       sources.map(&:dup)
     rescue KeyError, URI::InvalidURIError
+      []
+    end
+
+    # [url, article number, point] of each record: art. 4's points 7 and 8 share the URL and article number
+    def self.required_official_units_for(topic_key, language:)
+      official_sources_for(topic_key, language: language).map do |source|
+        [source.fetch(:url), source.fetch(:article_number), source[:point]]
+      end
+    rescue KeyError
       []
     end
 
@@ -807,13 +884,28 @@ module LegalChatbot
         uri.query == "uri=CELEX:#{GDPR_BREACH_OFFICIAL_EDITION}" &&
         GDPR_BREACH_REQUIRED_ARTICLES.include?(article_number) &&
         source[:article_text] == GDPR_BREACH_OFFICIAL_TEXTS.fetch(source.fetch(:language).downcase, {})[article_number]
+      processor_texts = GDPR_PROCESSOR_OFFICIAL_SOURCES.fetch(source.fetch(:language).downcase, [])
+                                                       .to_h { |record| [record[:article_number], record[:article_text]] }
+      corrected_processor_edition =
+        source[:official_source_topic] == GDPR_PROCESSOR_TOPIC_KEY &&
+        source[:official_edition] == GDPR_PROCESSOR_OFFICIAL_EDITION &&
+        uri.query == "uri=CELEX:#{GDPR_PROCESSOR_OFFICIAL_EDITION}" &&
+        GDPR_PROCESSOR_REQUIRED_ARTICLES.include?(article_number) &&
+        source[:article_text] == processor_texts[article_number]
+      corrected_controller_edition =
+        source[:official_source_topic] == GDPR_CONTROLLER_TOPIC_KEY &&
+        source[:official_edition] == GDPR_CONTROLLER_OFFICIAL_EDITION &&
+        uri.query == "uri=CELEX:#{GDPR_CONTROLLER_OFFICIAL_EDITION}" &&
+        GDPR_CONTROLLER_REQUIRED_ARTICLES.include?(article_number) &&
+        source[:article_text] == GDPR_CONTROLLER_OFFICIAL_TEXTS.fetch(source.fetch(:language).downcase, {})[article_number]
 
       source.fetch(:source) == 'eur_lex' &&
         source.fetch(:official_source_id) == GDPR_PROCESSOR_OFFICIAL_SOURCE_ID &&
         source.fetch(:authority) == 'EUR-Lex' &&
         uri.scheme == 'https' && uri.host == 'eur-lex.europa.eu' && uri.userinfo.nil? && uri.port == 443 &&
         uri.path == "/legal-content/#{source.fetch(:language)}/TXT/HTML/" &&
-        (original_edition || corrected_marketing_edition || corrected_website_edition || corrected_breach_edition) &&
+        (original_edition || corrected_marketing_edition || corrected_website_edition || corrected_breach_edition ||
+         corrected_processor_edition || corrected_controller_edition) &&
         uri.fragment == "art_#{article_number}" &&
         source.fetch(:article_text).to_s.strip.present?
     end
@@ -922,7 +1014,12 @@ module LegalChatbot
       'werkloosheid' => {
         numac: '1991013192',
         article_patterns: ['Art. 100', 'Art. 101', 'Art. 102', 'Art. 103', 'Art. 108', 'Art. 114', 'Art. 115'],
-        label: 'Werkloosheidsuitkering - Art. 100-115 Werkloosheidsbesluit'
+        label: 'Werkloosheidsuitkering - Art. 100-115 Werkloosheidsbesluit',
+        # #337 (Sol 2026-11-22 08:38:00Z): Art. 115 holds the 1999 base amounts, and the answer printed them as the
+        # current minima. The note gives the indexed minima with their first day and manual check, and is dropped
+        # once the newest schedule is past that check (IndexedAmounts).
+        indexation_note: IndexedAmounts.context_note,
+        note_stale_after: IndexedAmounts.fresh_until
       },
       # ── Tax ─────────────────────────────────────────────────────────
       # Tax entries fall back to the FisconetPlus DB by DOCUMENT TYPE, never by
@@ -1128,6 +1225,10 @@ module LegalChatbot
       GDPR_BREACH_TOPIC_KEY => {
         official_source_key: GDPR_BREACH_TOPIC_KEY,
         labels: GDPR_BREACH_SOURCE_LABELS
+      },
+      GDPR_CONTROLLER_TOPIC_KEY => {
+        official_source_key: GDPR_CONTROLLER_TOPIC_KEY,
+        labels: GDPR_CONTROLLER_SOURCE_LABELS
       },
 
       # ── Social Security Contribution ─────────────────────────────────

@@ -407,7 +407,8 @@ module LegalChatbot
                     LegalFactProvider::GDPR_RETENTION_OFFICIAL_SOURCES,
                     LegalFactProvider::GDPR_DIRECT_MARKETING_OFFICIAL_SOURCES,
                     LegalFactProvider::GDPR_COMMERCIAL_WEBSITE_OFFICIAL_SOURCES,
-                    LegalFactProvider::GDPR_BREACH_OFFICIAL_SOURCES]
+                    LegalFactProvider::GDPR_BREACH_OFFICIAL_SOURCES,
+                    LegalFactProvider::GDPR_CONTROLLER_OFFICIAL_SOURCES]
       registries.flat_map { |registry| registry.fetch(language, []) }.find do |record|
         record.fetch(:official_source_id) == identity && record.fetch(:url) == url &&
           record.fetch(:article_number) == number && record.fetch(:article_text) == raw
@@ -792,6 +793,24 @@ module LegalChatbot
                                'RentalIndexationGrounding')
     end
 
+    # #337 (Sol 2026-11-22 08:38:00Z, 11:43:54Z, 13:14:02Z): not a block but a correction. In an unemployment answer a
+    # benefit figure (a base amount of the decree's art. 115, or an indexed one) becomes or stays the amount of the
+    # schedule for the period it speaks of, or is withheld when no schedule checked by hand covers that period; a
+    # quotation keeps its base amounts. One line under the answer gives the first day, the official table and the manual
+    # check (IndexedAmounts). The record counts each outcome.
+    def apply_indexed_amounts(text, question, sources)
+      result = IndexedAmounts.apply(text, question: question, sources: sources, language: @language)
+      return text if result.text == text
+
+      previous = @last_citation_guard_result || { verified: true, passed: true, rejected: 0 }
+      @last_citation_guard_result = previous.merge(indexed_amounts_replaced: result.replaced,
+                                                   indexed_amounts_confirmed: result.confirmed,
+                                                   indexed_amounts_withheld: result.withheld,
+                                                   indexed_amounts_quoted: result.quoted,
+                                                   indexed_amounts_version: IndexedAmounts::VERSION)
+      result.text
+    end
+
     def validate_withdrawal_function_status_answer(text, question, sources, candidate: text)
       merge_semantic_grounding(text, OnlineWithdrawalFunctionStatus.evaluate(candidate, question, sources),
                                :missing_withdrawal_function_status_conditions, :withdrawal_function_status_version,
@@ -978,13 +997,15 @@ module LegalChatbot
       forbidden_internal_numacs = Array(
         @required_gdpr_processor_citations&.fetch(:forbidden_internal_numacs, nil)
       )
+      required_points = Array(@required_gdpr_processor_citations&.fetch(:required_definition_points, nil))
       if text.blank?
-        passed = required_numacs.empty? && required_external_pairs.empty?
+        passed = required_numacs.empty? && required_external_pairs.empty? && required_points.empty?
         @last_citation_guard_result = {
           verified: true, passed: passed,
-          rejected: required_numacs.length + required_external_pairs.length,
+          rejected: required_numacs.length + required_external_pairs.length + required_points.length,
           unsupported_references: [], missing_required_regimes: required_numacs,
           missing_required_external_citations: required_external_pairs,
+          missing_required_definition_points: required_points, misattributed_definition_points: [],
           misattributed_domestic_sources: [], version: 4
         }
         return passed ? text : unsupported_article_citation_message
@@ -1049,6 +1070,11 @@ module LegalChatbot
       missing_required_regimes = required_numacs - cited_numacs
       cited_external_pairs = verified_external_article_citation_pairs(text, allowed_external_pairs)
       missing_required_external = required_external_pairs - cited_external_pairs.to_a
+      # #1582: a GDPR art. 4 link names the point users read; it must be a required point the label names, and one
+      # a source holds at that link (points 7 and 8 share the URL)
+      normalize = method(:normalize_article_number)
+      missing_definition_points = required_points - GdprDefinitionPoints.cited(text, allowed_external_pairs, normalize).to_a
+      misattributed_points = GdprDefinitionPoints.misattributed(text, sources, normalize)
       domestic_scan_text = text.to_s.gsub(MARKDOWN_LINK_PATTERN) do |markdown|
         parsed = markdown.match(/\A\[([^\]\n]+)\]\(([^)\n]+)\)\z/)
         next markdown unless parsed
@@ -1068,16 +1094,18 @@ module LegalChatbot
         forbidden_internal_numacs.include?(numac)
       end.uniq
       passed = unsupported.empty? && missing_required_regimes.empty? && missing_required_external.empty? &&
-               misattributed_domestic_sources.empty?
+               misattributed_domestic_sources.empty? && missing_definition_points.empty? && misattributed_points.empty?
 
       @last_citation_guard_result = {
         verified: true,
         passed: passed,
         rejected: unsupported.length + missing_required_regimes.length + missing_required_external.length +
-                  misattributed_domestic_sources.length,
+                  misattributed_domestic_sources.length + missing_definition_points.length + misattributed_points.length,
         unsupported_references: unsupported,
         missing_required_regimes: missing_required_regimes,
         missing_required_external_citations: missing_required_external,
+        missing_required_definition_points: missing_definition_points,
+        misattributed_definition_points: misattributed_points,
         misattributed_domestic_sources: misattributed_domestic_sources,
         version: 4
       }
@@ -1087,6 +1115,7 @@ module LegalChatbot
         "[CitationGuard] blocked answer: unsupported_count=#{unsupported.size} " \
         "missing_regime_count=#{missing_required_regimes.size} " \
         "missing_external_count=#{missing_required_external.size} " \
+        "missing_point_count=#{missing_definition_points.size} misattributed_point_count=#{misattributed_points.size} " \
         "misattributed_domestic_count=#{misattributed_domestic_sources.size} " \
         "unsupported=#{citation_guard_log_references(unsupported)} " \
         "misattributed=#{citation_guard_log_references(misattributed_domestic_sources)}"
