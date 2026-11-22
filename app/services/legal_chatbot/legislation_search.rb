@@ -2331,6 +2331,42 @@ module LegalChatbot
     # 1 September 2026. Matched: a state secret in four languages.
     STATE_SECRET_PATTERN = /(?<![[:alnum:]])(?:staatsgeheim\p{L}*|secrets?\s+d['’]\s*[ée]tat|staatsgeheimnis\p{L}*|state\s+secrets?)(?![[:alnum:]])/iu
 
+    # Sol 2026-11-21 10:54:53Z (#149 "Aangifte arbeidsongeval termijn?"): the answer gave a five-day maritime deadline and
+    # missed the ordinary private-sector one. Art. 62 of the Industrial Accidents Act (1971041001) leaves the term to the
+    # King; the royal decree of 12 March 2003 (2003022292) art. 2 (read in full NL and FR, 2026-11-21) sets eight days from
+    # the day after the accident, and a minor accident entered in the register only once it worsens. That decree covers the
+    # private sector, so a question about a civil servant is left to the public-sector rules.
+    # Sol 2026-11-22 06:00:58Z: "publieke sector" was missed, and contesting a refused accident is an appeal, not the
+    # report: both are left out. A refusal alone is not an appeal ("mijn werkgever weigert het aan te geven" still asks
+    # about the report).
+    INDUSTRIAL_ACCIDENT_EXCLUDED = /(?:ambtena\p{L}*|openbare\s+sector|publieke\s+sector|overheid\p{L}*|lokale\s+besturen|statutair\p{L}*|fonction\s+publique|secteur\s+public|service\s+public|fonctionnaire\p{L}*|agents?\s+statutaires?|beamte\p{L}*|(?:ö|oe)ffentlich\p{L}*\s+(?:dienst|sektor)|public\s+(?:sector|service)|civil\s+servants?)/iu
+    INDUSTRIAL_ACCIDENT_APPEAL = /(?<![[:alnum:]])(?:betwist\p{L}*|aanvecht\p{L}*|afwijzing\p{L}*|afgewezen|beroep\s+(?:aantekenen|instellen|gaan)|hoger\s+beroep|contest\p{L}*|recours|rejet\p{L}*|widerspruch\p{L}*|anfecht\p{L}*|abgelehnt|ablehnung\p{L}*|appeal\p{L}*|disput\p{L}*|reject\p{L}*)(?![[:alnum:]])/iu
+    INDUSTRIAL_ACCIDENT_REPORT_PATTERN = /\A(?!.*#{INDUSTRIAL_ACCIDENT_EXCLUDED.source})(?!.*#{INDUSTRIAL_ACCIDENT_APPEAL.source})(?=.*(?<![[:alnum:]])(?:arbeidsongeval\p{L}*|ongeval\s+op\s+(?:het\s+)?werk|accidents?\s+du\s+travail|arbeitsunf(?:a|ä)ll\p{L}*|(?:workplace|occupational|industrial|work)\s+accidents?)(?![[:alnum:]]))(?=.*(?<![[:alnum:]])(?:aangifte\p{L}*|aangeven|aangegeven|melden|melding\p{L}*|gemeld|termijn\p{L}*|binnen\s+hoeveel|d[ée]clar\p{L}*|signal\p{L}*|d[ée]lai\p{L}*|meld\p{L}*|anzeig\p{L}*|frist\p{L}*|report\p{L}*|deadline|notif\p{L}*)(?![[:alnum:]]))/imu
+
+    # Sol 2026-11-21 10:54:53Z (#2158 "Zijn algemene voorwaarden altijd bindend?"): both answers came from the postal
+    # money-order rules and missed the general rule. Civil Code Book 5 (2022A32058) art. 5.23 (read in full NL and FR,
+    # 2026-11-21): the other party's actual knowledge of the general terms, or at least the opportunity to take actual
+    # knowledge, and their acceptance; negotiated terms prevail; offer and acceptance referring to different general terms.
+    # Sol 2026-11-22 06:00:58Z: "de algemene voorwaarden om een werkloosheidsuitkering te krijgen" are the conditions
+    # of a benefit, not contract terms: a question about a benefit, a permit or what it takes to obtain one is left out.
+    GENERAL_TERMS_EXCLUDED = /(?<![[:alnum:]])(?:uitkering\p{L}*|werkloosheid\p{L}*|subsidie\p{L}*|toelage\p{L}*|kinderbijslag|groeipakket|leefloon|tegemoetkoming\p{L}*|vergunning\p{L}*|toelating\p{L}*|allocation\p{L}*|ch[ôo]mage|subside\p{L}*|subvention\p{L}*|revenu\s+d.int[ée]gration|permis|arbeitslos\p{L}*|zulage\p{L}*|beihilfe\p{L}*|f(?:ö|oe)rder\p{L}*|genehmigung\p{L}*|benefit\p{L}*|allowance\p{L}*|subsid\p{L}*|permit\p{L}*|eligib\p{L}*|om\s+(?:\p{L}+\s+){0,4}te\s+(?:krijgen|verkrijgen|genieten|ontvangen|bekomen)|pour\s+(?:obtenir|b[ée]n[ée]ficier|avoir\s+droit)|um\s+(?:\p{L}+\s+){0,4}zu\s+(?:erhalten|bekommen|beziehen)|to\s+(?:get|obtain|receive|qualify))(?![[:alnum:]])/iu
+    GENERAL_TERMS_CORE = /(?<![[:alnum:]])(?:algemene\s+(?:verkoops?|leverings?|contract)?voorwaarden|conditions\s+g[ée]n[ée]rales|allgemeinen?\s+gesch(?:ä|ae)ftsbedingungen|general\s+terms(?:\s+and\s+conditions)?|standard\s+terms(?:\s+and\s+conditions)?|terms\s+and\s+conditions)(?![[:alnum:]])/iu
+    GENERAL_TERMS_PATTERN = /\A(?!.*#{GENERAL_TERMS_EXCLUDED.source})(?=.*#{GENERAL_TERMS_CORE.source})/imu
+
+    # Sol 2026-11-21 10:54:53Z (#1151, doorstep sales): the answer gave the deadline to return the goods and missed the
+    # 14 days to notify the withdrawal. Code of Economic Law (2013A11134) arts. VI.67, VI.69 and VI.71 (read in full NL and
+    # FR, 2026-11-21): 14 days from the contract (services) or the physical possession of the goods; a notice sent within
+    # the period is in time; the goods go back within 14 days after the notice. Distance contracts keep their own pins.
+    # Sol 2026-11-22 06:00:58Z: "Mag een gerechtsdeurwaarder aan de deur komen?" and a sale by telephone matched. A
+    # sale named as such counts on its own; "aan de deur", "démarchage", "doorstep" and the like only beside a sale or
+    # contract word, and never with a telephone (a distance contract keeps its own pins). "Bellen" stays allowed: at the door it is the
+    # doorbell.
+    OFF_PREMISES_STRONG = /(?<![[:alnum:]])(?:colportage|huis[-\s]aan[-\s]huis(?:verkoop|verkoper)\p{L}*|deur[-\s]aan[-\s]deur(?:verkoop|verkoper)\p{L}*|buiten\s+(?:de\s+)?verkoopruimte\p{L}*|hors\s+[ée]tablissement|d[ée]marchage\s+[àa]\s+domicile|vente\s+[àa]\s+domicile|haust(?:ü|ue)r(?:gesch(?:ä|ae)ft|verkauf|vertrag)\p{L}*|au(?:ß|ss)erhalb\s+von\s+gesch(?:ä|ae)ftsr(?:ä|ae)umen|off[-\s]premises|doorstep\s+(?:sale|selling|seller|contract)s?|door[-\s]to[-\s]door\s+(?:sale|selling|seller|salesman|salesperson|contract)s?)(?![[:alnum:]])/iu
+    OFF_PREMISES_WEAK = /(?<![[:alnum:]])(?:aan\s+(?:de|je|mijn|uw)\s+(?:voor)?deur|huis[-\s]aan[-\s]huis|deur[-\s]aan[-\s]deur|porte[-\s][àa][-\s]porte|[àa]\s+(?:mon|votre|son)\s+domicile|d[ée]marchage|haust(?:ü|ue)r|an\s+der\s+(?:haus)?t(?:ü|ue)r|door[-\s]to[-\s]door|doorstep|at\s+(?:my|the|your)\s+(?:front\s+)?door)(?![[:alnum:]])/iu
+    OFF_PREMISES_SALE = /(?<![[:alnum:]])(?:(?:ver)?ko(?:o|c)ht\p{L}*|(?:ver)?kopen|koop\p{L}*|verkoper\p{L}*|bestel\p{L}*|abonnement\p{L}*|contract\p{L}*|overeenkomst\p{L}*|herroep\p{L}*|annul\p{L}*|opzeg\p{L}*|aankoop\p{L}*|vente\p{L}*|vend\p{L}*|achat\p{L}*|achet\p{L}*|contrat\p{L}*|r[ée]tract\p{L}*|kauf\p{L}*|gekauft|verkauf\p{L}*|vertrag\p{L}*|widerruf\p{L}*|sale\p{L}*|sold|sell\p{L}*|bought|buy\p{L}*|purchas\p{L}*|subscription\p{L}*|cancel\p{L}*|withdraw\p{L}*)(?![[:alnum:]])/iu
+    OFF_PREMISES_PHONE = /(?<![[:alnum:]])(?:telefo\p{L}*|t[ée]l[ée]phon\p{L}*|phone\p{L}*|anruf\p{L}*|angerufen)(?![[:alnum:]])/iu
+    OFF_PREMISES_PATTERN = /\A(?:(?=.*#{OFF_PREMISES_STRONG.source})|(?!.*#{OFF_PREMISES_PHONE.source})(?=.*#{OFF_PREMISES_WEAK.source})(?=.*#{OFF_PREMISES_SALE.source}))/imu
+
     ARTICLE_PINS = [
       # Criminal / civil procedure
       [LEGACY_CRIMINAL_FACT_PATTERN,                                  '2024002052', '2'],        # Book I: more-favourable-law transition
@@ -2738,6 +2774,11 @@ module LegalChatbot
       # How the consumer tells the trader of the withdrawal (Sol 2026-11-16 16:49:59Z: the follow-up "Welk artikel
       # regelt die kennisgeving?" missed Art. VI.49 § 1).
       [WITHDRAWAL_NOTICE_PATTERN, '2013A11134', 'VI.49'],
+      [OFF_PREMISES_PATTERN, '2013A11134', 'VI.67'],
+      [OFF_PREMISES_PATTERN, '2013A11134', 'VI.69'],
+      [OFF_PREMISES_PATTERN, '2013A11134', 'VI.71'],
+      [GENERAL_TERMS_PATTERN, '2022A32058', '5.23'],
+      [INDUSTRIAL_ACCIDENT_REPORT_PATTERN, '2003022292', '2'],
       [DISTANCE_CONTRACT_DEFINITION_PATTERN, '2013A11134', 'I.8'],
       [RENTAL_DISPUTE_PEACE_JUDGE_PATTERN, '1967101054', '591'],
       [RENTAL_DISPUTE_PEACE_JUDGE_PATTERN, '1967101054', '629'],

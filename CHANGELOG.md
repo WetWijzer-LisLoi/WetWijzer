@@ -8,6 +8,18 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.89] - 2026-11-22
+
+### Added
+
+- The chat bubble has its own menu, asked for by the owner: a right-click, the context-menu key or Shift+F10 on the bubble offers one action, "Standaardpositie herstellen" ("Rétablir la position par défaut", "Standardposition wiederherstellen", "Reset to default position"), which puts the bubble back at its default place without opening or closing the chat. The panel keeps its size, its open or closed state and what was typed. Escape, Tab or a press elsewhere closes the menu, and a left-click and a drag work as before. Touch keeps the reset in the panel header, without a long press that would compete with dragging.
+
+### Fixed
+
+- For a signed-in reader, a reset position came back from the server on a later page: the saved layout was merged into the stored one, where a key that is left out is kept. A change of place now saves only the place and a change of size only the size, each as its own key, with a null for a place given up, which deletes it; a reset made before the saved preferences arrive is kept over them and leaves the saved size alone. The reset in the panel header deletes the stored layout instead of merging an empty one into it.
+- A signed-in reader's saved position and size are applied once the preferences arrive from the server. On a full page load they arrived after the widget had been set up, so they only came back with the next page visited inside the site.
+- The chatbot finds the governing provision of four ordinary questions that name no article: the deadline to report an industrial accident (royal decree of 12 March 2003, art. 2, beside art. 62 of the Industrial Accidents Act), whether general terms bind (Civil Code art. 5.23), withdrawing from a doorstep sale (Code of Economic Law arts. VI.67, VI.69 and VI.71) and the deadline of the succession declaration (W.Succ. art. 40 as Fisconet holds it for each region, where the Flemish entry points to the Flemish Tax Code). A flight delay or cancellation named in one word or by the aircraft now asks for Regulation (EC) No 261/2004; its articles reach an answer once the regulation has been fetched. Each is kept to its subject: a bailiff at the door, a sale by telephone, the conditions of a benefit or an appeal against a refused accident claim does not bring them.
+
 ## [1.1.88] - 2026-11-21
 
 ### Security

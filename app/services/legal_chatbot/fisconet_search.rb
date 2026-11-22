@@ -121,9 +121,20 @@ module LegalChatbot
       table && [table, VAT_SCHEDULE_RATES.fetch(table)]
     end
 
+    # Sol 2026-11-21 10:28:15Z (#2706 "Aangifte nalatenschap termijn?"): the answer gave the Flemish periods and said its
+    # sources gave none for Brussels or Wallonia. The keyword search returned W.Succ. arts. 35, 42, 100 and 135bis, never
+    # art. 40, the filing deadline. Fisconet holds art. 40 for the Walloon Region (from 01.01.2022), the Brussels-Capital
+    # Region (successions from 11.08.2022), the federal text (from 01.08.2012) and the Flemish Region, whose row records
+    # that the code is repealed there and its first two paragraphs became VCF art. 3.3.1.0.5, § 2 (all read in full, NL
+    # and FR, 2026-11-21). With the three regions present, select_per_article shows each region's row with its label.
+    # Sol 2026-11-22 06:00:58Z: "successieaangifte" missed (one word), and "return the estate's keys" matched the bare
+    # "return": a compound declaration counts, and "return" only as the estate's own return.
+    SUCCESSION_DECLARATION_DEADLINE_PATTERN = /\A(?=.*(?<![[:alnum:]])(?:(?:successie|nalatenschaps?|erfbelasting|erfenis)?aangifte\p{L}*|aangeven|declaration|d[ée]claration|erkl(?:ä|ae)rung|an(?:ge)?zeig\p{L}*|(?:estate|inheritance|succession)(?:\s+tax)?\s+return|return\s+(?:for|of)\s+(?:the\s+)?(?:estate|inheritance|succession))(?![[:alnum:]]))(?=.*(?<![[:alnum:]])(?:nalatenschap\p{L}*|successie\p{L}*|erfenis\p{L}*|succession\p{L}*|nachlass\p{L}*|erbschaft\p{L}*|estate|inheritance)(?![[:alnum:]]))(?=.*(?<![[:alnum:]])(?:termijn\p{L}*|binnen\s+(?:welke|hoeveel)|wanneer|tegen\s+wanneer|deadline|d[ée]lai\p{L}*|quand|frist\p{L}*|bis\s+wann|wann|time\s+limit|when|te\s+laat|en\s+retard|zu\s+sp(?:ä|ae)t|late)(?![[:alnum:]]))/imu
+
     # High-confidence tax concepts whose governing articles are otherwise
     # easily displaced by a different code containing the same vocabulary.
     ARTICLE_HINTS = [
+      { question: SUCCESSION_DECLARATION_DEADLINE_PATTERN, document_types: ['w.succ.'], articles: %w[40] },
       { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer|umsatzsteuer)\b)(?=.*\b(?:renovati\w*|verbouw\w*|rénovation\w*|renovation\w*)\b).*\z/im,
         document_types: ['kb 20'], articles: %w[A-XXXI A-XXXVIII] },
       { question: /\A(?=.*\b(?:btw|tva|vat|mehrwertsteuer|umsatzsteuer)\b)(?=.*\b(?:afbraak|heropbouw|démolition|reconstruction)\w*\b).*\z/im,

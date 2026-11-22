@@ -26,6 +26,8 @@ export function panelNudgeIntoView(left, top, margin = 8) {
 // The panel's bottom edge sits this far above the container's, straight from
 // the `bottom-[4.5rem]` class on #chatbot-widget-panel.
 const PANEL_BOTTOM_OFFSET = 72
+// Between the bubble and its menu, and between the menu and the window edge.
+const FAB_MENU_GAP = 8
 
 export const layoutMethods = {
   // Mobile has no floating launcher. Return focus to the dock's Chat link,
@@ -131,6 +133,16 @@ export const layoutMethods = {
   },
 
   handleFabKeydown(event) {
+    // The context-menu key and Shift+F10 open the bubble's own menu. A browser
+    // that also turns them into a contextmenu event reaches openFabMenu a
+    // second time, which keeps the one menu open.
+    if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
+      if (this.hasFabMenuTarget) {
+        event.preventDefault()
+        this.openFabMenu(event)
+      }
+      return
+    }
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
       this.toggle()
@@ -142,6 +154,132 @@ export const layoutMethods = {
     // (one synthesized click), keyboard and assistive technology. Desktop
     // pointer releases are already handled by the drag state machine.
     if (window.innerWidth < 768 || event.detail === 0) this.toggle()
+  },
+
+  // ═══════════════════════════════════════════════
+  // BUBBLE MENU - right-click, the context-menu key or Shift+F10 on the bubble
+  // ═══════════════════════════════════════════════
+
+  // One action, asked for by the owner (via Sol, 2026-11-21): put the bubble
+  // back at its default place. Only the position goes (_resetPositionOnly):
+  // the panel's size, whether it is open and the conversation all stay. Touch
+  // keeps the reset in the panel header; a long press is left to the browser,
+  // because it would compete with dragging.
+  openFabMenu(event) {
+    if (!this.hasFabMenuTarget || !this.hasToggleButtonTarget) return
+    if (event?.type === 'contextmenu' && this._fromTouch(event)) return
+    event?.preventDefault?.()
+    // A Mac's Ctrl+click starts as a left mousedown, so the drag machine is
+    // waiting for the release and would open or close the chat on it.
+    this._cancelFabDrag()
+
+    const menu = this.fabMenuTarget
+    if (menu.hidden) {
+      menu.hidden = false
+      this._placeFabMenu()
+      this._bindFabMenuDismiss()
+    }
+    if (this.hasFabMenuItemTarget) this.fabMenuItemTarget.focus({ preventScroll: true })
+  },
+
+  closeFabMenu({ refocus = false } = {}) {
+    this._unbindFabMenuDismiss()
+    if (!this.hasFabMenuTarget || this.fabMenuTarget.hidden) return
+    this.fabMenuTarget.hidden = true
+    if (refocus && this.hasToggleButtonTarget) this.toggleButtonTarget.focus({ preventScroll: true })
+  },
+
+  resetBubblePosition(event) {
+    event?.preventDefault?.()
+    this.closeFabMenu({ refocus: true })
+    this._resetPositionOnly()
+    // _resetPositionOnly leaves an open panel where the old position had
+    // nudged it; back at the default corner it is fitted again.
+    this._fitPanelInViewport()
+  },
+
+  // A long press reports itself as touch: as a PointerEvent where the browser
+  // makes contextmenu one, and through Chrome's InputDeviceCapabilities.
+  _fromTouch(event) {
+    return event.pointerType === 'touch' || event.sourceCapabilities?.firesTouchEvents === true
+  },
+
+  _cancelFabDrag() {
+    const state = this._fabDragState
+    if (!state) return
+    document.removeEventListener('mousemove', this._boundFabDragMove)
+    document.removeEventListener('mouseup', this._boundFabDragEnd)
+    document.removeEventListener('touchmove', this._boundFabDragMove)
+    document.removeEventListener('touchend', this._boundFabDragEnd)
+    document.body.classList.remove('widget-dragging')
+    this._fabDragState = null
+    // A bubble already on the move stays where it was put.
+    if (state.dragging) {
+      this._persistWidgetPosition()
+      this._syncResetPositionButton()
+    }
+  },
+
+  // Above the bubble and aligned with its right edge, or below it when the
+  // bubble was dragged to the top; always inside the window. The menu is
+  // position: fixed, so it is measured once it is shown.
+  _placeFabMenu() {
+    const menu = this.fabMenuTarget
+    const bubble = this.toggleButtonTarget.getBoundingClientRect()
+    const box = menu.getBoundingClientRect()
+    const width = document.documentElement?.clientWidth || window.innerWidth
+    const height = document.documentElement?.clientHeight || window.innerHeight
+    let top = bubble.top - FAB_MENU_GAP - box.height
+    if (top < FAB_MENU_GAP) top = bubble.bottom + FAB_MENU_GAP
+    top = Math.max(FAB_MENU_GAP, Math.min(top, height - box.height - FAB_MENU_GAP))
+    const left = Math.max(FAB_MENU_GAP, Math.min(bubble.right - box.width, width - box.width - FAB_MENU_GAP))
+    menu.style.left = `${Math.round(left)}px`
+    menu.style.top = `${Math.round(top)}px`
+  },
+
+  // Bound only while the menu is open. Not closed on scroll: the bubble and
+  // the menu are both fixed to the window, and an answer streaming into the
+  // transcript scrolls it all the time.
+  _bindFabMenuDismiss() {
+    if (this._fabMenuDismissBound) return
+    this._fabMenuDismissBound = true
+    if (!this._boundFabMenuPress) {
+      this._boundFabMenuPress = (event) => {
+        if (this.hasFabMenuTarget && this.fabMenuTarget.contains(event.target)) return
+        this.closeFabMenu()
+      }
+      this._boundFabMenuKey = (event) => {
+        if (event.key === 'Escape') {
+          // The menu owns Escape while it is open; the open panel's Escape
+          // handler on the document would otherwise close the chat as well.
+          event.preventDefault()
+          event.stopImmediatePropagation()
+          this.closeFabMenu({ refocus: true })
+        } else if (event.key === 'Tab') {
+          // Back on the bubble before the browser moves on, so Tab and
+          // Shift+Tab continue from where the menu was opened.
+          this.closeFabMenu({ refocus: true })
+        }
+      }
+      // A resize or leaving the window hides the menu; a keyboard user whose focus was in it gets the bubble back.
+      this._boundFabMenuAway = () => {
+        const hadFocus = this.hasFabMenuTarget && this.fabMenuTarget.contains(document.activeElement)
+        this.closeFabMenu({ refocus: hadFocus })
+      }
+    }
+    document.addEventListener('pointerdown', this._boundFabMenuPress, true)
+    document.addEventListener('keydown', this._boundFabMenuKey, true)
+    window.addEventListener('resize', this._boundFabMenuAway)
+    window.addEventListener('blur', this._boundFabMenuAway)
+  },
+
+  _unbindFabMenuDismiss() {
+    if (!this._fabMenuDismissBound) return
+    this._fabMenuDismissBound = false
+    document.removeEventListener('pointerdown', this._boundFabMenuPress, true)
+    document.removeEventListener('keydown', this._boundFabMenuKey, true)
+    window.removeEventListener('resize', this._boundFabMenuAway)
+    window.removeEventListener('blur', this._boundFabMenuAway)
   },
 
   // Auto-resize widget textarea
@@ -256,7 +394,7 @@ export const layoutMethods = {
 
     if (wasDragging) {
       // Was a drag - persist position, do NOT open/close
-      this._persistWidgetLayout()
+      this._persistWidgetPosition()
       this._syncResetPositionButton()
     } else {
       // Was a click (no movement) - open or close+reset
@@ -311,7 +449,7 @@ export const layoutMethods = {
       document.removeEventListener('mouseup', onUp)
       document.removeEventListener('touchmove', onMove)
       document.removeEventListener('touchend', onUp)
-      this._persistWidgetLayout()
+      this._persistWidgetPosition()
       this._syncResetPositionButton()
     }
 
@@ -392,7 +530,7 @@ export const layoutMethods = {
       // A taller or wider panel can reach past the top-left of the window
       // from a bubble position that fitted before the resize.
       this._fitPanelInViewport()
-      this._persistWidgetLayout()
+      this._persistWidgetSize()
       this._syncResetPositionButton()
     }
 
@@ -452,7 +590,7 @@ export const layoutMethods = {
     }
 
     // Persist layout state
-    if (typeof this._persistWidgetLayout === 'function') this._persistWidgetLayout()
+    if (typeof this._persistWidgetSize === 'function') this._persistWidgetSize()
     if (typeof this._syncResetPositionButton === 'function') this._syncResetPositionButton()
   },
 
@@ -501,9 +639,12 @@ export const layoutMethods = {
     // inline offsets the previous position left on the panel.
     this._fitPanelInViewport()
 
-    // Clear stored layout prefs
+    // Clear stored layout prefs. remove() sends a null, which deletes the key
+    // on the server. The empty object sent before was merged into the stored
+    // layout (RFC 7396, User#merge_ui_prefs!) and changed nothing there, so a
+    // signed-in reader got the old position and size back on the next page.
     try {
-      prefsStore.set('chatbot_widget', {})
+      prefsStore.remove('chatbot_widget')
     } catch (_) {}
 
     // Sync reset button state (now nothing to reset, so disable it)
@@ -538,7 +679,16 @@ export const layoutMethods = {
     // watcher has to be bound before the mobile bail-out so it is in place if
     // the window is widened later.
     this._watchPanelFit()
+    // A page snapshot never brings an open bubble menu back.
+    this.closeFabMenu()
+    this._applySavedWidgetLayout()
+  },
 
+  // Run again once the server's copy of a signed-in reader's preferences has
+  // arrived (chatbot_controller.js, _initPreferencesAsync): on a full page load
+  // the store is still empty at connect, so the saved position and size only
+  // came back with the next Turbo visit.
+  _applySavedWidgetLayout() {
     if (window.innerWidth < 640) return // never restore on mobile
 
     let saved
@@ -599,28 +749,42 @@ export const layoutMethods = {
    * Persist current widget layout to prefsStore.
    */
 
-  _persistWidgetLayout() {
+  // The bubble's place: where it was dragged, or null for both coordinates once it is back at the default.
+  _persistWidgetPosition() {
     const container = this.element
-    const panel = this.hasWidgetTarget ? this.widgetTarget : document.getElementById('chatbot-widget-panel')
-    const layout = {}
-
-    if (container.classList.contains('widget-custom-pos')) {
-      const rect = container.getBoundingClientRect()
-      layout.left = Math.round(rect.left)
-      layout.top  = Math.round(rect.top)
+    if (!container.classList.contains('widget-custom-pos')) {
+      this._saveWidgetLayout({ left: null, top: null })
+      return
     }
+    const rect = container.getBoundingClientRect()
+    this._saveWidgetLayout({ left: Math.round(rect.left), top: Math.round(rect.top) })
+  },
 
-    if (panel) {
-      const w = panel.style.width
-      const h = panel.style.height || panel.style.maxHeight
-      if (w) layout.width  = parseInt(w, 10)
-      if (h) layout.height = parseInt(h, 10)
-      if (panel.classList.contains('widget-expanded')) layout.expanded = true
-    }
+  // The panel's size: its resized width and height, null where the CSS sizes it, and whether it is maximized.
+  _persistWidgetSize() {
+    const panel = this._widgetPanel()
+    if (!panel) return
+    const w = panel.style.width
+    const h = panel.style.height || panel.style.maxHeight
+    this._saveWidgetLayout({ width: w ? parseInt(w, 10) : null, height: h ? parseInt(h, 10) : null,
+                             expanded: panel.classList.contains('widget-expanded') ? true : null })
+  },
 
+  // Saves only the keys an action changed, each as its own nested key. The server merges a patch per RFC 7396
+  // (User#merge_ui_prefs!): a key left out is kept and a null deletes it. Before the server copy of the preferences
+  // arrives, the store holds and sends only these keys, and applies them over that copy when it comes
+  // (PreferencesStore#_doInit): a reset made that early is not undone by the saved position, and a position change
+  // never clears the saved size. Sending the whole layout did both (Sol 2026-11-22 06:00:58Z).
+  _saveWidgetLayout(values) {
+    // Only the floating widget has a layout to keep (see _restoreWidgetLayout).
+    if (!this._widgetPanel()) return
     try {
-      prefsStore.set('chatbot_widget', layout)
+      for (const [key, value] of Object.entries(values)) prefsStore.set(`chatbot_widget.${key}`, value)
     } catch (_) { /* save failed - silently ignore */ }
+  },
+
+  _widgetPanel() {
+    return this.hasWidgetTarget ? this.widgetTarget : document.getElementById('chatbot-widget-panel')
   },
 
   /**

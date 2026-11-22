@@ -88,6 +88,8 @@ class ChatbotController extends Controller {
     "typingIndicator",
     "widget",
     "toggleButton",
+    "fabMenu",
+    "fabMenuItem",
     "badge",
     "fabIconChat",
     "fabIconClose",
@@ -265,6 +267,8 @@ class ChatbotController extends Controller {
     // a clean welcome state instead; a consented user's real transcript comes
     // back from the server in connect().
     this._boundBeforeCache = () => {
+      // An open bubble menu must not be saved into the page snapshot.
+      this.closeFabMenu?.()
       if (!this.hasMessagesTarget) return
       const indicator = this.hasTypingIndicatorTarget ? this.typingIndicatorTarget : this._typingIndicatorEl
       this.messagesTarget.innerHTML = ''
@@ -331,6 +335,8 @@ class ChatbotController extends Controller {
     // Escape-key listener is bound while the widget is open; without this it
     // leaks (and holds the whole controller alive) across Turbo navigations
     this._unbindEscapeKey()
+    // Likewise the bubble menu's listeners, which exist while it is open.
+    this._unbindFabMenuDismiss?.()
     // Mid-drag Turbo navigation would leak the FAB drag listeners
     if (this._boundFabDragMove) {
       document.removeEventListener('mousemove', this._boundFabDragMove)
@@ -497,8 +503,8 @@ class ChatbotController extends Controller {
       container.style.left = ''
       container.style.top = ''
     }
-    // Persist: keep size but clear position from saved prefs
-    this._persistWidgetLayout()
+    // Persist: clear the saved place only; the saved size stays (layout_mixin.js, _saveWidgetLayout)
+    this._persistWidgetPosition()
     this._syncResetPositionButton()
   }
   _syncWidgetPills() {
@@ -2756,6 +2762,9 @@ class ChatbotController extends Controller {
       this._syncSlidersFromPreferences()
       this._syncWidgetPills()
       this._syncSourceCheckboxes()
+      // The widget's saved position and size were read at connect, before the
+      // server copy arrived (layout_mixin.js, _applySavedWidgetLayout).
+      this._applySavedWidgetLayout?.()
       if (this._researchDepthTouched) this.savePreferences()
       return true
     } catch (e) {

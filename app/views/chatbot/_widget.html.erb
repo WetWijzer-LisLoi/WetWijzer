@@ -281,6 +281,10 @@
       bottom: auto !important;
       right: auto !important;
     }
+    /* The bubble's context menu is placed beside the bubble in window
+       coordinates (layout_mixin.js, _placeFabMenu) and sits above the panel. */
+    #chatbot-fab-menu { position: fixed; z-index: 70; }
+    #chatbot-fab-menu[hidden] { display: none !important; }
     /* Mobile: full-width widget - override drag/resize */
     @media (max-width: 767px) {
       /* Default mobile FAB position - close to bottom edge */
@@ -399,7 +403,7 @@
   <button type="button"
           id="chatbot-fab"
           data-chatbot-target="toggleButton"
-          data-action="click->chatbot#handleFabClick keydown->chatbot#handleFabKeydown mousedown->chatbot#startFabDrag touchstart->chatbot#startFabDrag"
+          data-action="click->chatbot#handleFabClick keydown->chatbot#handleFabKeydown mousedown->chatbot#startFabDrag touchstart->chatbot#startFabDrag contextmenu->chatbot#openFabMenu"
           aria-label="<%= open_label %>"
           aria-expanded="false"
           aria-controls="chatbot-widget-panel"
@@ -427,6 +431,25 @@
       <%= tooltip_text %>
     </span>
   </button>
+
+  <%# The bubble's own context menu, with one action: put the bubble back at its default place (the owner, via Sol,
+      2026-11-21). A right-click, the context-menu key or Shift+F10 on the bubble opens it; Escape, Tab or a press
+      elsewhere closes it (layout_mixin.js, "BUBBLE MENU"). Touch keeps the reset in the panel header. %>
+  <div id="chatbot-fab-menu"
+       role="menu"
+       aria-label="<%= t('chatbot.bubble_menu') %>"
+       hidden
+       data-chatbot-target="fabMenu"
+       data-action="contextmenu->chatbot#openFabMenu"
+       class="p-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f172a] shadow-2xl">
+    <button type="button"
+            role="menuitem"
+            data-chatbot-target="fabMenuItem"
+            data-action="click->chatbot#resetBubblePosition"
+            class="block w-full whitespace-nowrap text-left px-3 py-2 rounded-lg text-sm text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 cursor-pointer">
+      <%= t('chatbot.reset_bubble_position') %>
+    </button>
+  </div>
 
   <%# Context-aware toast notification - shown on law pages instead of auto-opening the panel %>
   <div id="chatbot-context-toast" class="hidden" role="status" aria-live="polite"></div>

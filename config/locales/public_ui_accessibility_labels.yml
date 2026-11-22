@@ -6,6 +6,8 @@ nl:
   chatbot:
     open_chatbot: "Chatbot openen"
     one_new_message: "1 nieuw bericht"
+    bubble_menu: "Chatbotmenu"
+    reset_bubble_position: "Standaardpositie herstellen"
 fr:
   public_navigation:
     menu: "Menu"
@@ -14,6 +16,8 @@ fr:
   chatbot:
     open_chatbot: "Ouvrir le chatbot"
     one_new_message: "1 nouveau message"
+    bubble_menu: "Menu du chatbot"
+    reset_bubble_position: "Rétablir la position par défaut"
 de:
   public_navigation:
     menu: "Menü"
@@ -22,6 +26,8 @@ de:
   chatbot:
     open_chatbot: "Chatbot öffnen"
     one_new_message: "1 neue Nachricht"
+    bubble_menu: "Chatbot-Menü"
+    reset_bubble_position: "Standardposition wiederherstellen"
 en:
   public_navigation:
     menu: "Menu"
@@ -30,3 +36,5 @@ en:
   chatbot:
     open_chatbot: "Open chatbot"
     one_new_message: "1 new message"
+    bubble_menu: "Chatbot menu"
+    reset_bubble_position: "Reset to default position"
