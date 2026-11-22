@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.90] - 2026-11-22
+
+### Fixed
+
+- A law's parliamentary preparations no longer link a reference that cannot name the dossier. Justel's parliamentary work for a law before 1995 names a session's documents and dates, and these were read as a legislature and a dossier: on Part I of the Judicial Code "Kamer 59-0002" (the Chamber's amendment no. 59-2) opened the Chamber's current dossier 56K0002, a list of members by language group, and "7-4", the date of a bill of 7 April 1965, was read as dossier 4 of a 7th legislature. A reference is now no link when its legislature is not one the house numbers dossiers by (the Chamber from its 49th, the Senate from its 1st, both from the elections of 21 May 1995), or when the Chamber corpus holds the dossier with a type that prepares no law (a resolution, a coalition agreement, the house's rules and the like) or as a budget document (a list or table, a policy note, a general explanation, a report) while the law is no budget law. A dossier the corpus does not hold, a blank or unlisted type, and a dossier of a later legislature than the law keep their link, still shown as automatically linked and unverified. When the Chamber corpus cannot be read, the law's metadata shows Justel's Chamber reference as unverified text, without a link. The panel, its "view all" list and the metadata follow the same rule.
+- The chatbot's governing provisions for more ordinary questions: a telephone sold at the door, and a sale concluded at the door after a call, are doorstep sales (only canvassing by telephone is left to the distance-contract rules); a refund asked from a seller, or terms that "permit" a return, keep the general-terms rule (only the conditions of a benefit or a permit are left out); a worker who declares a disputed industrial accident themself gets art. 62 of the Industrial Accidents Act, whose second paragraph lets the victim declare, and is no longer taken for an appeal, while an appeal filed by the worker still is one; a stated public-sector case no longer gets that private-sector article; and the Flemish "erfbelastingaangifte" gets the succession declaration deadline.
+
 ## [1.1.89] - 2026-11-22
 
 ### Added

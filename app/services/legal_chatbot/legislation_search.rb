@@ -2341,7 +2341,13 @@ module LegalChatbot
     # about the report).
     INDUSTRIAL_ACCIDENT_EXCLUDED = /(?:ambtena\p{L}*|openbare\s+sector|publieke\s+sector|overheid\p{L}*|lokale\s+besturen|statutair\p{L}*|fonction\s+publique|secteur\s+public|service\s+public|fonctionnaire\p{L}*|agents?\s+statutaires?|beamte\p{L}*|(?:ö|oe)ffentlich\p{L}*\s+(?:dienst|sektor)|public\s+(?:sector|service)|civil\s+servants?)/iu
     INDUSTRIAL_ACCIDENT_APPEAL = /(?<![[:alnum:]])(?:betwist\p{L}*|aanvecht\p{L}*|afwijzing\p{L}*|afgewezen|beroep\s+(?:aantekenen|instellen|gaan)|hoger\s+beroep|contest\p{L}*|recours|rejet\p{L}*|widerspruch\p{L}*|anfecht\p{L}*|abgelehnt|ablehnung\p{L}*|appeal\p{L}*|disput\p{L}*|reject\p{L}*)(?![[:alnum:]])/iu
-    INDUSTRIAL_ACCIDENT_REPORT_PATTERN = /\A(?!.*#{INDUSTRIAL_ACCIDENT_EXCLUDED.source})(?!.*#{INDUSTRIAL_ACCIDENT_APPEAL.source})(?=.*(?<![[:alnum:]])(?:arbeidsongeval\p{L}*|ongeval\s+op\s+(?:het\s+)?werk|accidents?\s+du\s+travail|arbeitsunf(?:a|ä)ll\p{L}*|(?:workplace|occupational|industrial|work)\s+accidents?)(?![[:alnum:]]))(?=.*(?<![[:alnum:]])(?:aangifte\p{L}*|aangeven|aangegeven|melden|melding\p{L}*|gemeld|termijn\p{L}*|binnen\s+hoeveel|d[ée]clar\p{L}*|signal\p{L}*|d[ée]lai\p{L}*|meld\p{L}*|anzeig\p{L}*|frist\p{L}*|report\p{L}*|deadline|notif\p{L}*)(?![[:alnum:]]))/imu
+    # Sol 2026-11-22 06:35:42Z: "Mon employeur conteste mon accident du travail. Comment le déclarer moi-même ?"
+    # the employer disputes the accident and the reader asks to report it: a worker declaring the accident themself
+    # is no appeal. Art. 62, al. 2, of the Industrial Accidents Act (1971041001, read in full NL and FR, 2026-11-22)
+    # lets the victim or the rights holders declare it; the eight days of the decree's art. 2 bind the employer, its
+    # appointee or agent.
+    INDUSTRIAL_ACCIDENT_SELF_REPORT = /(?<![[:alnum:]])(?:zelf\s+(?:\p{L}+\s+){0,3}(?:aan\s+te\s+geven|aangeven|aangifte\p{L}*|te\s+melden|melden)|(?:aan\s+te\s+geven|aangeven|aangifte\s+doen|te\s+melden|melden)\s+(?:\p{L}+\s+){0,3}zelf|d[ée]clar\p{L}*\s+(?:\p{L}+\s+){0,3}moi[-\s]m[êe]me|moi[-\s]m[êe]me\s+(?:\p{L}+\s+){0,3}d[ée]clar\p{L}*|selbst\s+(?:\p{L}+\s+){0,3}(?:melden|anzeigen)|(?:melden|anzeigen)\s+(?:\p{L}+\s+){0,3}selbst|(?:report|declare|notify)\p{L}*\s+(?:\p{L}+\s+){0,3}myself)(?![[:alnum:]])/iu
+    INDUSTRIAL_ACCIDENT_REPORT_PATTERN = /\A(?!.*#{INDUSTRIAL_ACCIDENT_EXCLUDED.source})(?:(?=.*#{INDUSTRIAL_ACCIDENT_SELF_REPORT.source})|(?!.*#{INDUSTRIAL_ACCIDENT_APPEAL.source}))(?=.*(?<![[:alnum:]])(?:arbeidsongeval\p{L}*|ongeval\s+op\s+(?:het\s+)?werk|accidents?\s+du\s+travail|arbeitsunf(?:a|ä)ll\p{L}*|(?:workplace|occupational|industrial|work)\s+accidents?)(?![[:alnum:]]))(?=.*(?<![[:alnum:]])(?:aangifte\p{L}*|aangeven|aangegeven|melden|melding\p{L}*|gemeld|termijn\p{L}*|binnen\s+hoeveel|d[ée]clar\p{L}*|signal\p{L}*|d[ée]lai\p{L}*|meld\p{L}*|anzeig\p{L}*|frist\p{L}*|report\p{L}*|deadline|notif\p{L}*)(?![[:alnum:]]))/imu
 
     # Sol 2026-11-21 10:54:53Z (#2158 "Zijn algemene voorwaarden altijd bindend?"): both answers came from the postal
     # money-order rules and missed the general rule. Civil Code Book 5 (2022A32058) art. 5.23 (read in full NL and FR,
@@ -2349,7 +2355,9 @@ module LegalChatbot
     # knowledge, and their acceptance; negotiated terms prevail; offer and acceptance referring to different general terms.
     # Sol 2026-11-22 06:00:58Z: "de algemene voorwaarden om een werkloosheidsuitkering te krijgen" are the conditions
     # of a benefit, not contract terms: a question about a benefit, a permit or what it takes to obtain one is left out.
-    GENERAL_TERMS_EXCLUDED = /(?<![[:alnum:]])(?:uitkering\p{L}*|werkloosheid\p{L}*|subsidie\p{L}*|toelage\p{L}*|kinderbijslag|groeipakket|leefloon|tegemoetkoming\p{L}*|vergunning\p{L}*|toelating\p{L}*|allocation\p{L}*|ch[ôo]mage|subside\p{L}*|subvention\p{L}*|revenu\s+d.int[ée]gration|permis|arbeitslos\p{L}*|zulage\p{L}*|beihilfe\p{L}*|f(?:ö|oe)rder\p{L}*|genehmigung\p{L}*|benefit\p{L}*|allowance\p{L}*|subsid\p{L}*|permit\p{L}*|eligib\p{L}*|om\s+(?:\p{L}+\s+){0,4}te\s+(?:krijgen|verkrijgen|genieten|ontvangen|bekomen)|pour\s+(?:obtenir|b[ée]n[ée]ficier|avoir\s+droit)|um\s+(?:\p{L}+\s+){0,4}zu\s+(?:erhalten|bekommen|beziehen)|to\s+(?:get|obtain|receive|qualify))(?![[:alnum:]])/iu
+    # Sol 2026-11-22 06:35:42Z: "... and want to obtain a refund?" is relief sought from the seller: obtaining alone
+    # excludes nothing, only the benefit and permit words do.
+    GENERAL_TERMS_EXCLUDED = /(?<![[:alnum:]])(?:uitkering\p{L}*|werkloosheid\p{L}*|subsidie\p{L}*|toelage\p{L}*|kinderbijslag|groeipakket|leefloon|tegemoetkoming\p{L}*|vergunning\p{L}*|toelating\p{L}*|allocation\p{L}*|ch[ôo]mage|subside\p{L}*|subvention\p{L}*|revenu\s+d.int[ée]gration|permis|arbeitslos\p{L}*|zulage\p{L}*|beihilfe\p{L}*|f(?:ö|oe)rder\p{L}*|genehmigung\p{L}*|benefit\p{L}*|allowance\p{L}*|subsid\p{L}*|permits?(?![[:alnum:]])(?!\s+(?:me|us|you|him|her|them|buyers?|customers?|consumers?|the\s+(?:buyer|customer|consumer)s?|to)(?![[:alnum:]]))|eligib\p{L}*)(?![[:alnum:]])/iu
     GENERAL_TERMS_CORE = /(?<![[:alnum:]])(?:algemene\s+(?:verkoops?|leverings?|contract)?voorwaarden|conditions\s+g[ée]n[ée]rales|allgemeinen?\s+gesch(?:ä|ae)ftsbedingungen|general\s+terms(?:\s+and\s+conditions)?|standard\s+terms(?:\s+and\s+conditions)?|terms\s+and\s+conditions)(?![[:alnum:]])/iu
     GENERAL_TERMS_PATTERN = /\A(?!.*#{GENERAL_TERMS_EXCLUDED.source})(?=.*#{GENERAL_TERMS_CORE.source})/imu
 
@@ -2359,13 +2367,17 @@ module LegalChatbot
     # the period is in time; the goods go back within 14 days after the notice. Distance contracts keep their own pins.
     # Sol 2026-11-22 06:00:58Z: "Mag een gerechtsdeurwaarder aan de deur komen?" and a sale by telephone matched. A
     # sale named as such counts on its own; "aan de deur", "démarchage", "doorstep" and the like only beside a sale or
-    # contract word, and never with a telephone (a distance contract keeps its own pins). "Bellen" stays allowed: at the door it is the
-    # doorbell.
+    # contract word. "Bellen" stays allowed: at the door it is the doorbell.
     OFF_PREMISES_STRONG = /(?<![[:alnum:]])(?:colportage|huis[-\s]aan[-\s]huis(?:verkoop|verkoper)\p{L}*|deur[-\s]aan[-\s]deur(?:verkoop|verkoper)\p{L}*|buiten\s+(?:de\s+)?verkoopruimte\p{L}*|hors\s+[ée]tablissement|d[ée]marchage\s+[àa]\s+domicile|vente\s+[àa]\s+domicile|haust(?:ü|ue)r(?:gesch(?:ä|ae)ft|verkauf|vertrag)\p{L}*|au(?:ß|ss)erhalb\s+von\s+gesch(?:ä|ae)ftsr(?:ä|ae)umen|off[-\s]premises|doorstep\s+(?:sale|selling|seller|contract)s?|door[-\s]to[-\s]door\s+(?:sale|selling|seller|salesman|salesperson|contract)s?)(?![[:alnum:]])/iu
-    OFF_PREMISES_WEAK = /(?<![[:alnum:]])(?:aan\s+(?:de|je|mijn|uw)\s+(?:voor)?deur|huis[-\s]aan[-\s]huis|deur[-\s]aan[-\s]deur|porte[-\s][àa][-\s]porte|[àa]\s+(?:mon|votre|son)\s+domicile|d[ée]marchage|haust(?:ü|ue)r|an\s+der\s+(?:haus)?t(?:ü|ue)r|door[-\s]to[-\s]door|doorstep|at\s+(?:my|the|your)\s+(?:front\s+)?door)(?![[:alnum:]])/iu
+    OFF_PREMISES_WEAK = /(?<![[:alnum:]])(?:aan\s+(?:de|je|mijn|uw)\s+(?:voor)?deur|huis[-\s]aan[-\s]huis|deur[-\s]aan[-\s]deur|porte[-\s][àa][-\s]porte|[àa]\s+(?:mon|votre|son)\s+domicile|haust(?:ü|ue)r|an\s+der\s+(?:haus)?t(?:ü|ue)r|door[-\s]to[-\s]door|doorstep|at\s+(?:my|the|your)\s+(?:front\s+)?door)(?![[:alnum:]])/iu
     OFF_PREMISES_SALE = /(?<![[:alnum:]])(?:(?:ver)?ko(?:o|c)ht\p{L}*|(?:ver)?kopen|koop\p{L}*|verkoper\p{L}*|bestel\p{L}*|abonnement\p{L}*|contract\p{L}*|overeenkomst\p{L}*|herroep\p{L}*|annul\p{L}*|opzeg\p{L}*|aankoop\p{L}*|vente\p{L}*|vend\p{L}*|achat\p{L}*|achet\p{L}*|contrat\p{L}*|r[ée]tract\p{L}*|kauf\p{L}*|gekauft|verkauf\p{L}*|vertrag\p{L}*|widerruf\p{L}*|sale\p{L}*|sold|sell\p{L}*|bought|buy\p{L}*|purchas\p{L}*|subscription\p{L}*|cancel\p{L}*|withdraw\p{L}*)(?![[:alnum:]])/iu
-    OFF_PREMISES_PHONE = /(?<![[:alnum:]])(?:telefo\p{L}*|t[ée]l[ée]phon\p{L}*|phone\p{L}*|anruf\p{L}*|angerufen)(?![[:alnum:]])/iu
-    OFF_PREMISES_PATTERN = /\A(?:(?=.*#{OFF_PREMISES_STRONG.source})|(?!.*#{OFF_PREMISES_PHONE.source})(?=.*#{OFF_PREMISES_WEAK.source})(?=.*#{OFF_PREMISES_SALE.source}))/imu
+    # Sol 2026-11-22 06:35:42Z: "Een verkoper verkocht mij aan de deur een telefoon" sold a telephone at the door: the
+    # telephone counts only as the channel (per telefoon, téléphonique, am Telefon, by phone, a call), never as the goods.
+    OFF_PREMISES_PHONE = /(?<![[:alnum:]])(?:(?:per|via(?:\s+de)?|over\s+de|aan\s+de|op\s+de)\s+telefoon|telefonisch\p{L}*|telefoneer\p{L}*|telefoneren|getelefoneerd|telefoongesprek\p{L}*|telefoontje\p{L}*|telefoonverkoop\p{L}*|opgebeld|opbellen|belde\s+(?:me|mij|ons|hem|haar)\s+op|(?:par|au)\s+t[ée]l[ée]phone|t[ée]l[ée]phoniqu\p{L}*|t[ée]l[ée]phon(?:er|é(?:e|s|es)?|ait|aient|ant)|(?:am|per)\s+telefon|telefonier\p{L}*|anruf\p{L}*|angerufen|telefonverkauf\p{L}*|telefonwerbung|(?:by|over\s+the|on\s+the)\s+(?:tele)?phone|(?:tele)?phone\s+calls?|(?:tele)?phoned|cold[-\s]call\p{L}*|tele(?:marketing|sales))(?![[:alnum:]])/iu
+    # Sol 2026-11-22 09:08:02Z: a seller who called first and concluded the sale at the buyer's door made a doorstep
+    # sale; the telephone leaves a question out only as canvassing without a door ("démarchage téléphonique").
+    OFF_PREMISES_CANVASS = /(?<![[:alnum:]])d[ée]marchage(?![[:alnum:]])/iu
+    OFF_PREMISES_PATTERN = /\A(?:(?=.*#{OFF_PREMISES_STRONG.source})|(?=.*#{OFF_PREMISES_WEAK.source})(?=.*#{OFF_PREMISES_SALE.source})|(?!.*#{OFF_PREMISES_PHONE.source})(?=.*#{OFF_PREMISES_CANVASS.source})(?=.*#{OFF_PREMISES_SALE.source}))/imu
 
     ARTICLE_PINS = [
       # Criminal / civil procedure
@@ -2731,7 +2743,9 @@ module LegalChatbot
       [/(?=.*\b(?:arbeidsongeval|accident\s+du\s+travail)\b)(?=.*\b(?:wanneer|definitie|erken|voorwaarden|quand|définition|reconnaître|conditions)\b)/i, '1971041001', '7'],
       [/(?=.*\b(?:arbeidsongeval|accident\s+du\s+travail)\b)(?=.*\b(?:oorzaak|uitvoering|overkomen|cause|exécution|survenu)\b)/i, '1971041001', '9'],
       [/(?=.*\b(?:arbeidsongeval|accident\s+du\s+travail)\b)(?=.*\b(?:vergoeding|arbeidsongeschiktheid|loon|indemnité|incapacité|rémunération)\b)/i, '1971041001', '24'],
-      [/(?=.*\b(?:arbeidsongeval|accident\s+du\s+travail)\b)(?=.*\b(?:aangifte|melden|termijn|déclaration|signaler|délai)\b)/i, '1971041001', '62'],
+      # Sol 2026-11-22 06:35:42Z: the verbs too ("le déclarer moi-même", "zelf aangeven"): art. 62 is the declaration.
+      # 09:08:02Z: a stated public-sector case is left to the public-sector rules, as for the decree's art. 2.
+      [/\A(?!.*#{INDUSTRIAL_ACCIDENT_EXCLUDED.source})(?=.*\b(?:arbeidsongeval|accident\s+du\s+travail)\b)(?=.*\b(?:aangifte|aangeven|aan\s+te\s+geven|melden|termijn|déclaration|déclarer|signaler|délai)\b)/im, '1971041001', '62'],
       [/\b(?:beroepsziekte|beroepsziekten|maladie\s+professionnelle|maladies\s+professionnelles)\b/i, '1970060309', '30'],
       [/\b(?:beroepsziekte|beroepsziekten|maladie\s+professionnelle|maladies\s+professionnelles)\b/i, '1970060309', '30bis'],
 

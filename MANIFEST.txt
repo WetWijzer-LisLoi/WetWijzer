@@ -450,6 +450,7 @@ app/services/parliamentary_relations/filter.rb
 app/services/parliamentary_relations/manifest.rb
 app/services/parliamentary_relations/producer_guard.rb
 app/services/parliamentary_relations/resolver.rb
+app/services/parliamentary_relations/session.rb
 app/services/parliamentary_relations/wer_assignment_repair.rb
 app/services/parliamentary_search_service.rb
 app/services/pending_second_factor.rb

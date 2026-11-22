@@ -28,20 +28,28 @@ module ParliamentaryRelations
       by_numac = new(:numac, numac)
       return by_numac if by_numac.count(db, language:).positive?
 
-      refs = dossier_refs(numac)
+      refs = dossier_refs(numac, db)
       new(:dossier_refs, numac, refs) if refs.any?
     end
 
-    # The Chamber dossiers a law's parliamentary_refs name. Senate refs
-    # ("S:...") were never looked up here and still are not.
-    def self.dossier_refs(numac)
-      raw = Legislation.where(numac: numac.to_s).where.not(parliamentary_refs: [nil, '']).pick(:parliamentary_refs)
+    # The Chamber dossiers a law's parliamentary_refs name, without those
+    # Session rules out: a legislature the Chamber does not number dossiers
+    # by, or a dossier the Chamber corpus db holds as preparing no law. A
+    # corpus that fails raises, and the resolver shows the panel unavailable.
+    # Senate refs ("S:...") were never looked up here and still are not.
+    def self.dossier_refs(numac, db = nil)
+      raw, title = Legislation.where(numac: numac.to_s).where.not(parliamentary_refs: [nil, ''])
+                              .pick(:parliamentary_refs, :title)
       Array(JSON.parse(raw.presence || '[]')).filter_map do |ref|
         match = ref.to_s.start_with?('K:') && DOSSIER.match(ref.to_s.delete_prefix('K:'))
         next unless match
 
-        Manifest::Dossier.new(parliament: 'chamber', legislature: match[1].to_i, number: match[2].to_i,
-                              evidence_url: nil)
+        legislature = match[1].to_i
+        number = match[2].to_i
+        next unless Session.numbered?('chamber', legislature)
+        next if db && Session.verdict(db, legislature, number, title) == :no_law
+
+        Manifest::Dossier.new(parliament: 'chamber', legislature: legislature, number: number, evidence_url: nil)
       end.uniq
     rescue JSON::ParserError
       []

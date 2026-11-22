@@ -145,7 +145,13 @@
           <% dossier_links.each do |link| %>
             <div>
               <span><%= link[:parliament] == 'senate' ? t(:senate_label, default: 'Senaat') : t(:chamber_label, default: 'Kamer') %>:</span>
-              <%= link_to(link[:label], link[:url], target: "_blank", rel: "noopener noreferrer", class: "text-(--link-color) hover:text-(--link-hover-color) hover:underline") %>
+              <% if link[:url] %>
+                <%= link_to(link[:label], link[:url], target: "_blank", rel: "noopener noreferrer", class: "text-(--link-color) hover:text-(--link-hover-color) hover:underline") %>
+              <% else %>
+                <%# the Chamber corpus could not be read: Justel's reference stays, unlinked (Sol 2026-11-22 09:08:02Z) %>
+                <span data-dossier-unchecked><%= link[:label] %></span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">(<%= t('related_sources.parliamentary.unverified').downcase %>)</span>
+              <% end %>
               <% if link[:verified] %>
                 <span class="text-xs text-gray-500 dark:text-gray-400">(<%= t('related_sources.parliamentary.verified').downcase %>)</span>
               <% end %>

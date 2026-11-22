@@ -176,7 +176,7 @@ class Content < ReadonlyRecord
   # @param locale_sym [Symbol] :nl or :fr determines language parameter
   # @return [String, nil] URL to senate.be dossier page or nil
   def senate_dossier_url(locale_sym = :nl)
-    pair = parse_senate_pair
+    pair = senate_dossier_pair
     return nil unless pair
 
     leg, nr = pair
@@ -192,7 +192,7 @@ class Content < ReadonlyRecord
   # @param locale_sym [Symbol] :nl or :fr determines language parameters
   # @return [String, nil] URL to dekamer.be dossier page or nil
   def chamber_dossier_url(locale_sym = :nl)
-    pair = parse_chamber_pair
+    pair = chamber_dossier_pair
     return nil unless pair
 
     legislat, dossier_id = pair
@@ -206,10 +206,9 @@ class Content < ReadonlyRecord
     "#{base}?lang=#{inner_lang}&legislat=#{legislat}&dossierID=#{dossier_id}"
   end
 
-  private
-
-  # Returns [leg, nr] or nil
-  def parse_senate_pair
+  # [legislature, number] of the Senate dossier field ("3-1734"), or nil. ParliamentaryRelations::Session decides
+  # whether the pair can name the law's own dossier.
+  def senate_dossier_pair
     return nil if senate_dossier.blank?
 
     m = senate_dossier.to_s.match(/\A\s*(\d{1,3})\s*[-‑–]\s*(\d{1,7})\s*\z/)
@@ -218,8 +217,8 @@ class Content < ReadonlyRecord
     nil
   end
 
-  # Returns [legislat, dossier_id] or nil
-  def parse_chamber_pair
+  # [legislature, number] of the Chamber dossier field ("51-2799" or "51 2799"), or nil
+  def chamber_dossier_pair
     return nil if chamber_dossier.blank?
 
     # Accepts space-separated or dash-separated forms like "51 2799" or "51-2799"

@@ -49,7 +49,11 @@ module ParliamentaryRelations
   # The dossier links of a law page's metadata. A reviewed law shows its
   # reviewed dossiers, and a contents link only for a parliament its relation
   # does not cover; any other law shows what its contents row names (Justel's
-  # own dossier fields), as before.
+  # own dossier fields) unless Session rules the pair out: a legislature the
+  # house does not number dossiers by ("7-4" for the Judicial Code's bill of
+  # 7-4-1965), or a Chamber dossier the corpus holds as preparing no law.
+  # When the Chamber corpus cannot be read, a Chamber reference is shown as
+  # unverified text, url nil: no dossier is linked that could not be checked.
   def self.metadata_dossiers(numac, content, locale: I18n.locale)
     reviewed = manifest.for_law(numac)
     links = Array(reviewed&.dossiers).map do |dossier|
@@ -57,14 +61,30 @@ module ParliamentaryRelations
     end
     covered = links.map { |link| link[:parliament] }
     if content
-      { 'senate' => [content.senate_dossier_label, -> { content.senate_dossier_url(locale) }],
-        'chamber' => [content.chamber_dossier_label, -> { content.chamber_dossier_url(locale) }] }.each do |parliament, (label, url)|
-        next if covered.include?(parliament) || label.blank? || (href = url.call).blank?
+      fields = { 'senate' => [content.senate_dossier_label, content.senate_dossier_pair,
+                              -> { content.senate_dossier_url(locale) }],
+                 'chamber' => [content.chamber_dossier_label, content.chamber_dossier_pair,
+                               -> { content.chamber_dossier_url(locale) }] }
+      fields.each do |parliament, (label, pair, url)|
+        next if covered.include?(parliament) || label.blank? || pair.nil? || !Session.numbered?(parliament, pair.first)
 
-        links << { parliament: parliament, label: label, url: href, verified: false }
+        verdict = parliament == 'chamber' ? metadata_verdict(pair, numac) : :open
+        next if verdict == :no_law
+        next if verdict == :open && (href = url.call).blank?
+
+        links << { parliament: parliament, label: label, url: (href if verdict == :open), verified: false }
       end
     end
     links.sort_by { |link| link[:parliament] == 'senate' ? 0 : 1 }
+  end
+
+  # Session.verdict for a contents row's Chamber [legislature, number]; a corpus that is missing or fails is :unreadable
+  def self.metadata_verdict(pair, numac)
+    db = (chamber_db if File.exist?(chamber_db_path))
+    Session.verdict(db, pair.first, pair.last, Session.law_title(numac))
+  rescue SQLite3::Exception => e
+    Rails.logger.warn("[ParliamentaryRelations] #{numac}: the dossier type could not be read: #{e.message}")
+    :unreadable
   end
 
   def self.vlaams_db_path
