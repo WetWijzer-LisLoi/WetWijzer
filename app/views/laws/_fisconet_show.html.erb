@@ -475,7 +475,7 @@
                     copied the link at once). %>
                 <div class="<%= top_pad %> pb-4 flex items-start" data-permalink="<%= article_anchor_id %>" data-source="#article-text-<%= article_anchor_id %>">
                   <div class="flex-1 min-w-0" id="article-text-<%= article_anchor_id %>">
-                    <div class="max-w-none article-content overflow-x-auto [&_table]:w-full [&_table]:max-w-full [&_table]:table-auto [&_td]:wrap-break-word [&_th]:wrap-break-word [&_p:last-child]:mb-0" <%= tag.attributes(lang: legal_text_lang) %>>
+                    <div class="max-w-none article-content [&_table]:w-full [&_table]:max-w-full [&_table]:table-auto [&_td]:wrap-break-word [&_th]:wrap-break-word [&_p:last-child]:mb-0" <%= tag.attributes(lang: legal_text_lang) %>>
                       <% if article[:end_date].present? %>
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 float-right ml-2"><%= @language_id == 2 ? 'Abrogé' : 'Opgeheven' %></span>
                       <% end %>
@@ -496,7 +496,7 @@
                       %>
                       <% if provision_body %>
                         <p class="article-heading"><span class="article-number not-prose font-bold text-gray-900 dark:text-white"><%= provision_label %></span></p>
-                        <div class="fisconet-provision"><%= provision_body %></div>
+                        <div class="fisconet-provision"><%= contain_wide_tables(provision_body) %></div>
                       <% elsif text.present? && text.length > 10 %>
                         <%
                           # Clean text for rendering: the leading lines that only repeat the

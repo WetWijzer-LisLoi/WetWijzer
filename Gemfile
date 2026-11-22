@@ -2,7 +2,7 @@
 
 source 'https://rubygems.org'
 
-ruby '4.0.5'
+ruby '4.0.10'
 
 # Ruby 4.0 removed these from default gems
 gem 'csv'

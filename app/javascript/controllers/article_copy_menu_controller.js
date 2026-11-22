@@ -13,22 +13,36 @@ import { citationText, displayedText, fragmentUrl, reportCopyFailure, runCopy } 
 // every frame load, so the cached article HTML (CacheVersionHelper::RENDER_CODE_FILES) and the words the copies read
 // stay as they were. Until 1.1.84 a click on the number copied the link at once, before the menu opened.
 //
-// The menu shows the article it is open for (its label) and offers the text and citation only when the article has a
-// wording (an archive date can have none). When that article's own frame renders again under it (a step, a period, a
-// comparison), the menu stays open and where it is, for the article's new number, so a press already on its way lands
-// on the item it was aimed at. In 1.1.86 it closed then, Turbo scrolled to the step's anchor, and on the live Judicial
-// Code the press meant for the text copy reached the page instead, opened Art. 21's menu, and the copy took Art. 21
-// (Sol 2026-11-21 10:09:36Z and 13:23:21Z). A copy chosen while the article's step is still on its way waits for that
-// step and copies the wording the reader switched to, not the one leaving the screen.
+// The menu is named for the article it is open for (its accessible name; the visible caption went in 1.1.88, the owner
+// via Sol 2026-11-21 16:40:11Z) and offers the text and citation only when the article has a wording (an archive date
+// can have none). When that article's own frame renders again under it (a step, a period, a comparison), the menu stays
+// open and where it is, for the article's new number, so a press already on its way lands on the item it was aimed at.
+// In 1.1.86 it closed then, Turbo scrolled to the step's anchor, and on the live Judicial Code the press meant for the
+// text copy reached the page instead, opened Art. 21's menu, and the copy took Art. 21 (Sol 2026-11-21 10:09:36Z and
+// 13:23:21Z). A copy chosen while the article's step is still on its way waits for that step and copies the wording the
+// reader switched to, not the one leaving the screen.
+//
+// The new wording can also move the number itself: on the live Judicial Code, Older from 021 to 006 shrank the picker
+// above Art. 20 and moved its number up 40 px, so a press on the number made during the swap landed on the text and no
+// menu opened (Sol 2026-11-21 16:24:50Z). Where the number stood just before its frame rendered again is kept, and a
+// press on that spot during the swap, or just after it, opens that article's menu for its new number.
 const NUMBER = ".article-number"
 const ARTICLE = "[data-permalink]"
 const MARGIN = 4
 // How long such a copy waits for its step. A step that failed, or has not arrived by then, copies nothing and says so.
 const STEP_WAIT_MS = 5000
 const STEP_ENDS = ["turbo:frame-load", "turbo:fetch-request-error", "turbo:frame-missing"]
+// How long after its frame loaded a press on a number's previous spot still counts as aimed at it, the longest a swap
+// in progress keeps that spot, and the number's own hit area around it (the ::after in application.scss).
+const SWAP_GRACE_MS = 400
+const SWAP_LONGEST_MS = 3000
+const HIT_X = 4
+const HIT_Y = 6
+// A press on one of these is the reader's own choice, never a press meant for the number that stood there.
+const OWN_CONTROLS = 'a, button, input, select, textarea, summary, label, [role="button"], [role="menuitem"]'
 
 export default class extends Controller {
-  static targets = ["item", "history", "label", "wording"]
+  static targets = ["item", "history", "wording"]
   static values = { linkCopied: String, textCopied: String, citationCopied: String, numberLabel: String }
 
   connect() {
@@ -38,17 +52,21 @@ export default class extends Controller {
     this.stepWaitMs = STEP_WAIT_MS
     // The articles' own frames with a step on its way: from its request until the frame has rendered, or failed.
     this.steps = new WeakSet()
+    // Per article whose frame is rendering again: where its number stood before, and until when a press there counts.
+    this.swaps = new Map()
     this.onClick = this.click.bind(this)
     this.onKeydown = this.keydown.bind(this)
     this.onStepStart = event => { if (this.articleFrame(event.target)) this.steps.add(event.target) }
     this.onStepEnd = event => this.steps.delete(event.target)
     this.onBeforeRender = event => {
+      this.noteSwap(event.target)
       if (this.isOpen() && this.trigger && event.target?.contains?.(this.trigger)) {
         this.focusIndex = this.visibleItems().indexOf(document.activeElement)
       }
     }
     this.onFrameLoad = event => {
       this.steps.delete(event.target)
+      this.settleSwap(event.target)
       this.enhance(event.target)
       if (this.isOpen() && this.trigger && !this.trigger.isConnected && !this.rebind()) this.close()
     }
@@ -60,6 +78,10 @@ export default class extends Controller {
     document.addEventListener("turbo:before-frame-render", this.onBeforeRender, true)
     // Capture: before a history frame's own load listener puts the focus back on its number (history_links).
     document.addEventListener("turbo:frame-load", this.onFrameLoad, true)
+    // A kept spot is a place on the screen: any scroll (the page's or a box's) or resize makes it another place.
+    this.onScroll = () => this.forgetSwaps()
+    document.addEventListener("scroll", this.onScroll, true)
+    window.addEventListener?.("resize", this.onScroll)
     this.enhance(document)
   }
 
@@ -71,6 +93,8 @@ export default class extends Controller {
     document.removeEventListener("turbo:frame-missing", this.onStepEnd, true)
     document.removeEventListener("turbo:before-frame-render", this.onBeforeRender, true)
     document.removeEventListener("turbo:frame-load", this.onFrameLoad, true)
+    document.removeEventListener("scroll", this.onScroll, true)
+    window.removeEventListener?.("resize", this.onScroll)
   }
 
   enhance(root) {
@@ -93,7 +117,7 @@ export default class extends Controller {
   }
 
   click(event) {
-    const hit = this.numberAt(event.target)
+    const hit = this.numberAt(event.target) || this.swappedNumberAt(event)
     if (hit) {
       event.preventDefault()
       if (this.isOpen() && this.trigger === hit.number) this.close()
@@ -153,14 +177,12 @@ export default class extends Controller {
     this.visibleItems()[0]?.focus({ preventScroll: true })
   }
 
-  // The items the article offers, and the article the menu names.
+  // The items the article offers, and the article the menu is named for.
   showItems(number) {
     if (this.hasHistoryTarget) this.historyTarget.hidden = !this.historyLink()
     const wording = Boolean(this.sourceElement())
     this.wordingTargets.forEach(item => { item.hidden = !wording })
-    const name = (number.textContent || "").trim()
-    this.element.setAttribute("aria-label", name)
-    if (this.hasLabelTarget) this.labelTarget.textContent = name
+    this.element.setAttribute("aria-label", (number.textContent || "").trim())
   }
 
   // Its article's frame rendered again under the open menu: the menu stays open and where it is (see the top), now
@@ -168,7 +190,7 @@ export default class extends Controller {
   // (Turbo gave it to the step's own autofocus). False when the article itself left the page, as its whole list does
   // on another archive date.
   rebind() {
-    const number = this.article?.isConnected ? this.article.querySelector(NUMBER) : null
+    const number = this.article?.isConnected ? this.visibleNumber(this.article) : null
     const focusIndex = this.focusIndex
     this.focusIndex = -1
     if (!number) return false
@@ -178,6 +200,62 @@ export default class extends Controller {
     const items = this.visibleItems()
     if (focusIndex >= 0 && items.length) items[Math.min(focusIndex, items.length - 1)].focus({ preventScroll: true })
     return true
+  }
+
+  // An article's number as shown: a comparison keeps the chosen wording, with its own number, hidden for the copy.
+  visibleNumber(article) {
+    const numbers = Array.from(article.querySelectorAll(NUMBER))
+    return numbers.find(number => !number.closest("[hidden]")) || numbers[0] || null
+  }
+
+  // Its frame is about to render again: where the article's number stands now, which a press during the swap may
+  // still aim at (see the top). Kept until the frame loads plus SWAP_GRACE_MS, and never longer than SWAP_LONGEST_MS;
+  // any scroll or resize drops every kept spot, since the spot is a place on the screen (Sol 2026-11-21 17:19:12Z).
+  noteSwap(frame) {
+    const article = this.articleFrame(frame) ? frame.closest(ARTICLE) : null
+    const number = article && this.visibleNumber(article)
+    const rect = number?.getBoundingClientRect()
+    if (!rect || !(rect.width > 0 && rect.height > 0)) return
+    this.swaps.set(article, { rect, until: this.now() + SWAP_LONGEST_MS })
+  }
+
+  // Its frame has loaded: the spot counts SWAP_GRACE_MS longer, never past the time it was first given.
+  settleSwap(frame) {
+    const swap = this.swaps.get(frame?.closest?.(ARTICLE))
+    if (swap) swap.until = Math.min(swap.until, this.now() + SWAP_GRACE_MS)
+  }
+
+  forgetSwaps() {
+    this.swaps.clear()
+  }
+
+  // The article whose number stood under this press until its frame rendered again, with its number now. Only a press
+  // inside that same article counts, so another article's text or a place outside every article never opens it; a
+  // press that matches more than one kept spot is declined. Null as well for a press on a control of its own, inside
+  // the menu, outside every kept spot, or after its time.
+  swappedNumberAt(event) {
+    if (!this.swaps.size || !Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) return null
+    if (this.element.contains(event.target) || event.target?.closest?.(OWN_CONTROLS)) return null
+    const pressed = event.target?.closest?.(ARTICLE)
+    const now = this.now()
+    const matches = []
+    for (const [article, swap] of this.swaps) {
+      if (!article.isConnected || now > swap.until) {
+        this.swaps.delete(article)
+        continue
+      }
+      const { left, right, top, bottom } = swap.rect
+      if (event.clientX < left - HIT_X || event.clientX > right + HIT_X) continue
+      if (event.clientY < top - HIT_Y || event.clientY > bottom + HIT_Y) continue
+      matches.push(article)
+    }
+    if (matches.length !== 1 || matches[0] !== pressed) return null
+    const number = this.visibleNumber(pressed)
+    return number ? { number, article: pressed } : null
+  }
+
+  now() {
+    return globalThis.performance?.now?.() ?? Date.now()
   }
 
   // Below the number, or above it when the screen ends first; never past either side of the screen.

@@ -414,9 +414,9 @@
      data-article-copy-menu-text-copied-value="<%= t(:text_copied) %>"
      data-article-copy-menu-citation-copied-value="<%= t(:clean_text_copied) %>"
      data-article-copy-menu-number-label-value="<%= t(:article_options) %>">
-  <%# The article it is open for, in view (Sol 2026-11-21 10:09:36Z: a copy right after a fast switch took the next
-      article); the menu's own name says it too. %>
-  <p class="px-2.5 pt-1.5 pb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 truncate" aria-hidden="true" data-article-copy-menu-target="label"></p>
+  <%# The menu's accessible name is the article it is open for (aria-label, set when it opens and after a switch); the
+      visible caption that repeated the number the reader had just pressed is gone (the owner, via Sol 2026-11-21
+      16:40:11Z), so History, where the article has one, is the first row. %>
   <button type="button" role="menuitem" tabindex="-1" hidden data-article-copy-menu-target="item history" data-action="article-copy-menu#openHistory"
           class="w-full px-2.5 py-1.5 text-left text-xs font-normal text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-hidden focus-visible:bg-gray-100 dark:focus-visible:bg-gray-700 flex items-center gap-1.5 transition-colors border-b border-gray-100 dark:border-gray-700">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 shrink-0 opacity-60" aria-hidden="true" focusable="false"><path d="M4 12a8 8 0 1 0 1.07-4"/><path d="M5.07 4v4h4"/><path d="M12 8v4l3 2"/></svg>

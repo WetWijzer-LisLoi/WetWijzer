@@ -47,14 +47,16 @@ module ReferencesHelper
   # SECTION_SYMBOL_COLOR removed - § markers render as plain text (no styling)
   SPECIAL_MARKER_COLOR = 'text-(--special-marker)'
 
-  # TailwindCSS classes for the main article content wrapper
+  # TailwindCSS classes for the main article content wrapper. The article text grows and scrolls with the page: until
+  # 1.1.88 the wrapper scrolled itself (overflow-x-auto makes both axes scroll), and a one-line article whose number's
+  # larger hit area reached 1 px below it drew a vertical scrollbar beside the law (the owner's screenshot, via Sol
+  # 2026-11-21 15:20:55Z). A wide table scrolls in its own region instead (contain_wide_tables).
   ARTICLE_CONTENT_CLASSES = %w[
     prose
     prose-sm
     dark:prose-invert
     max-w-none
     article-content
-    overflow-x-auto
     [&_table]:w-full
     [&_table]:max-w-full
     [&_table]:table-auto
@@ -140,9 +142,38 @@ module ReferencesHelper
 
   def assemble_article_with_references(formatted_content, references_text)
     content_tag(:div, class: ARTICLE_CONTENT_CLASSES) do
+      formatted_content = contain_wide_tables(formatted_content)
       references_section = references_text.present? ? render_references_section(references_text) : nil
       references_section.present? ? safe_join([formatted_content, references_section]) : formatted_content
     end
+  end
+
+  TABLE_TAG = %r{<(/?)table\b[^>]*>}i
+
+  # A table in legal text scrolls sideways in a region of its own when it is wider than the article, so the text
+  # around it grows with the page (see ARTICLE_CONTENT_CLASSES). Only a table at the top level gets a region; the
+  # region is named and takes keyboard focus, so it can be scrolled without a pointer, as on the Classic pages
+  # (ClassicHelper#classic_contain_tables, whose label it shares). Only markup that is already safe comes back marked
+  # safe, and a closing tag without its table adds nothing.
+  def contain_wide_tables(html)
+    return html unless html.respond_to?(:html_safe?) && html.html_safe? && html.to_str.match?(/<table\b/i)
+
+    label = ERB::Util.html_escape(t('classic.table_scroll'))
+    depth = 0
+    wrapped = html.to_str.gsub(TABLE_TAG) do |tag|
+      if Regexp.last_match(1) == '/'
+        next tag unless depth.positive?
+
+        depth -= 1
+        depth.zero? ? "#{tag}</div>" : tag
+      else
+        depth += 1
+        depth == 1 ? %(<div class="article-table-scroll" tabindex="0" role="region" aria-label="#{label}">#{tag}) : tag
+      end
+    end
+    wrapped += '</div>' if depth.positive?
+    # Only safe input reaches here, and the wrapper is static markup.
+    wrapped.html_safe
   end
 
   # The text a section heading's anchor derives from, for the renderers below
@@ -2000,8 +2031,9 @@ module ReferencesHelper
       safe_content = safe_db_content(main_content, :regular_article)
       linked_content = apply_document_links(safe_content)
 
-      # Wrap in div with whitespace preservation and monospace font for alignment
-      formatted = content_tag(:div, linked_content, class: 'whitespace-pre-wrap font-mono text-sm')
+      # Wrap in div with whitespace preservation and monospace font for alignment. A real HTML table in it scrolls in its
+      # own region too, now that the article text no longer scrolls (Sol 2026-11-21 17:19:12Z).
+      formatted = content_tag(:div, contain_wide_tables(linked_content), class: 'whitespace-pre-wrap font-mono text-sm')
 
       # Add references if present
       if references_text.present?

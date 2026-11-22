@@ -8,6 +8,23 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.88] - 2026-11-21
+
+### Security
+
+- Ruby 4.0.10 instead of 4.0.5, on the web server, the background jobs and in development, CI and the container image. Ruby's own advisory GHSA-34m4-m9fh-gqp5 (published 2026-11-19, critical) reports a heap buffer overflow in the case conversion of strings in some single-byte encodings that may allow remote code execution, in Ruby 4.0.0 to 4.0.9; GitHub lists it as CVE-2026-132825.
+
+### Fixed
+
+- A release that changes the Ruby version can be deployed. The deploy hook ran the new release's checks with the Ruby the running server had been started with (rbenv's `RBENV_VERSION` and `RBENV_DIR`), and refused the restarted server because that variable had changed.
+- Law pages, articles: a press on an article's number while its new wording is being shown (a step, a period, a comparison) opens that article's menu, also when the new wording moved the number, and a copy chosen at once is the wording switched to. In 1.1.87 such a press could land on the text and open no menu (a live check on the Judicial Code: from wording 021 to 006 the number of article 20 moved up 40 px).
+- Law pages: the text of an article no longer scrolls inside its own box. A one-line article showed a vertical scrollbar that scrolled one pixel (seen in the dark theme). A table wider than the article scrolls sideways in a region of its own, which also scrolls with the keyboard.
+
+### Changed
+
+- Law pages, articles: the article menu no longer repeats the article's number as its first row. Its accessible name still names the article, also after a switch, and History is the first row where the article has one.
+- Admin, Users: 200 accounts per page by default, with 25, 50 and 100 to choose; any other value of the size, such as "25.5" or a list, gives 200. Every page, size, sort and filter link keeps the query, the sort, the filters and the size (the pages used to drop the abuse filter), and a new query, filter, sort or size starts at page one. Previous and Next for every sort; at the browsing limit of 10,000 rows there is no Next link, and the page says why. The cached total is labelled as all non-admin accounts, not as the filtered number.
+
 ## [1.1.87] - 2026-11-21
 
 ### Fixed
