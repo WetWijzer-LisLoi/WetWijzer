@@ -21,11 +21,24 @@ module LegalChatbot
     # "Appréciation" in Cassation's. Before it stand the parties' arguments, which never outrank the court's reasoning
     # on an equal match (#2445).
     REASONING_LABEL = /\A[[:space:]]*(?:-[[:space:]]*B[[:space:]]*-|beoordeling|appréciation)[[:space:]:.,-]*\z/i
+    # A numbered consideration, as the Constitutional Court numbers its judgments: the label that opens it at the
+    # start of a line ("B.7. De keuze ...", "B.1.8. De voormelde ..."), and the same label named in a question
+    # ("B.7", "B.1.7 en B.5.3"). Sol 2026-11-23 03:45:46Z: with the exact ECLI and "B.7" in the question, the reasons
+    # quoted at B.7 of judgment 41/2009 were absent. A passage was chosen by the question's words alone, a label is
+    # no word, and the window around a matching line (600 characters) stopped inside the quoted memorandum.
+    CONSIDERATION_LABEL = /\A[[:space:]]*([AB]\.\d{1,2}(?:\.\d{1,2}){0,3})\.[[:space:]]/
+    # "b.7" in a question reads as B.7 (Sol 2026-11-23 10:08:33Z)
+    NAMED_CONSIDERATION = /(?<![[:alnum:].])([AaBb]\.\d{1,2}(?:\.\d{1,2}){0,3})(?![[:alnum:]]|\.\d)/
+    # A page number on a line of its own, as the judgments' PDF text leaves them between two considerations
+    BARE_PAGE_NUMBER = /\A[[:space:]]*\d{1,4}[[:space:]]*\z/
+    MAX_NAMED_CONSIDERATIONS = 6
 
     module_function
 
     # court: the deciding court of a judgment, whose own name in the question selects the judgment, not a passage.
-    def excerpt(text, question, max_chars:, summary: nil, court: nil)
+    # labels: the consideration labels that are this judgment's own when the question names several judgments
+    # (JurisprudenceSearch.named_references); nil reads them from the question.
+    def excerpt(text, question, max_chars:, summary: nil, court: nil, labels: nil)
       budget = max_chars.to_i
       return '' unless budget.positive?
 
@@ -42,9 +55,12 @@ module LegalChatbot
       return (NO_BODY_LABEL + labelled_summary(summary, budget - NO_BODY_LABEL.length))[0, budget] if body.strip.empty?
 
       literal_budget = budget - LITERAL_LABEL.length - summary_block.length
-      return (LITERAL_LABEL + literal_passages(body, question, [budget - LITERAL_LABEL.length, 0].max, court: court))[0, budget] if literal_budget < 160
+      if literal_budget < 160
+        room = [budget - LITERAL_LABEL.length, 0].max
+        return (LITERAL_LABEL + literal_passages(body, question, room, court: court, labels: labels))[0, budget]
+      end
 
-      LITERAL_LABEL + literal_passages(body, question, literal_budget, court: court) + summary_block
+      LITERAL_LABEL + literal_passages(body, question, literal_budget, court: court, labels: labels) + summary_block
     end
 
     def labelled_summary(summary, budget)
@@ -55,7 +71,7 @@ module LegalChatbot
       "\n#{SUMMARY_LABEL}#{text}\n"
     end
 
-    def literal_passages(text, question, budget, court: nil)
+    def literal_passages(text, question, budget, court: nil, labels: nil)
       return '' unless budget.positive?
       return text if text.length <= budget
       return text[0, budget] if budget <= ELISION.length * 2
@@ -82,13 +98,25 @@ module LegalChatbot
         units[index][:start] >= text.length / 2 &&
           text[units[index][:start]...units[index][:finish]].strip.match?(OPERATIVE_LABEL)
       end
+      # The considerations the question names come first and whole, each from its label to the next one, so a
+      # quotation inside it and the reasons after the quotation stay together. One that is longer than the room
+      # left is cut at the end of a line, and the cut is marked.
+      named_considerations(text, units, question, operative, named: labels).each do |start, finish, first|
+        remaining = budget - range_cost(text, selected) - (ELISION.length * 2)
+        break if remaining < 80
+
+        span = finish - start <= remaining ? [start, finish] : leading_span(text, units, first, finish, remaining)
+        selected = merge_ranges(selected + [span])
+        main_passage_selected = true
+      end
       if operative
         # Preserve the outcome as well as reasoning when it fits. It is a
         # separate literal passage, not evidence that every reasoning sentence
         # states the holding. No outcome is synthesized from the summary.
         last = [operative + 3, units.length - 1].min
         outcome = [units[operative][:start], units[last][:finish]]
-        selected << outcome if range_cost(text, [outcome]) <= budget / 3
+        with_outcome = merge_ranges(selected + [outcome])
+        selected = with_outcome if range_cost(text, [outcome]) <= budget / 3 && range_cost(text, with_outcome) <= budget
       end
 
       ranked.each do |index|
@@ -125,6 +153,50 @@ module LegalChatbot
         selected = merge_ranges(selected + [bounded_span(text, units[index], terms, remaining)])
       end
       render(text, selected)
+    end
+
+    # [[start, finish, first unit], ...]: the considerations the question names that the text holds, in the order the
+    # question names them. A consideration runs from its label, at the start of a line, to the next label or the
+    # operative part; the page numbers left on their own line before that next label are not part of it. A label
+    # with no line of its own ("B.5" where the judgment numbers B.5.1, B.5.2, ...) takes its sub-considerations.
+    def named_considerations(text, units, question, operative, named: nil)
+      names = (named || question.to_s.scan(NAMED_CONSIDERATION).flatten).map { |name| name.sub(/\A[ab]/, &:upcase) }
+                                                                        .uniq.first(MAX_NAMED_CONSIDERATIONS)
+      return [] if names.empty?
+
+      labels = units.each_index.filter_map do |index|
+        start = units[index][:start]
+        next unless start.zero? || text[start - 1] == "\n"
+
+        label = text[start...units[index][:finish]][CONSIDERATION_LABEL, 1]
+        [index, label] if label
+      end
+      names.filter_map do |name|
+        own = ->(label) { label == name }
+        under = ->(label) { label.start_with?("#{name}.") }
+        first = labels.find { |_index, label| own.call(label) } || labels.find { |_index, label| under.call(label) }
+        next unless first
+
+        part_of = own.call(first[1]) ? ->(_label) { false } : under
+        following = labels.find { |index, label| index > first[0] && !part_of.call(label) }
+        stop = [following&.first, operative && operative > first[0] ? operative : nil, units.length].compact.min
+        last = stop - 1
+        last -= 1 while last > first[0] && text[units[last][:start]...units[last][:finish]].match?(BARE_PAGE_NUMBER)
+        [units[first[0]][:start], units[last][:finish], first[0]]
+      end
+    end
+
+    # The start of a consideration that does not fit: its lines while they fit, else the start of its first line
+    # up to a word.
+    def leading_span(text, units, first, finish, budget)
+      start = units[first][:start]
+      last = first
+      last += 1 while last + 1 < units.length && units[last + 1][:finish] <= finish && units[last + 1][:finish] - start <= budget
+      return [start, units[last][:finish]] if units[last][:finish] - start <= budget
+
+      cut = start + budget
+      cut -= 1 while cut > start + 1 && !text[cut].match?(/[[:space:]]/)
+      [start, cut]
     end
 
     # The question's terms without the words of the deciding court's own name. "Wat zegt het Grondwettelijk Hof over

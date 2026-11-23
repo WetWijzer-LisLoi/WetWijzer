@@ -330,7 +330,12 @@ module LegalChatbot
         failure ||= e
         []
       end
-      rows = scope_native_source_results(native_rows, question) + Array(eu_rows)
+      rows = scope_native_source_results(native_rows, question)
+      # A decision the question names stands alone (JurisprudenceSearch#named_cases): an EU judgment found beside it by
+      # its words is not the decision asked for (Sol 2026-11-23 03:45:46Z: flight-delay and cookie-consent cards beside
+      # Constitutional Court judgment 46/2019). An EU act or judgment the question names itself stays (eu_targeted).
+      eu_rows = Array(eu_rows).select { |row| row[:eu_targeted] } if rows.any? { |row| row[:explicit_reference] }
+      rows += Array(eu_rows)
       raise PartialSearchFailure.new(failure, rows) if failure
 
       rows

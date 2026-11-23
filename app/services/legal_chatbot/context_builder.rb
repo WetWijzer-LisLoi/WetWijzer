@@ -95,7 +95,8 @@ module LegalChatbot
       text = source_record_field(record, :full_text).presence || source_record_field(record, :chunk_text)
       SourcePassageExcerpt.excerpt(ensure_utf8(text), question, max_chars: max_chars,
                                                                 summary: ensure_utf8(source_record_field(record, :summary)),
-                                                                court: source_record_field(record, :court))
+                                                                court: source_record_field(record, :court),
+                                                                labels: source_record_field(record, :considerations))
     end
 
     # An advisory opinion of the Council's Legislation section is not case law,

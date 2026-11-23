@@ -13,7 +13,7 @@ module HistoryPilotHelper
       undetermined: 'Inwerkingtreding niet bepaald: Justel vermeldt de wijziging, maar niet wanneer ze in werking treedt.',
       caveat_composed: 'Samengestelde weergave: geen bewaarde versie van Justel is op deze datum de volledige wet. Volgorde en opschriften komen uit %{page}.',
       caveat_unresolved: 'Onopgeloste data voor:', return_current: 'Huidige wet',
-      archive: 'Archief op datum', history: 'Geschiedenis', history_of: 'Geschiedenis van artikel %{article}', older: 'Ouder', newer: 'Nieuwer',
+      archive: 'Archief op datum', history: 'Geschiedenis', history_of: 'Geschiedenis van artikel %{article}',
       back_to_law: 'Terug naar de versie van de wet', back_to_current: 'Terug naar de huidige wet',
       compare: 'Vergelijk met de vorige versie', hide_compare: 'Vergelijking verbergen',
       from: 'van', until: 'tot en met', open: 'nog van kracht', start_unknown: 'begin niet vermeld',
@@ -22,6 +22,7 @@ module HistoryPilotHelper
       available: 'Beschikbare data', justel_archive: 'Archief van Justel', show: 'Toon', date: 'Datum',
       window: 'geldig', toc: 'Inhoudstafel', published: 'gepubliceerd op', introduced: 'ingevoerd door',
       not_in_archive: 'Tekst niet in het archief', notes_only: 'enkel de nota\'s van Justel verschillen',
+      wording_unchanged: 'de bewoording is ongewijzigd',
       superseded: 'vervangen voor de inwerkingtreding', no_change: 'in alle gearchiveerde versies ongewijzigd',
       earliest: 'De oudste tekst die het archief toont; de inwerkingtreding ervan vermeldt het archief niet.',
       authentic: 'Justel: geconsolideerde tekst zonder authentiek karakter; enkel het Belgisch Staatsblad is authentiek.',
@@ -41,7 +42,7 @@ module HistoryPilotHelper
       undetermined: "Entrée en vigueur non fixée : Justel mentionne la modification, mais pas sa date d'entrée en vigueur.",
       caveat_composed: "Vue composée : aucune version conservée de Justel n'est la loi complète à cette date. L'ordre et les intitulés viennent de %{page}.",
       caveat_unresolved: 'Dates non résolues pour :', return_current: 'Loi actuelle',
-      archive: 'Archives par date', history: 'Historique', history_of: "Historique de l'article %{article}", older: 'Plus ancienne', newer: 'Plus récente',
+      archive: 'Archives par date', history: 'Historique', history_of: "Historique de l'article %{article}",
       back_to_law: 'Revenir à la version de la loi', back_to_current: 'Revenir à la loi actuelle',
       compare: 'Comparer avec la version précédente', hide_compare: 'Masquer la comparaison',
       from: 'du', until: 'au', open: 'toujours en vigueur', start_unknown: 'début non mentionné',
@@ -50,6 +51,7 @@ module HistoryPilotHelper
       available: 'Dates disponibles', justel_archive: 'Archives de Justel', show: 'Afficher', date: 'Date',
       window: 'en vigueur', toc: 'Table des matières', published: 'publié le', introduced: 'introduit par',
       not_in_archive: "Texte absent de l'archive", notes_only: 'seules les notes de Justel diffèrent',
+      wording_unchanged: 'le texte est inchangé',
       superseded: 'remplacé avant son entrée en vigueur', no_change: 'inchangé dans toutes les versions archivées',
       earliest: "Le plus ancien texte que montre l'archive ; son entrée en vigueur n'y figure pas.",
       authentic: 'Justel : texte consolidé sans caractère authentique ; seul le Moniteur belge fait foi.',
@@ -69,7 +71,7 @@ module HistoryPilotHelper
       undetermined: 'Commencement not fixed: Justel names the change but not when it takes effect.',
       caveat_composed: 'Composed view: no saved Justel version is the complete law on this date. Order and headings come from %{page}.',
       caveat_unresolved: 'Unresolved dates for:', return_current: 'Current law',
-      archive: 'Archive by date', history: 'History', history_of: 'History of Article %{article}', older: 'Older', newer: 'Newer',
+      archive: 'Archive by date', history: 'History', history_of: 'History of Article %{article}',
       back_to_law: 'Return to the law version', back_to_current: 'Return to current law',
       compare: 'Compare with the previous version', hide_compare: 'Hide the comparison',
       from: 'from', until: 'to', open: 'still in force', start_unknown: 'start not stated',
@@ -78,6 +80,7 @@ module HistoryPilotHelper
       available: 'Available dates', justel_archive: 'Justel archive', show: 'Show', date: 'Date',
       window: 'in force', toc: 'Table of contents', published: 'published on', introduced: 'introduced by',
       not_in_archive: 'Text not in the archive', notes_only: "only Justel's notes differ",
+      wording_unchanged: 'the wording is unchanged',
       superseded: 'replaced before it took effect', no_change: 'unchanged in every archived version',
       earliest: 'The oldest text the archive shows; the archive does not state when it took effect.',
       authentic: 'Justel: consolidated text without official force; only the Belgian Official Gazette is authentic.',
@@ -118,14 +121,26 @@ module HistoryPilotHelper
     iso.present? ? Date.iso8601(iso).strftime('%d-%m-%Y') : nil
   end
 
-  # "van 03-02-2014 tot en met 02-08-2017", "van begin niet vermeld, nog van kracht".
-  def history_period(version)
+  # "van 03-02-2014 tot en met 02-08-2017", "van begin niet vermeld, nog van kracht". following: the next wording in a
+  # list of them; when it starts the day after this one ends, the end is left out ("van 03-02-2014"): the next date
+  # shows it (the owner, 2026-11-22 05:59:46Z: "tot en met is useless, next date shows from when"). An end that a gap
+  # or an unknown date makes informative stays.
+  def history_period(version, following: nil)
     unknown = history_label(:start_unknown)
     unknown = "#{unknown} (#{history_label(:not_before)} #{history_day(version.not_before)})" if version.not_before.present?
     start = "#{history_label(:from)} #{history_day(version.valid_from) || unknown}"
     return "#{start}, #{history_label(:open)}" if version.current?
+    return start if history_adjacent?(version, following)
 
     "#{start} #{history_label(:until)} #{history_day(version.valid_until) || history_label(:end_unknown)}"
+  end
+
+  def history_adjacent?(version, following)
+    return false unless following && version.valid_until.present? && following.valid_from.present?
+
+    Date.iso8601(following.valid_from) == Date.iso8601(version.valid_until) + 1
+  rescue Date::Error
+    false
   end
 
   def history_snapshot_label(snapshot)
@@ -277,6 +292,18 @@ module HistoryPilotHelper
     number = Regexp.escape(identifier.delete_suffix('.').delete_prefix('Art. '))
     match = /\A[[:space:]\u00A0\u202F]*Art(?:ikel|icle)?\.?[[:space:]\u00A0\u202F]*#{number}[[:space:]\u00A0\u202F]*\.(?![0-9])/i.match(text)
     match ? text[match.end(0)..].to_s.lstrip : text
+  end
+
+  # The comparison of a wording with the wording before it, inside the wording's normal presentation
+  # (HistoryInlineComparison): both are printed as the law page prints them, and the result is the newer wording's
+  # own HTML with the added words marked and the removed words struck where they stood. [html, counts in words].
+  def history_inline_comparison(key, old_body, new_body, numac)
+    old_html = print_article(old_body, key, 'ART', source_numac: numac)
+    new_html = print_article(new_body, key, 'ART', source_numac: numac)
+    html, counts = HistoryInlineComparison.compare(old_html, new_html, removed_label: history_label(:removed),
+                                                                       added_label: history_label(:added))
+    # print_article's own HTML, parsed and serialized again; the two labels are ours
+    [html.html_safe, counts]
   end
 
   # What an article's frame shows, in the form the address asks for it (utils/history_links.js

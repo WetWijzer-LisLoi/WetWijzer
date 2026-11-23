@@ -5,6 +5,7 @@ import { Turbo } from "@hotwired/turbo-rails";
 import { installTurboCspNonce } from "../utils/turbo_csp_nonce";
 import { installFrameMissingFallback } from "../utils/frame_missing_fallback";
 import { installTurboHistoryRepairs } from "../utils/turbo_history_repairs";
+import { takeHistoryStep } from "../utils/history_links";
 import "@/controllers";
 import '../stylesheets/application.scss';
 
@@ -96,6 +97,9 @@ window.addEventListener('turbo:load', (event) => {
     return;
   }
   
+  // A step in one article's history changed that article in place: the page stays where the reader has it
+  if (takeHistoryStep(event.detail?.url)) return;
+
   // For subsequent Turbo navigations, handle hash scrolling
   // Defer to allow controllers to connect and DOM to settle
   setTimeout(() => scrollToHash(), 0);

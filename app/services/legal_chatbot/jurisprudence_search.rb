@@ -31,6 +31,36 @@ module LegalChatbot
     # Hydrate and validate a bounded pool BEFORE taking the answer budget.
     # Orphaned ids and unsuitable neighbours must not consume that budget.
     MAX_CANDIDATES = 200
+    # A decision the question names is fetched by its own identity, before any vector hit (Sol 2026-11-23 03:45:46Z:
+    # with the exact ECLI of Constitutional Court judgment 46/2019 in the question, the answer came from other
+    # judgments; measured the same day, the decision was in this database all along, but nothing looked it up and
+    # the vector search did not return it). Named: a Belgian ECLI, or a number/year beside the Constitutional Court's
+    # name ("arrest nr. 46/2019 van het Grondwettelijk Hof", "arrêt n° 41/2009 de la Cour constitutionnelle",
+    # "GwH 140/2018"), which is that court's ECLI. case_number is unique in the database, so the lookup is one index
+    # search. A question that names its decision gets that decision alone: a vector neighbour beside it was read as
+    # if it were the decision asked for.
+    NAMED_ECLI_PATTERN = /(?<![[:alnum:]])ECLI:BE:[A-Z0-9]{2,12}:(?:19|20)\d{2}:[A-Z0-9]+(?:\.[A-Z0-9]+)*/i
+    CONSTITUTIONAL_COURT_PATTERN = /(?<![[:alpha:]])(?:grondwettelijk\s+hof|cour\s+constitutionnelle|verfassungsgerichtshof|
+      constitutional\s+court|arbitragehof|cour\s+d.arbitrage|GwH|C\.\s?const\.)(?![[:alpha:]])/iux
+    # A Constitutional Court judgment named by its number. Sol 2026-11-23 10:08:33Z: "Wat zegt het Grondwettelijk Hof
+    # over Verordening 44/2001?" names no judgment 44/2001, so a number/year counts only right after a judgment word
+    # ("arrest nr. 41/2009", "arrêt n° 140/2018", "judgment 41/2009", "Entscheid Nr. 46/2019"), in a question that names
+    # the Court, or right after the Court's own name or abbreviation ("GwH 41/2009", "Grondwettelijk Hof, arrest
+    # 41/2009", "C.C. 140/2018").
+    JUDGMENT_WORD = '(?:arrest(?:en)?|arr\.|arr[êe]ts?|judgments?|rulings?|urteil\p{L}*|entscheid\p{L}*)'
+    NUMBER_MARK = '(?:(?:nrs?\.?|n[°º]s?\.?|nos?\.?)\s*)?'
+    COURT_NAME = '(?:GwH|Grondwettelijk\s+Hof|Cour\s+constitutionnelle|Verfassungsgerichtshof|Constitutional\s+Court|Arbitragehof|' \
+                 'Cour\s+d.arbitrage|C\.\s?C\.|C\.\s?const\.)'
+    JUDGMENT_NUMBER = '(\d{1,3})/((?:19|20)\d{2})(?![\d/])'
+    BY_JUDGMENT_WORD = /(?<![[:alnum:]])#{JUDGMENT_WORD}\s+#{NUMBER_MARK}#{JUDGMENT_NUMBER}/iu
+    BY_COURT_NAME = /(?<![[:alnum:]])#{COURT_NAME}[,:]?\s+(?:#{JUDGMENT_WORD}\s+)?#{NUMBER_MARK}#{JUDGMENT_NUMBER}/iu
+    # A consideration label in a question, "B.7" or "b.7" alike (SourcePassageExcerpt reads the same labels).
+    QUESTION_LABEL = /(?<![[:alnum:].])([AaBb]\.\d{1,2}(?:\.\d{1,2}){0,3})(?![[:alnum:]]|\.\d)/
+    # What may stand between a label and the decision named right after it for the label to be that decision's: "B.7
+    # uit GwH 41/2009", "B.1.8 van arrest 140/2018", "B.7 de l'arrêt 41/2009".
+    LABEL_TO_FOLLOWING = /\A[\s,]*(?:(?:van|uit|in|of|de|du|des|la|le|het|the|from|aus|dem|der|im|vom)[\s,]+|[ld]['’])*\z/i
+    MAX_NAMED_CASES = 3
+    CASE_COLUMNS = 'id, case_number, court, decision_date, summary, full_text, url, language_id'
 
     # Staff-specific railway employment/safety material is not a rule for
     # an office employee who happens to work during a train commute. Require
@@ -134,14 +164,63 @@ module LegalChatbot
     # when it did not. Read by the fan-out right after #search returns.
     attr_reader :retrieval_degradation
 
+    # The ECLIs the last question named that this database does not hold: such a decision is missing from the index,
+    # which is another thing than a held decision whose passage was not chosen.
+    attr_reader :missing_references
+
+    # The ECLIs a question names, in upper case as the database stores them, in the order the question names them.
+    def self.named_eclis(question) = named_references(question).map(&:first)
+
+    # [[ecli, labels], ...]: the decisions a question names, in its order, each with the consideration labels that are
+    # its own (Sol 2026-11-23 10:08:33Z: "Vergelijk B.7 uit GwH 41/2009 met B.1.8 uit ECLI:BE:GHCC:2018:ARR.140" asks
+    # B.7 of the one and B.1.8 of the other). With one decision named, every label is its own.
+    def self.named_references(question)
+      text = question.to_s
+      found = text.to_enum(:scan, NAMED_ECLI_PATTERN).map { [Regexp.last_match.begin(0), Regexp.last_match.end(0), Regexp.last_match[0].upcase] }
+      court_named = text.match?(CONSTITUTIONAL_COURT_PATTERN)
+      [BY_COURT_NAME, (BY_JUDGMENT_WORD if court_named)].compact.each do |pattern|
+        text.to_enum(:scan, pattern).each do
+          match = Regexp.last_match
+          ecli = format('ECLI:BE:GHCC:%<year>s:ARR.%<number>03d', year: match[2], number: match[1].to_i)
+          found << [match.begin(0), match.end(0), ecli]
+        end
+      end
+      references = found.sort_by(&:first).uniq(&:last).first(MAX_NAMED_CASES)
+      labels = references_labels(text, references)
+      references.each_with_index.map { |(_start, _finish, ecli), index| [ecli, labels.fetch(index)] }
+    end
+
+    # Each label goes to the decision named right after it when only connecting words stand between them, else to
+    # the decision named last before it, else to the first one named.
+    def self.references_labels(text, references)
+      labels = references.map { [] }
+      return labels if references.empty?
+
+      text.to_enum(:scan, QUESTION_LABEL).each do
+        match = Regexp.last_match
+        label = match[1].sub(/\A[ab]/, &:upcase)
+        following = references.index { |start, _finish, _ecli| start >= match.end(0) }
+        index = if following && text[match.end(0)...references[following].first].match?(LABEL_TO_FOLLOWING)
+                  following
+                else
+                  references.rindex { |_start, finish, _ecli| finish <= match.begin(0) } || 0
+                end
+        labels[index] << label unless labels[index].include?(label)
+      end
+      labels
+    end
+
     # Find similar jurisprudence cases using FAISS vector search
     def search(question_embedding, limit: 5, question: nil)
       # Reset first: one service instance can serve more than one ask.
       @retrieval_degradation = nil
+      @missing_references = []
       limit = limit.to_i.clamp(0, MAX_CANDIDATES)
       return [] if limit.zero?
 
       source_db = jurisprudence_source_db
+      named = named_cases(question, source_db).first(limit)
+      return named if named.any?
 
       # FAISS service (fast path) - request more to filter by threshold
       candidate_limit = [limit * 8, 32].max.clamp(1, MAX_CANDIDATES)
@@ -162,25 +241,11 @@ module LegalChatbot
       # Fetch case details
       selected = []
       top_cases.each do |case_id, similarity|
-        case_data = source_db.execute(
-          'SELECT id, case_number, court, decision_date, summary, full_text, url, language_id FROM cases WHERE id = ?',
-          [case_id]
-        ).first
+        case_data = source_db.execute("SELECT #{CASE_COLUMNS} FROM cases WHERE id = ?", [case_id]).first
 
         next unless case_data
 
-        candidate = {
-          id: case_data[0],
-          case_number: case_data[1],
-          court: case_data[2],
-          decision_date: case_data[3],
-          summary: case_data[4],
-          full_text: case_data[5],
-          url: case_data[6],
-          language_id: case_data[7],
-          source_language: { 1 => 'nl', 2 => 'fr', 3 => 'de' }[case_data[7].to_i],
-          similarity: similarity
-        }.merge(self.class.source_metadata(case_number: case_data[1], court: case_data[2]))
+        candidate = case_candidate(case_data, similarity)
         begin
           next unless secondary_source_relevant?(candidate, question)
         rescue Regexp::TimeoutError
@@ -224,7 +289,7 @@ module LegalChatbot
       cases.map.with_index do |c, index|
         lang_label = { 1 => 'NL', 2 => 'FR', 3 => 'DE' }[c[:language_id].to_i] || 'unknown'
         text = SourcePassageExcerpt.excerpt(c[:full_text], question, max_chars: max_chars, summary: c[:summary],
-                                                                     court: c[:court])
+                                                                     court: c[:court], labels: c[:considerations])
         metadata = self.class.source_metadata(case_number: c[:case_number], court: c[:court])
         kind_notice = "Source kind: #{metadata[:judicial_kind] || 'unclassified case-law collection record'}"
         kind_notice += '; advice, not a judgment or binding legislation.' if metadata[:authority_kind] == 'advisory'
@@ -327,6 +392,36 @@ module LegalChatbot
 
     def jurisprudence_source_db
       @jurisprudence_source_db ||= SQLite3::Database.new(JURISPRUDENCE_SOURCE_DB)
+    end
+
+    # The decisions the question names, each by its ECLI, in the order it names them, each with the consideration
+    # labels that are its own (considerations: SourcePassageExcerpt gives those whole); the ones the database does not
+    # hold go to @missing_references. A named decision is the question's own choice: no similarity threshold and no
+    # topic gate applies to it.
+    def named_cases(question, source_db)
+      self.class.named_references(question).filter_map do |ecli, labels|
+        case_data = source_db.execute("SELECT #{CASE_COLUMNS} FROM cases WHERE case_number = ? LIMIT 1", [ecli]).first
+        next case_candidate(case_data, 1.0).merge(explicit_reference: true, considerations: labels) if case_data
+
+        @missing_references << ecli
+        nil
+      end
+    end
+
+    # A row of the cases table (CASE_COLUMNS) as the candidate the chatbot works with.
+    def case_candidate(case_data, similarity)
+      {
+        id: case_data[0],
+        case_number: case_data[1],
+        court: case_data[2],
+        decision_date: case_data[3],
+        summary: case_data[4],
+        full_text: case_data[5],
+        url: case_data[6],
+        language_id: case_data[7],
+        source_language: { 1 => 'nl', 2 => 'fr', 3 => 'de' }[case_data[7].to_i],
+        similarity: similarity
+      }.merge(self.class.source_metadata(case_number: case_data[1], court: case_data[2]))
     end
 
     # Case-law neighbours can be useful analogies, but should still concern

@@ -362,6 +362,9 @@ module LegalChatbot
 
       leg_articles = all_results[:legislation] || []
       jur_cases = all_results[:jurisprudence] || []
+      # Decisions the question names that the case-law index does not hold (JurisprudenceSearch#missing_references):
+      # the context says so, so no other decision is read as if it were the one asked for.
+      missing_cases = sources.include?(:jurisprudence) ? Array(jurisprudence_search_svc.try(:missing_references)) : []
       parl_docs = all_results[:parliamentary] || []
       tax_articles = all_results[:fisconet] || []
       regional_docs = all_results[:regional] || []
@@ -436,6 +439,10 @@ module LegalChatbot
         # low tier answer from an arbitrary single region.
         regional_docs = regional_docs.take(context_policy.fetch(:regional))
       end
+      # A decision the question names stands alone (JurisprudenceSearch#named_cases) and takes the room of the case
+      # rows it leaves unused, so the considerations the question names reach the model whole (Sol 2026-11-23
+      # 03:45:46Z: B.7 of judgment 41/2009 is 3,914 characters; two case rows at the low tier, 5,000).
+      case_chars = named_case_chars(jur_cases, context_policy, max_article_chars)
 
       # The regional index contains a small overlap with the primary Belgian
       # legislation index. Keeping both copies of the very same provision
@@ -532,6 +539,8 @@ module LegalChatbot
         tax_articles,
         regional_docs,
         max_article_chars: max_article_chars,
+        case_chars: case_chars,
+        missing_cases: missing_cases,
         authoritative_docs: authoritative_docs,
         question: question
       )
@@ -601,8 +610,8 @@ module LegalChatbot
         context = ensure_utf8(
           build_combined_context_from_db(
             leg_articles, jur_cases, parl_docs, tax_articles, regional_docs,
-            max_article_chars: max_article_chars, authoritative_docs: authoritative_docs,
-            question: question
+            max_article_chars: max_article_chars, case_chars: case_chars, missing_cases: missing_cases,
+            authoritative_docs: authoritative_docs, question: question
           )
         )
         Rails.logger.info("[QuoteRepair] added #{quote_repairs.length} quote-attributed article(s)")
@@ -663,8 +672,8 @@ module LegalChatbot
           repaired_context = ensure_utf8(
             build_combined_context_from_db(
               leg_articles, jur_cases, parl_docs, tax_articles, regional_docs,
-              max_article_chars: max_article_chars, authoritative_docs: authoritative_docs,
-              question: question
+              max_article_chars: max_article_chars, case_chars: case_chars, missing_cases: missing_cases,
+              authoritative_docs: authoritative_docs, question: question
             )
           )
           begin
@@ -1072,6 +1081,15 @@ module LegalChatbot
       return nil if numac.blank? || article_number.blank? || !language_id.match?(/\A[1-9]\d*\z/)
 
       [numac, article_number, language_id]
+    end
+
+    # The room of the decisions a question names when they stand alone (JurisprudenceSearch#named_cases): the case
+    # rows they leave unused add theirs. nil when a row is not named or the policy sets no number of case rows.
+    def named_case_chars(cases, policy, max_article_chars)
+      return nil unless policy[:bounded] && cases.any? && cases.all? { |row| row[:explicit_reference] }
+
+      slots = policy.fetch(:jurisprudence, 0).to_i
+      slots > cases.size ? max_article_chars * slots / cases.size : nil
     end
 
     def research_context_policy(question:, articles:)

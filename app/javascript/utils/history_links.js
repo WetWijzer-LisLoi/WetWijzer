@@ -5,6 +5,40 @@
 // variant has one per language (Art.42_WAALS_GEWEST, Art.42_REGION_WALLONNE).
 const HISTORY_PARAM = /^(?:art_version|art_compare)\[(.+)\]$/
 
+// A step in an article's history changes that article in place, and Turbo then promotes it to a visit of the page
+// (the frame advances the address), which ends in turbo:load. The page's own handlers of that event scroll to the
+// address's anchor, the article's top: with the history panel open that moved the article's number at every step (the
+// owner, via Sol 2026-11-23 04:31:08Z). The frame notes its step's address when it has loaded
+// (history_links_controller.js), and the page load of that same address within STEP_LOAD_MS takes the note and leaves
+// the page where it is (entrypoints/application.js). Any other page load scrolls as before (Sol 2026-11-23 10:08:33Z:
+// a note taken by whatever load came first could keep another navigation from its anchor).
+const STEP_LOAD_MS = 2000
+const notedSteps = new Map()
+
+// An address as a step's: its path and its parameters in any order and encoding, without the fragment.
+function stepAddress(href) {
+  try {
+    const url = new URL(href, 'https://wetwijzer.invalid')
+    const params = [...url.searchParams].map(([name, value]) => `${name}=${value}`).sort()
+    return `${url.pathname}?${params.join('&')}`
+  } catch (_) {
+    return null
+  }
+}
+
+export function noteHistoryStep(href, now = Date.now()) {
+  const address = stepAddress(href)
+  if (address) notedSteps.set(address, now)
+}
+
+export function takeHistoryStep(href, now = Date.now()) {
+  for (const [address, at] of notedSteps) {
+    if (now < at || now - at > STEP_LOAD_MS) notedSteps.delete(address)
+  }
+  const address = stepAddress(href)
+  return Boolean(address) && notedSteps.delete(address)
+}
+
 export function mergedHistoryUrl(linkHref, currentHref, ownKeys = []) {
   const current = new URL(currentHref)
   const link = new URL(linkHref, current)

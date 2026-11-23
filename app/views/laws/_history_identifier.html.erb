@@ -1,6 +1,9 @@
-<%# Article-history pilot: the article's identifier on a line of its own (HistoryPilotHelper#history_identifier), where
-    its wording does not show its number: before a comparison's words, and alone on an archive date with no wording (a
-    gap). It is the button that opens the article's menu (article_copy_menu_controller.js makes it one), so History
-    and the copies stay at hand (Sol 2026-11-21 10:09:36Z: a visible, keyboard-operable identifier outside the diff).
+<%# Article-history pilot: the article's identifier on a line of its own (HistoryPilotHelper#history_identifier), first
+    in the article's frame whenever the article shows anything but its plain text (laws/_history_article). It is set in
+    the type of the legal text (ReferencesHelper::ARTICLE_CONTENT_CLASSES), so it stands exactly where the wording's own
+    number stands in the plain text: the panel opening below it, a step and Close leave it in place (the owner, via Sol
+    2026-11-23 04:31:08Z). It is the button that opens the article's menu (article_copy_menu_controller.js makes it
+    one), so History and the copies stay at hand (Sol 2026-11-21 10:09:36Z: a visible, keyboard-operable identifier
+    outside the diff).
     Locals: identifier. %>
-<p class="not-prose mb-1" data-history-identifier><span class="article-number not-prose cursor-pointer"><%= identifier %></span></p>
+<div class="<%= ReferencesHelper::ARTICLE_CONTENT_CLASSES %>" data-history-identifier><span class="article-number not-prose cursor-pointer"><%= identifier %></span></div>

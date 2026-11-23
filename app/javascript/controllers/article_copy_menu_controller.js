@@ -4,9 +4,10 @@ import { citationText, displayedText, fragmentUrl, reportCopyFailure, runCopy } 
 // The menu of a law's articles (WW-COPY-01; the owner's design, via Sol 2026-11-21 07:00:09Z). The article number
 // opens it, by a click, Enter or Space. Opening it, closing it, Escape and History write nothing to the clipboard:
 // only a copy item copies, once, the article's link (language_id kept), its text as shown, or its citation text.
-// History, shown for an article with history only, opens that article's picker in place through its frame's own
-// step link (laws/_history_link). Escape, Tab and a copy put the focus back on the number. One menu serves every
-// article; it sits at the page root so it never inherits article markup.
+// History, shown for an article with history only, opens that article's panel in place through its frame's own
+// step link (laws/_history_link), and closes it when it is open (the owner, via Sol 2026-11-23 04:35:31Z): the item
+// carries the link's state as aria-expanded. Escape, Tab and a copy put the focus back on the number. One menu serves
+// every article; it sits at the page root so it never inherits article markup.
 //
 // An article is a [data-permalink] row naming its text (data-source): the live law, the dated archive and the
 // Fisconet codes. Its number becomes a button here (role, tabindex, aria-haspopup, aria-expanded), on connect and on
@@ -179,7 +180,12 @@ export default class extends Controller {
 
   // The items the article offers, and the article the menu is named for.
   showItems(number) {
-    if (this.hasHistoryTarget) this.historyTarget.hidden = !this.historyLink()
+    if (this.hasHistoryTarget) {
+      const link = this.historyLink()
+      this.historyTarget.hidden = !link
+      if (link) this.historyTarget.setAttribute("aria-expanded", String(link.getAttribute("aria-expanded") === "true"))
+      else this.historyTarget.removeAttribute("aria-expanded")
+    }
     const wording = Boolean(this.sourceElement())
     this.wordingTargets.forEach(item => { item.hidden = !wording })
     this.element.setAttribute("aria-label", (number.textContent || "").trim())
@@ -291,17 +297,13 @@ export default class extends Controller {
     return this.article?.querySelector("a[data-history-link]") || null
   }
 
-  // The article's picker, opened in place by its frame's own step link; already open, the focus goes to it.
+  // The article's history panel, opened in place by its frame's own step link, or closed by it when it is open:
+  // the link's step is the opposite of what the frame shows (laws/_history_link). The frame then takes the focus
+  // without scrolling: the panel's heading after opening, the article's number after closing (history_links).
   openHistory() {
     const link = this.historyLink()
-    const article = this.article
     this.close()
-    if (!link) return
-    if (link.getAttribute("aria-expanded") === "true") {
-      article.querySelector("[data-history-picker] h4")?.focus()
-      return
-    }
-    link.click()
+    link?.click()
   }
 
   copyLink() {

@@ -264,7 +264,10 @@ export default class extends Controller {
           if (!target) return
           // Reinitialize when the law articles frame loads or when content within article area updates
           if (target.id === 'law_articles' || (target.closest && target.closest('.article-content'))) {
-            this.refreshAfterFrameLoad()
+            // One article's own history frame (laws/_history_frame) changed that article in place: the sections are
+            // measured again, and the page stays where the reader has it (the owner, via Sol 2026-11-23 04:31:08Z)
+            const inPlace = typeof target.id === 'string' && target.id.startsWith('history-')
+            this.refreshAfterFrameLoad({ scroll: !inPlace })
           }
         } catch (_) { /* noop */ }
       }
@@ -1142,7 +1145,7 @@ export default class extends Controller {
   /**
    * Refresh tracking after Turbo frame loads to ensure sections and observers reflect new content
    */
-  refreshAfterFrameLoad() {
+  refreshAfterFrameLoad({ scroll = true } = {}) {
     if (!this._connected || !this.enabledValue) return
     // Debounce rapid frame loads - only one reinit at a time
     if (this._refreshing) return
@@ -1175,7 +1178,7 @@ export default class extends Controller {
         const hash = window.location.hash
         if (hash) {
           this.activateByHash(hash)
-          if (!acted) this.scrollToCurrentHash()
+          if (!acted && scroll) this.scrollToCurrentHash()
         } else if (savedActiveLinkTarget) {
           // Re-activate the section that was active before the frame reload
           this.activateByHash(`#${savedActiveLinkTarget}`)

@@ -1,40 +1,52 @@
-<%# Article-history pilot: one covered article, in reading order (the owner, via Sol 2026-11-20 16:42:25Z). Its picker
-    when the reader opened it, the notes the archive date needs (none on the live page) and the chosen wording's
-    period stand outside the legal text; then the legal text, at the full width of the article (the owner's design of
-    2026-11-21, via Sol 07:00:09Z: no icon and no column of its own; the number opens the article's menu, and its
-    History item follows the hidden step link). The legal text, #article-text-<permalink> (what the copy actions read),
-    is print_article's output untouched: the live row on the current-law page (live: [text, title, type]), else the
-    wording the archive gives or the reader chose. With a comparison, the words changed against the wording before
-    are shown in its place, after the article's identifier so its menu stays at hand, and the chosen wording stays
-    the copied text; at the oldest wording there is none, so the text stays visible with a short note. Right after Close,
+<%# Article-history pilot: one covered article, in reading order. The article's number always stands first and stays
+    where it is (the owner, via Sol 2026-11-23 04:31:08Z: the page jumped at every step; the history box stood above the
+    number and pushed it down). While the article shows its plain text, the number is the first word of that text, as
+    in every other article. As soon as it shows anything else (its history panel, a wording the reader chose, a
+    comparison, the notes an archive date needs, or no wording at all) the number stands on a line of its own
+    (laws/_history_identifier), at that same place, and below it, in this order: the panel, the notes, the chosen
+    wording's period, and the text. So opening the panel, a step to another wording, a comparison and Close change only
+    what stands below the number, and a date switch changes only what stands below the panel.
+
+    The legal text is print_article's output untouched: the live row on the current-law page (live: [text, title,
+    type]), else the wording the archive gives or the reader chose. Below the number's own line the text is shown
+    without its leading number (hidden by the stylesheet, [data-history-shown-text]); with a comparison, the same
+    text carries the change against the wording before (laws/_history_diff), and at the oldest wording there is none,
+    so the text stays with a short note. In both cases #article-text-<permalink> (what the copy actions read) is the whole wording,
+    kept hidden for the copy (utils/article_copy.js lays it out for the moment of the read). Right after Close,
     data-history-return-focus asks for the focus back on the number (history_links_controller.js).
     Locals: history (HistoryPilotHelper::ArticleState), permalink, numac, live (optional). %>
 <% key = history.key %>
 <% live = local_assigns[:live] %>
-<% if history_open?(key) %><%= render 'laws/history_picker', history: history, permalink: permalink %><% end %>
-<% unless history.live? %><%= render 'laws/history_notes', history: history %><% end %>
-<% if history.chosen %>
-  <p class="not-prose mb-1 text-xs text-gray-600 dark:text-gray-300" data-history-chosen="<%= key %>"><%= (history_label(:version_label) % { period: history_period(history.selected) }).upcase_first %><% if history.off_date %> (<%= history_label(:off_date) % { date: history_day(@history_as_of) } %>)<% end %></p>
-<% end %>
+<% open = history_open?(key) %>
 <% printed = if history.live? && live
                print_article(*live, source_numac: numac)
              elsif history.shown_body
                print_article(history.shown_body, key, 'ART', source_numac: numac)
              end %>
 <% comparing = @history_compare.include?(key) && history.shown_body %>
-<% if comparing && !history.compare_base %>
-  <p class="not-prose mb-1 text-xs text-gray-600 dark:text-gray-300" data-history-no-previous><%= history_label(:no_previous) %></p>
-<% end %>
+<% plain = printed && !open && !history.chosen && !comparing && (history.live? || !history.unresolved?) %>
 <div data-history-row="<%= key %>" data-history-state="<%= history_rendered_state(key) %>" <%= tag.attributes(data: { history_return_focus: ('' if history_focus?(key, 'close')) }) %>>
   <%= render 'laws/history_link', history: history, permalink: permalink %>
-  <% if comparing && history.compare_base %>
-    <%= render 'laws/history_diff', key: key, old_body: history.compare_base.body, new_body: history.shown_body %>
-    <div id="article-text-<%= permalink %>" hidden data-history-copy-text><%= printed %></div>
-  <% elsif printed %>
+  <% if plain %>
     <div id="article-text-<%= permalink %>"><%= printed %></div>
   <% else %>
-    <%# No wording on the archive date (a gap): the identifier alone keeps History at hand; the menu then offers no copy
-        of a wording that is not there (Sol 2026-11-21 10:09:36Z). %>
     <%= render 'laws/history_identifier', identifier: history_identifier(key) %>
+    <% if open %><%= render 'laws/history_picker', history: history, permalink: permalink %><% end %>
+    <% unless history.live? %><%= render 'laws/history_notes', history: history %><% end %>
+    <% if history.chosen %>
+      <p class="not-prose mb-1 text-xs text-gray-600 dark:text-gray-300" data-history-chosen="<%= key %>"><%= (history_label(:version_label) % { period: history_period(history.selected) }).upcase_first %><% if history.off_date %> (<%= history_label(:off_date) % { date: history_day(@history_as_of) } %>)<% end %></p>
+    <% end %>
+    <% if comparing && !history.compare_base %>
+      <p class="not-prose mb-1 text-xs text-gray-600 dark:text-gray-300" data-history-no-previous><%= history_label(:no_previous) %></p>
+    <% end %>
+    <% if comparing && history.compare_base %>
+      <%= render 'laws/history_diff', key: key, old_body: history.compare_base.body, new_body: history.shown_body, numac: numac,
+                                      notes_only: history.selected&.change_kind == 'notes only' %>
+    <% elsif printed %>
+      <div data-history-shown-text><%= printed %></div>
+    <% end %>
+    <%# No wording on the archive date (a gap): the number alone keeps History at hand; the menu then offers no copy of
+        a wording that is not there (Sol 2026-11-21 10:09:36Z). %>
+    <% if printed %><div id="article-text-<%= permalink %>" hidden data-history-copy-text><%= printed %></div><% end %>
   <% end %>
 </div>

@@ -328,6 +328,7 @@ app/services/fisconet_article_anchors.rb
 app/services/fisconet_code_registry.rb
 app/services/fisconet_provision.rb
 app/services/fisconet_search_service.rb
+app/services/history_inline_comparison.rb
 app/services/invoice_service.rb
 app/services/jurisprudence_search_service.rb
 app/services/law_search_constants.rb
@@ -865,6 +866,7 @@ public/sw.js
 public/vite/.vite/manifest-assets.json
 public/vite/.vite/manifest.json
 public/vite/assets/application--Tt29A6V.css
+public/vite/assets/application--q83suI2.js
 public/vite/assets/application--xCmOLOB.js
 public/vite/assets/application-19jp2-xV.js
 public/vite/assets/application-AoyFyjhb.js
@@ -912,7 +914,6 @@ public/vite/assets/application-Bg72xW3O.css
 public/vite/assets/application-BhuIuwNE.js
 public/vite/assets/application-BlYIKHvN.css
 public/vite/assets/application-BljTHQ0U.css
-public/vite/assets/application-BndWz1h5.js
 public/vite/assets/application-BnqEfAFX.js
 public/vite/assets/application-Bp1eZMIJ.css
 public/vite/assets/application-BpnsFRLJ.css
@@ -946,7 +947,7 @@ public/vite/assets/application-C_9vDH8i.css
 public/vite/assets/application-Cb7_8Pgu.css
 public/vite/assets/application-CcCEGaTi.js
 public/vite/assets/application-CcLxC4GL.css
-public/vite/assets/application-CkzOeZaD.css
+public/vite/assets/application-CgmpfuNz.css
 public/vite/assets/application-CnTvLShx.css
 public/vite/assets/application-Co6lhnkz.js
 public/vite/assets/application-CqcCHVTp.js

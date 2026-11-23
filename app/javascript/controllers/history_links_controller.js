@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { mergedHistoryUrl, requestedHistoryState, settledHistoryUrl } from "../utils/history_links.js"
+import { mergedHistoryUrl, noteHistoryStep, requestedHistoryState, settledHistoryUrl } from "../utils/history_links.js"
 import { keepFragmentRestorationsInPlace } from "../utils/turbo_history_repairs.js"
 
 // One covered article's history frame (laws/_history_frame): before Turbo follows a step link in it (the hidden link
@@ -15,7 +15,10 @@ import { keepFragmentRestorationsInPlace } from "../utils/turbo_history_repairs.
 // fragment and the step (history_focus) of the reader's latest step in any article and Turbo's history state kept; and
 // every frame's step links
 // are brought up to date, so copying or opening one gives the choices on the screen. After Close the focus goes back
-// to the article's number, the menu's button (data-history-return-focus).
+// to the article's number, the menu's button (data-history-return-focus); after any other step it goes to the step
+// just taken or the panel's heading (data-history-autofocus). Neither scrolls the page, and the step is noted so that
+// the page's turbo:load handlers leave the page where it is too (utils/history_links.js, noteHistoryStep): the
+// article's number and the panel stay in place at every step (the owner, via Sol 2026-11-23 04:31:08Z).
 //
 // Back and Forward between this law's steps: Turbo restores such an entry from its own record of the page, which a
 // step superseded by a quicker one can leave out of step with the address (CI-1.1.84b, 2026-11-21; see also
@@ -38,6 +41,8 @@ let shownLaw = null
 let pageBound = false
 let latestFragment = null
 let latestFocus = null
+// The frame of the reader's latest step: only its landing may move the focus (see focusAfterStep)
+let latestStepFrame = null
 let shownSearch = null
 let connectedFrames = 0
 let restoring = false
@@ -141,6 +146,8 @@ export default class extends Controller {
       pageBound = true
     }
     reopenArchiveAfterReload()
+    // A page loaded with a panel open (a shared link, a reload): the focus the autofocus attribute used to give
+    this.element.querySelector("[data-history-autofocus]")?.focus({ preventScroll: true })
   }
 
   disconnect() {
@@ -160,14 +167,34 @@ export default class extends Controller {
     const step = new URL(link.href)
     latestFragment = step.hash
     latestFocus = step.searchParams.get("history_focus")
+    latestStepFrame = this.element
   }
 
   landed() {
+    noteHistoryStep(this.element.src)
     const settled = new URL(settledHistoryUrl(window.location.href, shownFrames(), latestFocus))
     const fragment = latestFragment || window.location.hash
     window.history.replaceState(window.history.state, "", `${settled.pathname}${settled.search}${fragment}`)
     shownSearch = settled.search
     refreshStepLinks()
-    this.element.querySelector("[data-history-return-focus] .article-number[tabindex]")?.focus()
+    this.focusAfterStep()
+  }
+
+  // The focus moves only to the frame of the reader's latest step, and only while the reader's focus is not elsewhere
+  // (Sol 2026-11-23 10:08:33Z: a slower step in one article must not take the focus from a later choice in another,
+  // nor from where the reader has tabbed): on nothing, inside this frame (the step pressed, now replaced), or on the
+  // article menu's History item once the menu has closed (it closes before it follows the step). While the menu is
+  // open it keeps the focus (article_copy_menu_controller.js, rebind).
+  focusAfterStep() {
+    if (latestStepFrame && latestStepFrame !== this.element) return
+    const active = document.activeElement
+    const menu = active?.closest?.("[data-controller~='article-copy-menu']")
+    if (menu && !menu.classList.contains("hidden")) return
+    const free = !active || active === document.body || active === document.documentElement || this.element.contains(active) ||
+      Boolean(menu)
+    if (!free) return
+    const target = this.element.querySelector("[data-history-return-focus] .article-number[tabindex]") ||
+      this.element.querySelector("[data-history-autofocus]")
+    target?.focus({ preventScroll: true })
   }
 }

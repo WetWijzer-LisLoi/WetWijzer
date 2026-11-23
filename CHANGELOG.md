@@ -8,6 +8,19 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.95] - 2026-11-23
+
+### Changed
+
+- An article's history no longer moves the page. The article's number stays first and where it is; the history panel opens below it, and choosing a date, the comparison and Close change only what stands below the number. No step scrolls the page.
+- The history panel has no Older and Newer: its dates are the choices. A wording that ends the day before the next one starts is listed by its start alone.
+- History in an article's menu opens that article's history and closes it when it is open; the item says which.
+- The comparison with the previous wording stands inside the wording's normal presentation: common words once, added words in the colour of their amendment, removed words struck through where they stood and never as a link, a replacement old then new. When no word changed, a line says so.
+
+### Fixed
+
+- A question that names a court decision by its ECLI, or a Constitutional Court judgment by its number ("arrest nr. 41/2009", "GwH 41/2009"), gets that decision, fetched directly, instead of decisions a search finds near it. A consideration the question names ("B.7", "B.1.7 en B.5.3") is given whole, from its label to the next one, for the decision it belongs to, and a named decision WetWijzer does not hold is said to be missing.
+
 ## [1.1.94] - 2026-11-23
 
 ### Fixed

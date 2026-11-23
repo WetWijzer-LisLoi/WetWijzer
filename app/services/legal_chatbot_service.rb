@@ -471,6 +471,25 @@ class LegalChatbotService
     end
   end
 
+  # Sol 2026-11-23 03:45:46Z: a decision the question names that the case-law index does not hold is another thing
+  # than a held decision whose passage was not chosen. The context names it, so that no other decision is read as
+  # that decision (JurisprudenceSearch#missing_references).
+  MISSING_CASE_NOTICE = {
+    'nl' => 'NIET IN DE RECHTSPRAAKINDEX: %<eclis>s. De vraag noemt deze beslissing, maar WetWijzer heeft haar tekst ' \
+            'niet; geen andere beslissing in deze context is die beslissing.',
+    'fr' => "ABSENT DE L'INDEX DE JURISPRUDENCE : %<eclis>s. La question cite cette décision, mais WetWijzer n'en a pas " \
+            "le texte ; aucune autre décision de ce contexte n'est cette décision.",
+    'en' => 'NOT IN THE CASE-LAW INDEX: %<eclis>s. The question names this decision, but WetWijzer does not hold its ' \
+            'text; no other decision in this context is that decision.'
+  }.freeze
+
+  def missing_case_context_notice(missing_cases)
+    eclis = Array(missing_cases).compact.uniq
+    return nil if eclis.empty?
+
+    format(MISSING_CASE_NOTICE.fetch(@language, MISSING_CASE_NOTICE.fetch('en')), eclis: eclis.join(', '))
+  end
+
   # Build combined context from legislation, jurisprudence, parliamentary
   # works, tax legislation, regional legislation, and sealed official EU
   # sources admitted by LegalFactProvider.
@@ -482,7 +501,9 @@ class LegalChatbotService
     regional_docs = [],
     max_article_chars: 4000,
     authoritative_docs: [],
-    question: nil
+    question: nil,
+    case_chars: nil,
+    missing_cases: []
   )
     parts = []
     juris_label = @language == 'fr' ? 'JURISPRUDENCE' : 'RECHTSPRAAK'
@@ -503,8 +524,9 @@ class LegalChatbotService
     cases.each_with_index do |c, index|
       lang_label = source_context_language(c)
       text = LegalChatbot::SourcePassageExcerpt.excerpt(
-        ensure_utf8(c[:full_text]), question, max_chars: max_article_chars, summary: ensure_utf8(c[:summary]),
-                                              court: c[:court]
+        ensure_utf8(c[:full_text]), question, max_chars: (c[:explicit_reference] && case_chars) || max_article_chars,
+                                              summary: ensure_utf8(c[:summary]),
+                                              court: c[:court], labels: c[:considerations]
       )
       judicial_kind = if LegalChatbot::AdvisoryOpinions.advisory?(c[:case_number])
                         'legislative_opinion'
@@ -584,6 +606,9 @@ class LegalChatbotService
 
     rental_notice = rental_termination_context_notice(articles, question)
     parts << rental_notice if rental_notice
+
+    missing_notice = missing_case_context_notice(missing_cases)
+    parts << missing_notice if missing_notice
 
     parts.join("\n\n---\n\n")
   end

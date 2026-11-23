@@ -909,6 +909,26 @@ html, body {
   text-decoration: underline;
 }
 
+/* An article with its number on a line of its own (laws/_history_article: its history panel, a chosen wording or a
+   note stands between the number and the text): the text below does not repeat the number it starts with. */
+[data-history-shown-text] > div > .article-number:first-child {
+  display: none;
+}
+
+/* The comparison of a wording with the wording before it (HistoryInlineComparison; the owner, via Sol 2026-11-23
+   04:31:08Z), inside the wording's own presentation: the added words keep the colour of their amendment and get a
+   dotted line under them, the removed words are struck through where they stood. No background of their own. */
+ins.history-added {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: color-mix(in srgb, currentColor 60%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+del.history-removed {
+  text-decoration-line: line-through;
+}
+
 /* An article number that opens the article's menu (article_copy_menu_controller.js gives it role="button"; the
    owner's design, via Sol 2026-11-21 07:00:09Z): visibly a control, for the keyboard and touch too. The press area
    reaches a little past the glyphs without moving the text; the underline never prints. */
