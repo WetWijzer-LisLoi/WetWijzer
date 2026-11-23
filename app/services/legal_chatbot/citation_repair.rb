@@ -186,7 +186,12 @@ module LegalChatbot
     # 15:29:47Z: thirteen general tax samples withheld). Same rule: only the
     # numbers the guard rejected, and only inside the Fisconet documents the
     # search already returned.
-    def repair_cited_tax_articles(guard_result, tax_articles)
+    #
+    # Sol 2026-11-22 23:31:33Z: an answer citing arts. 42 and 43 of the act of 26 March 1999 got the VAT code's and
+    # every region's W.Reg. arts. 42 and 43 as cards. The guard hands over bare numbers, and each was looked up in every
+    # held tax code. A rejected number now reaches the tax codes only when its citation names a tax code, or names no
+    # law while no retrieved Belgian law holds that number; repair_cited_articles keeps the same rule for the main laws.
+    def repair_cited_tax_articles(guard_result, tax_articles, text: nil, leg_articles: [])
       rejected = Array(guard_result&.fetch(:unsupported_references, nil))
       return [] if rejected.empty? || tax_articles.blank?
 
@@ -196,14 +201,63 @@ module LegalChatbot
       # The region is part of a row's identity: W.Reg. and W.Succ. hold one row per region for a number,
       # and a held Brussels row must not keep the Flemish one out (Sol 2026-11-19 17:31:53Z).
       held = tax_articles.to_set { |article| tax_row_identity(article) }
+      held_elsewhere = Array(leg_articles).filter_map { |article| retrieved_source_article_number(article) }.to_set
+      laws = cited_law_kinds(text)
       numbers = interleave_repair_candidates(rejected.map do |reference|
-        expand_article_range(reference.to_s.sub(/\A\s*Art(?:ikel|icle)?s?\.?\s*/i, '')).compact_blank
+        number = reference.to_s.sub(/\A\s*Art(?:ikel|icle)?s?\.?\s*/i, '')
+        next [] unless tax_repair_number?(number, laws, held_elsewhere)
+
+        expand_article_range(number).compact_blank
       end)
       return [] if numbers.empty?
 
       fisconet_search_svc.fetch_articles_by_number(
         legislation_ids: legislation_ids, article_numbers: numbers, limit: CITATION_REPAIR_LIMIT
       ).reject { |row| held.include?(tax_row_identity(row)) }
+    end
+
+    # The law a citation names right after its numbers: a Fisconet tax code (or a Fisconet link), another law (or a
+    # Justel link), or none.
+    TAX_CODE_CITATION = %r{(?<![[:alpha:]])(?:W\.?\s?I\.?\s?B\.?|KB\s?/\s?WIB|W\.?\s?BTW|BTW|TVA|MwStGB|EStGB|
+                           W\.?\s?Reg\.?|W\.?\s?Succ\.?|C\.?\s?I\.?\s?R\.?|AR\s?/\s?CIR|CTVA|C\.?\s?enr\.?|C\.?\s?succ\.?|VCF|
+                           Vlaamse\s+Codex\s+Fiscaliteit|Code\s+flamand\s+de\s+la\s+fiscalit[ée]|
+                           Wetboek\s+(?:van\s+de\s+)?(?:inkomstenbelastingen|belasting\s+over\s+de\s+toegevoegde\s+waarde)|
+                           Wetboek\s+der\s+(?:registratie|successie)\p{L}*|Code\s+des\s+(?:imp[ôo]ts\s+sur\s+les\s+revenus|droits)|
+                           Code\s+de\s+la\s+TVA|(?:income\s+tax|VAT)\s+code|Einkommensteuergesetzbuch|Mehrwertsteuergesetzbuch)
+                           (?![[:alpha:]])|FISCONET_\d+}iux
+    OTHER_LAW_CITATION = %r{(?<![[:alpha:]])(?:wet|wetten|loi|lois|gesetz\p{L}*|act|decreet|d[ée]cret|ordonnantie|
+                            ordonnance|besluit|arr[êe]t[ée]|verordening|r[èe]glement|richtlijn|directive|verordnung|richtlinie|
+                            grondwet|constitution|verfassung|burgerlijk|gerechtelijk|strafwetboek|code\s+(?:civil|judiciaire|
+                            p[ée]nal)|wetboek\s+van\s+(?:economisch|vennootschappen|strafvordering)|KB|AR|CAO|CCT)
+                            (?![[:alpha:]])|/laws/\d{4}[0-9A-Z]\d{5}}iux
+    CITED_LAW_WINDOW = 90
+
+    def cited_law_kinds(text)
+      kinds = Hash.new { |hash, key| hash[key] = Set.new }
+      return kinds if text.blank?
+
+      next_article = Regexp.new("\\n|\\b#{Orchestrator::ARTICLE_PREFIX_SOURCE}")
+      text.to_s.to_enum(:scan, Orchestrator::ARTICLE_CITATION_SEQUENCE_PATTERN).each do
+        match = Regexp.last_match
+        window = text.to_s[match.end(0), CITED_LAW_WINDOW].to_s
+        window = window[0, window.index(next_article)] if window.index(next_article)
+        kind = if window.match?(TAX_CODE_CITATION) then :tax
+               elsif window.match?(OTHER_LAW_CITATION) then :other
+               end
+        next unless kind
+
+        article_numbers_in_citation_sequence(match[:numbers]).each { |number| kinds[normalize_article_number(number)] << kind }
+      end
+      kinds
+    end
+
+    def tax_repair_number?(number, laws, held_elsewhere)
+      key = normalize_article_number(number)
+      kinds = laws.fetch(key, Set.new)
+      return true if kinds.include?(:tax)
+      return false if kinds.include?(:other)
+
+      !held_elsewhere.include?(key)
     end
 
     def tax_row_identity(article)

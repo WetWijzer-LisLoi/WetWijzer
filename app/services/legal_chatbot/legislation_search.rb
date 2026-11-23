@@ -2391,14 +2391,23 @@ module LegalChatbot
     # Walloon decree of 15 March 2018 art. 36, since that decree repealed art. 1742 for a Walloon residential lease; old
     # Civil Code art. 1742, which the Brussels Housing Code departs from only at the tenant's death); the tenant's death
     # is what ends it in each region.
-    LANDLORD_DIED = /(?<![[:alpha:]])(?:verhuurder|huisbaas|eigenaar|bailleur|propri[ée]taire|vermieter\p{L}*|landlord|owner)\p{L}*[^.?!]{0,40}?(?:overl(?:ij|e)\p{L}*|gestorven|sterft|stierf|d[ée]c[èe]s|d[ée]c[ée]d\p{L}*|(?:dood|meurt|mort|stirbt|gestorben|verstorben|died|dies|death)(?![[:alpha:]]))|(?:overlijden|d[ée]c[èe]s|tod|death)\s+(?:van\s+(?:de|mijn|onze)\s+|du\s+|de\s+(?:mon|notre)\s+|des\s+|of\s+(?:the|my|our)\s+)(?:verhuurder|huisbaas|eigenaar|bailleur|propri[ée]taire|vermieter\p{L}*|landlord|owner)/iu
-    TENANT_DIED = /(?<![[:alpha:]])(?:huurder|locataire|mieter\p{L}*|tenant)\p{L}*[^.?!]{0,40}?(?:overl(?:ij|e)\p{L}*|gestorven|sterft|stierf|d[ée]c[èe]s|d[ée]c[ée]d\p{L}*|(?:dood|meurt|mort|stirbt|gestorben|verstorben|died|dies|death)(?![[:alpha:]]))|(?:overlijden|d[ée]c[èe]s|tod|death)\s+(?:van\s+(?:de|mijn|onze)\s+|du\s+|de\s+(?:mon|notre)\s+|des\s+|of\s+(?:the|my|our)\s+)(?:huurder|locataire|mieter\p{L}*|tenant)/iu
-    LANDLORD_DEATH_PATTERN = /\A(?=.*(?:#{LANDLORD_DIED.source}))(?!.*(?:#{TENANT_DIED.source}))/imu
+    # Sol 23:31:33Z: "Ik ben huurder en mijn verhuurder is overleden" names both parties. A tenant's death needs no
+    # landlord named between the tenant and the death word. (The landlord's side needs no mirror rule: a tenant named in
+    # its gap is a tenant death, which decides.) A landlord's death also needs a lease word: "De eigenaar van het
+    # bedrijf is overleden" asks nothing about a lease.
+    LANDLORD_NOUN = /(?<![[:alpha:]])(?:verhuurder|huisbaas|eigenaar|bailleur|propri[ée]taire|vermieter|landlord|owner)/iu
+    TENANT_NOUN = /(?<![[:alpha:]])(?:huurder|locataire|mieter|tenant)/iu
+    DIED_WORD = /(?:overl(?:ij|e)\p{L}*|gestorven|sterft|stierf|d[ée]c[èe]s|d[ée]c[ée]d\p{L}*|(?:dood|meurt|mort|stirbt|gestorben|verstorben|died|dies|death)(?![[:alpha:]]))/iu
+    DEATH_OF = /(?:overlijden|d[ée]c[èe]s|tod|death)\s+(?:van\s+(?:de|mijn|onze)\s+|du\s+|de\s+(?:mon|notre)\s+|des\s+|of\s+(?:the|my|our)\s+)/iu
+    LANDLORD_DIED = /#{LANDLORD_NOUN.source}\p{L}*[^.?!]{0,40}?#{DIED_WORD.source}|#{DEATH_OF.source}#{LANDLORD_NOUN.source}/iu
+    TENANT_DIED = /#{TENANT_NOUN.source}\p{L}*(?:(?!#{LANDLORD_NOUN.source})[^.?!]){0,40}?#{DIED_WORD.source}|#{DEATH_OF.source}#{TENANT_NOUN.source}/iu
+    LEASE_WORD = /(?<![[:alpha:]])(?:(?:ver)?huur\p{L}*|huisbaas\p{L}*|bail|baux|locataire\p{L}*|bailleur\p{L}*|(?:ver)?miet\p{L}*|lease\p{L}*|tenan\p{L}*|landlord\p{L}*|rent(?:al|ed|ing)?(?![[:alpha:]]))/iu
+    LANDLORD_DEATH_PATTERN = /\A(?=.*(?:#{LANDLORD_DIED.source}))(?!.*(?:#{TENANT_DIED.source}))(?=.*#{LEASE_WORD.source})/imu
     # #978 (Sol 2026-11-22 13:20:48Z and 17:42:33Z): the tenant's death ends a residential lease differently in each
     # region, and the answer gave Brussels only a Housing Fund scheme. The ordinary rule of each region: Flanders,
     # Woninghuurdecreet art. 42; Wallonia, decree of 15 March 2018 art. 46; Brussels, Housing Code art. 232, which departs
     # from old Civil Code art. 1742 (a lease does not end at the death of either party).
-    TENANT_DEATH_PATTERN = /\A(?!(?=.*(?:#{LANDLORD_DIED.source}))(?!.*(?:#{TENANT_DIED.source})))(?=.*(?<![[:alpha:]])(?:(?:ver)?huur\p{L}*|bail|baux|locataire\p{L}*|bailleur\p{L}*|(?:ver)?miet\p{L}*|lease\p{L}*|tenan\p{L}*|landlord\p{L}*|rent(?:al|ed|ing)?(?![[:alpha:]])))(?=.*(?<![[:alpha:]])(?:overl(?:ij|e)\p{L}*|sterf\p{L}*|stierf|gestorven|d[ée]c[èe]s|d[ée]c[ée]d\p{L}*|verstorben\p{L}*|deceased|(?:dood|meurt|mort|tod|stirbt|gestorben|dies|died|death)(?![[:alpha:]])))/imu
+    TENANT_DEATH_PATTERN = /\A(?!(?=.*(?:#{LANDLORD_DIED.source}))(?!.*(?:#{TENANT_DIED.source})))(?=.*#{LEASE_WORD.source})(?=.*(?<![[:alpha:]])(?:overl(?:ij|e)\p{L}*|sterf\p{L}*|stierf|gestorven|d[ée]c[èe]s|d[ée]c[ée]d\p{L}*|verstorben\p{L}*|deceased|(?:dood|meurt|mort|tod|stirbt|gestorben|dies|died|death)(?![[:alpha:]])))/imu
     # #2746 (Sol 2026-11-22 13:20:48Z): "Wanneer heb ik rechtsbijstand nodig?", a sample of the insurance category, got
     # six cards on legal aid before specialised courts. Legal-expenses insurance in the Insurance Act of 4 April 2014:
     # art. 154 (its scope), 156 (the free choice of a lawyer, also in a conflict of interests) and 157 (a disagreement

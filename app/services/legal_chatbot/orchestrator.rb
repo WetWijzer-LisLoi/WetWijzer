@@ -373,6 +373,14 @@ module LegalChatbot
       eu_docs = (leg_articles + jur_cases).select { |row| row[:source] == LegalChatbot::EuCorpus::SOURCE }
       leg_articles = leg_articles.reject { |row| row[:source] == LegalChatbot::EuCorpus::SOURCE }
       jur_cases = jur_cases.reject { |row| row[:source] == LegalChatbot::EuCorpus::SOURCE }
+      # Sol 2026-11-22 23:31:33Z: EU rows found by word overlap alone reached the cards of questions that never raise
+      # their act's subject: the AI Act and GDPR arts. 8 and 83 under "Zijn algemene voorwaarden altijd bindend?" (the
+      # Dutch title of GDPR art. 83 begins "Algemene voorwaarden"), the e-commerce directive under "Elektronisch
+      # voorschrift?". The narrow-subject rule judges them as it judges Belgian rows; an act the question names and the
+      # rows an EU topic plan or website overview chose (EuSearch marks them eu_targeted) stay.
+      eu_docs = eu_docs.select do |row|
+        row[:eu_targeted] || LegalChatbot::SpecialistSubjectScope.source_relevant?(row, question, viewing: true)
+      end
 
       # Apply quality filters to legislation. Hybrid FAISS/FTS retrieval now
       # happens inside LegislationSearch#search, so this remains safe even
@@ -632,7 +640,8 @@ module LegalChatbot
       unless citation_guard_passed?
         repaired = scope_repair_sources_for_question(repair_cited_articles(@last_citation_guard_result, leg_articles), question)
         # The tax codes live only in Fisconet; their cited articles are repaired there (CitationRepair).
-        repaired_tax = repair_cited_tax_articles(@last_citation_guard_result, tax_articles).select do |article|
+        repaired_tax = repair_cited_tax_articles(@last_citation_guard_result, tax_articles, text: answer,
+                                                                                            leg_articles: leg_articles).select do |article|
           LegalChatbot::FisconetSearch.contextual_source_relevant?(article, question)
         end
         if (repaired.any? || repaired_tax.any?) && enough_request_time?

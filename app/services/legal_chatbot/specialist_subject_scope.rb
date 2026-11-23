@@ -130,11 +130,12 @@ module LegalChatbot
            stude\p{L}*|studeer\p{L}*|[ée]tudi\p{L}*|
            [ée]ducati\p{L}*|bildung\p{L}*|schooling|obligation\s+scolaire|schulpflicht\p{L}*)#{E}/iux
       ],
-      # The AI Act
+      # The AI Act. A hyphen compound ("ai-verordening", "KI-Verordnung") raises it, but not the French inversion
+      # "Ai-je ... ?" (Sol 2026-11-22 23:31:33Z).
       ai: [
         %r{#{B}(?:2024/1689|artifici[ëe]le\s+intelligentie|intelligence\s+artificielle|k[üu]nstliche\p{L}*\s+intelligenz|
            artificial\s+intelligence)#{E}}iux,
-        %r{#{B}(?:(?-i:AI|A\.I\.|KI|IA)|(?:ai|ia|ki)-\p{L}+|artifici[ëe]le|artificielle|artificial|k[üu]nstlich\p{L}*|intelligent\p{L}*|algoritm\p{L}*|
+        %r{#{B}(?:(?-i:AI|A\.I\.|KI|IA)|(?:ai(?!-je(?![[:alpha:]]))|ia|ki)-\p{L}+|artifici[ëe]le|artificielle|artificial|k[üu]nstlich\p{L}*|intelligent\p{L}*|algoritm\p{L}*|
            algorithm\p{L}*|algorithmus|chatbot\p{L}*|chatgpt|deepfake\p{L}*|geautomatiseerd\p{L}*|automatis\p{L}*|automated|
            automatisiert\p{L}*|machine\s+learning|gezichtsherkenning|reconnaissance\s+faciale|gesichtserkennung|
            facial\s+recognition|biometr\p{L}*|robot\p{L}*|2024/1689)#{E}}iux
@@ -144,12 +145,12 @@ module LegalChatbot
         %r{#{B}(?:2016/679|gegevensbescherming|protection\s+des\s+donn[ée]es|datenschutz\p{L}*|data\s+protection|
            verwerking\s+van\s+persoonsgegevens|traitement\s+des\s+donn[ée]es\s+[àa]\s+caract[èe]re\s+personnel|
            verarbeitung\s+personenbezogener\s+daten|processing\s+of\s+personal\s+data)#{E}}iux,
-        /#{B}(?:privacy|priv[ée]\p{L}*|vie\s+priv[ée]e|privatsph[äa]re|persoonsgegeven\p{L}*|persoonlijke\s+gegevens|gegevens\p{L}*|
+        /#{B}(?:privacy\p{L}*|confidentialit\p{L}*|priv[ée]\p{L}*|vie\s+priv[ée]e|privatsph[äa]re|persoonsgegeven\p{L}*|persoonlijke\s+gegevens|gegevens\p{L}*|
            \p{L}*data|donn[ée]es|daten\p{L}*|personenbezogen\p{L}*|gdpr|avg|rgpd|dsgvo|camera\p{L}*|cam[ée]ra\p{L}*|kamera\p{L}*|
            foto\p{L}*|photo\p{L}*|beeld\p{L}*|image\p{L}*|bild\p{L}*|video\p{L}*|cookie\p{L}*|e-?mail\p{L}*|mail\p{L}*|
-           computer\p{L}*|ordinateur\p{L}*|internet|online|app|apps|applicati\p{L}*|website\p{L}*|site\s+web|webshop\p{L}*|
+           courriel\p{L}*|computer\p{L}*|ordinateur\p{L}*|internet|online|app|apps|applicati\p{L}*|website\p{L}*|site\s+web|webshop\p{L}*|
            webwinkel\p{L}*|verwerk\p{L}*|traitement\p{L}*|sous-traitant\p{L}*|verarbeit\p{L}*|auftragsverarbeit\p{L}*|
-           processor\p{L}*|controller\p{L}*|verantwortlich\p{L}*|inzage\p{L}*|vergetel\p{L}*|oubli|vergessen\p{L}*|
+           processor\p{L}*|processing|controller\p{L}*|verantwortlich\p{L}*|inzage\p{L}*|vergetel\p{L}*|oubli|vergessen\p{L}*|
            forgotten|forget|erasure|effacement|l[öo]schung\p{L}*|uitwiss\p{L}*|personal|personnel\p{L}*|persoonlijk\p{L}*|
            verwijder\p{L}*|wissen|gewist|supprim\p{L}*|effac\p{L}*|l[öo]sch\p{L}*|eras\p{L}*|delet\p{L}*|bezwaar\p{L}*|
            opposition\p{L}*|widerspruch\p{L}*|objection\p{L}*|herkomst|herkunft|origine|telefoonnummer\p{L}*|
@@ -158,7 +159,7 @@ module LegalChatbot
            profil\p{L}*|marketing|nieuwsbrief\p{L}*|newsletter\p{L}*|telemarketing|datalek\p{L}*|breach\p{L}*|fuite\p{L}*|
            identiteit\p{L}*|identit[ée]\p{L}*|identit[äa]t\p{L}*|identity|(?-i:eID|EID)|rijksregister\p{L}*|registre\s+national|
            bewak\p{L}*|surveil\p{L}*|[üu]berwach\p{L}*|monitor\p{L}*|track\p{L}*|gps|locatie\p{L}*|localisation|standort\p{L}*|
-           location|medisch\s+dossier|dossier\s+m[ée]dical|patientenakte|medical\s+records?|registratie\p{L}*|
+           location|medisch\s+dossier|dossier\s+m[ée]dical|patientenakte|medical\s+(?:records?|files?)|registratie\p{L}*|
            enregistrement\p{L}*|toestemming\p{L}*|consentement\p{L}*|einwilligung\p{L}*|consent)#{E}/iux
       ],
       # The e-commerce directive
@@ -166,11 +167,14 @@ module LegalChatbot
         %r{#{B}(?:2000/31|elektronische\s+handel|commerce\s+[ée]lectronique|elektronischen\s+gesch[äa]ftsverkehr\p{L}*|
            electronic\s+commerce|informatiemaatschappij|soci[ée]t[ée]\s+de\s+l.information|informationsgesellschaft|
            information\s+society)#{E}}iux,
-        /#{B}(?:online|internet\p{L}*|webwinkel\p{L}*|webshop\p{L}*|website\p{L}*|site\s+web|sites?\s+internet|e-?commerce|
+        # "Onlinekauf" and "en ligne" too: the EU measurement of 2026-11-23 read French and German questions
+        /#{B}(?:online\p{L}*|en\s+ligne|internet\p{L}*|webwinkel\p{L}*|webshop\p{L}*|website\p{L}*|webseite\p{L}*|site\s+web|
+           sites?\s+internet|e-?commerce|
            platform\p{L}*|plateforme\p{L}*|plattform\p{L}*|marketplace\p{L}*|marktplaats|elektronische\s+handel|
            commerce\s+[ée]lectronique|informatiemaatschappij|soci[ée]t[ée]\s+de\s+l.information|informationsgesellschaft|
            information\s+society|hosting\p{L}*|h[ée]berge\p{L}*|provider\p{L}*|fournisseur\p{L}*|anbieter\p{L}*|
-           e-?mail\p{L}*|spam\p{L}*|cookie\p{L}*|app|apps|digita\p{L}*|num[ée]rique\p{L}*|sociale\s+media|r[ée]seaux\s+sociaux|
+           e-?mail\p{L}*|courriel\p{L}*|spam\p{L}*|cookie\p{L}*|app|apps|digita\p{L}*|num[ée]rique\p{L}*|sociale\s+media|
+           r[ée]seaux\s+sociaux|
            social\s+media|soziale\p{L}*\s+medien)#{E}/iux
       ],
       # Income tax: the income tax code, its royal decree and the withholding taxes

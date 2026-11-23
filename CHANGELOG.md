@@ -8,6 +8,15 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.93] - 2026-11-23
+
+### Fixed
+
+- EU articles that only shared words with a question reached its cards and the model's context: the AI Act art. 6 and GDPR arts. 8 and 83 under "Zijn algemene voorwaarden altijd bindend?" (the Dutch title of GDPR art. 83 begins with "Algemene voorwaarden"), and the e-commerce directive art. 7 under "Elektronisch voorschrift?". The narrow-subject rule of 1.1.92 never saw EU articles; it now judges them as it judges Belgian ones. An act the question names (by CELEX, alias or ECLI) and the articles an EU topic plan or website overview selects stay. On the 2,877 Dutch catalogue questions, 143 of the 286 EU articles found by word overlap stand under a question that does not raise their act's subject and are left out: 77 of the AI Act, 28 of the GDPR, 24 of the e-commerce directive and 14 of the Digital Services Act. In the French, German and English catalogues 794 of 1,533, 1,604 of 2,026 and 503 of 770 such articles are left out; reading them showed six words the lists lacked, now added: German compounds of "online" and "Webseite", French "en ligne" and "courriel", and English "processing" and "medical file". Dutch privacy compounds ("privacyverklaring", "privacybeleid") and the French "confidentialité" now raise the GDPR too: no catalogue question lost a row for want of them, but a question about a privacy notice would have.
+- An answer that cited an article of another law brought tax-code articles with the same number as cards: the citation repair looked each rejected number up in every retrieved tax code, so "Art. 42, § 1, Wet van 26 maart 1999" brought VAT code art. 42 and W.Reg. art. 42 of each region. A rejected number now reaches the tax codes only when its citation names a tax code or links to one, or names no law while no retrieved Belgian law holds that number.
+- A death is read for the party it follows: "Ik ben huurder en mijn verhuurder is overleden" gets the rules that keep the lease (Flanders art. 42, Wallonia art. 36, old Civil Code art. 1742), not those that end it at the tenant's death. A landlord's death also needs a lease word, so the death of a company's or a car's owner gets no lease rule (1.1.92 gave it the landlord's).
+- The French "Ai-je ... ?" no longer raises the AI Act.
+
 ## [1.1.92] - 2026-11-22
 
 ### Fixed
