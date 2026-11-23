@@ -3,13 +3,16 @@
     its own: there is no Older or Newer, the reader picks the date (the owner on the live page, 2026-11-22 05:59:19Z:
     "Ouder Jonger has no use, they can just click the actual choice"). A wording that ends the day before the next one
     starts is shown by its start alone, as the next date shows where it ends (the owner, 05:59:46Z: "tot en met is
-    useless, next date shows from when"); an end that a gap or an unknown date makes informative stays. Comparison and
-    the source of the wording shown are one step deeper (a native <details>, last in the panel, so it grows downwards
-    only). Every step updates this article's frame alone (laws/_history_frame) and keeps the panel open. The panel keeps
-    its size from one wording to the next: the way back has its place, as a link or, when the law's wording is shown,
-    as its greyed name. The focus goes to the step just taken, or to the panel's heading when that step is gone:
-    data-history-autofocus, which history_links_controller.js focuses without scrolling the page (the autofocus
-    attribute made Turbo scroll the focused link into view).
+    useless, next date shows from when"); an end that a gap or an unknown date makes informative stays.
+    The owner, via Sol 2026-11-23 14:13:13Z: the period stands once, in the list of dates; one compact control right
+    below the dates compares the wording shown with the one before it ("Vergelijk met vorige versie", "Vergelijking
+    sluiten" while it is shown), and is left out where no earlier wording exists; the source of the wording shown has
+    a quiet disclosure of its own ("Bron en wijziging": the amending act with its publication, and the Justel version),
+    last in the panel, so it grows downwards only. Every step updates this article's frame alone (laws/_history_frame)
+    and keeps the panel open. The panel keeps its size from one wording to the next: the way back has its place, as a
+    link or, when the law's wording is shown, as its greyed name. The focus goes to the step just taken, or to the
+    panel's heading when that step is gone: data-history-autofocus, which history_links_controller.js focuses without
+    scrolling the page (the autofocus attribute made Turbo scroll the focused link into view).
     Locals: history (HistoryPilotHelper::ArticleState), permalink. %>
 <% key = history.key %>
 <% versions = history.versions %>
@@ -19,7 +22,7 @@
 <% step = history_focus?(key) ? @history_focus[1] : nil %>
 <% to = ->(version, name) { history_law_path(@law, versions: @history_versions.merge(key => ArticleHistoryPilot.version_name(version)), anchor: permalink, focus: [key, name]) } %>
 <% comparing = @history_compare.include?(key) %>
-<% present = { 'law' => chosen.present?, 'item' => !index.nil?, 'compare' => true }[step] %>
+<% present = { 'law' => chosen.present?, 'item' => !index.nil?, 'compare' => history.compare_base.present? || comparing }[step] %>
 <% back = @history_as_of.present? ? history_label(:back_to_law) : history_label(:back_to_current) %>
 <section class="not-prose my-2 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-sm max-w-full" data-history-picker="<%= key %>" aria-label="<%= history_label(:history) %> <%= key %>">
   <div class="flex flex-wrap items-center justify-between gap-2">
@@ -35,12 +38,14 @@
       <span class="text-gray-400 dark:text-gray-500" aria-disabled="true" data-history-step-off="law"><%= back %></span>
     <% end %>
   </div>
-  <ol class="mt-2 space-y-1" aria-label="<%= history_label(:history) %>">
+  <ol class="mt-2 space-y-1 break-words" aria-label="<%= history_label(:history) %>">
     <% versions.each_with_index do |version, position| %>
       <% period = history_period(version, following: versions[position + 1]) %>
       <li>
         <% if version == selected %>
           <span aria-current="true" class="font-semibold" tabindex="-1" <%= tag.attributes(data: { history_autofocus: ('' if step == 'item') }) %>><%= period %></span>
+          <%# A wording the reader chose that does not apply on the archive date says so here, where its period stands %>
+          <% if history.off_date %><span class="text-xs text-gray-600 dark:text-gray-300" data-history-off-date>(<%= history_label(:off_date) % { date: history_day(@history_as_of) } %>)</span><% end %>
         <% else %>
           <%= link_to period, to.(version, 'item'), data: { turbo_frame: "history-#{permalink}", history_step: 'item', history_version: ArticleHistoryPilot.version_name(version) }, class: 'underline' %>
         <% end %>
@@ -52,31 +57,30 @@
   <% history.disputes.each do |stretch| %>
     <p class="mt-1 text-xs" data-history-disputed-stretch><strong><%= history_label(:disputed) %></strong>, <%= history_period(stretch) %>: <%= history_label(:disputed_days) %>, <%= history_dispute_days(stretch) %>.</p>
   <% end %>
-  <details class="mt-2" data-history-details <%= 'open' if step == 'compare' %>>
-    <summary class="cursor-pointer text-xs underline-offset-2 hover:underline"><%= history_label(:details) %></summary>
-    <div class="mt-1 space-y-1 text-xs text-gray-600 dark:text-gray-300">
-      <% if history.live? %>
-        <p data-history-shown-source><%= history_label(:shown_live) %>
-          <% captured = selected&.captured_at.to_s[0, 10] %>
-          <% if history.compare_base == selected %><%= history_label(:live_differs) % { captured: history_day(captured) } %><% else %><%= history_label(:live_same) % { captured: history_day(captured) } %><% end %>
-        </p>
-      <% end %>
-      <% if selected && !history.live? %>
-        <%# A disputed date never gets a period that presents the wording as in force; the notes give both dates. %>
-        <% unless history.dispute %><p data-history-period><%= history_period(selected) %></p><% end %>
-        <% if selected.introduced_by.present? %>
-          <p><%= history_label(:introduced) %> <%= selected.introduced_by.sub(/\s*\(archived version \d+\)\z/, '') %>, <%= history_label(:published) %> <%= history_day(selected.published) %></p>
+  <% if history.compare_base || comparing %>
+    <p class="mt-2">
+      <%= link_to history_label(comparing ? :hide_compare : :compare),
+                  history_law_path(@law, compare: comparing ? @history_compare - [key] : @history_compare + [key], anchor: permalink, focus: [key, 'compare']),
+                  data: { turbo_frame: "history-#{permalink}", history_step: 'compare', history_autofocus: ('' if step == 'compare') }, class: 'underline' %>
+    </p>
+  <% end %>
+  <% source = history.live? && history.compare_base == selected ? nil : selected %>
+  <% amending = selected && !history.live? && selected.introduced_by.present? %>
+  <% if history.live? || amending || source&.source_url.present? %>
+    <details class="mt-2" data-history-details>
+      <summary class="cursor-pointer text-xs text-gray-600 dark:text-gray-300 underline-offset-2 hover:underline"><%= history_label(:details) %></summary>
+      <div class="mt-1 space-y-1 text-xs text-gray-600 dark:text-gray-300 break-words">
+        <% if history.live? %>
+          <p data-history-shown-source><%= history_label(:shown_live) %>
+            <% captured = selected&.captured_at.to_s[0, 10] %>
+            <% if history.compare_base == selected %><%= history_label(:live_differs) % { captured: history_day(captured) } %><% else %><%= history_label(:live_same) % { captured: history_day(captured) } %><% end %>
+          </p>
         <% end %>
-      <% end %>
-      <% source = history.live? && history.compare_base == selected ? nil : selected %>
-      <% if source&.source_url.present? %>
-        <p><a href="<%= source.source_url %>" rel="noopener" target="_blank" class="underline" data-history-source><%= history_label(:source) %><%= " #{format('%03d', source.first_version)}" if source.first_version %></a></p>
-      <% end %>
-      <% if history.compare_base || comparing %>
-        <%= link_to history_label(comparing ? :hide_compare : :compare),
-                    history_law_path(@law, compare: comparing ? @history_compare - [key] : @history_compare + [key], anchor: permalink, focus: [key, 'compare']),
-                    data: { turbo_frame: "history-#{permalink}", history_step: 'compare', history_autofocus: ('' if step == 'compare') }, class: 'underline' %>
-      <% end %>
-    </div>
-  </details>
+        <% if amending %><p data-history-amended-by><%= history_amending_act(selected) %></p><% end %>
+        <% if source&.source_url.present? %>
+          <p><a href="<%= source.source_url %>" rel="noopener" target="_blank" class="underline" data-history-source><%= history_label(:source) %><%= " (#{format('%03d', source.first_version)})" if source.first_version %></a></p>
+        <% end %>
+      </div>
+    </details>
+  <% end %>
 </section>

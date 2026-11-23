@@ -100,10 +100,15 @@ module LegalChatbot
       end
       # The considerations the question names come first and whole, each from its label to the next one, so a
       # quotation inside it and the reasons after the quotation stay together. One that is longer than the room
-      # left is cut at the end of a line, and the cut is marked.
-      named_considerations(text, units, question, operative, named: labels).each do |start, finish, first|
-        remaining = budget - range_cost(text, selected) - (ELISION.length * 2)
-        break if remaining < 80
+      # left is cut at the end of a line, and the cut is marked. Sol 2026-11-23 11:08:38Z: a very long first one took
+      # the room of the next. They share it: one that fits its share stands whole, the others share what it leaves.
+      named = named_considerations(text, units, question, operative, named: labels)
+      shares = fair_shares(named.map { |start, finish, _first| finish - start }, budget - (ELISION.length * 2 * named.size))
+      named.zip(shares).each do |(start, finish, first), share|
+        room = budget - range_cost(text, selected) - (ELISION.length * 2)
+        next if room < 80
+
+        remaining = [room, share].min
 
         span = finish - start <= remaining ? [start, finish] : leading_span(text, units, first, finish, remaining)
         selected = merge_ranges(selected + [span])
@@ -184,6 +189,18 @@ module LegalChatbot
         last -= 1 while last > first[0] && text[units[last][:start]...units[last][:finish]].match?(BARE_PAGE_NUMBER)
         [units[first[0]][:start], units[last][:finish], first[0]]
       end
+    end
+
+    # Each length's share of total: the shortest are given whole while they fit an equal share of what is left, and
+    # the rest share it equally.
+    def fair_shares(lengths, total)
+      shares = Array.new(lengths.size, 0)
+      left = [total, 0].max
+      lengths.each_index.sort_by { |index| [lengths[index], index] }.each_with_index do |index, rank|
+        shares[index] = [lengths[index], left / (lengths.size - rank)].min
+        left -= shares[index]
+      end
+      shares
     end
 
     # The start of a consideration that does not fit: its lines while they fit, else the start of its first line

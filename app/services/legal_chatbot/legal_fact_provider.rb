@@ -2168,23 +2168,90 @@ module LegalChatbot
       DIRECTIVE
     end
 
-    # Sol 2026-11-20 01:32:31Z (#2116): an answer counted the withdrawal period from the day of the event itself. WER
-    # art. VI.47, § 2 (read in full NL and FR on 2026-11-20): the period "verstrijkt 14 dagen na" the day of conclusion
-    # (services; water, gas, electricity and district heating) or of physical possession (sales), so that day does not
-    # count. The example date is plain arithmetic on that wording.
-    # Sol 2026-11-20 13:52:21Z (#2117, #1114): an answer let the trader withhold the refund without the collection
-    # exception, and another gave the digital-content conditions as conditions in every case. WER art. VI.50 and VI.53
-    # (read in full NL and FR on 2026-11-20): § 3 of VI.50 opens "Behoudens wanneer de onderneming heeft aangeboden de
-    # goederen zelf af te halen"; VI.53, 1° and 13°, attach the conditions to a contract that obliges the consumer to pay.
+    # How to count the 14 days, shared by the distance and the off-premises directives below. Sol 2026-11-20 01:32:31Z
+    # (#2116): an answer counted the period from the day of the event itself; Sol 2026-11-23 06:49:36Z (#1151): the
+    # doorstep-sale answer of 1.1.93 let the 14 days start on the day of signing or receipt. Sol 2026-11-23 07:14:35Z
+    # and 09:24:52Z, on 1.1.94: the examples need their year; the fourteenth day may fall on a weekend or a holiday;
+    # utilities sold without a limited volume or set quantity count from the contract, a gas cylinder from its
+    # possession; only goods of one order delivered separately count from the last one; the rule holds between a trader
+    # and a consumer (a B2B purchase, a doorstep-selling permit); and a notice is in time when it is sent, while a live
+    # answer required the trader to know of it before the end.
+    # Read in full on 2026-11-23 (2013A11134): arts. VI.47, VI.49, VI.67 and VI.69 (NL and FR); arts. I.1, I.8, VI.48,
+    # VI.50, VI.53, VI.68 and VI.71 (NL). For book VI an "onderneming" is defined by art. I.8, 39°, and both contracts
+    # are contracts "tussen de onderneming en de consument" (I.8, 15° and 31°). Art. I.1, 9°, counts a Saturday as a
+    # "werkdag", so the weekend rule below names the days instead of using that word. From our EU corpus (NL): Directive
+    # 2011/83/EU recitals 40 and 41 and, consolidated to 27 September 2026, arts. 2, 9 and 11; Directive (EU) 2019/771
+    # art. 2, consolidated to 31 July 2026. Regulation (EEC, Euratom) No 1182/71, which recital 41 applies to the
+    # directive's periods, is not in our corpus: its Dutch text was read in full from the EU Publications Office (art.
+    # 3(4): a period whose last day is a holiday, a Sunday or a Saturday ends with the following working day; art. 2(2):
+    # working days are all days other than holidays, Sundays and Saturdays). The weekdays are the calendar's, and the
+    # tests recompute every date.
+    # Sol 2026-11-23 14:42:44Z: the late information was dated "binnen die twaalf maanden", the months after the end of
+    # the ordinary period. VI.48 and VI.68, read again in full (NL and FR) the same day, count those twelve months from
+    # "de in artikel VI.47 [VI.67], § 2, bedoelde dag", the starting point of the ordinary period; information given
+    # later opens no new period of 14 days, and the period still ends twelve months after the ordinary one.
+    # The text cites only articles of the WER. Measured on 2026-11-23 through the whole answer pipeline: an answer that
+    # cites "art. 3, lid 4, van verordening (EEG, Euratom) nr. 1182/71", a regulation no source holds, was retried twice
+    # and then withheld ("Antwoord niet weergegeven"); the regulation named without an article number was delivered.
+    # So the rule names it without one, and the gas cylinder rests on art. I.1, 6°, and the wording of VI.47 and VI.67.
+    def withdrawal_period_rules(title:, period:, extension:, notice:, contract:)
+      <<~RULES.strip
+        #{title} (art. #{period}, § 2, WER).
+        VOOR WIE: het herroepingsrecht geldt voor een overeenkomst tussen een onderneming en een consument (art. I.8,
+        #{contract}, WER). Een consument is een natuurlijke persoon die handelt voor doeleinden buiten zijn handels-,
+        bedrijfs-, ambachts- of beroepsactiviteit (art. I.1, 2°, WER). Sloot de vrager de overeenkomst voor zo'n
+        activiteit, of met een particulier, dan heeft hij dit herroepingsrecht niet: zeg dat. Blijkt het niet uit de vraag,
+        zeg dan dat de regel alleen geldt voor een consument tegenover een onderneming.
+        TELLEN: de termijn van 14 dagen "verstrijkt 14 dagen na":
+        - bij een dienst, en bij de levering van water, gas of elektriciteit die niet gereed voor verkoop zijn gemaakt in
+        een beperkt volume of in een bepaalde hoeveelheid, of van stadsverwarming: de dag waarop de overeenkomst wordt
+        gesloten;
+        - bij een verkoop: de dag waarop de consument, of een door hem aangewezen derde die niet de vervoerder is, de
+        goederen fysiek in bezit neemt. Gas dat gereed is gemaakt voor verkoop in een bepaalde hoeveelheid, zoals een
+        gasfles, valt niet onder de levering hierboven: een gasfles is een goed (een lichamelijke roerende zaak, art. I.1,
+        6°, WER), en daarvoor telt de inbezitneming. Heeft de consument in dezelfde bestelling meerdere goederen besteld
+        die afzonderlijk worden geleverd: de dag waarop hij het laatste goed in bezit neemt; bestaat de levering van een
+        goed uit verschillende zendingen of onderdelen: de laatste zending of het laatste onderdeel; bij een overeenkomst
+        voor de regelmatige levering van goederen gedurende een bepaalde periode: het eerste goed.
+        Die dag is het vertrekpunt en telt zelf niet mee: de eerste dag van de termijn is de dag erna. Noem in het antwoord
+        het vertrekpunt en de eerste getelde dag. Tel bij een verkoop niet vanaf de bestelling of de ondertekening.
+        Voorbeeld dienst: overeenkomst gesloten op dinsdag 3 maart 2026; eerste dag woensdag 4 maart 2026, laatste dag
+        dinsdag 17 maart 2026.
+        Voorbeeld verkoop: overeenkomst gesloten op dinsdag 3 maart 2026, goed in bezit genomen op dinsdag 10 maart 2026;
+        eerste dag woensdag 11 maart 2026, laatste dag dinsdag 24 maart 2026.
+        WEEKEINDE OF FEESTDAG: valt de laatste dag op een zaterdag, een zondag of een wettelijke feestdag, dan verstrijkt de
+        termijn aan het einde van de eerstvolgende dag die geen zaterdag, zondag of wettelijke feestdag is. Zo rekent
+        verordening (EEG, Euratom) nr. 1182/71 de termijnen, en volgens richtlijn 2011/83/EU geldt zij voor de termijnen
+        van die richtlijn. Die verordening staat niet in de bronnen: noem haar zonder artikelnummer. Voorbeeld: goed in
+        bezit genomen op zaterdag 7 maart 2026; eerste dag zondag 8 maart 2026, veertiende dag zaterdag 21 maart 2026,
+        zodat de termijn verstrijkt op maandag 23 maart 2026.
+        GEEN INFORMATIE OVER HET HERROEPINGSRECHT (art. #{extension}, WER): heeft de onderneming die verplichte informatie
+        niet gegeven, dan verstrijkt de termijn twaalf maanden na het einde van de gewone termijn. Geeft zij ze alsnog
+        binnen twaalf maanden na het vertrekpunt dat hierboven onder TELLEN staat (dus niet na het einde van de gewone
+        termijn), dan verstrijkt de termijn 14 dagen na de dag waarop de consument ze ontving. Geeft zij ze later, dan
+        begint er geen nieuwe termijn van 14 dagen: de termijn verstrijkt nog altijd twaalf maanden na het einde van de
+        gewone termijn. Voorbeeld dienst: overeenkomst gesloten op dinsdag 3 maart 2026, laatste dag van de gewone termijn
+        dinsdag 17 maart 2026; zonder informatie verstrijkt de termijn op woensdag 17 maart 2027. Ontvangt de consument de
+        informatie op maandag 1 maart 2027, binnen twaalf maanden na 3 maart 2026, dan verstrijkt de termijn op maandag
+        15 maart 2027. Ontvangt hij ze pas op woensdag 10 maart 2027, meer dan twaalf maanden na 3 maart 2026, dan
+        verstrijkt de termijn op woensdag 17 maart 2027, niet op woensdag 24 maart 2027.
+        MEEDELEN (art. #{notice}, § 2 en § 4, WER): de herroeping is tijdig als de consument zijn mededeling verzendt
+        voordat de termijn is verstreken; de bewijslast van de herroeping ligt bij de consument. Voorbeeld: verzendt hij
+        ze op dinsdag 24 maart 2026, de laatste dag van het voorbeeld verkoop, en ontvangt de onderneming ze op donderdag
+        26 maart 2026, dan is de herroeping tijdig. Schrijf niet dat de onderneming de herroeping vóór het einde van de
+        termijn moet ontvangen of kennen.
+      RULES
+    end
+
+    # The distance contract (arts. VI.47 to VI.53). Sol 2026-11-20 13:52:21Z (#2117, #1114): an answer let the trader
+    # withhold the refund without the collection exception, and another gave the digital-content conditions as conditions
+    # in every case. WER arts. VI.50 and VI.53 (read in full NL and FR on 2026-11-20; NL again on 2026-11-23): § 3 of
+    # VI.50 opens "Behoudens wanneer de onderneming heeft aangeboden de goederen zelf af te halen"; VI.53, 1° and 13°,
+    # attach the conditions to a contract that obliges the consumer to pay.
     def withdrawal_period_directive
-      <<~DIRECTIVE.strip
-        HERROEPINGSTERMIJN TELLEN (art. VI.47, § 2, WER): de termijn van 14 dagen "verstrijkt 14 dagen na" de dag waarop
-        de overeenkomst wordt gesloten (diensten; levering van water, gas, elektriciteit en stadsverwarming) of de dag
-        waarop de consument, of een door hem aangewezen derde die niet de vervoerder is, de goederen fysiek in bezit neemt
-        (verkoop; bij meerdere goederen of zendingen het laatste goed of de laatste zending, bij een regelmatige levering
-        het eerste goed). Die dag zelf telt niet mee: de eerste dag van de termijn is de dag erna. Voorbeeld: neemt de
-        consument het goed op 3 maart in bezit, dan is 4 maart de eerste dag en verstrijkt de termijn op 17 maart. Tel bij
-        een verkoop niet vanaf de bestelling.
+      rules = withdrawal_period_rules(title: 'HERROEPINGSTERMIJN TELLEN', period: 'VI.47', extension: 'VI.48',
+                                      notice: 'VI.49', contract: '15°')
+      rest = <<~DIRECTIVE.strip
         TERUGBETALING (art. VI.50, § 3, WER): bij een verkoopovereenkomst mag de onderneming met de terugbetaling wachten
         tot zij alle goederen heeft teruggekregen of tot de consument heeft aangetoond dat hij ze heeft teruggezonden, naar
         gelang wat eerst valt, BEHALVE wanneer de onderneming heeft aangeboden de goederen zelf af te halen: dan mag zij
@@ -2198,41 +2265,24 @@ module LegalChatbot
         de voorafgaande uitdrukkelijke toestemming van de consument en hij erkende zijn herroepingsrecht te verliezen. Stel
         die voorwaarden nooit voor als voorwaarden die in elk geval gelden.
       DIRECTIVE
+      "#{rules}\n#{rest}"
     end
 
-    # Sol 2026-11-23 06:49:36Z (#1151): on 1.1.93 the answer to "Wat zijn mijn rechten bij colportage
-    # (huis-aan-huisverkoop)?" let the 14 days start on the day of signing or receipt; 1.1.92, with the same six cards,
-    # had started counting the day after. The directive above only reaches a question that names the withdrawal right,
-    # and it cites the distance contract's art. VI.47. Read in full on 2026-11-23, NL and FR (2013A11134): art. VI.67
-    # (§ 2: the period "verstrijkt 14 dagen na" the day of conclusion, for services and for water, gas, electricity and
-    # district heating, or the day of physical possession, for sales; FR "expire après une période de 14 jours à
-    # compter" of that day), art. VI.69 (§ 2: in time when the notice is sent before the period has expired) and art.
-    # VI.71 (§ 1: the goods go back within 14 days after the day of the notice, unless the trader offered to collect
-    # them). Directive 2011/83/EU art. 9 (EU corpus, NL and EN) has the same wording; its recital 41, which Sol cites
-    # for the first counted day, is not in our corpus and was not read here. The example dates are plain arithmetic on
-    # the articles' wording, and the test recomputes them.
+    # The off-premises contract (#1151, arts. VI.67 to VI.71). The directive above only reaches a question that names
+    # the withdrawal right, and it cites the distance contract's articles. Art. VI.71, § 1 (read in full NL on
+    # 2026-11-23): the goods go back within 14 days after the day of the notice, unless the trader offered to collect
+    # them; that period is separate from the withdrawal period.
     def off_premises_withdrawal_directive
-      <<~DIRECTIVE.strip
-        HERROEPINGSTERMIJN TELLEN BIJ EEN OVEREENKOMST BUITEN VERKOOPRUIMTEN (art. VI.67, § 2, WER): de termijn van 14
-        dagen "verstrijkt 14 dagen na" de dag waarop de overeenkomst wordt gesloten (diensten; levering van water, gas,
-        elektriciteit en stadsverwarming) of de dag waarop de consument, of een door hem aangewezen derde die niet de
-        vervoerder is, de goederen fysiek in bezit neemt (verkoop; bij meerdere goederen of zendingen het laatste goed of
-        de laatste zending, bij een regelmatige levering het eerste goed). Die dag is het vertrekpunt, maar telt zelf
-        niet mee: de eerste dag van de termijn is de dag erna. Noem in het antwoord zowel het vertrekpunt als de eerste
-        getelde dag.
-        Voorbeeld diensten: wordt de overeenkomst op 3 maart gesloten, dan is 4 maart de eerste dag en 17 maart de
-        laatste dag van de termijn.
-        Voorbeeld verkoop: wordt de overeenkomst op 3 maart gesloten en neemt de consument het goed op 10 maart in bezit,
-        dan is 11 maart de eerste dag en 24 maart de laatste dag van de termijn. Tel bij een verkoop niet vanaf de
-        ondertekening.
-        MEEDELEN (art. VI.69, § 2, WER): de herroeping is tijdig als de consument zijn mededeling verzendt voordat de
-        herroepingstermijn is verstreken.
+      rules = withdrawal_period_rules(title: 'HERROEPINGSTERMIJN TELLEN BIJ EEN OVEREENKOMST BUITEN VERKOOPRUIMTEN',
+                                      period: 'VI.67', extension: 'VI.68', notice: 'VI.69', contract: '31°')
+      rest = <<~DIRECTIVE.strip
         TERUGZENDEN, EEN AFZONDERLIJKE TERMIJN (art. VI.71, § 1, WER): de consument zendt de goederen terug of overhandigt
         ze onverwijld en in elk geval binnen 14 dagen na de dag waarop hij zijn beslissing om te herroepen aan de
         onderneming heeft meegedeeld, tenzij de onderneming heeft aangeboden de goederen zelf af te halen. Voorbeeld:
-        deelt hij de herroeping op 17 maart mee, dan kan hij de goederen terugzenden tot en met 31 maart. Verwar die
-        termijn niet met de herroepingstermijn zelf.
+        deelt hij de herroeping mee op dinsdag 17 maart 2026, dan kan hij de goederen terugzenden tot en met dinsdag
+        31 maart 2026. Verwar die termijn niet met de herroepingstermijn zelf.
       DIRECTIVE
+      "#{rules}\n#{rest}"
     end
 
     # Sol 2026-11-20 10:14:49Z (#2231): the answer must say which stage the reader is at. Read in full on 2026-11-20: Road

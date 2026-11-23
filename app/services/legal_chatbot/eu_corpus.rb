@@ -33,8 +33,11 @@ module LegalChatbot
     # Equivalent literal evidence can have newer title/provenance observations.
     # Every selected record still passes the FULL identity seal above; this
     # narrower set is only for deduplicating unchanged official source bytes.
+    # The document date is such an observation: measured on production on 2026-11-23, 100 of the 121 units both
+    # corpora hold (the whole Dutch GDPR) differed on it and on nothing else, and each was dropped, so Dutch privacy
+    # questions got the English GDPR (Sol 2026-11-23 09:24:52Z, #1591).
     TEXT_IDENTITY_FIELDS = (IDENTITY_FIELDS - %i[heading law_title title article_title legal_status metadata aliases authentic_language
-                                                 correction_observed_at correction_verification]).freeze
+                                                 correction_observed_at correction_verification document_date]).freeze
     @verified_artifacts = {}
     @edition_verified_artifacts = {}
     @edition_inventories = {}

@@ -57,8 +57,14 @@ module LegalChatbot
     # A consideration label in a question, "B.7" or "b.7" alike (SourcePassageExcerpt reads the same labels).
     QUESTION_LABEL = /(?<![[:alnum:].])([AaBb]\.\d{1,2}(?:\.\d{1,2}){0,3})(?![[:alnum:]]|\.\d)/
     # What may stand between a label and the decision named right after it for the label to be that decision's: "B.7
-    # uit GwH 41/2009", "B.1.8 van arrest 140/2018", "B.7 de l'arrêt 41/2009".
-    LABEL_TO_FOLLOWING = /\A[\s,]*(?:(?:van|uit|in|of|de|du|des|la|le|het|the|from|aus|dem|der|im|vom)[\s,]+|[ld]['’])*\z/i
+    # uit GwH 41/2009", "B.1.8 van arrest 140/2018", "B.7 de l'arrêt 41/2009", and other labels joined by "en", "et",
+    # "and" or "und" ("B.1.7 en B.5.3 uit GwH 46/2019"), which references_labels takes out first.
+    LABEL_TO_FOLLOWING = /\A[\s,;]*(?:(?:van|uit|in|of|de|du|des|la|le|het|the|from|aus|dem|der|im|vom|en|et|and|und|&)[\s,;]+|[ld]['’])*\z/i
+    # Sol 2026-11-23 14:42:44Z: in "GwH 41/2009, B.7 en GwH 46/2019, B.5.3" the decision comes first and B.7 is
+    # 41/2009's. What may stand between a decision and a label right after it for the label to be that decision's, and
+    # the connecting words alone that join such a label to what follows without making it the next decision's.
+    LABEL_AFTER_PRECEDING = /\A[\s,;:]*(?:(?:en|et|and|und|&|onder|sous|unter|at|r\.\s?o\.|overwegingen|overweging|consid[ée]rants?|paragraphs?|punt|point|rn\.|randnummer\p{L}*)[\s,;:]*)*\z/i
+    CONJUNCTION_ONLY = /\A[\s,;]*(?:(?:en|et|and|und|&)[\s,;]+)*\z/i
     MAX_NAMED_CASES = 3
     CASE_COLUMNS = 'id, case_number, court, decision_date, summary, full_text, url, language_id'
 
@@ -190,20 +196,30 @@ module LegalChatbot
       references.each_with_index.map { |(_start, _finish, ecli), index| [ecli, labels.fetch(index)] }
     end
 
-    # Each label goes to the decision named right after it when only connecting words stand between them, else to
-    # the decision named last before it, else to the first one named.
+    # Each label goes to the decision named right after it when only connecting words and other labels stand between
+    # them, else to the decision named last before it, else to the first one named. Sol 2026-11-23 11:08:38Z: in
+    # "Vergelijk B.7 uit GwH 41/2009 met B.1.7 en B.5.3 uit GwH 46/2019" both B.1.7 and B.5.3 are 46/2019's. Sol
+    # 2026-11-23 14:42:44Z: a label that follows its decision ("GwH 41/2009, B.7") stays that decision's when only a
+    # connecting word leads on to the next label or decision ("GwH 41/2009, B.7 en GwH 46/2019, B.5.3").
     def self.references_labels(text, references)
       labels = references.map { [] }
       return labels if references.empty?
 
+      starts = text.to_enum(:scan, QUESTION_LABEL).map { Regexp.last_match.begin(0) }
       text.to_enum(:scan, QUESTION_LABEL).each do
         match = Regexp.last_match
         label = match[1].sub(/\A[ab]/, &:upcase)
         following = references.index { |start, _finish, _ecli| start >= match.end(0) }
-        index = if following && text[match.end(0)...references[following].first].match?(LABEL_TO_FOLLOWING)
+        preceding = references.rindex { |_start, finish, _ecli| finish <= match.begin(0) }
+        gap = following && text[match.end(0)...references[following].first].gsub(QUESTION_LABEL, ' ')
+        before = preceding && text[references[preceding][1]...match.begin(0)].gsub(QUESTION_LABEL, ' ')
+        upcoming = [starts.find { |start| start >= match.end(0) }, following && references[following].first].compact.min
+        index = if before&.match?(LABEL_AFTER_PRECEDING) && text[match.end(0)...(upcoming || text.length)].match?(CONJUNCTION_ONLY)
+                  preceding
+                elsif gap&.match?(LABEL_TO_FOLLOWING)
                   following
                 else
-                  references.rindex { |_start, finish, _ecli| finish <= match.begin(0) } || 0
+                  preceding || 0
                 end
         labels[index] << label unless labels[index].include?(label)
       end

@@ -17,9 +17,12 @@ module HistoryInlineComparison
   WORD = /[^[:space:]  ]+/
   ADDED_CLASS = 'history-added'
   REMOVED_CLASS = 'history-removed'
-  # A statutory word of a printed wording: its text node and place in it; for a newer wording, whether it was added
-  # and the removed runs that stood before it.
-  Word = Struct.new(:text, :node, :from, :to, :added, :before)
+  # Elements a word never runs across: one block's last word and the next block's first are two words.
+  BLOCK = %w[address article aside blockquote dd div dl dt figure footer h1 h2 h3 h4 h5 h6 header hr li main nav ol p pre
+             section table tbody td tfoot th thead tr ul].freeze
+  # A statutory word of a printed wording: its pieces (each a text node and the place of the word's part in it); for a
+  # newer wording, whether it was added and the removed runs that stood before it.
+  Word = Struct.new(:text, :pieces, :added, :before)
   # The words of a removed run with the older wording's line breaks: before it, after each word, and after it.
   Run = Struct.new(:words, :breaks, :break_before, :break_after, keyword_init: true)
 
@@ -62,18 +65,47 @@ module HistoryInlineComparison
     parent.remove if parent.children.empty?
   end
 
-  # The statutory words of a printed wording in reading order, with :break for each line break between them.
+  # The statutory words of a printed wording in reading order, with :break for each line break between them. A word
+  # runs on across inline markup (Sol 2026-11-23 11:08:38Z: "arbeidsrecht" against "<em>arbeids</em>recht" is one
+  # word, not one removed and two added). White space, a line break, a block and a skipped element (a reference mark,
+  # the article's number) end a word. A rule (<hr>) holds no text, so no word has it among its ancestors: it counts as
+  # a line break (Sol 2026-11-23 14:42:44Z).
   def stream(fragment)
     skipped = fragment.css(SKIPPED).to_a
-    fragment.xpath('.//text() | .//br').each_with_object([]) do |node, out|
-      next if skipped.any? { |element| node.ancestors.include?(element) }
-      next out << :break if node.element?
-
-      node.content.scan(WORD) do
-        match = Regexp.last_match
-        out << Word.new(match[0], node, match.begin(0), match.end(0), false, [])
+    open = nil
+    fragment.xpath('.//text() | .//br | .//hr').each_with_object([]) do |node, out|
+      if skipped.any? { |element| node.ancestors.include?(element) }
+        open = nil
+        next
       end
+      if node.element?
+        open = nil
+        next out << :break
+      end
+
+      text = node.content
+      open = nil if open && !inline_neighbours?(open.pieces.last.first, node)
+      text.scan(WORD) do
+        match = Regexp.last_match
+        if open && match.begin(0).zero?
+          open.text += match[0]
+          open.pieces << [node, 0, match.end(0)]
+        else
+          out << Word.new(match[0], [[node, match.begin(0), match.end(0)]], false, [])
+        end
+        open = nil
+      end
+      last = out.last
+      open = last.is_a?(Word) && last.pieces.last.first.equal?(node) && last.pieces.last.last == text.length ? last : nil
     end
+  end
+
+  # Whether no block starts or ends between two text nodes
+  def inline_neighbours?(before, after)
+    left = before.ancestors.to_a
+    right = after.ancestors.to_a
+    shared = left.map(&:pointer_id) & right.map(&:pointer_id)
+    (left + right).none? { |element| BLOCK.include?(element.name) && !shared.include?(element.pointer_id) }
   end
 
   # Marks each newer word as added or not and hangs every removed run before the newer word it stood before.
@@ -226,38 +258,44 @@ module HistoryInlineComparison
     end
   end
 
-  # Each text node of the newer wording is rebuilt from its words: the added ones in <ins>, each removed run in <del>
-  # before the word it stood before.
+  # Each text node of the newer wording is rebuilt from the pieces of its words: the added ones in <ins>, each removed
+  # run in <del> before the word it stood before. The piece of an added word that runs on into another text node gets
+  # an <ins> of its own there, without a second label for screen readers.
   def rewrite(fragment, new_stream, removed_label, added_label)
     document = fragment.document
     starts_line = {}.compare_by_identity
     new_stream.each_with_index { |item, index| starts_line[item] = index.zero? || new_stream[index - 1] == :break }
-    new_stream.grep(Word).group_by(&:node).each do |node, words|
+    by_node = {}.compare_by_identity
+    new_stream.grep(Word).each do |word|
+      word.pieces.each_with_index { |(node, from, to), index| (by_node[node] ||= []) << [word, from, to, index.zero?] }
+    end
+    by_node.each do |node, pieces|
       text = node.content
-      pieces = []
+      parts = []
       cursor = 0
       open = nil
-      words.each do |word|
-        gap = text[cursor...word.from]
-        if open && word.added && word.before.empty?
+      pieces.each do |word, from, to, first|
+        gap = text[cursor...from]
+        before = first ? word.before : []
+        if open && word.added && before.empty?
           open.add_child(document.create_text_node(gap))
         else
           open = nil
-          pieces << document.create_text_node(gap) unless gap.empty?
-          word.before.each { |run| pieces.concat(removed_nodes(document, run, removed_label, at_line_start: starts_line[word])) }
+          parts << document.create_text_node(gap) unless gap.empty?
+          before.each { |run| parts.concat(removed_nodes(document, run, removed_label, at_line_start: starts_line[word])) }
         end
         if word.added
-          open ||= added_node(document, added_label).tap { |element| pieces << element }
-          open.add_child(document.create_text_node(word.text))
+          open ||= added_node(document, first ? added_label : nil).tap { |element| parts << element }
+          open.add_child(document.create_text_node(text[from...to]))
         else
           open = nil
-          pieces << document.create_text_node(word.text)
+          parts << document.create_text_node(text[from...to])
         end
-        cursor = word.to
+        cursor = to
       end
       rest = text[cursor..].to_s
-      pieces << document.create_text_node(rest) unless rest.empty?
-      node.replace(Nokogiri::XML::NodeSet.new(document, pieces))
+      parts << document.create_text_node(rest) unless rest.empty?
+      node.replace(Nokogiri::XML::NodeSet.new(document, parts))
     end
   end
 

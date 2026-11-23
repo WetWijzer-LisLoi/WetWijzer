@@ -112,6 +112,20 @@ module LegalChatbot
     # and human rights treaties, criminal law and procedure with the search
     # laws, the police function, and diplomatic and consular premises.
     HOME_TITLE_FAMILY_PATTERN = /\b(?:grondwet|constitution|Verfassung|rechten\s+van\s+de\s+mens|droits\s+de\s+l['’]\s*homme|Menschenrechte\p{L}*|human\s+rights|burgerrechten\s+en\s+politieke\s+rechten|droits\s+civils\s+et\s+politiques|strafwetboek|code\s+p[ée]nal|Strafgesetzbuch|criminal\s+code|strafvordering|instruction\s+criminelle|proc[ée]dure\s+p[ée]nale|Strafprozess\p{L}*|criminal\s+procedure|huiszoeking\p{L}*|opsporing\p{L}*\s+ten\s+huize|visites?\s+domiciliaires?|perquisitions?|Hausdurchsuchung\p{L}*|politieambt|fonction\s+de\s+police|Polizeiamt|diplomati\p{L}*|consul\p{L}*|Konsular\p{L}*)\b/iu
+    # "Wat is een privacyverklaring?" (Sol 2026-11-23 09:24:52Z, #1591) showed art. 6.32 of the decree implementing the
+    # Flemish Housing Code (in its Book 6, social rental: the landlord hands the tenant a privacy statement) and art. 5
+    # of the Coronalert cooperation agreement (the app's privacy statement is published), beside the GDPR. A privacy
+    # notice is GDPR arts. 12 to 14 (EuTopicIntent :privacy_notice); its Belgian cards stay data-protection law, read
+    # from the law's title, and a law of another subject stays when the question raises that subject: renting for the
+    # housing decree, the app or the pandemic for the cooperation agreement.
+    PRIVACY_NOTICE_SUBJECTS = [
+      [/(?<![[:alnum:]])(?:wonen|woning\p{L}*|huur\p{L}*|logement\p{L}*|bail\p{L}*|wohn\p{L}*|miet\p{L}*|housing|tenan\p{L}*)(?![[:alnum:]])/iu,
+       /(?<![[:alnum:]])(?:huur\p{L}*|verhuur\p{L}*|woning\p{L}*|wonen|bail\p{L}*|bailleu\p{L}*|locataire\p{L}*|logement\p{L}*|miet\p{L}*|
+          vermiet\p{L}*|wohnung\p{L}*|rent|rental|rented|renting|tenant\p{L}*|landlord\p{L}*|housing)(?![[:alnum:]])/iux],
+      [/(?<![[:alnum:]])(?:contactopsporing\p{L}*|tra[çc]age|kontaktverfolgung\p{L}*|contact\s+tracing)(?![[:alnum:]])/iu,
+       /(?<![[:alnum:]])(?:corona\p{L}*|covid\p{L}*|contactopsporing\p{L}*|tra[çc]age|kontaktverfolgung\p{L}*|contact\s*tracing|tracing)(?![[:alnum:]])/iu]
+    ].freeze
+
     # Topics whose family is read from the law's title alone.
     TITLE_TOPICS = { education_right: EDUCATION_TITLE_FAMILY_PATTERN, home_inviolability: HOME_TITLE_FAMILY_PATTERN,
                      guaranteed_pay: GUARANTEED_PAY_TITLE_FAMILY_PATTERN }.freeze
@@ -154,6 +168,7 @@ module LegalChatbot
       found << :traffic_fine_challenge if text.match?(LegislationSearch::TRAFFIC_FINE_CONTEST_PATTERN)
       found << :education_right if text.match?(LegislationSearch::CONSTITUTION_EDUCATION_PATTERN)
       found << :home_inviolability if text.match?(LegislationSearch::CONSTITUTION_HOME_INVIOLABILITY_PATTERN)
+      found << :privacy_notice if EuTopicIntent.plan(text)&.fetch(:topic, nil) == :privacy_notice
       found
     end
 
@@ -168,11 +183,18 @@ module LegalChatbot
       found.any? do |topic|
         next false if topic == :workplace_camera && title.match?(CAMERA_SPECIALIST_TITLE_PATTERN)
         next false if topic == :road_speed && title.match?(SHIPPING_TITLE_PATTERN)
+        next privacy_notice_source?(title, question) if topic == :privacy_notice
         next title.match?(TITLE_TOPICS.fetch(topic)) if TITLE_TOPICS.key?(topic)
 
         source.match?(TOPICS.fetch(topic))
       end
     end
+
+    def self.privacy_notice_source?(title, question)
+      title.match?(DATA_PROTECTION_FAMILY_PATTERN) ||
+        PRIVACY_NOTICE_SUBJECTS.any? { |law, asked| title.match?(law) && question.to_s.match?(asked) }
+    end
+    private_class_method :privacy_notice_source?
 
     # A plural title word also names its singular: "een vastgoedmakelaar"
     # names the "Beroepsinstituut van Vastgoedmakelaars".

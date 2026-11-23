@@ -2372,8 +2372,8 @@ module LegalChatbot
     # Sol 2026-11-22 06:00:58Z: "Mag een gerechtsdeurwaarder aan de deur komen?" and a sale by telephone matched. A
     # sale named as such counts on its own; "aan de deur", "démarchage", "doorstep" and the like only beside a sale or
     # contract word. "Bellen" stays allowed: at the door it is the doorbell.
-    OFF_PREMISES_STRONG = /(?<![[:alnum:]])(?:colportage|huis[-\s]aan[-\s]huis(?:verkoop|verkoper)\p{L}*|deur[-\s]aan[-\s]deur(?:verkoop|verkoper)\p{L}*|buiten\s+(?:de\s+)?verkoopruimte\p{L}*|hors\s+[ée]tablissement|d[ée]marchage\s+[àa]\s+domicile|vente\s+[àa]\s+domicile|haust(?:ü|ue)r(?:gesch(?:ä|ae)ft|verkauf|vertrag)\p{L}*|au(?:ß|ss)erhalb\s+von\s+gesch(?:ä|ae)ftsr(?:ä|ae)umen|off[-\s]premises|doorstep\s+(?:sale|selling|seller|contract)s?|door[-\s]to[-\s]door\s+(?:sale|selling|seller|salesman|salesperson|contract)s?)(?![[:alnum:]])/iu
-    OFF_PREMISES_WEAK = /(?<![[:alnum:]])(?:aan\s+(?:de|je|mijn|uw)\s+(?:voor)?deur|huis[-\s]aan[-\s]huis|deur[-\s]aan[-\s]deur|porte[-\s][àa][-\s]porte|[àa]\s+(?:mon|votre|son)\s+domicile|haust(?:ü|ue)r|an\s+der\s+(?:haus)?t(?:ü|ue)r|door[-\s]to[-\s]door|doorstep|at\s+(?:my|the|your)\s+(?:front\s+)?door)(?![[:alnum:]])/iu
+    OFF_PREMISES_STRONG = /(?<![[:alnum:]])(?:colportage|huis[-\s]aan[-\s]huis(?:verkoop|verkoper)\p{L}*|deur[-\s]aan[-\s]deur(?:verkoop|verkoper)\p{L}*|buiten\s+(?:de\s+|zijn\s+|haar\s+|hun\s+|een\s+)?verkoopruimte\p{L}*|hors\s+[ée]tablissement|d[ée]marchage\s+[àa]\s+domicile|vente\s+[àa]\s+domicile|haust(?:ü|ue)r(?:gesch(?:ä|ae)ft|verkauf|vertrag)\p{L}*|au(?:ß|ss)erhalb\s+von\s+gesch(?:ä|ae)ftsr(?:ä|ae)umen|off[-\s]premises|doorstep\s+(?:sale|selling|seller|contract)s?|door[-\s]to[-\s]door\s+(?:sale|selling|seller|salesman|salesperson|contract)s?)(?![[:alnum:]])/iu
+    OFF_PREMISES_WEAK = /(?<![[:alnum:]])(?:aan\s+(?:de|je|mijn|uw)\s+(?:voor)?deur|huis[-\s]aan[-\s]huis|bij\s+(?:mij|ons|u|jou)\s+(?:thuis|aan\s+huis)|chez\s+(?:moi|nous)|bei\s+(?:mir|uns)\s+zu\s*hause|at\s+(?:my|our)\s+(?:home|house)|deur[-\s]aan[-\s]deur|porte[-\s][àa][-\s]porte|[àa]\s+(?:mon|votre|son)\s+domicile|haust(?:ü|ue)r|an\s+der\s+(?:haus)?t(?:ü|ue)r|door[-\s]to[-\s]door|doorstep|at\s+(?:my|the|your)\s+(?:front\s+)?door)(?![[:alnum:]])/iu
     OFF_PREMISES_SALE = /(?<![[:alnum:]])(?:(?:ver)?ko(?:o|c)ht\p{L}*|(?:ver)?kopen|koop\p{L}*|verkoper\p{L}*|bestel\p{L}*|abonnement\p{L}*|contract\p{L}*|overeenkomst\p{L}*|herroep\p{L}*|annul\p{L}*|opzeg\p{L}*|aankoop\p{L}*|vente\p{L}*|vend\p{L}*|achat\p{L}*|achet\p{L}*|contrat\p{L}*|r[ée]tract\p{L}*|kauf\p{L}*|gekauft|verkauf\p{L}*|vertrag\p{L}*|widerruf\p{L}*|sale\p{L}*|sold|sell\p{L}*|bought|buy\p{L}*|purchas\p{L}*|subscription\p{L}*|cancel\p{L}*|withdraw\p{L}*)(?![[:alnum:]])/iu
     # Sol 2026-11-22 06:35:42Z: "Een verkoper verkocht mij aan de deur een telefoon" sold a telephone at the door: the
     # telephone counts only as the channel (per telefoon, téléphonique, am Telefon, by phone, a call), never as the goods.
@@ -2386,7 +2386,33 @@ module LegalChatbot
     # word comes before it in its clause or follows it within 25 characters.
     OFF_PREMISES_DELIVERY = /(?<![[:alnum:]])(?:(?:ge|af|thuis)?lever(?:d|de|den|en|t|ing|ingen)?|bezorg\p{L}*|koerier\p{L}*|pakket\p{L}*|postbode\p{L}*|livr(?:é|ée|és|ées|er|aison|eur|ait)|colis|facteur|(?:ge)?liefer(?:n|t|te|ten|ung)?|zustell\p{L}*|zugestellt|paket\p{L}*|deliver\p{L}*|courier\p{L}*|parcel\p{L}*|postman|shipped|shipping)(?![[:alnum:]])/iu
     OFF_PREMISES_DOOR = /(?:\A|[.;!?\n])(?:(?!#{OFF_PREMISES_DELIVERY.source})[^.;!?\n])*?#{OFF_PREMISES_WEAK.source}(?![^.;!?\n]{0,25}?#{OFF_PREMISES_DELIVERY.source})/iu
-    OFF_PREMISES_PATTERN = /\A(?:(?=.*#{OFF_PREMISES_STRONG.source})|(?=.*?#{OFF_PREMISES_DOOR.source})(?=.*#{OFF_PREMISES_SALE.source})|(?!.*#{OFF_PREMISES_PHONE.source})(?=.*#{OFF_PREMISES_CANVASS.source})(?=.*#{OFF_PREMISES_SALE.source}))/imu
+    # Sol 2026-11-23 07:14:35Z: the withdrawal rule holds between a trader and a consumer, so a question about the
+    # seller's permit to sell at the door ("Heb ik een vergunning nodig voor colportage?") is not this topic, unless it
+    # also asks about withdrawing, cancelling, a refund or the buyer's rights. Sol 2026-11-23 14:42:44Z: "Heb ik een
+    # vergunning nodig voor colportage bij consumenten?" names the seller's customers, not a buyer's question, so a
+    # consumer counts only as the holder of the rights asked about ("welke rechten heeft de consument").
+    OFF_PREMISES_PERMIT = /(?<![[:alnum:]])(?:\p{L}*vergunning\p{L}*|machtiging\p{L}*|leurkaart\p{L}*|ambulant\p{L}*|permis|
+                           autorisation\s+(?:de|d['’]|pour)|genehmigung\p{L}*|reisegewerbe\p{L}*|gewerbeschein\p{L}*|
+                           gewerbeerlaubnis\p{L}*|permits?|licen[cs]e\p{L}*|authori[sz]ation\s+(?:to|for))(?![[:alnum:]])/iux
+    OFF_PREMISES_BUYER = /(?<![[:alnum:]])(?:herroep\p{L}*|bedenktijd|annul\p{L}*|opzeg\p{L}*|ontbind\p{L}*|terugbetal\p{L}*|
+                          terugstur\p{L}*|terugzend\p{L}*|(?:mijn|onze|zijn|haar|uw)\s+rechten|consumentenrecht\p{L}*|
+                          rechten\s+(?:van|heeft|hebben)\s+(?:de\s+|een\s+)?(?:consument|koper)\p{L}*|r[ée]tract\p{L}*|
+                          r[ée]sili\p{L}*|rembours\p{L}*|(?:mes|nos|ses|vos)\s+droits|
+                          droits\s+(?:du|des|d['’]un|a\s+le)\s+(?:consommat|achet)\p{L}*|widerruf\p{L}*|r[üu]cktritt\p{L}*|
+                          k[üu]ndig\p{L}*|erstatt\p{L}*|(?:meine|unsere|ihre)\s+rechte|verbraucherrecht\p{L}*|
+                          rechte\s+(?:des|der|eines|hat\s+der|hat\s+ein)\s+(?:verbraucher|k[äa]ufer)\p{L}*|cancel\p{L}*|
+                          withdraw\p{L}*|refund\p{L}*|(?:my|our|your)\s+rights|(?:consumer|buyer)(?:s|['’]s|s['’])?\s+rights|
+                          rights\s+(?:of|does|do)\s+(?:the\s+|a\s+)?(?:consumer|buyer)\p{L}*)(?![[:alnum:]])/iux
+    OFF_PREMISES_PATTERN = /\A(?!(?=.*#{OFF_PREMISES_PERMIT})(?!.*#{OFF_PREMISES_BUYER}))(?:(?=.*#{OFF_PREMISES_STRONG.source})|(?=.*?#{OFF_PREMISES_DOOR.source})(?=.*#{OFF_PREMISES_SALE.source})|(?!.*#{OFF_PREMISES_PHONE.source})(?=.*#{OFF_PREMISES_CANVASS.source})(?=.*#{OFF_PREMISES_SALE.source}))/imu
+    # Sol 2026-11-23 15:08:27Z (live 1.1.95): "Een handelaar komt op 3 maart 2026 bij mij thuis, buiten zijn
+    # verkoopruimte. [...] Ik ontvang de verplichte informatie over het herroepingsrecht pas op 10 maart 2027. [...] Op welke
+    # datum verstrijkt mijn herroepingstermijn?" got the distance contract's VI.47 and VI.48 and neither VI.67 nor VI.68.
+    # "Buiten zijn verkoopruimte" and "bij mij thuis" name the place now, and a question about the information on the
+    # withdrawal right also gets VI.68 (late or missing information, read in full NL and FR on 2026-11-23).
+    OFF_PREMISES_INFORMATION = /(?<![[:alnum:]])(?:informatie\p{L}*|inlichting\p{L}*|ge[ïi]nformeerd|information\p{L}*|
+                                inform[ée]\p{L}*|informiert|belehr\p{L}*|widerrufsbelehrung\p{L}*|informed)(?![[:alnum:]])/iux
+    # Anchored at the start, as the pins' lookahead guard requires (LegalChatbotLookaheadAnchorTest)
+    OFF_PREMISES_LATE_INFORMATION_PATTERN = /\A(?=.*#{OFF_PREMISES_INFORMATION})#{OFF_PREMISES_PATTERN.source.delete_prefix('\A')}/imu
     # Sol 19:11:40Z: who died decides. A landlord's death leaves the lease in place (Woninghuurdecreet art. 42, § 1;
     # Walloon decree of 15 March 2018 art. 36, since that decree repealed art. 1742 for a Walloon residential lease; old
     # Civil Code art. 1742, which the Brussels Housing Code departs from only at the tenant's death); the tenant's death
@@ -2401,7 +2427,10 @@ module LegalChatbot
     # ("Wat moet ik als huurder doen na het overlijden van mijn verhuurder?"), so a tenant's death word may not be one the
     # landlord owns; and "deceased" and "passed away" are death words for either party.
     DIED_WORD = /(?:overl(?:ij|e)\p{L}*|gestorven|sterft|stierf|d[ée]c[èe]s|d[ée]c[ée]d\p{L}*|deceased|passed\s+away|(?:dood|meurt|mort|stirbt|gestorben|verstorben|died|dies|death)(?![[:alpha:]]))/iu
-    OF_PARTY = /\s+(?:van\s+(?:de|mijn|onze)\s+|du\s+|de\s+(?:mon|notre)\s+|des\s+|of\s+(?:the|my|our)\s+)/iu
+    # Sol 2026-11-23 05:02:05Z: "Que doit faire le locataire après le décès de ma propriétaire ?" is the landlord's death,
+    # but "de ma" was not read as naming whose death it is. Each article and possessive of the four languages now is.
+    # One line, not /x: its source is interpolated into DEATH_OF and TENANT_DIED.
+    OF_PARTY = /\s+(?:van\s+(?:de|het|een|mijn|onze|zijn|haar|hun|uw|je|jouw)\s+|du\s+|des\s+|d['’]\s*(?:une?\s+)?|de\s+(?:la|mon|ma|mes|notre|nos|son|sa|ses|leur|leurs|votre|vos|ton|ta|tes)\s+|de\s+l['’]\s*|(?:der|dem|eines|einer|meines|meiner|unseres|unserer|seines|seiner|ihres|ihrer|deines|deiner)\s+|of\s+(?:the|an?|my|our|his|her|their|your)\s+)/iu
     DEATH_OF = /(?:overlijden|d[ée]c[èe]s|tod|death)#{OF_PARTY.source}/iu
     LANDLORD_DIED = /#{LANDLORD_NOUN.source}\p{L}*[^.?!]{0,40}?#{DIED_WORD.source}|#{DEATH_OF.source}#{LANDLORD_NOUN.source}/iu
     TENANT_DIED = /#{TENANT_NOUN.source}\p{L}*(?:(?!#{LANDLORD_NOUN.source})[^.?!]){0,40}?#{DIED_WORD.source}(?![[:alpha:]])(?!#{OF_PARTY.source}#{LANDLORD_NOUN.source})|#{DEATH_OF.source}#{TENANT_NOUN.source}/iu
@@ -2839,6 +2868,7 @@ module LegalChatbot
       # regelt die kennisgeving?" missed Art. VI.49 § 1).
       [WITHDRAWAL_NOTICE_PATTERN, '2013A11134', 'VI.49'],
       [OFF_PREMISES_PATTERN, '2013A11134', 'VI.67'],
+      [OFF_PREMISES_LATE_INFORMATION_PATTERN, '2013A11134', 'VI.68'],
       [OFF_PREMISES_PATTERN, '2013A11134', 'VI.69'],
       [OFF_PREMISES_PATTERN, '2013A11134', 'VI.71'],
       [GENERAL_TERMS_PATTERN, '2022A32058', '5.23'],
@@ -4912,6 +4942,9 @@ module LegalChatbot
       return false unless PlatformModerationSourceScope.source_relevant?(article, question)
       # Card relevance (Sol 2026-11-22 13:15:02Z): a law of a narrow subject the question does not raise
       return false unless SpecialistSubjectScope.source_relevant?(article, question, viewing: viewing || selected_law.present?)
+      # #1591 (Sol 2026-11-23 09:24:52Z): the parts of the Belgian data-protection act for the police and the courts, the
+      # intelligence services and recorded calls, only when the question raises them
+      return false unless DataProtectionPartScope.source_relevant?(article, question)
       return false if withdrawal_borrowed_from_specialist_regime?(article, question)
       return false if equality_question_borrows_peripheral_rule?(article, question)
       return false if civil_intestacy_borrows_tax_competence?(article, question)

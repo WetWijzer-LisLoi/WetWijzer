@@ -381,8 +381,11 @@ module LegalChatbot
       # Dutch title of GDPR art. 83 begins "Algemene voorwaarden"), the e-commerce directive under "Elektronisch
       # voorschrift?". The narrow-subject rule judges them as it judges Belgian rows; an act the question names and the
       # rows an EU topic plan or website overview chose (EuSearch marks them eu_targeted) stay.
+      # Sol 2026-11-23 05:02:05Z: an article whose own subject is narrower than its act's (e-commerce art. 7, GDPR arts.
+      # 8 and 83) stays only when the question raises that subject too (EuArticleSubjectScope).
       eu_docs = eu_docs.select do |row|
-        row[:eu_targeted] || LegalChatbot::SpecialistSubjectScope.source_relevant?(row, question, viewing: true)
+        row[:eu_targeted] || (LegalChatbot::SpecialistSubjectScope.source_relevant?(row, question, viewing: true) &&
+                              LegalChatbot::EuArticleSubjectScope.source_relevant?(row, question))
       end
 
       # Apply quality filters to legislation. Hybrid FAISS/FTS retrieval now
@@ -490,6 +493,15 @@ module LegalChatbot
       if LegalFactProvider.gdpr_retention_question?(question) || LegalFactProvider.gdpr_breach_question?(question) ||
          (LegalFactProvider.official_source_question?(question) && !LegalFactProvider.belgian_privacy_act_asked?(question))
         leg_articles = leg_articles.reject { |article| domestic_gdpr_retention_substitute?(article, question) }
+      end
+      # #1591 (Sol 2026-11-23 09:24:52Z, live 1.1.94): "Wat is een privacyverklaring?" led with art. 37 of the same act, a
+      # rule for the authorities competent for criminal matters, ahead of GDPR arts. 13, 14 and 12. A privacy notice is
+      # those GDPR articles: the act stays only in a part whose context the question raises (DataProtectionPartScope), or
+      # when the reader asks about the act itself.
+      if EuTopicIntent.plan(question)&.fetch(:topic, nil) == :privacy_notice && !LegalFactProvider.belgian_privacy_act_asked?(question)
+        leg_articles = leg_articles.reject do |article|
+          domestic_gdpr_retention_substitute?(article, question) && !DataProtectionPartScope.raised_part?(article, question)
+        end
       end
 
       if leg_articles.empty? && jur_cases.empty? && parl_docs.empty? && tax_articles.empty? && regional_docs.empty? && authoritative_docs.empty?

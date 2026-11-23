@@ -4,7 +4,8 @@
     in every other article. As soon as it shows anything else (its history panel, a wording the reader chose, a
     comparison, the notes an archive date needs, or no wording at all) the number stands on a line of its own
     (laws/_history_identifier), at that same place, and below it, in this order: the panel, the notes, the chosen
-    wording's period, and the text. So opening the panel, a step to another wording, a comparison and Close change only
+    wording's period (while the panel is closed: open, its list of dates shows the period, which stands once; the
+    owner, via Sol 2026-11-23 14:13:13Z), and the text. So opening the panel, a step to another wording, a comparison and Close change only
     what stands below the number, and a date switch changes only what stands below the panel.
 
     The legal text is print_article's output untouched: the live row on the current-law page (live: [text, title,
@@ -33,7 +34,7 @@
     <%= render 'laws/history_identifier', identifier: history_identifier(key) %>
     <% if open %><%= render 'laws/history_picker', history: history, permalink: permalink %><% end %>
     <% unless history.live? %><%= render 'laws/history_notes', history: history %><% end %>
-    <% if history.chosen %>
+    <% if history.chosen && !open %>
       <p class="not-prose mb-1 text-xs text-gray-600 dark:text-gray-300" data-history-chosen="<%= key %>"><%= (history_label(:version_label) % { period: history_period(history.selected) }).upcase_first %><% if history.off_date %> (<%= history_label(:off_date) % { date: history_day(@history_as_of) } %>)<% end %></p>
     <% end %>
     <% if comparing && !history.compare_base %>

@@ -8,6 +8,25 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.96] - 2026-11-23
+
+### Changed
+
+- An article's history panel offers "Vergelijk met vorige versie" right below its dates ("Vergelijking sluiten" while the comparison is shown), keeps the amending act and the Justel link in a quiet "Bron en wijziging" section ("Wet van 19 oktober 2015 (gepubliceerd op 22 oktober 2015)", "Bekijk op Justel (015)"), and shows each period once, in the list of dates.
+
+### Fixed
+
+- Answers about the withdrawal period give their examples with weekday and year, say when the period ends if its last day falls on a weekend or a public holiday, apply the right only between a consumer and a business, tell utilities, a gas bottle and an order delivered in parts apart, give the longer period when the business gave no information about the right (information given more than twelve months after the contract or the delivery opens no new 14 days), and say that a withdrawal sent on the last day is in time even if it arrives later.
+- A question about a contract signed at the consumer's home ("bij mij thuis, buiten zijn verkoopruimte") gets the rules for contracts concluded away from business premises, with the article on late information, and no longer those for distance contracts.
+- A question about the permit for door-to-door selling no longer gets the buyer's withdrawal rules, also when it names the seller's customers.
+- A question about a privacy statement is answered from the GDPR (articles 12 to 14) instead of from Belgian rules for the police, the intelligence services, social housing or the Coronalert app, which still appear when a question is about them, and without unrelated laws beside it. Asking which "inlichtingen" a statement must give is no question about the intelligence services. Dutch questions get the Dutch text of the GDPR.
+- An EU article on a narrower subject than its act (unsolicited commercial e-mail, children's consent, GDPR fines) no longer appears beside a question that does not raise that subject. "What kind of" and "older than" no longer raise children's consent, and a reader who gives a minor's age does.
+- The GDPR no longer appears beside a question about an objection in a public inquiry, nor the Consumer Rights Directive beside a question that is not about buying, selling or a contract with a business.
+- The comparison of two wordings of an article no longer shows a word as changed when only its formatting differs, and keeps the words on either side of a horizontal rule apart.
+- A question that names considerations of two court decisions gets each consideration from its own decision, also when each decision is followed by its own ("GwH 41/2009, B.7 en GwH 46/2019, B.5.3"), and a very long consideration no longer pushes out a shorter one asked for beside it.
+- A question about the death of "ma propriétaire" (and similar wordings in each language) is read as the landlord's death, not the tenant's.
+- A cited tax article written as "artikel 131 KB / WIB 92" or "W.Reg., art. 42" is looked up in the code it names, also when two such citations follow each other ("W.Reg., art. 42 en WIB 92, art. 131").
+
 ## [1.1.95] - 2026-11-23
 
 ### Changed

@@ -248,25 +248,72 @@ module LegalChatbot
                             p[ée]nal)|wetboek\s+van\s+(?:economisch|vennootschappen|strafvordering)|KB|AR|CAO|CCT)
                             (?![[:alpha:]])|/laws/\d{4}[0-9A-Z]\d{5}}iux
     CITED_LAW_WINDOW = 90
+    # Sol 2026-11-23 05:02:05Z: a code written before the article ("W.Reg., art. 42", "WIB 92, artikel 131") names it when
+    # nothing after the number does: the code ends right before the article word, with its year and a comma at most.
+    CODE_BEFORE_WINDOW = 40
+    TAX_CODES_BEFORE = TAX_CODES.transform_values { |pattern| /#{pattern}(?:\s*(?:19|20)?\d{2})?[\s,]*\z/ }.freeze
 
-    # Per cited number: [:code, document type] or [:id, legislation id] for each tax code its citations name, or :other
+    # Per cited number: [:code, document type] or [:id, legislation id] for each tax code its citations name, or :other.
+    # Sol 2026-11-23 14:42:44Z: in "W.Reg., art. 42 en WIB 92, art. 131" the code after art. 42 is the next citation's,
+    # written first, and art. 42 is W.Reg.'s. A code right before the article word names it first; the words after the
+    # number name it otherwise, and a code they name that way is not also the next citation's code written first
+    # ("artikel 42 W.Reg., artikel 131 WIB 92"). One sequence with a code on each side ("W.Reg., art. 42 en artikel 131
+    # WIB 92") gives the code before it to the numbers before its last article word and the code after it to the rest.
     def cited_law_kinds(text)
       kinds = Hash.new { |hash, key| hash[key] = Set.new }
       return kinds if text.blank?
 
       next_article = Regexp.new("\\n|\\b#{Orchestrator::ARTICLE_PREFIX_SOURCE}")
+      claimed = 0
       text.to_s.to_enum(:scan, Orchestrator::ARTICLE_CITATION_SEQUENCE_PATTERN).each do
         match = Regexp.last_match
         window = text.to_s[match.end(0), CITED_LAW_WINDOW].to_s
-        window = window[0, window.index(next_article)] if window.index(next_article)
-        found = TAX_CODES.filter_map { |type, pattern| [:code, type] if window.match?(pattern) } +
-                window.scan(FISCONET_LINK).map { |(id)| [:id, id.to_i] }
-        found = [:other] if found.empty? && window.match?(OTHER_LAW_CITATION)
-        next if found.empty?
+        cut = window.index(next_article)
+        window = window[0, cut] if cut
+        window = without_next_citation_code(window) if cut && text.to_s[match.end(0) + cut] != "\n"
+        before = [match.begin(0) - CODE_BEFORE_WINDOW, claimed, 0].max
+        prefix = before < match.begin(0) ? tax_codes_named(text.to_s[before...match.begin(0)], TAX_CODES_BEFORE) : []
+        suffix = tax_codes_named(window)
+        claimed = match.end(0) + window.length if prefix.empty? && suffix.any?
+        links = window.scan(FISCONET_LINK).map { |(id)| [:id, id.to_i] }
+        cited_code_parts(match[:numbers], prefix, suffix).each do |numbers, codes|
+          found = codes + links
+          found = [:other] if found.empty? && window.match?(OTHER_LAW_CITATION)
+          next if found.empty?
 
-        article_numbers_in_citation_sequence(match[:numbers]).each { |number| kinds[normalize_article_number(number)].merge(found) }
+          article_numbers_in_citation_sequence(numbers).each { |number| kinds[normalize_article_number(number)].merge(found) }
+        end
       end
       kinds
+    end
+
+    # [[numbers, codes]] of one citation sequence: the code before it, else the code after it; with a different code on
+    # each side, the numbers before its last article word take the first and the rest the second (both without one)
+    def cited_code_parts(numbers, prefix, suffix)
+      return [[numbers, prefix.presence || suffix]] if prefix.empty? || suffix.empty? || prefix == suffix
+
+      split = numbers.rindex(Regexp.new("\\b#{Orchestrator::ARTICLE_PREFIX_SOURCE}"))
+      split ? [[numbers[0...split], prefix], [numbers[split..], suffix]] : [[numbers, prefix | suffix]]
+    end
+
+    # The words after a citation up to the next article word, without a code that ends them when a connecting word or
+    # another code stands before it: that code is the next citation's, written first ("art. 42 en WIB 92, art. 131",
+    # "artikel 42 W.Reg. en WIB 92, artikel 131"). Right after the number it is this citation's own ("artikel 42
+    # W.Reg., artikel 131 WIB 92", "artikel 42, § 1, W.Reg., artikel 131").
+    NEXT_CITATION_JOIN = /(?<![[:alpha:]])(?:en|et|and|und|of|ou|or|oder|sowie)(?![[:alpha:]])|;/i
+    def without_next_citation_code(window)
+      start = TAX_CODES_BEFORE.values.filter_map { |pattern| window =~ pattern }.min
+      return window if start.nil?
+
+      head = window[0, start]
+      head.match?(NEXT_CITATION_JOIN) || tax_codes_named(head).any? ? head : window
+    end
+
+    # The tax codes a stretch of text names. Sol 2026-11-23 05:02:05Z: "artikel 131 KB / WIB 92" is the royal decree
+    # alone, spaced as much as unspaced: the WIB inside KB/WIB names no second code.
+    def tax_codes_named(text, patterns = TAX_CODES)
+      without_decree = text.gsub(TAX_CODES.fetch('kb/wib 92'), ' ')
+      patterns.filter_map { |type, pattern| [:code, type] if (type == 'wib 92' ? without_decree : text).match?(pattern) }
     end
 
     # The held tax codes a rejected number may be looked up in: those its citations name; with another law named,

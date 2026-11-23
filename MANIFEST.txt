@@ -351,9 +351,11 @@ app/services/legal_chatbot/commercial_website_scope_grounding.rb
 app/services/legal_chatbot/consumer_withdrawal_grounding.rb
 app/services/legal_chatbot/context_builder.rb
 app/services/legal_chatbot/core_law_mappings.rb
+app/services/legal_chatbot/data_protection_part_scope.rb
 app/services/legal_chatbot/dated_article_answer.rb
 app/services/legal_chatbot/embedding_service.rb
 app/services/legal_chatbot/eu_article_dependencies.rb
+app/services/legal_chatbot/eu_article_subject_scope.rb
 app/services/legal_chatbot/eu_corpus.rb
 app/services/legal_chatbot/eu_discovery.rb
 app/services/legal_chatbot/eu_live_corpus.rb

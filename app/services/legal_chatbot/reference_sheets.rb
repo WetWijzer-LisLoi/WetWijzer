@@ -154,6 +154,9 @@ module LegalChatbot
     # The domains that share the word "notice" (opzeg, préavis, Kündigung)
     # with the employment ladder: leases, insurance, subscriptions, utilities.
     # Whole word families only: the "leas" prefix also matched "at least" (root 21:38:13).
+    # A sale at a distance named beside an off-premises one (the distance sheet stays then)
+    DISTANCE_SALE_CONTEXT = /(?<![[:alnum:]])(?:online|webshop\p{L}*|webwinkel\p{L}*|internet\p{L}*|op\s+afstand|[àa]\s+distance|
+                              en\s+ligne|fernabsatz\p{L}*|distance\s+(?:contracts?|sales?|selling))(?![[:alnum:]])/iux
     NOTICE_NON_EMPLOYMENT_CONTEXT = /\b(?:(?:woninghuur|handelshuur|huurcontract|huur|huurder|verhuurder|bail|locataire|
       bailleur|verzekering|assurance|abonnement|telecom|energiecontract|lease|leasing|tenan|landlord|insurance|subscription|
       miet|vermiet|versicherung)\w*|rent|rental|rentals|renting|rented|renter|renters)\b/ix
@@ -337,6 +340,14 @@ module LegalChatbot
       if key == 'opzegtermijn'
         non_employment = q.match?(NOTICE_NON_EMPLOYMENT_CONTEXT)
         return false if non_employment && !q.match?(NOTICE_EMPLOYMENT_CONTEXT)
+      end
+
+      # Sol 2026-11-23 15:08:27Z (live 1.1.95): an off-premises contract is no distance contract, yet the distance
+      # sheet (arts. VI.47 to VI.53) gave its rules and cards to "Een handelaar komt op 3 maart 2026 bij mij thuis,
+      # buiten zijn verkoopruimte. [...]". It stays beside the off-premises sheet only when the question also names a
+      # sale at a distance.
+      if key == 'herroepingsrecht' && question.to_s.match?(LegislationSearch::OFF_PREMISES_PATTERN) && !q.match?(DISTANCE_SALE_CONTEXT)
+        return false
       end
 
       # The gates below exist because facts are injected with override

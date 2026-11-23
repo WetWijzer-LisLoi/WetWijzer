@@ -6,7 +6,7 @@
 module HistoryPilotHelper
   HISTORY_LABELS = {
     nl: {
-      close: 'Sluiten', details: 'Vergelijken en bron', shown_live: 'Getoonde tekst: de huidige tekst van WetWijzer.',
+      close: 'Sluiten', details: 'Bron en wijziging', shown_live: 'Getoonde tekst: de huidige tekst van WetWijzer.',
       live_same: 'Gelijk aan de bewaarde Justel-versie (opgehaald op %{captured}).',
       live_differs: 'Wijkt af van de laatst bewaarde Justel-versie (opgehaald op %{captured}); de vergelijking toont het verschil.',
       version_label: 'versie %{period}', off_date: 'gold niet op %{date}', no_previous: 'Er is geen oudere versie om mee te vergelijken.',
@@ -15,12 +15,14 @@ module HistoryPilotHelper
       caveat_unresolved: 'Onopgeloste data voor:', return_current: 'Huidige wet',
       archive: 'Archief op datum', history: 'Geschiedenis', history_of: 'Geschiedenis van artikel %{article}',
       back_to_law: 'Terug naar de versie van de wet', back_to_current: 'Terug naar de huidige wet',
-      compare: 'Vergelijk met de vorige versie', hide_compare: 'Vergelijking verbergen',
+      compare: 'Vergelijk met vorige versie', hide_compare: 'Vergelijking sluiten',
       from: 'van', until: 'tot en met', open: 'nog van kracht', start_unknown: 'begin niet vermeld',
-      end_unknown: 'einde niet vermeld', source: 'Bron: Justel', version: 'gearchiveerde versie',
+      end_unknown: 'einde niet vermeld', source: 'Bekijk op Justel', version: 'gearchiveerde versie',
       current: 'huidige tekst', archived_on: 'Archiefweergave op', no_snapshot: 'Voor deze datum toont het archief geen volledige versie.',
       available: 'Beschikbare data', justel_archive: 'Archief van Justel', show: 'Toon', date: 'Datum',
-      window: 'geldig', toc: 'Inhoudstafel', published: 'gepubliceerd op', introduced: 'ingevoerd door',
+      window: 'geldig', toc: 'Inhoudstafel', act_law: 'Wet van %{date}', act_law_published: 'gepubliceerd op %{date}',
+      act_walloon_decree: 'Decreet van het Waalse Gewest van %{date}', act_walloon_decree_published: 'gepubliceerd op %{date}',
+      act_published: 'gepubliceerd op %{date}',
       not_in_archive: 'Tekst niet in het archief', notes_only: 'enkel de nota\'s van Justel verschillen',
       wording_unchanged: 'de bewoording is ongewijzigd',
       superseded: 'vervangen voor de inwerkingtreding', no_change: 'in alle gearchiveerde versies ongewijzigd',
@@ -35,7 +37,7 @@ module HistoryPilotHelper
       disputed_on: 'Of deze tekst op deze datum gold, staat niet vast; hij wordt hier niet als geldende tekst getoond.'
     },
     fr: {
-      close: 'Fermer', details: 'Comparer et source', shown_live: 'Texte affiché : le texte actuel de WetWijzer.',
+      close: 'Fermer', details: 'Source et modification', shown_live: 'Texte affiché : le texte actuel de WetWijzer.',
       live_same: 'Identique à la version Justel conservée (relevée le %{captured}).',
       live_differs: "Diffère de la dernière version Justel conservée (relevée le %{captured}) ; la comparaison montre l'écart.",
       version_label: 'version %{period}', off_date: "n'était pas en vigueur le %{date}", no_previous: "Il n'y a pas de version plus ancienne à comparer.",
@@ -44,12 +46,14 @@ module HistoryPilotHelper
       caveat_unresolved: 'Dates non résolues pour :', return_current: 'Loi actuelle',
       archive: 'Archives par date', history: 'Historique', history_of: "Historique de l'article %{article}",
       back_to_law: 'Revenir à la version de la loi', back_to_current: 'Revenir à la loi actuelle',
-      compare: 'Comparer avec la version précédente', hide_compare: 'Masquer la comparaison',
+      compare: 'Comparer avec la version précédente', hide_compare: 'Fermer la comparaison',
       from: 'du', until: 'au', open: 'toujours en vigueur', start_unknown: 'début non mentionné',
-      end_unknown: 'fin non mentionnée', source: 'Source : Justel', version: 'version archivée',
+      end_unknown: 'fin non mentionnée', source: 'Voir sur Justel', version: 'version archivée',
       current: 'texte actuel', archived_on: 'Vue des archives au', no_snapshot: "Pour cette date, l'archive ne montre aucune version complète.",
       available: 'Dates disponibles', justel_archive: 'Archives de Justel', show: 'Afficher', date: 'Date',
-      window: 'en vigueur', toc: 'Table des matières', published: 'publié le', introduced: 'introduit par',
+      window: 'en vigueur', toc: 'Table des matières', act_law: 'Loi du %{date}', act_law_published: 'publiée le %{date}',
+      act_walloon_decree: 'Décret de la Région wallonne du %{date}', act_walloon_decree_published: 'publié le %{date}',
+      act_published: 'publié le %{date}',
       not_in_archive: "Texte absent de l'archive", notes_only: 'seules les notes de Justel diffèrent',
       wording_unchanged: 'le texte est inchangé',
       superseded: 'remplacé avant son entrée en vigueur', no_change: 'inchangé dans toutes les versions archivées',
@@ -64,7 +68,7 @@ module HistoryPilotHelper
       disputed_on: "Il n'est pas établi que ce texte était en vigueur à cette date ; il n'est pas présenté ici comme le texte en vigueur."
     },
     en: {
-      close: 'Close', details: 'Compare and source', shown_live: 'Text shown: the current WetWijzer text.',
+      close: 'Close', details: 'Source and amendment', shown_live: 'Text shown: the current WetWijzer text.',
       live_same: 'Same as the saved Justel version (captured on %{captured}).',
       live_differs: 'Differs from the last saved Justel version (captured on %{captured}); the comparison shows the difference.',
       version_label: 'version %{period}', off_date: 'not in force on %{date}', no_previous: 'There is no older version to compare with.',
@@ -73,12 +77,14 @@ module HistoryPilotHelper
       caveat_unresolved: 'Unresolved dates for:', return_current: 'Current law',
       archive: 'Archive by date', history: 'History', history_of: 'History of Article %{article}',
       back_to_law: 'Return to the law version', back_to_current: 'Return to current law',
-      compare: 'Compare with the previous version', hide_compare: 'Hide the comparison',
+      compare: 'Compare with the previous version', hide_compare: 'Close the comparison',
       from: 'from', until: 'to', open: 'still in force', start_unknown: 'start not stated',
-      end_unknown: 'end not stated', source: 'Source: Justel', version: 'archived version',
+      end_unknown: 'end not stated', source: 'View on Justel', version: 'archived version',
       current: 'current text', archived_on: 'Archive view for', no_snapshot: 'The archive shows no complete version for this date.',
       available: 'Available dates', justel_archive: 'Justel archive', show: 'Show', date: 'Date',
-      window: 'in force', toc: 'Table of contents', published: 'published on', introduced: 'introduced by',
+      window: 'in force', toc: 'Table of contents', act_law: 'Act of %{date}', act_law_published: 'published on %{date}',
+      act_walloon_decree: 'Decree of the Walloon Region of %{date}', act_walloon_decree_published: 'published on %{date}',
+      act_published: 'published on %{date}',
       not_in_archive: 'Text not in the archive', notes_only: "only Justel's notes differ",
       wording_unchanged: 'the wording is unchanged',
       superseded: 'replaced before it took effect', no_change: 'unchanged in every archived version',
@@ -102,6 +108,17 @@ module HistoryPilotHelper
     'REGION_BRUXELLES-CAPITALE' => 'Région de Bruxelles-Capitale'
   }.freeze
 
+  HISTORY_MONTHS = {
+    nl: %w[januari februari maart april mei juni juli augustus september oktober november december],
+    fr: %w[janvier février mars avril mai juin juillet août septembre octobre novembre décembre],
+    en: %w[January February March April May June July August September October November December]
+  }.freeze
+  # The amending acts as the archive names them (read in db/article_history on 2026-11-23: "WET 2015-10-19", "LOI
+  # 2015-10-19", "DECREET WAALSE GEWEST 2019-04-04", "DECRET REGION WALLONNE 2019-04-04", each with "(archived version
+  # NNN)"), by the label that writes them out
+  HISTORY_AMENDING_ACTS = { 'WET' => :act_law, 'LOI' => :act_law, 'DECREET WAALSE GEWEST' => :act_walloon_decree,
+                            'DECRET REGION WALLONNE' => :act_walloon_decree }.freeze
+
   # The interface language: Dutch and French as on those sites, English for the English and German interfaces.
   def history_label(key)
     labels = HISTORY_LABELS.fetch(I18n.locale.to_sym) { HISTORY_LABELS[:en] }
@@ -119,6 +136,29 @@ module HistoryPilotHelper
 
   def history_day(iso)
     iso.present? ? Date.iso8601(iso).strftime('%d-%m-%Y') : nil
+  end
+
+  # "19 oktober 2015", "1er octobre 2015", "19 October 2015"
+  def history_long_day(iso)
+    return nil if iso.blank?
+
+    date = Date.iso8601(iso)
+    language = HISTORY_MONTHS.key?(I18n.locale.to_sym) ? I18n.locale.to_sym : :en
+    day = language == :fr && date.day == 1 ? '1er' : date.day.to_s
+    "#{day} #{HISTORY_MONTHS.fetch(language)[date.month - 1]} #{date.year}"
+  end
+
+  # The owner, via Sol 2026-11-23 14:13:13Z: "Wet van 19 oktober 2015 (gepubliceerd op 22 oktober 2015)", in the source
+  # disclosure. An act the archive names in another form keeps its own words; a missing publication date is left out.
+  def history_amending_act(version)
+    named = version.introduced_by.to_s.sub(/\s*\(archived version \d+\)\z/, '')
+    kind, date = named.match(/\A(.+?)\s+(\d{4}-\d{2}-\d{2})\z/)&.captures
+    label = HISTORY_AMENDING_ACTS[kind]
+    act = label ? format(history_label(label), date: history_long_day(date)) : named
+    return act if version.published.blank?
+
+    published = label ? :"#{label}_published" : :act_published
+    "#{act} (#{format(history_label(published), date: history_long_day(version.published))})"
   end
 
   # "van 03-02-2014 tot en met 02-08-2017", "van begin niet vermeld, nog van kracht". following: the next wording in a

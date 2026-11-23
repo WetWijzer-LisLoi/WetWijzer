@@ -140,20 +140,23 @@ module LegalChatbot
            automatisiert\p{L}*|machine\s+learning|gezichtsherkenning|reconnaissance\s+faciale|gesichtserkennung|
            facial\s+recognition|biometr\p{L}*|robot\p{L}*|2024/1689)#{E}}iux
       ],
-      # The GDPR and data protection laws
+      # The GDPR and data protection laws. An objection alone raises nothing (Sol 2026-11-23 14:13:13Z: GDPR arts. 12 and
+      # 13 on the cards of "... dat het betrokken publiek tijdens het openbaar onderzoek al een bezwaar of standpunt
+      # indiende ..."): an objection in a public inquiry, to a permit or to a tax is no objection to processing, and a
+      # question about that names the data, the processing, marketing or profiling.
       data_protection: [
         %r{#{B}(?:2016/679|gegevensbescherming|protection\s+des\s+donn[ée]es|datenschutz\p{L}*|data\s+protection|
            verwerking\s+van\s+persoonsgegevens|traitement\s+des\s+donn[ée]es\s+[àa]\s+caract[èe]re\s+personnel|
            verarbeitung\s+personenbezogener\s+daten|processing\s+of\s+personal\s+data)#{E}}iux,
-        /#{B}(?:privacy\p{L}*|confidentialit\p{L}*|priv[ée]\p{L}*|vie\s+priv[ée]e|privatsph[äa]re|persoonsgegeven\p{L}*|persoonlijke\s+gegevens|gegevens\p{L}*|
+        /#{B}(?:privacy\p{L}*|confidentialit\p{L}*|priv[ée]\p{L}*|vie\s+priv[ée]e|privatsph[äa]re|persoonsgegeven\p{L}*|persoonlijke\s+gegevens|\p{L}*gegevens\p{L}*|
            \p{L}*data|donn[ée]es|daten\p{L}*|personenbezogen\p{L}*|gdpr|avg|rgpd|dsgvo|camera\p{L}*|cam[ée]ra\p{L}*|kamera\p{L}*|
            foto\p{L}*|photo\p{L}*|beeld\p{L}*|image\p{L}*|bild\p{L}*|video\p{L}*|cookie\p{L}*|e-?mail\p{L}*|mail\p{L}*|
            courriel\p{L}*|computer\p{L}*|ordinateur\p{L}*|internet|online|app|apps|applicati\p{L}*|website\p{L}*|site\s+web|webshop\p{L}*|
            webwinkel\p{L}*|verwerk\p{L}*|traitement\p{L}*|sous-traitant\p{L}*|verarbeit\p{L}*|auftragsverarbeit\p{L}*|
            processor\p{L}*|processing|controller\p{L}*|verantwortlich\p{L}*|inzage\p{L}*|vergetel\p{L}*|oubli|vergessen\p{L}*|
            forgotten|forget|erasure|effacement|l[öo]schung\p{L}*|uitwiss\p{L}*|personal|personnel\p{L}*|persoonlijk\p{L}*|
-           verwijder\p{L}*|wissen|gewist|supprim\p{L}*|effac\p{L}*|l[öo]sch\p{L}*|eras\p{L}*|delet\p{L}*|bezwaar\p{L}*|
-           opposition\p{L}*|widerspruch\p{L}*|objection\p{L}*|herkomst|herkunft|origine|telefoonnummer\p{L}*|
+           verwijder\p{L}*|wissen|gewist|supprim\p{L}*|effac\p{L}*|l[öo]sch\p{L}*|eras\p{L}*|delet\p{L}*|
+           herkomst|herkunft|origine|direktwerbung\p{L}*|prospection\p{L}*|telefoonnummer\p{L}*|
            telefonnummer\p{L}*|rufnummer\p{L}*|phone\s+numbers?|num[ée]ros?\s+de\s+t[ée]l[ée]phone|ongevraagd\p{L}*|
            non\s+sollicit\p{L}*|unsolicited|werbeanruf\p{L}*|spam\p{L}*|bel-me-niet\p{L}*|ne-m.appelez-plus|
            profil\p{L}*|marketing|nieuwsbrief\p{L}*|newsletter\p{L}*|telemarketing|datalek\p{L}*|breach\p{L}*|fuite\p{L}*|
@@ -176,6 +179,25 @@ module LegalChatbot
            e-?mail\p{L}*|courriel\p{L}*|spam\p{L}*|cookie\p{L}*|app|apps|digita\p{L}*|num[ée]rique\p{L}*|sociale\s+media|
            r[ée]seaux\s+sociaux|
            social\s+media|soziale\p{L}*\s+medien)#{E}/iux
+      ],
+      # The consumer rights directive. Sol 2026-11-23 14:13:13Z: its art. 16 ter stood on the cards of a question about
+      # the closed list of discrimination grounds, found by word overlap alone. A row a topic plan targets (the
+      # withdrawal plan) stays before this scope is asked.
+      consumer_rights: [
+        %r{#{B}(?:2011/83|consumentenrechten|droits\s+des\s+consommateurs|rechte\s+der\s+verbraucher|consumer\s+rights)#{E}}iux,
+        /#{B}(?:consument\p{L}*|consommat\p{L}*|verbraucher\p{L}*|consumer\p{L}*|koper\p{L}*|acheteu\p{L}*|k[äa]ufer\p{L}*|
+           buyer\p{L}*|aankoop\p{L}*|achat\p{L}*|kauf\p{L}*|purchas\p{L}*|gekocht|kocht|koop|kopen|achet\p{L}*|gekauft|bought|
+           buy\p{L}*|bestel\p{L}*|commande\p{L}*|bestell\p{L}*|order\p{L}*|herroep\p{L}*|bedenktijd|r[ée]tract\p{L}*|
+           widerruf\p{L}*|withdraw\p{L}*|cooling|webwinkel\p{L}*|webshop\p{L}*|online\p{L}*|en\s+ligne|verkoper\p{L}*|
+           vendeu\p{L}*|verk[äa]ufer\p{L}*|seller\p{L}*|trader\p{L}*|handelaar\p{L}*|professionnel\p{L}*|unternehm\p{L}*|
+           lever\p{L}*|livr\p{L}*|liefer\p{L}*|deliver\p{L}*|terugbetal\p{L}*|rembours\p{L}*|erstatt\p{L}*|refund\p{L}*|
+           retour\p{L}*|terugstur\p{L}*|terugzend\p{L}*|return\p{L}*|colportage|huis-aan-huis\p{L}*|d[ée]marchage|
+           haust[üu]r\p{L}*|doorstep|abonnement\p{L}*|subscription\p{L}*|verko\p{L}*|vente\p{L}*|vend\p{L}*|verkauf\p{L}*|
+           sale\p{L}*|sold|sell\p{L}*|winkel\p{L}*|magasin\p{L}*|gesch[äa]ft\p{L}*|shop\p{L}*|store\p{L}*|
+           overeenkomst\p{L}*|contract\p{L}*|contrat\p{L}*|vertr[äa]g\p{L}*|kosten|frais|geb[üu]hr\p{L}*|fees?|charges?|
+           betal\p{L}*|paiement\p{L}*|zahl\p{L}*|pay\p{L}*|prijs\p{L}*|prix|preis\p{L}*|price\p{L}*|garantie\p{L}*|
+           guarantee\p{L}*|warrant\p{L}*|digita\p{L}*|num[ée]rique\p{L}*|op\s+afstand|[àa]\s+distance|fernabsatz\p{L}*|
+           telefo\p{L}*|t[ée]l[ée]phon\p{L}*|phone\p{L}*|pakket\p{L}*|colis|paket\p{L}*|parcel\p{L}*)#{E}/iux
       ],
       # Income tax: the income tax code, its royal decree and the withholding taxes
       income_tax: [
@@ -202,17 +224,22 @@ module LegalChatbot
            code\s+de\s+la\s+tva|mehrwertsteuer\p{L}*|umsatzsteuer\p{L}*|value\s+added\s+tax)#{E}/iux,
         /#{B}(?:#{TAX_WORDS}|factu\p{L}*|invoice\p{L}*|rechnung\p{L}*)#{E}/iux
       ],
-      # Registration, gift and inheritance duties, and the regional tax codes that levy them
+      # Registration, gift and inheritance duties, and the regional tax codes that levy them. Sol 2026-11-23 14:13:13Z: the
+      # Code of miscellaneous duties and taxes (titles read in the corpus on 2026-11-23) brought its arts. 153 and 156,
+      # whose notes name a Constitutional Court judgment, to a question about an objection in a public inquiry.
       duties: [
         /#{B}(?:registratie-,\s+hypotheek-\s+en\s+griffierechten|droits\s+d.enregistrement|successierechten|
            droits\s+de\s+succession|erbschaftsteuer\p{L}*|codex\s+fiscaliteit|code\s+(?:wallon|bruxellois)\s+de\s+la\s+fiscalit[ée]|
-           erfbelasting|schenkbelasting|registratiebelasting)#{E}/iux,
+           erfbelasting|schenkbelasting|registratiebelasting|diverse\s+rechten\s+en\s+taksen|droits\s+et\s+taxes\s+divers|
+           met\s+het\s+zegel\s+gelijkgestelde\s+taksen|taxes\s+assimil[ée]es\s+au\s+timbre)#{E}/iux,
         /#{B}(?:#{TAX_WORDS}|erf\p{L}*|erven|nalatenschap\p{L}*|\p{L}*schenk\p{L}*|h[ée]rit\p{L}*|successi\p{L}*|legs|
            erb\p{L}*|inherit\p{L}*|legacy|donation\p{L}*|don\s+manuel|gifts?|registratie\p{L}*|enregistrement\p{L}*|
            notari\p{L}*|onroerend\p{L}*|immobili\p{L}*|immobilier|real\s+estate|kadast\p{L}*|cadast\p{L}*|
            verkeersbelasting|onroerende\s+voorheffing|abat\p{L}*|sprong\p{L}*|saut\s+de\s+g[ée]n[ée]ration|registr\p{L}*|
            enregistr\p{L}*|\p{L}*gift(?:en)?|verdel\p{L}*|verdeeld|verdeling\p{L}*|partage\p{L}*|teilung\p{L}*|testament\p{L}*|
-           estate\p{L}*|vruchtgebruik\p{L}*|usufruit\p{L}*|nie(?:ß|ss)brauch\p{L}*|usufruct\p{L}*)#{E}/iux
+           estate\p{L}*|vruchtgebruik\p{L}*|usufruit\p{L}*|nie(?:ß|ss)brauch\p{L}*|usufruct\p{L}*|taks\p{L}*|zegel\p{L}*|
+           timbre\p{L}*|beurs\p{L}*|bourse\p{L}*|effectenrekening\p{L}*|comptes?[-\s]titres|wertpapierkont\p{L}*|
+           securities\s+accounts?|verzekeringsverrichting\p{L}*|op[ée]rations?\s+d.assurance)#{E}/iux
       ]
     }.freeze
     # A question about a source the reader is shown ("Explain this specialist source.", "Wat zegt deze wet?") keeps
