@@ -1905,11 +1905,23 @@ module LegalChatbot
       ['2011011331', TIMESHARE_TITLE_PATTERN, TIMESHARE_QUERY_PATTERN]
     ].freeze
 
+    # Sol 2026-11-23 20:00:46Z (live 1.1.96): old Civil Code art. 1701/13, the refund when a contract for digital content
+    # ends, stood as a card beside the off-premises deadline answer it does not support. Arts. 1701/1 to 1701/19 are the
+    # old Civil Code's title on digital content and digital services (art. 1701/1 defines both "voor de toepassing van
+    # deze titel"; the titles read in the corpus on 2026-11-23); a withdrawal question keeps them only when it names such
+    # content or service.
+    DIGITAL_CONTENT_ARTICLE = %r{\A(?:Art(?:ikel|icle)?\.?\s*)?1701/(?:[1-9]|1[0-9])\z}i
+    DIGITAL_CONTENT_QUERY_PATTERN = /\b(?:digita\p{L}*|num[ée]rique\p{L}*|software|apps?|streaming\p{L}*|download\p{L}*|e-?books?)\b/iu
+
     def self.withdrawal_borrowed_from_specialist_regime?(article, question)
       return false unless question.match?(WITHDRAWAL_RIGHT_QUERY_PATTERN)
 
       numac = (article[:numac] || article['numac']).to_s
       title = (article[:law_title] || article[:title] || article['law_title'] || article['title']).to_s
+      if numac == '1804032154' && (article[:article_title] || article['article_title']).to_s.strip.match?(DIGITAL_CONTENT_ARTICLE)
+        return !question.match?(DIGITAL_CONTENT_QUERY_PATTERN)
+      end
+
       WITHDRAWAL_SPECIALIST_REGIMES.any? do |regime_numac, title_pattern, query_pattern|
         (numac == regime_numac || title.match?(title_pattern)) && !question.match?(query_pattern)
       end
@@ -2373,7 +2385,7 @@ module LegalChatbot
     # sale named as such counts on its own; "aan de deur", "démarchage", "doorstep" and the like only beside a sale or
     # contract word. "Bellen" stays allowed: at the door it is the doorbell.
     OFF_PREMISES_STRONG = /(?<![[:alnum:]])(?:colportage|huis[-\s]aan[-\s]huis(?:verkoop|verkoper)\p{L}*|deur[-\s]aan[-\s]deur(?:verkoop|verkoper)\p{L}*|buiten\s+(?:de\s+|zijn\s+|haar\s+|hun\s+|een\s+)?verkoopruimte\p{L}*|hors\s+[ée]tablissement|d[ée]marchage\s+[àa]\s+domicile|vente\s+[àa]\s+domicile|haust(?:ü|ue)r(?:gesch(?:ä|ae)ft|verkauf|vertrag)\p{L}*|au(?:ß|ss)erhalb\s+von\s+gesch(?:ä|ae)ftsr(?:ä|ae)umen|off[-\s]premises|doorstep\s+(?:sale|selling|seller|contract)s?|door[-\s]to[-\s]door\s+(?:sale|selling|seller|salesman|salesperson|contract)s?)(?![[:alnum:]])/iu
-    OFF_PREMISES_WEAK = /(?<![[:alnum:]])(?:aan\s+(?:de|je|mijn|uw)\s+(?:voor)?deur|huis[-\s]aan[-\s]huis|bij\s+(?:mij|ons|u|jou)\s+(?:thuis|aan\s+huis)|chez\s+(?:moi|nous)|bei\s+(?:mir|uns)\s+zu\s*hause|at\s+(?:my|our)\s+(?:home|house)|deur[-\s]aan[-\s]deur|porte[-\s][àa][-\s]porte|[àa]\s+(?:mon|votre|son)\s+domicile|haust(?:ü|ue)r|an\s+der\s+(?:haus)?t(?:ü|ue)r|door[-\s]to[-\s]door|doorstep|at\s+(?:my|the|your)\s+(?:front\s+)?door)(?![[:alnum:]])/iu
+    OFF_PREMISES_WEAK = /(?<![[:alnum:]])(?:aan\s+(?:de|je|mijn|uw)\s+(?:voor)?deur|huis[-\s]aan[-\s]huis|deur[-\s]aan[-\s]deur|porte[-\s][àa][-\s]porte|[àa]\s+(?:mon|votre|son)\s+domicile|haust(?:ü|ue)r|an\s+der\s+(?:haus)?t(?:ü|ue)r|door[-\s]to[-\s]door|doorstep|at\s+(?:my|the|your)\s+(?:front\s+)?door)(?![[:alnum:]])/iu
     OFF_PREMISES_SALE = /(?<![[:alnum:]])(?:(?:ver)?ko(?:o|c)ht\p{L}*|(?:ver)?kopen|koop\p{L}*|verkoper\p{L}*|bestel\p{L}*|abonnement\p{L}*|contract\p{L}*|overeenkomst\p{L}*|herroep\p{L}*|annul\p{L}*|opzeg\p{L}*|aankoop\p{L}*|vente\p{L}*|vend\p{L}*|achat\p{L}*|achet\p{L}*|contrat\p{L}*|r[ée]tract\p{L}*|kauf\p{L}*|gekauft|verkauf\p{L}*|vertrag\p{L}*|widerruf\p{L}*|sale\p{L}*|sold|sell\p{L}*|bought|buy\p{L}*|purchas\p{L}*|subscription\p{L}*|cancel\p{L}*|withdraw\p{L}*)(?![[:alnum:]])/iu
     # Sol 2026-11-22 06:35:42Z: "Een verkoper verkocht mij aan de deur een telefoon" sold a telephone at the door: the
     # telephone counts only as the channel (per telefoon, téléphonique, am Telefon, by phone, a call), never as the goods.
@@ -2386,6 +2398,17 @@ module LegalChatbot
     # word comes before it in its clause or follows it within 25 characters.
     OFF_PREMISES_DELIVERY = /(?<![[:alnum:]])(?:(?:ge|af|thuis)?lever(?:d|de|den|en|t|ing|ingen)?|bezorg\p{L}*|koerier\p{L}*|pakket\p{L}*|postbode\p{L}*|livr(?:é|ée|és|ées|er|aison|eur|ait)|colis|facteur|(?:ge)?liefer(?:n|t|te|ten|ung)?|zustell\p{L}*|zugestellt|paket\p{L}*|deliver\p{L}*|courier\p{L}*|parcel\p{L}*|postman|shipped|shipping)(?![[:alnum:]])/iu
     OFF_PREMISES_DOOR = /(?:\A|[.;!?\n])(?:(?!#{OFF_PREMISES_DELIVERY.source})[^.;!?\n])*?#{OFF_PREMISES_WEAK.source}(?![^.;!?\n]{0,25}?#{OFF_PREMISES_DELIVERY.source})/iu
+    # Sol 2026-11-23 15:53:08Z: "Ik heb bij mij thuis online een abonnement afgesloten" is no off-premises contract:
+    # the consumer's home counts only where a trader came there (a seller, a representative, "kwam", "langs"), and a
+    # delivery to the home says nothing of where the contract was formed (the door's rule above).
+    OFF_PREMISES_HOME = /(?<![[:alnum:]])(?:bij\s+(?:mij|ons|u|jou)\s+(?:thuis|aan\s+huis)|chez\s+(?:moi|nous)|
+                         bei\s+(?:mir|uns)\s+zu\s*hause|at\s+(?:my|our)\s+(?:home|house))(?![[:alnum:]])/iux
+    OFF_PREMISES_HOME_VISIT = /(?:\A|[.;!?\n])(?:(?!#{OFF_PREMISES_DELIVERY.source})[^.;!?\n])*?#{OFF_PREMISES_HOME}(?![^.;!?\n]{0,25}?#{OFF_PREMISES_DELIVERY.source})/iu
+    OFF_PREMISES_VISITOR = /(?<![[:alnum:]])(?:verkoper\p{L}*|handelaar\p{L}*|vertegenwoordiger\p{L}*|colporteur\p{L}*|komt|komen|
+                            kwam|kwamen|gekomen|langs|langsgekomen|bezoek\p{L}*|bezocht|vendeu\p{L}*|commercia(?:l|ux)|
+                            repr[ée]sentant\p{L}*|d[ée]marcheu\p{L}*|venu\p{L}*|verk[äa]ufer\p{L}*|vertreter\p{L}*|
+                            h[äa]ndler\p{L}*|kam|besuch\p{L}*|seller\p{L}*|salesm[ae]n|salesperson\p{L}*|sales\s+rep\p{L}*|
+                            trader\p{L}*|came|visit\p{L}*)(?![[:alnum:]])/iux
     # Sol 2026-11-23 07:14:35Z: the withdrawal rule holds between a trader and a consumer, so a question about the
     # seller's permit to sell at the door ("Heb ik een vergunning nodig voor colportage?") is not this topic, unless it
     # also asks about withdrawing, cancelling, a refund or the buyer's rights. Sol 2026-11-23 14:42:44Z: "Heb ik een
@@ -2403,7 +2426,7 @@ module LegalChatbot
                           rechte\s+(?:des|der|eines|hat\s+der|hat\s+ein)\s+(?:verbraucher|k[äa]ufer)\p{L}*|cancel\p{L}*|
                           withdraw\p{L}*|refund\p{L}*|(?:my|our|your)\s+rights|(?:consumer|buyer)(?:s|['’]s|s['’])?\s+rights|
                           rights\s+(?:of|does|do)\s+(?:the\s+|a\s+)?(?:consumer|buyer)\p{L}*)(?![[:alnum:]])/iux
-    OFF_PREMISES_PATTERN = /\A(?!(?=.*#{OFF_PREMISES_PERMIT})(?!.*#{OFF_PREMISES_BUYER}))(?:(?=.*#{OFF_PREMISES_STRONG.source})|(?=.*?#{OFF_PREMISES_DOOR.source})(?=.*#{OFF_PREMISES_SALE.source})|(?!.*#{OFF_PREMISES_PHONE.source})(?=.*#{OFF_PREMISES_CANVASS.source})(?=.*#{OFF_PREMISES_SALE.source}))/imu
+    OFF_PREMISES_PATTERN = /\A(?!(?=.*#{OFF_PREMISES_PERMIT})(?!.*#{OFF_PREMISES_BUYER}))(?:(?=.*#{OFF_PREMISES_STRONG.source})|(?=.*?#{OFF_PREMISES_DOOR.source})(?=.*#{OFF_PREMISES_SALE.source})|(?!.*#{OFF_PREMISES_PHONE.source})(?=.*#{OFF_PREMISES_CANVASS.source})(?=.*#{OFF_PREMISES_SALE.source})|(?=.*?#{OFF_PREMISES_HOME_VISIT.source})(?=.*#{OFF_PREMISES_VISITOR})(?=.*#{OFF_PREMISES_SALE.source}))/imu
     # Sol 2026-11-23 15:08:27Z (live 1.1.95): "Een handelaar komt op 3 maart 2026 bij mij thuis, buiten zijn
     # verkoopruimte. [...] Ik ontvang de verplichte informatie over het herroepingsrecht pas op 10 maart 2027. [...] Op welke
     # datum verstrijkt mijn herroepingstermijn?" got the distance contract's VI.47 and VI.48 and neither VI.67 nor VI.68.
@@ -4945,6 +4968,8 @@ module LegalChatbot
       # #1591 (Sol 2026-11-23 09:24:52Z): the parts of the Belgian data-protection act for the police and the courts, the
       # intelligence services and recorded calls, only when the question raises them
       return false unless DataProtectionPartScope.source_relevant?(article, question)
+      # The State Gazette's extract of another Constitutional Court judgment than the one the question names
+      return false unless JudgmentExtractScope.source_relevant?(article, question)
       return false if withdrawal_borrowed_from_specialist_regime?(article, question)
       return false if equality_question_borrows_peripheral_rule?(article, question)
       return false if civil_intestacy_borrows_tax_competence?(article, question)

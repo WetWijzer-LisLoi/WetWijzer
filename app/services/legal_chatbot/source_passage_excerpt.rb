@@ -32,6 +32,23 @@ module LegalChatbot
     # A page number on a line of its own, as the judgments' PDF text leaves them between two considerations
     BARE_PAGE_NUMBER = /\A[[:space:]]*\d{1,4}[[:space:]]*\z/
     MAX_NAMED_CONSIDERATIONS = 6
+    # The most room a judgment whose considerations a question names may take for them (measured on 2026-11-23: the
+    # longest of Sol's named considerations, B.1.8 of 140/2018, runs 4,135 characters, and with B.5.3 beside it 5,711;
+    # B.7 of 41/2009 runs 3,914)
+    NAMED_ROOM_CAP = 7000
+    # Sol 2026-11-23 20:00:46Z (live 1.1.96): the ordinary questions, which name no consideration, still missed the
+    # motives the Court quotes from the preparatory works (41/2009 B.7, 140/2018 B.1.8, 46/2019 B.1.7). A question about
+    # the legislator's reasons in the preparatory works gives whole the Court's considerations that cite those works.
+    PREPARATORY_QUESTION = /(?<![[:alnum:]])(?:parlementaire\s+(?:voorbereiding\p{L}*|motieven|werkzaamheden|stukken|besprekingen)|
+                            memorie\s+van\s+toelichting|voorbereidende\s+werk\p{L}*|travaux\s+pr[ée]paratoires|
+                            expos[ée]\s+des\s+motifs|gesetzesmaterialien|parlamentarische\s+vorarbeiten|gesetzesbegr[üu]ndung|
+                            preparatory\s+works?|legislative\s+history|explanatory\s+memorandum|
+                            parliamentary\s+(?:preparation|history|record|debates?))(?![[:alnum:]])/iux
+    # A citation of the preparatory works ("Parl. St., Kamer, 2006-2007, DOC 51-2722/001", "Doc. parl.")
+    PREPARATORY_CITATION = %r{(?:Parl\.\s*St\.|Parl\.\s*Doc\.|Doc\.\s*parl\.|Gedr\.\s*St\.|DOC\s*\d{2}[-\s]?\d+/\d+)}
+    # Measured on the production texts on 2026-11-23, the two with most of the question's words are 41/2009 B.7 (alone);
+    # 140/2018 B.1.8 and B.5.3; 46/2019 B.5.3 and B.1.7
+    MAX_PREPARATORY_CONSIDERATIONS = 2
 
     module_function
 
@@ -54,6 +71,7 @@ module LegalChatbot
                       end
       return (NO_BODY_LABEL + labelled_summary(summary, budget - NO_BODY_LABEL.length))[0, budget] if body.strip.empty?
 
+      labels = considered_labels(body, question, labels)
       literal_budget = budget - LITERAL_LABEL.length - summary_block.length
       if literal_budget < 160
         room = [budget - LITERAL_LABEL.length, 0].max
@@ -61,6 +79,62 @@ module LegalChatbot
       end
 
       LITERAL_LABEL + literal_passages(body, question, literal_budget, court: court, labels: labels) + summary_block
+    end
+
+    # The room for a judgment's excerpt: chars, or more when the considerations the question names need it to stand
+    # whole, up to NAMED_ROOM_CAP. Sol's retest of 41/2009 (2026-11-23): B.7 runs 3,914 characters, all of it the
+    # quoted memorandum, and the 2,500 a case row had cut it before the reference that closes the quotation. The
+    # excerpt itself still never exceeds the room it is given.
+    def room_for_named(text, question, chars, labels:, summary: nil)
+      labels = considered_labels(text.to_s, question, labels)
+      return chars if labels.nil? && !question.to_s.match?(NAMED_CONSIDERATION)
+
+      needed = named_room(text, question, labels: labels)
+      return chars if needed.zero?
+
+      needed += 400 unless summary.to_s.strip.empty?
+      chars >= NAMED_ROOM_CAP ? chars : needed.clamp(chars, NAMED_ROOM_CAP)
+    end
+
+    # The considerations given whole: those passed (a judgment's own when the question names several; none when it names
+    # only another judgment's), else nil when the question names some (named_considerations reads them from it), else,
+    # for a question about the legislator's reasons, the Court's considerations that cite the preparatory works.
+    def considered_labels(text, question, labels)
+      return labels unless labels.nil?
+      return nil if question.to_s.match?(NAMED_CONSIDERATION)
+
+      preparatory_labels(text, question)
+    end
+
+    # For a question about the legislator's reasons in the preparatory works: the labels of the Court's considerations
+    # (B.) that cite those works, the MAX_PREPARATORY_CONSIDERATIONS with most of the question's words (then quotation
+    # marks, then length), in the text's order; nil when the question asks no such thing or none cites them.
+    def preparatory_labels(text, question)
+      return nil unless question.to_s.match?(PREPARATORY_QUESTION)
+
+      starts = text.to_enum(:scan, /^(B\.\d{1,2}(?:\.\d{1,2}){0,3})\.[[:space:]]/).map { [Regexp.last_match.begin(0), Regexp.last_match[1]] }
+      terms = passage_terms(question, nil)
+      found = starts.each_with_index.filter_map do |(start, label), index|
+        span = text[start...(starts[index + 1]&.first || text.length)]
+        [label, start, term_hits(span, terms), span.count('«'), span.length] if span.match?(PREPARATORY_CITATION)
+      end
+      chosen = found.sort_by { |_label, start, hits, quotes, length| [-hits, -quotes, -length, start] }
+                    .first(MAX_PREPARATORY_CONSIDERATIONS)
+      chosen.empty? ? nil : chosen.sort_by { |_label, start, *| start }.map(&:first)
+    end
+
+    # The room the considerations a question names take whole: the literal label, each consideration, its elisions and
+    # the 80 characters literal_passages wants left before it places one (without them a short second consideration,
+    # B.10 beside B.7, found too little room); 0 when the text holds none of them.
+    def named_room(text, question, labels: nil)
+      body = text.to_s
+      return 0 if body.strip.empty?
+
+      units = source_units(body, body.length)
+      named = named_considerations(body, units, question, operative_index(body, units), named: labels)
+      return 0 if named.empty?
+
+      LITERAL_LABEL.length + named.sum { |start, finish, _first| finish - start } + (((ELISION.length * 2) + 80) * named.size)
     end
 
     def labelled_summary(summary, budget)
@@ -94,10 +168,7 @@ module LegalChatbot
 
       selected = []
       main_passage_selected = false
-      operative = (units.length - 1).downto(0).find do |index|
-        units[index][:start] >= text.length / 2 &&
-          text[units[index][:start]...units[index][:finish]].strip.match?(OPERATIVE_LABEL)
-      end
+      operative = operative_index(text, units)
       # The considerations the question names come first and whole, each from its label to the next one, so a
       # quotation inside it and the reasons after the quotation stay together. One that is longer than the room
       # left is cut at the end of a line, and the cut is marked. Sol 2026-11-23 11:08:38Z: a very long first one took
@@ -188,6 +259,14 @@ module LegalChatbot
         last = stop - 1
         last -= 1 while last > first[0] && text[units[last][:start]...units[last][:finish]].match?(BARE_PAGE_NUMBER)
         [units[first[0]][:start], units[last][:finish], first[0]]
+      end
+    end
+
+    # The unit that opens the operative part (its label in the text's second half), or nil
+    def operative_index(text, units)
+      (units.length - 1).downto(0).find do |index|
+        units[index][:start] >= text.length / 2 &&
+          text[units[index][:start]...units[index][:finish]].strip.match?(OPERATIVE_LABEL)
       end
     end
 

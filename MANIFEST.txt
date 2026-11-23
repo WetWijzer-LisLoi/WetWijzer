@@ -390,6 +390,7 @@ app/services/legal_chatbot/german_question_translation.rb
 app/services/legal_chatbot/grounding_scope.rb
 app/services/legal_chatbot/house_hidden_defect_practical_grounding.rb
 app/services/legal_chatbot/indexed_amounts.rb
+app/services/legal_chatbot/judgment_extract_scope.rb
 app/services/legal_chatbot/jurisprudence_search.rb
 app/services/legal_chatbot/language_detection.rb
 app/services/legal_chatbot/legal_fact_provider.rb

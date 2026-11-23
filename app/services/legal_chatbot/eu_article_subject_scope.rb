@@ -15,14 +15,22 @@ module LegalChatbot
     # A minor's age, in the words that give one (Sol 2026-11-23 14:42:44Z: "a 13-year-old asking explicitly about
     # personal consent in an app can miss the rule"): "ik ben 13", "13-jarige", "13 years old", "j'ai 13 ans", "onder de
     # 16". A number of days, euros or per cent after "ik ben" is no age, and "vijf jaar" alone is a retention period.
+    # Sol 2026-11-23 15:53:08Z: "for under 6 months" is a duration: after "under", "onder de", "unter" or "moins de" a
+    # time unit makes the number a period ("onder de 16 jaar" and "unter 16 Jahren" stay ages), while "jonger dan",
+    # "younger than" and "jünger als" compare ages whatever follows.
     MINOR = '(?:1[0-7]|[1-9])(?!\d)'
+    UPTO18 = '(?:1[0-8]|[1-9])(?![\d.,])'
     NOT_AN_AGE = '(?![.,]\d)(?!\s*(?:%|euro|dagen|tage|days|jours|weken|wochen|weeks|semaines|maanden|monate|months|mois|uur|' \
                  'uren|stunden|hours|heures|minuten|minutes|keer|mal|times|fois|procent|prozent|percent))'
-    AGE = "(?:ik\\s+ben|ich\\s+bin|i\\s+am|i['’]m|j['’]ai)\\s+(?:pas\\s+|erst\\s+|only\\s+|just\\s+|seulement\\s+)?#{MINOR}" \
+    AGE = "(?:ik\\s+ben|ich\\s+bin|i\\s+am|i['’]m|j['’]ai)\\s+(?:pas\\s+|erst\\s+|only\\s+|just\\s+|seulement\\s+|moins\\s+de\\s+)?#{MINOR}" \
           "(?:\\s+(?:jaar|jahre|years|ans))?#{NOT_AN_AGE}|" \
           "#{MINOR}(?:[\\s-]*(?:jarige?n?|j[äa]hrige?[nmrs]?|year[\\s-]olds?)|\\s+(?:jaar\\s+oud|jahre\\s+alt|years?\\s+old))|" \
           "[âa]g[ée]e?s?\\s+de\\s+#{MINOR}\\s+ans|aged\\s+#{MINOR}|" \
-          '(?:jonger\\s+dan|onder\\s+de|under|below|younger\\s+than|moins\\s+de|unter|j[üu]nger\\s+als)\\s+(?:1[0-8]|[1-9])(?![\\d.,])'.freeze
+          "(?:jonger\\s+dan|younger\\s+than|j[üu]nger\\s+als)\\s+#{UPTO18}|" \
+          "onder\\s+de\\s+#{UPTO18}(?!\\s*(?:maand|maanden|week|weken|dag|dagen|uur|uren|minuten))|" \
+          "unter\\s+#{UPTO18}(?!\\s*(?:monat\\p{L}*|woche\\p{L}*|tag|tage|tagen|stunde\\p{L}*|minute\\p{L}*))|" \
+          "(?:under|below|moins\\s+de)\\s+#{UPTO18}(?!\\s*(?:years?|months?|weeks?|days?|hours?|minutes?|ans?|mois|semaines?|" \
+          'jours?|heures?))'.freeze
     # [base CELEX, article number] => the words that raise the article's own subject
     SUBJECTS = {
       %w[32000L0031 7] => /#{B}(?:ongevraagd\p{L}*|ongewenst\p{L}*|reclame\p{L}*|marketing\p{L}*|spam\p{L}*|nieuwsbrie\p{L}*|

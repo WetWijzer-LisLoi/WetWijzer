@@ -154,9 +154,11 @@ module LegalChatbot
     # The domains that share the word "notice" (opzeg, préavis, Kündigung)
     # with the employment ladder: leases, insurance, subscriptions, utilities.
     # Whole word families only: the "leas" prefix also matched "at least" (root 21:38:13).
-    # A sale at a distance named beside an off-premises one (the distance sheet stays then)
-    DISTANCE_SALE_CONTEXT = /(?<![[:alnum:]])(?:online|webshop\p{L}*|webwinkel\p{L}*|internet\p{L}*|op\s+afstand|[àa]\s+distance|
-                              en\s+ligne|fernabsatz\p{L}*|distance\s+(?:contracts?|sales?|selling))(?![[:alnum:]])/iux
+    # A sale at a distance named beside an off-premises one (the distance sheet stays then). Sol 2026-11-23 15:53:08Z:
+    # the channel of contracting counts, not a product's name ("een internetabonnement" sold at the door).
+    DISTANCE_SALE_CONTEXT = /(?<![[:alnum:]])(?:online(?![-[:alnum:]])|webshop\p{L}*|webwinkel\p{L}*|(?:via|op|over)\s+(?:het\s+)?internet|
+                              op\s+afstand|[àa]\s+distance|en\s+ligne|(?:par|sur)\s+internet|fernabsatz\p{L}*|im\s+internet|
+                              (?:on|over)\s+the\s+internet|distance\s+(?:contracts?|sales?|selling))(?![[:alnum:]])/iux
     NOTICE_NON_EMPLOYMENT_CONTEXT = /\b(?:(?:woninghuur|handelshuur|huurcontract|huur|huurder|verhuurder|bail|locataire|
       bailleur|verzekering|assurance|abonnement|telecom|energiecontract|lease|leasing|tenan|landlord|insurance|subscription|
       miet|vermiet|versicherung)\w*|rent|rental|rentals|renting|rented|renter|renters)\b/ix

@@ -524,7 +524,10 @@ class LegalChatbotService
     cases.each_with_index do |c, index|
       lang_label = source_context_language(c)
       text = LegalChatbot::SourcePassageExcerpt.excerpt(
-        ensure_utf8(c[:full_text]), question, max_chars: (c[:explicit_reference] && case_chars) || max_article_chars,
+        ensure_utf8(c[:full_text]), question, max_chars: LegalChatbot::SourcePassageExcerpt.room_for_named(
+          ensure_utf8(c[:full_text]), question, (c[:explicit_reference] && case_chars) || max_article_chars,
+          labels: c[:considerations], summary: ensure_utf8(c[:summary])
+        ),
                                               summary: ensure_utf8(c[:summary]),
                                               court: c[:court], labels: c[:considerations]
       )

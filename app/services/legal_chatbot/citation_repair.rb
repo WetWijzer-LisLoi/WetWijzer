@@ -270,9 +270,9 @@ module LegalChatbot
         window = text.to_s[match.end(0), CITED_LAW_WINDOW].to_s
         cut = window.index(next_article)
         window = window[0, cut] if cut
-        window = without_next_citation_code(window) if cut && text.to_s[match.end(0) + cut] != "\n"
         before = [match.begin(0) - CODE_BEFORE_WINDOW, claimed, 0].max
         prefix = before < match.begin(0) ? tax_codes_named(text.to_s[before...match.begin(0)], TAX_CODES_BEFORE) : []
+        window = without_next_citation_code(window, code_first: prefix.any?) if cut && text.to_s[match.end(0) + cut] != "\n"
         suffix = tax_codes_named(window)
         claimed = match.end(0) + window.length if prefix.empty? && suffix.any?
         links = window.scan(FISCONET_LINK).map { |(id)| [:id, id.to_i] }
@@ -299,14 +299,16 @@ module LegalChatbot
     # The words after a citation up to the next article word, without a code that ends them when a connecting word or
     # another code stands before it: that code is the next citation's, written first ("art. 42 en WIB 92, art. 131",
     # "artikel 42 W.Reg. en WIB 92, artikel 131"). Right after the number it is this citation's own ("artikel 42
-    # W.Reg., artikel 131 WIB 92", "artikel 42, § 1, W.Reg., artikel 131").
+    # W.Reg., artikel 131 WIB 92", "artikel 42, § 1, W.Reg., artikel 131"), unless this citation wrote its own code
+    # first: then the text writes codes first, and a comma is enough (Sol 2026-11-23 15:53:08Z: "W.Reg., art. 42, WIB
+    # 92, art. 131").
     NEXT_CITATION_JOIN = /(?<![[:alpha:]])(?:en|et|and|und|of|ou|or|oder|sowie)(?![[:alpha:]])|;/i
-    def without_next_citation_code(window)
+    def without_next_citation_code(window, code_first: false)
       start = TAX_CODES_BEFORE.values.filter_map { |pattern| window =~ pattern }.min
       return window if start.nil?
 
       head = window[0, start]
-      head.match?(NEXT_CITATION_JOIN) || tax_codes_named(head).any? ? head : window
+      code_first || head.match?(NEXT_CITATION_JOIN) || tax_codes_named(head).any? ? head : window
     end
 
     # The tax codes a stretch of text names. Sol 2026-11-23 05:02:05Z: "artikel 131 KB / WIB 92" is the royal decree

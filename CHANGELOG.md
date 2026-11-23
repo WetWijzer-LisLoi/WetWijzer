@@ -8,6 +8,18 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.97] - 2026-11-23
+
+### Fixed
+
+- A question about the reasons a court quotes from the preparatory works gets those passages of the judgment whole, also when it names no paragraph, and a passage a question names is no longer cut before the end of its quotation.
+- A question that names one Constitutional Court judgment no longer shows the State Gazette's extracts of other judgments.
+- A contract concluded at the consumer's home counts as a doorstep contract only when a trader came there, and an internet subscription sold at the door is not treated as an online sale.
+- The old Civil Code's rules on digital content no longer appear beside a withdrawal question that is not about digital content.
+- Two tax citations separated only by commas are each looked up in their own code.
+- "For under 6 months" is no longer read as a child's age.
+- An article's history names the amending act on its first opening when the current text is the saved wording.
+
 ## [1.1.96] - 2026-11-23
 
 ### Changed

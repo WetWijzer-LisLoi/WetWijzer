@@ -65,7 +65,10 @@
     </p>
   <% end %>
   <% source = history.live? && history.compare_base == selected ? nil : selected %>
-  <% amending = selected && !history.live? && selected.introduced_by.present? %>
+  <%# The amending act of the saved wording also stands on the live text when the live text is that wording (an exact
+      archive match: compare_base is then the wording before it); a live text that differs never gets it (Sol
+      2026-11-23 15:53:08Z) %>
+  <% amending = selected && selected.introduced_by.present? && (!history.live? || history.compare_base != selected) %>
   <% if history.live? || amending || source&.source_url.present? %>
     <details class="mt-2" data-history-details>
       <summary class="cursor-pointer text-xs text-gray-600 dark:text-gray-300 underline-offset-2 hover:underline"><%= history_label(:details) %></summary>
