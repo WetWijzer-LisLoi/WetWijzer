@@ -6,9 +6,16 @@ module LegalChatbot
   # current legal conclusion or user fact is generated here.
   class EuTopicIntent
     GDPR = '32016R0679'
-    GDPR_TOPICS = %i[data_erasure direct_marketing_objection data_processor third_country_transfer].freeze
+    GDPR_TOPICS = %i[data_erasure direct_marketing_objection data_processor third_country_transfer privacy_notice].freeze
 
     PLANS = {
+      # Sol 2026-11-22 23:31:33Z (#1591): "Wat is een privacyverklaring?" found no EU unit at all; the information a
+      # privacy notice gives is GDPR arts. 13 (data collected from the data subject) and 14 (from elsewhere), with the
+      # transparency rules of art. 12.
+      privacy_notice: {
+        legislation_targets: %w[13 14 12].map { |number| [GDPR, number] },
+        case_targets: [], discovery_terms: ['data protection', 'privacy']
+      },
       data_erasure: {
         legislation_targets: %w[17 12 19 18].map { |number| [GDPR, number] },
         case_targets: [], discovery_terms: ['data protection', 'privacy']
@@ -85,6 +92,8 @@ module LegalChatbot
     MARKETING = /(?<![[:alpha:]])(?:direct(?:e)? marketing|directmarketing|directe reclame|marketing direct|prospection (?:commerciale|directe)|direktwerbung|direktmarketing)(?![[:alpha:]])/u
     MARKETING_OBJECTION = /(?<![[:alpha:]])(?:bezwaar|verzet|stop\p{L}*|afmeld\p{L}*|uitschrijv\p{L}*|uitschrijven|object\p{L}*|oppose|opt out|unsubscrib\p{L}*|refus\p{L}*|oppos\p{L}*|desinscri\p{L}*|widerspr\p{L}*|widerspruch|ablehn\p{L}*|abbestell\p{L}*)(?![[:alpha:]])/u
     PROCESSOR_AGREEMENT = /(?<![[:alpha:]])(?:verwerkersovereenkomst(?:en)?|gegevensverwerkersovereenkomst(?:en)?|data processing (?:agreement|contract)s?|auftragsverarbeitungsvertrag\p{L}*|auftragsverarbeitungsvereinbarung\p{L}*|contrat de traitement (?:des? )?donnees)(?![[:alpha:]])/u
+    # Matched on the normalized text (no accents, lower case, hyphens as spaces)
+    PRIVACY_NOTICE = /(?<![[:alpha:]])(?:privacy ?verklaring\p{L}*|privacy ?beleid|privacy ?(?:statements?|notices?|polic(?:y|ies))|declarations? de confidentialite|politiques? de (?:confidentialite|protection des donnees|vie privee)|avis de confidentialite|datenschutz ?erklarung\p{L}*|datenschutz ?hinweis\p{L}*|datenschutz ?richtlinie\p{L}*)(?![[:alpha:]])/u
     PROCESSOR = /(?<![[:alpha:]])(?:verwerker(?:s)?|gegevensverwerker(?:s)?|subverwerker(?:s)?|data processors?|processors?|sous traitants?|auftragsverarbeiter\p{L}*|auftragsverarbeitung)(?![[:alpha:]])/u
     COOKIES_OR_TERMINAL_STORAGE = /(?<![[:alpha:]])(?:cookies?|cookiebanner|cookietoestemming|cookie consent|cookie einwilligung|terminal (?:equipment|storage)|terminalapparatuur|eindapparatuur|stockage (?:sur|dans) (?:un |le |mon )?terminal|speicherung (?:auf|in) (?:einem |dem )?endgerat\p{L}*)(?![[:alpha:]])/u
     CONSENT = /(?<![[:alpha:]])(?:cookietoestemming|toestemm\p{L}*|consent\p{L}*|einwillig\p{L}*|zustimm\p{L}*|opt in|refus\p{L}*|weigeren|weiger\p{L}*|reject\p{L}*|ablehn\p{L}*)(?![[:alpha:]])/u
@@ -152,6 +161,7 @@ module LegalChatbot
         matches << :flight_disruption if flight_disruption_question?(text)
         foreign = text.match?(FOREIGN_DESTINATION) || raw.match?(SHORT_FOREIGN_DESTINATION)
         matches << :third_country_transfer if data && text.match?(TRANSFER) && foreign
+        matches << :privacy_notice if text.match?(PRIVACY_NOTICE)
 
         # Erasure is the specific requested GDPR right when another GDPR cue
         # merely supplies its context (a processor, marketing or transferred

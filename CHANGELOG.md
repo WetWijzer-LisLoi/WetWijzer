@@ -8,6 +8,15 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.94] - 2026-11-23
+
+### Fixed
+
+- A question about a privacy notice ("Wat is een privacyverklaring?", "privacybeleid", "déclaration de confidentialité", "Datenschutzerklärung", "privacy notice") found no EU article and leaned on special Belgian provisions. An EU topic plan now selects GDPR arts. 13 and 14, the information a privacy notice gives, and art. 12 on how it is given.
+- The tax citation repair reads only the tax code a citation names: "artikel 42 W.Reg." no longer also brings the VAT code's art. 42, and "KB/WIB 92" is not read as "WIB 92".
+- A question about a doorstep sale ("Wat zijn mijn rechten bij colportage (huis-aan-huisverkoop)?") could get an answer that let the 14 days start on the day of signing or receipt. Such a question now gets the counting rule of WER art. VI.67, § 2, before the article: the day of the contract (services) or of taking possession (goods) is the starting point and is not counted, with a dated example of the first and the last day for each. The 14 days for sending the goods back (art. VI.71) are kept apart.
+- A death word that belongs to the landlord ("Wat moet ik als huurder doen na het overlijden van mijn verhuurder?") no longer reads as the tenant's death, and "deceased" and "passed away" count for either party.
+
 ## [1.1.93] - 2026-11-23
 
 ### Fixed

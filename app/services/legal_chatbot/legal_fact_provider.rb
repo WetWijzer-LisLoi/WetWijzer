@@ -730,6 +730,10 @@ module LegalChatbot
     end
     # Contesting a traffic fine (Sol 2026-11-20 10:14:49Z, #2231): a deterministic key.
     TRAFFIC_FINE_TOPIC_KEY = 'verkeersboete_betwisten'
+    # Withdrawal from an off-premises contract (Sol 2026-11-23 06:49:36Z, #1151 "Wat zijn mijn rechten bij colportage
+    # (huis-aan-huisverkoop)?": with the same six cards as before, an answer let the 14 days start on the day of signing
+    # or receipt). A deterministic key, matched by the pattern that pins arts. VI.67, VI.69 and VI.71.
+    OFF_PREMISES_TOPIC_KEY = 'herroeping_buiten_verkoopruimten'
 
     # The Montreal Convention's limits (Sol 2026-11-20 16:20:33Z, #1137: "Wat zijn mijn rechten bij een
     # vliegtuigvertraging?" gave 4,150 SDR as the current limit for delay). The published text (2003A15226, art. 21 and
@@ -782,6 +786,7 @@ module LegalChatbot
                                    text.match?(LegislationSearch::WITNESS_DUTY_PATTERN)
       keys << MAF_TOPIC_KEY if text.match?(MAF_PATTERN)
       keys << TRAFFIC_FINE_TOPIC_KEY if text.match?(LegislationSearch::TRAFFIC_FINE_CONTEST_PATTERN)
+      keys << OFF_PREMISES_TOPIC_KEY if text.match?(LegislationSearch::OFF_PREMISES_PATTERN)
       keys << MONTREAL_LIMITS_TOPIC_KEY if text.match?(MONTREAL_PATTERN)
       keys
     end
@@ -1176,6 +1181,14 @@ module LegalChatbot
         numac: '2013A11134',
         article_patterns: ['Art. VI.47', 'Art. VI.48', 'Art. VI.49', 'Art. VI.50', 'Art. VI.51', 'Art. VI.52', 'Art. VI.53'],
         label: 'Herroepingsrecht - Art. VI.47-53 Wetboek Economisch Recht'
+      },
+      # Off-premises contracts (#1151): art. VI.67 sets the period, and off_premises_withdrawal_directive, before the
+      # article, says how to count it. Arts. VI.69 (the notice) and VI.71 (the return) reach the context as pinned
+      # articles, so they are not repeated here.
+      OFF_PREMISES_TOPIC_KEY => {
+        numac: '2013A11134',
+        article_patterns: ['Art. VI.67'],
+        label: 'Herroepingstermijn buiten verkoopruimten - Art. VI.67 Wetboek Economisch Recht'
       },
 
       # ── Criminal ────────────────────────────────────────────────────────
@@ -1930,6 +1943,8 @@ module LegalChatbot
         prepend_fact_directive(base_result, traffic_fine_directive)
       when 'herroepingsrecht'
         prepend_fact_directive(base_result, withdrawal_period_directive)
+      when OFF_PREMISES_TOPIC_KEY
+        prepend_fact_directive(base_result, off_premises_withdrawal_directive)
       else
         base_result
       end
@@ -2182,6 +2197,41 @@ module LegalChatbot
         de volledige uitvoering; legt de overeenkomst een betalingsverplichting op, dan alleen als de uitvoering begon met
         de voorafgaande uitdrukkelijke toestemming van de consument en hij erkende zijn herroepingsrecht te verliezen. Stel
         die voorwaarden nooit voor als voorwaarden die in elk geval gelden.
+      DIRECTIVE
+    end
+
+    # Sol 2026-11-23 06:49:36Z (#1151): on 1.1.93 the answer to "Wat zijn mijn rechten bij colportage
+    # (huis-aan-huisverkoop)?" let the 14 days start on the day of signing or receipt; 1.1.92, with the same six cards,
+    # had started counting the day after. The directive above only reaches a question that names the withdrawal right,
+    # and it cites the distance contract's art. VI.47. Read in full on 2026-11-23, NL and FR (2013A11134): art. VI.67
+    # (§ 2: the period "verstrijkt 14 dagen na" the day of conclusion, for services and for water, gas, electricity and
+    # district heating, or the day of physical possession, for sales; FR "expire après une période de 14 jours à
+    # compter" of that day), art. VI.69 (§ 2: in time when the notice is sent before the period has expired) and art.
+    # VI.71 (§ 1: the goods go back within 14 days after the day of the notice, unless the trader offered to collect
+    # them). Directive 2011/83/EU art. 9 (EU corpus, NL and EN) has the same wording; its recital 41, which Sol cites
+    # for the first counted day, is not in our corpus and was not read here. The example dates are plain arithmetic on
+    # the articles' wording, and the test recomputes them.
+    def off_premises_withdrawal_directive
+      <<~DIRECTIVE.strip
+        HERROEPINGSTERMIJN TELLEN BIJ EEN OVEREENKOMST BUITEN VERKOOPRUIMTEN (art. VI.67, § 2, WER): de termijn van 14
+        dagen "verstrijkt 14 dagen na" de dag waarop de overeenkomst wordt gesloten (diensten; levering van water, gas,
+        elektriciteit en stadsverwarming) of de dag waarop de consument, of een door hem aangewezen derde die niet de
+        vervoerder is, de goederen fysiek in bezit neemt (verkoop; bij meerdere goederen of zendingen het laatste goed of
+        de laatste zending, bij een regelmatige levering het eerste goed). Die dag is het vertrekpunt, maar telt zelf
+        niet mee: de eerste dag van de termijn is de dag erna. Noem in het antwoord zowel het vertrekpunt als de eerste
+        getelde dag.
+        Voorbeeld diensten: wordt de overeenkomst op 3 maart gesloten, dan is 4 maart de eerste dag en 17 maart de
+        laatste dag van de termijn.
+        Voorbeeld verkoop: wordt de overeenkomst op 3 maart gesloten en neemt de consument het goed op 10 maart in bezit,
+        dan is 11 maart de eerste dag en 24 maart de laatste dag van de termijn. Tel bij een verkoop niet vanaf de
+        ondertekening.
+        MEEDELEN (art. VI.69, § 2, WER): de herroeping is tijdig als de consument zijn mededeling verzendt voordat de
+        herroepingstermijn is verstreken.
+        TERUGZENDEN, EEN AFZONDERLIJKE TERMIJN (art. VI.71, § 1, WER): de consument zendt de goederen terug of overhandigt
+        ze onverwijld en in elk geval binnen 14 dagen na de dag waarop hij zijn beslissing om te herroepen aan de
+        onderneming heeft meegedeeld, tenzij de onderneming heeft aangeboden de goederen zelf af te halen. Voorbeeld:
+        deelt hij de herroeping op 17 maart mee, dan kan hij de goederen terugzenden tot en met 31 maart. Verwar die
+        termijn niet met de herroepingstermijn zelf.
       DIRECTIVE
     end
 
