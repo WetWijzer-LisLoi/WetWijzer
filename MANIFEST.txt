@@ -388,6 +388,7 @@ app/services/legal_chatbot/german_figure_check.rb
 app/services/legal_chatbot/german_legal_glossary.rb
 app/services/legal_chatbot/german_question_translation.rb
 app/services/legal_chatbot/grounding_scope.rb
+app/services/legal_chatbot/historical_reasons_scope.rb
 app/services/legal_chatbot/house_hidden_defect_practical_grounding.rb
 app/services/legal_chatbot/indexed_amounts.rb
 app/services/legal_chatbot/judgment_extract_scope.rb

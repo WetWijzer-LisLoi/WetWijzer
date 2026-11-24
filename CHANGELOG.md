@@ -8,6 +8,14 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.98] - 2026-11-24
+
+### Fixed
+
+- A question that names a Constitutional Court judgment but no paragraph, and asks for the legislator's reasons, gets the passages in which the Court quotes the preparatory works, and the answer is told which passages those are.
+- A question about a legislator's reasons for an act of a given date no longer shows acts made after that date, unless it compares them or names their year.
+- An online purchase made at home is no doorstep sale because a seller is named elsewhere in the question, while a home visit booked online still is; a contract signed digitally is no contract for digital content; rules on credit and payment services no longer appear beside a doorstep withdrawal question that names no credit or instalments; "les moins de 16 ans" and "âgé de moins de 18 ans" are read as ages of minors, and "âgé de 18 ans" is not.
+
 ## [1.1.97] - 2026-11-23
 
 ### Fixed

@@ -1911,15 +1911,34 @@ module LegalChatbot
     # deze titel"; the titles read in the corpus on 2026-11-23); a withdrawal question keeps them only when it names such
     # content or service.
     DIGITAL_CONTENT_ARTICLE = %r{\A(?:Art(?:ikel|icle)?\.?\s*)?1701/(?:[1-9]|1[0-9])\z}i
-    DIGITAL_CONTENT_QUERY_PATTERN = /\b(?:digita\p{L}*|num[ée]rique\p{L}*|software|apps?|streaming\p{L}*|download\p{L}*|e-?books?)\b/iu
+    # Sol 2026-11-24 07:02:22Z (live 1.1.97): WER art. VII.87, a tied or ancillary contract when credit is taken out,
+    # stood as a card beside a doorstep service's withdrawal deadline. Book VII (payment and credit services) stays out
+    # of an off-premises withdrawal question that names no credit, loan, instalments or payment service, and stays for
+    # one that does. Every other question keeps it: in book VII a payment order is "herroepen" too (arts. VII.31 and
+    # VII.50, read in the corpus on 2026-11-24).
+    CREDIT_BOOK_ARTICLE = /\A(?:Art(?:ikel|icle)?\.?\s*)?VII\.\d/i
+    # "dienstverlening" is no loan
+    CREDIT_QUERY_PATTERN = /\b(?:\p{L}*krediet\p{L}*|\p{L}*(?<!ver)lening\p{L}*|lenen|geleend|financier\p{L}*|afbetal\p{L}*|
+                              aflos\p{L}*|in\s+(?:\d+\s+)?(?:maandelijkse\s+)?termijnen|\p{L}*hypoth[eéè]\p{L}*|mortgages?|
+                              cr[ée]dit\p{L}*|pr[êe]ts?|emprunt\p{L}*|financement\p{L}*|mensualit[ée]s?|en\s+(?:\d+|plusieurs)\s+fois|
+                              \p{L}*kredit\p{L}*|\p{L}*darlehen\p{L}*|finanzier\p{L}*|ratenzahlung\p{L}*|ratenkauf\p{L}*|in\s+raten|
+                              credit\p{L}*|loans?|financ\p{L}*|instal+ments?|betaaldienst\p{L}*|services?\s+de\s+paiement|
+                              zahlungsdienst\p{L}*|payment\s+services?)\b/iux
+    # Sol 2026-11-24 01:24:47Z: "digitaal ondertekend" (a doorstep cleaning service signed on a tablet) is no digital
+    # content: the content or service itself is named, or a product that is one.
+    DIGITAL_CONTENT_QUERY_PATTERN = /\b(?:digitale?\s+(?:inhoud\p{L}*|dienst\p{L}*|content|inhalte?n?|services?|product\p{L}*|abonnement\p{L}*)|
+                                     contenus?\s+num[ée]riques?|services?\s+num[ée]riques?|digital\s+(?:content|services?|products?)|
+                                     software|apps?|streaming\p{L}*|download\p{L}*|e-?books?)\b/iux
 
     def self.withdrawal_borrowed_from_specialist_regime?(article, question)
       return false unless question.match?(WITHDRAWAL_RIGHT_QUERY_PATTERN)
 
       numac = (article[:numac] || article['numac']).to_s
       title = (article[:law_title] || article[:title] || article['law_title'] || article['title']).to_s
-      if numac == '1804032154' && (article[:article_title] || article['article_title']).to_s.strip.match?(DIGITAL_CONTENT_ARTICLE)
-        return !question.match?(DIGITAL_CONTENT_QUERY_PATTERN)
+      article_title = (article[:article_title] || article['article_title']).to_s.strip
+      return !question.match?(DIGITAL_CONTENT_QUERY_PATTERN) if numac == '1804032154' && article_title.match?(DIGITAL_CONTENT_ARTICLE)
+      if numac == '2013A11134' && article_title.match?(CREDIT_BOOK_ARTICLE)
+        return question.match?(OFF_PREMISES_PATTERN) && !question.match?(CREDIT_QUERY_PATTERN)
       end
 
       WITHDRAWAL_SPECIALIST_REGIMES.any? do |regime_numac, title_pattern, query_pattern|
@@ -2403,12 +2422,21 @@ module LegalChatbot
     # delivery to the home says nothing of where the contract was formed (the door's rule above).
     OFF_PREMISES_HOME = /(?<![[:alnum:]])(?:bij\s+(?:mij|ons|u|jou)\s+(?:thuis|aan\s+huis)|chez\s+(?:moi|nous)|
                          bei\s+(?:mir|uns)\s+zu\s*hause|at\s+(?:my|our)\s+(?:home|house))(?![[:alnum:]])/iux
-    OFF_PREMISES_HOME_VISIT = /(?:\A|[.;!?\n])(?:(?!#{OFF_PREMISES_DELIVERY.source})[^.;!?\n])*?#{OFF_PREMISES_HOME}(?![^.;!?\n]{0,25}?#{OFF_PREMISES_DELIVERY.source})/iu
     OFF_PREMISES_VISITOR = /(?<![[:alnum:]])(?:verkoper\p{L}*|handelaar\p{L}*|vertegenwoordiger\p{L}*|colporteur\p{L}*|komt|komen|
                             kwam|kwamen|gekomen|langs|langsgekomen|bezoek\p{L}*|bezocht|vendeu\p{L}*|commercia(?:l|ux)|
                             repr[ée]sentant\p{L}*|d[ée]marcheu\p{L}*|venu\p{L}*|verk[äa]ufer\p{L}*|vertreter\p{L}*|
                             h[äa]ndler\p{L}*|kam|besuch\p{L}*|seller\p{L}*|salesm[ae]n|salesperson\p{L}*|sales\s+rep\p{L}*|
                             trader\p{L}*|came|visit\p{L}*)(?![[:alnum:]])/iux
+    # Sol 2026-11-24 01:24:47Z: "Ik heb bij mij thuis online een stofzuiger gekocht. De verkoper weigert ..." names the
+    # seller in another sentence of a purchase made online. The home counts as the place of the contract only where no
+    # online channel is named.
+    OFF_PREMISES_ONLINE = /(?<![[:alnum:]])(?:online|via\s+(?:het\s+)?internet|op\s+(?:het\s+)?internet|over\s+(?:het\s+)?internet|
+                           op\s+(?:de|een|hun|zijn|haar)\s+website|webshop\p{L}*|webwinkel\p{L}*|en\s+ligne|(?:sur|par)\s+internet|
+                           sur\s+(?:le|leur|son|un)\s+site|im\s+internet|[üu]ber\s+das\s+internet|on\s+(?:the|their|a)\s+website|
+                           (?:on|over)\s+the\s+internet)(?![[:alnum:]])/iux
+    # Sol 2026-11-24 06:57:43Z: "Ik boekte de afspraak online. De verkoper kwam bij mij thuis en daar ondertekenden wij
+    # het contract" is a home visit: an online channel counts against the home only in the home's own sentence.
+    OFF_PREMISES_HOME_VISIT = /(?:\A|[.;!?\n])(?![^.;!?\n]*?#{OFF_PREMISES_ONLINE})(?:(?!#{OFF_PREMISES_DELIVERY.source})[^.;!?\n])*?#{OFF_PREMISES_HOME}(?![^.;!?\n]{0,25}?#{OFF_PREMISES_DELIVERY.source})/iu
     # Sol 2026-11-23 07:14:35Z: the withdrawal rule holds between a trader and a consumer, so a question about the
     # seller's permit to sell at the door ("Heb ik een vergunning nodig voor colportage?") is not this topic, unless it
     # also asks about withdrawing, cancelling, a refund or the buyer's rights. Sol 2026-11-23 14:42:44Z: "Heb ik een
@@ -4970,6 +4998,8 @@ module LegalChatbot
       return false unless DataProtectionPartScope.source_relevant?(article, question)
       # The State Gazette's extract of another Constitutional Court judgment than the one the question names
       return false unless JudgmentExtractScope.source_relevant?(article, question)
+      # A later act under a question about the reasons of an act of a date the question names
+      return false unless HistoricalReasonsScope.source_relevant?(article, question)
       return false if withdrawal_borrowed_from_specialist_regime?(article, question)
       return false if equality_question_borrows_peripheral_rule?(article, question)
       return false if civil_intestacy_borrows_tax_competence?(article, question)

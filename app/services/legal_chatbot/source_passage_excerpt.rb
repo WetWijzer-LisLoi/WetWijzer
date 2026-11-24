@@ -99,11 +99,34 @@ module LegalChatbot
     # The considerations given whole: those passed (a judgment's own when the question names several; none when it names
     # only another judgment's), else nil when the question names some (named_considerations reads them from it), else,
     # for a question about the legislator's reasons, the Court's considerations that cite the preparatory works.
+    # Sol 2026-11-24 01:24:47Z (live 1.1.97): a question that names a judgment but no consideration ("arrest nr.
+    # 41/2009") gives that judgment's row the labels [] (JurisprudenceSearch.named_references), which read as "only
+    # another judgment's", so its considerations that cite the preparatory works were never chosen. An empty list means
+    # that only when the question names a consideration.
     def considered_labels(text, question, labels)
-      return labels unless labels.nil?
-      return nil if question.to_s.match?(NAMED_CONSIDERATION)
+      named = question.to_s.match?(NAMED_CONSIDERATION)
+      return labels unless labels.nil? || (labels.empty? && !named)
+      return nil if named
 
       preparatory_labels(text, question)
+    end
+
+    # The considerations given whole whose text cites the preparatory works, for the context's note on whose reasons
+    # they hold (Sol 2026-11-24 01:24:47Z: an answer gave grounds the Court weighs as the reasons of the memorandum it
+    # quotes). Named ones and chosen ones alike; [] when none.
+    def preparatory_citations(text, question, labels: nil)
+      body = text.to_s
+      return [] if body.strip.empty?
+
+      considered = considered_labels(body, question, labels)
+      considered = question.to_s.scan(NAMED_CONSIDERATION).flatten.map { |name| name.sub(/\A[ab]/, &:upcase) } if considered.nil?
+      considered.uniq.select do |label|
+        start = body.index(/^#{Regexp.escape(label)}\.[[:space:]]/)
+        next false unless start
+
+        following = body.index(/^[AB]\.\d{1,2}(?:\.\d{1,2}){0,3}\.[[:space:]]/, start + label.length + 1)
+        body[start...(following || body.length)].match?(PREPARATORY_CITATION)
+      end
     end
 
     # For a question about the legislator's reasons in the preparatory works: the labels of the Court's considerations

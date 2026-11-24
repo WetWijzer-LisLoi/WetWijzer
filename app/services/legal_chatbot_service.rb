@@ -539,6 +539,13 @@ class LegalChatbotService
                           'case_law_collection'
                       end
       metadata = source_context_metadata(c, kind: judicial_kind)
+      # Sol 2026-11-24 01:24:47Z: whose reasons a consideration holds. The considerations given whole that cite the
+      # parliamentary preparation are named, so the legislator's reasons the decision quotes stay apart from its own.
+      cited = LegalChatbot::SourcePassageExcerpt.preparatory_citations(ensure_utf8(c[:full_text]), question, labels: c[:considerations])
+      if cited.any?
+        metadata = "#{metadata}\nPREPARATORY WORKS CITED IN: #{cited.join(', ')} (the decision quotes or cites the parliamentary " \
+                   "preparation there: keep the legislator's reasons it quotes apart from its own assessment)"
+      end
       ecli = c[:case_number]
       link = ecli ? "/jurisprudence/#{ecli}" : nil
       if LegalChatbot::AdvisoryOpinions.advisory?(ecli)

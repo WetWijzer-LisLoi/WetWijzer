@@ -17,7 +17,8 @@ module LegalChatbot
     # 16". A number of days, euros or per cent after "ik ben" is no age, and "vijf jaar" alone is a retention period.
     # Sol 2026-11-23 15:53:08Z: "for under 6 months" is a duration: after "under", "onder de", "unter" or "moins de" a
     # time unit makes the number a period ("onder de 16 jaar" and "unter 16 Jahren" stay ages), while "jonger dan",
-    # "younger than" and "jünger als" compare ages whatever follows.
+    # "younger than" and "jünger als" compare ages whatever follows. Sol 2026-11-24 01:24:47Z: "les moins de 16 ans"
+    # and "les utilisateurs de moins de 15 ans" name the young, not a period.
     MINOR = '(?:1[0-7]|[1-9])(?!\d)'
     UPTO18 = '(?:1[0-8]|[1-9])(?![\d.,])'
     NOT_AN_AGE = '(?![.,]\d)(?!\s*(?:%|euro|dagen|tage|days|jours|weken|wochen|weeks|semaines|maanden|monate|months|mois|uur|' \
@@ -25,7 +26,9 @@ module LegalChatbot
     AGE = "(?:ik\\s+ben|ich\\s+bin|i\\s+am|i['’]m|j['’]ai)\\s+(?:pas\\s+|erst\\s+|only\\s+|just\\s+|seulement\\s+|moins\\s+de\\s+)?#{MINOR}" \
           "(?:\\s+(?:jaar|jahre|years|ans))?#{NOT_AN_AGE}|" \
           "#{MINOR}(?:[\\s-]*(?:jarige?n?|j[äa]hrige?[nmrs]?|year[\\s-]olds?)|\\s+(?:jaar\\s+oud|jahre\\s+alt|years?\\s+old))|" \
-          "[âa]g[ée]e?s?\\s+de\\s+#{MINOR}\\s+ans|aged\\s+#{MINOR}|" \
+          "[âa]g[ée]e?s?\\s+de\\s+(?:#{MINOR}|moins\\s+de\\s+#{UPTO18})\\s+ans|aged\\s+#{MINOR}|" \
+          "(?:les|des|aux|enfants?|jeunes|mineurs?|utilisateurs?|utilisatrices?|personnes?|ceux|celles)\\s+(?:de\\s+|d['’]\\s*)?" \
+          "moins\\s+de\\s+#{UPTO18}\\s+ans|" \
           "(?:jonger\\s+dan|younger\\s+than|j[üu]nger\\s+als)\\s+#{UPTO18}|" \
           "onder\\s+de\\s+#{UPTO18}(?!\\s*(?:maand|maanden|week|weken|dag|dagen|uur|uren|minuten))|" \
           "unter\\s+#{UPTO18}(?!\\s*(?:monat\\p{L}*|woche\\p{L}*|tag|tage|tagen|stunde\\p{L}*|minute\\p{L}*))|" \

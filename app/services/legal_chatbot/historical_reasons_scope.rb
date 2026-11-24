@@ -1,0 +1,67 @@
+# frozen_string_literal: true
+
+module LegalChatbot
+  # Sol 2026-11-24 06:57:43Z (live 1.1.97): "Waarom koos de Belgische wetgever in de Antidiscriminatiewet van 10 mei 2007
+  # voor een gesloten lijst van discriminatiegronden? Welke redenen uit de parlementaire voorbereiding ...?" showed art. 7
+  # of the Brussels joint decree and ordinance of 4 April 2024 twice (2024003443 and 2024003444, the same wording
+  # published on 16 and 19 April 2024). An act made after the one whose reasons are asked cannot hold the reasons of the
+  # earlier legislature. For a question about a legislator's reasons that names the date of the act concerned, a law
+  # whose title dates it after that day leaves the sources, unless the question compares or names the law's year (Sol
+  # 2026-11-24 07:27:49Z: a later authority the reader asks for stays); each record stays as it is, and every other
+  # question keeps it.
+  module HistoricalReasonsScope
+    MONTHS = {
+      'januari' => 1, 'februari' => 2, 'maart' => 3, 'april' => 4, 'mei' => 5, 'juni' => 6, 'juli' => 7, 'augustus' => 8,
+      'september' => 9, 'oktober' => 10, 'november' => 11, 'december' => 12, 'janvier' => 1, 'février' => 2, 'fevrier' => 2,
+      'mars' => 3, 'avril' => 4, 'mai' => 5, 'juin' => 6, 'juillet' => 7, 'août' => 8, 'aout' => 8, 'septembre' => 9,
+      'octobre' => 10, 'novembre' => 11, 'décembre' => 12, 'decembre' => 12, 'januar' => 1, 'februar' => 2, 'märz' => 3,
+      'dezember' => 12, 'january' => 1, 'february' => 2, 'march' => 3, 'may' => 5, 'june' => 6, 'july' => 7, 'august' => 8,
+      'october' => 10
+    }.freeze
+    MONTH = MONTHS.keys.map { |month| Regexp.escape(month) }.join('|')
+    # The legislator's reasons: why the legislator chose, or what the preparatory works say
+    REASONS_QUESTION = /(?<![[:alnum:]])(?:waarom|pourquoi|warum|why|redenen|motieven|motifs|raisons|gr[üu]nde|reasons)(?![[:alnum:]])/iu
+    LEGISLATOR = /(?<![[:alnum:]])(?:\p{L}*wetgever\p{L}*|decreetgever\p{L}*|ordonnantiegever\p{L}*|l[ée]gislateur\p{L}*|
+                  gesetzgeber\p{L}*|legislat(?:or|ure)s?|parlementaire\s+voorbereiding|travaux\s+pr[ée]paratoires)(?![[:alnum:]])/iux
+    # A comparison asks for the later act too: "hoe verhoudt die keuze zich tot ...", "par rapport au code", "im Vergleich"
+    COMPARISON = /(?<![[:alnum:]])(?:vergelijk\p{L}*|verhoudt|verhouding\p{L}*|verschil\p{L}*|tegenover|compar\p{L}*|
+                  par\s+rapport\s+(?:à|au|aux)|diff[ée]r\p{L}*|vergleich\p{L}*|unterschied\p{L}*|verh[äa]lt|versus)(?![[:alnum:]])/iux
+    # "van 10 mei 2007", "du 10 mai 2007", "vom 10. Mai 2007", "of 10 May 2007"
+    NAMED_DATE = /(?<![[:alnum:]])(?:van|du|vom|of)\s+(\d{1,2})(?:er)?\.?\s+(#{MONTH})\s+((?:19|20)\d{2})(?!\d)/iu
+    TITLE_DATE = /\A\s*(\d{1,2})(?:er)?\.?\s+(#{MONTH})\s+((?:17|18|19|20)\d{2})(?!\d)/iu
+
+    module_function
+
+    def source_relevant?(article, question)
+      text = question.to_s
+      return true unless text.match?(REASONS_QUESTION) && text.match?(LEGISLATOR)
+      return true if text.match?(COMPARISON)
+
+      named = date(text.match(NAMED_DATE))
+      return true unless named
+
+      law = date(title(article).match(TITLE_DATE))
+      return true if law.nil? || law <= named
+
+      # A later act the question names by its year stays, as in a comparison; the year of a judgment number such as
+      # 41/2009 names no act
+      text.match?(%r{(?<![\d/])#{law.year}(?!\d)})
+    end
+
+    def date(match)
+      return nil unless match
+
+      month = MONTHS[match[2].downcase]
+      month ? Date.new(match[3].to_i, month, match[1].to_i) : nil
+    rescue Date::Error
+      nil
+    end
+
+    def title(article)
+      return '' unless article.is_a?(Hash)
+
+      (article[:law_title] || article['law_title'] || article[:title] || article['title']).to_s
+    end
+    private_class_method :title
+  end
+end
