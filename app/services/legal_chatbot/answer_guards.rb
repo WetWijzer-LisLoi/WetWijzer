@@ -549,7 +549,7 @@ module LegalChatbot
         indexed = source_tokens_with_offsets(text)
         next if indexed.empty?
 
-        span = ordered_token_span(indexed.map(&:first), wanted)
+        span = ordered_token_span(indexed.map(&:first), wanted, (wanted.length * QUOTE_RECONSTRUCTION_MAX_GROWTH).ceil)
         next unless span
 
         first_index, last_index = span
@@ -574,18 +574,24 @@ module LegalChatbot
     # First and last index of an in-order (gapped) occurrence of `wanted`
     # inside `tokens`, or nil. Greedy from the earliest possible start, which
     # yields the tightest span for the statutory text we deal with.
-    def ordered_token_span(tokens, wanted)
-      start_positions = tokens.each_index.select { |index| tokens[index] == wanted.first }
-      start_positions.each do |start|
+    # The tightest span of at most max_span tokens that holds the wanted tokens in order (Sol 2026-11-24 10:26:43Z:
+    # 140/2018 printed the omission notice). The first start that completed was taken before, so a quotation that begins
+    # with a common word ("de", "gebeuren") matched a sprawling early span, failed the growth limit and was dropped
+    # although its passage came later.
+    def ordered_token_span(tokens, wanted, max_span = tokens.length)
+      best = nil
+      tokens.each_index.select { |index| tokens[index] == wanted.first }.each do |start|
         cursor = start
         matched = 0
-        while cursor < tokens.length && matched < wanted.length
+        while cursor < tokens.length && matched < wanted.length && cursor - start < max_span
           matched += 1 if tokens[cursor] == wanted[matched]
           cursor += 1
         end
-        return [start, cursor - 1] if matched == wanted.length
+        next unless matched == wanted.length
+
+        best = [start, cursor - 1] if best.nil? || cursor - 1 - start < best[1] - best[0]
       end
-      nil
+      best
     end
 
     # The blockquote pattern consumes the newline that ended the quote, so

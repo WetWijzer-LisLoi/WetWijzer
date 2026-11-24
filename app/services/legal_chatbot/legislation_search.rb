@@ -36,6 +36,16 @@ module LegalChatbot
     # Short keys and one-word offence names must be complete tokens. Without
     # the right boundary, "april" triggers the consumer-credit key "apr" and
     # "volgens" triggers the theft key "vol".
+    # Sol 2026-11-24 10:26:43Z (live 1.1.98): Constitution art. 195, on its revision, under the question on judgment
+    # 41/2009. The court's name made the Constitution a core law ("grondwet" and "grondwettelijk" both start
+    # "Grondwettelijk Hof"); read on production the same day, the injection then added arts. 142, 125 and 195 there and
+    # arts. 125, 103 and 118 under the question on judgment 46/2019. So in a question that names a judgment of the Court,
+    # the court's name is no reference to the Constitution. The Constitution named, a constitutional right, or the Court
+    # in general ("Was prüft der Verfassungsgerichtshof?", 1.1.66) still is one; the court's own article 142 stays
+    # pinned (ARTICLE_PINS).
+    CONSTITUTION_CORE_KEYS = %w[grondwet grondwettelijk constitution constitutionnel verfassung].to_set.freeze
+    CONSTITUTIONAL_COURT_NAME = /(?<![[:alnum:]])(?:grondwettelijke?\s+hof|cour\s+constitutionnelle|verfassungsgerichtshof\p{L}*|
+                                 constitutional\s+court)(?![[:alnum:]])/x
     EXACT_CORE_LAW_KEYWORDS = %w[
       apr vol wer wib wib92 ziv vcro vov vzw asbl bv nv btw tva rva onem swt ocmw cpas visa
       cao cct igo rsvz epc jkp taeg avg gdpr dpo rgpd fpc tbs pbm cpbw rup vof cv ipr gmbh vat
@@ -4365,6 +4375,11 @@ module LegalChatbot
     # BOOSTING & FILTERING
     # ------------------------------------------------------------------
 
+    # A judgment of the Constitutional Court the question names by its number
+    def constitutional_judgment_named?(question)
+      JurisprudenceSearch.named_references(question).any? { |ecli, _labels| ecli.start_with?('ECLI:BE:GHCC:') }
+    end
+
     def matching_core_law_numacs(question)
       question_lower = question.downcase
       relevant_core_numacs = Set.new
@@ -4405,6 +4420,8 @@ module LegalChatbot
         # questions; only the immigration sense should promote the Aliens Act.
         next if AMBIGUOUS_RESIDENCE_KEYS.include?(kw) && !immigration_context?(question_lower)
         next if kw == 'verfassung' && question.match?(PERSONAL_CONDITION_VERFASSUNG)
+        next if CONSTITUTION_CORE_KEYS.include?(kw) && constitutional_judgment_named?(question) &&
+                !question_lower.gsub(CONSTITUTIONAL_COURT_NAME, ' ').match?(pattern)
 
         numacs.each do |n|
           # "Terugbetaling" is deliberately mapped to both consumer and

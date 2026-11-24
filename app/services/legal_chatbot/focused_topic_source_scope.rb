@@ -130,6 +130,19 @@ module LegalChatbot
     TITLE_TOPICS = { education_right: EDUCATION_TITLE_FAMILY_PATTERN, home_inviolability: HOME_TITLE_FAMILY_PATTERN,
                      guaranteed_pay: GUARANTEED_PAY_TITLE_FAMILY_PATTERN }.freeze
 
+    # Sol 2026-11-24 10:26:43Z (live 1.1.98): under the doorstep deadline question the slot WER art. VII.87 left went
+    # to art. 3 of the royal decree of 7 December 2016 on price indication in the hospitality sector (2016011534), which
+    # shares only "van buiten" and "verkoopruimte" with it. An off-premises withdrawal question keeps the consumer
+    # contract codes, whose own rules decide their articles (book VII and old Civil Code arts. 1701/x in
+    # LegislationSearch), the specialist withdrawal regimes (decided there too) and any source on withdrawal or on
+    # contracts made away from the business premises; a source the question names by its title stays.
+    CONSUMER_CONTRACT_TITLE_PATTERN = /(?<![[:alnum:]])(?:wetboek\s+van\s+economisch\s+recht|code\s+de\s+droit\s+[ée]conomique|
+                                       wirtschaftsgesetzbuch|gesetzbuch\s+des\s+wirtschaftsrechts|burgerlijk\s+wetboek|code\s+civil|
+                                       zivilgesetzbuch|b[üu]rgerliches\s+gesetzbuch)(?![[:alnum:]])/iux
+    WITHDRAWAL_FAMILY_PATTERN = /(?<![[:alnum:]])(?:herroep\p{L}*|bedenk(?:ing)?s?(?:tijd|termijn)\p{L}*|buiten\s+(?:de\s+)?verkoopruimte\p{L}*|
+                                 r[ée]tract\p{L}*|hors\s+(?:de\s+l['’]\s*|des\s+)?[ée]tablissement\p{L}*|widerruf\p{L}*|
+                                 au[ßs]erhalb\s+von\s+gesch[äa]ftsr[äa]umen|withdraw\p{L}*|off[-\s]premises|cooling[-\s]off)/iux
+
     TOPICS = {
       gas_fine_challenge: GAS_FAMILY_PATTERN,
       internet_image: COPYRIGHT_FAMILY_PATTERN,
@@ -169,6 +182,7 @@ module LegalChatbot
       found << :education_right if text.match?(LegislationSearch::CONSTITUTION_EDUCATION_PATTERN)
       found << :home_inviolability if text.match?(LegislationSearch::CONSTITUTION_HOME_INVIOLABILITY_PATTERN)
       found << :privacy_notice if EuTopicIntent.plan(text)&.fetch(:topic, nil) == :privacy_notice
+      found << :off_premises_withdrawal if off_premises_withdrawal_question?(text)
       found
     end
 
@@ -184,11 +198,23 @@ module LegalChatbot
         next false if topic == :workplace_camera && title.match?(CAMERA_SPECIALIST_TITLE_PATTERN)
         next false if topic == :road_speed && title.match?(SHIPPING_TITLE_PATTERN)
         next privacy_notice_source?(title, question) if topic == :privacy_notice
+        next off_premises_withdrawal_source?(article, title, source) if topic == :off_premises_withdrawal
         next title.match?(TITLE_TOPICS.fetch(topic)) if TITLE_TOPICS.key?(topic)
 
         source.match?(TOPICS.fetch(topic))
       end
     end
+
+    def self.off_premises_withdrawal_question?(text)
+      text.match?(LegislationSearch::OFF_PREMISES_PATTERN) && text.match?(LegislationSearch::WITHDRAWAL_RIGHT_QUERY_PATTERN)
+    end
+
+    def self.off_premises_withdrawal_source?(article, title, source)
+      numac = field(article, :numac)
+      title.match?(CONSUMER_CONTRACT_TITLE_PATTERN) || source.match?(WITHDRAWAL_FAMILY_PATTERN) ||
+        LegislationSearch::WITHDRAWAL_SPECIALIST_REGIMES.any? { |regime, pattern, _asked| numac == regime || title.match?(pattern) }
+    end
+    private_class_method :off_premises_withdrawal_source?
 
     def self.privacy_notice_source?(title, question)
       title.match?(DATA_PROTECTION_FAMILY_PATTERN) ||

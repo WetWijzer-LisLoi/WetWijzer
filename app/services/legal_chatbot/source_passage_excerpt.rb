@@ -49,6 +49,10 @@ module LegalChatbot
     # Measured on the production texts on 2026-11-23, the two with most of the question's words are 41/2009 B.7 (alone);
     # 140/2018 B.1.8 and B.5.3; 46/2019 B.5.3 and B.1.7
     MAX_PREPARATORY_CONSIDERATIONS = 2
+    # A parenthesised citation of the preparatory works as the decision writes it (Sol 2026-11-24 10:26:43Z: the
+    # 140/2018 answer did not name "Parl. St., Kamer, 2013-2014, DOC 53-3144/001, p. 39", which closes its B.1.8 quotation)
+    PREPARATORY_REFERENCE = /\(([^()]{0,40}?#{PREPARATORY_CITATION.source}[^()]{0,200})\)/
+    MAX_PREPARATORY_REFERENCES = 3
 
     module_function
 
@@ -127,6 +131,18 @@ module LegalChatbot
         following = body.index(/^[AB]\.\d{1,2}(?:\.\d{1,2}){0,3}\.[[:space:]]/, start + label.length + 1)
         body[start...(following || body.length)].match?(PREPARATORY_CITATION)
       end
+    end
+
+    # The citations of the preparatory works in one consideration, as the decision writes them, at most
+    # MAX_PREPARATORY_REFERENCES, whitespace folded
+    def preparatory_references(text, label)
+      body = text.to_s
+      start = body.index(/^#{Regexp.escape(label)}\.[[:space:]]/)
+      return [] unless start
+
+      following = body.index(/^[AB]\.\d{1,2}(?:\.\d{1,2}){0,3}\.[[:space:]]/, start + label.length + 1)
+      references = body[start...(following || body.length)].scan(PREPARATORY_REFERENCE).flatten
+      references.map { |reference| reference.gsub(/[[:space:]]+/, ' ').strip }.uniq.first(MAX_PREPARATORY_REFERENCES)
     end
 
     # For a question about the legislator's reasons in the preparatory works: the labels of the Court's considerations

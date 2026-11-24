@@ -8,6 +8,15 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.100] - 2026-11-24
+
+### Fixed
+
+- A doorstep withdrawal question no longer gets an unrelated law in the place of a source left out, such as a royal decree on price indication in restaurants; consumer-contract law, the rules on withdrawal and any law the question names stay.
+- A question about a named judgment of the Constitutional Court no longer gets articles of the Constitution that only share words with it; a question that names the Constitution itself, or asks about the Court in general, still gets them.
+- A near-quotation is restored from the closest passage that holds its words, so a quotation that begins with a common word is no longer left out.
+- An answer about the reasons a judgment quotes from the preparatory works can name the parliamentary documents as the judgment cites them.
+
 ## [1.1.99] - 2026-11-24
 
 ### Fixed
