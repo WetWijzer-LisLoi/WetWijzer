@@ -7,8 +7,9 @@ module LegalChatbot
   # published on 16 and 19 April 2024). An act made after the one whose reasons are asked cannot hold the reasons of the
   # earlier legislature. For a question about a legislator's reasons that names the date of the act concerned, a law
   # whose title dates it after that day leaves the sources, unless the question compares or names the law's year (Sol
-  # 2026-11-24 07:27:49Z: a later authority the reader asks for stays); each record stays as it is, and every other
-  # question keeps it.
+  # 2026-11-24 07:27:49Z: a later authority the reader asks for stays), or asks something else in a clause of its own
+  # (Sol 08:22:18Z: "... en wat bepaalt artikel 7 van het Brussels Wetboek inzake de gelijkheid?"); each record stays as
+  # it is, and every other question keeps it.
   module HistoricalReasonsScope
     MONTHS = {
       'januari' => 1, 'februari' => 2, 'maart' => 3, 'april' => 4, 'mei' => 5, 'juni' => 6, 'juli' => 7, 'augustus' => 8,
@@ -26,6 +27,13 @@ module LegalChatbot
     # A comparison asks for the later act too: "hoe verhoudt die keuze zich tot ...", "par rapport au code", "im Vergleich"
     COMPARISON = /(?<![[:alnum:]])(?:vergelijk\p{L}*|verhoudt|verhouding\p{L}*|verschil\p{L}*|tegenover|compar\p{L}*|
                   par\s+rapport\s+(?:à|au|aux)|diff[ée]r\p{L}*|vergleich\p{L}*|unterschied\p{L}*|verh[äa]lt|versus)(?![[:alnum:]])/iux
+    # A clause ends a sentence before a capital or the end ("nr. 41/2009" and "art. 3" end none), or joins a question word
+    # with "en" / "et" / "und" / "and"; a clause of fewer than three words ("Graag kort.") is none
+    SENTENCE_BREAK = /[.?!;]+(?=\s+\p{Lu}|\s*\z)/u
+    CLAUSE_QUESTION_WORD = /(?:wat|hoe|welke?|waar\p{L}*|wanneer|wie|kan|kun\p{L}*|mag|moet|geldt|bepaalt|zegt|staat|que|qu['’]|
+                             quel(?:le)?s?|comment|o[ùu]|quand|qui|peut|puis|peuvent|doit|dit|pr[ée]voit|was|welche[rsnm]?|kann|
+                             muss|gilt|sagt|what|how|which|where|when|who|can|may|must|does|do|is|are)(?![[:alnum:]])/iux
+    CONJUNCTION_BREAK = /,?\s+(?:en|et|und|and)\s+(?=(?:ook\s+|aussi\s+|auch\s+|also\s+)?#{CLAUSE_QUESTION_WORD.source})/iux
     # "van 10 mei 2007", "du 10 mai 2007", "vom 10. Mai 2007", "of 10 May 2007"
     NAMED_DATE = /(?<![[:alnum:]])(?:van|du|vom|of)\s+(\d{1,2})(?:er)?\.?\s+(#{MONTH})\s+((?:19|20)\d{2})(?!\d)/iu
     TITLE_DATE = /\A\s*(\d{1,2})(?:er)?\.?\s+(#{MONTH})\s+((?:17|18|19|20)\d{2})(?!\d)/iu
@@ -36,6 +44,7 @@ module LegalChatbot
       text = question.to_s
       return true unless text.match?(REASONS_QUESTION) && text.match?(LEGISLATOR)
       return true if text.match?(COMPARISON)
+      return true unless reasons_only?(text)
 
       named = date(text.match(NAMED_DATE))
       return true unless named
@@ -46,6 +55,12 @@ module LegalChatbot
       # A later act the question names by its year stays, as in a comparison; the year of a judgment number such as
       # 41/2009 names no act
       text.match?(%r{(?<![\d/])#{law.year}(?!\d)})
+    end
+
+    def reasons_only?(text)
+      clauses = text.split(SENTENCE_BREAK).flat_map { |sentence| sentence.split(CONJUNCTION_BREAK) }
+      clauses.select { |clause| clause.scan(/\p{L}+/).size >= 3 }
+             .all? { |clause| clause.match?(REASONS_QUESTION) || clause.match?(LEGISLATOR) }
     end
 
     def date(match)

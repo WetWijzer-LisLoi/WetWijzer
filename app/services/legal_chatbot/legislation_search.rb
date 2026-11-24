@@ -1916,19 +1916,47 @@ module LegalChatbot
     # of an off-premises withdrawal question that names no credit, loan, instalments or payment service, and stays for
     # one that does. Every other question keeps it: in book VII a payment order is "herroepen" too (arts. VII.31 and
     # VII.50, read in the corpus on 2026-11-24).
-    CREDIT_BOOK_ARTICLE = /\A(?:Art(?:ikel|icle)?\.?\s*)?VII\.\d/i
+    # Sol 2026-11-24 08:22:18Z: "... en kan ik ook mijn betalingsopdracht herroepen?" asks for book VII's payment
+    # services. Each subject keeps its own title: as the corpus heads book VII (read on 2026-11-24), title 3 (payment
+    # services) runs from art. VII.4 to VII.63/3 and title 4 (credit agreements) from art. VII.63/4 to VII.188.
+    BOOK_VII_ARTICLE = %r{\A(?:Art(?:ikel|icle)?\.?\s*)?VII\.(\d+)(?:/(\d+))?(?![\d/])}i
+    PAYMENT_SERVICES_ARTICLES = ([4, 0]..[63, 3])
+    CREDIT_AGREEMENT_ARTICLES = ([63, 4]..[188, 9999])
+    PAYMENT_QUERY_PATTERN = /\b(?:betalingsopdracht\p{L}*|betaalopdracht\p{L}*|overschrijving\p{L}*|domicili[ëe]ring\p{L}*|
+                               doorlopende\s+opdracht\p{L}*|betaalrekening\p{L}*|zichtrekening\p{L}*|betalingsrekening\p{L}*|
+                               betalingsdienst\p{L}*|betaaldienst\p{L}*|betalingstransactie\p{L}*|betaalkaart\p{L}*|bankkaart\p{L}*|
+                               debetkaart\p{L}*|kredietkaart\p{L}*|ordres?\s+de\s+paiement|virements?|domiciliations?|
+                               comptes?\s+(?:de\s+paiement|à\s+vue)|op[ée]rations?\s+de\s+paiement|services?\s+de\s+paiement|
+                               cartes?\s+de\s+(?:d[ée]bit|paiement|cr[ée]dit)|zahlungsauftr\p{L}*|überweisung\p{L}*|lastschrift\p{L}*|
+                               zahlungskont\p{L}*|girokont\p{L}*|zahlungsdienst\p{L}*|zahlungsvorg\p{L}*|kreditkart\p{L}*|
+                               payment\s+(?:orders?|accounts?|services?|transactions?)|direct\s+debits?|standing\s+orders?|
+                               (?:bank|credit)\s+transfers?|(?:debit|credit)\s+cards?)\b/iux
     # "dienstverlening" is no loan
     CREDIT_QUERY_PATTERN = /\b(?:\p{L}*krediet\p{L}*|\p{L}*(?<!ver)lening\p{L}*|lenen|geleend|financier\p{L}*|afbetal\p{L}*|
                               aflos\p{L}*|in\s+(?:\d+\s+)?(?:maandelijkse\s+)?termijnen|\p{L}*hypoth[eéè]\p{L}*|mortgages?|
                               cr[ée]dit\p{L}*|pr[êe]ts?|emprunt\p{L}*|financement\p{L}*|mensualit[ée]s?|en\s+(?:\d+|plusieurs)\s+fois|
                               \p{L}*kredit\p{L}*|\p{L}*darlehen\p{L}*|finanzier\p{L}*|ratenzahlung\p{L}*|ratenkauf\p{L}*|in\s+raten|
-                              credit\p{L}*|loans?|financ\p{L}*|instal+ments?|betaaldienst\p{L}*|services?\s+de\s+paiement|
-                              zahlungsdienst\p{L}*|payment\s+services?)\b/iux
+                              credit\p{L}*|loans?|financ\p{L}*|instal+ments?)\b/iux
     # Sol 2026-11-24 01:24:47Z: "digitaal ondertekend" (a doorstep cleaning service signed on a tablet) is no digital
     # content: the content or service itself is named, or a product that is one.
     DIGITAL_CONTENT_QUERY_PATTERN = /\b(?:digitale?\s+(?:inhoud\p{L}*|dienst\p{L}*|content|inhalte?n?|services?|product\p{L}*|abonnement\p{L}*)|
                                      contenus?\s+num[ée]riques?|services?\s+num[ée]riques?|digital\s+(?:content|services?|products?)|
                                      software|apps?|streaming\p{L}*|download\p{L}*|e-?books?)\b/iux
+
+    # [63, 4] for "Art. VII.63/4"; nil outside book VII's numbered articles
+    def self.book_vii_number(article_title)
+      match = article_title.match(BOOK_VII_ARTICLE)
+      match && [match[1].to_i, match[2].to_i]
+    end
+
+    def self.book_vii_subject_named?(number, question)
+      payment = question.match?(PAYMENT_QUERY_PATTERN)
+      credit = question.match?(CREDIT_QUERY_PATTERN)
+      return payment if PAYMENT_SERVICES_ARTICLES.cover?(number)
+      return credit if CREDIT_AGREEMENT_ARTICLES.cover?(number)
+
+      payment || credit
+    end
 
     def self.withdrawal_borrowed_from_specialist_regime?(article, question)
       return false unless question.match?(WITHDRAWAL_RIGHT_QUERY_PATTERN)
@@ -1937,8 +1965,8 @@ module LegalChatbot
       title = (article[:law_title] || article[:title] || article['law_title'] || article['title']).to_s
       article_title = (article[:article_title] || article['article_title']).to_s.strip
       return !question.match?(DIGITAL_CONTENT_QUERY_PATTERN) if numac == '1804032154' && article_title.match?(DIGITAL_CONTENT_ARTICLE)
-      if numac == '2013A11134' && article_title.match?(CREDIT_BOOK_ARTICLE)
-        return question.match?(OFF_PREMISES_PATTERN) && !question.match?(CREDIT_QUERY_PATTERN)
+      if numac == '2013A11134' && (number = book_vii_number(article_title))
+        return question.match?(OFF_PREMISES_PATTERN) && !book_vii_subject_named?(number, question)
       end
 
       WITHDRAWAL_SPECIALIST_REGIMES.any? do |regime_numac, title_pattern, query_pattern|

@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.99] - 2026-11-24
+
+### Fixed
+
+- A question about a legislator's reasons that also asks, in a clause of its own, what a later act says keeps that later act among the sources.
+- A doorstep withdrawal question that also asks about a payment order keeps the payment-services rules of book VII of the Code of Economic Law, and leaves its credit rules out unless it names credit.
+
 ## [1.1.98] - 2026-11-24
 
 ### Fixed
