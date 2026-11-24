@@ -46,6 +46,13 @@ module LegalChatbot
     CONSTITUTION_CORE_KEYS = %w[grondwet grondwettelijk constitution constitutionnel verfassung].to_set.freeze
     CONSTITUTIONAL_COURT_NAME = /(?<![[:alnum:]])(?:grondwettelijke?\s+hof|cour\s+constitutionnelle|verfassungsgerichtshof\p{L}*|
                                  constitutional\s+court)(?![[:alnum:]])/x
+    # The core laws whose articles are not injected by shared words: the Constitution. Read on production on 2026-11-24:
+    # the injection added arts. 142, 125 and 195 under the question on judgment 41/2009 (still a core law there through
+    # "discriminatiegronden", live check of 1.1.100 at 15:08Z), arts. 125, 103 and 118 under 46/2019, and arts. 103, 104
+    # and 125 under "Welke artikelen van de Grondwet waarborgen de gelijkheid?". Its articles come from the pins (equality
+    # arts. 10 and 11, the Court's art. 142, ...) and the semantic search, whose rows the core-law boost still ranks; the
+    # law a reader views is still injected.
+    NO_WORD_INJECTION_NUMACS = Set['1994021048'].freeze
     EXACT_CORE_LAW_KEYWORDS = %w[
       apr vol wer wib wib92 ziv vcro vov vzw asbl bv nv btw tva rva onem swt ocmw cpas visa
       cao cct igo rsvz epc jkp taeg avg gdpr dpo rgpd fpc tbs pbm cpbw rup vof cv ipr gmbh vat
@@ -1941,12 +1948,12 @@ module LegalChatbot
                                zahlungskont\p{L}*|girokont\p{L}*|zahlungsdienst\p{L}*|zahlungsvorg\p{L}*|kreditkart\p{L}*|
                                payment\s+(?:orders?|accounts?|services?|transactions?)|direct\s+debits?|standing\s+orders?|
                                (?:bank|credit)\s+transfers?|(?:debit|credit)\s+cards?)\b/iux
-    # "dienstverlening" is no loan
+    # "dienstverlening" is no loan; a "credit transfer" is a payment (Sol 2026-11-24 13:50:41Z)
     CREDIT_QUERY_PATTERN = /\b(?:\p{L}*krediet\p{L}*|\p{L}*(?<!ver)lening\p{L}*|lenen|geleend|financier\p{L}*|afbetal\p{L}*|
                               aflos\p{L}*|in\s+(?:\d+\s+)?(?:maandelijkse\s+)?termijnen|\p{L}*hypoth[eéè]\p{L}*|mortgages?|
-                              cr[ée]dit\p{L}*|pr[êe]ts?|emprunt\p{L}*|financement\p{L}*|mensualit[ée]s?|en\s+(?:\d+|plusieurs)\s+fois|
+                              cr[ée]dit(?!\s+transfers?)\p{L}*|pr[êe]ts?|emprunt\p{L}*|financement\p{L}*|mensualit[ée]s?|en\s+(?:\d+|plusieurs)\s+fois|
                               \p{L}*kredit\p{L}*|\p{L}*darlehen\p{L}*|finanzier\p{L}*|ratenzahlung\p{L}*|ratenkauf\p{L}*|in\s+raten|
-                              credit\p{L}*|loans?|financ\p{L}*|instal+ments?)\b/iux
+                              credit(?!\s+transfers?)\p{L}*|loans?|financ\p{L}*|instal+ments?)\b/iux
     # Sol 2026-11-24 01:24:47Z: "digitaal ondertekend" (a doorstep cleaning service signed on a tablet) is no digital
     # content: the content or service itself is named, or a product that is one.
     DIGITAL_CONTENT_QUERY_PATTERN = /\b(?:digitale?\s+(?:inhoud\p{L}*|dienst\p{L}*|content|inhalte?n?|services?|product\p{L}*|abonnement\p{L}*)|
@@ -4576,7 +4583,7 @@ module LegalChatbot
       # INJECTION: If core laws are relevant but missing, inject them
       if relevant_core_numacs.any?
         existing_numacs = articles.to_set { |a| a[:numac] }
-        missing_numacs = relevant_core_numacs - existing_numacs
+        missing_numacs = relevant_core_numacs - existing_numacs - NO_WORD_INJECTION_NUMACS
 
         if missing_numacs.any?
           injected = inject_core_law_articles(missing_numacs, question_lower)

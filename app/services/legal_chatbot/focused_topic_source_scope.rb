@@ -139,9 +139,17 @@ module LegalChatbot
     CONSUMER_CONTRACT_TITLE_PATTERN = /(?<![[:alnum:]])(?:wetboek\s+van\s+economisch\s+recht|code\s+de\s+droit\s+[ée]conomique|
                                        wirtschaftsgesetzbuch|gesetzbuch\s+des\s+wirtschaftsrechts|burgerlijk\s+wetboek|code\s+civil|
                                        zivilgesetzbuch|b[üu]rgerliches\s+gesetzbuch)(?![[:alnum:]])/iux
-    WITHDRAWAL_FAMILY_PATTERN = /(?<![[:alnum:]])(?:herroep\p{L}*|bedenk(?:ing)?s?(?:tijd|termijn)\p{L}*|buiten\s+(?:de\s+)?verkoopruimte\p{L}*|
-                                 r[ée]tract\p{L}*|hors\s+(?:de\s+l['’]\s*|des\s+)?[ée]tablissement\p{L}*|widerruf\p{L}*|
-                                 au[ßs]erhalb\s+von\s+gesch[äa]ftsr[äa]umen|withdraw\p{L}*|off[-\s]premises|cooling[-\s]off)/iux
+    # Consumer withdrawal, not the bare verb (Sol 2026-11-24 13:50:41Z: "de vergunning kan worden herroepen" is no
+    # withdrawal from a contract): the withdrawal right or period, contracts away from the premises, or the consumer
+    # who withdraws in the same sentence.
+    WITHDRAWAL_FAMILY_PATTERN = /(?<![[:alnum:]])(?:herroepingsrecht\p{L}*|herroepingstermijn\p{L}*|recht\s+(?:van|op)\s+herroeping|
+                                 bedenk(?:ing)?s?(?:tijd|termijn)\p{L}*|buiten\s+(?:de\s+)?verkoopruimte\p{L}*|
+                                 droit\s+de\s+r[ée]tractation|d[ée]lai\s+de\s+r[ée]tractation|hors\s+(?:de\s+l['’]\s*|des\s+)?[ée]tablissement\p{L}*|
+                                 widerrufsrecht\p{L}*|widerrufsfrist\p{L}*|au[ßs]erhalb\s+von\s+gesch[äa]ftsr[äa]umen|
+                                 right\s+of\s+withdrawal|withdrawal\s+period|off[-\s]premises|cooling[-\s]off|
+                                 consument\p{L}*[^.;]{0,120}?herroep\p{L}*|herroep\p{L}*[^.;]{0,120}?consument\p{L}*|
+                                 consommat\p{L}*[^.;]{0,120}?r[ée]tract\p{L}*|verbraucher\p{L}*[^.;]{0,120}?widerruf\p{L}*|
+                                 consumer\p{L}*[^.;]{0,120}?withdraw\p{L}*)/iux
 
     TOPICS = {
       gas_fine_challenge: GAS_FAMILY_PATTERN,
@@ -191,7 +199,7 @@ module LegalChatbot
       return true if found.empty?
 
       title = field(article, :law_title, :title)
-      return true if named_by_title?(title, question)
+      return true if named_by_title?(title, found.include?(:off_premises_withdrawal) ? asked_text(question) : question)
 
       source = [title, field(article, :article_title), field(article, :article_text)].join("\n")
       found.any? do |topic|
@@ -204,6 +212,14 @@ module LegalChatbot
         source.match?(TOPICS.fetch(topic))
       end
     end
+
+    # What the question asks: its sentences that end in a question mark. Under a doorstep question a source named by a
+    # word of its title must be asked about, not share a word with the facts (Sol 2026-11-24 13:50:41Z: "een etentje
+    # in de horecasector" kept the hospitality price decree).
+    def self.asked_text(question)
+      question.to_s.scan(/[^.!?;]*\?/).join(' ')
+    end
+    private_class_method :asked_text
 
     def self.off_premises_withdrawal_question?(text)
       text.match?(LegislationSearch::OFF_PREMISES_PATTERN) && text.match?(LegislationSearch::WITHDRAWAL_RIGHT_QUERY_PATTERN)

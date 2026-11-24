@@ -8,6 +8,16 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.101] - 2026-11-24
+
+### Fixed
+
+- A question about a legislator's reasons that also asks for the answer in a given language still leaves out acts made after the date it names.
+- A payment by credit transfer no longer counts as credit in a doorstep withdrawal question.
+- A doorstep withdrawal question keeps sources on the consumer's withdrawal only, not every text in which something is revoked, such as a permit.
+- Under a doorstep withdrawal question, a law named only by a word among the facts no longer appears; a law the question asks about still does.
+- A question about a named judgment of the Constitutional Court that also names a subject of the Constitution, such as discrimination, no longer gets Constitution articles that only share words with it; 1.1.100 stopped this only where the Court's name was the reason.
+
 ## [1.1.100] - 2026-11-24
 
 ### Fixed

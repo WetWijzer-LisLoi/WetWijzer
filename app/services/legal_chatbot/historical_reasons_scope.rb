@@ -34,6 +34,13 @@ module LegalChatbot
                              quel(?:le)?s?|comment|o[ùu]|quand|qui|peut|puis|peuvent|doit|dit|pr[ée]voit|was|welche[rsnm]?|kann|
                              muss|gilt|sagt|what|how|which|where|when|who|can|may|must|does|do|is|are)(?![[:alnum:]])/iux
     CONJUNCTION_BREAK = /,?\s+(?:en|et|und|and)\s+(?=(?:ook\s+|aussi\s+|auch\s+|also\s+)?#{CLAUSE_QUESTION_WORD.source})/iux
+    # Sol 2026-11-24 13:50:41Z: "Antwoord in het Nederlands." appended to the 41/2009 question undid the cutoff. A clause
+    # that only asks for the answer's language or form, with no question word, is no clause on another subject.
+    INSTRUCTION_CLAUSE = /\A[[:space:][:punct:]]*(?:(?:graag|gelieve|svp|alsjeblieft|alstublieft|please|merci|bitte)\s+)?
+                          (?:antwoord\p{L}*|answer|reply|r[ée]pon\p{L}*|antworte\p{L}*|schrijf|write|[ée]cri\p{L}*|schreib\p{L}*|
+                             (?:in\s+het|en|auf|in)\s+(?:nederlands|frans|duits|engels|fran[çc]ais|n[ée]erlandais|allemand|anglais|
+                             deutsch|niederl[äa]ndisch|franz[öo]sisch|englisch|english|dutch|french|german))(?![[:alnum:]])/iux
+    QUESTION_WORD_IN_CLAUSE = /(?<![[:alnum:]])#{CLAUSE_QUESTION_WORD.source}/iux
     # "van 10 mei 2007", "du 10 mai 2007", "vom 10. Mai 2007", "of 10 May 2007"
     NAMED_DATE = /(?<![[:alnum:]])(?:van|du|vom|of)\s+(\d{1,2})(?:er)?\.?\s+(#{MONTH})\s+((?:19|20)\d{2})(?!\d)/iu
     TITLE_DATE = /\A\s*(\d{1,2})(?:er)?\.?\s+(#{MONTH})\s+((?:17|18|19|20)\d{2})(?!\d)/iu
@@ -59,8 +66,12 @@ module LegalChatbot
 
     def reasons_only?(text)
       clauses = text.split(SENTENCE_BREAK).flat_map { |sentence| sentence.split(CONJUNCTION_BREAK) }
-      clauses.select { |clause| clause.scan(/\p{L}+/).size >= 3 }
+      clauses.select { |clause| clause.scan(/\p{L}+/).size >= 3 && !instruction?(clause) }
              .all? { |clause| clause.match?(REASONS_QUESTION) || clause.match?(LEGISLATOR) }
+    end
+
+    def instruction?(clause)
+      clause.match?(INSTRUCTION_CLAUSE) && !clause.match?(QUESTION_WORD_IN_CLAUSE)
     end
 
     def date(match)
