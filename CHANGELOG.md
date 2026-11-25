@@ -8,6 +8,15 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.104] - 2026-11-25
+
+### Fixed
+
+- In an answer on unemployment benefit, a list or table of amounts that no official table confirms is left out and the answer says so once, instead of showing a placeholder for each amount, while a line that states a condition stays; a claim in the answer that the amounts were checked by hand is removed (beside an amount, only its own words), so that only the note under the answer dates the amounts, and a sentence about someone checking a file stays.
+- In an answer on unemployment benefit, each amount is checked against its own period: an amount for the first months is no longer replaced by the amount the same sentence gives for a later period, periods written out in words such as "maanden een tot drie", "tot en met" and "en daarna" are read, and a daily amount given as a monthly amount, also by a sentence of its own about the amounts right above it, is left out with a note.
+- The chatbot reads statutes without Justel's amendment markers, so an amended figure such as "maximaal [4 650 uur]4" is read as 650 hours, not 4,650; the articles shown on the site keep their markers.
+- When the site's own question limit is reached, the chatbot says so in the reader's language, with the time from which questions can be asked again or the wait, and that the question was not charged.
+
 ## [1.1.103] - 2026-11-25
 
 ### Fixed

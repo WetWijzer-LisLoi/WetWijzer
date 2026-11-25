@@ -34,8 +34,12 @@ module LegalChatbot
   # longer ago than RECHECK_DAYS cannot vouch for a later day. The minima of art. 115, § 2 appear indexed in no official
   # table and are always withheld. Not covered: monthly figures a model derives itself, the maxima, which follow from the
   # wage limits of art. 111, and the amount art. 115, § 3 gives the unemployed of art. 28, § 3 whatever their household.
+  #
+  # Version 4 (#1944, Sol 2026-11-25 00:37:56Z): only the note claims a manual check, and only beside a figure it dates;
+  # an item or table row left with withheld figures and a label only goes, so the reader gets one limitation instead of
+  # a placeholder per figure.
   class IndexedAmounts
-    VERSION = 3
+    VERSION = 4
     DECREE = '1991013192'
     STEP = BigDecimal('1.02')
     # Art. 115 as the programme law of 18 July 2025 (art. 171, in force 1 March 2026) replaced it, read in full NL on
@@ -116,6 +120,34 @@ module LegalChatbot
     # The daily rate right after a figure: a qualifier follows it
     DAILY_RATE = /\A[[:space:]]*(?:per[[:space:]]+(?:uitkerings)?dag|par[[:space:]]+jour|pro[[:space:]]+tag|per[[:space:]]+day|
                   a[[:space:]]+day)(?![[:alpha:]])/ix
+    # Sol 2026-11-25 04:13:27Z (#115), 05:06:10Z: a sentence of its own that calls the answer's amounts monthly. It
+    # points at the amounts (MONTHLY_POINTER: "Deze maandbedragen", "Deze bedragen", "Dit zijn") and calls them monthly
+    # or computed over 26 days (MONTHLY_MARK), with no figure, no negation and no daily word in it. No such claim:
+    # "Dit zijn dagbedragen, geen maandbedragen.", a general "De maandbedragen worden berekend op 26 dagen.", or "Deze
+    # bedragen worden per maand betaald.". Art. 115's figures are daily, so unless the rows the claim describes hold a
+    # real conversion (a monthly figure 26 times one of their daily figures: "€1.645,54", "€776,10") the claim is false
+    # and goes, and a figure of those rows without a daily label takes its unit and is withheld (monthly_claims). Other
+    # rows, and an unrelated four-digit amount, are left alone.
+    MONTHLY_POINTER = /(?<![[:alpha:]])(?:(?:deze|die|bovenstaande|vermelde|genoemde|ces|diese|obigen|genannten|these|those|above)
+                       [[:space:]]+(?:\p{L}+[[:space:]]+)?(?:maandbedrag\p{L}*|bedrag\p{L}*|montants?|monatsbetr[äa]g\p{L}*|
+                       betr[äa]g\p{L}*|amounts?|figures?)|(?:dit|dat|het)[[:space:]]+zijn|ce[[:space:]]+sont|(?:das|dies|es)[[:space:]]+sind|
+                       (?:these|they)[[:space:]]+are)(?![[:alpha:]])/ix
+    MONTHLY_MARK = /(?<![[:alpha:]])(?:maandbedrag\p{L}*|maandelijkse[[:space:]]+bedragen|bedragen[[:space:]]+per[[:space:]]+maand|
+                    montants?[[:space:]]+mensuels?|monatsbetr[äa]g\p{L}*|monthly[[:space:]]+amounts?|
+                    (?:berekend|gebaseerd|calcul\p{L}*|berechnet|basier\p{L}*|calculated|based)(?:[[:space:]]+\p{L}+){0,4}[[:space:]]+
+                    26[[:space:]]+(?:uitkerings)?(?:dagen|jours|tage\p{L}*|days)|
+                    26[[:space:]]+(?:uitkerings)?(?:dagen|jours|tage\p{L}*|days)(?:[[:space:]]+\p{L}+){0,2}[[:space:]]+
+                    (?:berekend|berechnet|calcul\p{L}*|calculated))(?![[:alpha:]])/ix
+    NEGATION = /(?<![[:alpha:]])(?:geen|niet|nooit|ne|pas|jamais|aucun\p{L}*|kein\p{L}*|nicht|nie|not|no|never)(?![[:alpha:]])/i
+    MONEY_VALUE = /(?<![\d.,])(\d{1,3}(?:[.,[:space:]]\d{3})+|\d{1,4})[.,](\d{2})(?!\d)/
+    CONVERSION_DAYS = 26
+    CONVERSION_TOLERANCE = BigDecimal('0.15')
+    DAILY_WORDS = /(?<![[:alpha:]])(?:per[[:space:]]+(?:uitkerings)?dag|dagbedrag\p{L}*|par[[:space:]]+jour|journali\p{L}*|
+                   pro[[:space:]]+tag|tagesbetr\p{L}*|t[äa]glich\p{L}*|per[[:space:]]+day|a[[:space:]]+day|daily)(?![[:alpha:]])/ix
+    # Sol 2026-11-25 03:16:54Z (#115): art. 115's minima are daily amounts; one the answer labels as a monthly amount is
+    # wrong in its unit whatever its number, and is withheld
+    MONTHLY_RATE = /\A[[:space:]]*(?:euros?|eur|€)?[[:space:]]*(?:per[[:space:]]+maand|maandelijks\p{L}*|par[[:space:]]+mois|
+                    mensuel\p{L}*|pro[[:space:]]+monat|monatlich\p{L}*|per[[:space:]]+month|a[[:space:]]+month|monthly)(?![[:alpha:]])/ix
     AMOUNT = /(?<pre>(?<![[:alpha:]])(?:€|EUR|euros?)[[:space:]]?)?(?<![\d.,])(?<int>\d{1,3})(?<sep>[.,])(?<dec>\d{2})(?!\d|[.,]\d)
               (?![[:space:]]?(?:%|procent|pour[-[:space:]]?cent|percent|prozent))(?<post>[[:space:]]?(?:€|EUR|euros?)(?![[:alpha:]]))?/ix
     BLOCKQUOTE = /\A[[:space:]]*>/
@@ -127,9 +159,15 @@ module LegalChatbot
     # Abbreviations whose full stop ends no sentence
     ABBREVIATION = /(?<![[:alpha:]])(?:art|artt|nr|nrs|blz|bv|vb|p|pp|al|ca|resp|zgn|enz|etc|cf|vgl|o\.a|i\.e|e\.g|b\.v|n\.v\.t)\z/i
     # Where a clause ends inside a sentence: punctuation (not a decimal comma) or a conjunction
-    CLAUSE_BREAK = /,(?!\d)|[;:()]|[[:space:]](?:en|maar|terwijl|and|but|while|et|mais|tandis|und|aber|während)(?=[[:space:]])/i
+    # A clause that opens with "daarna" or its equals, right after the clause of a figure: that figure is the first period
+    THEN_AFTER = /\A(?:[[:space:]]*(?:,|;|en|and|et|und))?[[:space:]]+(?:daarna|nadien|vervolgens|ensuite|puis|danach|anschlie(?:ß|ss)end|
+                  then|thereafter|afterwards)(?![[:alpha:]])/ix
+    # The "en" of "tot en met" (a band: "maanden één tot en met drie") joins its months and breaks no clause (#116)
+    CLAUSE_BREAK = /,(?!\d)|[;:()]|(?<!tot)[[:space:]](?:en|maar|terwijl|and|but|while|et|mais|tandis|und|aber|während)(?=[[:space:]])/i
     # The facts that select a row, in the four languages. A more specific phase (months 1 to 3, ...) is read before the
     # general halves of the first period.
+    # The word between the two months of a band: "1 tot 3", "een tot en met drie", "1 t/m 3", "1-3", "1 à 3", "1 bis 3"
+    BAND_TO = %r{(?:-|–|tot[[:space:]]+en[[:space:]]+met|tot|t/m|à|au|jusqu.?(?:à|au)|bis|to|through|until)}i
     FACTS = {
       regime: {
         temporary: /tijdelijk\p{L}*[[:space:]]+werklo\p{L}*|ch[ôo]m\p{L}*[[:space:]]+temporaire|zeitweilig\p{L}*|kurzarbeit\p{L}*|
@@ -146,17 +184,23 @@ module LegalChatbot
                  allein[[:space:]]+lebend\p{L}*|living[[:space:]]+alone|lives?[[:space:]]+alone|single[[:space:]]+(?:claimants?|persons?|workers?|people)/iux,
         cohabiting: /samenwonend\p{L}*|cohabitant\p{L}*|zusammenwohnend\p{L}*|zusammenlebend\p{L}*|cohabiting/iux
       },
+      # Sol 2026-11-25 03:16:54Z (#116): a band also in spelled-out numbers and with "tot en met" ("in de maanden een tot
+      # drie", "maanden zeven tot en met twaalf", "de eerste tot de derde maand")
       phase: {
         months_1_3: /eerste[[:space:]]+(?:drie|3)[[:space:]]+maanden|(?:trois|3)[[:space:]]+premiers[[:space:]]+mois|ersten[[:space:]]+(?:drei|3)[[:space:]]+monat\p{L}*|
-                     first[[:space:]]+(?:three|3)[[:space:]]+months|(?:maand(?:en)?|mois|monate?|months?)[[:space:]]+1[[:space:]]*(?:-|–|tot|à|bis|to)[[:space:]]*3(?!\d)/iux,
-        months_4_6: /(?:maand(?:en)?|mois|monate?|months?)[[:space:]]+(?:vier|quatre|four|4)[[:space:]]*(?:-|–|tot|à|bis|to)[[:space:]]*(?:zes|six|sechs|6)(?!\d)/iux,
-        months_7_12: /(?:maand(?:en)?|mois|monate?|months?)[[:space:]]+(?:zeven|sept|sieben|seven|7)[[:space:]]*(?:-|–|tot|à|bis|to)[[:space:]]*
-                      (?:twaalf|douze|zwölf|zwoelf|twelve|12)(?!\d)/iux,
+                     first[[:space:]]+(?:three|3)[[:space:]]+months|
+                     (?:maand(?:en)?|mois|monate?|months?)[[:space:]]+(?:1|een|één|eén|un|eins|one)[[:space:]]*#{BAND_TO}[[:space:]]*(?:3|drie|trois|drei|three)(?![\d[:alpha:]])|
+                     (?:eerste|1e|1ste)[[:space:]]+tot[[:space:]]+(?:en[[:space:]]+met[[:space:]]+)?(?:de[[:space:]]+)?(?:derde|3e|3de)[[:space:]]+maand/iux,
+        months_4_6: /(?:maand(?:en)?|mois|monate?|months?)[[:space:]]+(?:vier|quatre|four|4)[[:space:]]*#{BAND_TO}[[:space:]]*(?:zes|six|sechs|6)(?![\d[:alpha:]])|
+                     (?:vierde|4e|4de)[[:space:]]+tot[[:space:]]+(?:en[[:space:]]+met[[:space:]]+)?(?:de[[:space:]]+)?(?:zesde|6e|6de)[[:space:]]+maand/iux,
+        months_7_12: /(?:maand(?:en)?|mois|monate?|months?)[[:space:]]+(?:zeven|sept|sieben|seven|7)[[:space:]]*#{BAND_TO}[[:space:]]*
+                      (?:twaalf|douze|zwölf|zwoelf|twelve|12)(?![\d[:alpha:]])|
+                      (?:zevende|7e|7de)[[:space:]]+tot[[:space:]]+(?:en[[:space:]]+met[[:space:]]+)?(?:de[[:space:]]+)?(?:twaalfde|12e|12de)[[:space:]]+maand/iux,
         second: /tweede[[:space:]]+vergoedingsperiode|seconde?[[:space:]]+p[ée]riode[[:space:]]+d.indemnisation|zweiten?[[:space:]]+entsch[äa]digungszeitraum\p{L}*|
                  second[[:space:]]+(?:compensation|benefit)[[:space:]]+period/iux,
         first6: /eerste[[:space:]]+(?:zes|6)[[:space:]]+maanden|(?:zes|6)[[:space:]]+eerste[[:space:]]+maanden|(?:six|6)[[:space:]]+premiers[[:space:]]+mois|
                  ersten[[:space:]]+(?:sechs|6)[[:space:]]+monat\p{L}*|first[[:space:]]+(?:six|6)[[:space:]]+months|
-                 (?:maand(?:en)?|mois|monate?|months?)[[:space:]]+1[[:space:]]*(?:-|–|tot|à|bis|to)[[:space:]]*6(?!\d)/iux,
+                 (?:maand(?:en)?|mois|monate?|months?)[[:space:]]+(?:1|een|één|eén|un|eins|one)[[:space:]]*#{BAND_TO}[[:space:]]*(?:6|zes|six|sechs)(?![\d[:alpha:]])/iux,
         after6: /daaropvolgende[[:space:]]+maanden|(?<![[:alpha:]])daarna(?![[:alpha:]])|vanaf[[:space:]]+de[[:space:]]+(?:zevende|7de|7e)[[:space:]]+maand|
                  na[[:space:]]+(?:de[[:space:]]+eerste[[:space:]]+)?(?:zes|6)[[:space:]]+maanden|mois[[:space:]]+suivants|(?<![[:alpha:]])ensuite(?![[:alpha:]])|
                  apr[èe]s[[:space:]]+les[[:space:]]+(?:six|6)[[:space:]]+premiers[[:space:]]+mois|
@@ -219,6 +263,7 @@ module LegalChatbot
         uncovered: 'Voor %<period>s is geen handmatig nagekeken bedrag beschikbaar; het is weggelaten. Zie %<tables>s.',
         unidentified: 'Uit het antwoord blijkt niet welk minimum van art. 115 een bedrag betreft (gezin, fase of regeling); ' \
                       'het is weggelaten. Zie %<tables>s.',
+        unit: 'Een dagbedrag van art. 115 stond in het antwoord als maandbedrag; het is weggelaten. Zie %<tables>s.',
         unpublished: 'Het minimum bij werkloosheid met bedrijfstoeslag (art. 115, § 2) staat in geen officiële tabel ' \
                      'geïndexeerd en is weggelaten.',
         withheld: '[actueel bedrag: zie de tabel van de RVA]',
@@ -250,6 +295,7 @@ module LegalChatbot
         uncovered: "Pour %<period>s, aucun montant vérifié manuellement n'est disponible ; il est omis. Voir %<tables>s.",
         unidentified: "La réponse ne permet pas de savoir quel minimum de l'art. 115 un montant vise (ménage, phase ou " \
                       'régime) ; il est omis. Voir %<tables>s.',
+        unit: "Un montant journalier de l'art. 115 figurait dans la réponse comme montant mensuel ; il est omis. Voir %<tables>s.",
         unpublished: "Le minimum en cas de chômage avec complément d'entreprise (art. 115, § 2) ne figure indexé dans " \
                      'aucun tableau officiel et est omis.',
         withheld: "[montant actuel : voir le tableau de l'ONEM]",
@@ -281,6 +327,7 @@ module LegalChatbot
         uncovered: 'Für %<period>s ist kein manuell geprüfter Betrag verfügbar; er wurde weggelassen. Siehe %<tables>s.',
         unidentified: 'Aus der Antwort geht nicht hervor, welches Minimum von Art. 115 ein Betrag meint (Haushalt, Phase ' \
                       'oder Regelung); er wurde weggelassen. Siehe %<tables>s.',
+        unit: 'Ein Tagesbetrag von Art. 115 stand in der Antwort als Monatsbetrag; er wurde weggelassen. Siehe %<tables>s.',
         unpublished: 'Das Minimum bei Arbeitslosigkeit mit Betriebszuschlag (Art. 115 § 2) steht in keiner amtlichen ' \
                      'Tabelle indexiert und wurde weggelassen.',
         withheld: '[aktueller Betrag: siehe die Tabelle des LfA]',
@@ -317,6 +364,7 @@ module LegalChatbot
         uncovered: 'For %<period>s no manually checked amount is available; it is left out. See %<tables>s.',
         unidentified: 'The answer does not show which minimum of art. 115 an amount concerns (household, phase or ' \
                       'scheme); it is left out. See %<tables>s.',
+        unit: 'A daily amount of art. 115 appeared in the answer as a monthly amount; it is left out. See %<tables>s.',
         unpublished: 'The minimum for unemployment with a company supplement (art. 115, § 2) is shown indexed in no ' \
                      'official table and is left out.',
         withheld: "[current amount: see ONEM's table]",
@@ -345,8 +393,44 @@ module LegalChatbot
     QUOTE_WITHHELD = /Een citaat is weggelaten|Une citation a été omise|Ein Zitat wurde weggelassen|A quotation was omitted/
     QUOTE_BACK_REFERENCE = /(?<![[:alpha:]])(?:(?:geciteerde|aangehaalde)\s+(?:basis)?bedragen|(?:basis)?bedragen\s+(?:in|uit)\s+(?:het|dit|dat|de)\s+citaat|
                             montants?\s+(?:de\s+base\s+)?cit[ée]s|zitierten\s+(?:Basis)?betr[äa]ge|quoted\s+(?:base\s+)?amounts)(?![[:alpha:]])/ix
-    # The note opens with the base sentence: a copy the model echoed from the conversation is dropped before the new one
-    NOTE_LEAD = /\A[[:space:]*_]*#{Regexp.union(TEXT.values.map { |words| words[:base][0, 40] })}/
+    # The note opens with the base sentence, or with the § 2 limitation when no figure is shown: a copy the model echoed
+    # from the conversation is dropped before the new one
+    NOTE_LEAD = /\A[[:space:]*_]*#{Regexp.union(TEXT.values.flat_map { |words| [words[:base][0, 40], words[:unpublished][0, 40]] })}/
+    # Sol 2026-11-25 00:37:56Z (#1944): only the note says that amounts were checked by hand, and only for a figure it
+    # dates. The model writes such a sentence from the context note's check date, also over figures this class then
+    # withholds ("Deze bedragen zijn handmatig gecontroleerd op 22 november 2026" under nine placeholders): it goes, and
+    # in brackets only the bracket goes.
+    CHECK_CLAIM = /(?<![[:alpha:]])(?:handmatig|manueel|met[[:space:]]+de[[:space:]]+hand)(?:[[:space:]]+[^[:space:]]+){0,6}?[[:space:]]+
+                   (?:gecontroleerd|nagekeken|gecheckt|geverifieerd|bevestigd)(?![[:alpha:]])|
+                   (?<![[:alpha:]])(?:gecontroleerd|nagekeken|geverifieerd)[[:space:]]+(?:handmatig|manueel)(?![[:alpha:]])|
+                   (?<![[:alpha:]])(?:v[ée]rifi[ée]e?s?|contr[ôo]l[ée]e?s?)[[:space:]]+(?:manuellement|[àa][[:space:]]+la[[:space:]]+main)|
+                   (?<![[:alpha:]])manuellement[[:space:]]+(?:v[ée]rifi|contr[ôo]l)|
+                   (?<![[:alpha:]])(?:manuell|h[äa]ndisch|von[[:space:]]+Hand)[[:space:]]+\p{L}*(?:prüft|pruft|kontrolliert)|
+                   (?<![[:alpha:]])(?:manually|by[[:space:]]+hand)[[:space:]]+(?:checked|verified|reviewed)|
+                   (?<![[:alpha:]])(?:checked|verified|reviewed)[[:space:]]+(?:manually|by[[:space:]]+hand)/ix
+    # The words around a claim that go with it (Sol 2026-11-25 04:09:17Z): before it, an auxiliary verb, a date and a
+    # conjunction ("... en werd op 1 januari 2026 handmatig nagekeken"); after it, a date ("nagekeken op 1 januari 2026")
+    CLAIM_DATE = %r{(?:op|per|le|au|am|on)[[:space:]]+(?:\d{1,2}(?:er|e|\.)?[[:space:]]+\p{L}+[[:space:]]+\d{4}|\d{1,2}[./]\d{1,2}[./]\d{4}|\d{4}-\d{2}-\d{2})}i
+    CLAIM_LEAD = /(?:[[:space:]]+(?:werd(?:en)?|wordt|worden|zijn|is|was|waren|a[[:space:]]+été|ont[[:space:]]+été|est|sont|été|wurden?|ist|
+                    sind|has[[:space:]]+been|have[[:space:]]+been|been|were|are|en|and|et|und|#{CLAIM_DATE}))+[[:space:]]*\z/ix
+    CLAIM_TAIL = /\A(?:[[:space:]]+#{CLAIM_DATE})?/i
+    # A claim of a check is about the amounts when its sentence names them (or holds a figure or a placeholder); a
+    # sentence about someone checking a dossier, an application or a form names none and stays (Sol 02:47:29Z)
+    CHECK_CLAIM_SUBJECT = /(?<![[:alpha:]])(?:\p{L}*bedrag\p{L}*|cijfers?|minim(?:um|a)|montants?|chiffres?|\p{L}*betr[äa]g\p{L}*|
+                           zahlen|amounts?|figures?|rates?)(?![[:alpha:]])/ix
+    # Sol 00:37:56Z: an item or table row left with only withheld figures and its label tells the reader nothing; the
+    # note's one limitation stands for all of them. A label holds nothing but the facts this class reads (FACTS), the
+    # figure words and LABEL_FILLER: any other word makes the line a condition or an exception, legal content that stays
+    # with its placeholder (Sol 02:47:29Z, 04:09:17Z: "alleen als u minstens ...", "bij deeltijdse arbeid").
+    LABEL_FILLER = /(?<![[:alpha:]])(?:de|het|een|van|voor|met|in|op|en|of|tot|na|vanaf|eerste|tweede|werknemers?|werklozen?|
+                    volledig\p{L}*|minimum|minima|bedrag\p{L}*|categorie\p{L}*|le|la|les|du|des|pour|avec|ou|et|à|
+                    travailleurs?|chômeurs?|catégories?|der|die|das|den|dem|für|mit|und|oder|arbeitnehmer\p{L}*|
+                    arbeitslose\p{L}*|kategorie\p{L}*|the|for|with|and|or|workers?|claimants?|unemployed|categor(?:y|ies))
+                    (?![[:alpha:]])/ix
+    LIST_ITEM = /\A[[:space:]]*(?:[-*•+]|\d{1,2}[.)])[[:space:]]/
+    TABLE_SEPARATOR = /\A[[:space:]]*\|?[[:space:]]*:?-{2,}/
+    FIGURE_WORDS = /(?<![[:alpha:]])(?:euros?|eur|per|par|pro|uitkeringsdag|dag|dagen|jour|jours|tag|tage|day|days|maand|maanden|
+                    mois|monat|monate|month|months|bruto|netto|brut|net|brutto|minimum|minimaal|minimal)(?![[:alpha:]])/ix
     # The context note's lines: art. 115's categories with their base amounts, and whether the RVA's table also gives
     # the monthly amount (26 days)
     CONTEXT_LINES = [
@@ -398,19 +482,30 @@ module LegalChatbot
       return unchanged if text.blank? || !applies?(text, question, sources)
 
       language = TEXT.key?(language.to_s) ? language.to_s : 'nl'
+      words = TEXT.fetch(language)
       body = without_dangling_quote_reference(without_echoed_note(text))
       context = { today: today, schedules: schedules, language: language, question: question.to_s,
                   question_period: period_in(question.to_s, today),
                   answer_cue: question.to_s.match?(UNEMPLOYMENT) || decree_retained?(sources) }
       events = []
-      lines = body.split("\n", -1)
+      # Sol 02:47:29Z, 04:09:17Z: a claim of a manual check goes before the figures are judged, so its date never dates
+      # them; beside a figure only its words of provenance go
+      lines = without_check_claims(body.split("\n", -1), words)
+      claims = monthly_claims(lines)
+      context[:monthly_lines] = claims.values.flatten.to_set
       rewritten = lines.each_with_index.map { |line, index| rewrite_line(line, lines, index, context, events) }
-      # Sol 14:53:13Z: a copied old note goes even when no figure is left to date
-      return unchanged.with(text: body.rstrip) if events.empty? && body != text
+      # a false monthly claim goes once the figures it describes are judged
+      rewritten = without_monthly_claims(rewritten, claims.keys) if claims.any?
+      cleaned = rewritten.join("\n")
+      # Sol 14:53:13Z: a copied old note goes even when no figure is left to date; so does a claim with no figure judged
+      return unchanged.with(text: cleaned.rstrip) if events.empty? && cleaned != text
       return unchanged if events.empty?
 
       counts = events.map { |event| event[:kind] }.tally
-      Result.new(text: "#{rewritten.join("\n").rstrip}\n\n#{note_for(events, context)}", replaced: counts.fetch(:replaced, 0),
+      # a first block that went leaves no blank line above the answer
+      kept = without_withheld_only_lines(cleaned.split("\n", -1), words).join("\n").rstrip.sub(/\A(?:[[:blank:]]*\n)+/, '')
+      note = note_for(events, context)
+      Result.new(text: kept.empty? ? note : "#{kept}\n\n#{note}", replaced: counts.fetch(:replaced, 0),
                  confirmed: counts.fetch(:confirmed, 0), withheld: counts.fetch(:withheld, 0) + counts.fetch(:unpublished, 0),
                  quoted: counts.fetch(:quoted, 0), schedule: events.filter_map { |event| event[:schedule] }.first)
     end
@@ -430,6 +525,160 @@ module LegalChatbot
     def self.without_echoed_note(text)
       paragraphs = text.split(/\n{2,}/)
       paragraphs.any? { |paragraph| paragraph.match?(NOTE_LEAD) } ? paragraphs.grep_v(NOTE_LEAD).join("\n\n") : text
+    end
+
+    # The answer's false monthly claims (MONTHLY_POINTER), each line holding one to the indexes of the rows it describes:
+    # rows that hold a figure of art. 115 and no real conversion of one
+    def self.monthly_claims(lines)
+      lines.each_index.with_object({}) do |index, claims|
+        next if lines[index].match?(BLOCKQUOTE) || sentences(lines[index]).none? { |sentence| monthly_sentence?(sentence) }
+
+        rows = described_rows(lines, index)
+        described = rows.map { |row| lines[row] }.join("\n")
+        claims[index] = rows if art115_values(described).any? && !real_conversion?(described)
+      end
+    end
+
+    # The rows a claim describes: its own line and the lines right above it in its block, or, when those hold no amount
+    # (the claim opens a paragraph of its own, after a list), also the block right before it
+    def self.described_rows(lines, index)
+      rows = block_up(lines, index)
+      return rows if rows.any? { |row| lines[row].match?(MONEY_VALUE) }
+
+      above = rows.last - 1
+      above -= 1 while above >= 0 && lines[above].strip.empty?
+      above.negative? ? rows : rows + block_up(lines, above)
+    end
+
+    # A line and the lines right above it up to a blank line, nearest first
+    def self.block_up(lines, index)
+      rows = [index]
+      rows << (rows.last - 1) while rows.last.positive? && !lines[rows.last - 1].strip.empty?
+      rows
+    end
+
+    def self.monthly_sentence?(sentence)
+      sentence.match?(MONTHLY_POINTER) && sentence.match?(MONTHLY_MARK) && !sentence.match?(AMOUNT) &&
+        !sentence.match?(NEGATION) && !sentence.match?(DAILY_WORDS)
+    end
+
+    # The figures of a text that read as a row of art. 115
+    def self.art115_values(text)
+      text.to_enum(:scan, AMOUNT).filter_map do
+        value = BigDecimal("#{Regexp.last_match[:int]}.#{Regexp.last_match[:dec]}")
+        value if READINGS.key?(value)
+      end
+    end
+
+    # A monthly figure in the text that is CONVERSION_DAYS times one of its figures of art. 115
+    def self.real_conversion?(text)
+      daily = art115_values(text)
+      text.scan(MONEY_VALUE).any? do |whole, cents|
+        value = BigDecimal("#{whole.delete('^0-9')}.#{cents}")
+        daily.any? { |day| (value - (day * CONVERSION_DAYS)).abs <= CONVERSION_TOLERANCE }
+      end
+    end
+
+    # The lines without the monthly claims of the lines at the given indexes
+    def self.without_monthly_claims(lines, indexes)
+      lines.each_with_index.filter_map do |line, index|
+        next line unless indexes.include?(index)
+
+        kept = sentences(line).reject { |sentence| monthly_sentence?(sentence) }
+        kept.empty? ? nil : "#{line[/\A[[:space:]]*/]}#{kept.join(' ')}"
+      end
+    end
+
+    # The lines without the answer's claims of a manual check of the amounts (CHECK_CLAIM), each judged in its sentence
+    # (without_claim); a quotation stays
+    def self.without_check_claims(lines, words)
+      placeholders = [words[:unpublished_withheld], words[:withheld]]
+      lines.filter_map do |line|
+        next line if line.match?(BLOCKQUOTE) || !line.match?(CHECK_CLAIM)
+
+        kept = sentences(line).filter_map { |sentence| without_claim(sentence, placeholders) }
+        kept.empty? ? nil : "#{line[/\A[[:space:]]*/]}#{kept.join(' ')}"
+      end
+    end
+
+    # A sentence without its claim, or nil when only the claim was in it (Sol 00:37:56Z, 02:47:29Z, 04:09:17Z). The
+    # claim is about the amounts only when its sentence holds a figure, a placeholder or an amount word: a person
+    # checking a dossier stays. In brackets, the bracket goes; in a comma or semicolon clause without a figure, that
+    # clause goes and the statement stays. A claim that shares its clause with a figure loses its words of provenance
+    # (without_claim_words) and the statement with its figure stays: the note alone dates the figures it shows, so no
+    # second date stands in the answer. A sentence left with neither a figure nor a placeholder goes.
+    def self.without_claim(sentence, placeholders)
+      return sentence unless sentence.match?(CHECK_CLAIM)
+
+      shown = sentence.match?(AMOUNT)
+      withheld = placeholders.any? { |placeholder| sentence.include?(placeholder) }
+      return sentence unless shown || withheld || sentence.match?(CHECK_CLAIM_SUBJECT)
+
+      unbracketed = sentence.gsub(/[[:space:]]*\([^()\n]*\)/) { |bracket| bracket.match?(CHECK_CLAIM) ? '' : bracket }
+      return unbracketed unless unbracketed.match?(CHECK_CLAIM)
+
+      clauses = unbracketed.split(/(?<=[,;])[[:space:]]+/)
+      kept = clauses.reject { |clause| clause.match?(CHECK_CLAIM) && !clause.match?(AMOUNT) }
+      return nil if kept.empty?
+
+      joined = kept.join(' ').sub(/[,;]\z/, '')
+      joined += unbracketed[/[.!?]\z/].to_s unless joined.match?(/[.!?]\z/)
+      joined = without_claim_words(joined)
+      return nil unless kept.length < clauses.length || joined.match?(AMOUNT) || placeholders.any? { |placeholder| joined.include?(placeholder) }
+
+      joined.sub(/\A\p{Ll}/, &:upcase)
+    end
+
+    # The text without the words of each claim it holds: the check (CHECK_CLAIM), with the auxiliary verb, a date and a
+    # conjunction right before it (CLAIM_LEAD) and a date right after it (CLAIM_TAIL)
+    def self.without_claim_words(text)
+      while (match = text.match(CHECK_CLAIM))
+        text = "#{text[0...match.begin(0)].sub(CLAIM_LEAD, '')}#{text[match.end(0)..].sub(CLAIM_TAIL, '')}"
+      end
+      text.gsub(/[[:space:]]+([.,;:!?])/, '\1').gsub(/[[:space:]]{2,}/, ' ')
+    end
+
+    # The rewritten lines without an item or table row that is left with withheld figures and a label only; a list or a
+    # table that loses every such line loses its lead-in (the line before it that ends in a colon) as well
+    def self.without_withheld_only_lines(lines, words)
+      placeholders = [words[:unpublished_withheld], words[:withheld]]
+      drop = lines.each_index.select { |index| withheld_only?(lines[index], placeholders) }
+      return lines if drop.empty?
+
+      blocks(lines).each do |block|
+        items = block.reject { |index| (index == block.first && lines[index].match?(TABLE_ROW)) || lines[index].match?(TABLE_SEPARATOR) }
+        next unless items.any? && items.all? { |index| drop.include?(index) }
+
+        drop.concat(block)
+        lead = lines[0...block.first].rindex { |line| !line.strip.empty? }
+        drop << lead if lead && lines[lead].rstrip.end_with?(':') && !lines[lead].match?(LIST_ITEM) && !lines[lead].match?(TABLE_ROW)
+      end
+      lines.reject.with_index { |_line, index| drop.include?(index) }
+    end
+
+    def self.withheld_only?(line, placeholders)
+      return false unless line.match?(LIST_ITEM) || (line.match?(TABLE_ROW) && !line.match?(TABLE_SEPARATOR))
+      return false unless placeholders.any? { |placeholder| line.include?(placeholder) }
+
+      rest = placeholders.reduce(line) { |text, placeholder| text.gsub(placeholder, ' ') }
+      return false if rest.match?(AMOUNT)
+
+      label = FACTS.values.flat_map(&:values).reduce(rest.sub(LIST_ITEM, ' ').gsub(NEGATED_FAMILY, ' ')) do |text, pattern|
+        text.gsub(pattern, ' ')
+      end
+      label.gsub(FIGURE_WORDS, ' ').gsub(LABEL_FILLER, ' ').scan(/[[:alpha:]]+/).empty?
+    end
+
+    # Runs of consecutive list items, and of consecutive table lines, as arrays of line indexes
+    def self.blocks(lines)
+      lines.each_index.slice_when { |before, after| line_kind(lines[before]) != line_kind(lines[after]) }
+           .select { |run| line_kind(lines[run.first]) }
+    end
+
+    def self.line_kind(line)
+      return :table if line.match?(TABLE_ROW)
+
+      :list if line.match?(LIST_ITEM)
     end
 
     # One line: quotations and protected spans pass unchanged; every figure elsewhere is judged in its clause
@@ -472,7 +721,10 @@ module LegalChatbot
           next
         end
 
-        replacement, qualifier = judge(match, readings, scope, context, events)
+        monthly = segment[cursor..].to_s.match?(MONTHLY_RATE) ||
+                  (context[:monthly_lines]&.include?(place[:index]) && !scope[:clause].to_s.match?(DAILY_WORDS) &&
+                   !scope[:frame].to_s.match?(DAILY_WORDS))
+        replacement, qualifier = judge(match, readings, scope, context, events, monthly: monthly)
         if qualifier
           rate = segment[cursor..].to_s[DAILY_RATE]
           if rate
@@ -508,7 +760,52 @@ module LegalChatbot
       paragraph = place[:lines][paragraph_start(place[:lines], place[:index])...place[:index]] + [line[0...first]]
       before_all = paragraph.flat_map { |text| sentences(text) }.reverse
       { clause: clause, sentence: sentence, before: before_all.grep_v(AMOUNT), before_all: before_all, dated: sentence,
-        frame: sentence }
+        frame: sentence, local_phase: local_phase(sentence, position - first) }
+    end
+
+    # Sol 2026-11-25 04:13:27Z (#116, #304): the band of a figure from the words around it, when its clause alone cannot
+    # say. Among several figures in one clause ("van €51,12 per dag in maanden één tot drie tot €51,12 in maanden zeven
+    # tot twaalf"), the one band named between the figure and its neighbour: after it, unless the clause names a band
+    # before its first figure. A figure whose clause names no band and that is followed by "en daarna ..." is the first
+    # period ("alleenwonend €57,53 en daarna €57,53").
+    def self.local_phase(sentence, offset)
+      start, stop = clause_bounds(sentence, offset)
+      clause = sentence[start...stop]
+      figures = clause.to_enum(:scan, AMOUNT).map { Regexp.last_match }
+      index = figures.index { |figure| figure.begin(0) <= offset - start && offset - start < figure.end(0) }
+      return nil unless index
+
+      if figures.length > 1
+        span = if fact_values(clause[0...figures.first.begin(0)], :phase).any?
+                 clause[(index.zero? ? 0 : figures[index - 1].end(0))...figures[index].begin(0)]
+               else
+                 clause[figures[index].end(0)...(figures[index + 1]&.begin(0) || clause.length)]
+               end
+        bands = fact_values(span.to_s, :phase)
+        return bands.first if bands.one?
+      end
+      return nil unless fact_values(clause, :phase).empty?
+
+      # Sol 2026-11-25 05:06:10Z, 06:53:11Z: only a real pair, a figure in the clause that "daarna" opens, up to its
+      # clause break ("... en vervolgens stopt de uitkering terwijl een samenwonende €60,92 krijgt" is no pair), and
+      # never against the band a clause without a figure states ("Na de eerste zes maanden: alleenwonend €57,53 en
+      # daarna stopt de uitkering.")
+      following = sentence[stop..].to_s
+      after = following.match(THEN_AFTER)
+      return nil unless after && lead_phase(sentence).nil?
+
+      :first6 if following[after.end(0)..].to_s.split(CLAUSE_BREAK, 2).first.to_s.match?(AMOUNT)
+    end
+
+    def self.clause_bounds(sentence, position)
+      start = 0
+      sentence.to_enum(:scan, CLAUSE_BREAK).each do
+        found = Regexp.last_match
+        return [start, found.begin(0)] if position < found.begin(0)
+
+        start = found.end(0)
+      end
+      [start, sentence.length]
     end
 
     # A figure in euro in an answer about unemployment, whose clause names no other cost (or names the benefit), whose
@@ -525,9 +822,17 @@ module LegalChatbot
     end
 
     # The figure's row and the schedule of its period: [replacement, qualifier or nil]
-    def self.judge(match, readings, scope, context, events)
+    def self.judge(match, readings, scope, context, events, monthly: false)
       words = TEXT[context[:language]]
       facts = facts_for([scope[:clause], scope[:sentence], *scope[:before], context[:question]])
+      # Sol 2026-11-25 03:16:54Z (#116), 03:33:05Z (#304): in a sentence with several figures, a band named only in a
+      # clause with another figure is not this figure's. It takes the one band the sentence's clauses without a figure
+      # name ("In de eerste zes maanden: alleenwonend ... en daarna ..."), or a band an earlier sentence gives, or none.
+      if scope[:local_phase]
+        facts[:phase] = scope[:local_phase]
+      elsif borrowed_phase?(scope)
+        facts[:phase] = lead_phase(scope[:sentence].to_s) || facts_for([*scope[:before], context[:question]])[:phase]
+      end
       period = period_for(scope, context)
       schedule, reason = schedule_for(period, schedules: context[:schedules])
       latest = context[:schedules].sort_by { |candidate| candidate[:from] }.rfind { |candidate| candidate[:from] <= period.first }
@@ -536,6 +841,10 @@ module LegalChatbot
       if regime == :company
         events << { kind: :unpublished }
         return [words[:unpublished_withheld], nil]
+      end
+      if monthly
+        events << { kind: :withheld, regime: regime || :full, reason: :unit, period: period }
+        return [words[:withheld], nil]
       end
       unless row
         events << { kind: :withheld, regime: regime || :full, reason: :unidentified, period: period }
@@ -554,6 +863,21 @@ module LegalChatbot
 
       events << { kind: :replaced, regime: row[:regime], schedule: schedule }
       ["#{match[:pre]}#{written(indexed(row[:base], schedule[:rank]), match[:sep])}#{match[:post]}", qualifier]
+    end
+
+    # A prose sentence with more than one figure whose band is named in another clause than this figure's (a table row's
+    # label stands for all its cells)
+    def self.borrowed_phase?(scope)
+      sentence = scope[:sentence].to_s
+      return false if sentence.match?(TABLE_ROW) || sentence.scan(AMOUNT).length < 2
+
+      fact_values(scope[:clause].to_s, :phase).empty? && fact_values(sentence, :phase).any?
+    end
+
+    # The one band the clauses of a sentence that hold no figure name, or nil
+    def self.lead_phase(sentence)
+      bands = sentence.split(CLAUSE_BREAK).grep_v(AMOUNT).flat_map { |clause| fact_values(clause, :phase) }
+      bands.uniq.one? ? bands.first : nil
     end
 
     # [row, rank, how]: the row the facts allow that the figure reads as (:figure), the one row the facts allow when the
@@ -797,7 +1121,9 @@ module LegalChatbot
     def self.note_for(events, context)
       language = context[:language]
       words = TEXT.fetch(language)
-      parts = [words[:base]]
+      # What the base amounts are matters only beside a figure; without one, the limitation stands alone (Sol 00:37:56Z)
+      shown = events.any? { |event| %i[replaced confirmed quoted].include?(event[:kind]) }
+      parts = shown ? [words[:base]] : []
       # quoted base amounts given indexed apart are dated by their schedule too
       events.select { |event| %i[replaced confirmed quoted].include?(event[:kind]) && event[:schedule] }
             .group_by { |event| event[:schedule] }.each do |schedule, used|
@@ -809,6 +1135,8 @@ module LegalChatbot
         see = tables(language, withheld.map { |event| event[:regime] }, see: true)
         parts << if reason == :unidentified
                    format(words[:unidentified], tables: see)
+                 elsif reason == :unit
+                   format(words[:unit], tables: see)
                  elsif reason == :stale && period == [context[:today], context[:today]]
                    format(words[:stale], tables: see)
                  else

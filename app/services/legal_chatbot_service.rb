@@ -868,7 +868,9 @@ class LegalChatbotService
   # SourcePassageExcerpt instead: their decisive reasoning may be far beyond
   # the introduction and a catalogue summary is not literal source text.
   def article_context_text(text, question, max_article_chars, article: nil)
-    text = text_from_context_anchor(text, article)
+    # #221: the model reads the text without Justel's amendment markers; they go before the anchor is found, so an
+    # excerpt that starts inside an amended span leaves no closing marker behind (Sol 2026-11-25 02:51:39Z)
+    text = text_from_context_anchor(LegalChatbot::AmendmentMarkers.strip(text), article)
     if article && (commercial_excerpt = LegalChatbot::CommercialWebsiteContext.excerpt(article, text: text, question: question))
       return commercial_excerpt
     end

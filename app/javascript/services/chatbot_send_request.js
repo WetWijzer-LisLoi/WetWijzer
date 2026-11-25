@@ -127,6 +127,60 @@ const ZK_CONFLICT_MESSAGES = {
 // maps them to one capacity sentence that names no model or provider.
 const BUDGET_CODES = new Set(['model_daily_cap', 'provider_monthly_cap', 'provider_budget_unavailable'])
 
+// The site's own request limits answer 429 with code 'rate_limited', the
+// window in seconds (60 for the minute limit, 3600 for the hour) and when it
+// ends (config/initializers/rack_attack.rb). The request never reached the
+// chatbot, so nothing was charged. Sol 2026-11-24 23:55:37Z (#1337): the real
+// reset time, in the reader's language, worded apart from a credit or a model
+// budget refusal.
+// Sol 2026-11-25 02:51:39Z: "per hour" only for the hour's window, a neutral
+// lead for any longer one (none reaches the chatbot today: the minute, the
+// five minutes and the hour do, test/integration/rate_limiting_test.rb), and
+// "1 seconde" in the singular.
+const RATE_LIMITED = {
+  nl: { hour: 'U hebt het maximum aantal vragen per uur bereikt.', burst: 'U hebt te veel vragen kort na elkaar gesteld.',
+    longer: 'U hebt het maximum aantal vragen voor deze periode bereikt.',
+    from: 'Vanaf {time} kunt u opnieuw vragen stellen.', retry: 'Probeer het over {wait} opnieuw.',
+    second: 'seconde', seconds: 'seconden', minutes: 'minuten', free: 'Deze vraag is niet aangerekend.' },
+  fr: { hour: 'Vous avez atteint le nombre maximal de questions par heure.', burst: 'Vous avez posé trop de questions en peu de temps.',
+    longer: 'Vous avez atteint le nombre maximal de questions pour cette période.',
+    from: 'Vous pourrez en poser de nouveau à partir de {time}.', retry: 'Réessayez dans {wait}.',
+    second: 'seconde', seconds: 'secondes', minutes: 'minutes', free: 'Cette question ne vous a pas été facturée.' },
+  de: { hour: 'Sie haben die Höchstzahl an Fragen pro Stunde erreicht.', burst: 'Sie haben zu viele Fragen kurz hintereinander gestellt.',
+    longer: 'Sie haben die Höchstzahl an Fragen für diesen Zeitraum erreicht.',
+    from: 'Ab {time} Uhr können Sie wieder Fragen stellen.', retry: 'Versuchen Sie es in {wait} erneut.',
+    second: 'Sekunde', seconds: 'Sekunden', minutes: 'Minuten', free: 'Diese Frage wurde nicht berechnet.' },
+  en: { hour: 'You have reached the maximum number of questions per hour.', burst: 'You have asked too many questions in a short time.',
+    longer: 'You have reached the maximum number of questions for this period.',
+    from: 'You can ask again from {time}.', retry: 'Please try again in {wait}.',
+    second: 'second', seconds: 'seconds', minutes: 'minutes', free: 'This question was not charged.' }
+}
+const TIME_LOCALES = { nl: 'nl-BE', fr: 'fr-BE', de: 'de-BE', en: 'en-GB' }
+const HOUR = 3600
+
+// The sentence for a 'rate_limited' body, or null when the body names neither
+// a valid reset nor a wait (the server's own text then stays).
+function rateLimitedMessage(data, lang) {
+  const words = RATE_LIMITED[lang] || RATE_LIMITED.nl
+  const period = Number(data.period)
+  const resetAt = new Date(data.reset_at)
+  let when = null
+  if (period === HOUR && typeof data.reset_at === 'string' && !Number.isNaN(resetAt.getTime())) {
+    const time = resetAt.toLocaleTimeString(TIME_LOCALES[lang] || 'nl-BE', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Brussels' })
+    when = words.from.replace('{time}', time)
+  } else {
+    const seconds = Math.ceil(Number(data.retry_after))
+    if (Number.isFinite(seconds) && seconds > 0) {
+      const wait = seconds === 1 ? `1 ${words.second}`
+        : seconds < 120 ? `${seconds} ${words.seconds}` : `${Math.ceil(seconds / 60)} ${words.minutes}`
+      when = words.retry.replace('{wait}', wait)
+    }
+  }
+  if (!when) return null
+  const lead = period === HOUR ? words.hour : period > HOUR ? words.longer : words.burst
+  return `${lead} ${when} ${words.free}`
+}
+
 const UPSELL_HEADER = { nl: '🔓 Blijf juridische vragen stellen:', fr: '🔓 Continuez à poser des questions juridiques :', de: '🔓 Stellen Sie weiterhin juristische Fragen:', en: '🔓 Keep asking legal questions:' }
 const UPSELL_BUY_LABEL = { nl: '💳 Credits Kopen', fr: '💳 Acheter des Crédits', de: '💳 Credits Kaufen', en: '💳 Buy Credits' }
 const UPSELL_PRO_LABEL = { nl: '⚡ Ontdek Praxis Pro', fr: '⚡ Découvrez Praxis Pro', de: '⚡ Entdecken Sie Praxis Pro', en: '⚡ Discover Praxis Pro' }
@@ -149,6 +203,8 @@ export function jsonErrorDescriptor(status, data, language) {
     // the stream's capacity sentence, with the charge notice when there is
     // one. An ordinary rate limit keeps its text and retry hint.
     if (BUDGET_CODES.has(data.error)) return { message: sseErrorMessage(data, lang) }
+    const limited = data.code === 'rate_limited' ? rateLimitedMessage(data, lang) : null
+    if (limited) return { message: limited }
     const retryAfter = data.retry_after ? ` (${Math.ceil(data.retry_after / 60)} min)` : ""
     return { message: withChargeNotice(data.error + retryAfter, data, lang) }
   }

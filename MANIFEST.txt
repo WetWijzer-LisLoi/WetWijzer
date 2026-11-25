@@ -337,6 +337,7 @@ app/services/law_toc_entries.rb
 app/services/law_toc_targets.rb
 app/services/legal_chatbot/advisory_opinions.rb
 app/services/legal_chatbot/air_passenger_source_scope.rb
+app/services/legal_chatbot/amendment_markers.rb
 app/services/legal_chatbot/answer_guards.rb
 app/services/legal_chatbot/answer_linking.rb
 app/services/legal_chatbot/answer_meta.rb
@@ -942,6 +943,7 @@ public/vite/assets/application-CM5hG9ec.js
 public/vite/assets/application-CO0dL6Pn.js
 public/vite/assets/application-COM5XECo.css
 public/vite/assets/application-CRH5sO66.js
+public/vite/assets/application-CSmfQ9Un.js
 public/vite/assets/application-CXtzfpCz.css
 public/vite/assets/application-CYGyPn3I.css
 public/vite/assets/application-CYth1P3V.css
@@ -974,7 +976,6 @@ public/vite/assets/application-DGOmgdBG.js
 public/vite/assets/application-DL2VPsTH.js
 public/vite/assets/application-DLj0shQh.js
 public/vite/assets/application-DOHuBpHw.css
-public/vite/assets/application-DPU-NnAW.js
 public/vite/assets/application-DQZJgscu.css
 public/vite/assets/application-DQgxQ4cU.js
 public/vite/assets/application-DRC8r2NI.js

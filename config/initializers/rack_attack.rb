@@ -228,19 +228,28 @@ module Rack
     end
 
     # Custom response for throttled requests; each one counts towards the ban.
+    # Rack::Attack counts in windows aligned to the epoch, so a window ends at the next multiple of its period (an
+    # hour's at the full UTC hour). Sol 2026-11-24 23:55:37Z (#1337): the chatbot showed the English sentence below on
+    # every site and no time; the body now also carries a code, the window and its reset, so the reader is told in
+    # their language when to ask again. `error` stays for other callers.
     self.throttled_responder = lambda do |request|
       Rack::Attack.record_throttled_request(request)
       match_data = request.env['rack.attack.match_data']
       now = match_data[:epoch_time]
+      period = match_data[:period].to_i
+      reset = now + (period - (now % period))
 
       headers = {
         'RateLimit-Limit' => match_data[:limit].to_s,
         'RateLimit-Remaining' => '0',
-        'RateLimit-Reset' => (now + (match_data[:period] - (now % match_data[:period]))).to_s,
+        'RateLimit-Reset' => reset.to_s,
+        'Retry-After' => (reset - now).to_s,
         'Content-Type' => 'application/json'
       }
+      body = { error: 'Rate limit exceeded. Please try again later.', code: 'rate_limited', period: period,
+               retry_after: reset - now, reset_at: Time.at(reset).utc.iso8601 }
 
-      [429, headers, [{ error: 'Rate limit exceeded. Please try again later.' }.to_json]]
+      [429, headers, [body.to_json]]
     end
 
     # Custom response for blocked requests (temporary ban)
