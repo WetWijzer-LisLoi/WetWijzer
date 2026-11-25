@@ -119,9 +119,10 @@ module LegalChatbot
           replacement
         else
           rejected += 1
-          quote_removal_notice(block)
+          withheld_quote_notice(block, judgment_pinpoint(quote, candidates))
         end
       end
+      guarded = without_dangling_quote_references(guarded) if rejected.positive?
       @last_quote_guard_result = {
         verified: true,
         checked: checked,
@@ -600,10 +601,202 @@ module LegalChatbot
     # with "- Bij niet-naleving ..." running straight on from it, in a run the
     # owner reported. Give the notice the same trailing newlines the block had
     # so the surrounding paragraph and list structure survives.
-    def quote_removal_notice(block)
+    def quote_removal_notice(block, pinpoint = nil)
       trailing = block.to_s[/\n+\z/].to_s
       trailing = "\n" if trailing.empty?
-      "#{missing_quote_message}#{trailing}"
+      "#{[missing_quote_message, pinpoint].compact.join(' ')}#{trailing}"
+    end
+
+    # Sol 2026-11-24 15:25:09Z (live 1.1.100): 140/2018 printed the omission notice and named neither B.1.8 nor the
+    # memorandum it quotes. When a quotation from a judgment is withheld, the notice adds a verified pinpoint: the
+    # consideration that holds at least PINPOINT_MIN_SHARE of the quotation's longer words, and the citations of the
+    # preparatory works in it, both copied from the decision. A quotation of a statute gets none.
+    PINPOINT_MIN_SHARE = 0.8
+    PINPOINT_MIN_WORDS = 6
+    PINPOINT_MAX_REFERENCES = 2
+    CONSIDERATION_LABEL = /^([AB]\.\d{1,2}(?:\.\d{1,2}){0,3})\.[[:space:]]/
+
+    # Sol 2026-11-24 20:11:39Z: unordered overlap with a whole consideration is not enough. The words must sit together:
+    # a supporting passage is a run of the consideration's words that holds PINPOINT_MIN_SHARE of them, at most
+    # PINPOINT_MAX_SPREAD times the quotation's length plus PINPOINT_SPREAD_MARGIN words. Two considerations can share
+    # the same words with opposite holdings, so passages in a second consideration anywhere in the cited judgments leave
+    # the pinpoint out. Sol 21:28:20Z: the same words can also hold the contrary within the one consideration left, so a
+    # passage whose sentences negate other words than the quotation does is no support (see same_polarity?); without a
+    # passage that agrees there is no pinpoint, and the citations of the passage's own sentences are given only when one
+    # passage agrees (two agreeing passages give the consideration alone).
+    PINPOINT_MAX_SPREAD = 2
+    PINPOINT_SPREAD_MARGIN = 8
+
+    def judgment_pinpoint(quote, candidates)
+      quote_tokens = normalized_quote_tokens(quote)
+      wanted = quote_tokens.select { |token| token.length >= 4 }.uniq.to_set
+      return nil if wanted.length < PINPOINT_MIN_WORDS
+
+      needed = (wanted.length * PINPOINT_MIN_SHARE).ceil
+      longest = (quote_tokens.length * PINPOINT_MAX_SPREAD) + PINPOINT_SPREAD_MARGIN
+      found = Array(candidates).flat_map do |source|
+        next [] unless source.is_a?(Hash) && source[:ecli].to_s.start_with?('ECLI:')
+
+        judgment_considerations(source[:text]).filter_map do |label, body|
+          spans = supporting_spans(body, wanted, needed, longest)
+          [label, body, spans, source[:ecli]] if spans.any?
+        end
+      end
+      return nil unless found.one?
+
+      label, body, spans, ecli = found.first
+      agreeing = spans.map { |first, last| passage_sentence_bounds(body, first, last) }.uniq.select do |start, stop|
+        same_polarity?(quote_tokens, source_tokens_with_offsets(body[start..stop]).map(&:first), wanted)
+      end
+      return nil if agreeing.empty?
+
+      references = if agreeing.one?
+                     start, stop = agreeing.first
+                     body[start..stop].scan(LegalChatbot::SourcePassageExcerpt::PREPARATORY_REFERENCE).flatten
+                                      .map { |reference| reference.gsub(/[[:space:]]+/, ' ').strip }.uniq.first(PINPOINT_MAX_REFERENCES)
+                   else
+                     []
+                   end
+      pinpoint_message(label, ecli, references)
+    end
+
+    # [[first character, last character], ...] of the passages of body, in order and not overlapping: each is the
+    # shortest run that ends where `needed` distinct wanted words are first all present, kept when it is shorter than
+    # `longest` words; the next is looked for after the kept one's sentence, so that the rest of that sentence never
+    # joins it. A run too long gives up its first word so that a closer run further on can still be found.
+    def supporting_spans(body, wanted, needed, longest)
+      tokens = source_tokens_with_offsets(body)
+      ends = sentence_ends(body)
+      spans = []
+      counts = Hash.new(0)
+      covered = 0
+      left = 0
+      tokens.each_with_index do |(token, _start, _stop), right|
+        next if right < left
+
+        if wanted.include?(token)
+          covered += 1 if counts[token].zero?
+          counts[token] += 1
+        end
+        next if covered < needed
+
+        loop do
+          head = tokens[left].first
+          break if wanted.include?(head) && counts[head] == 1 && covered == needed
+
+          if wanted.include?(head)
+            counts[head] -= 1
+            covered -= 1 if counts[head].zero?
+          end
+          left += 1
+        end
+        if right - left < longest
+          spans << [tokens[left][1], tokens[right][2] - 1]
+          boundary = ends.find { |index| index >= tokens[right][2] - 1 } || body.length
+          counts = Hash.new(0)
+          covered = 0
+          left = tokens.index { |(_word, start, _stop)| start > boundary } || tokens.length
+        else
+          head = tokens[left].first
+          counts[head] -= 1
+          covered -= 1 if counts[head].zero?
+          left += 1
+        end
+      end
+      spans
+    end
+
+    # Negations whose scope the polarity check compares; "pas" is the French one ("n'est pas justifiée").
+    NEGATION_WORDS = %w[niet geen nooit noch niets zonder ne pas ni jamais aucun aucune rien sans nicht kein keine keinen keinem
+                        keiner keines nie niemals weder ohne not no never neither nor none without].to_set.freeze
+    NEGATION_REACH = 3
+
+    # Each negation's predicate key: the nearest of the quotation's longer words before it and the nearest after it,
+    # within NEGATION_REACH words, negations left out ("de Grondwet niet schendt" gives grondwet and schendt); a negation
+    # next to none of them counts for nothing.
+    def negation_keys(tokens, wanted)
+      content = ->(token) { wanted.include?(token) && !NEGATION_WORDS.include?(token) }
+      tokens.each_index.filter_map do |index|
+        next unless NEGATION_WORDS.include?(tokens[index])
+
+        before = tokens[[index - NEGATION_REACH, 0].max...index].rfind(&content)
+        after = tokens[(index + 1)..(index + NEGATION_REACH)].to_a.find(&content)
+        [before.to_s, after.to_s] if before || after
+      end.sort
+    end
+
+    # Sol 2026-11-24 21:28:20Z and 22:16:54Z: the passage must negate exactly what the quotation negates. "niet redelijk
+    # verantwoord" does not support "... de Grondwet niet schendt", and "is redelijk maar niet noodzakelijk" does not
+    # support "is niet redelijk maar wel noodzakelijk", although the words around the two negations overlap; when the
+    # negated predicate is not the same, it is uncertain and no pinpoint is given. A quotation that keeps the passage's
+    # words but moves the negation elsewhere ("schendt de Grondwet niet" against "de Grondwet niet schendt") gets none
+    # either. Limits of the text alone (Sol 22:16:54Z, 22:49:20Z): a contrary wording without any negation ("gegrond"
+    # and "ongegrond", "schendt" and "eerbiedigt") is not seen, nor are swapped actors next to the same words ("de
+    # werkgever is aansprakelijk voor de schade van de werknemer" against the reverse); more word lists would not
+    # establish support, so the rule stays one that omits a pinpoint when in doubt.
+    def same_polarity?(quote_tokens, passage_tokens, wanted)
+      negation_keys(quote_tokens, wanted) == negation_keys(passage_tokens, wanted)
+    end
+
+    # The sentences the passage stands in (Array#rfind is core Ruby 4.0).
+    def passage_sentence_bounds(body, first, last, ends = sentence_ends(body))
+      [(ends.rfind { |index| index < first } || -1) + 1, ends.find { |index| index >= last } || (body.length - 1)]
+    end
+
+    # Where body's sentences end. A full stop inside parentheses ends no sentence, so a citation such as
+    # "(Parl. St., Kamer, 2013-2014, DOC 53-3144/001, p. 39)" stays with the sentence it closes.
+    def sentence_ends(body)
+      ends = []
+      depth = 0
+      body.each_char.with_index do |char, index|
+        depth += 1 if char == '('
+        depth -= 1 if char == ')' && depth.positive?
+        ends << index if depth.zero? && '.!?'.include?(char) && (index + 1 == body.length || body[index + 1].match?(/\s/))
+      end
+      ends
+    end
+
+    # Sol 2026-11-24 17:38:35Z (live 1.1.101): the 140/2018 answer said "de formulering hierboven tussen aanhalingstekens
+    # is de letterlijke tekst zoals die in de bron staat" after its only quotation was withheld. Sol 20:11:39Z: only that
+    # sentence goes, the one directly after the notice of a withheld quotation, when it speaks of a quotation above as
+    # literal; an ordinary legal sentence with the same words elsewhere stays. The mark is a private-use character that
+    # never leaves the guard.
+    WITHHELD_QUOTE_MARK = "\u{E000}"
+    QUOTE_ABOVE = /(?<![[:alnum:]])(?:hierboven|bovenstaande?|ci-dessus|plus\s+haut|oben|obige[nmrs]?|above)(?![[:alnum:]])/iu
+    QUOTE_LITERAL = /(?<![[:alnum:]])(?:letterlijk\p{L}*|aanhalingstekens|littéra\p{L}*|textuel\p{L}*|guillemets|wörtlich\p{L}*|
+                     anführungszeichen|verbatim|quotation\s+marks|quoted)(?![[:alnum:]])/iux
+    QUOTE_NOUN = /(?<![[:alnum:]])(?:citaat|citaten|aanhaling\p{L}*|passage|formulering|bewoording\p{L}*|tekst|citation\p{L}*|
+                  formulation|libellé|texte|zitat\p{L}*|stelle|formulierung|wortlaut|text|quotation|quote|wording)(?![[:alnum:]])/iux
+
+    def withheld_quote_notice(block, pinpoint)
+      quote_removal_notice(block, pinpoint).sub(/(\n*)\z/) { "#{WITHHELD_QUOTE_MARK}#{Regexp.last_match(1)}" }
+    end
+
+    def without_dangling_quote_references(text)
+      text.gsub(/#{WITHHELD_QUOTE_MARK}(\n*)([^.!?\n]+[.!?]?[[:blank:]]*)?/o) do
+        gap = Regexp.last_match(1)
+        sentence = Regexp.last_match(2).to_s
+        vouching = !sentence.lstrip.start_with?('>') && # a quotation line that follows is never cut
+                   sentence.match?(QUOTE_ABOVE) && sentence.match?(QUOTE_LITERAL) && sentence.match?(QUOTE_NOUN)
+        vouching ? gap : "#{gap}#{sentence}"
+      end
+    end
+
+    # [[label, its text], ...] in the judgment's order
+    def judgment_considerations(text)
+      body = text.to_s
+      starts = body.to_enum(:scan, CONSIDERATION_LABEL).map { [Regexp.last_match.begin(0), Regexp.last_match[1]] }
+      starts.each_with_index.map { |(start, label), index| [label, body[start...(starts[index + 1]&.first || body.length)]] }
+    end
+
+    def pinpoint_message(label, ecli, references)
+      cited = references.any? ? " (#{references.join('; ')})" : ''
+      case @language
+      when 'fr' then "Le passage figure au considérant #{label} de #{ecli}#{cited}."
+      when 'de' then "Die Stelle steht in Erwägung #{label} von #{ecli}#{cited}."
+      when 'en' then "The passage is in consideration #{label} of #{ecli}#{cited}."
+      else "De passage staat in overweging #{label} van #{ecli}#{cited}."
+      end
     end
 
     def missing_quote_message

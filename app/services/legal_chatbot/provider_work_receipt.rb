@@ -32,7 +32,7 @@ module LegalChatbot
 
     KINDS = %w[question_embedding hyde generation question_translation answer_translation].freeze
 
-    attr_reader :reservation, :dispatch_count, :first_kind
+    attr_reader :reservation, :dispatch_count, :first_kind, :kinds
 
     # reservation: the browser BillingReservation (nil for unbilled service
     # requests, which are tracked in memory only).
@@ -45,6 +45,7 @@ module LegalChatbot
       @dispatched = false
       @dispatch_count = 0
       @first_kind = nil
+      @kinds = [].freeze
       @cancelled = false
       @refusal = nil
     end
@@ -69,6 +70,8 @@ module LegalChatbot
             @dispatched = true
           end
           @dispatch_count += 1
+          # Replaced whole, never changed in place, so readers need no lock.
+          @kinds = (@kinds | [kind]).freeze
         end
       end
       true
@@ -90,6 +93,15 @@ module LegalChatbot
     # thread may be inside an admission.
     def dispatched?
       @dispatched
+    end
+
+    # Owner decision 2026-11-24 (Sol 18:07:56Z): a question that WetWijzer's
+    # own budget cap stops before any request to the selected generation model
+    # is written costs nothing, even after its embedding. This tells whether
+    # such a request was admitted for this question (recorded before its
+    # write, like every dispatch). Non-blocking, as #dispatched? is.
+    def generation_dispatched?
+      @kinds.include?('generation')
     end
 
     private

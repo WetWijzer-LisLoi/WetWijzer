@@ -80,6 +80,14 @@ const SSE_CODE_MESSAGES = {
     de: 'Der Chatbot hat vorübergehend sein Kapazitätslimit erreicht. Bitte versuchen Sie es später erneut.',
     en: 'The chatbot has temporarily reached its capacity limit. Please try again later.'
   },
+  // Sol 2026-11-24: the selected model's own daily budget refused, so the
+  // reader can pick another model. The model is not named.
+  selected_model_budget: {
+    nl: 'Het gekozen model heeft voorlopig zijn dagbudget bereikt. Kies een ander model of probeer het later opnieuw.',
+    fr: 'Le modèle choisi a provisoirement atteint son budget journalier. Choisissez un autre modèle ou réessayez plus tard.',
+    de: 'Das gewählte Modell hat vorläufig sein Tagesbudget erreicht. Wählen Sie ein anderes Modell oder versuchen Sie es später erneut.',
+    en: 'The selected model has reached its daily budget for now. Choose another model or try again later.'
+  },
   billing_reconciliation_unavailable: {
     nl: 'Uw creditsaldo kon niet worden gecontroleerd. Er is niets aangerekend. Probeer het over enkele ogenblikken opnieuw.',
     fr: "Votre solde de crédits n'a pas pu être vérifié. Rien n'a été débité. Réessayez dans quelques instants.",
@@ -115,23 +123,39 @@ const NOTHING_CHARGED = {
 // `charge_notice`, already localized, exactly once; it is appended as sent.
 // Without it, a code that used to promise "nothing was charged" (a fence
 // after the model ran) still does, truthfully, when the payload reports no
-// deduction.
+// deduction. Our own budget caps say so too (owner decision 2026-11-24: a
+// question they stop before the selected generation model was called costs
+// nothing, even after its embedding), but only on a stated zero (Sol
+// 21:28:20Z): an explicit free preflight or a confirmed refund carries
+// credits_deducted 0; a missing credits_info, or a refund still pending
+// (credits_deducted null), establishes neither.
+const BUDGET_REFUSALS = ['model_daily_cap', 'provider_monthly_cap', 'provider_budget_unavailable']
+
 export function withChargeNotice(message, parsed, language) {
   const lang = language || 'nl'
   const notice = typeof parsed?.charge_notice === 'string' ? parsed.charge_notice.trim() : ''
   if (notice) return `${message}\n\n${notice}`
-  if (parsed?.error === 'account_inactive' && !(parsed.credits_info && parsed.credits_info.credits_deducted > 0)) {
-    return `${message} ${NOTHING_CHARGED[lang] || NOTHING_CHARGED.nl}`
-  }
-  return message
+  const deducted = parsed?.credits_info ? parsed.credits_info.credits_deducted : undefined
+  const free = BUDGET_REFUSALS.includes(parsed?.error)
+    ? deducted === 0
+    : parsed?.error === 'account_inactive' && !(deducted > 0)
+  return free ? `${message} ${NOTHING_CHARGED[lang] || NOTHING_CHARGED.nl}` : message
 }
 
 // The three budget codes share one sentence: which cap tripped is an
-// operator detail, and the copy never names models or providers.
+// operator detail, and the copy never names models or providers. Only the
+// reader's own choice is told apart: when the selected model's daily budget
+// refused (budget_scope "selected_model"), the sentence says so, unnamed.
 const SSE_CODE_ALIASES = {
   model_daily_cap: 'capacity_limit',
   provider_monthly_cap: 'capacity_limit',
   provider_budget_unavailable: 'capacity_limit'
+}
+
+function sseMessageCode(parsed) {
+  if (parsed.error === 'upgrade_required' && parsed.tier === 'purchased') return 'upgrade_required_purchased'
+  if (parsed.error === 'model_daily_cap' && parsed.budget_scope === 'selected_model') return 'selected_model_budget'
+  return SSE_CODE_ALIASES[parsed.error] || parsed.error
 }
 
 // "1 credits" reads as a bug; French also takes the singular for 0.
@@ -179,9 +203,7 @@ function sseErrorSentence(parsed, language) {
   if (parsed.error === 'zero_knowledge_state_conflict') return ZK_CONFLICT_MESSAGES[lang] || ZK_CONFLICT_MESSAGES.nl
   if (parsed.error === 'bad_request') return BAD_REQUEST_MESSAGES[lang] || BAD_REQUEST_MESSAGES.nl
   if (parsed.error === 'insufficient_credits') return insufficientCreditsMessage(parsed, lang)
-  const code = parsed.error === 'upgrade_required' && parsed.tier === 'purchased'
-    ? 'upgrade_required_purchased'
-    : (SSE_CODE_ALIASES[parsed.error] || parsed.error)
+  const code = sseMessageCode(parsed)
   const table = Object.prototype.hasOwnProperty.call(SSE_CODE_MESSAGES, code) ? SSE_CODE_MESSAGES[code] : null
   if (table) return table[lang] || table.nl
   // source_requires_pro puts an already localized sentence in `error`, so

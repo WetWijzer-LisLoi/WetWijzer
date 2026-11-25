@@ -638,9 +638,53 @@ module LegalChatbot
 
         count = Rails.cache.read(model_daily_count_key(model)) || 0
         spend_units = Rails.cache.read(model_daily_spend_key(model)).to_i
-        next_query_units = model_budget_reservation_units(model)
+        next_query_units = model_next_query_units(model)
         at_call_cap = !benchmark_run? && count >= cap
         at_call_cap || spend_units + next_query_units > model_daily_budget_units
+      end
+
+      # Sol 2026-11-24 18:05:18Z: the checks before any provider work must not
+      # admit a question whose first generation the reservation then refuses
+      # after the question's embedding was sent. On 2026-11-24 Opus had
+      # 613,997 of its 10,000,000 daily units left; the check priced the next
+      # question at the flat 131,000 and passed, and the first generations,
+      # priced from their real messages, were refused (reservations 3967, 3969
+      # and 3971). The next question is now priced at the largest admitted
+      # first generation of the model today or yesterday, never below the flat
+      # cost. The spend counters it is compared with include every reservation
+      # still in flight, so room already reserved is never counted twice. Sol
+      # 21:28:20Z: a refused attempt records nothing (a refused 1.10 EUR
+      # request must not stop a later 0.30 EUR one with 0.70 EUR left).
+      def model_next_query_units(model)
+        [model_budget_reservation_units(model), model_reservation_peak_units(model)].max
+      end
+
+      def model_reservation_peak_key(model, date = Date.current)
+        "model_reservation_peak_micro_eur:#{model}:#{date}"
+      end
+
+      # Advisory: an unreadable cache prices at the flat cost, as before.
+      def model_reservation_peak_units(model)
+        [Date.current, Date.current.prev_day].map { |date| Rails.cache.read(model_reservation_peak_key(model, date)).to_i }.max
+      rescue StandardError
+        0
+      end
+
+      # Only grows within a day: the read, the comparison and the write hold the
+      # budget counters' own lock (Sol 21:28:20Z: concurrent writers must not
+      # lower the peak), across processes on the file store, in this process
+      # otherwise.
+      def record_model_reservation_peak(model, units)
+        key = model_reservation_peak_key(model)
+        cache = Rails.cache
+        raise_peak = -> { cache.write(key, units, expires_in: 49.hours) if units > cache.read(key).to_i }
+        if cache.is_a?(ActiveSupport::Cache::FileStore)
+          with_budget_file_store_lock(cache, &raise_peak)
+        else
+          PROVIDER_BUDGET_PROCESS_MUTEX.synchronize(&raise_peak)
+        end
+      rescue StandardError => e
+        Rails.logger.warn("[Budget] first-generation peak not recorded: #{e.class}")
       end
 
       # Atomically reserve one provider call before network I/O. The LLM client
@@ -652,7 +696,10 @@ module LegalChatbot
       # counter (cache counters for the daily breakers, one database upsert
       # for the monthly provider ledger). A reservation beyond a ceiling is
       # rolled back before provider dispatch.
-      def reserve_model_budget!(model, reasoning_effort: nil, max_output_tokens: nil, messages: nil)
+      #
+      # first_call: the client's first provider call (a question's first
+      # generation); its size is what the pre-checks price the next question at.
+      def reserve_model_budget!(model, reasoning_effort: nil, max_output_tokens: nil, messages: nil, first_call: false)
         cap = daily_cap_for(model)
         provider = provider_for_model(model)
         raise ArgumentError, "Unknown chatbot model: #{model}" unless cap && provider
@@ -707,6 +754,8 @@ module LegalChatbot
         raise BudgetLimitExceeded.new(reason: :provider_monthly_cap, model: model, provider: provider) if total_units > budget_units
 
         reservation[:state] = :reserved
+        # Only an admitted first generation sets the price of the next question.
+        record_model_reservation_peak(model, cost_units) if first_call
         reservation
       rescue StandardError
         release_model_budget!(reservation) if reservation
@@ -1225,7 +1274,7 @@ module LegalChatbot
         return false unless budget
 
         spend_units = provider_monthly_spend_units(provider)
-        next_query_units = (cost_per_query_eur(model) * PROVIDER_SPEND_UNITS_PER_EUR).round
+        next_query_units = model_next_query_units(model)
         budget_units = provider_monthly_budget_units(provider)
 
         spend_units + next_query_units > budget_units

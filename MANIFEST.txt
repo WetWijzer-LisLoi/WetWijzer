@@ -870,7 +870,6 @@ public/sw.js
 public/vite/.vite/manifest-assets.json
 public/vite/.vite/manifest.json
 public/vite/assets/application--Tt29A6V.css
-public/vite/assets/application--q83suI2.js
 public/vite/assets/application--xCmOLOB.js
 public/vite/assets/application-19jp2-xV.js
 public/vite/assets/application-AoyFyjhb.js
@@ -975,6 +974,7 @@ public/vite/assets/application-DGOmgdBG.js
 public/vite/assets/application-DL2VPsTH.js
 public/vite/assets/application-DLj0shQh.js
 public/vite/assets/application-DOHuBpHw.css
+public/vite/assets/application-DPU-NnAW.js
 public/vite/assets/application-DQZJgscu.css
 public/vite/assets/application-DQgxQ4cU.js
 public/vite/assets/application-DRC8r2NI.js

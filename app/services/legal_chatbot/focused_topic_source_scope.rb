@@ -213,13 +213,46 @@ module LegalChatbot
       end
     end
 
-    # What the question asks: its sentences that end in a question mark. Under a doorstep question a source named by a
-    # word of its title must be asked about, not share a word with the facts (Sol 2026-11-24 13:50:41Z: "een etentje
-    # in de horecasector" kept the hospitality price decree).
+    # What the question asks: its sentences that end in a question mark or open with a request verb ("Pas het besluit ...
+    # toe en leg ... uit", Sol 2026-11-24 15:43:06Z). Under a doorstep question a source named by a word of its title
+    # must be asked about, not share a word with the facts (Sol 13:50:41Z: "een etentje in de horecasector" kept the
+    # hospitality price decree).
+    REQUEST_VERB = /\A[[:space:][:punct:]]*(?:leg|geef|bespreek|vergelijk|licht|analyseer|verklaar|beschrijf|noem|toon|zeg|
+                    schrijf|controleer|beoordeel|bereken|explain|apply|describe|compare|list|give|tell|analy[sz]e|assess|check|
+                    calculate|expliquez|explique|appliquez|applique|d[ée]cri\p{L}*|comparez|donnez|donne|indiquez|indique|
+                    analysez|erkl[äa]r\p{L}*|wende|beschreib\p{L}*|vergleich\p{L}*|nenne|gib|pr[üu]fe|berechne)(?![[:alnum:]])/iux
+    # "Pas ... toe" asks to apply; "Pas na de levering ..." states a fact
+    APPLY_REQUEST = /\A[[:space:][:punct:]]*pas(?![[:alnum:]]).*(?<![[:alnum:]])toe(?![[:alnum:]])/iu
+
     def self.asked_text(question)
-      question.to_s.scan(/[^.!?;]*\?/).join(' ')
+      sentences(question.to_s).select do |sentence|
+        sentence.rstrip.end_with?('?') || sentence.match?(REQUEST_VERB) || sentence.match?(APPLY_REQUEST)
+      end.join(' ')
     end
     private_class_method :asked_text
+
+    # Sol 2026-11-24 20:11:39Z: the full stop of "art. 3" ended the request "Leg uit hoe art. 3 van het horecabesluit hier
+    # werkt.", so its source was no longer asked about. A sentence ends at . ! ? or ; before a capital, a quotation mark
+    # or the end, and never after an abbreviation or a single letter ("art. VII.87", "nr. 5", "J. Peeters").
+    SENTENCE_END_CANDIDATE = /[.!?;](?=\s+(?:\p{Lu}|["'«„(\[])|\s*\z)/u
+    ABBREVIATIONS = %w[art artt nr nrs bv vb al par lid blz enz cf vgl resp jo dhr mevr mr prof dr st parl kb bs zie
+                       p pp ca ong o.a e.a i.e e.g t.a.v n.a.v].to_set.freeze
+
+    def self.sentences(text)
+      parts = []
+      start = 0
+      text.to_enum(:scan, SENTENCE_END_CANDIDATE).each do
+        match = Regexp.last_match
+        word = text[start...match.begin(0)][/([[:alpha:].]+)\z/, 1].to_s.downcase
+        next if match[0] == '.' && (ABBREVIATIONS.include?(word) || word.length == 1)
+
+        parts << text[start...match.end(0)]
+        start = match.end(0)
+      end
+      parts << text[start..] if start < text.length
+      parts.reject { |part| part.strip.empty? }
+    end
+    private_class_method :sentences
 
     def self.off_premises_withdrawal_question?(text)
       text.match?(LegislationSearch::OFF_PREMISES_PATTERN) && text.match?(LegislationSearch::WITHDRAWAL_RIGHT_QUERY_PATTERN)
@@ -242,15 +275,36 @@ module LegalChatbot
     # names the "Beroepsinstituut van Vastgoedmakelaars".
     def self.named_by_title?(title, question)
       asked = question.to_s.downcase
-      title.downcase.scan(/\p{L}+/).uniq.any? do |word|
+      title_words = title.downcase.scan(/\p{L}+/).uniq
+      named = title_words.any? do |word|
         next false if GENERIC_TITLE_WORDS.include?(word)
 
         [word, word.sub(/(?:en|s)\z/, '')].uniq.any? do |form|
           form.length >= TITLE_WORD_MIN && !GENERIC_TITLE_WORDS.include?(form) && asked.include?(form)
         end
       end
+      named || named_by_compound?(title_words, asked.scan(/\p{L}+/).to_set)
     end
     private_class_method :named_by_title?
+
+    # Sol 2026-11-24 20:11:39Z: "het horecabesluit" names the "Koninklijk besluit betreffende de prijsaanduiding in de
+    # horecasector". An asked word names the instrument when it joins the leading part (COMPOUND_STEM_MIN letters at
+    # least) of a significant title word, or the whole word with a linking s, to the kind of instrument the title is.
+    INSTRUMENT_KINDS = %w[besluit decreet wet wetboek ordonnantie reglement verordening code loi décret arrêté ordonnance].freeze
+    COMPOUND_STEM_MIN = 6
+
+    def self.named_by_compound?(title_words, asked_words)
+      kinds = INSTRUMENT_KINDS.select { |kind| title_words.include?(kind) }
+      return false if kinds.empty?
+
+      title_words.any? do |word|
+        next false if word.length < TITLE_WORD_MIN || GENERIC_TITLE_WORDS.include?(word)
+
+        stems = (COMPOUND_STEM_MIN..word.length).map { |length| word[0, length] } << "#{word}s"
+        stems.any? { |stem| kinds.any? { |kind| asked_words.include?("#{stem}#{kind}") } }
+      end
+    end
+    private_class_method :named_by_compound?
 
     def self.field(article, *keys)
       keys.each do |key|

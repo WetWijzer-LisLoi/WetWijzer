@@ -13,6 +13,8 @@ module Api
 
     BROWSER_BILLING_APP_PREFIX = 'browser_chatbot:'
     BROWSER_BILLING_REQUEST_ID_PATTERN = /\A[A-Za-z0-9][A-Za-z0-9._-]{0,127}\z/
+    # Each step of waive_blocked_generation_charge! is tried this many times.
+    BLOCKED_GENERATION_ATTEMPTS = 3
 
     private
 
@@ -110,7 +112,8 @@ module Api
       delivery_abort_allowed:,
       user:,
       reason:,
-      receipt: nil
+      receipt: nil,
+      generation_blocked: false
     )
       if reservation.settled?
         return {
@@ -187,7 +190,7 @@ module Api
       end
 
       credits_info = finish_undelivered_browser_chat!(
-        reservation, receipt: receipt, analytic: analytic, user: user, reason: reason
+        reservation, receipt: receipt, analytic: analytic, user: user, reason: reason, generation_blocked: generation_blocked
       )
       {
         outcome: reservation.refunded? ? :refunded : :settled,
@@ -242,9 +245,28 @@ module Api
     # claim fence, a pre-delivery failure) and returns its truthful
     # credits_info. Dispatched work keeps the single charge without inventing a
     # delivery; otherwise the reservation is released. Callers discard or roll
-    # back any content first, independently of this decision.
-    def finish_undelivered_browser_chat!(reservation, receipt:, analytic:, user:, reason:)
+    # back any content first, independently of this decision. generation_blocked:
+    # our own budget cap ended the question before any request to the selected
+    # generation model was admitted (see waive_blocked_generation_charge!).
+    def finish_undelivered_browser_chat!(reservation, receipt:, analytic:, user:, reason:, generation_blocked: false)
       return nil unless reservation
+
+      if generation_blocked
+        case waive_blocked_generation_charge!(reservation, analytic: analytic, reason: reason)
+        when :refunded, :pending
+          return browser_chat_settlement_credits_info(reservation, analytic: analytic, user: user)
+        when :noted
+          # The row could not be written; the note holds the obligation until the stale reconciler gives the refund.
+          Rails.logger.error("Browser chatbot blocked-generation refund kept as a note: reservation #{reservation.id} left reserved")
+          return browser_chat_settlement_credits_info(reservation, analytic: analytic, user: user, pending: true)
+        when :unrecorded
+          # Neither the row nor the note could be written: the row is not charged here, the reader is promised nothing,
+          # and this line is the evidence for a repair by hand.
+          Rails.logger.error("Browser chatbot blocked-generation refund NOT RECORDED: reservation #{reservation.id} left reserved; " \
+                             'repair by hand')
+          return browser_chat_settlement_credits_info(reservation, analytic: analytic, user: user, unknown: true)
+        end
+      end
 
       if browser_chat_work_dispatched?(reservation, receipt)
         begin
@@ -260,11 +282,63 @@ module Api
       browser_chat_settlement_credits_info(reservation, analytic: analytic, user: user)
     end
 
+    # Owner decision 2026-11-24 (relayed by Sol at 18:07:56Z): when
+    # WetWijzer's own budget cap prevents dispatch to the selected generation
+    # model, the final charge is zero, even if the question's embedding (or
+    # HyDE) was sent. Sol 21:28:20Z: the obligation must survive a failed
+    # write and a restart, so it is first recorded on the row
+    # (BillingReservation#mark_blocked_generation!, honoured by every later
+    # refund! and by retain_work!) and only then given. Each step is tried
+    # BLOCKED_GENERATION_ATTEMPTS times. :refunded once the credits are back;
+    # :pending when the obligation stands on the row but the refund write
+    # failed (the stale reconciler gives it, once); :noted when only the cache
+    # note holds it (the row could not be written; the reconciler records and
+    # gives it); :unrecorded when neither could be written; :not_eligible for
+    # a row whose first work was a generation, a row with a delivery and a
+    # final row (the ordinary path).
+    def waive_blocked_generation_charge!(reservation, analytic:, reason:)
+      return :not_eligible unless reservation&.browser_work_tracked?
+
+      # Sol 22:16:54Z: before any accounts write, the obligation is kept as a note the stale reconcilers honour.
+      noted = reservation.note_blocked_generation!
+      marked = with_blocked_generation_retries { reservation.mark_blocked_generation! }
+      return noted ? :noted : :unrecorded if marked.nil?
+
+      refunded = marked && with_blocked_generation_retries { reservation.refund_blocked_generation!(reason: reason) }
+      return :pending if refunded.nil?
+
+      reservation.clear_blocked_generation_note!
+      return :not_eligible unless refunded
+
+      mark_analytic_refunded!(analytic)
+      Rails.logger.info('Browser chatbot charge waived: our own budget stopped the question before its generation')
+      :refunded
+    end
+
+    # The step's value, or nil when every attempt raised.
+    def with_blocked_generation_retries
+      attempts = 0
+      begin
+        attempts += 1
+        yield
+      rescue StandardError => e
+        Rails.logger.error("Browser chatbot blocked-generation step failed (attempt #{attempts}): #{e.class}")
+        retry if attempts < BLOCKED_GENERATION_ATTEMPTS
+        nil
+      end
+    end
+
     # What the client is told after any settlement decision: the reservation's
     # actual state, never an assumed refund. A dispatched row whose retention
-    # was deferred is still charged.
-    def browser_chat_settlement_credits_info(reservation, analytic:, user:)
-      if reservation.settled? || (reservation.reserved? && reservation.work_dispatched?)
+    # was deferred is still charged. A blocked-generation refund that is owed
+    # but not yet given is neither a charge nor a confirmed zero (Sol
+    # 21:28:20Z): no deduction is stated and the refund is said to be pending.
+    def browser_chat_settlement_credits_info(reservation, analytic:, user:, pending: false, unknown: false)
+      if unknown
+        credit_balance_info(user, deducted: nil)
+      elsif pending || reservation.blocked_generation_pending?
+        credit_balance_info(user, deducted: nil, refund_pending: true)
+      elsif reservation.settled? || (reservation.reserved? && reservation.work_dispatched?)
         project_browser_chat_analytic!(reservation, analytic) if reservation.settled?
         credit_balance_info(user, deducted: reservation.amount)
       else

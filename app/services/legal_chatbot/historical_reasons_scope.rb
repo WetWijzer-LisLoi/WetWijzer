@@ -34,13 +34,21 @@ module LegalChatbot
                              quel(?:le)?s?|comment|o[ùu]|quand|qui|peut|puis|peuvent|doit|dit|pr[ée]voit|was|welche[rsnm]?|kann|
                              muss|gilt|sagt|what|how|which|where|when|who|can|may|must|does|do|is|are)(?![[:alnum:]])/iux
     CONJUNCTION_BREAK = /,?\s+(?:en|et|und|and)\s+(?=(?:ook\s+|aussi\s+|auch\s+|also\s+)?#{CLAUSE_QUESTION_WORD.source})/iux
-    # Sol 2026-11-24 13:50:41Z: "Antwoord in het Nederlands." appended to the 41/2009 question undid the cutoff. A clause
-    # that only asks for the answer's language or form, with no question word, is no clause on another subject.
-    INSTRUCTION_CLAUSE = /\A[[:space:][:punct:]]*(?:(?:graag|gelieve|svp|alsjeblieft|alstublieft|please|merci|bitte)\s+)?
-                          (?:antwoord\p{L}*|answer|reply|r[ée]pon\p{L}*|antworte\p{L}*|schrijf|write|[ée]cri\p{L}*|schreib\p{L}*|
-                             (?:in\s+het|en|auf|in)\s+(?:nederlands|frans|duits|engels|fran[çc]ais|n[ée]erlandais|allemand|anglais|
-                             deutsch|niederl[äa]ndisch|franz[öo]sisch|englisch|english|dutch|french|german))(?![[:alnum:]])/iux
-    QUESTION_WORD_IN_CLAUSE = /(?<![[:alnum:]])#{CLAUSE_QUESTION_WORD.source}/iux
+    # Sol 2026-11-24 13:50:41Z and 15:43:06Z: "Antwoord in het Nederlands." appended to the 41/2009 question undid the
+    # cutoff, while "Schrijf daarnaast een toelichting op artikel 7 ..." asks for substance. A clause made only of words
+    # about the answer's language or form (this closed list) is no clause on another subject.
+    INSTRUCTION_WORDS = %w[
+      antwoord antwoorden beantwoord answer reply réponds répondez répondre réponse antworte antworten schrijf write écris
+      écrivez schreib schreibe graag gelieve svp alsjeblieft alstublieft please merci bitte s il vous te plaît plait in het
+      en auf de la le les the a an een ook also aussi auch me mij moi mir nederlands frans duits engels français francais
+      néerlandais neerlandais allemand anglais deutsch niederländisch französisch englisch english dutch french german
+      kort korte korter beknopt bondig kurz kurze briefly brief bref brièvement court courte concise concisely taal langue
+      sprache language puntsgewijs opsomming punten tabel bullets bullet points liste tableau tabelle stichpunkte table
+      maximaal maximum max hoogstens minder dan woorden woord zinnen zin alinea alineas regels mots mot phrases words word
+      sentences wörter wörtern sätze sätzen höchstens maximal
+    ].to_set.freeze
+    # Sol 2026-11-24 20:11:39Z: a length instruction such as "Antwoord in maximaal 100 woorden." is form, not substance
+    # (numbers are no words here).
     # "van 10 mei 2007", "du 10 mai 2007", "vom 10. Mai 2007", "of 10 May 2007"
     NAMED_DATE = /(?<![[:alnum:]])(?:van|du|vom|of)\s+(\d{1,2})(?:er)?\.?\s+(#{MONTH})\s+((?:19|20)\d{2})(?!\d)/iu
     TITLE_DATE = /\A\s*(\d{1,2})(?:er)?\.?\s+(#{MONTH})\s+((?:17|18|19|20)\d{2})(?!\d)/iu
@@ -71,7 +79,8 @@ module LegalChatbot
     end
 
     def instruction?(clause)
-      clause.match?(INSTRUCTION_CLAUSE) && !clause.match?(QUESTION_WORD_IN_CLAUSE)
+      words = clause.downcase.scan(/\p{L}+/)
+      words.any? && words.all? { |word| INSTRUCTION_WORDS.include?(word) }
     end
 
     def date(match)

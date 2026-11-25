@@ -127,14 +127,27 @@ class BillingReservation < AccountRecord
   # reached its terminal state now (or already had), so the reconcilers count
   # retained work as reconciled rather than as a refund that did not happen.
   def reconcile_stale_row!(reason:)
-    if included_quota? || delivery_pending?
-      settle!
-    elsif browser_work_tracked? && work_dispatched?
+    return settle! if included_quota? || delivery_pending?
+
+    if browser_work_tracked? && reserved? && work_dispatched? && !blocked_generation_pending?
+      case blocked_generation_note_state
+      when :unreadable
+        # Sol 2026-11-24 22:49:20Z: an unreadable note is not an absent one. The row is neither charged nor refunded
+        # on this pass; it stays for the next one (the per-user reconciliation reports it as not yet reconciled, so
+        # that user's next question is refused as billing_reconciliation_unavailable until the note can be read).
+        Rails.logger.warn("Stale browser reservation deferred: its refund note could not be read (reservation #{id})")
+        return false
+      when :noted
+        # The obligation that could not be written to the row in time, kept as a note: recorded now, and given once.
+        return refund!(reason: reason).tap { |refunded| clear_blocked_generation_note! if refunded } if mark_blocked_generation!
+      end
       Rails.logger.info("Stale browser reservation retained after provider dispatch (reason=#{reason})")
-      retain_work!
-    else
-      refund!(reason: reason)
+      return retain_work!
     end
+
+    # Also the row that owes a blocked-generation refund (mark_blocked_generation!): refund! gives it, once, and a note
+    # the waiver left (its own refund had failed) goes with it.
+    refund!(reason: reason).tap { |refunded| clear_blocked_generation_note! if refunded }
   end
 
   # Deterministically rebuild the analytics projection from the accounts
@@ -486,8 +499,10 @@ class BillingReservation < AccountRecord
   def retain_work!(now: Time.current)
     raise ArgumentError, 'only browser credit reservations retain provider work' unless browser_work_tracked?
 
+    # A row that owes a blocked-generation refund (mark_blocked_generation!) is never charged here.
     transitioned = self.class.where(id: id, status: RESERVED_STATUS, delivery_state: nil, delivery_token: nil)
                        .where.not(work_dispatched_at: nil)
+                       .where('refund_reason IS NULL OR refund_reason <> ?', BLOCKED_GENERATION_REASON)
                        .update_all(status: SETTLED_STATUS, settled_at: now, updated_at: now)
     if transitioned == 1
       self.status = SETTLED_STATUS
@@ -549,12 +564,13 @@ class BillingReservation < AccountRecord
     retained_work = false
     retained_settled_at = nil
     outcome = self.class.transaction do
-      persisted_status, persisted_delivery_state, persisted_delivery_token, persisted_work_at = self.class.where(id: id).lock.pick(
-        :status,
-        :delivery_state,
-        :delivery_token,
-        :work_dispatched_at
-      )
+      persisted_status, persisted_delivery_state, persisted_delivery_token, persisted_work_at, persisted_reason, persisted_kind =
+        self.class.where(id: id).lock.pick(:status, :delivery_state, :delivery_token, :work_dispatched_at, :refund_reason,
+                                           :work_dispatch_kind)
+      # The durable obligation of a question our own budget stopped before its generation (mark_blocked_generation!):
+      # every caller of refund!, the stale reconcilers included, returns its credits instead of keeping the work.
+      blocked = persisted_reason == BLOCKED_GENERATION_REASON && persisted_kind != GENERATION_WORK_KIND
+      reason = BLOCKED_GENERATION_REASON if blocked
 
       case persisted_status
       when REFUNDED_STATUS
@@ -589,7 +605,7 @@ class BillingReservation < AccountRecord
         # Paid browser work was already dispatched for this question: no
         # caller (error branch, fence, outer rescue, stale reconciler) may
         # return the credits. Settle the work without inventing a delivery.
-        if persisted_work_at.present? && browser_work_tracked?
+        if persisted_work_at.present? && browser_work_tracked? && !blocked
           settled_time = Time.current
           transitioned = self.class.where(id: id, status: RESERVED_STATUS, delivery_state: nil, delivery_token: nil)
                              .where.not(work_dispatched_at: nil)
@@ -638,6 +654,147 @@ class BillingReservation < AccountRecord
       self.status = SETTLED_STATUS
       self.work_dispatched_at ||= persisted_work_at
       self.settled_at = retained_settled_at
+    end
+    outcome
+  end
+
+  GENERATION_WORK_KIND = 'generation'
+  BLOCKED_GENERATION_REASON = 'budget_blocked_generation'
+
+  # Sol 2026-11-24 21:28:20Z: the zero charge of a question our own budget stopped before its generation must survive a
+  # failed refund write and a restart. This first, committed step records that obligation on the row (refund_reason
+  # stays nil on every other reserved row): refund! then returns the credits whoever calls it, the stale reconcilers
+  # included, and retain_work! never charges it. True when the row now owes that refund, or already gave it; false for a
+  # row whose first recorded work was a generation, a row with a delivery and a settled row.
+  def mark_blocked_generation!(now: Time.current)
+    raise ArgumentError, 'only browser credit reservations carry dispatch evidence' unless browser_work_tracked?
+
+    marked = self.class.where(id: id, status: RESERVED_STATUS, delivery_state: nil, delivery_token: nil)
+                 .where('work_dispatch_kind IS NULL OR work_dispatch_kind <> ?', GENERATION_WORK_KIND)
+                 .update_all(refund_reason: BLOCKED_GENERATION_REASON, updated_at: now)
+    persisted_status, persisted_reason = self.class.where(id: id).pick(:status, :refund_reason)
+    self.status = persisted_status if persisted_status
+    self.refund_reason = persisted_reason
+    marked == 1 || persisted_status == REFUNDED_STATUS ||
+      (persisted_status == RESERVED_STATUS && persisted_reason == BLOCKED_GENERATION_REASON)
+  end
+
+  # A reserved row whose blocked-generation refund is recorded but not yet given (the client is told it is pending).
+  def blocked_generation_pending?
+    reserved? && refund_reason == BLOCKED_GENERATION_REASON
+  end
+
+  # Sol 2026-11-24 22:16:54Z: the obligation must outlive the case where not even mark_blocked_generation! can be
+  # written. Before any accounts write, the waiver keeps it as a note: one small file per reservation under
+  # storage/billing_notes, a directory production keeps across restarts and deploys. The stale reconcilers read it for
+  # a row still reserved, record the mark and give the refund once, and the note goes when the refund is given.
+  #
+  # A plain file and not the Rails cache (Sol 22:49:20Z): the cache's file store answers a failed read as a miss
+  # (ActiveSupport 8.1 FileStore#read_serialized_entry rescues every error and returns nil), so an unreadable note could
+  # not be told from an absent one. File.stat raises Errno::ENOENT for a missing note and another error for a failed read.
+  class_attribute :blocked_generation_note_root, instance_accessor: false, default: nil
+
+  def self.blocked_generation_note_dir
+    Pathname(blocked_generation_note_root || Rails.root.join('storage', 'billing_notes'))
+  end
+
+  def self.blocked_generation_note_path(id) = blocked_generation_note_dir.join("blocked_generation_refund_owed_#{Integer(id)}")
+
+  # The one lookup of a note: a seam, so a test can make a single lookup fail as a real read error does.
+  def self.blocked_generation_note_stat(path) = File.stat(path)
+
+  # True when the note is on disk.
+  def note_blocked_generation!(now: Time.current)
+    path = self.class.blocked_generation_note_path(id)
+    FileUtils.mkdir_p(path.dirname)
+    File.open(path, File::WRONLY | File::CREAT | File::TRUNC, 0o640) do |file|
+      file.write("reservation_id=#{id} user_id=#{user_id} noted_at=#{now.utc.iso8601}\n")
+      file.fsync
+    end
+    true
+  rescue StandardError => e
+    Rails.logger.error("Browser chatbot blocked-generation note not written: reservation #{id} (#{e.class})")
+    false
+  end
+
+  # :noted, :absent (no note file) or :unreadable (the lookup itself failed): never taken for an absent note.
+  def blocked_generation_note_state
+    self.class.blocked_generation_note_stat(self.class.blocked_generation_note_path(id))
+    :noted
+  rescue Errno::ENOENT
+    :absent
+  rescue StandardError
+    :unreadable
+  end
+
+  def blocked_generation_noted? = blocked_generation_note_state == :noted
+
+  def clear_blocked_generation_note!
+    File.delete(self.class.blocked_generation_note_path(id))
+    true
+  rescue Errno::ENOENT
+    true
+  rescue StandardError => e
+    Rails.logger.error("Browser chatbot blocked-generation note not cleared: reservation #{id} (#{e.class})")
+    false
+  end
+
+  # Owner decision 2026-11-24 (relayed by Sol at 18:07:56Z): when WetWijzer's
+  # own budget cap prevents dispatch to the selected generation model, the
+  # final charge is zero, even if the question's embedding was sent. The
+  # caller establishes from the question's receipt that no generation request
+  # was admitted. Under the row lock, a reserved browser credit row without a
+  # delivery is refunded exactly once, whatever embedding, HyDE or translation
+  # work it records; a row whose first recorded work was a generation, a row
+  # with a delivery and a settled row are left to the ordinary path (false).
+  # A refunded row answers true, so a repeated or concurrent call is a no-op.
+  def refund_blocked_generation!(reason: BLOCKED_GENERATION_REASON)
+    raise ArgumentError, 'only browser credit reservations carry dispatch evidence' unless browser_work_tracked?
+
+    refunded_time = nil
+    persisted_status = nil
+    outcome = self.class.transaction do
+      persisted_status, persisted_delivery_state, persisted_delivery_token, persisted_kind = self.class.where(id: id).lock.pick(
+        :status,
+        :delivery_state,
+        :delivery_token,
+        :work_dispatch_kind
+      )
+
+      case persisted_status
+      when REFUNDED_STATUS
+        true
+      when SETTLED_STATUS
+        false
+      when RESERVED_STATUS
+        next false unless persisted_delivery_state.nil? && persisted_delivery_token.nil?
+        next false if persisted_kind == GENERATION_WORK_KIND
+
+        refunded_time = Time.current
+        transitioned = self.class.where(id: id, status: RESERVED_STATUS, delivery_state: nil, delivery_token: nil).update_all(
+          status: REFUNDED_STATUS,
+          refunded_at: refunded_time,
+          refund_reason: reason.to_s.first(100).presence,
+          updated_at: refunded_time
+        )
+        raise RefundFailed, 'reservation state changed during refund' unless transitioned == 1
+
+        apply_credit_refund!
+        true
+      else
+        raise RefundFailed, "unknown reservation state: #{persisted_status.inspect}"
+      end
+    end
+
+    if outcome
+      self.status = REFUNDED_STATUS
+      if refunded_time
+        self.refunded_at = refunded_time
+        self.refund_reason = reason.to_s.first(100).presence
+        self.updated_at = refunded_time
+      end
+    elsif persisted_status
+      self.status = persisted_status
     end
     outcome
   end

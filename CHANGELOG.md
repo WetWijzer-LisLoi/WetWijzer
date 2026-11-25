@@ -8,6 +8,30 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.103] - 2026-11-25
+
+### Fixed
+
+- A question that WetWijzer's own budget cap stops before the chosen model is asked now costs nothing, even when its search had already started; the notice says that nothing was charged only once the credits are back.
+- When the chosen model's daily budget is reached, the notice says so, so that another model can be chosen, and such a question is refused before its search starts.
+- The notice for a withheld quotation from a judgment names a consideration only when one consideration clearly holds the quotation without negating it, with the citations of that passage alone, and only the sentence right after it that vouches for the withheld quotation is removed.
+- An error of the AI provider keeps its own status whatever the form of its reply.
+- In a doorstep withdrawal question, "art. 3" no longer ends the request, and a law asked for by a short name such as "het horecabesluit" counts as asked.
+- A length instruction such as "Antwoord in maximaal 100 woorden." counts as an instruction, not as part of the question.
+
+## [1.1.102] - 2026-11-25
+
+### Fixed
+
+- A quotation from a judgment that cannot be verified is still left out, but the notice now names the consideration it comes from and the parliamentary documents the judgment cites there; a sentence that vouches for a withheld quotation goes with it.
+- A question about a legislator's reasons that also asks for an explanation of a later act keeps that act among the sources; a request about the answer's language or length alone still does not.
+- Under a doorstep withdrawal question, a law asked about in an instruction, such as "Pas het besluit ... toe", counts as asked.
+- The speculation-tax questions get the dated capital gains facts, so the answer no longer gives the statutory base amount as the exemption for 2026 income.
+
+### Changed
+
+- When the AI provider's content filter refuses a question, the log records each category's verdict.
+
 ## [1.1.101] - 2026-11-24
 
 ### Fixed

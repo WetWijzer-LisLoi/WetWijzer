@@ -56,6 +56,44 @@ module LegalChatbot
       end
     end
 
+    # The verdict of each content-filter category in an Azure OpenAI refusal (status 400, code content_filter), such as
+    # "hate=filtered:false,severity:safe violence=filtered:true,severity:medium"; nil for any other body. Sol 2026-11-24
+    # 15:43:06Z (#1272): the 500-character body snippet stopped before the category that fired. The verdicts hold no
+    # request text. Sol 20:11:39Z: any shape (an array, null, a nested field that is no object) gives nil or
+    # "categories=unknown" and never raises, so the caller still raises with the provider's own status; only bounded
+    # category names and recognized values are logged.
+    CONTENT_FILTER_CATEGORY = /\A[a-z][a-z0-9_]{0,39}\z/
+    CONTENT_FILTER_MAX_CATEGORIES = 12
+    CONTENT_FILTER_VALUES = {
+      'filtered' => [true, false], 'detected' => [true, false], 'severity' => %w[safe low medium high]
+    }.freeze
+
+    def self.content_filter_verdicts(body)
+      parsed = JSON.parse(body.to_s)
+      error = parsed.is_a?(Hash) ? parsed['error'] : nil
+      return nil unless error.is_a?(Hash) && error['code'] == 'content_filter'
+
+      inner = error['innererror']
+      result = inner.is_a?(Hash) ? inner['content_filter_result'] : nil
+      return 'categories=unknown' unless result.is_a?(Hash)
+
+      verdicts = result.first(CONTENT_FILTER_MAX_CATEGORIES).filter_map do |category, verdict|
+        next unless category.is_a?(String) && category.match?(CONTENT_FILTER_CATEGORY)
+
+        "#{category}=#{content_filter_flags(verdict).join(',').presence || '?'}"
+      end
+      verdicts.empty? ? 'categories=unknown' : verdicts.join(' ')
+    rescue StandardError
+      nil
+    end
+
+    def self.content_filter_flags(verdict)
+      return [] unless verdict.is_a?(Hash)
+
+      CONTENT_FILTER_VALUES.filter_map { |key, known| "#{key}:#{verdict[key]}" if known.include?(verdict[key]) }
+    end
+    private_class_method :content_filter_flags
+
     # Whether the last provider call came back empty or cut off at its output
     # ceiling. #query raises on it; GermanAnswerTranslation calls call_llm
     # directly and reads it here.
@@ -244,7 +282,8 @@ module LegalChatbot
           model,
           reasoning_effort: effective_request_reasoning_effort(model, messages: messages),
           max_output_tokens: provider_max_tokens,
-          messages: messages
+          messages: messages,
+          first_call: @provider_call_count == 1
         )
       end
       @provider_request_started = false
@@ -391,6 +430,8 @@ module LegalChatbot
           "[LLM] Azure OpenAI chat error model=#{model} deployment=#{deployment_name} " \
           "status=#{response.code} body=#{body_snippet.inspect}"
         )
+        verdicts = self.class.content_filter_verdicts(response.body)
+        Rails.logger.error("[LLM] Azure OpenAI content filter model=#{model} #{verdicts}") if verdicts
         raise "Azure OpenAI chat error #{response.code}"
       end
 

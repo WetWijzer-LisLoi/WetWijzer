@@ -53,6 +53,11 @@ module Api
     # The JSON form has no supervisor: its whole request stays under the
     # 150 s nginx read timeout, as deep analysis does (140 s).
     GERMAN_ANSWER_JSON_DEADLINE_SECONDS = 140
+    # Sol 2026-11-24 18:05:18Z: a capacity refusal says so when it is the
+    # selected model's own daily budget that refused; another model's budget
+    # (HyDE's) and the provider ceilings keep the general sentence. The client
+    # never names the model.
+    SELECTED_MODEL_BUDGET_SCOPE = 'selected_model'
 
     # WW-SEC-14: every counter lives in a stable, calendar-aligned window: a
     # burst minute, a clock hour, a UTC day, a UTC month. The window is part
@@ -394,7 +399,7 @@ module Api
         # provider budget is enforced separately below. The deep_analysis /
         # legacy paths enforced this check but #ask did not.
         if !benchmark_cap_bypass? && LegalChatbotService.model_at_daily_cap?(model)
-          response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error', error: 'model_daily_cap', model: model.to_s }))}\n\n")
+          response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error', error: 'model_daily_cap', model: model.to_s, budget_scope: SELECTED_MODEL_BUDGET_SCOPE }.merge(free_preflight_credits_info)))}\n\n")
           response.stream.close
           return
         end
@@ -402,7 +407,7 @@ module Api
         # Application-side provider estimated-spend ceiling (not a cloud billing hard cap)
         if !benchmark_cap_bypass? && LegalChatbotService.provider_at_monthly_cap?(model)
           provider = LegalChatbotService.provider_for_model(model)
-          response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error', error: 'provider_monthly_cap', provider: provider.to_s }))}\n\n")
+          response.stream.write("data: #{JSON.generate(not_started_error_event({ type: 'error', error: 'provider_monthly_cap', provider: provider.to_s }.merge(free_preflight_credits_info)))}\n\n")
           response.stream.close
           return
         end
@@ -791,13 +796,15 @@ module Api
         # Per-model daily circuit breaker; the shared provider/month budget is
         # enforced separately below (this check was missing from this path).
         if !benchmark_cap_bypass? && LegalChatbotService.model_at_daily_cap?(model)
-          return render json: { error: 'model_daily_cap', model: model.to_s }, status: :too_many_requests
+          return render json: { error: 'model_daily_cap', model: model.to_s, budget_scope: SELECTED_MODEL_BUDGET_SCOPE }
+                          .merge(free_preflight_credits_info), status: :too_many_requests
         end
 
         # Application-side provider estimated-spend ceiling (not a cloud billing hard cap)
         if !benchmark_cap_bypass? && LegalChatbotService.provider_at_monthly_cap?(model)
           provider = LegalChatbotService.provider_for_model(model)
-          return render json: { error: 'provider_monthly_cap', provider: provider.to_s }, status: :too_many_requests
+          return render json: { error: 'provider_monthly_cap', provider: provider.to_s }.merge(free_preflight_credits_info),
+                        status: :too_many_requests
         end
 
         # Reserve credits and create the durable ledger row atomically after all
@@ -1034,6 +1041,11 @@ module Api
       provider_work_receipt&.cancel!
       terminate_chatbot_query_thread(query_thread)
       rollback_zero_knowledge_chat_revision!(conversation, zk_claim) if zk_claim
+      # Owner decision 2026-11-24 (Sol 18:07:56Z): our own cap ended the
+      # question before any request to the selected generation model was
+      # admitted, so it costs nothing, even when its embedding went out. The
+      # query thread has ended and the receipt is cancelled: its record is final.
+      generation_blocked = !provider_work_receipt.nil? && !provider_work_receipt.generation_dispatched?
       if reservation
         billing_resolution = resolve_failed_browser_chat_delivery!(
           reservation,
@@ -1045,13 +1057,14 @@ module Api
           delivery_token: billing_delivery_token,
           delivery_abort_allowed: billing_delivery_abort_allowed,
           user: streaming_user || current_user,
-          reason: 'provider_budget_rejected',
-          receipt: provider_work_receipt
+          reason: generation_blocked ? 'budget_blocked_generation' : 'provider_budget_rejected',
+          receipt: provider_work_receipt,
+          generation_blocked: generation_blocked
         )
         failure_credits_info = billing_resolution[:credits_info]
         keep_new_conversation = true if billing_resolution[:outcome] == :settled
       end
-      render_chatbot_budget_limit(e, credits_info: failure_credits_info, language: language,
+      render_chatbot_budget_limit(e, credits_info: failure_credits_info, language: language, selected_model: model,
                                      answer_provenance: answer_provenance(chatbot, result, status: 'no_model_answer'))
     rescue StandardError => e
       provider_work_receipt&.cancel!
@@ -1694,14 +1707,16 @@ module Api
       false
     end
 
-    def render_chatbot_budget_limit(error, credits_info: nil, language: nil, answer_provenance: nil)
+    def render_chatbot_budget_limit(error, credits_info: nil, language: nil, answer_provenance: nil, selected_model: nil)
       code = chatbot_budget_error_code(error)
+      selected = code == 'model_daily_cap' && error.model.present? && error.model.to_s == selected_model.to_s
       payload = {
         type: 'error',
         error: code,
         code: code,
         model: error.model,
         provider: error.provider&.to_s,
+        budget_scope: (SELECTED_MODEL_BUDGET_SCOPE if selected),
         credits_info: credits_info,
         answer_provenance: answer_provenance
       }.compact.merge(browser_chat_charge_notice_field(credits_info, language))
@@ -1714,6 +1729,14 @@ module Api
       end
     rescue IOError, ActionController::Live::ClientDisconnected
       response.stream.close rescue nil
+    end
+
+    # Sol 2026-11-24 21:28:20Z: the notice says that nothing was charged only on an explicit free preflight or a
+    # confirmed zero deduction. A budget refusal before any reservation states its zero; a service request without an
+    # account states nothing.
+    def free_preflight_credits_info
+      info = credit_balance_info(@service_bypass ? nil : current_user, deducted: 0)
+      info ? { credits_info: info } : {}
     end
 
     def chatbot_budget_error_code(error)

@@ -55,6 +55,10 @@ module LegalChatbot
     # 10°), so the named tax alone does not match beside a real-estate word.
     CAPITAL_GAIN_WORD = /(?<![[:alnum:]])(?:meerwaarde\p{L}*|plus[-\s]?values?|capital\s+gains?|kursgewinn\p{L}*|ver(?:ä|ae)u(?:ß|ss)erungsgewinn\p{L}*|kapitalgewinn\p{L}*)/iu
     FINANCIAL_ASSET_WORD = /(?<![[:alnum:]])(?:aandel\p{L}*|beleggingsfonds\p{L}*|fonds(?:en)?|etfs?|trackers?|obligaties|effecten\p{L}*|financi[eë]le\s+activa|beleggingen|portefeuille\p{L}*|actions?|obligations?|actifs?\s+financiers?|shares?|stocks?|bonds?|funds?|financial\s+assets?|aktien|anleihen|wertpapier\p{L}*|finanzanlagen?|crypto\p{L}*|bitcoin\p{L}*|krypto\p{L}*)(?![[:alnum:]])/iu
+    # Sol 2026-11-24 17:02:31Z (#2689 "Speculatiebelasting aandelen?"): the catalogue's speculation-tax questions
+    # (public/chatbot_questions.json 730 and 1292, in their four languages) got no capital gains facts and gave the
+    # statutory base of 4.855 euro as the 2026 exemption. The facts tell normal management from speculation (art. 90).
+    SPECULATION_TAX_NAME = /(?<![[:alnum:]])(?:speculatie(?:belasting|taks)|taxe\s+sur\s+la\s+sp[ée]culation|spekulationssteuer|speculation\s+tax)/iu
     CAPITAL_GAINS_TAX_NAME = /(?<![[:alnum:]])(?:meerwaarden?belasting|meerwaardetaks|(?:taxe|imp[oô]t|imposition)\s+(?:sur|des)\s+(?:les|la)\s+plus[-\s]values?|capital\s+gains?\s+tax|kapitalgewinnsteuer|(?:be)?steuer\p{L}*\s+(?:von|auf)\s+(?:den\s+)?kapitalgewinn\p{L}*)(?![[:alnum:]])/iu
     CRYPTO_ASSET_WORD = /(?<![[:alnum:]])(?:crypto\p{L}*|bitcoin\p{L}*|krypto\p{L}*)/iu
     CRYPTO_TAX_EXTRA_WORD = /(?<![[:alnum:]])(?:impos(?:ition|able|ée?s?)|(?:be|ver)steuer\p{L}*)(?![[:alnum:]])/iu
@@ -63,7 +67,8 @@ module LegalChatbot
       CRYPTO_TAX_PATTERN,
       /\A(?=.*#{CRYPTO_ASSET_WORD.source})(?=.*#{CRYPTO_TAX_EXTRA_WORD.source}).*\z/imu,
       /\A(?=.*#{CAPITAL_GAIN_WORD.source})(?=.*#{FINANCIAL_ASSET_WORD.source}).*\z/imu,
-      /\A(?!.*#{REAL_ESTATE_WORD.source})(?=.*#{CAPITAL_GAINS_TAX_NAME.source}).*\z/imu
+      /\A(?!.*#{REAL_ESTATE_WORD.source})(?=.*#{CAPITAL_GAINS_TAX_NAME.source}).*\z/imu,
+      /\A(?!.*#{REAL_ESTATE_WORD.source})(?=.*#{SPECULATION_TAX_NAME.source}).*\z/imu
     )
     # Sol 2026-11-20 05:41:41Z (#2673): a rental income answer mixed the figures on the return with the taxable base.
     # The landlord's income is WIB 92 art. 7 (and 8 for a split lease), the cost deduction art. 13 and the indexed
