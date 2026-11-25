@@ -8,6 +8,19 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.105] - 2026-11-25
+
+### Added
+
+- In the admin, Pro access that an administrator granted by hand can be recorded as such, and the account then shows "N/A (manual Pro grant)" as its payment provider. The record changes no credits, payments or subscription and applies only to the Pro period it was recorded in: a later change of tier by an administrator ends it, unless it keeps Pro, and it stays visible as history afterwards.
+
+### Fixed
+
+- In the admin, the payment provider of an account names what its records show (Mollie, Crypto (CoinGate), Stripe (legacy) or no recorded provider) instead of a stored value, the provider subscription ID belongs to that provider, and "recurring subscription pending" needs a paid first payment. A payment refunded or charged back in part still counts as a payment; one refunded or charged back in full does not. Downgrading a Pro account that still has paid time works again; it failed since July.
+- When one of the site's request limits is reached, opening a page in a browser gives a page in the site's language with the time from which it can try again and a link back to this site, instead of data meant for apps; apps and the site's own scripts keep the data. The limits do not change.
+- In an answer on unemployment benefit, a later clause that names another household ("alleenwonend €57,53 en vervolgens samenwonend €60,92") is no later period, so the first amount keeps its own. The minimum amounts of art. 115, § 2 that an answer affirms to be the amounts literally in the article stay as written, each under its own household; where amounts are left out, such a sentence goes with them, while a sentence that denies or questions it stays. A sentence left after a removed claim of a check no longer starts in lower case.
+- The n-gram readiness check of the operations runbook reads the database's tables through the application's own connection, which returns rows in another shape.
+
 ## [1.1.104] - 2026-11-25
 
 ### Fixed

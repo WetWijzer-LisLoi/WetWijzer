@@ -466,6 +466,7 @@ app/services/parliamentary_relations/wer_assignment_repair.rb
 app/services/parliamentary_search_service.rb
 app/services/pending_second_factor.rb
 app/services/rack_attack_keys.rb
+app/services/rack_attack_throttled_page.rb
 app/services/registration_admission_policy.rb
 app/services/registration_country_policy.rb
 app/services/retention/account_deletion_sweep_service.rb

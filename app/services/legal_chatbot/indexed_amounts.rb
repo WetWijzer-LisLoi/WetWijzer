@@ -114,6 +114,17 @@ module LegalChatbot
     BASE_FRAME = /basisbedrag|spilindex|index(?:cijfer)?[[:space:]]+100|niet[-[:space:]]ge[iï]ndexeerd|montants?[[:space:]]+de[[:space:]]+base|
                   indice[-[:space:]]pivot|non[[:space:]]+index[ée]|basisbetr[aä]g|schwellenindex|base[[:space:]]+amount|pivot[[:space:]]+index|
                   not[[:space:]]+indexed/ix
+    # Sol 2026-11-25 09:55:53Z (#1944): a sentence that names the amounts right before it the article's own, literal ones
+    # ("... €37,89 voor een werknemer met gezinslast, ... Dit zijn de bedragen die letterlijk in het artikel staan;"). A
+    # base amount it frames stays as written; when the amounts before it were withheld, the sentence goes with them.
+    LITERAL_FRAME = /letterlijk[[:space:]]+in[[:space:]]+het[[:space:]]+artikel|textuellement[[:space:]]+(?:dans|à)[[:space:]]+l.article|
+                     tels?[[:space:]]+qu.(?:ils|elles)[[:space:]]+figurent[[:space:]]+dans[[:space:]]+l.article|
+                     w[öo]rtlich[[:space:]]+im[[:space:]]+artikel|literally[[:space:]]+in[[:space:]]+the[[:space:]]+article/ix
+    # Sol 11:19:37Z: only an affirmative sentence frames. A negation up to the end of the words' clause, a question, or
+    # "whether" before the words (literal_frame?) leave the amounts to be judged and the sentence in place
+    LITERAL_NEGATION = /(?<![[:alpha:]])(?:niet|geen|nooit|noch|nergens|pas|aucun\p{L}*|jamais|nullement|ni|nicht|kein\p{L}*|
+                        nie|niemals|not|no|never|neither|nor|none)(?![[:alpha:]])|n['’]t(?![[:alpha:]])/ix
+    LITERAL_WHETHER = /(?<![[:alpha:]])(?:(?:of|si|ob|whether|if)(?![[:alpha:]])|s['’](?=(?:ils?|elles?)(?![[:alpha:]])))/ix
     # Money in a sentence: a currency, or a daily rate
     MONEY = /€|(?<![[:alpha:]])(?:eur(?:os?)?(?![[:alpha:]])|per[[:space:]]+(?:uitkerings)?dag|dagbedrag|par[[:space:]]+jour|
              journalier|pro[[:space:]]+tag|tagesbetrag|per[[:space:]]+day|a[[:space:]]+day|daily)/ix
@@ -496,6 +507,7 @@ module LegalChatbot
       rewritten = lines.each_with_index.map { |line, index| rewrite_line(line, lines, index, context, events) }
       # a false monthly claim goes once the figures it describes are judged
       rewritten = without_monthly_claims(rewritten, claims.keys) if claims.any?
+      rewritten = without_dangling_literal_reference(rewritten, words)
       cleaned = rewritten.join("\n")
       # Sol 14:53:13Z: a copied old note goes even when no figure is left to date; so does a claim with no figure judged
       return unchanged.with(text: cleaned.rstrip) if events.empty? && cleaned != text
@@ -596,7 +608,38 @@ module LegalChatbot
       lines.filter_map do |line|
         next line if line.match?(BLOCKQUOTE) || !line.match?(CHECK_CLAIM)
 
-        kept = sentences(line).filter_map { |sentence| without_claim(sentence, placeholders) }
+        kept = rejoined(sentences(line).map { |sentence| without_claim(sentence, placeholders) })
+        kept.empty? ? nil : "#{line[/\A[[:space:]]*/]}#{kept.join(' ')}"
+      end
+    end
+
+    # The sentences of a line that stay (nil for each that went), the first after a dropped one capitalized: it may have
+    # followed a semicolon (Sol 2026-11-25 09:55:53Z, #116: a paragraph opened with "latere indexering kan ze hebben
+    # vervangen." after its claim of a check went)
+    def self.rejoined(parts)
+      parts.each_with_index.filter_map do |sentence, index|
+        next unless sentence
+
+        index.positive? && parts[index - 1].nil? ? sentence.sub(/\A\p{Ll}/, &:upcase) : sentence
+      end
+    end
+
+    # The lines without a sentence that calls the amounts right before it the article's literal ones, where those were
+    # withheld (LITERAL_FRAME)
+    def self.without_dangling_literal_reference(lines, words)
+      placeholders = [words[:unpublished_withheld], words[:withheld]]
+      lines.filter_map do |line|
+        next line if line.match?(BLOCKQUOTE) || !line.match?(LITERAL_FRAME)
+
+        parts = sentences(line)
+        dropped = parts.each_with_index.map do |sentence, index|
+          dangling = index.positive? && placeholders.any? { |placeholder| parts[index - 1].include?(placeholder) } &&
+                     literal_frame?(sentence) && !sentence.match?(AMOUNT)
+          dangling ? nil : sentence
+        end
+        next line if dropped.all?
+
+        kept = rejoined(dropped)
         kept.empty? ? nil : "#{line[/\A[[:space:]]*/]}#{kept.join(' ')}"
       end
     end
@@ -716,7 +759,9 @@ module LegalChatbot
         position = start + match.begin(0)
         scope = scope_at(line, position, place)
         readings = READINGS.fetch(BigDecimal("#{match[:int]}.#{match[:dec]}"), [])
-        unless readings.any? && benefit_claim?(scope, cue, match)
+        # Sol 2026-11-25 09:55:53Z (#1944): a base amount that the next sentence names as the article's literal one
+        literal = scope[:framed_as_literal] && literal_base?(readings, scope, context)
+        if literal || readings.empty? || !benefit_claim?(scope, cue, match)
           out << match[0]
           next
         end
@@ -759,8 +804,32 @@ module LegalChatbot
       clause = clause_at(sentence, position - first)
       paragraph = place[:lines][paragraph_start(place[:lines], place[:index])...place[:index]] + [line[0...first]]
       before_all = paragraph.flat_map { |text| sentences(text) }.reverse
+      following = sentences(line[last..].to_s).first.to_s
       { clause: clause, sentence: sentence, before: before_all.grep_v(AMOUNT), before_all: before_all, dated: sentence,
-        frame: sentence, local_phase: local_phase(sentence, position - first) }
+        frame: sentence, local_phase: local_phase(sentence, position - first),
+        framed_as_literal: literal_frame?(following) && !following.match?(AMOUNT) }
+    end
+
+    # An affirmative sentence that names the amounts before it the article's literal ones: no question, no negation up
+    # to the end of the clause with the words, no "whether" before them ("Dit zijn niet de bedragen die letterlijk in
+    # het artikel staan", "Letterlijk in het artikel staan ze niet", "Staan ze letterlijk in het artikel?", "Controleer of
+    # ze letterlijk in het artikel staan" say nothing of the kind). A negation in a later clause qualifies something
+    # else: "Dit zijn de bedragen die letterlijk in het artikel staan, geen geïndexeerde bedragen" affirms.
+    def self.literal_frame?(sentence)
+      frame = sentence.match(LITERAL_FRAME)
+      return false unless frame
+
+      through_clause = sentence[0...(sentence.index(CLAUSE_BREAK, frame.end(0)) || sentence.length)]
+      return false if sentence.rstrip.end_with?('?') || through_clause.match?(LITERAL_NEGATION)
+
+      !sentence[0...frame.begin(0)].match?(LITERAL_WHETHER)
+    end
+
+    # Sol 2026-11-25 11:19:37Z: a base amount stays as the article's literal one only under the facts its own words give:
+    # "€37,89 voor een samenwonende" gives the family's base amount to another household, and is judged
+    def self.literal_base?(readings, scope, context)
+      pool = candidates(facts_at(scope, context))
+      readings.any? { |row, rank| rank.nil? && pool.include?(row) }
     end
 
     # Sol 2026-11-25 04:13:27Z (#116, #304): the band of a figure from the words around it, when its clause alone cannot
@@ -794,7 +863,13 @@ module LegalChatbot
       after = following.match(THEN_AFTER)
       return nil unless after && lead_phase(sentence).nil?
 
-      :first6 if following[after.end(0)..].to_s.split(CLAUSE_BREAK, 2).first.to_s.match?(AMOUNT)
+      then_clause = following[after.end(0)..].to_s.split(CLAUSE_BREAK, 2).first.to_s
+      return nil unless then_clause.match?(AMOUNT)
+
+      # Sol 2026-11-25 09:22:37Z: a clause that names another household than the figure's ("Alleenwonend €57,53 en
+      # vervolgens samenwonend €60,92") lists households, not periods
+      named = fact_values(then_clause, :household)
+      :first6 if named.empty? || named == fact_values(clause, :household)
     end
 
     def self.clause_bounds(sentence, position)
@@ -824,15 +899,7 @@ module LegalChatbot
     # The figure's row and the schedule of its period: [replacement, qualifier or nil]
     def self.judge(match, readings, scope, context, events, monthly: false)
       words = TEXT[context[:language]]
-      facts = facts_for([scope[:clause], scope[:sentence], *scope[:before], context[:question]])
-      # Sol 2026-11-25 03:16:54Z (#116), 03:33:05Z (#304): in a sentence with several figures, a band named only in a
-      # clause with another figure is not this figure's. It takes the one band the sentence's clauses without a figure
-      # name ("In de eerste zes maanden: alleenwonend ... en daarna ..."), or a band an earlier sentence gives, or none.
-      if scope[:local_phase]
-        facts[:phase] = scope[:local_phase]
-      elsif borrowed_phase?(scope)
-        facts[:phase] = lead_phase(scope[:sentence].to_s) || facts_for([*scope[:before], context[:question]])[:phase]
-      end
+      facts = facts_at(scope, context)
       period = period_for(scope, context)
       schedule, reason = schedule_for(period, schedules: context[:schedules])
       latest = context[:schedules].sort_by { |candidate| candidate[:from] }.rfind { |candidate| candidate[:from] <= period.first }
@@ -863,6 +930,20 @@ module LegalChatbot
 
       events << { kind: :replaced, regime: row[:regime], schedule: schedule }
       ["#{match[:pre]}#{written(indexed(row[:base], schedule[:rank]), match[:sep])}#{match[:post]}", qualifier]
+    end
+
+    # The facts of a figure from its own words outward: its clause, its sentence, the sentences before it, the question.
+    # Sol 2026-11-25 03:16:54Z (#116), 03:33:05Z (#304): in a sentence with several figures, a band named only in a
+    # clause with another figure is not this figure's. It takes the one band the sentence's clauses without a figure
+    # name ("In de eerste zes maanden: alleenwonend ... en daarna ..."), or a band an earlier sentence gives, or none.
+    def self.facts_at(scope, context)
+      facts = facts_for([scope[:clause], scope[:sentence], *scope[:before], context[:question]])
+      if scope[:local_phase]
+        facts[:phase] = scope[:local_phase]
+      elsif borrowed_phase?(scope)
+        facts[:phase] = lead_phase(scope[:sentence].to_s) || facts_for([*scope[:before], context[:question]])[:phase]
+      end
+      facts
     end
 
     # A prose sentence with more than one figure whose band is named in another clause than this figure's (a table row's

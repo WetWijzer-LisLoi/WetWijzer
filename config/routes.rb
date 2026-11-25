@@ -191,6 +191,9 @@ Rails.application.routes.draw do
           post :change_abuse_suspension_reason
           post :lift_abuse_suspension
           post :update_tier
+          # Sol 2026-11-25 09:51:02Z: the provenance of a complimentary Pro grant, recorded and cleared, nothing else
+          post :record_manual_pro_grant
+          post :clear_manual_pro_grant
           post :set_credits
           post :resend_verification
           post :clear_rate_limits

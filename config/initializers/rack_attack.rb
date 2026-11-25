@@ -249,7 +249,8 @@ module Rack
       body = { error: 'Rate limit exceeded. Please try again later.', code: 'rate_limited', period: period,
                retry_after: reset - now, reset_at: Time.at(reset).utc.iso8601 }
 
-      [429, headers, [body.to_json]]
+      # Sol 2026-11-25 09:44:12Z: a browser navigation gets a readable page; API clients and scripts keep the JSON
+      RackAttackThrottledPage.response_for(request, headers, reset: reset, now: now) || [429, headers, [body.to_json]]
     end
 
     # Custom response for blocked requests (temporary ban)

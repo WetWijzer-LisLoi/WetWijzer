@@ -59,6 +59,8 @@ matrix:
   admin/users#change_abuse_suspension_reason: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
   admin/users#lift_abuse_suspension: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
   admin/users#update_tier: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
+  admin/users#record_manual_pro_grant: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
+  admin/users#clear_manual_pro_grant: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
   admin/users#set_credits: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: true, unauthorized: 302 }
   admin/users#resend_verification: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }
   admin/users#clear_rate_limits: { auth: admin_session, csrf: samesite_exception, ownership: admin, rate_limit: req/ip, billing: false, unauthorized: 302 }

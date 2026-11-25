@@ -28,6 +28,7 @@ class AccountActivity < AccountRecord
     credits_removed
     credits_set_by_admin
     tier_changed_by_admin
+    tier_downgrade_scheduled_by_admin
     deactivated_by_admin
     reactivated_by_admin
     deletion_cancelled_by_admin
@@ -38,6 +39,8 @@ class AccountActivity < AccountRecord
     permanently_deleted_by_admin
     pro_credits_granted
     rate_limits_cleared
+    manual_pro_grant_recorded
+    manual_pro_grant_cleared
   ].freeze
 
   # Legacy TEXT snapshots may deserialize repaired raw values as a scalar.
