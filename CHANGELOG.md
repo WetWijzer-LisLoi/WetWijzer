@@ -8,6 +8,20 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.106] - 2026-11-25
+
+### Changed
+
+- The weekly consolidation run ends with a status that asks for a look when the official database lists a newer version of the Drugs Act than ours, or a change on the day of our own copy, which may be newer. The law stays outside that run, which never fetches it; its refresh remains a separate step.
+- The Praxis strip on the chatbot page says what Praxis does: drafting court documents with Praxi in the lawyer's own writing style, bundling documents and invoicing recorded time per case.
+
+### Fixed
+
+- The chatbot dates the new Criminal Code (Books I and II) to 1 September 2026, the day it took effect generally, instead of 8 April 2026, the day first planned. Facts of 8 April to 31 August 2026 are now compared under the old and the new Code with the more-favourable-law rule, as earlier facts were. A full date of an earlier year, and "before" any earlier date, now also count as facts before the new Code. The chatbot says that the treatment under deprivation of liberty and the extended supervision take effect only on 1 January 2035, unless the King sets an earlier date.
+- A fine a court imposes is described with the 2.5 opdecimes of the law of 5 March 1952, applicable since 1 September 2026, instead of a factor of 8. The chatbot's verified source on opdecimes now reads that law; it pointed at another act of the same day.
+- Questions on penalties for drug offences no longer show treaties on the transfer of sentenced persons as sources; a question about such a transfer keeps them, and a question about a transfer of money or data does not raise them. They now show the article of the Criminal Code that defines the penalty levels the Drugs Act uses, and the 1952 law on opdecimes.
+- An answer about drug offences committed before 1 September 2026 says that our sources give today's text of the Drugs Act, and links its official version history on Justel.
+
 ## [1.1.105] - 2026-11-25
 
 ### Added

@@ -428,6 +428,13 @@ class LegalChatbotService
   # block is the in-force half; this says a change exists and, for about a third of them,
   # when it starts. It goes on the HEADER line because every text slice is a silent prefix
   # cut with no ellipsis, so anything appended to the body can simply vanish.
+  # Sol 2026-11-25 12:43:15Z: Code arts 36, 42 and 46 name penalties that art. 38 of the Book I act defers to 2035; the
+  # header says so, so a source of art. 36 does not make all its sanctions sound available now (CriminalCodeCommencement)
+  def deferred_penalties_note(source)
+    note = LegalChatbot::CriminalCodeCommencement.deferred_note(source[:numac], source[:article_title], @language)
+    note ? " [#{note}]" : ''
+  end
+
   def future_amendment_note(source)
     return '' unless source[:future_amendment]
 
@@ -1250,7 +1257,8 @@ class LegalChatbotService
     # The text is the IN-FORCE half; retrieval already removed any not-yet-applicable
     # block. Say so on the header line, so the model can tell the user a change is
     # coming instead of silently omitting it.
-    pending = commenced_amendment_note(article) + uncommenced_insertion_note(article) + future_amendment_note(article)
+    pending = commenced_amendment_note(article) + uncommenced_insertion_note(article) + future_amendment_note(article) +
+              deferred_penalties_note(article)
     # A pin whose governing provision sits deep in a long article names it
     # here; the text itself stays complete from its first character.
     governing = article[:context_excerpt_anchor].to_s
@@ -1772,7 +1780,7 @@ class LegalChatbotService
             - Gezondheidsrecht: Cite Patiëntenrechtenwet 2002, Gezondheidswet
             - Huurrecht: Cite Vlaams Woninghuurdecreet 2018, Woninghuurwet
             - Sociaal recht: Cite specifieke wet (ZIV-wet, Leefloonwet, Werkloosheidsbesluit)
-            - Strafrechtelijke overgang: voor feiten van vóór 8 april 2026 mag je niet automatisch alleen het oude of alleen het nieuwe Strafwetboek toepassen. Vergelijk de historische bepaling met Boek I art. 2 en de huidige delictsbepaling uit de bronnen (mildere strafwet); als die vergelijking niet door de bronnen kan worden gemaakt, zeg dat uitdrukkelijk en geef geen definitieve strafinschatting.
+            - Strafrechtelijke overgang: #{LegalChatbot::CriminalCodeCommencement.transition_text('nl')}. Voor feiten van vóór #{LegalChatbot::CriminalCodeCommencement.date_text('nl')} mag je niet automatisch alleen het oude of alleen het nieuwe Strafwetboek toepassen. Vergelijk de historische bepaling met Boek I art. 2 en de huidige delictsbepaling uit de bronnen (mildere strafwet); als die vergelijking niet door de bronnen kan worden gemaakt, zeg dat uitdrukkelijk en geef geen definitieve strafinschatting.
 
             REGIONAL TOPICS (huur, registratierechten, kinderbijslag, erfbelasting, vergunningen):
             Add a short "REGIONALE VERSCHILLEN" section ONLY with info relevant to the specific topic asked about.
@@ -1793,7 +1801,7 @@ class LegalChatbotService
             - NEVER merge two gewesten into one figure, range or table row, and never present a federal W.Succ./W.Reg. text as the tarief that applies in a gewest: voor deze twee wetboeken is de federale tekst residuair.
             - If the sources carry only some gewesten, give those and say explicitly which gewest is missing. Do NOT present one gewest's figure as the general Belgian rule and do NOT fill the gap from memory. If the question does not say which gewest applies, ask.
 
-            FINES: Belgian fines use opdeciemen — multiply the amount stated in the law by the current opdeciemen multiplier to get the actual fine amount.
+            FINES: #{LegalChatbot::CriminalCodeCommencement.fine_surcharge_text('en')}.
 
             [ANTI-HALLUCINATION HINTS] – Known LLM failure patterns to avoid:
             - Proefperiode: AFGESCHAFT sinds 1 januari 2014 (only uitzendarbeid/studentencontract)
@@ -1803,7 +1811,7 @@ class LegalChatbotService
             - Arbeiders/bedienden: eenheidsstatuut sinds 2014
             - Belgisch puntensysteem rijbewijs: BESTAAT NIET (geen puntenrijbewijs in België)
             - Erfrecht reserve: 1/2 ongeacht aantal kinderen (hervorming 2018)
-            - Strafboetes: vermenigvuldig met de actuele opdeciemen-coëfficiënt
+            - Strafboetes: de opdecimes-regel van art. 1 van de wet van 5 maart 1952 hierboven (FINES); geen vaste coëfficiënt voor elke boete
             - Wettelijke conformiteitsgarantie bij consumentenkoop: uitgangspunt 2 JAAR vanaf levering. Voor tweedehandsgoederen kan die termijn alleen uitdrukkelijk worden verkort en nooit tot minder dan 1 JAAR. Citeer Art. 1649quater en presenteer 1 jaar nooit als de algemene regel.
             - Eindejaarspremie/dertiende maand: er bestaat GEEN algemeen wettelijk recht of universele berekeningsformule. Geef alleen een concreet recht of bedrag als de toepasselijke paritaire commissie, sector- of ondernemings-cao/arbeidsregeling en werknemersgegevens in de bronnen/context staan; vraag die anders op.
             - Exacte personenbelasting: geef geen exact eindbedrag zonder minstens aanslagjaar, belastbare grondslag, gezinssituatie/aftrekken en gemeente. Leg ontbrekende gegevens uit en geef hoogstens de bronregels.
@@ -2031,7 +2039,7 @@ class LegalChatbotService
 
       #{source_hyperlink_policy(question, language: :fr)}
 
-      Amendes: x8 décimes additionnels en Belgique (€100 dans la loi = €800 réel)
+      Amendes pénales: #{LegalChatbot::CriminalCodeCommencement.fine_surcharge_text('fr')}.
 
       [ANTI-HALLUCINATION] – Erreurs connues du LLM à éviter:
       - Période d'essai: SUPPRIMÉE depuis le 1er janvier 2014 (seuls intérim/étudiants: 3 jours)
@@ -2041,8 +2049,8 @@ class LegalChatbotService
       - Ouvriers/employés: statut unique depuis 2014
       - Permis à points: N'EXISTE PAS en Belgique
       - Réserve héréditaire: 1/2 quel que soit le nombre d'enfants (réforme 2018)
-      - Amendes pénales: multiplier par 8 décimes additionnels (€100 dans la loi = €800 réel)
-      - Transition pénale: pour des faits antérieurs au 8 avril 2026, n'appliquez pas automatiquement uniquement l'ancien ou le nouveau Code pénal. Comparez la disposition historique avec l'art. 2 du Livre Ier et la disposition actuelle de l'infraction présentes dans les sources (loi pénale la plus favorable); si les sources ne permettent pas cette comparaison, dites-le clairement et ne donnez pas d'estimation définitive de la peine.
+      - Amendes pénales: la règle des décimes de l'article 1er de la loi du 5 mars 1952 ci-dessus; pas de coefficient unique pour toute amende
+      - Transition pénale: #{LegalChatbot::CriminalCodeCommencement.transition_text('fr')}. Pour des faits antérieurs au #{LegalChatbot::CriminalCodeCommencement.date_text('fr')}, n'appliquez pas automatiquement uniquement l'ancien ou le nouveau Code pénal. Comparez la disposition historique avec l'art. 2 du Livre Ier et la disposition actuelle de l'infraction présentes dans les sources (loi pénale la plus favorable); si les sources ne permettent pas cette comparaison, dites-le clairement et ne donnez pas d'estimation définitive de la peine.
       - Garantie légale de conformité: principe de 2 ANS à compter de la délivrance. Pour un bien d'occasion, ce délai ne peut être réduit que par accord exprès et jamais à moins d'1 AN. Citez l'art. 1649quater et ne présentez jamais un an comme règle générale.
       - Droit de rétractation achats en ligne: 14 JOURS (pas 7 jours)
       - Prime de fin d'année/treizième mois: il n'existe AUCUN droit légal général ni formule universelle. Ne donnez un droit ou montant concret que si la commission paritaire, la CCT/règle d'entreprise applicable et les données du travailleur figurent dans les sources; sinon demandez-les.

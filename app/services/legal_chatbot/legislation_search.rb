@@ -800,7 +800,7 @@ module LegalChatbot
     LEGACY_CRIMINAL_CODE_NUMAC = '1867060850'
     CURRENT_CRIMINAL_CODE_NUMACS = Set.new(%w[2024002052 2024002088]).freeze
     LEGACY_CRIMINAL_CODE_NAME_PATTERN = /\b(?:oud\s+strafwetboek|strafwetboek\s+van\s+1867|ancien\s+code\s+pénal|old\s+criminal\s+code|altes\s+strafgesetzbuch)\b/i
-    CRIMINAL_OFFENCE_PATTERN = /\b(?:feiten?|misdrijf|strafbaar\s+feit|diefstal|stelen|belaging|inbraak|oplichting|fraude|moord|doodslag|verkrachting|mishandeling|drugs?(?:bezit)?|vol|harcèlement|infraction|cambriolage|escroquerie|fraude|meurtre|homicide|viol|agression|stupéfiants?|drogue|theft|offen[cs]e|burglary|robbery|fraud|murder|homicide|rape|assault|drugs?|diebstahl|straftat|einbruch|raub|betrug|mord|totschlag|vergewaltigung|körperverletzung|drogen)\b/i
+    CRIMINAL_OFFENCE_PATTERN = /\b(?:feiten?|misdrijf|strafbaar\s+feit|diefstal|stelen|belaging|inbraak|oplichting|fraude|moord|doodslag|verkrachting|mishandeling|drugs?(?:bezit|handel)?|vol|harcèlement|infraction|cambriolage|escroquerie|fraude|meurtre|homicide|viol|agression|stupéfiants?|drogue|theft|offen[cs]e|burglary|robbery|fraud|murder|homicide|rape|assault|drugs?|diebstahl|straftat|einbruch|raub|betrug|mord|totschlag|vergewaltigung|körperverletzung|drogen(?:handel|besitz)?)\b/i
     CRIMINAL_EVENT_PATTERN = %r{
       \b(?:
         vond\s+plaats|gebeurde|dateert|(?:werd|is|heb|heeft|hebben)?\s*gepleegd|begaan|
@@ -809,30 +809,19 @@ module LegalChatbot
         wurde\s+begangen|begangen|ereignete\s+sich|fand\s+statt
       )\b
     }ix
-    LEGACY_CRIMINAL_DATE_PATTERN = %r{
-      (?:
-        (?:19\d{2}|20(?:0\d|1\d|2[0-5]))(?!\d)(?!\s*(?:€|eur(?:o)?s?\b|dollars?\b|usd\b|gbp\b))|
-        2026[-/.]0?[1-3][-/.](?:0?[1-9]|[12]\d|3[01])(?!\d)|
-        2026[-/.]0?4[-/.]0?[1-7](?!\d)|
-        (?:0?[1-9]|[12]\d|3[01])[-/.]0?[1-3][-/.]2026(?!\d)|
-        0?[1-7][-/.]0?4[-/.]2026(?!\d)|
-        (?:(?:[1-9]|[12]\d|3[01])(?:st|nd|rd|th|er|e|\.)?\s+)?
-          (?:januari|janvier|january|januar|februari|février|fevrier|february|februar|maart|mars|march|märz|maerz)\s+2026|
-        [1-7](?:st|nd|rd|th|er|e|\.)?\s+(?:april|avril)\s+2026|
-        (?:january|february|march)\s+(?:[1-9]|[12]\d|3[01])(?:st|nd|rd|th)?,?\s+2026|
-        april\s+[1-7](?:st|nd|rd|th)?,?\s+2026
-      )
-    }ix
-    PRE_CUTOVER_CRIMINAL_REFERENCE_PATTERN = %r{
-      (?:
-        (?:de\s+|le\s+|dem\s+|the\s+)?(?:8(?:th|e|er|\.)?\s+(?:april|avril)\s+2026|april\s+8(?:th)?,?\s+2026|0?8[-/.]0?4[-/.]2026|2026[-/.]0?4[-/.]0?8)|
-        (?:de\s+|du\s+|the\s+|des\s+)?(?:inwerkingtreding|entrée\s+en\s+vigueur|entry\s+into\s+force|inkrafttreten)\s+(?:van\s+|du\s+|of\s+|des\s+)?(?:het\s+|le\s+|the\s+|des\s+)?(?:nieuwe?\s+|nouveau\s+|new\s+|neuen?\s+)?(?:strafwetboek|code\s+pénal|criminal\s+code|strafgesetzbuch)
-      )
-    }ix
+    # Dates before the new Criminal Code took effect, and the day itself, built from
+    # LegalChatbot::CriminalCodeCommencement::EFFECTIVE (1 September 2026). Until 1.1.106 these held 8 April 2026, the
+    # date first planned, so facts of 8 April to 31 August 2026 were read as new-Code facts.
+    LEGACY_CRIMINAL_DATE_PATTERN = Regexp.new("(?:#{LegalChatbot::CriminalCodeCommencement.legacy_date_source})",
+                                              Regexp::IGNORECASE | Regexp::EXTENDED)
+    PRE_CUTOVER_CRIMINAL_REFERENCE_PATTERN = Regexp.new(
+      "(?:#{LegalChatbot::CriminalCodeCommencement.cutover_reference_source})", Regexp::IGNORECASE | Regexp::EXTENDED
+    )
     LEGACY_CRIMINAL_FACT_PATTERN = %r{
       (?:
         #{CRIMINAL_OFFENCE_PATTERN.source}\s+(?:op|in|uit|van|on|from|im|am|aus|le|en|de)\s+#{LEGACY_CRIMINAL_DATE_PATTERN.source}|
-        #{CRIMINAL_OFFENCE_PATTERN.source}.{0,30}(?:vóór|voor|avant|before|vor)\s+#{PRE_CUTOVER_CRIMINAL_REFERENCE_PATTERN.source}|
+        #{CRIMINAL_OFFENCE_PATTERN.source}.{0,30}(?:vóór|voor|avant|before|vor)\s+(?:de\s+|le\s+|dem\s+|the\s+)?
+          (?:#{PRE_CUTOVER_CRIMINAL_REFERENCE_PATTERN.source}|#{LEGACY_CRIMINAL_DATE_PATTERN.source})|
         #{CRIMINAL_OFFENCE_PATTERN.source}.{0,80}#{CRIMINAL_EVENT_PATTERN.source}.{0,30}#{LEGACY_CRIMINAL_DATE_PATTERN.source}|
         #{CRIMINAL_OFFENCE_PATTERN.source}.{0,80}#{LEGACY_CRIMINAL_DATE_PATTERN.source}.{0,30}#{CRIMINAL_EVENT_PATTERN.source}|
         #{LEGACY_CRIMINAL_DATE_PATTERN.source}.{0,40}#{CRIMINAL_EVENT_PATTERN.source}.{0,40}#{CRIMINAL_OFFENCE_PATTERN.source}
@@ -2808,6 +2797,12 @@ module LegalChatbot
       [CANNABIS_OR_POSSESSION_PATTERN, '1921022450', '2ter'],
       [DRUG_OFFENCE_PATTERN, '2017031231', '6'],
       [DRUG_OFFENCE_PATTERN, '2017031231', '61'],
+      # Sol 2026-11-25 11:06:22Z and 11:11:49Z (#1556, #1557): since 1 September 2026 the Drugswet punishes by penalty
+      # level (art. 2bis: level 3), so Book I art. 36 says what that level is (its deferred treatment carries the note
+      # of CriminalCodeCommencement), and art. 1 of the law of 5 March 1952 raises a fine a court imposes. Both read in
+      # full in the corpus on 2026-11-25.
+      [DRUG_OFFENCE_PATTERN, '2024002052', '36'],
+      [DRUG_OFFENCE_PATTERN, '1952030505', '1'],
       [ALCOHOL_DRIVING_LIMIT_PATTERN, '1968031601', '34'],
       [ALCOHOL_DRIVING_LIMIT_PATTERN, '1968031601', '35'],
       [ALCOHOL_DRIVING_LIMIT_PATTERN, '1968031601', '36'],

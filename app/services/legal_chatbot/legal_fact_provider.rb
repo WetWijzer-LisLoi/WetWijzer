@@ -1332,10 +1332,12 @@ module LegalChatbot
       },
 
       # Opdeciemen: multiplication factor for criminal fines.
-      # Wet 5 maart 1952. Art. 1 contains the factor.
+      # Wet 5 maart 1952. Art. 1 contains the factor. Until 1.1.106 this pointed at 1952030501, a royal decree of the
+      # same day on permanent delegates with no row in the corpus, so the pack stayed empty (read 2026-11-25).
       'opdeciemen' => {
-        numac: '1952030501',
+        numac: '1952030505',
         article_patterns: ['Art. 1', 'Art. 2'],
+        content_fingerprints: %w[opdecimes décimes],
         label: 'Opdeciemen strafrechtelijke geldboeten - Wet 5 maart 1952'
       },
 

@@ -40,10 +40,10 @@ module LegalChatbot
       '1967101057' => 'Gerechtelijk Wetboek - Deel VI Arbitrage',
       '1967101063' => 'Gerechtelijk Wetboek - Deel VII Bemiddeling',
       '1967101064' => 'Gerechtelijk Wetboek - Deel VIII Collaboratieve onderhandeling',
-      # Criminal Law. The 2024 code entered into force on 8 April 2026.
+      # Criminal Law. The 2024 Code took effect generally on 1 September 2026 (LegalChatbot::CriminalCodeCommencement).
       '2024002052' => 'Strafwetboek Boek I - Algemene bepalingen',
       '2024002088' => 'Strafwetboek Boek II - Misdrijven en straffen',
-      '1867060850' => 'Strafwetboek 1867 (historisch, feiten vóór 8 april 2026)',
+      '1867060850' => "Strafwetboek 1867 (historisch, feiten vóór #{LegalChatbot::CriminalCodeCommencement.date_text('nl')})",
       '1808111701' => 'Wetboek van Strafvordering',
       '1878041750' => 'Voorafgaande Titel Wetboek van Strafvordering',
       '2010A09589' => 'Sociaal Strafwetboek',

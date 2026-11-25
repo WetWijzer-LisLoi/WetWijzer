@@ -1259,6 +1259,7 @@ module LegalChatbot
       grounded_answer = validate_commercial_website_scope_answer(grounded_answer, question, retained_legislation, candidate: clean_answer)
       # #337: an unemployment answer gets the applicable indexed amounts instead of the decree's base amounts.
       grounded_answer = apply_indexed_amounts(grounded_answer, question, retained_legislation)
+      grounded_answer = apply_dated_drug_law_note(grounded_answer, question)
       validate_office_commute_answer(grounded_answer, question, statutory_sources)
     end
 

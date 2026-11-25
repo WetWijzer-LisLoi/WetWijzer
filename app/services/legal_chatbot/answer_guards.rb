@@ -1010,6 +1010,12 @@ module LegalChatbot
       result.text
     end
 
+    # Sol 2026-11-25 12:35:40Z: a drug offence question about facts before 1 September 2026 learns that our Drugswet is
+    # today's text and where its official history is (DatedDrugLawNote)
+    def apply_dated_drug_law_note(text, question)
+      DatedDrugLawNote.apply(text, question: question, language: @language)
+    end
+
     def validate_withdrawal_function_status_answer(text, question, sources, candidate: text)
       merge_semantic_grounding(text, OnlineWithdrawalFunctionStatus.evaluate(candidate, question, sources),
                                :missing_withdrawal_function_status_conditions, :withdrawal_function_status_version,

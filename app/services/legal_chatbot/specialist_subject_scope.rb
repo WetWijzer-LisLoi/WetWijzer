@@ -240,6 +240,24 @@ module LegalChatbot
            estate\p{L}*|vruchtgebruik\p{L}*|usufruit\p{L}*|nie(?:ß|ss)brauch\p{L}*|usufruct\p{L}*|taks\p{L}*|zegel\p{L}*|
            timbre\p{L}*|beurs\p{L}*|bourse\p{L}*|effectenrekening\p{L}*|comptes?[-\s]titres|wertpapierkont\p{L}*|
            securities\s+accounts?|verzekeringsverrichting\p{L}*|op[ée]rations?\s+d.assurance)#{E}/iux
+      ],
+      # Treaties and laws on the transfer of sentenced persons. Sol 2026-11-25 11:06:22Z: the Belgian-Moroccan and
+      # Belgian-Congolese treaties (1999A15126 art. 9, 2014B15235 art. 11) were cards 5 and 6 of the drug sentencing
+      # samples #1556 and #1557. Titles read in the corpus on 2026-11-25: "overbrenging (tussen Staten) van (de)
+      # gevonniste personen" or "veroordeelde personen", "transfèrement (interétatique) des personnes condamnées". A
+      # question about such a transfer, or about serving a sentence in one's home country, keeps them. Sol 16:22:46Z: a
+      # transfer word counts only beside a sentence or prison word ("a bank transfer" raises nothing); the French
+      # "transfèrement" and the German "Überstellung" name the transfer of a person on their own.
+      sentenced_transfer: [
+        /#{B}(?:overbrenging\s+(?:tussen\s+staten\s+)?van\s+(?:de\s+)?(?:gevonniste|veroordeelde)\s+personen|
+           transf[èe]rement\s+(?:inter-?[ée]tatique\s+)?des\s+personnes\s+condamn[ée]es|
+           [üu]berstellung\s+verurteilter\s+personen|transfer\s+of\s+sentenced\s+persons)#{E}/iux,
+        /\A(?:(?=.*#{B}(?:transf[èe]rement\p{L}*|[üu]berstell\p{L}*)#{E})|
+              (?=.*#{B}(?:overbreng\p{L}*|overgebracht|overgeplaatst|overplaats\p{L}*|transf[ée]r\p{L}*|transfer\p{L}*|
+                         thuisland|land\s+van\s+herkomst|pays\s+d.origine|heimatland|home\s+country)#{E})
+              (?=.*#{B}(?:gevangen\p{L}*|gedetineerd\p{L}*|veroordeel\p{L}*|gevonnist\p{L}*|straf\p{L}*|d[ée]tenu\p{L}*|
+                         condamn\p{L}*|peine\p{L}*|prison\p{L}*|inmate\p{L}*|sentenc\p{L}*|convict\p{L}*|h[äa]ftling\p{L}*|
+                         gefangen\p{L}*|verurteil\p{L}*|haft)#{E}))/iumx
       ]
     }.freeze
     # A question about a source the reader is shown ("Explain this specialist source.", "Wat zegt deze wet?") keeps
