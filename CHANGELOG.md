@@ -8,6 +8,14 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.111] - 2026-11-26
+
+### Fixed
+
+- A general question on dismissal during a trial period no longer shows the staff statutes of a public body, such as the statute of the scientific staff of a botanic garden or the legal position of local staff; a question about public staff keeps them.
+- A question on the rate of a worker's or an employer's social security contributions shows article 38 of the law of 29 June 1981 first, and its other sources stay social security law, without an annual holidays decree, a pension decree or a wage subsidy for disabled workers.
+- An answer on how long a collective debt settlement lasts reads the rules of article 51 of the Judicial Code from that article itself.
+
 ## [1.1.110] - 2026-11-26
 
 ### Changed

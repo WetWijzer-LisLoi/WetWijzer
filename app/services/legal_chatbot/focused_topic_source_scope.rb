@@ -127,8 +127,24 @@ module LegalChatbot
     ].freeze
 
     # Topics whose family is read from the law's title alone.
+    # Sol 2026-11-26 08:49:45Z (#2548, live 1.1.109): beside art. 38 of the law of 29 June 1981 the cards held an annual
+    # holidays decree (1967033001), a 1968 wage subsidy for disabled workers (1968012301), a pension decree (1962040401) and
+    # the 2014 competitiveness pact law (2014203009), "tangential candidates where support for the generic rate is already
+    # complete". Under a question on a contribution rate (LegislationSearch::SOCIAL_CONTRIBUTION_RATE_PATTERN, art. 38
+    # pinned) the other cards stay social security law, read from the law's title: the social security acts, the RSZ, the
+    # work bonus, and the programme and recovery laws and acts of diverse provisions that set or change the contributions.
+    SOCIAL_SECURITY_TITLE_FAMILY_PATTERN = /(?<![[:alnum:]])(?:sociale\s+zekerheid|maatschappelijke\s+zekerheid|s[ée]curit[ée]\s+sociale|
+                                            soziale\p{L}*\s+sicherheit|social\s+security|\p{L}*zekerheidsbijdrage\p{L}*|
+                                            bijdragen\s+van\s+sociale\s+zekerheid|cotisations?\s+de\s+s[ée]curit[ée]\s+sociale|
+                                            werkbonus|bonus\s+[àa]\s+l['’]\s*emploi|besch[äa]ftigungsbonus|programmawet\p{L}*|
+                                            loi-programme|loi\s+programme|programmgesetz\p{L}*|herstelwet\p{L}*|
+                                            loi\s+de\s+redressement|diverse\s+bepalingen|dispositions\s+diverses|
+                                            verschiedene\s+bestimmungen|rijksdienst\s+voor\s+sociale\s+zekerheid|
+                                            office\s+national\s+de\s+s[ée]curit[ée]\s+sociale|(?-i:RSZ|ONSS))(?![[:alnum:]])/iux
+
     TITLE_TOPICS = { education_right: EDUCATION_TITLE_FAMILY_PATTERN, home_inviolability: HOME_TITLE_FAMILY_PATTERN,
-                     guaranteed_pay: GUARANTEED_PAY_TITLE_FAMILY_PATTERN }.freeze
+                     guaranteed_pay: GUARANTEED_PAY_TITLE_FAMILY_PATTERN,
+                     social_contribution_rate: SOCIAL_SECURITY_TITLE_FAMILY_PATTERN }.freeze
 
     # Sol 2026-11-24 10:26:43Z (live 1.1.98): under the doorstep deadline question the slot WER art. VII.87 left went
     # to art. 3 of the royal decree of 7 December 2016 on price indication in the hospitality sector (2016011534), which
@@ -183,6 +199,7 @@ module LegalChatbot
       found << :internet_image if text.match?(IMAGE_PATTERN) && text.match?(ONLINE_ORIGIN_PATTERN)
       found << :portrait_use if text.match?(PORTRAIT_USE_PATTERN)
       found << :guaranteed_pay if text.match?(GUARANTEED_PAY_PATTERN)
+      found << :social_contribution_rate if text.match?(LegislationSearch::SOCIAL_CONTRIBUTION_RATE_PATTERN)
       found << :workplace_camera if text.match?(CAMERA_PATTERN) && text.match?(WORKPLACE_PATTERN)
       found << :data_breach if GdprBreachSources.topic?(text)
       found << :road_speed if road_speed_question?(text)

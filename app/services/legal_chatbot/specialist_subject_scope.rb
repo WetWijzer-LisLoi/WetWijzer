@@ -48,6 +48,37 @@ module LegalChatbot
                         'without\s+(?:benefits?|income)|hoe\s*lang\p{L}*|duur\p{L}*|looptijd|maanden|jaren|jaar|' \
                         'periode\p{L}*|p[ée]riode\p{L}*|dur[ée]e\p{L}*|combien\s+de\s+temps|mois|ans|ann[ée]es?|' \
                         'wie\s+lange|dauer\p{L}*|monate\p{L}*|jahre\p{L}*|how\s+long|duration|months?|years?|period\p{L}*'
+    # The staff noun of a title: personeel, or the French noun personnel (after an article or a preposition, at the start of a
+    # segment, or before a staff adjective), never the French adjective ("à caractère personnel", "statut personnel")
+    STAFF_NOUN = /#{B}personeel\p{L}*|#{B}(?:le|du|au|de|en|et|son|sa|leur|leurs|ce|cet|notre|votre)\s+personnel#{E}|
+                  (?:\A|[.\-_:;]\s*)personnel#{E}|#{B}personnel\s+(?:contractuel|statutaire|provincial|communal|enseignant|
+                  temporaire|administratif|technique|ouvrier|subalterne|militaire|civil|scientifique)\p{L}*/iux
+    # The words of a question about public staff (SUBJECTS[:public_staff_circular] and [:public_staff_statute]): the
+    # services, the local and the education staff, the police and the army, the courts, prisons, the fire service, the
+    # railways and the diplomatic service. CI receipt-1-1-111: also German local and public employees ("Arbeitszeit der
+    # Kommunalbediensteten") and working conditions ("de arbeidsvoorwaarden van de Regie voor Maritiem Transport", whose
+    # staff decree is a staff statute)
+    PUBLIC_STAFF_WORDS = 'ambt\p{L}*|fonctionnaire\p{L}*|beamte\p{L}*|civil\s+servants?|contractu\p{L}*|statutair\p{L}*|' \
+                         'statutaire\p{L}*|personeel\p{L}*|personnel|staff|overheid\p{L}*|' \
+                         'openbare\s+(?:sector|dienst\p{L}*|besturen|instelling\p{L}*)|pouvoirs?\s+publics?|secteur\s+public|' \
+                         'services?\s+publics?|public\s+(?:sector|services?|servants?)|[öo]ffentlich\p{L}*\s+dienst\p{L}*|' \
+                         'fonction\s+publique|ministerie\p{L}*|minist[èe]re\p{L}*|ministry|ministerium|overheidsdienst\p{L}*|' \
+                         '(?-i:FOD|SPF)|gemeente\p{L}*|communes?|communa\p{L}*|gemeinde\p{L}*|municipa\p{L}*|provincie\p{L}*|' \
+                         'provinces?|provincia\p{L}*|provinz\p{L}*|ocmw\p{L}*|cpas|politie\p{L}*|police\p{L}*|polizei\p{L}*|' \
+                         'onderwijs\p{L}*|enseignement\p{L}*|unterricht\p{L}*|leerkracht\p{L}*|leraa?r\p{L}*|onderwijzer\p{L}*|' \
+                         'enseignant\p{L}*|lehrer\p{L}*|teacher\p{L}*|defensie|d[ée]fense|militair\p{L}*|militaire\p{L}*|' \
+                         'wedde\p{L}*|bar[èe]me\p{L}*|stagiair\p{L}*|griffie\p{L}*|griffier\p{L}*|greff\p{L}*|magistra\p{L}*|' \
+                         'parket\p{L}*|parquet\p{L}*|\p{L}*rechter\p{L}*|\p{L}*rechtbank\p{L}*|tribuna\p{L}*|juges?|' \
+                         '\p{L}*gerecht\p{L}*|justitie\p{L}*|justice|gevangenis\p{L}*|strafinrichting\p{L}*|penitentiair\p{L}*|' \
+                         'p[ée]nitentiaire\p{L}*|prison\p{L}*|brandweer\p{L}*|pompier\p{L}*|feuerwehr\p{L}*|firefight\p{L}*|' \
+                         'spoorweg\p{L}*|nmbs|sncb|infrabel|cheminot\p{L}*|diplomat\p{L}*|consula\p{L}*|kommunal\p{L}*|' \
+                         '\p{L}*bedienstete\p{L}*|beh[öo]rde\p{L}*|local\s+(?:authorit\p{L}*|government\p{L}*|councils?)|' \
+                         'agents?\s+(?:communaux|provinciaux|publics?)|arbeidsvoorwaarden|conditions\s+de\s+travail|' \
+                         'arbeitsbedingungen|working\s+conditions'
+    # Dismissal, the trial period and notice (SUBJECTS[:public_staff_statute])
+    DISMISSAL_WORDS = 'proeftijd\p{L}*|proefperiode\p{L}*|ontsla\p{L}*|opzeg\p{L}*|p[ée]riodes?\s+d.essai|licenci\p{L}*|' \
+                      'pr[ée]avis|probezeit\p{L}*|\p{L}*k[üu]ndig\p{L}*|entlass\p{L}*|probation\p{L}*|trial\s+periods?|' \
+                      'dismiss\p{L}*|notice\s+periods?|fired|firing'
     # A program law or a law of diverse provisions lists many subjects in its title: no title word makes it a narrow law.
     # Diverse provisions on one named domain ("diverse bepalingen betreffende de controle van energieproducten") are
     # that domain's law.
@@ -314,18 +345,27 @@ module LegalChatbot
       # burgerlijke stand is about civil status, and "à caractère personnel" or "statut personnel" (personal data, the
       # personal status of foreigners, their names) is the French adjective.
       public_staff_circular: [
-        /\A(?=.*#{B}(?:omzendbrief|circulaire)#{E})
-           (?=.*(?:#{B}personeel\p{L}*|#{B}(?:le|du|au|de|en|et|son|sa|leur|leurs|ce|cet|notre|votre)\s+personnel#{E}|
-                  (?:\A|[.\-_:;]\s*)personnel#{E}|#{B}personnel\s+(?:contractuel|statutaire|provincial|communal|enseignant|
-                  temporaire|administratif|technique|ouvrier|subalterne|militaire|civil)\p{L}*))/iumx,
-        /#{B}(?:#{TAX_WORDS}|ambt\p{L}*|fonctionnaire\p{L}*|beamte\p{L}*|civil\s+servants?|contractu\p{L}*|statutair\p{L}*|statutaire\p{L}*|
-           personeel\p{L}*|personnel|staff|overheid\p{L}*|openbare\s+(?:sector|dienst\p{L}*|besturen|instelling\p{L}*)|
-           pouvoirs?\s+publics?|secteur\s+public|services?\s+publics?|public\s+(?:sector|services?|servants?)|
-           [öo]ffentlich\p{L}*\s+dienst\p{L}*|fonction\s+publique|ministerie\p{L}*|minist[èe]re\p{L}*|ministry|ministerium|
-           overheidsdienst\p{L}*|(?-i:FOD|SPF)|gemeente\p{L}*|communes?|communa\p{L}*|gemeinde\p{L}*|municipa\p{L}*|
-           provincie\p{L}*|provinces?|provincia\p{L}*|provinz\p{L}*|ocmw\p{L}*|cpas|politie\p{L}*|police\p{L}*|polizei\p{L}*|
-           onderwijs\p{L}*|enseignement\p{L}*|unterricht\p{L}*|leerkracht\p{L}*|leraa?r\p{L}*|onderwijzer\p{L}*|enseignant\p{L}*|
-           lehrer\p{L}*|teacher\p{L}*|defensie|d[ée]fense|militair\p{L}*|militaire\p{L}*|wedde\p{L}*|bar[èe]me\p{L}*)#{E}/iux
+        /\A(?=.*#{B}(?:omzendbrief|circulaire)#{E})(?=.*(?:#{STAFF_NOUN}))/iumx,
+        /#{B}(?:#{TAX_WORDS}|#{PUBLIC_STAFF_WORDS})#{E}/iux
+      ],
+      # Sol 2026-11-26 08:49:45Z (#2534 "Kan ik ontslagen worden tijdens de proeftijd?", live 1.1.109): the two cards that
+      # replaced the Proximus and circular 349 cards, a French Community decree on the statute of the scientific staff of
+      # the Meise botanic garden (2019014409, art. 17: a trainee's appeal against dismissal or an extended probation) and a
+      # Flemish decree on the minimum conditions for the staff establishment and legal position of local staff (2012036277,
+      # art. 47: dismissal of a statutory staff member on probation). "Neither is a source for a generic worker's trial
+      # period." A rule on the statute, legal position or establishment of a body's staff is left out only for a question
+      # on dismissal, the trial period or notice that names no public staff; every other question keeps it (CI
+      # receipt-1-1-111: the working hours of a shipping company's employees keep the staff decree of the Regie voor
+      # Maritiem Transport). A collective labour agreement, a joint committee's decision and a private company's staff
+      # stay outside, as private-sector law: CAO nr. 5 on the union delegations "van het personeel der ondernemingen"
+      # (1971052460), read on 2026-11-26.
+      public_staff_statute: [
+        /\A(?!.*#{B}(?:collectieve\s+arbeidsovereenkomst\p{L}*|conventions?\s+collectives?\s+de\s+travail|paritair\p{L}*\s+comit[ée]\p{L}*|
+                     comit[ée]\s+paritaire|commissions?\s+paritaires?|privaat\s+recht|droit\s+priv[ée]|ondernemingen|entreprises)#{E})
+           (?=.*#{B}(?:statuut|rechtspositie\p{L}*|personeelsstatuut|personeelsformatie\p{L}*|statut|statuts|cadre\s+organique|
+                     cadres\s+organiques)#{E})
+           (?=.*(?:#{STAFF_NOUN}))/iumx,
+        /\A(?!(?=.*#{B}(?:#{DISMISSAL_WORDS})#{E})(?!.*#{B}(?:#{TAX_WORDS}|#{PUBLIC_STAFF_WORDS})#{E}))/iumx
       ],
       # A decree on the staff or the employment at one named public employer, kept for a question that names it
       employer_staff_decree: [
@@ -384,8 +424,8 @@ module LegalChatbot
                           artikels?|quellen?)(?![[:alpha:]])/iux
     # A law of a specific subject is judged by it alone: the tobacco decree's "fiscaal stelsel" makes it no income tax
     # law, a sector fund's statutes make it no agency
-    GENERIC = %i[public_body income_tax vat duties management_agreement public_staff_circular employer_staff_decree
-                 judicial_organisation social_integration tax_notice].freeze
+    GENERIC = %i[public_body income_tax vat duties management_agreement public_staff_circular public_staff_statute
+                 employer_staff_decree judicial_organisation social_integration tax_notice].freeze
     # Sol 2026-11-25 17:29:23Z: a transfer question that names where the person goes keeps that country's bilateral
     # treaty and no other. The bilateral transfer treaties in the corpus (titles read on 2026-11-25): Morocco, Thailand,
     # Hong Kong, DR Congo, the Dominican Republic, Brazil, Kosovo, Albania, China and India. Each entry: the country as a

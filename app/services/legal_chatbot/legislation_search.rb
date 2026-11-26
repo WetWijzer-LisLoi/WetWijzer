@@ -2111,6 +2111,27 @@ module LegalChatbot
                 laufzeit)\b)
       .*\z
     /ix
+    # Sol 2026-11-26 08:49:45Z (#2548 "Hoeveel RSZ werknemer?", live 1.1.109): the worker's rates come from art. 38 of the
+    # law of 29 June 1981, third of five cards behind an annual holidays decree and a wage subsidy for disabled workers.
+    # A question on the rate of a worker's or an employer's social security contributions; the reductions, the student
+    # exemption and the self-employed have rules of their own (the catalogue's 13 RSZ/ONSS questions, read 2026-11-26).
+    # CI receipt-1-1-111: "the employer contribution to my train ticket" is no social security contribution, so a bare
+    # employer or worker contribution (werkgeversbijdrage, cotisation patronale) does not count: the question names the
+    # RSZ, the ONSS or social security, as every rate question of the catalogue does.
+    SOCIAL_CONTRIBUTION_RATE_PATTERN = /
+      \A
+      (?!.*(?<![[:alnum:]])(?:\p{L}*vermindering\p{L}*|verminder\p{L}*|r[ée]duction\p{L}*|vrijstelling\p{L}*|exon[ée]ration\p{L}*|
+           zelfstandig\p{L}*|ind[ée]pendant\p{L}*|selbst[äa]ndig\p{L}*|self-employed|student\p{L}*|[ée]tudiant\p{L}*|
+           erm[äa](?:ß|ss)igung\p{L}*|befreiung\p{L}*|reductions?|exemptions?)(?![[:alnum:]]))
+      (?=.*(?<![[:alnum:]])(?:rsz\p{L}*|onss|lss|socialezekerheidsbijdrage\p{L}*|sociale\s+(?:zekerheids)?bijdrage\p{L}*|
+           cotisations?\s+(?:sociales?|onss|de\s+s[ée]curit[ée]\s+sociale)|sozialversicherungsbeitr\p{L}*|sozialabgabe\p{L}*|
+           social\s+security\s+contributions?|social\s+contributions?)(?![[:alnum:]]))
+      (?=.*(?<![[:alnum:]])(?:werknemer\p{L}*|werkgever\p{L}*|bediende\p{L}*|arbeider\p{L}*|loon|lonen|brutoloon\p{L}*|betaal\p{L}*|
+           salari[ée]\p{L}*|salariale\p{L}*|travailleur\p{L}*|employeur\p{L}*|patronal\p{L}*|r[ée]mun[ée]ration\p{L}*|salaire\p{L}*|
+           pay\p{L}*|arbeitnehmer\p{L}*|arbeitgeber\p{L}*|lohn\p{L}*|gehalt\p{L}*|zahl\p{L}*|employee\p{L}*|employer\p{L}*|
+           worker\p{L}*|wage\p{L}*|salary|personnelle\p{L}*|persoonlijke)(?![[:alnum:]]))
+      .*\z
+    /imxu
     # Unemployment with company supplement (SWT, formerly brugpensioen, prépension), in the four languages
     SWT_PATTERN = /
       \b(?:swt|bedrijfstoeslag|brugpensioen|compl[ée]ment\s+d['’]entreprise|pr[ée]pension|betriebszuschlag|
@@ -3143,6 +3164,10 @@ module LegalChatbot
       # § 2, rules out: unless the law provides otherwise, an extension is no longer than the original time limit. Read
       # in full in NL and FR on 2026-11-26.
       [DEBT_SETTLEMENT_DURATION_PATTERN, '1967101052', '51'],
+      # Sol 2026-11-26 08:49:45Z (#2548 on live 1.1.109): the rate of a worker's or an employer's social security
+      # contributions is art. 38 of the law of 29 June 1981 (1981001048), its first card. Read in full in NL and FR on
+      # 2026-11-26.
+      [SOCIAL_CONTRIBUTION_RATE_PATTERN, '1981001048', '38'],
       [/(?:\bfaillissement\b.{0,60}\b(?:onderneming|vennootschap|handelaar)\b|\b(?:onderneming|vennootschap|handelaar)\b.{0,60}\bfaillissement\b)/i, '2013A11134', 'XX.99'],
 
       # Regional tax competence. Succession and registration duties are REGIONAL taxes, and

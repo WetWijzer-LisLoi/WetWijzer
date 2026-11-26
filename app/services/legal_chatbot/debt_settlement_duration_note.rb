@@ -15,6 +15,9 @@ module LegalChatbot
   #   for serious reasons and by a reasoned decision.
   # Each note rides on the header of its article's source block (LegalChatbotService#debt_settlement_duration_note), and
   # only while the article's text holds the sentences it restates, in Dutch or in French: an amended text gets no note.
+  # Sol 2026-11-26 11:02:56Z: the note checked the text of art. 1675/12 alone while it repeated the rules of art. 51. It
+  # now restates art. 1675/12 only; art. 51 itself is pinned for the duration question, so its current text is in the
+  # context.
   module DebtSettlementDurationNote
     NUMAC = '1967101056'
     # article => { 'held' => the sentences of § 2 as each language's row holds them, language => the note }
@@ -29,16 +32,11 @@ module LegalChatbot
         'nl' => 'looptijd (§ 2): ten hoogste vijf jaar, maar de schuldenaar kan uitdrukkelijk en met opgave van redenen ' \
                 'vragen dat artikel 51 toch van toepassing is, om bepaalde elementen van zijn vermogen te beschermen en de ' \
                 'menselijke waardigheid van de schuldenaar en zijn gezin te verzekeren; de rechter beslist bij bijzonder ' \
-                'gemotiveerde ' \
-                'beslissing. Volgens artikel 51 mag een verlenging, tenzij de wet anders bepaalt, niet langer zijn dan de ' \
-                'oorspronkelijke termijn, en een latere verlenging alleen om gewichtige redenen en bij een met redenen ' \
-                'omklede beslissing. De vijf jaar zijn dus geen absolute grens.',
+                'gemotiveerde beslissing. De vijf jaar zijn dus geen absolute grens.',
         'fr' => 'durée (§ 2) : cinq ans au plus, mais le débiteur peut solliciter de manière expresse et motivée que ' \
                 "l'article 51 s'applique, en vue de sauvegarder certains éléments de son patrimoine et d'assurer le respect " \
                 'de la dignité humaine du débiteur et de sa famille ; le juge statue par une décision spécialement motivée. ' \
-                "Selon l'article 51, sauf si la loi en dispose autrement, la prorogation ne peut avoir une durée supérieure " \
-                "au délai originaire, et une prorogation ultérieure n'est accordée que pour des motifs graves et par " \
-                'décision motivée. Les cinq ans ne sont donc pas une limite absolue.'
+                'Les cinq ans ne sont donc pas une limite absolue.'
       },
       'art1675/13' => {
         'held' => {
