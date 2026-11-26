@@ -24,6 +24,30 @@ module LegalChatbot
                 'avertissement-extrait\p{L}*|enr[ôo]lement\p{L}*|steuerbescheid\p{L}*|tax\s+assessment\p{L}*|\p{L}*minfin\p{L}*|' \
                 'tax-?on-?web|elektrische\s+(?:auto|wagen)\p{L}*|v[ée]hicules?\s+[ée]lectriques?|voitures?\s+[ée]lectriques?|' \
                 'elektroauto\p{L}*|electric\s+(?:vehicles?|cars?)|laadpa\p{L}*|bornes?\s+de\s+recharge'
+    # The words of SUBJECTS[:social_integration]: a question about the amount of an unemployment benefit, which names
+    # no social integration and no end, loss, limit, duration or reform of that benefit (a duration question asks about
+    # the time limit, after which the social-integration income may follow)
+    UNEMPLOYMENT_WORDS = 'werkloo\p{L}*|werkloze\p{L}*|doppen|dopgeld|stempelgeld|ch[ôo]mage\p{L}*|ch[ôo]meur\p{L}*|' \
+                         'arbeitslos\p{L}*|unemploy\p{L}*|rva|onem'
+    BENEFIT_AMOUNT_WORDS = '\p{L}*bedr(?:ag|aag)\p{L}*|hoeveel|hoogte|hoe\s+hoog|bereken\p{L}*|percentage|\p{L}*maximum\p{L}*|' \
+                           '\p{L}*minimum\p{L}*|bruto\p{L}*|netto\p{L}*|montant\p{L}*|combien|calcul\p{L}*|taux|pourcentage|' \
+                           'betrag\p{L}*|h[öo]he|wie\s+hoch|wie\s*viel\p{L}*|berechn\p{L}*|prozent\p{L}*|amount\p{L}*|' \
+                           'how\s+much|calculat\p{L}*|rates?'
+    SOCIAL_INTEGRATION_WORDS = 'leefloon\p{L}*|ocmw\p{L}*|cpas|maatschappelijke\s+integratie|maatschappelijk\s+welzijn|' \
+                               'int[ée]gration\s+sociale|revenu\s+d.int[ée]gration|aide\s+sociale|bijstand\p{L}*|' \
+                               'sozialhilfe|eingliederungseinkommen|[öo]shz|social\s+(?:assistance|integration|welfare)|' \
+                               'integration\s+income|bestaansminimum|minimex'
+    BENEFIT_END_WORDS = 'stop\p{L}*|gestopt|einde\p{L}*|eindig\p{L}*|afgelopen|verlie\p{L}*|verloren|kwijt\p{L}*|geschorst|' \
+                        'schorsing\p{L}*|uitgesloten|uitsluiting\p{L}*|sanctie\p{L}*|geweigerd|weigering\p{L}*|beperk\p{L}*|' \
+                        'hervorm\p{L}*|fin|finit|termin[ée]\p{L}*|arr[êe]t\p{L}*|perte\p{L}*|perd\p{L}*|suspen\p{L}*|' \
+                        'exclu\p{L}*|sanction\p{L}*|refus\p{L}*|limit\p{L}*|r[ée]form\p{L}*|ende\p{L}*|endet|beend\p{L}*|' \
+                        'verlier\p{L}*|verlust\p{L}*|gesperrt|sperre\p{L}*|ausgeschlossen|ausschluss\p{L}*|sanktion\p{L}*|' \
+                        'abgelehnt|befrist\p{L}*|begrenz\p{L}*|end|ends|ended|ending|lose|loses|losing|lost|loss|denied|' \
+                        'reform\p{L}*|geen\s+(?:uitkering|inkomen)|zonder\s+(?:uitkering|inkomen)|' \
+                        'sans\s+(?:allocations?|revenus?)|ohne\s+(?:leistung\p{L}*|einkommen)|no\s+(?:benefits?|income)|' \
+                        'without\s+(?:benefits?|income)|hoe\s*lang\p{L}*|duur\p{L}*|looptijd|maanden|jaren|jaar|' \
+                        'periode\p{L}*|p[ée]riode\p{L}*|dur[ée]e\p{L}*|combien\s+de\s+temps|mois|ans|ann[ée]es?|' \
+                        'wie\s+lange|dauer\p{L}*|monate\p{L}*|jahre\p{L}*|how\s+long|duration|months?|years?|period\p{L}*'
     # A program law or a law of diverse provisions lists many subjects in its title: no title word makes it a narrow law.
     # Diverse provisions on one named domain ("diverse bepalingen betreffende de controle van energieproducten") are
     # that domain's law.
@@ -271,6 +295,84 @@ module LegalChatbot
            zusammenarbeit\p{L}*|kaderovereenkomst\p{L}*|accords?-cadres?|framework\s+agreements?|rahmenabkommen\p{L}*|
            handelsakkoord\p{L}*|handelsovereenkomst\p{L}*|accords?\s+commerciaux|accord\s+commercial|trade\s+agreements?|
            handelsabkommen\p{L}*)#{E}/iux
+      ],
+      # Cards Sol named on four live catalogue samples (2026-11-25 09:55:53Z, 14:42:20Z and 23:21:19Z, live 1.1.104 to
+      # 1.1.106): on #115 "Bedrag werkloosheidsuitkering?" the social-integration art. 14 (2002022559); on #1944 "Wat is SWT
+      # stelsel werkloosheid met bedrijfstoeslag?" the occupational-pension tax notice (2016003244); on #2534 "Kan ik
+      # ontslagen worden tijdens de proeftijd?" the Proximus and 1991 civil-service cards (1984014223, 1991801190); on #2548
+      # "Hoeveel RSZ werknemer?" the judicial organisation (1967101053) and the 2006-08 State/RSZ management agreement
+      # (2006A22748). None of them answers its sample. Titles read in the corpus on 2026-11-26, Dutch and French. These
+      # subjects are GENERIC: a law that an older subject judges stays judged by it, with one more reason to keep it.
+      # A management agreement between the State and a public institution, kept for a question about such an agreement
+      management_agreement: [
+        /#{B}(?:bestuursovereenkomst\p{L}*|contrats?\s+d.administration)#{E}/iux,
+        /#{B}(?:bestuursovereenkomst\p{L}*|contrats?\s+d.administration|management\s+agreements?|verwaltungsvertr[äa]g\p{L}*)#{E}/iux
+      ],
+      # A circular on the staff of public services, kept for a question about public staff (municipal, provincial, OCMW,
+      # police, teaching and military staff included) or about a tax (the circulars on the municipal tax on employed
+      # staff). The staff word of the title is the noun personeel or personnel only: a circular to the ambtenaren van de
+      # burgerlijke stand is about civil status, and "à caractère personnel" or "statut personnel" (personal data, the
+      # personal status of foreigners, their names) is the French adjective.
+      public_staff_circular: [
+        /\A(?=.*#{B}(?:omzendbrief|circulaire)#{E})
+           (?=.*(?:#{B}personeel\p{L}*|#{B}(?:le|du|au|de|en|et|son|sa|leur|leurs|ce|cet|notre|votre)\s+personnel#{E}|
+                  (?:\A|[.\-_:;]\s*)personnel#{E}|#{B}personnel\s+(?:contractuel|statutaire|provincial|communal|enseignant|
+                  temporaire|administratif|technique|ouvrier|subalterne|militaire|civil)\p{L}*))/iumx,
+        /#{B}(?:#{TAX_WORDS}|ambt\p{L}*|fonctionnaire\p{L}*|beamte\p{L}*|civil\s+servants?|contractu\p{L}*|statutair\p{L}*|statutaire\p{L}*|
+           personeel\p{L}*|personnel|staff|overheid\p{L}*|openbare\s+(?:sector|dienst\p{L}*|besturen|instelling\p{L}*)|
+           pouvoirs?\s+publics?|secteur\s+public|services?\s+publics?|public\s+(?:sector|services?|servants?)|
+           [öo]ffentlich\p{L}*\s+dienst\p{L}*|fonction\s+publique|ministerie\p{L}*|minist[èe]re\p{L}*|ministry|ministerium|
+           overheidsdienst\p{L}*|(?-i:FOD|SPF)|gemeente\p{L}*|communes?|communa\p{L}*|gemeinde\p{L}*|municipa\p{L}*|
+           provincie\p{L}*|provinces?|provincia\p{L}*|provinz\p{L}*|ocmw\p{L}*|cpas|politie\p{L}*|police\p{L}*|polizei\p{L}*|
+           onderwijs\p{L}*|enseignement\p{L}*|unterricht\p{L}*|leerkracht\p{L}*|leraa?r\p{L}*|onderwijzer\p{L}*|enseignant\p{L}*|
+           lehrer\p{L}*|teacher\p{L}*|defensie|d[ée]fense|militair\p{L}*|militaire\p{L}*|wedde\p{L}*|bar[èe]me\p{L}*)#{E}/iux
+      ],
+      # A decree on the staff or the employment at one named public employer, kept for a question that names it
+      employer_staff_decree: [
+        /\A(?=.*#{B}(?:proximus|belgacom)#{E})(?=.*#{B}(?:tewerkstelling|personeel\p{L}*|statuut|minder-?validen|emploi|personnel|
+           statut|handicap\p{L}*)#{E})/iumx,
+        /#{B}(?:proximus|belgacom)#{E}/iux
+      ],
+      # Part II of the Judicial Code, on the organisation of the courts, and the decrees on that organisation. A question
+      # about courts, judges, their offices and registries, a procedure, lawyers, bailiffs, court experts or legal aid
+      # keeps them (Part II holds the bar, the bailiffs, the register of court experts and second-line legal aid).
+      judicial_organisation: [
+        /#{B}(?:rechterlijke\s+organisatie|organisation\s+judiciaire)#{E}/iux,
+        /#{B}(?:\p{L}*rechtbank\p{L}*|\p{L}*rechter\p{L}*|\p{L}*hof|\p{L}*hoven|magistra\p{L}*|griffie\p{L}*|griffier\p{L}*|
+           \p{L}*parket\p{L}*|procureur\p{L}*|\p{L}*gerecht\p{L}*|justitie\p{L}*|rechtszaa?k\p{L}*|rechtszaken|proces\p{L}*|
+           jury\p{L}*|jur[ée]s?|assis\p{L}*|geschworene\p{L}*|\p{L}*auditeur\p{L}*|\p{L}*auditora\p{L}*|assessor\p{L}*|assesseur\p{L}*|
+           procedur\p{L}*|procederen|geding\p{L}*|vonnis\p{L}*|arrest\p{L}*|beroep\p{L}*|advoca\p{L}*|balie\p{L}*|
+           deurwaarder\p{L}*|\p{L}*deskundige\p{L}*|pro\s+deo|juridische\s+bijstand|rechtsbijstand|rechtshulp|kanton\p{L}*|
+           arrondissement\p{L}*|tribuna\p{L}*|cours?|juges?|juridiction\p{L}*|greff\p{L}*|parquet\p{L}*|proc[èe]s|
+           proc[ée]dure\p{L}*|jugement\p{L}*|appel\p{L}*|avocat\p{L}*|barreau\p{L}*|huissier\p{L}*|expert\p{L}*|
+           aide\s+juridique|assistance\s+judiciaire|canton\p{L}*|justice|\p{L}*gericht\p{L}*|\p{L}*richter\p{L}*|
+           staatsanwalt\p{L}*|\p{L}*anw[äa]lt\p{L}*|prozess\p{L}*|verfahren\p{L}*|urteil\p{L}*|berufung\p{L}*|
+           gerichtsvollzieher\p{L}*|sachverst[äa]ndig\p{L}*|justiz\p{L}*|courts?|judges?|judicia\p{L}*|prosecut\p{L}*|
+           lawyers?|attorneys?|bailiffs?|lawsuits?|litigation|proceedings?|appeals?|legal\s+aid)#{E}/iux
+      ],
+      # The social-integration law and its decrees. Only a question about the amount of an unemployment benefit that names
+      # no social integration and no end, loss, limit or reform of the benefit leaves them out: every other question keeps
+      # them, a collective debt settlement among them (its arts 1675/12 and /13 cite art. 14).
+      social_integration: [
+        /#{B}(?:recht\s+op\s+maatschappelijke\s+integratie|droit\s+[àa]\s+l.int[ée]gration\s+sociale)#{E}/iux,
+        /\A(?!(?=.*#{B}(?:#{UNEMPLOYMENT_WORDS})#{E})(?=.*#{B}(?:#{BENEFIT_AMOUNT_WORDS})#{E})
+             (?!.*#{B}(?:#{SOCIAL_INTEGRATION_WORDS}|#{BENEFIT_END_WORDS})#{E}))/iumx
+      ],
+      # A notice of the tax administration. Its notices cover advance payments, deductions, certificates for childcare,
+      # gifts and loans, VAT, withholding taxes and supplementary pensions; a question naming a tax or one of those matters
+      # keeps them.
+      tax_notice: [
+        /#{B}(?:algemene\s+administratie\s+van\s+de\s+fiscaliteit|administration\s+g[ée]n[ée]rale\s+de\s+la\s+fiscalit[ée])#{E}/iux,
+        /#{B}(?:#{TAX_WORDS}|\p{L}*belast\p{L}*|\p{L}*impos\p{L}*|\p{L}*besteuer\p{L}*|\p{L}*voorheffing\p{L}*|\p{L}*pr[ée]compte\p{L}*|
+           voorafbetaling\p{L}*|versements?\s+anticip\p{L}*|vorauszahlung\p{L}*|advance\s+payments?|aangifte\p{L}*|
+           d[ée]claration\p{L}*|\p{L}*erkl[äa]rung\p{L}*|\p{L}*attest\p{L}*|certificat\p{L}*|bescheinigung\p{L}*|kwijtschrift\p{L}*|
+           re[çc]us?|gift\p{L}*|dons?(?!['’]t)|lib[ée]ralit\p{L}*|spende\p{L}*|donation\p{L}*|\p{L}*lening\p{L}*|pr[êe]ts?|
+           darlehen\p{L}*|\p{L}*krediet\p{L}*|cr[ée]dit\p{L}*|kredit\p{L}*|loans?|mortgage\p{L}*|hypoth\p{L}*|\p{L}*pensioen\p{L}*|
+           pensions?|retraite\p{L}*|\p{L}*rente\p{L}*|retirement|\p{L}*verzekering\p{L}*|assurance\p{L}*|\p{L}*versicherung\p{L}*|
+           insurance|kinderopvang\p{L}*|opvang\p{L}*|\p{L}*oppas\p{L}*|garde\s+d.enfants|kinderbetreuung\p{L}*|child\s*care|
+           inkomen\p{L}*|revenus?|einkommen\p{L}*|income|\p{L}*verklaring\p{L}*|invest\p{L}*|
+           ereloon\p{L}*|erelonen|honorai\p{L}*|commissie\p{L}*|commission\p{L}*|factu\p{L}*|invoic\p{L}*|rechnung\p{L}*|
+           pensions?\s+compl[ée]mentaires?|fonds\s+de\s+pension|supplementary\s+pensions?|group\s+insurance)#{E}/iux
       ]
     }.freeze
     # A question about a source the reader is shown ("Explain this specialist source.", "Wat zegt deze wet?") keeps
@@ -282,7 +384,8 @@ module LegalChatbot
                           artikels?|quellen?)(?![[:alpha:]])/iux
     # A law of a specific subject is judged by it alone: the tobacco decree's "fiscaal stelsel" makes it no income tax
     # law, a sector fund's statutes make it no agency
-    GENERIC = %i[public_body income_tax vat duties].freeze
+    GENERIC = %i[public_body income_tax vat duties management_agreement public_staff_circular employer_staff_decree
+                 judicial_organisation social_integration tax_notice].freeze
     # Sol 2026-11-25 17:29:23Z: a transfer question that names where the person goes keeps that country's bilateral
     # treaty and no other. The bilateral transfer treaties in the corpus (titles read on 2026-11-25): Morocco, Thailand,
     # Hong Kong, DR Congo, the Dominican Republic, Brazil, Kosovo, Albania, China and India. Each entry: the country as a

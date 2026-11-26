@@ -8,6 +8,12 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.109] - 2026-11-26
+
+### Fixed
+
+- Answers on the amount of an unemployment benefit, on unemployment with company supplement (SWT), on dismissal during a trial period and on the worker's social security contributions no longer show sources on another subject, such as the social-integration law, a tax administration notice to insurers and pension institutions, a decree on employing disabled workers at Proximus, a circular on the contractual staff of the ministries, the Judicial Code's part on the organisation of the courts or a management agreement between the State and the National Social Security Office. Laws of those kinds stay for a question that raises their subject; the social-integration law also stays for a question on the end, the duration or the reform of an unemployment benefit.
+
 ## [1.1.108] - 2026-11-26
 
 ### Fixed
