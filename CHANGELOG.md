@@ -8,6 +8,12 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.112] - 2026-11-26
+
+### Fixed
+
+- An answer on the amount of an unemployment benefit says which claims the amounts are for: an admission from 1 March 2026 follows the new amounts, an earlier admission keeps the former amounts during the transition, and a person who was 55 or older with a sufficient career on 30 June 2025 has amounts of their own.
+
 ## [1.1.111] - 2026-11-26
 
 ### Fixed

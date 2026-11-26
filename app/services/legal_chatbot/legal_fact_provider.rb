@@ -1045,6 +1045,11 @@ module LegalChatbot
         # unemployment benefit out of the extension; #115 did not tell admissions from 1 March 2026 from the transition.
         # Read in full on the production corpus on 2026-11-25: arts 114 and 116 (replaced by arts 169 and 172 of the
         # programme law of 18 July 2025, in force on 1 March 2026) and art. 212 of that law (2025005578).
+        # Sol 2026-11-26 12:48:40Z (#115 on live 1.1.110): the amount answer gave the bands without saying which claims
+        # they fit. Art. 212 (read in full again on 2026-11-26): for an admission before 1 March 2026 the amount stays
+        # that of arts. 114, 116 and 118 as applicable until 28 February 2026 (§ 1, seventh paragraph); § 2 sets the
+        # amounts of those 55 or older with a sufficient career on 30 June 2025; § 4 brings a new admission after an
+        # interruption under the new rules. Art. 171 replaced art. 115 (the new minimum amounts).
         rule_note: <<~NOTE.strip
           WERKLOOSHEID: VERGOEDINGSPERIODES EN OVERGANG (art. 114 en 116 Werkloosheidsbesluit, vervangen door art. 169 en
           172 van de programmawet van 18 juli 2025, in werking sinds 1 maart 2026; art. 212 van die programmawet).
@@ -1066,6 +1071,12 @@ module LegalChatbot
             minstens 55 jaar was met voldoende beroepsverleden, behoudt het zonder beperking in de tijd (art. 212, § 2). Wie na een
             onderbreking vanaf 1 maart 2026 een aanvraag indient en aan de nieuwe toelatingsvoorwaarden voldoet, valt
             onder de nieuwe regels (art. 212, § 4). Vraag naar de datum van toelating als die het antwoord bepaalt.
+          - Bedragen: de bedragen en fases van art. 114 en 115 zoals van toepassing sinds 1 maart 2026 gelden voor wie
+            vanaf 1 maart 2026 wordt toegelaten, ook na een onderbreking volgens de nieuwe toelatingsvoorwaarden (art. 212,
+            § 4). Voor wie vóór 1 maart 2026 werd toegelaten, wordt het bedrag tijdens de overgangsperiode verder bepaald
+            volgens art. 114, 116 en 118 zoals van toepassing tot 28 februari 2026 (art. 212, § 1, zevende lid); wie op
+            30 juni 2025 minstens 55 jaar was met voldoende beroepsverleden, krijgt de bedragen van art. 212, § 2. Zeg bij
+            een vraag naar bedragen voor welke groep het schema geldt.
         NOTE
       },
       # ── Tax ─────────────────────────────────────────────────────────
@@ -1936,7 +1947,7 @@ module LegalChatbot
     # the benefit periods and the transition of the programme law of 18 July 2025.
     # r53 (1.1.108): the trial-period block carries arts 37/2 and 127 and the rule
     # note on the trial period abolished in 2014 and the three days that remain.
-    FACT_CACHE_VERSION = 'r53'
+    FACT_CACHE_VERSION = 'r54'
 
     # FisconetPlus DB path (same as FisconetSearch)
     FISCONET_DB = ENV.fetch('FISCONET_DB', '/mnt/HC_Volume_104299669/embeddings/fisconet.sqlite3')
