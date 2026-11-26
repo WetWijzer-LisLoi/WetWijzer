@@ -1315,8 +1315,27 @@ module LegalChatbot
       # The repealed Art. 38-41 AOW text will show "opgeheven".
       'proeftijd' => {
         numac: '1978070303',
-        article_patterns: ['Art. 38', 'Art. 39', 'Art. 40', 'Art. 41', 'Art. 48'],
-        label: 'Proeftijd (afgeschaft) - Art. 38-48 Arbeidsovereenkomstenwet'
+        article_patterns: ['Art. 38', 'Art. 39', 'Art. 40', 'Art. 41', 'Art. 48', 'Art. 127'],
+        label: 'Proeftijd (afgeschaft) - Art. 38-48 en 127 Arbeidsovereenkomstenwet',
+        # Sol 2026-11-25 23:21:19Z (#2534 "Kan ik ontslagen worden tijdens de proeftijd?"): the answer named art. 127 and
+        # the temporary-work art. 5 but not their consequence, nor that an ordinary contract is ended under the ordinary
+        # rules. Read in full on the production corpus on 2026-11-26: arts 48, 67 and 81 (repealed by arts 28, 41 and
+        # 49 of the law of 26 December 2013, in force on 1 January 2014), arts 37/2, 39 and 127 of this act, and art. 5
+        # of the law of 24 July 1987 on temporary work (1987012597).
+        # Sol 2026-11-26 02:34:41Z: art. 5 of the law of 3 June 2026 (2026201577, read in full in NL and FR) applies the
+        # notice periods below six months of seniority only to contracts whose agreed performance begins on its
+        # commencement (1 August 2026) or later, and art. 37/2 does not say so. The note therefore names no notice
+        # duration, and art. 37/2 is not in this pack: a notice question gets the opzegtermijn pack, which tells the
+        # contracts apart.
+        rule_note: <<~NOTE.strip
+          PROEFTIJD: een gewone arbeidsovereenkomst heeft sinds 1 januari 2014 geen proeftijd meer (art. 48, 67 en 81
+          opgeheven bij de wet van 26 december 2013). Een werknemer kan ook in de eerste maanden worden ontslagen, maar
+          volgens de gewone regels: met een opzeggingstermijn (art. 37/2) of met een opzeggingsvergoeding (art. 39),
+          behalve bij een dringende reden.
+          Alleen bij een overeenkomst voor de tewerkstelling van studenten (art. 127) en bij uitzendarbeid (art. 5 van de
+          wet van 24 juli 1987, behoudens strijdige overeenkomst) gelden de eerste drie arbeidsdagen als proeftijd: tot het
+          einde daarvan kan elk van de partijen de overeenkomst beëindigen zonder opzegging of vergoeding.
+        NOTE
       },
 
       # Carensdag: REPEALED by Eenheidsstatuut 2013.
@@ -1915,7 +1934,9 @@ module LegalChatbot
     # future law is given in that version, with the day it took effect.
     # r52 (1.1.107): the unemployment block carries art. 116 and the rule note on
     # the benefit periods and the transition of the programme law of 18 July 2025.
-    FACT_CACHE_VERSION = 'r52'
+    # r53 (1.1.108): the trial-period block carries arts 37/2 and 127 and the rule
+    # note on the trial period abolished in 2014 and the three days that remain.
+    FACT_CACHE_VERSION = 'r53'
 
     # FisconetPlus DB path (same as FisconetSearch)
     FISCONET_DB = ENV.fetch('FISCONET_DB', '/mnt/HC_Volume_104299669/embeddings/fisconet.sqlite3')

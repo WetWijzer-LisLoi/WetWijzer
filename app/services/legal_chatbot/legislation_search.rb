@@ -2101,6 +2101,16 @@ module LegalChatbot
     UNEMPLOYMENT_BENEFIT_PATTERN = /
       \b(?:werkloosheidsuitkering(?:en)?|werkloosheidsvergoeding|werkloze|rva|ch[oô]mage|allocations?\s+de\s+ch[oô]mage|onem)\b
     /ix
+    # How long a collective debt settlement lasts, in the four languages (#2797). Sol 2026-11-26 02:34:41Z: a bare year
+    # word ("op 65 jaar", "à 70 ans") is an age or a condition, no duration, so only words of duration count.
+    DEBT_SETTLEMENT_DURATION_PATTERN = /
+      \A
+      (?=.*\b(?:collectieve\s+schuldenregeling|r[èe]glement\s+collectif\s+de\s+dettes|kollektive\p{L}*\s+schuldenregelung|
+                collective\s+debt\s+settlement)\b)
+      (?=.*\b(?:hoe\s*lang|duur\p{L}*|looptijd|dur[ée]e|combien\s+de\s+temps|how\s+long|duration|wie\s+lange|dauer\p{L}*|
+                laufzeit)\b)
+      .*\z
+    /ix
     # Unemployment with company supplement (SWT, formerly brugpensioen, prépension), in the four languages
     SWT_PATTERN = /
       \b(?:swt|bedrijfstoeslag|brugpensioen|compl[ée]ment\s+d['’]entreprise|pr[ée]pension|betriebszuschlag|
@@ -3121,6 +3131,13 @@ module LegalChatbot
 
       # Consumer debt settlement is judicial procedure, not enterprise bankruptcy.
       [/\b(?:collectieve\s+schuldenregeling|règlement\s+collectif\s+de\s+dettes)\b/i, '1967101056', '1675/2'],
+      # Sol 2026-11-25 23:21:19Z (#2797 "Hoelang duurt een collectieve schuldenregeling?"): the answer refused any
+      # duration. Judicial Code art. 1675/10, § 6: an amicable settlement at most seven years, unless the debtor expressly
+      # and with reasons asks for an extension; art. 1675/12, § 2: a judicial settlement at most five years; art.
+      # 1675/13, § 2: with a remission of capital, three to five years. Read in full in NL and FR on 2026-11-26.
+      [DEBT_SETTLEMENT_DURATION_PATTERN, '1967101056', '1675/10'],
+      [DEBT_SETTLEMENT_DURATION_PATTERN, '1967101056', '1675/12'],
+      [DEBT_SETTLEMENT_DURATION_PATTERN, '1967101056', '1675/13'],
       [/(?:\bfaillissement\b.{0,60}\b(?:onderneming|vennootschap|handelaar)\b|\b(?:onderneming|vennootschap|handelaar)\b.{0,60}\bfaillissement\b)/i, '2013A11134', 'XX.99'],
 
       # Regional tax competence. Succession and registration duties are REGIONAL taxes, and

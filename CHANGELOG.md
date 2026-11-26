@@ -8,6 +8,14 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.108] - 2026-11-26
+
+### Fixed
+
+- A question on how long a collective debt settlement lasts gets the three durations of the Judicial Code: at most seven years for an amicable settlement unless the debtor asks with reasons for longer, at most five years for a judicial settlement, and three to five years when debts are written off.
+- Answers about the trial period say that an ordinary employment contract has had none since 1 January 2014 and is ended under the ordinary rules, and that only student contracts and temporary agency work keep three days in which either party can end the contract without notice or indemnity.
+- Answers about the worker's social security contributions give the total of the four ordinary rates, 13.07% before reductions.
+
 ## [1.1.107] - 2026-11-26
 
 ### Changed

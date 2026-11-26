@@ -441,6 +441,7 @@ app/services/legal_chatbot/text_processing.rb
 app/services/legal_chatbot/topic_citations.rb
 app/services/legal_chatbot/vehicle_headlight_glare_guidance.rb
 app/services/legal_chatbot/vehicle_headlight_glare_source_scope.rb
+app/services/legal_chatbot/worker_contribution_note.rb
 app/services/legal_chatbot_service.rb
 app/services/mollie_api_client.rb
 app/services/mollie_checkout_service.rb
