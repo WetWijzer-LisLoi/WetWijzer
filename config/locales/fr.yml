@@ -1076,7 +1076,7 @@ fr:
     cta: "Découvrir Praxis"
     tagline: "Tarifs de lancement prévus pour 1 utilisateur : Essentials %{essentials} €/mois · Plus avec IA %{plus} €/mois (hors TVA)"
     teaser_title: "Praxis - En développement"
-    teaser_description: "Gestion des dossiers, actes de procédure dans votre style, regroupement des pièces, suivi du temps et facturation."
+    teaser_description: "Gestion des dossiers, actes de procédure dans votre style, regroupement des pièces, suivi du temps et facturation pour les avocats."
     teaser_cta: "En savoir plus sur Praxis →"
 
   # Roll-call votes on dossier and MP pages; see en.yml.

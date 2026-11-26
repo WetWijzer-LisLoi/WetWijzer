@@ -3138,6 +3138,11 @@ module LegalChatbot
       [DEBT_SETTLEMENT_DURATION_PATTERN, '1967101056', '1675/10'],
       [DEBT_SETTLEMENT_DURATION_PATTERN, '1967101056', '1675/12'],
       [DEBT_SETTLEMENT_DURATION_PATTERN, '1967101056', '1675/13'],
+      # Sol 2026-11-26 07:05:47Z (#2797 on live 1.1.108): the five years of art. 1675/12 were stated as an absolute
+      # maximum. Judicial Code art. 51 (1967101052), which art. 1675/12, § 2, lets the debtor invoke and art. 1675/13,
+      # § 2, rules out: unless the law provides otherwise, an extension is no longer than the original time limit. Read
+      # in full in NL and FR on 2026-11-26.
+      [DEBT_SETTLEMENT_DURATION_PATTERN, '1967101052', '51'],
       [/(?:\bfaillissement\b.{0,60}\b(?:onderneming|vennootschap|handelaar)\b|\b(?:onderneming|vennootschap|handelaar)\b.{0,60}\bfaillissement\b)/i, '2013A11134', 'XX.99'],
 
       # Regional tax competence. Succession and registration duties are REGIONAL taxes, and
@@ -5072,6 +5077,9 @@ module LegalChatbot
       # #1591 (Sol 2026-11-23 09:24:52Z): the parts of the Belgian data-protection act for the police and the courts, the
       # intelligence services and recorded calls, only when the question raises them
       return false unless DataProtectionPartScope.source_relevant?(article, question)
+      # #2797 (Sol 2026-11-26 07:05:47Z): Books XX and XVII of the Economic Law Code under a collective debt settlement
+      # question that raises no enterprise, bankruptcy or collective redress
+      return false unless DebtSettlementSourceScope.source_relevant?(article, question)
       # The State Gazette's extract of another Constitutional Court judgment than the one the question names
       return false unless JudgmentExtractScope.source_relevant?(article, question)
       # A later act under a question about the reasons of an act of a date the question names

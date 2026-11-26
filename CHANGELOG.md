@@ -8,6 +8,17 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.110] - 2026-11-26
+
+### Changed
+
+- The Praxis strip on the chatbot page says who Praxis is for: lawyers.
+
+### Fixed
+
+- An answer on how long a collective debt settlement lasts says that the five years of a judicial settlement can be extended under article 51 of the Judicial Code when the debtor asks for it expressly and with reasons, and that article 51 does not apply to a settlement with a remission of capital.
+- Questions on a collective debt settlement no longer show articles of the Economic Law Code on the insolvency of enterprises or on collective redress, unless the question raises an enterprise, a bankruptcy or collective redress.
+
 ## [1.1.109] - 2026-11-26
 
 ### Fixed

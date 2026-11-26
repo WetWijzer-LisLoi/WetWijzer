@@ -1064,7 +1064,7 @@ en:
     cta: "Discover Praxis"
     tagline: "Planned launch prices for 1 user: Essentials €%{essentials}/month · Plus with AI €%{plus}/month (excl. VAT)"
     teaser_title: "Praxis - In development"
-    teaser_description: "Case management, court documents in your own writing style, exhibit bundles, time tracking and invoicing."
+    teaser_description: "Case management, court documents in your own writing style, exhibit bundles, time tracking and invoicing for lawyers."
     teaser_cta: "More about Praxis →"
 
   # Roll-call votes (naamstemmingen) on dossier and MP pages. The source,

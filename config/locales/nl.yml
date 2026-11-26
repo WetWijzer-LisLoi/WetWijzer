@@ -1078,7 +1078,7 @@ nl:
     cta: "Ontdek Praxis"
     tagline: "Geplande lanceringsprijzen voor 1 gebruiker: Essentials €%{essentials}/maand · Plus met AI €%{plus}/maand (excl. btw)"
     teaser_title: "In ontwikkeling"
-    teaser_description: "Dossierbeheer, processtukken in eigen schrijfstijl, stukkenbundeling, tijdsregistratie en facturatie."
+    teaser_description: "Dossierbeheer, processtukken in eigen schrijfstijl, stukkenbundeling, tijdsregistratie en facturatie voor advocaten."
     teaser_cta: "Meer over Praxis →"
 
   # Roll-call votes on dossier and MP pages; see en.yml.

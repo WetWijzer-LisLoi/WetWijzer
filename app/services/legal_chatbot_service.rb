@@ -444,6 +444,12 @@ class LegalChatbotService
 
   # Sol 2026-11-25 23:21:19Z (#2548): art. 38 of the law of 29 June 1981 names the worker's total contribution rate of its
   # § 2 (WorkerContributionNote), so an answer that lists the four rates can also give their sum
+  def debt_settlement_duration_note(source)
+    note = LegalChatbot::DebtSettlementDurationNote.note(source[:numac], source[:article_title], @language,
+                                                         source[:article_text])
+    note ? " [#{note}]" : ''
+  end
+
   def worker_contribution_note(source)
     note = LegalChatbot::WorkerContributionNote.note(source[:numac], source[:article_title], @language, source[:article_text])
     note ? " [#{note}]" : ''
@@ -1272,7 +1278,8 @@ class LegalChatbotService
     # block. Say so on the header line, so the model can tell the user a change is
     # coming instead of silently omitting it.
     pending = commenced_amendment_note(article) + uncommenced_insertion_note(article) + future_amendment_note(article) +
-              deferred_penalties_note(article) + drug_fine_ceiling_note(article) + worker_contribution_note(article)
+              deferred_penalties_note(article) + drug_fine_ceiling_note(article) + worker_contribution_note(article) +
+              debt_settlement_duration_note(article)
     # A pin whose governing provision sits deep in a long article names it
     # here; the text itself stays complete from its first character.
     governing = article[:context_excerpt_anchor].to_s
