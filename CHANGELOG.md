@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.113] - 2026-11-26
+
+### Fixed
+
+- A general question on dismissal during a trial period keeps to employment contract law: the Social Penal Code (the deferral of an administrative fine, the notice of a takeover of assets) and a joint committee's agreement, such as the food industry's on the year-end bonus, no longer appear. A question on penal probation, a fine, a driving licence, public staff or a free trial is not narrowed, and a question that names the sector keeps its agreement.
+- A question on the rate of the worker's own social security contribution keeps to the law of 29 June 1981 and the work bonus act, without the employer's rates of the law of 25 April 2014 or a 2002 royal decree on a wage-band reduction; a question on the employer's rate keeps them. Under such a question, naming the worker ("werknemersbijdrage", "à la charge du travailleur") no longer keeps every law whose title names workers.
+
 ## [1.1.112] - 2026-11-26
 
 ### Fixed

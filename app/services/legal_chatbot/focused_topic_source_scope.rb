@@ -142,9 +142,59 @@ module LegalChatbot
                                             verschiedene\s+bestimmungen|rijksdienst\s+voor\s+sociale\s+zekerheid|
                                             office\s+national\s+de\s+s[ée]curit[ée]\s+sociale|(?-i:RSZ|ONSS))(?![[:alnum:]])/iux
 
+    # Sol 2026-11-26 15:54:36Z (#2548 "Hoeveel RSZ werknemer?", live 1.1.111): art. 38 first of three. The other two cards
+    # were social security law that does not carry the worker's rate: art. 53 of the law of 25 April 2014 (2014203619)
+    # "changes employer rates in art. 38 §3", and art. 1 of the royal decree of 18 December 2002 (2002023088) "concerns a
+    # 2002 wage-band reduction with amounts in francs". "Please keep the first source and cover those two negatives in the
+    # source-card tests." A question on the worker's contribution alone (a worker word, no employer word) keeps the law of
+    # 29 June 1981 itself, read from its own title (an instrument that cites it names it after "wet van 29 juni 1981"), and
+    # the work bonus, which lowers the worker's own contribution.
+    WORKER_ONLY_PATTERN = /\A(?=.*(?<![[:alnum:]])(?:werknemer\p{L}*|persoonlijke|bediende\p{L}*|arbeider\p{L}*|salari[ée]\p{L}*|
+                           salariale\p{L}*|personnelle\p{L}*|travailleur\p{L}*|employee\p{L}*|worker\p{L}*|arbeitnehmer\p{L}*)(?![[:alnum:]]))
+                          (?!.*(?<![[:alnum:]])(?:werkgever\p{L}*|patronal\p{L}*|employeur\p{L}*|employer\p{L}*|
+                           arbeitgeber\p{L}*)(?![[:alnum:]]))/imxu
+    WORKER_CONTRIBUTION_TITLE_FAMILY_PATTERN = /(?<![[:alnum:]])(?:wet\s+houdende\s+de\s+algemene\s+beginselen\s+van\s+de\s+sociale\s+
+                                                zekerheid\s+voor\s+werknemers|loi\s+[ée]tablissant\s+les\s+principes\s+g[ée]n[ée]raux\s+
+                                                de\s+la\s+s[ée]curit[ée]\s+sociale\s+des\s+travailleurs\s+salari[ée]s|werkbonus|
+                                                bonus\s+[àa]\s+l['’]\s*emploi|besch[äa]ftigungsbonus)(?![[:alnum:]])/iux
+    # Sol 2026-11-26 15:54:36Z (#2534 "Kan ik ontslagen worden tijdens de proeftijd?", live 1.1.111): after the staff
+    # decrees, "Two replacement cards still concern different legal questions": art. 116 of the Social Penal Code
+    # (2010A09589), the deferral of an administrative fine, whose probation term is a "proeftijd", and art. 5 of the
+    # food-industry agreement of 17 May 1995 (1995051765), no year-end bonus after a dismissal during the trial period.
+    # "Please test source relevance for these near-matches along with the previously excluded cards." A question on an
+    # employment trial period keeps employment contract law, read from the law's title: the employment contracts and
+    # temporary work acts, the agreements of the National Labour Council, the unified status and the dismissal and notice
+    # rules. The Social Penal Code and a joint committee's agreement leave, unless the question names them. A question on
+    # penal probation, a fine, a driving licence, public staff or a free trial of a subscription is not judged here; the
+    # catalogue's 19 questions on a trial period or probation were read on 2026-11-26 ("Hoe werkt probatie bij een
+    # veroordeling?", "Permis probatoire ?").
+    EMPLOYMENT_TRIAL_PERIOD_PATTERN = /\A(?=.*(?<![[:alnum:]])(?:proeftijd\p{L}*|proefperiode\p{L}*|(?:tijdens|gedurende)\s+(?:de\s+)?proef|
+                                       p[ée]riodes?\s+d['’]essai|clauses?\s+d['’]essai|probezeit\p{L}*|probationary\s+periods?|
+                                       probation\s+periods?|trial\s+periods?)(?![[:alnum:]]))
+                                      (?!.*(?<![[:alnum:]])(?:straf\p{L}*|\p{L}*strafwetboek|veroordel\p{L}*|probatie\p{L}*|
+                                       uitstel\p{L}*|opschorting\p{L}*|misdrij\p{L}*|gevangenis\p{L}*|reclassering\p{L}*|
+                                       inbreuk\p{L}*|\p{L}*boete\p{L}*|crimin\p{L}*|p[ée]na\p{L}*|sursis|condamn\p{L}*|
+                                       infraction\p{L}*|d[ée]lit\p{L}*|amendes?|probatoire\p{L}*|bew[äa]hrung\p{L}*|
+                                       straftat\p{L}*|verurteil\p{L}*|geldbu[ßs]e\p{L}*|bu[ßs]geld\p{L}*|convict\p{L}*|
+                                       sentenc\p{L}*|(?:re)?offen[cds]\p{L}*|crimes?|parole|rijbewijs\p{L}*|
+                                       permis\s+de\s+conduire|f[üu]hrerschein\p{L}*|licen[cs]e\p{L}*|\p{L}*abonnement\p{L}*|
+                                       gratis|gratuit\p{L}*|kostenlos\p{L}*|free|subscription\p{L}*|consument\p{L}*|
+                                       consommat\p{L}*|verbraucher\p{L}*|consumer\p{L}*|
+                                       #{SpecialistSubjectScope::PUBLIC_STAFF_WORDS})(?![[:alnum:]]))/imxu
+    EMPLOYMENT_CONTRACT_TITLE_FAMILY_PATTERN = /\A(?!.*(?<![[:alnum:]])(?:paritair\p{L}*|paritaire\p{L}*|parit[äa]tisch\p{L}*)(?![[:alnum:]]))
+                                               (?=.*(?<![[:alnum:]])(?:arbeidsovereenkomst\p{L}*|contrats?\s+de\s+travail|
+                                               arbeitsvertr[äa]g\p{L}*|employment\s+contracts?|uitzendarbeid|tijdelijke\s+arbeid|
+                                               travail\s+int[ée]rimaire|travail\s+temporaire|leiharbeit|zeitarbeit|
+                                               nationale\s+arbeidsraad|conseil\s+national\s+du\s+travail|nationaler\s+arbeitsrat|
+                                               eenheidsstatuut|statut\s+unique|einheitsstatut\p{L}*|ontslag\p{L}*|licenci\p{L}*|
+                                               k[üu]ndigung\p{L}*|dismissal\p{L}*|opzeggingstermijn\p{L}*|
+                                               d[ée]lais?\s+de\s+pr[ée]avis)(?![[:alnum:]]))/imxu
+
     TITLE_TOPICS = { education_right: EDUCATION_TITLE_FAMILY_PATTERN, home_inviolability: HOME_TITLE_FAMILY_PATTERN,
                      guaranteed_pay: GUARANTEED_PAY_TITLE_FAMILY_PATTERN,
-                     social_contribution_rate: SOCIAL_SECURITY_TITLE_FAMILY_PATTERN }.freeze
+                     social_contribution_rate: SOCIAL_SECURITY_TITLE_FAMILY_PATTERN,
+                     worker_contribution_rate: WORKER_CONTRIBUTION_TITLE_FAMILY_PATTERN,
+                     employment_trial_period: EMPLOYMENT_CONTRACT_TITLE_FAMILY_PATTERN }.freeze
 
     # Sol 2026-11-24 10:26:43Z (live 1.1.98): under the doorstep deadline question the slot WER art. VII.87 left went
     # to art. 3 of the royal decree of 7 December 2016 on price indication in the hospitality sector (2016011534), which
@@ -184,11 +234,15 @@ module LegalChatbot
       text.match?(SPEED_LIMIT_PATTERN) && !text.match?(NON_ROAD_PATTERN)
     end
 
-    # Title words too common to say which instrument the question names.
+    # Title words too common to say which instrument the question names. The worker is named in most titles of social
+    # law, as in the royal decree of 18 December 2002 on a wage-band reduction (2002023088, "voor werknemers", "des
+    # travailleurs salariés"), a card Sol named on #2548 (2026-11-26 15:54:36Z): "Wat is de werknemersbijdrage RSZ?" or
+    # "à la charge du travailleur" names none of them.
     GENERIC_TITLE_WORDS = %w[
       administratieve administratives betreffende bepalingen bescherming collectieve communales concernant
       dispositions gemeentelijke hoofdstedelijke koninklijk modification ordonnantie organisatie
       persoonlijke toepassing uitvoering vaststelling verordening wijziging arbeidsovereenkomst
+      travailleur travailleurs werknemers
     ].freeze
     TITLE_WORD_MIN = 10
 
@@ -199,7 +253,10 @@ module LegalChatbot
       found << :internet_image if text.match?(IMAGE_PATTERN) && text.match?(ONLINE_ORIGIN_PATTERN)
       found << :portrait_use if text.match?(PORTRAIT_USE_PATTERN)
       found << :guaranteed_pay if text.match?(GUARANTEED_PAY_PATTERN)
-      found << :social_contribution_rate if text.match?(LegislationSearch::SOCIAL_CONTRIBUTION_RATE_PATTERN)
+      if text.match?(LegislationSearch::SOCIAL_CONTRIBUTION_RATE_PATTERN)
+        found << (text.match?(WORKER_ONLY_PATTERN) ? :worker_contribution_rate : :social_contribution_rate)
+      end
+      found << :employment_trial_period if text.match?(EMPLOYMENT_TRIAL_PERIOD_PATTERN)
       found << :workplace_camera if text.match?(CAMERA_PATTERN) && text.match?(WORKPLACE_PATTERN)
       found << :data_breach if GdprBreachSources.topic?(text)
       found << :road_speed if road_speed_question?(text)
