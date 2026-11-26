@@ -8,6 +8,21 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.107] - 2026-11-26
+
+### Changed
+
+- The Praxis strip on the chatbot page is a short list of what Praxis does: case management, court documents in your own writing style, exhibit bundles, time tracking and invoicing.
+
+### Fixed
+
+- A question about transferring a sentenced person to a named country shows that country's transfer treaty and no other country's.
+- Questions on penalties for drug offences no longer show the EU-Korea framework agreement on trade and cooperation as a source; a question about that cooperation keeps it.
+- Answers about unemployment benefits keep the first benefit period of twelve months apart from its extension, which is the second period. They say that periods of a concurrent unemployment benefit do not extend the right, and tell admissions from 1 March 2026 apart from the transition for earlier admissions.
+- An answer about unemployment with company supplement (SWT) cites the collective agreement that has the last employer pay the supplement, and who has a right to it.
+- Answers about criminal fines give the 2.5 opdecimes as an increase of 25% as well.
+- Answers about drug offences give the general fine ceiling of the Drugs Act apart from the rules for the offences the King designates.
+
 ## [1.1.106] - 2026-11-25
 
 ### Changed

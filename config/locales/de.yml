@@ -1098,7 +1098,7 @@ de:
     cta: "Praxis entdecken"
     tagline: "Geplante Einführungspreise für 1 Nutzer: Essentials €%{essentials}/Monat · Plus mit KI €%{plus}/Monat (zzgl. MwSt.)"
     teaser_title: "Praxis - In Entwicklung"
-    teaser_description: "Verfassen Sie mit Praxi Schriftsätze in Ihrem eigenen Schreibstil, bündeln Sie Ihre Unterlagen und rechnen Sie Ihre erfasste Zeit pro Akte ab."
+    teaser_description: "Aktenverwaltung, Schriftsätze im eigenen Stil, Zusammenstellung von Anlagen, Zeiterfassung und Abrechnung."
     teaser_cta: "Mehr über Praxis →"
 
   # Roll-call votes on dossier and MP pages; see en.yml.

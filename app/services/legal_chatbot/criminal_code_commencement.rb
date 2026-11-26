@@ -37,17 +37,20 @@ module LegalChatbot
     # 16 March 2026 (2026002190), whose art. 64 puts it in force with Books I and II: a fine a court imposes under the
     # Criminal Code or a special law is increased by 2.5 opdecimes, i.e. by a quarter (Sol verified it in Justel,
     # 2026-11-25 12:37:07Z); for a special law that sets no penalty level, art. 78, § 1, second paragraph of the Code
-    # applies. The law's own words: "opdecimes" (Dutch), "décimes" (French).
+    # applies. The law's own words: "opdecimes" (Dutch), "décimes" (French). Sol 2026-11-25 23:00:07Z (#1556, #1557 on
+    # live 1.1.106): both answers named the 2.5 opdecimes and the law but never what they add, so the rule says 25% too.
     FINE_SURCHARGE = {
       'en' => 'a criminal fine that a court imposes is increased by the opdecimes of art. 1 of the law of 5 March 1952: since ' \
-              '%<date>s by 2.5 opdecimes (x1.25) under the Criminal Code and the special laws that set a penalty level; for a ' \
-              'special law that sets no level, art. 78, § 1, second paragraph of the Criminal Code applies. Say whether an amount ' \
-              'is the statutory base or the amount payable, and keep a settlement offer apart from a fine a court imposes',
+              '%<date>s by 2.5 opdecimes, that is by 25%% (x1.25), under the Criminal Code and the special laws that set a ' \
+              'penalty level; for a special law that sets no level, art. 78, § 1, second paragraph of the Criminal Code ' \
+              'applies. When you name the opdecimes, also give the increase as 25%%. Say whether an amount is the statutory ' \
+              'base or the amount payable, and keep a settlement offer apart from a fine a court imposes',
       'fr' => "une amende pénale prononcée par un tribunal est majorée des décimes de l'article 1er de la loi du 5 mars 1952: depuis " \
-              'le %<date>s de 2,5 décimes (x1,25) en vertu du Code pénal et des lois particulières qui déterminent un niveau de ' \
-              "peine; pour une loi particulière qui ne détermine pas de niveau de peine, l'article 78, § 1er, alinéa 2, du Code " \
-              'pénal est applicable. Indiquez si un montant est le montant légal de base ou le montant à payer, et distinguez une ' \
-              "proposition de transaction d'une amende prononcée par un tribunal"
+              'le %<date>s de 2,5 décimes, soit de 25 %% (x1,25), en vertu du Code pénal et des lois particulières qui ' \
+              "déterminent un niveau de peine; pour une loi particulière qui ne détermine pas de niveau de peine, l'article 78, " \
+              '§ 1er, alinéa 2, du Code pénal est applicable. Lorsque vous citez les décimes, donnez aussi la majoration de 25 %%. ' \
+              'Indiquez si un montant est le montant légal de base ou le montant à payer, et distinguez une proposition de ' \
+              "transaction d'une amende prononcée par un tribunal"
     }.freeze
     # A month's names in the four languages a question may be written in
     MONTH_NAMES = {

@@ -2101,6 +2101,11 @@ module LegalChatbot
     UNEMPLOYMENT_BENEFIT_PATTERN = /
       \b(?:werkloosheidsuitkering(?:en)?|werkloosheidsvergoeding|werkloze|rva|ch[oô]mage|allocations?\s+de\s+ch[oô]mage|onem)\b
     /ix
+    # Unemployment with company supplement (SWT, formerly brugpensioen, prépension), in the four languages
+    SWT_PATTERN = /
+      \b(?:swt|bedrijfstoeslag|brugpensioen|compl[ée]ment\s+d['’]entreprise|pr[ée]pension|betriebszuschlag|
+         company\s+supplement)\b
+    /ix
     UNEMPLOYMENT_CONDITIONS_PATTERN = /
       \A
       (?=.*#{UNEMPLOYMENT_BENEFIT_PATTERN})
@@ -3103,6 +3108,13 @@ module LegalChatbot
       [UNEMPLOYMENT_FAULT_DISMISSAL_PATTERN, '1991013192', '51'],
       [UNEMPLOYMENT_FAULT_DISMISSAL_PATTERN, '1991013192', '52'],
       [UNEMPLOYMENT_FAULT_DISMISSAL_PATTERN, '1991013192', '53'],
+      # Sol 2026-11-25 14:42:20Z (#1944 "Wat is SWT stelsel werkloosheid met bedrijfstoeslag?"): the answer never said
+      # who pays the supplement. CAO nr. 17 (1974121960) art. 4, § 1: it is borne by the last employer, unless a
+      # generally binding agreement moved that duty to a subsistence fund; art. 3 (as amended by the agreement of
+      # 21 October 2025): only after a dismissal notified before 1 April 2025, at 62 by 30 June 2025, with a career of
+      # 40 years. Both read in full in NL and FR on the production corpus on 2026-11-26.
+      [SWT_PATTERN, '1974121960', '4'],
+      [SWT_PATTERN, '1974121960', '3'],
 
       # Federal VAT Code: small-enterprise exemption/franchise.
       [VAT_SMALL_ENTERPRISE_EXEMPTION_PATTERN, '1969070305', '56bis'],

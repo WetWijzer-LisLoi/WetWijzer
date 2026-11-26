@@ -356,6 +356,7 @@ app/services/legal_chatbot/criminal_code_commencement.rb
 app/services/legal_chatbot/data_protection_part_scope.rb
 app/services/legal_chatbot/dated_article_answer.rb
 app/services/legal_chatbot/dated_drug_law_note.rb
+app/services/legal_chatbot/drug_fine_ceiling_note.rb
 app/services/legal_chatbot/embedding_service.rb
 app/services/legal_chatbot/eu_article_dependencies.rb
 app/services/legal_chatbot/eu_article_subject_scope.rb

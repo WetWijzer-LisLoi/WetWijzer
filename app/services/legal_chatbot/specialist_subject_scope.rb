@@ -258,6 +258,19 @@ module LegalChatbot
               (?=.*#{B}(?:gevangen\p{L}*|gedetineerd\p{L}*|veroordeel\p{L}*|gevonnist\p{L}*|straf\p{L}*|d[ée]tenu\p{L}*|
                          condamn\p{L}*|peine\p{L}*|prison\p{L}*|inmate\p{L}*|sentenc\p{L}*|convict\p{L}*|h[äa]ftling\p{L}*|
                          gefangen\p{L}*|verurteil\p{L}*|haft)#{E}))/iumx
+      ],
+      # Framework agreements on trade and cooperation between the European Community and a third country. Sol 2026-11-25
+      # 23:00:07Z: art. 13 of the EC-Korea agreement (1999A15104, "Bestrijding van drugs en witwassen van geld",
+      # cooperation, no sentencing rule; read in full on 2026-11-26) was card 6 of the drug trafficking sample #1557 on
+      # live 1.1.106. In the corpus the title names that agreement and the acts that approve it (titles read on
+      # 2026-11-26). A question about cooperation or such an agreement keeps it; a domestic penalty question does not.
+      # The separable "werken ... samen" and "arbeiten ... zusammen" are not read: "samen" alone is no cooperation.
+      trade_cooperation: [
+        /#{B}(?:kaderovereenkomst\s+inzake\s+handel\s+en\s+samenwerking|accord-cadre\s+de\s+commerce\s+et\s+de\s+coop[ée]ration)#{E}/iux,
+        /#{B}(?:samenwerk\p{L}*|co[öo]peratie\p{L}*|coop[éèe]r\p{L}*|co-operat\p{L}*|kooperation\p{L}*|
+           zusammenarbeit\p{L}*|kaderovereenkomst\p{L}*|accords?-cadres?|framework\s+agreements?|rahmenabkommen\p{L}*|
+           handelsakkoord\p{L}*|handelsovereenkomst\p{L}*|accords?\s+commerciaux|accord\s+commercial|trade\s+agreements?|
+           handelsabkommen\p{L}*)#{E}/iux
       ]
     }.freeze
     # A question about a source the reader is shown ("Explain this specialist source.", "Wat zegt deze wet?") keeps
@@ -270,6 +283,25 @@ module LegalChatbot
     # A law of a specific subject is judged by it alone: the tobacco decree's "fiscaal stelsel" makes it no income tax
     # law, a sector fund's statutes make it no agency
     GENERIC = %i[public_body income_tax vat duties].freeze
+    # Sol 2026-11-25 17:29:23Z: a transfer question that names where the person goes keeps that country's bilateral
+    # treaty and no other. The bilateral transfer treaties in the corpus (titles read on 2026-11-25): Morocco, Thailand,
+    # Hong Kong, DR Congo, the Dominican Republic, Brazil, Kosovo, Albania, China and India. Each entry: the country as a
+    # Dutch or French title names it, and the country or its people as a question names them. A title is the treaty of
+    # the first entry it names, so the Hong Kong agreement ("Hongkong van de Volksrepubliek China") is Hong Kong's. A
+    # title that names none (the Strasbourg convention, the law of 23 May 1990) and a question that names none keep every
+    # treaty. "Indien" is Dutch for "if" and never names India, so the German "Indien" is not read either.
+    TRANSFER_COUNTRIES = {
+      morocco: [/#{B}(?:marokko|maroc)#{E}/iu, /#{B}(?:marok\p{L}*|maroc\p{L}*|morocc\p{L}*)#{E}/iu],
+      congo: [/#{B}congo#{E}/iu, /#{B}(?:congo\p{L}*|kongo\p{L}*|rdc|drc)#{E}/iu],
+      thailand: [/#{B}(?:thailand|tha[ïi]lande)#{E}/iu, /#{B}tha[ïi]\p{L}*#{E}/iu],
+      hong_kong: [/#{B}hong[[:space:]]?kong#{E}/iu, /#{B}hong[[:space:]]?kong\p{L}*#{E}/iu],
+      dominican_republic: [/#{B}(?:dominicaanse|dominicaine)#{E}/iu, /#{B}(?:dominica\p{L}*|dominikan\p{L}*)#{E}/iu],
+      brazil: [/#{B}(?:brazili[ëe]|br[ée]sil)#{E}/iu, /#{B}(?:brazil\p{L}*|br[ée]sil\p{L}*|brasil\p{L}*)#{E}/iu],
+      kosovo: [/#{B}kosovo#{E}/iu, /#{B}kosov\p{L}*#{E}/iu],
+      albania: [/#{B}(?:albani[ëe]|albanie)#{E}/iu, /#{B}alban\p{L}*#{E}/iu],
+      china: [/#{B}(?:china|chine)#{E}/iu, /#{B}(?:china|chine\p{L}*|chinois\p{L}*)#{E}/iu],
+      india: [/#{B}(?:india|inde)#{E}/iu, /#{B}(?:india\p{L}*|indi[ëe]r\p{L}*|indiase|indisch\p{L}*|inde)#{E}/iu]
+    }.freeze
 
     module_function
 
@@ -277,13 +309,26 @@ module LegalChatbot
     # viewed, kept by its NUMAC before this scope runs, so "dit artikel" refers to it and exempts no other candidate
     # (Sol 19:11:40Z).
     def source_relevant?(article, question, viewing: false)
-      found = subjects(law_title(article))
+      title = law_title(article)
+      found = subjects(title)
       return true if found.empty?
 
       text = question.to_s
       return true if !viewing && text.match?(ABOUT_SHOWN_SOURCE)
 
-      found.any? { |subject| text.match?(SUBJECTS.fetch(subject).last) }
+      found.any? { |subject| text.match?(SUBJECTS.fetch(subject).last) && destination_fits?(subject, title, text) }
+    end
+
+    # Whether a transfer treaty fits the destination the question names: a question that names one or more of
+    # TRANSFER_COUNTRIES keeps their treaties and those of no other; a title that names none of them stays
+    def destination_fits?(subject, title, question)
+      return true unless subject == :sentenced_transfer
+
+      party = TRANSFER_COUNTRIES.find { |_country, (in_title, _asked)| title.match?(in_title) }&.first
+      return true unless party
+
+      named = TRANSFER_COUNTRIES.select { |_country, (_in_title, asked)| question.match?(asked) }.keys
+      named.empty? || named.include?(party)
     end
 
     # The narrow subjects of a law title, the specific ones over the generic

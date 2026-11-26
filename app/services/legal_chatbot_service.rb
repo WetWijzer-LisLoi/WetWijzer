@@ -435,6 +435,13 @@ class LegalChatbotService
     note ? " [#{note}]" : ''
   end
 
+  # Sol 2026-11-25 23:00:07Z: the Drugswet arts 2bis and 2ter each name the fine ceiling that applies to them
+  # (DrugFineCeilingNote), so the general 800,000 euro of art. 2bis, § 6 is not read as the art. 2ter exception's only
+  def drug_fine_ceiling_note(source)
+    note = LegalChatbot::DrugFineCeilingNote.note(source[:numac], source[:article_title], @language)
+    note ? " [#{note}]" : ''
+  end
+
   def future_amendment_note(source)
     return '' unless source[:future_amendment]
 
@@ -1258,7 +1265,7 @@ class LegalChatbotService
     # block. Say so on the header line, so the model can tell the user a change is
     # coming instead of silently omitting it.
     pending = commenced_amendment_note(article) + uncommenced_insertion_note(article) + future_amendment_note(article) +
-              deferred_penalties_note(article)
+              deferred_penalties_note(article) + drug_fine_ceiling_note(article)
     # A pin whose governing provision sits deep in a long article names it
     # here; the text itself stays complete from its first character.
     governing = article[:context_excerpt_anchor].to_s

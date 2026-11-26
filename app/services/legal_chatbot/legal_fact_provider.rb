@@ -937,6 +937,9 @@ module LegalChatbot
     #   indexation_note:  (optional) Current/effective fact placed before article content.
     #                     Used for topics where the law text contains base amounts
     #                     that are adjusted via spilindex (e.g. leefloon, kinderbijslag).
+    #   rule_note:        (optional) A rule read from the law's own text, placed after the
+    #                     indexation note. It does not depend on a schedule, so note_stale_after
+    #                     never drops it.
     #
     FACT_SOURCES = {
       # ── Employment & Labor ──────────────────────────────────────────────
@@ -1030,13 +1033,40 @@ module LegalChatbot
       },
       'werkloosheid' => {
         numac: '1991013192',
-        article_patterns: ['Art. 100', 'Art. 101', 'Art. 102', 'Art. 103', 'Art. 108', 'Art. 114', 'Art. 115'],
-        label: 'Werkloosheidsuitkering - Art. 100-115 Werkloosheidsbesluit',
+        article_patterns: ['Art. 100', 'Art. 101', 'Art. 102', 'Art. 103', 'Art. 108', 'Art. 114', 'Art. 115', 'Art. 116'],
+        label: 'Werkloosheidsuitkering - Art. 100-116 Werkloosheidsbesluit',
         # #337 (Sol 2026-11-22 08:38:00Z): Art. 115 holds the 1999 base amounts, and the answer printed them as the
         # current minima. The note gives the indexed minima with their first day and manual check, and is dropped
         # once the newest schedule is past that check (IndexedAmounts).
         indexation_note: IndexedAmounts.context_note,
-        note_stale_after: IndexedAmounts.fresh_until
+        note_stale_after: IndexedAmounts.fresh_until,
+        # Sol 2026-11-25 14:42:20Z: #116 extended "the first period" by a month per 104 days, while art. 114, § 1 makes
+        # that extension the second period; #304 lacked art. 116, § 2, 2°, which leaves periods of a concurrent
+        # unemployment benefit out of the extension; #115 did not tell admissions from 1 March 2026 from the transition.
+        # Read in full on the production corpus on 2026-11-25: arts 114 and 116 (replaced by arts 169 and 172 of the
+        # programme law of 18 July 2025, in force on 1 March 2026) and art. 212 of that law (2025005578).
+        rule_note: <<~NOTE.strip
+          WERKLOOSHEID: VERGOEDINGSPERIODES EN OVERGANG (art. 114 en 116 Werkloosheidsbesluit, vervangen door art. 169 en
+          172 van de programmawet van 18 juli 2025, in werking sinds 1 maart 2026; art. 212 van die programmawet).
+          - Toegelaten vanaf 1 maart 2026 (art. 30 of 33): de eerste vergoedingsperiode duurt twaalf maanden. Het recht op
+            uitkeringen wordt uitgebreid met één maand per 104 arbeidsdagen of gelijkgestelde dagen beroepsverleden (104
+            halve dagen bij een toelating op grond van art. 33), met ten hoogste twaalf maanden; die uitbreiding is de
+            tweede vergoedingsperiode (art. 114, § 1). Schrijf dus niet dat de eerste vergoedingsperiode met die maanden
+            wordt verlengd.
+          - De duur van het recht wordt verlengd met de periodes van een uitkering wegens ziekte of invaliditeit, een
+            arbeidsongeval, een ongeval op de weg naar en van het werk of een beroepsziekte, of een andere uitkering wegens
+            arbeidsongeschiktheid of invaliditeit; niet met de periodes van art. 116, § 1, eerste lid, 5° (moederschap,
+            vaderschaps- of adoptieverlof) en niet met de periodes waarin de werknemer tegelijk een werkloosheidsuitkering
+            genoot. De vergoedingsperiodes en fases lopen tijdens die periodes door (art. 116, § 2).
+          - Niet in de tijd beperkt (art. 114, § 2), onder meer: wie bij de uitkeringsaanvraag minstens 55 jaar is en een
+            voldoende beroepsverleden bewijst (31 jaar; 32 jaar bij een toelating in 2027, 33 in 2028, 34 in 2029, 35 vanaf
+            2030), en wie uitkeringen geniet in het stelsel van werkloosheid met bedrijfstoeslag.
+          - Toegelaten vóór 1 maart 2026: de overgangsregeling van art. 212 van de programmawet. De duur hangt af van de
+            vergoedingsperiode op 30 juni 2025, en het recht loopt ten laatste tot 30 juni 2030; wie op 30 juni 2025
+            minstens 55 jaar was met voldoende beroepsverleden, behoudt het zonder beperking in de tijd (art. 212, § 2). Wie na een
+            onderbreking vanaf 1 maart 2026 een aanvraag indient en aan de nieuwe toelatingsvoorwaarden voldoet, valt
+            onder de nieuwe regels (art. 212, § 4). Vraag naar de datum van toelating als die het antwoord bepaalt.
+        NOTE
       },
       # ── Tax ─────────────────────────────────────────────────────────
       # Tax entries fall back to the FisconetPlus DB by DOCUMENT TYPE, never by
@@ -1883,7 +1913,9 @@ module LegalChatbot
     # first, and a two-part notice case shows no full-seniority employer figure.
     # r51 (1.1.82): a verified article whose newer version Justel still files as
     # future law is given in that version, with the day it took effect.
-    FACT_CACHE_VERSION = 'r51'
+    # r52 (1.1.107): the unemployment block carries art. 116 and the rule note on
+    # the benefit periods and the transition of the programme law of 18 July 2025.
+    FACT_CACHE_VERSION = 'r52'
 
     # FisconetPlus DB path (same as FisconetSearch)
     FISCONET_DB = ENV.fetch('FISCONET_DB', '/mnt/HC_Volume_104299669/embeddings/fisconet.sqlite3')
@@ -2861,11 +2893,12 @@ module LegalChatbot
       format_article_block(
         source[:label], matching,
         indexation_note: source[:indexation_note],
-        note_stale_after: source[:note_stale_after]
+        note_stale_after: source[:note_stale_after],
+        rule_note: source[:rule_note]
       )
     end
 
-    def format_article_block(label, articles, indexation_note: nil, note_stale_after: nil)
+    def format_article_block(label, articles, indexation_note: nil, note_stale_after: nil, rule_note: nil)
       article_lines = []
 
       articles.each do |article|
@@ -2917,6 +2950,8 @@ module LegalChatbot
           lines << indexation_note
         end
       end
+      # A rule from the law's own text depends on no schedule, so a stale indexation note never takes it along
+      lines << rule_note if rule_note.present?
       lines.concat(article_lines)
 
       lines.join("\n")
