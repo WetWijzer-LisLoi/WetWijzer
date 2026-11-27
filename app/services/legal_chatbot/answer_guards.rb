@@ -1000,9 +1000,12 @@ module LegalChatbot
     # Sol 2026-11-26 22:34:20Z (#115, live 1.1.113): then the paragraph on whom the full-unemployment amounts apply to
     # goes right before the first of them, when the text right above does not already say it
     # (UnemploymentAmountApplicability).
+    # Sol 2026-11-27 09:38:22Z (#304, live 1.1.115): an answer on unemployment after an accident that leaves out the
+    # temporary-unemployment exception of art. 61, § 2, second paragraph, gets it (AccidentUnemploymentException).
     def apply_indexed_amounts(text, question, sources)
       result = IndexedAmounts.apply(text, question: question, sources: sources, language: @language)
-      applied = UnemploymentAmountApplicability.apply(result.text, question: question, sources: sources, language: @language)
+      amounts = UnemploymentAmountApplicability.apply(result.text, question: question, sources: sources, language: @language)
+      applied = AccidentUnemploymentException.apply(amounts, question: question, language: @language)
       return text if applied == text
 
       previous = @last_citation_guard_result || { verified: true, passed: true, rejected: 0 }
@@ -1012,7 +1015,8 @@ module LegalChatbot
                       indexed_amounts_withheld: result.withheld, indexed_amounts_quoted: result.quoted,
                       indexed_amounts_version: IndexedAmounts::VERSION)
       end
-      record[:unemployment_applicability_version] = UnemploymentAmountApplicability::VERSION if applied != result.text
+      record[:unemployment_applicability_version] = UnemploymentAmountApplicability::VERSION if amounts != result.text
+      record[:accident_unemployment_exception_version] = AccidentUnemploymentException::VERSION if applied != amounts
       @last_citation_guard_result = previous.merge(record)
       applied
     end

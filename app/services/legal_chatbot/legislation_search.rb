@@ -2117,6 +2117,22 @@ module LegalChatbot
            \p{L}*arbeitsunf[äa]ll\p{L}*|wegeunf[äa]ll\p{L}*|berufskrankheit\p{L}*|arbeitsunf[äa]hig\p{L}*|
            (?:occupational|industrial|work(?:place)?|commuting)\s+(?:accidents?|injur\p{L}*|diseases?)|incapacity)(?![[:alnum:]]))
     /imxu
+    # Sol 2026-11-27 09:38:22Z (#304 on live 1.1.115): "Please prioritise the applicable unemployment provisions for the
+    # amount (110/114/115 as relevant)". Art. 114 of the decree (read in full in NL and FR on 2026-11-27): the daily
+    # amount of the first period is a percentage of the average daily wage by household category (art. 110) under the
+    # wage limits of art. 111; the second period pays the minima of art. 115 (read in full in NL and FR on 2026-11-26). An
+    # accident-unemployment question that asks an amount.
+    ACCIDENT_UNEMPLOYMENT_AMOUNT_PATTERN = /\A(?=#{ACCIDENT_UNEMPLOYMENT_PATTERN})
+                                            (?=.*(?<![[:alnum:]])(?:hoeveel|\p{L}*bedrag\p{L}*|hoogte|combien|montant\p{L}*|
+                                            wie\s+(?:viel|hoch)|h[öo]he|\p{L}*betrag\p{L}*|how\s+much|amount\p{L}*)(?![[:alnum:]]))/imxu
+    # Sol 2026-11-27 09:38:22Z (#2534 on live 1.1.115): the answer's ordinary notice and indemnity statement had no
+    # reference or card to art. 39 of the employment contracts act this time; on 1.1.114 retrieval had brought it. "Please
+    # preserve relevant support for that specific statement." Art. 39 (read in full in NL and FR on 2026-11-27): the
+    # indemnity for ending a contract for an indefinite term without serious cause or without the notice period. A question
+    # on an employment trial period (FocusedTopicSourceScope) that names a dismissal or notice.
+    TRIAL_PERIOD_DISMISSAL_PATTERN = /\A(?=#{FocusedTopicSourceScope::EMPLOYMENT_TRIAL_PERIOD_PATTERN})
+                                      (?=.*(?<![[:alnum:]])(?:\p{L}*ontsla\p{L}*|ontslag\p{L}*|opzeg\p{L}*|licenci\p{L}*|pr[ée]avis|
+                                      \p{L}*k[üu]ndig\p{L}*|entlass\p{L}*|dismiss\p{L}*|fired|notice)(?![[:alnum:]]))/imxu
     # How long a collective debt settlement lasts, in the four languages (#2797). Sol 2026-11-26 02:34:41Z: a bare year
     # word ("op 65 jaar", "à 70 ans") is an age or a condition, no duration, so only words of duration count.
     DEBT_SETTLEMENT_DURATION_PATTERN = /
@@ -3189,6 +3205,13 @@ module LegalChatbot
       # present in NL and FR on 2026-11-27.
       [ACCIDENT_UNEMPLOYMENT_PATTERN, '1991013192', '61'],
       [ACCIDENT_UNEMPLOYMENT_PATTERN, '1991013192', '62'],
+      # Sol 2026-11-27 09:38:22Z (#304 on live 1.1.115): for the amount, arts. 114 and 115 of the decree, read in full and
+      # present in NL and FR (art. 114 on 2026-11-27, art. 115 on 2026-11-26).
+      [ACCIDENT_UNEMPLOYMENT_AMOUNT_PATTERN, '1991013192', '114'],
+      [ACCIDENT_UNEMPLOYMENT_AMOUNT_PATTERN, '1991013192', '115'],
+      # Sol 2026-11-27 09:38:22Z (#2534 on live 1.1.115): the indemnity statement of a trial-period dismissal answer keeps
+      # its support, art. 39 of the employment contracts act (a target already, for an indemnity question).
+      [TRIAL_PERIOD_DISMISSAL_PATTERN, '1978070303', '39'],
       [/(?:\bfaillissement\b.{0,60}\b(?:onderneming|vennootschap|handelaar)\b|\b(?:onderneming|vennootschap|handelaar)\b.{0,60}\bfaillissement\b)/i, '2013A11134', 'XX.99'],
 
       # Regional tax competence. Succession and registration duties are REGIONAL taxes, and

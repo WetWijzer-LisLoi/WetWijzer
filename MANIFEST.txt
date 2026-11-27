@@ -335,6 +335,7 @@ app/services/law_search_constants.rb
 app/services/law_search_service.rb
 app/services/law_toc_entries.rb
 app/services/law_toc_targets.rb
+app/services/legal_chatbot/accident_unemployment_exception.rb
 app/services/legal_chatbot/advisory_opinions.rb
 app/services/legal_chatbot/air_passenger_source_scope.rb
 app/services/legal_chatbot/amendment_markers.rb

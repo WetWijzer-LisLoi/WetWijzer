@@ -30,9 +30,21 @@ module LegalChatbot
     WELL_BEING = /#{B}(?:welzijn\p{L}*|preventie\p{L}*|\p{L}*veiligheid\p{L}*|bien-[êe]tre|pr[ée]vention\p{L}*|
                   s[ée]curit[ée]\s+(?:au|du)\s+travail|s[ée]curit[ée]\s+des\s+travailleurs|wohlbefinden|pr[äa]vention\p{L}*|
                   arbeitssicherheit|sicherheit\s+am\s+arbeitsplatz|well-?being|prevention|safety)#{E}/iux
-    DEATH = /#{B}(?:overlijd\p{L}*|overleden\p{L}*|nabestaand\p{L}*|weduw\p{L}*|wees|wezen|begrafenis\p{L}*|d[ée]c[èe]s|d[ée]c[ée]d\p{L}*|
-             veu[fv]\p{L}*|orphelin\p{L}*|survivant\p{L}*|fun[ée]railles|tod|todes\p{L}*|stirbt|gestorben|hinterblieben\p{L}*|
-             witwe\p{L}*|waise\p{L}*|death|dies|died|deceased|survivor\p{L}*|widow\p{L}*|orphan\p{L}*|funeral\p{L}*)#{E}/iux
+    # Sol 2026-11-27 09:38:22Z: "Krijgt de echtgenoot van een werkloze na een dodelijk arbeidsongeval een rente?" lost
+    # art. 12; a fatal accident is a death too
+    DEATH = /#{B}(?:overlijd\p{L}*|overleden\p{L}*|nabestaand\p{L}*|weduw\p{L}*|wees|wezen|begrafenis\p{L}*|dodelijk\p{L}*|d[ée]c[èe]s|
+             d[ée]c[ée]d\p{L}*|mortel\p{L}*|veu[fv]\p{L}*|orphelin\p{L}*|survivant\p{L}*|fun[ée]railles|tod|todes\p{L}*|t[öo]dlich\p{L}*|
+             stirbt|gestorben|hinterblieben\p{L}*|witwe\p{L}*|waise\p{L}*|death|dies|died|deceased|fatal\p{L}*|survivor\p{L}*|widow\p{L}*|
+             orphan\p{L}*|funeral\p{L}*)#{E}/iux
+    # Sol 2026-11-27 09:38:22Z (#304 on live 1.1.115): arts. 25 (temporary worsening of a permanent incapacity after
+    # reclassification) and 39 (the annual wage ceiling of the compensation and annuities) of the Occupational Accidents Act
+    # "support neither the requested unemployment amount nor a statement about those specialist issues in this answer"; to
+    # keep "when the question actually asks for accident compensation". Read in full in NL on 2026-11-27.
+    # ("werkloosheidsvergoeding" is the unemployment benefit itself)
+    ACCIDENT_COMPENSATION = /#{B}(?:(?!werkloosheids)\p{L}*vergoeding\p{L}*|rente|renten|basisloon|\p{L}*plafond\p{L}*|jaarloon|verergert|verergering\p{L}*|
+                             revalidatie\p{L}*|indemnit[ée]\p{L}*|r[ée]mun[ée]ration\s+de\s+base|aggravation|r[ée]adaptation|
+                             entsch[äa]digung\p{L}*|basislohn|jahreslohn|verschlimmer\p{L}*|compensation|annuit\p{L}*|base\s+wage|
+                             ceiling|worsen\p{L}*|rehabilitation)#{E}/iux
     # question: the question the rule judges; articles: the article numbers it reads (nil: every article of the law);
     # subject: the words of a question that asks for the article
     RULES = [
@@ -43,7 +55,9 @@ module LegalChatbot
       { question: -> { LegislationSearch::ACCIDENT_UNEMPLOYMENT_PATTERN }, numac: '1996012650', articles: nil,
         subject: WELL_BEING },
       { question: -> { LegislationSearch::ACCIDENT_UNEMPLOYMENT_PATTERN }, numac: '1971041001',
-        articles: /\A(?:1\d|2[01])(?:bis|ter|quater)?\z/, subject: DEATH }
+        articles: /\A(?:1\d|2[01])(?:bis|ter|quater)?\z/, subject: DEATH },
+      { question: -> { LegislationSearch::ACCIDENT_UNEMPLOYMENT_PATTERN }, numac: '1971041001', articles: /\A(?:25|39)\z/,
+        subject: ACCIDENT_COMPENSATION }
     ].freeze
 
     # Sol 2026-11-27 06:50:19Z (review of the draft): a number alone named the article in any act ("art. 4

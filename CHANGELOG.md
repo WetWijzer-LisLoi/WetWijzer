@@ -8,6 +8,14 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.116] - 2026-11-27
+
+### Fixed
+
+- An answer on unemployment benefit after an occupational accident always gives the exception of article 61, § 2 of the unemployment decree: a worker who is temporarily unfit can still receive benefits as temporarily unemployed for work the applicable insurance allows, subject to suspension or reduction of the compensation. For an amount, its sources now give articles 114 and 115 of the decree, and they leave out articles 25 and 39 of the occupational accidents act unless the question asks for accident compensation.
+- A general question on dismissal during a trial period keeps article 39 of the employment contracts act, the indemnity in lieu of notice, among its sources.
+- A question on a fatal accident keeps the survivors' annuities of the occupational accidents act.
+
 ## [1.1.115] - 2026-11-27
 
 ### Fixed
