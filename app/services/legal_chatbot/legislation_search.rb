@@ -2101,6 +2101,22 @@ module LegalChatbot
     UNEMPLOYMENT_BENEFIT_PATTERN = /
       \b(?:werkloosheidsuitkering(?:en)?|werkloosheidsvergoeding|werkloze|rva|ch[oô]mage|allocations?\s+de\s+ch[oô]mage|onem)\b
     /ix
+    # Sol 2026-11-27 06:39:23Z (#304 "Hoeveel werkloosheidsuitkering krijg ik na een arbeidsongeval?", live 1.1.114): the
+    # headline only explained the extension of the duration (art. 116, § 2) and left out art. 61, § 2 of the
+    # unemployment decree. Read in full in NL and FR on 2026-11-27: no benefits for a worker temporarily fully or partly
+    # unfit for work under the legislation on occupational accidents, commuting accidents or occupational diseases, except
+    # as temporarily unemployed for work allowed subject to suspension or temporary reduction of the compensation; a
+    # permanently unfit worker can have benefits unless art. 62 deems the worker unfit for work (unfit in the sense of the
+    # sickness and invalidity insurance, by the director on the doctor's advice). A question on unemployment benefit
+    # after an accident, an occupational disease or an incapacity, in the four languages.
+    ACCIDENT_UNEMPLOYMENT_PATTERN = /
+      \A
+      (?=.*(?<![[:alnum:]])(?:\p{L}*werkloos\p{L}*|werkloze\p{L}*|ch[oô]m\p{L}*|\p{L}*arbeitslos\p{L}*|unemploy\p{L}*|jobless)(?![[:alnum:]]))
+      (?=.*(?<![[:alnum:]])(?:\p{L}*arbeidsongeval\p{L}*|ongeval\p{L}*\s+op\s+de\s+weg|\p{L}*beroepsziekte\p{L}*|arbeidsongeschikt\p{L}*|
+           accidents?\s+du\s+travail|accidents?\s+sur\s+le\s+chemin|maladies?\s+professionnelles?|incapacit[ée]\p{L}*|
+           \p{L}*arbeitsunf[äa]ll\p{L}*|wegeunf[äa]ll\p{L}*|berufskrankheit\p{L}*|arbeitsunf[äa]hig\p{L}*|
+           (?:occupational|industrial|work(?:place)?|commuting)\s+(?:accidents?|injur\p{L}*|diseases?)|incapacity)(?![[:alnum:]]))
+    /imxu
     # How long a collective debt settlement lasts, in the four languages (#2797). Sol 2026-11-26 02:34:41Z: a bare year
     # word ("op 65 jaar", "à 70 ans") is an age or a condition, no duration, so only words of duration count.
     DEBT_SETTLEMENT_DURATION_PATTERN = /
@@ -3168,6 +3184,11 @@ module LegalChatbot
       # contributions is art. 38 of the law of 29 June 1981 (1981001048), its first card. Read in full in NL and FR on
       # 2026-11-26.
       [SOCIAL_CONTRIBUTION_RATE_PATTERN, '1981001048', '38'],
+      # Sol 2026-11-27 06:39:23Z (#304 on live 1.1.114): unemployment benefit after an occupational accident starts from
+      # art. 61, § 2 of the unemployment decree, and its permanent incapacity rule from art. 62. Both read in full and
+      # present in NL and FR on 2026-11-27.
+      [ACCIDENT_UNEMPLOYMENT_PATTERN, '1991013192', '61'],
+      [ACCIDENT_UNEMPLOYMENT_PATTERN, '1991013192', '62'],
       [/(?:\bfaillissement\b.{0,60}\b(?:onderneming|vennootschap|handelaar)\b|\b(?:onderneming|vennootschap|handelaar)\b.{0,60}\bfaillissement\b)/i, '2013A11134', 'XX.99'],
 
       # Regional tax competence. Succession and registration duties are REGIONAL taxes, and
@@ -5105,6 +5126,9 @@ module LegalChatbot
       # #2797 (Sol 2026-11-26 07:05:47Z): Books XX and XVII of the Economic Law Code under a collective debt settlement
       # question that raises no enterprise, bankruptcy or collective redress
       return false unless DebtSettlementSourceScope.source_relevant?(article, question)
+      # Sol 2026-11-27 06:39:23Z (#2534, #304): an article of a relevant law that answers another question, unless the
+      # question raises its subject or names it
+      return false unless ArticleSubjectScope.source_relevant?(article, question)
       # The State Gazette's extract of another Constitutional Court judgment than the one the question names
       return false unless JudgmentExtractScope.source_relevant?(article, question)
       # A later act under a question about the reasons of an act of a date the question names

@@ -1050,6 +1050,12 @@ module LegalChatbot
         # that of arts. 114, 116 and 118 as applicable until 28 February 2026 (§ 1, seventh paragraph); § 2 sets the
         # amounts of those 55 or older with a sufficient career on 30 June 2025; § 4 brings a new admission after an
         # interruption under the new rules. Art. 171 replaced art. 115 (the new minimum amounts).
+        # Sol 2026-11-27 06:39:23Z (#304 "Hoeveel werkloosheidsuitkering krijg ik na een arbeidsongeval?", live 1.1.114):
+        # the headline only explained the extension of art. 116, § 2. "Please source this first, distinguish still
+        # incapacitated vs recovered and temporary vs permanent, then explain how an eligible claimant's ordinary amount is
+        # calculated or what facts are missing. Keep Art. 116 as a separate duration point and distinguish accident
+        # compensation. No universal amount is justified." Arts. 61 and 62 of the decree read in full on 2026-11-27; both
+        # are pinned for such a question (LegislationSearch::ACCIDENT_UNEMPLOYMENT_PATTERN).
         rule_note: <<~NOTE.strip
           WERKLOOSHEID: VERGOEDINGSPERIODES EN OVERGANG (art. 114 en 116 Werkloosheidsbesluit, vervangen door art. 169 en
           172 van de programmawet van 18 juli 2025, in werking sinds 1 maart 2026; art. 212 van die programmawet).
@@ -1063,6 +1069,16 @@ module LegalChatbot
             arbeidsongeschiktheid of invaliditeit; niet met de periodes van art. 116, § 1, eerste lid, 5° (moederschap,
             vaderschaps- of adoptieverlof) en niet met de periodes waarin de werknemer tegelijk een werkloosheidsuitkering
             genoot. De vergoedingsperiodes en fases lopen tijdens die periodes door (art. 116, § 2).
+          - Na een arbeidsongeval, een ongeval op de weg naar of van het werk of een beroepsziekte bepaalt art. 61, § 2
+            eerst of er recht is: wie tijdelijk volledig of gedeeltelijk arbeidsongeschikt is volgens die wetgeving, kan
+            geen uitkeringen genieten, behalve als tijdelijk werkloze voor arbeid die hij mag verrichten onder voorbehoud
+            van schorsing of tijdelijke vermindering van zijn vergoeding; wie blijvend arbeidsongeschikt is, kan
+            uitkeringen genieten, behalve als hij volgens art. 62 als arbeidsongeschikt wordt beschouwd. Begin een
+            antwoord over werkloosheid na een ongeval met die regel en onderscheid wie nog arbeidsongeschikt is van wie
+            hersteld is, en tijdelijke van blijvende ongeschiktheid. De verlenging van de duur (art. 116, § 2) is een
+            afzonderlijk punt, en de vergoeding van het ongeval zelf (Arbeidsongevallenwet) is geen werkloosheidsuitkering.
+            Noem geen algemeen bedrag: geef hoe het bedrag van een gerechtigde volgt uit art. 114 en 115 (en art. 110 voor
+            de gezinstoestand), of welke gegevens daarvoor ontbreken.
           - Niet in de tijd beperkt (art. 114, § 2), onder meer: wie bij de uitkeringsaanvraag minstens 55 jaar is en een
             voldoende beroepsverleden bewijst (31 jaar; 32 jaar bij een toelating in 2027, 33 in 2028, 34 in 2029, 35 vanaf
             2030), en wie uitkeringen geniet in het stelsel van werkloosheid met bedrijfstoeslag.
@@ -1947,7 +1963,10 @@ module LegalChatbot
     # the benefit periods and the transition of the programme law of 18 July 2025.
     # r53 (1.1.108): the trial-period block carries arts 37/2 and 127 and the rule
     # note on the trial period abolished in 2014 and the three days that remain.
-    FACT_CACHE_VERSION = 'r54'
+    # r54 (1.1.112): the unemployment rule note says which claims the amounts are for.
+    # r55 (1.1.115): the unemployment rule note gives art. 61, § 2 first for a question
+    # on unemployment after an accident or an occupational disease (Sol 2026-11-27 06:39:23Z).
+    FACT_CACHE_VERSION = 'r55'
 
     # FisconetPlus DB path (same as FisconetSearch)
     FISCONET_DB = ENV.fetch('FISCONET_DB', '/mnt/HC_Volume_104299669/embeddings/fisconet.sqlite3')

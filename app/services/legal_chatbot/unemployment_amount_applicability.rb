@@ -13,8 +13,8 @@ module LegalChatbot
   # Read in full in the production corpus on 2026-11-26, Dutch and French: art. 212 of the programme law of 18 July 2025
   # (2025005578) and art. 115 of the royal decree of 25 November 1991 (1991013192) as art. 171 of that law replaced it
   # from 1 March 2026.
-  # - Art. 212, § 1: the worker admitted before 1 March 2026 keeps the right at the latest until 30 June 2030; while he
-  #   keeps it, the amount is further set by arts. 114, 116 and 118 as applicable until 28 February 2026 (seventh
+  # - Art. 212, § 1: the worker admitted before 1 March 2026 keeps the right at the latest until 30 June 2030; while it is
+  #   kept, the amount is further set by arts. 114, 116 and 118 as applicable until 28 February 2026 (seventh
   #   paragraph).
   # - Art. 212, § 2: the worker who had reached the age of 55 on 30 June 2025 with a sufficient career keeps the right
   #   without the time limit of art. 114, § 1 and has the daily amounts that paragraph sets.

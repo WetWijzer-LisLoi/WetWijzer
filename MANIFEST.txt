@@ -342,6 +342,7 @@ app/services/legal_chatbot/answer_guards.rb
 app/services/legal_chatbot/answer_linking.rb
 app/services/legal_chatbot/answer_meta.rb
 app/services/legal_chatbot/article_excerpt.rb
+app/services/legal_chatbot/article_subject_scope.rb
 app/services/legal_chatbot/childcare_expense_grounding.rb
 app/services/legal_chatbot/citation_repair.rb
 app/services/legal_chatbot/civil_claim_guidance_sources.rb

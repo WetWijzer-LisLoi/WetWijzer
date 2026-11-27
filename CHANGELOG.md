@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.115] - 2026-11-27
+
+### Fixed
+
+- A question on unemployment benefit after an occupational accident, a commuting accident or an occupational disease is answered first from article 61 of the unemployment decree, with article 62 among its sources: a worker who is still temporarily unfit for work gets no benefit, except as temporarily unemployed for work that is allowed, and a permanently unfit worker can get it, unless considered unfit for work under article 62. The extension of the duration (article 116) stays a separate point, and no general amount is given. Its sources leave out the flat-rate benefit after the artists' arrangement, the well-being act and the death benefits of the occupational accidents act, unless the question asks for them.
+- A general question on dismissal during a trial period no longer shows article 63 of the employment contracts act (the arbitrary dismissal of a blue-collar worker); a question on arbitrary dismissal, or one that names that article, keeps it.
+
 ## [1.1.114] - 2026-11-26
 
 ### Fixed
