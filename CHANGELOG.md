@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.114] - 2026-11-26
+
+### Fixed
+
+- An answer on the amount of an unemployment benefit says, right above its full-unemployment amounts, whom they apply to: those admitted from 1 March 2026, also after an interruption under the new admission conditions (article 212, § 4 of the programme law of 18 July 2025, linked); those admitted before keep the former amounts during the transition (§ 1); those who were 55 or older on 30 June 2025 with a sufficient career have the daily amounts of § 2; temporary unemployment has its own minima.
+- An additional verified source gives its statement first and then the reference, instead of a reference that ran into the statement ("zie De algemene proeftijd ...").
+
 ## [1.1.113] - 2026-11-26
 
 ### Fixed

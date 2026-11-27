@@ -997,17 +997,24 @@ module LegalChatbot
     # schedule for the period it speaks of, or is withheld when no schedule checked by hand covers that period; a
     # quotation keeps its base amounts. One line under the answer gives the first day, the official table and the manual
     # check (IndexedAmounts). The record counts each outcome.
+    # Sol 2026-11-26 22:34:20Z (#115, live 1.1.113): then the paragraph on whom the full-unemployment amounts apply to
+    # goes right before the first of them, when the text right above does not already say it
+    # (UnemploymentAmountApplicability).
     def apply_indexed_amounts(text, question, sources)
       result = IndexedAmounts.apply(text, question: question, sources: sources, language: @language)
-      return text if result.text == text
+      applied = UnemploymentAmountApplicability.apply(result.text, question: question, sources: sources, language: @language)
+      return text if applied == text
 
       previous = @last_citation_guard_result || { verified: true, passed: true, rejected: 0 }
-      @last_citation_guard_result = previous.merge(indexed_amounts_replaced: result.replaced,
-                                                   indexed_amounts_confirmed: result.confirmed,
-                                                   indexed_amounts_withheld: result.withheld,
-                                                   indexed_amounts_quoted: result.quoted,
-                                                   indexed_amounts_version: IndexedAmounts::VERSION)
-      result.text
+      record = {}
+      if result.text != text
+        record.merge!(indexed_amounts_replaced: result.replaced, indexed_amounts_confirmed: result.confirmed,
+                      indexed_amounts_withheld: result.withheld, indexed_amounts_quoted: result.quoted,
+                      indexed_amounts_version: IndexedAmounts::VERSION)
+      end
+      record[:unemployment_applicability_version] = UnemploymentAmountApplicability::VERSION if applied != result.text
+      @last_citation_guard_result = previous.merge(record)
+      applied
     end
 
     # Sol 2026-11-25 12:35:40Z: a drug offence question about facts before 1 September 2026 learns that our Drugswet is

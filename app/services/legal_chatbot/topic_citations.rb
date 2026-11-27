@@ -519,9 +519,12 @@ module LegalChatbot
       # appended and the figure note had nothing to compare (incident t1,
       # q0015 t1). The line is the one statement the figure note reads.
       force = true if rule[:answer] && rule[:probe] && rule[:probe] != :current_ggmmi
-      note = localized_citation_note(rule[:topic])
-      note = "#{note} #{localized_promille_equivalence}" if rule[:promille_note] && force
-      note = "#{note} #{localized_high_confidence_topic_answer(rule[:topic])}" if rule[:answer]
+      # Sol 2026-11-26 22:34:20Z (#2534, live 1.1.113): the lead-in ends in "zie" (voyez, siehe, see), so a statement
+      # after it read "zie De algemene proeftijd ...". The statements come first; the lead-in stands right before its link.
+      statements = []
+      statements << localized_promille_equivalence if rule[:promille_note] && force
+      statements << localized_high_confidence_topic_answer(rule[:topic]) if rule[:answer]
+      note = [*statements, localized_citation_note(rule[:topic])].join(' ')
       append_retrieved_source_citation(text, source, label: rule[:label], note: note, force: force)
     end
 
