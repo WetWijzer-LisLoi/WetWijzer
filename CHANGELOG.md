@@ -8,6 +8,20 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.117] - 2026-11-27
+
+### Changed
+
+- The research-depth control shows, for each model and reasoning mode, the average waiting time measured on recent answers (at least ten successful answers in the last 30 days), or that it is not yet known, instead of a fixed time range per depth.
+
+### Fixed
+
+- An answer on unemployment benefit after an occupational accident or disease now opens with the entitlement rule of article 61, § 2 of the unemployment decree, before any amount, and that rule is its only account of who is entitled: the answer's own sentences on that point are left out, while its amounts, quotations and citations stay. It says "temporarily fully or partly unfit for work" as the decree does, and it applies only when the question asks for the unemployment benefit itself, not for an ordinary illness or a survivor's annuity.
+- The percentages of the first unemployment period (65 % and 60 %) now come with the note on who these amounts apply to.
+- The chatbot addresses the reader formally ("u" in Dutch, "Sie" in German, "vous" in French), and an answer on dismissal in the first months of employment opens with whether the employer may dismiss.
+- A quotation of the unemployment decree keeps its own amounts also inside a list; the indexed amounts are given in the note below it.
+- On the support page, the button to the models and Pro terms is readable in every colour theme.
+
 ## [1.1.116] - 2026-11-27
 
 ### Fixed

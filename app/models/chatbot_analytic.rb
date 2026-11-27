@@ -24,6 +24,32 @@ class ChatbotAnalytic < AnalyticsRecord
   scope :web_queries, -> { where(request_source: [nil, 'web']) }
   scope :partner_queries, -> { where(request_source: 'partner') }
 
+  # Time to a completed answer, in seconds. Keep retries in the mean: the reader
+  # waits for them too. A fixed-model selection has no effective effort in its
+  # recorded trace; older rows with no trace cannot identify that selection.
+  def self.average_wait_seconds_by_selection
+    Rails.cache.fetch('chatbot/average_wait_seconds_by_selection/v1', expires_in: 15.minutes, race_condition_ttl: 15.seconds) do
+      models = LegalChatbot::ModelsConfig::AVAILABLE_MODELS
+      # Signed service calls also carry the 'web' label, but only browser asks
+      # reserve credits or receive a rating control. A rating is never required.
+      completed = web_queries.where(model_used: models.keys, has_error: false, created_at: 30.days.ago..Time.current)
+                             .where('billing_reservation_token IS NOT NULL OR rating_ui_version IS NOT NULL')
+                             .where('citation_guard_outcome IS NULL OR citation_guard_outcome <> ?', 'refusal')
+                             .where('response_time > 0 AND (reasoning_effort_used IS NOT NULL OR generation_trace_version IS NOT NULL)')
+      averages = completed.group(:model_used, :reasoning_effort_used).having('COUNT(*) >= ?', 10).average(:response_time)
+
+      averages.each_with_object({}) do |((model, effort), seconds), selections|
+        levels = LegalChatbotService.reasoning_levels_for_model(model)
+        next unless levels.empty? ? effort.nil? : levels.include?(effort)
+
+        (selections[model] ||= {})[effort || 'fixed'] = [seconds.round, 1].max
+      end
+    end
+  rescue ActiveRecord::ActiveRecordError => e
+    Rails.logger.warn("[ChatbotAnalytic] Wait times unavailable: #{e.class}")
+    {}
+  end
+
   # --- 10-star ratings (RAT-002) --------------------------------------------
   #
   # rating_ui_version is stamped ONLY when a rating token was successfully

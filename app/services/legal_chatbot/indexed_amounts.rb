@@ -161,7 +161,11 @@ module LegalChatbot
                     mensuel\p{L}*|pro[[:space:]]+monat|monatlich\p{L}*|per[[:space:]]+month|a[[:space:]]+month|monthly)(?![[:alpha:]])/ix
     AMOUNT = /(?<pre>(?<![[:alpha:]])(?:€|EUR|euros?)[[:space:]]?)?(?<![\d.,])(?<int>\d{1,3})(?<sep>[.,])(?<dec>\d{2})(?!\d|[.,]\d)
               (?![[:space:]]?(?:%|procent|pour[-[:space:]]?cent|percent|prozent))(?<post>[[:space:]]?(?:€|EUR|euros?)(?![[:alpha:]]))?/ix
-    BLOCKQUOTE = /\A[[:space:]]*>/
+    # Sol 2026-11-27 14:58:54Z (review of e6da9432d): "- > " and "1. > " quotations of art. 115 were rewritten from 34,94
+    # to 63,29 euro after the quote guard had verified them, because only a bare ">" counted here; the quote guard also
+    # reads a blockquote in a list item. Every blockquote form, at any indentation and after list markers, is a
+    # quotation: its figures go in the note only.
+    BLOCKQUOTE = /\A[[:space:]]*(?:(?:[-*+]|\d{1,9}[.)])[[:space:]]+)*>/
     QUOTED = /„[^“”"\n]*[“”"]|“[^”\n]*”|«[^»\n]*»|‘[^’\n]*’|‹[^›\n]*›|"[^"\n]*"/
     # Never rewritten: Markdown links (label and target), URLs, inline code, article references
     PROTECTED = %r{\[[^\]\n]*\]\([^)\n]*\)|https?://[^\s)\]]+|`[^`\n]*`|

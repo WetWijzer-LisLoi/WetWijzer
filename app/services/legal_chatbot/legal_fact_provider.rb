@@ -1354,11 +1354,15 @@ module LegalChatbot
         # commencement (1 August 2026) or later, and art. 37/2 does not say so. The note therefore names no notice
         # duration, and art. 37/2 is not in this pack: a notice question gets the opzegtermijn pack, which tells the
         # contracts apart.
+        # Sol 2026-11-27 13:27:18Z (#2534 on live 1.1.116): "Je kunt dus niet worden ontslagen tijdens een proeftijd in die
+        # gewone arbeidsovereenkomst." "Please keep the public chatbot in the formal register ("u"), and lead with whether
+        # the employer may dismiss someone in those first months." The register is a rule of the system prompt.
         rule_note: <<~NOTE.strip
           PROEFTIJD: een gewone arbeidsovereenkomst heeft sinds 1 januari 2014 geen proeftijd meer (art. 48, 67 en 81
           opgeheven bij de wet van 26 december 2013). Een werknemer kan ook in de eerste maanden worden ontslagen, maar
           volgens de gewone regels: met een opzeggingstermijn (art. 37/2) of met een opzeggingsvergoeding (art. 39),
-          behalve bij een dringende reden.
+          behalve bij een dringende reden. Begin een antwoord op een vraag over ontslag in de eerste maanden met dat
+          antwoord: de werkgever mag ontslaan, volgens die gewone regels.
           Alleen bij een overeenkomst voor de tewerkstelling van studenten (art. 127) en bij uitzendarbeid (art. 5 van de
           wet van 24 juli 1987, behoudens strijdige overeenkomst) gelden de eerste drie arbeidsdagen als proeftijd: tot het
           einde daarvan kan elk van de partijen de overeenkomst beëindigen zonder opzegging of vergoeding.
@@ -1966,7 +1970,9 @@ module LegalChatbot
     # r54 (1.1.112): the unemployment rule note says which claims the amounts are for.
     # r55 (1.1.115): the unemployment rule note gives art. 61, § 2 first for a question
     # on unemployment after an accident or an occupational disease (Sol 2026-11-27 06:39:23Z).
-    FACT_CACHE_VERSION = 'r55'
+    # r56 (1.1.117): the trial-period rule note asks to lead with whether the employer may
+    # dismiss in the first months (Sol 2026-11-27 13:27:18Z).
+    FACT_CACHE_VERSION = 'r56'
 
     # FisconetPlus DB path (same as FisconetSearch)
     FISCONET_DB = ENV.fetch('FISCONET_DB', '/mnt/HC_Volume_104299669/embeddings/fisconet.sqlite3')

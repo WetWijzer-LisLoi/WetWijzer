@@ -284,7 +284,7 @@ export const researchDepthMethods = {
         .replace('%{model}', option?.dataset.modelName || option?.value || '')
         .replace('%{reasoning}', option?.dataset.reasoningLabel || '')
         .replace('%{credits}', String(total ?? 0))
-        .replace('%{time}', active?.dataset.depthTime || '')
+        .replace('%{time}', option?.dataset.averageWaitLabel || '')
         + (option?.dataset.reasoningOption && !this._combinationOnResearchBar(option)
           && control.dataset.manualSelectionMessage ? ' · ' + control.dataset.manualSelectionMessage : '')
       const capability = control.querySelector('[data-research-depth-capability]')

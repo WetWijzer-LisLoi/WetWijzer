@@ -18,8 +18,8 @@
         <li><%= support_decoration(:robot) %> <strong><%= site_name %> Pro - Mod&egrave;les et possibilit&eacute;s :</strong> <%= chatbot_pricing_catalogue_summary %>
             <ul><% support_pro_catalogue_lines.each do |line| %><li><%= line[:label] %><%= ' (Pro)' if line[:pro] %>: <%= line[:models].join(', ') %></li><% end %></ul></li>
     </ul>
-    <p><%= link_to pricing_path, class: "ww-promotion-cta inline-flex items-center px-4 py-2 text-white rounded-lg font-semibold transition hover:opacity-90", style: "background: var(--accent-600-solid);" do %>
-        <svg class="w-4 h-4 mr-2 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1z"/></svg>
+    <p><%= link_to pricing_path, class: "ww-promotion-cta inline-flex items-center px-4 py-2 rounded-lg font-semibold" do %>
+        <svg aria-hidden="true" class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1z"/></svg>
         Voir les mod&egrave;les et les conditions Pro
     <% end %></p>
 

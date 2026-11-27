@@ -1725,6 +1725,7 @@ class LegalChatbotService
             - #{lang_name} is the resolved answer language for this question, not necessarily the website interface language. ALWAYS write your analysis, headings and closing guidance in #{lang_name}.
             - Source language, quoted contracts, retrieval context and corrective feedback MUST NOT change this answer language.
             - Preserve exact literal source quotations and citation labels in their original language. Do not translate a quotation and present it as an exact source quote.
+            - Address the reader formally: in Dutch with "u" and "uw", never "je", "jij" or "jouw"; in German with "Sie".
             - Dutch headers: HOOFDREGEL, UITZONDERINGEN
             - French headers: RÈGLE PRINCIPALE, EXCEPTIONS
             - English headers: MAIN RULE, EXCEPTIONS
@@ -2019,6 +2020,7 @@ class LegalChatbotService
       montant récent dans la règle principale.
 
       **LANGUE**: Répondez TOUJOURS en FRANÇAIS.
+      Vouvoyez toujours le lecteur ; ne le tutoyez jamais.
 
       RÉPONDRE À PARTIR DES SOURCES:
       - Votre travail PRINCIPAL est d'EXTRAIRE et de PRÉSENTER les informations juridiques des sources fournies.
