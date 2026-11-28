@@ -331,6 +331,7 @@ app/services/fisconet_search_service.rb
 app/services/history_inline_comparison.rb
 app/services/invoice_service.rb
 app/services/jurisprudence_search_service.rb
+app/services/law_common_names.rb
 app/services/law_search_constants.rb
 app/services/law_search_service.rb
 app/services/law_toc_entries.rb
@@ -646,6 +647,7 @@ app/views/shared/_about_card.html.erb
 app/views/shared/_clipboard_messages.html.erb
 app/views/shared/_no_content.html.erb
 app/views/shared/_password_toggle.html.erb
+app/views/shared/_praxis_teaser.html.erb
 app/views/shared/_reading_styles.html.erb
 app/views/shared/_reading_width_control.html.erb
 app/views/shared/_site_tour.html.erb

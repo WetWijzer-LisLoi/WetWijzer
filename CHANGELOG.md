@@ -8,6 +8,20 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.121] - 2026-11-28
+
+### Added
+
+- The homepage and /laws show a compact Praxis link directly below the public legislation search controls and filters, and /search shows it below its search form; the classic sites keep their own layout. The chatbot page keeps its Praxis link, now from the same shared partial.
+
+### Changed
+
+- The research-depth control shows the waiting time as an approximation in all four languages, for example "Wachttijd: ongeveer 12 s", without the number of answers or the period. A selection with one to nine measured answers adds a short qualifier ("Voorlopige schatting"); a selection with no measurement still says so.
+
+### Fixed
+
+- Public legislation search finds the 2007 surveillance-camera law (NUMAC 2007000528) by its catalogue name, such as "camerawet", "loi caméras", "camera act" or "kameragesetz". For the exact name the main law search returns that law, as it already did for the drug law's catalogue names; /search and the search suggestions list it first, above the other title matches. Each keeps its language and filters.
+
 ## [1.1.120] - 2026-11-28
 
 ### Changed

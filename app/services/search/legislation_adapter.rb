@@ -26,10 +26,15 @@ module Search
           if tokens.any?
             fts_terms = tokens.map { |t| %("#{t}") }
             fts_terms[-1] += '*' unless query.end_with?(' ')
-            scope = scope.where(
-              'rowid IN (SELECT rowid FROM legislation_fts WHERE legislation_fts MATCH ?)',
-              fts_terms.join(' ')
-            )
+            rowids = 'SELECT rowid FROM legislation_fts WHERE legislation_fts MATCH ?'
+            binds = [fts_terms.join(' ')]
+            common_numacs = LawCommonNames.numacs_for(query)
+            if common_numacs.any?
+              rowids += ' UNION ALL SELECT rowid FROM legislation WHERE numac IN (?)'
+              binds << common_numacs
+              scope = scope.in_order_of(:numac, common_numacs, filter: false)
+            end
+            scope = scope.where("rowid IN (#{rowids})", *binds)
           end
         end
       end

@@ -37,14 +37,13 @@
     base_credits = LegalChatbotService.credits_for_model(level_id, model_id)
     total_credits = base_credits + LegalChatbotService.reasoning_surcharge_for_model(model_id, reasoning_option)
     observation = wait_observations.dig(model_id, reasoning_option)
-    detail_key = case observation&.dig(:count)
-                 when nil, 0 then nil
-                 when 1 then 'single_wait'
-                 when 2...ChatbotAnalytic::WAIT_SAMPLE_TARGET then 'preliminary_wait'
-                 else 'average_wait'
-                 end
-    wait_label = detail_key ? t('chatbot.research_depth.wait_value', seconds: observation.fetch(:seconds)) : t('chatbot.research_depth.wait_unknown')
-    wait_detail = detail_key && t("chatbot.research_depth.#{detail_key}", **observation)
+    sample_size = observation&.fetch(:count).to_i
+    wait_label = if sample_size.positive?
+      t('chatbot.research_depth.wait_value', seconds: observation.fetch(:seconds))
+    else
+      t('chatbot.research_depth.wait_unknown')
+    end
+    wait_detail = t('chatbot.research_depth.preliminary_wait') if sample_size.between?(1, ChatbotAnalytic::WAIT_SAMPLE_TARGET - 1)
     depth = LegalChatbotService.research_depth_for_combination(model_id, reasoning_option)
     reasoning_label = reasoning_option == 'fixed' ? t('chatbot.research_depth.fixed_reasoning_label') : t("chatbot.research_depth.variant_reasoning_#{reasoning_option}")
     option_label = t('chatbot.research_depth.variant_label', profile: t("chatbot.research_depth.options.#{depth}.label"), model: model_config[:name], reasoning: reasoning_label, credits: total_credits)

@@ -74,8 +74,13 @@ class UnifiedSearchController < ApplicationController
     sanitized = ActiveRecord::Base.sanitize_sql_like(query)
     like_query = "%#{sanitized}%"
 
-    scope = served_legislation.where(language_id: legislation_language_ids)
-                              .where('title LIKE ? OR numac LIKE ?', like_query, like_query)
+    available = served_legislation.where(language_id: legislation_language_ids)
+    scope = available.where('title LIKE ? OR numac LIKE ?', like_query, like_query)
+    common_numacs = LawCommonNames.numacs_for(query)
+    if common_numacs.any?
+      scope = scope.or(available.where(numac: common_numacs))
+      scope = scope.in_order_of(:numac, common_numacs, filter: false)
+    end
     total = scope.count
     return { items: [], total: total } if offset >= total
 
