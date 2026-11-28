@@ -85,6 +85,13 @@ module LegalChatbot
       prompt = "#{prompt}\n\n#{commercial_task}" if commercial_task
       parallel_employment_task = parallel_employment_task(question)
       prompt = "#{prompt}\n\n#{parallel_employment_task}" if parallel_employment_task
+      if question.to_s.match?(LegislationSearch::COUNSEL_AID_PATTERN) && !ForeignLegalSystemScope.foreign_legal_system?(question)
+        prompt = "#{prompt}\n\nFor Belgian pro deo counsel, use the supplied Judicial Code provisions to explain " \
+                 'what second-line legal aid covers, who may receive full or partial aid, and where to apply. ' \
+                 'Distinguish assistance by a lawyer from relief for court costs if the question uses both terms. ' \
+                 'Do not describe a private insurance policy as public legal aid or assume personal eligibility. ' \
+                 'Give an income threshold only if the supplied source establishes the indexed amount applicable on the relevant date.'
+      end
       erasure_task = gdpr_erasure_task(question)
       prompt = "#{prompt}\n\n#{erasure_task}" if erasure_task
       practical_task = practical_source_task(question)

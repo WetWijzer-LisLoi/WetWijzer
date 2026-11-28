@@ -8,6 +8,20 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.118] - 2026-11-28
+
+### Fixed
+
+- A general question on pro deo legal aid (such as "Wat is pro deo rechtsbijstand?" or "Juridische bijstand pro deo?", in the four languages) now gets the Judicial Code's own provisions as its sources: second-line legal aid (article 508/1), when it is wholly or partly free (article 508/13) and the legal aid bureau at each bar (article 508/7), plus legal aid for procedural costs (article 664) when the question also speaks of it. If the generated answer does not explain articles 508/1 and 508/13, the chatbot gives a short explanation built on those articles instead, each paragraph only where the article's own text is among the sources.
+- A follow-up suggestion no longer repeats the question just asked.
+- The note on who the unemployment amounts apply to now gives the three conditions of article 212, § 4 of the programme law for a new start after an interruption: an interruption within the meaning of article 138, first paragraph, 3° of the unemployment decree, an application as fully unemployed for all days of the week, and the admission conditions of article 30 or 33.
+- In an answer on unemployment benefit after an occupational accident or disease, a sentence on the compensation that only continues a left-out sentence about the exception, without a citation or an official amount of its own, is left out with it; a percentage is no support, and a quotation that a retrieved article holds word for word stays, on either side of a left-out sentence. A sentence saying that the accident compensation stays whole (paid on, in full, without suspension or reduction) is left out wherever it stands, whatever link it carries: art. 61, § 2 allows that work only subject to suspension or temporary reduction of the right to compensation.
+- A list of amounts keeps a proper heading when its introduction claimed a manual check of the amounts; the rest of that introduction and an independent heading stay.
+
+### Changed
+
+- The chatbot benchmark fails an answer without a substantive reply, even when it cites valid law links, and checks a pro deo question against articles 508/1 and 508/13.
+
 ## [1.1.117] - 2026-11-27
 
 ### Changed

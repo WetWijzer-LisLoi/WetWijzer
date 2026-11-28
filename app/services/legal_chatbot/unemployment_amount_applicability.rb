@@ -18,8 +18,9 @@ module LegalChatbot
   #   paragraph).
   # - Art. 212, § 2: the worker who had reached the age of 55 on 30 June 2025 with a sufficient career keeps the right
   #   without the time limit of art. 114, § 1 and has the daily amounts that paragraph sets.
-  # - Art. 212, § 4: §§ 1 to 3 no longer apply when the worker, after an interruption, claims as fully unemployed from
-  #   1 March 2026 and meets the admission conditions of art. 30 or 33 as applicable from that day.
+  # - Art. 212, § 4: §§ 1 to 3 no longer apply when the worker, after an interruption within the meaning of art. 138,
+  #   first paragraph, 3° of the decree, claims from 1 March 2026 as fully unemployed for all days of the week and meets
+  #   the admission conditions of art. 30 or 33 as applicable from that day.
   # - Art. 115: § 1 sets the minima of full unemployment, § 4 those of temporary unemployment, whatever the household.
   #
   # The paragraph goes right before the first table, list or paragraph of the final answer that holds a minimum of
@@ -33,14 +34,21 @@ module LegalChatbot
   # three of the first period, 60 % in months four to six and 60 % in months seven to twelve; § 6 pays the temporarily
   # unemployed 65 % (force majeure) or 60 %. A line with a percentage of § 3 gets the paragraph too, which now names
   # arts. 114 and 115 for the amounts and percentages.
+  # Version 3 (Sol 2026-11-27 20:47:47Z, live 1.1.117): the re-entry line said only "na een onderbreking ... een aanvraag
+  # als volledig werkloze". "The law expressly requires an interruption under art. 138, first paragraph, 3°, a
+  # full-unemployment application for all days of the week and meeting art. 30 or 33. Please qualify this shared sentence
+  # and test it ahead of the figures." Art. 212 of the programme law read in full again in NL and FR on 2026-11-27: § 4
+  # says exactly that, art. 30 or 33 "zoals van toepassing vanaf 1 maart 2026".
   module UnemploymentAmountApplicability
-    VERSION = 2
+    VERSION = 3
     TRANSITION_HREF = '/laws/2025005578#art-212'
     TEXT = {
       'nl' => '**Voor wie gelden deze bedragen?** De bedragen en percentages voor volledige werkloosheid in dit overzicht ' \
               'volgen art. 114 en 115 zoals van toepassing sinds 1 maart 2026. Ze gelden voor wie vanaf 1 maart 2026 tot het recht op ' \
-              'uitkeringen wordt toegelaten, ook voor wie na een onderbreking vanaf die datum een aanvraag als volledig ' \
-              'werkloze indient en aan de nieuwe toelatingsvoorwaarden voldoet ([art. 212, § 4 van de programmawet van ' \
+              'uitkeringen wordt toegelaten, ook voor wie na een onderbreking in de zin van art. 138, eerste lid, 3° van het ' \
+              'koninklijk besluit van 25 november 1991 vanaf die datum een uitkeringsaanvraag als volledig werkloze voor ' \
+              'alle dagen van de week indient en de toelaatbaarheidsvoorwaarden van art. 30 of 33 van dat besluit, zoals van ' \
+              'toepassing vanaf 1 maart 2026, vervult ([art. 212, § 4 van de programmawet van ' \
               "18 juli 2025](#{TRANSITION_HREF})). Wie vóór 1 maart 2026 werd toegelaten, krijgt tijdens de " \
               'overgangsperiode het bedrag volgens art. 114, 116 en 118 zoals van toepassing tot 28 februari 2026 ' \
               '(art. 212, § 1); wie op 30 juni 2025 minstens 55 jaar was met voldoende beroepsverleden, krijgt de ' \
@@ -48,8 +56,10 @@ module LegalChatbot
               'de gezinssituatie.',
       'fr' => "**À qui s'appliquent ces montants ?** Les montants et pourcentages du chômage complet de cet aperçu suivent les " \
               "articles 114 et 115 tels qu'ils s'appliquent depuis le 1er mars 2026. Ils valent pour le travailleur admis au droit aux " \
-              'allocations à partir du 1er mars 2026, y compris celui qui, après une interruption, introduit à partir de ' \
-              "cette date une demande comme chômeur complet et remplit les nouvelles conditions d'admissibilité " \
+              "allocations à partir du 1er mars 2026, y compris celui qui, après une interruption visée à l'article 138, " \
+              "alinéa 1er, 3°, de l'arrêté royal du 25 novembre 1991, introduit à partir de cette date une demande " \
+              "d'allocations comme chômeur complet pour tous les jours de la semaine et remplit les conditions " \
+              "d'admissibilité des articles 30 ou 33 de cet arrêté, tels qu'ils s'appliquent à partir du 1er mars 2026 " \
               "([art. 212, § 4, de la loi-programme du 18 juillet 2025](#{TRANSITION_HREF})). Pour le travailleur admis " \
               'avant le 1er mars 2026, le montant reste fixé pendant la période transitoire selon les articles 114, 116 ' \
               "et 118 tels qu'ils s'appliquaient jusqu'au 28 février 2026 (art. 212, § 1er) ; le travailleur qui avait " \
@@ -58,8 +68,10 @@ module LegalChatbot
               'familiale.',
       'de' => '**Für wen gelten diese Beträge?** Die Beträge und Prozentsätze der Vollarbeitslosigkeit in dieser Übersicht ' \
               'folgen Art. 114 und 115 in der seit dem 1. März 2026 geltenden Fassung. Sie gelten für Arbeitnehmer, die ab dem 1. März 2026 ' \
-              'zum Anspruch auf Leistungen zugelassen werden, auch für Arbeitnehmer, die nach einer Unterbrechung ab ' \
-              'diesem Tag einen Antrag als Vollarbeitsloser stellen und die neuen Zulassungsbedingungen erfüllen ' \
+              'zum Anspruch auf Leistungen zugelassen werden, auch für Arbeitnehmer, die nach einer Unterbrechung im Sinne ' \
+              'von Art. 138 Abs. 1 Nr. 3 des Königlichen Erlasses vom 25. November 1991 ab diesem Tag einen Leistungsantrag ' \
+              'als Vollarbeitsloser für alle Tage der Woche stellen und die Zulassungsbedingungen von Art. 30 oder 33 dieses ' \
+              'Erlasses in der ab dem 1. März 2026 geltenden Fassung erfüllen ' \
               "([Art. 212 § 4 des Programmgesetzes vom 18. Juli 2025](#{TRANSITION_HREF})). Für Arbeitnehmer, die vor " \
               'dem 1. März 2026 zugelassen wurden, wird der Betrag während der Übergangszeit weiter nach den Art. 114, ' \
               '116 und 118 in der bis zum 28. Februar 2026 geltenden Fassung bestimmt (Art. 212 § 1); wer am 30. Juni ' \
@@ -68,8 +80,10 @@ module LegalChatbot
               'Art. 115 § 4, unabhängig von der Familiensituation.',
       'en' => '**Who do these amounts apply to?** The full-unemployment amounts and percentages in this overview follow arts. ' \
               '114 and 115 as they apply since 1 March 2026. They apply to a worker admitted to benefits from 1 March 2026, including ' \
-              'one who, after an interruption, claims as fully unemployed from that day and meets the new admission ' \
-              "conditions ([art. 212, § 4 of the programme law of 18 July 2025](#{TRANSITION_HREF})). For a worker " \
+              'one who, after an interruption within the meaning of art. 138, first paragraph, 3° of the royal decree of ' \
+              '25 November 1991, claims benefits as fully unemployed for all days of the week from that day and meets the ' \
+              'admission conditions of art. 30 or 33 of that decree as they apply from 1 March 2026 ' \
+              "([art. 212, § 4 of the programme law of 18 July 2025](#{TRANSITION_HREF})). For a worker " \
               'admitted before 1 March 2026, the amount stays set during the transition by arts. 114, 116 and 118 as ' \
               'they applied until 28 February 2026 (art. 212, § 1); a worker who was aged 55 or older on 30 June 2025 ' \
               'with a sufficient career gets the daily amounts of art. 212, § 2. Temporary unemployment has its own ' \

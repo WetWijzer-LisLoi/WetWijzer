@@ -244,7 +244,8 @@ module LegalChatbot
 
       topic = LanguageDetection.follow_up_suggestion_topic(question_lower, suggestions_map, language: lang_key)
       suggestions = suggestions_map.fetch(topic)
-      suggestions[lang_key] || suggestions[:nl]
+      asked = question_lower.squish.delete_suffix('?').rstrip
+      (suggestions[lang_key] || suggestions[:nl]).reject { |suggestion| suggestion.downcase.squish.delete_suffix('?').rstrip == asked }
     end
   end
 end

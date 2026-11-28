@@ -408,6 +408,13 @@ module LegalChatbot
         leg_articles = focused
         tax_articles = []
         regional_docs = []
+      elsif sources.include?(:legislation) && @selected_law_numac.blank? && (aid_sources = ProDeoAnswer.focus(question, leg_articles))
+        # The general second-line aid definition belongs to the Judicial Code. Specialised court fee rules
+        # (e.g. the Unified Patent Court agreement) supplied neither the definition nor the means test.
+        leg_articles = aid_sources
+        tax_articles = []
+        regional_docs = []
+        eu_docs = eu_docs.select { |row| row[:source_kind] == 'jurisprudence' }
       end
       t_filter = ((Time.current - phase_start) * 1000).round
       phase_start = Time.current
@@ -597,6 +604,7 @@ module LegalChatbot
       # first costs one indexed lookup and no provider call, and cannot rescue
       # a false quote: the words must still occur verbatim in the fetched text.
       quote_repairs = scope_repair_sources_for_question(repair_quote_sources(answer, leg_articles), question)
+      quote_repairs = ProDeoAnswer.focus(question, quote_repairs) if aid_sources
       if quote_repairs.any?
         leg_articles += quote_repairs
         # A repair can introduce the primary copy of a provision that was not
@@ -664,6 +672,10 @@ module LegalChatbot
         repaired_tax = repair_cited_tax_articles(@last_citation_guard_result, tax_articles, text: answer,
                                                                                             leg_articles: leg_articles).select do |article|
           LegalChatbot::FisconetSearch.contextual_source_relevant?(article, question)
+        end
+        if aid_sources
+          repaired = ProDeoAnswer.focus(question, repaired)
+          repaired_tax = []
         end
         if (repaired.any? || repaired_tax.any?) && enough_request_time?
           leg_articles += repaired
@@ -754,7 +766,10 @@ module LegalChatbot
         end
       end
 
-      unless citation_guard_passed?
+      legal_aid_fallback = if aid_sources && (!citation_guard_passed? || ProDeoAnswer.needs_recovery?(clean_answer))
+                             ProDeoAnswer.fallback(question, leg_articles, language: @resolved_answer_language || @language)
+                           end
+      if !citation_guard_passed? || legal_aid_fallback
         # Preserve WHY the analysis was rejected before the fallback overwrites
         # it. The source-list fallback contains only verified links, so it
         # passes the guard, and re-validating it replaced the rejecting result
@@ -763,7 +778,7 @@ module LegalChatbot
         # the offending references, the exact data needed to decide whether a
         # rejection was retryable (unsupported prose refs) or structural (a
         # required regime that retrieval never returned).
-        @citation_guard_rejection = @last_citation_guard_result
+        @citation_guard_rejection = @last_citation_guard_result unless citation_guard_passed?
         # A SALVAGE PASS WAS TRIED AND SHELVED, 2026-08-04. Delivering the
         # rejected analysis with unverifiable references neutralized looks
         # obviously right - it was the largest withheld-POOR cluster (31 of
@@ -799,7 +814,7 @@ module LegalChatbot
                              FormationBvCapitalGrounding.fallback(question, statutory_sources, language: @language)
                            end
         classification_fallback = [classification_fallback, capital_fallback].compact_blank.join("\n\n").presence
-        grounded_fallback = house_fallback.presence || commute_fallback.presence ||
+        grounded_fallback = legal_aid_fallback || house_fallback.presence || commute_fallback.presence ||
                             childcare_fallback.presence || minor_fallback.presence || payment_fallback.presence ||
                             bv_checklist.presence || classification_fallback.presence || formation_fallback.presence
         verified_fallback = grounded_fallback || high_confidence_topic_fallback_answer(question, statutory_sources)

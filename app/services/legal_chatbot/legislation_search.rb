@@ -2594,11 +2594,36 @@ module LegalChatbot
     # Woninghuurdecreet art. 42; Wallonia, decree of 15 March 2018 art. 46; Brussels, Housing Code art. 232, which departs
     # from old Civil Code art. 1742 (a lease does not end at the death of either party).
     TENANT_DEATH_PATTERN = /\A(?!(?=.*(?:#{LANDLORD_DIED.source}))(?!.*(?:#{TENANT_DIED.source})))(?=.*#{LEASE_WORD.source})(?=.*(?<![[:alpha:]])(?:overl(?:ij|e)\p{L}*|sterf\p{L}*|stierf|gestorven|d[ée]c[èe]s|d[ée]c[ée]d\p{L}*|verstorben\p{L}*|deceased|passed\s+away|(?:dood|meurt|mort|tod|stirbt|gestorben|dies|died|death)(?![[:alpha:]])))/imu
-    # #2746 (Sol 2026-11-22 13:20:48Z): "Wanneer heb ik rechtsbijstand nodig?", a sample of the insurance category, got
-    # six cards on legal aid before specialised courts. Legal-expenses insurance in the Insurance Act of 4 April 2014:
-    # art. 154 (its scope), 156 (the free choice of a lawyer, also in a conflict of interests) and 157 (a disagreement
-    # with the insurer). A bare "rechtsbijstand" counts unless the question speaks of state legal aid.
-    LEGAL_EXPENSES_INSURANCE_PATTERN = /(?<![[:alpha:]])(?:rechtsbijstands?verzekering\p{L}*|verzekering\p{L}*\s+(?:voor\s+)?rechtsbijstand|assurances?\s+(?:de\s+)?protection\s+juridique|protection\s+juridique|rechtsschutz\p{L}*|legal\s+(?:expenses|protection)\s+(?:insurance|cover)\p{L}*)(?![[:alpha:]])|\A(?!.*(?<![[:alpha:]])(?:juridische|tweedelijns\p{L}*|eerstelijns\p{L}*|pro\s+deo|kosteloze?|gratis|bureau\p{L}*|bjb|verhoor\p{L}*|politieverhoor\p{L}*|ondervraging\p{L}*|audition\p{L}*|interrogatoire\p{L}*|vernehmung\p{L}*|interrogation\p{L}*|salduz|politie\p{L}*|police\p{L}*|polizei\p{L}*|aanhouding\p{L}*|arrestatie\p{L}*|garde\s+[àa]\s+vue|verdachte\p{L}*|suspect\p{L}*)(?![[:alpha:]]))(?=.*(?<![[:alpha:]])rechtsbijstand(?![[:alpha:]]))/imu
+    PRO_DEO = /pro[\s-]+deo/i
+    AID_OR_LAWYER = /rechtsbijstand|juridische\s+bijstand|advoca(?:at|ten)|(?:aide|assistance)\s+(?:juridique|judiciaire)|
+                     avocats?|legal\s+(?:aid|assistance)|lawyers?|rechtsbeistand|anw[äa]lt\p{L}*/ixu
+    COUNSEL_AID_PATTERN = /(?<![[:alpha:]])(?:
+      #{PRO_DEO}[\s-]*(?:#{AID_OR_LAWYER})|(?:#{AID_OR_LAWYER})[\s(-]+#{PRO_DEO}|
+      (?:recht\s+op|wat\s+is)\s+#{PRO_DEO}(?=\s*[?.!]?\s*\z)|\A#{PRO_DEO}(?=\s*[?.!]?\s*\z)|
+      tweedelijns(?:rechts)?bijstand|bureau\s+voor\s+juridische\s+bijstand|
+      (?:aide|assistance)\s+juridique\s+de\s+(?:deuxi[èe]me|seconde)\s+ligne|bureau\s+d['’]aide\s+juridique|
+      (?:second[-\s]line|secondary)\s+legal\s+(?:aid|assistance)|legal\s+(?:aid|assistance)\s+pro\s+bono|
+      (?:juristisch\p{L}*\s+)?(?:beistand|rechtshilfe)\s+der\s+zweiten\s+linie|zweitlinienbeistand
+    )(?![[:alpha:]])/ixu
+    # In the Dutch follow-up the colloquial label for a lawyer sits next to the statutory term for court-cost relief.
+    # Supply both texts there. The German default suggestion explicitly asks about procedural costs.
+    COURT_COST_AID_PATTERN = /(?<![[:alpha:]])(?:
+      #{PRO_DEO}[\s-]+rechtsbijstand|rechtsbijstand[\s-]+#{PRO_DEO}|bureau\s+voor\s+rechtsbijstand|
+      (?:rechtsbijstand|vrijstelling)\s+(?:(?:voor|van|de)\s+){0,3}(?:gerechts|proces)kosten|
+      assistance\s+judiciaire|prozesskostenhilfe|(?:waiver|help|assistance|aid)\s+(?:(?:of|with|for|the)\s+){0,3}court\s+(?:fees|costs)
+    )(?![[:alpha:]])/ixu
+    # #2746: bare "rechtsbijstand" in the insurance catalogue question keeps the Insurance Act (scope, free choice
+    # of lawyer and disagreement with the insurer) unless the question identifies a different kind of assistance.
+    LEGAL_EXPENSES_INSURANCE_PATTERN = /(?<![[:alpha:]])(?:
+      rechtsbijstands?verzekering\p{L}*|verzekering\p{L}*\s+(?:voor\s+)?rechtsbijstand|
+      assurances?\s+(?:de\s+)?protection\s+juridique|protection\s+juridique|rechtsschutz\p{L}*|
+      legal\s+(?:expenses|protection)\s+(?:insurance|cover)\p{L}*
+    )(?![[:alpha:]])|
+      \A(?!.*#{COUNSEL_AID_PATTERN}|.*#{COURT_COST_AID_PATTERN})(?!.*(?<![[:alpha:]])(?:
+        juridische|tweedelijns\p{L}*|eerstelijns\p{L}*|#{PRO_DEO}|kosteloze?|gratis|bureau\p{L}*|bjb|verhoor\p{L}*|politieverhoor\p{L}*|
+        ondervraging\p{L}*|audition\p{L}*|interrogatoire\p{L}*|vernehmung\p{L}*|interrogation\p{L}*|salduz|politie\p{L}*|
+        police\p{L}*|polizei\p{L}*|aanhouding\p{L}*|arrestatie\p{L}*|garde\s+[àa]\s+vue|verdachte\p{L}*|suspect\p{L}*
+      )(?![[:alpha:]]))(?=.*(?<![[:alpha:]])rechtsbijstand(?![[:alpha:]]))/imux
     # #72 (Sol 2026-11-22, the twenty catalogue questions): "Wat is een collectieve arbeidsovereenkomst en wanneer geldt
     # die?" got sector agreements, not whom a CAO binds. The act of 5 December 1968: art. 5 (the definition), 19 (whom it
     # binds), 26 (its individual clauses bind the sector's other employers and workers) and 31 (the effect of a
@@ -3038,6 +3063,10 @@ module LegalChatbot
       [LANDLORD_DEATH_PATTERN, '2018015087', '42'],
       [LANDLORD_DEATH_PATTERN, '2018201408', '36'],
       [LANDLORD_DEATH_PATTERN, '1804032154', '1742'],
+      [COUNSEL_AID_PATTERN, '1967101053', '508/1'],
+      [COUNSEL_AID_PATTERN, '1967101053', '508/13'],
+      [COUNSEL_AID_PATTERN, '1967101053', '508/7'],
+      [COURT_COST_AID_PATTERN, '1967101055', '664'],
       [LEGAL_EXPENSES_INSURANCE_PATTERN, '2014011239', '154'],
       [LEGAL_EXPENSES_INSURANCE_PATTERN, '2014011239', '156'],
       [LEGAL_EXPENSES_INSURANCE_PATTERN, '2014011239', '157'],
@@ -4804,22 +4833,23 @@ module LegalChatbot
     BELGIAN_CONSTITUTION_RIGHT_PATTERNS = [
       CONSTITUTION_EQUALITY_PATTERN, CONSTITUTION_HOME_INVIOLABILITY_PATTERN, CONSTITUTION_EDUCATION_PATTERN
     ].freeze
+    BELGIAN_SUCCESSION_AND_AID_PATTERNS = [INTESTATE_SUCCESSION_PATTERN, INHERITANCE_RENUNCIATION_PATTERN, COUNSEL_AID_PATTERN, COURT_COST_AID_PATTERN].freeze
 
-    # Belgian equality, home, education, intestacy and renunciation pins stay out of a question asked
+    # Belgian constitutional rights, succession and legal aid pins stay out of a question asked
     # under a foreign constitution or legal system (ForeignLegalSystemScope), and a civil
     # succession question (civil_succession_question?) gets no regional
     # tax-competence pins (Sol 2026-11-18 13:42:47Z and 2026-11-20 04:12:53Z).
     # An article asked for by number keeps its own pin.
-    def scope_equality_and_intestacy_pins(matched, question)
+    def scope_domestic_article_pins(matched, question)
       dropped = []
       if matched.any? { |pattern, _numac, _article| BELGIAN_CONSTITUTION_RIGHT_PATTERNS.any? { |right| pattern.equal?(right) } } &&
          (ForeignLegalSystemScope.foreign_constitution_only?(question) || ForeignLegalSystemScope.foreign_legal_system?(question))
         dropped.concat(BELGIAN_CONSTITUTION_RIGHT_PATTERNS)
       end
-      succession = []
-      succession << INTESTATE_SUCCESSION_PATTERN if question.match?(INTESTATE_SUCCESSION_PATTERN)
-      succession << INHERITANCE_RENUNCIATION_PATTERN if question.match?(INHERITANCE_RENUNCIATION_PATTERN)
-      dropped.concat(succession) if succession.any? && ForeignLegalSystemScope.foreign_legal_system?(question)
+      if matched.any? { |pattern, _numac, _article| BELGIAN_SUCCESSION_AND_AID_PATTERNS.include?(pattern) } &&
+         ForeignLegalSystemScope.foreign_legal_system?(question)
+        dropped.concat(BELGIAN_SUCCESSION_AND_AID_PATTERNS)
+      end
       dropped << REGIONAL_TAX_COMPETENCE_PATTERN if self.class.civil_succession_question?(question)
       return matched if dropped.empty?
 
@@ -4847,7 +4877,7 @@ module LegalChatbot
       matched = (explicit + matched).uniq { |_pattern, numac, article| [numac, article] } if explicit.any?
       matched = scope_peace_judge_rental_pins(matched, question)
       matched = scope_rental_filing_pins(matched, question)
-      matched = scope_equality_and_intestacy_pins(matched, question)
+      matched = scope_domestic_article_pins(matched, question)
       commercial_targets = CommercialWebsiteIntent.article_targets(question)
       if commercial_targets.any?
         matched = (commercial_targets.map { |numac, number| [CommercialWebsiteIntent::QUESTION_PATTERN, numac, number] } + matched)

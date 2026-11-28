@@ -1005,7 +1005,7 @@ module LegalChatbot
     def apply_indexed_amounts(text, question, sources)
       result = IndexedAmounts.apply(text, question: question, sources: sources, language: @language)
       amounts = UnemploymentAmountApplicability.apply(result.text, question: question, sources: sources, language: @language)
-      applied = AccidentUnemploymentException.apply(amounts, question: question, language: @language)
+      applied = AccidentUnemploymentException.apply(amounts, question: question, language: @language, sources: sources)
       return text if applied == text
 
       previous = @last_citation_guard_result || { verified: true, passed: true, rejected: 0 }

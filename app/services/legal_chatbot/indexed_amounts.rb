@@ -38,8 +38,12 @@ module LegalChatbot
   # Version 4 (#1944, Sol 2026-11-25 00:37:56Z): only the note claims a manual check, and only beside a figure it dates;
   # an item or table row left with withheld figures and a label only goes, so the reader gets one limitation instead of
   # a placeholder per figure.
+  #
+  # Version 5 (Sol 2026-11-27 14:58:54Z and 20:47:47Z, 1.1.117 and 1.1.118): every blockquote form is a quotation
+  # (BLOCKQUOTE), an appositive claim of a check goes with its comma, and a list lead-in left without its subject keeps
+  # a neutral heading (list_heading).
   class IndexedAmounts
-    VERSION = 4
+    VERSION = 5
     DECREE = '1991013192'
     STEP = BigDecimal('1.02')
     # Art. 115 as the programme law of 18 July 2025 (art. 171, in force 1 March 2026) replaced it, read in full NL on
@@ -285,6 +289,7 @@ module LegalChatbot
         unpublished_withheld: '[geen officieel geïndexeerd bedrag]',
         quoted: 'Het citaat geeft de basisbedragen van de wettekst; geïndexeerd: %<list>s.',
         quoted_base: 'Het citaat geeft de basisbedragen van de wettekst.',
+        list_heading: 'Dagbedragen:',
         tables: { full: 'de tabel van de [RVA](%<full>s)',
                   temporary: 'de tabel tijdelijke werkloosheid van de [RVA](%<temporary>s)',
                   both: 'de tabellen van de RVA voor [volledige](%<full>s) en [tijdelijke werkloosheid](%<temporary>s)' },
@@ -317,6 +322,7 @@ module LegalChatbot
         unpublished_withheld: '[aucun montant indexé officiel]',
         quoted: 'La citation donne les montants de base du texte légal ; indexés : %<list>s.',
         quoted_base: 'La citation donne les montants de base du texte légal.',
+        list_heading: 'Montants journaliers :',
         tables: { full: "le tableau de l'[ONEM](%<full>s)",
                   temporary: "le tableau chômage temporaire de l'[ONEM](%<temporary>s)",
                   both: "les tableaux de l'ONEM pour le [chômage complet](%<full>s) et le [chômage temporaire](%<temporary>s)" },
@@ -349,6 +355,7 @@ module LegalChatbot
         unpublished_withheld: '[kein amtlich indexierter Betrag]',
         quoted: 'Das Zitat gibt die Basisbeträge des Gesetzestextes wieder; indexiert: %<list>s.',
         quoted_base: 'Das Zitat gibt die Basisbeträge des Gesetzestextes wieder.',
+        list_heading: 'Tagesbeträge:',
         # dative after "laut", accusative after "Siehe"
         tables: { full: 'der Tabelle des [LfA](%<full>s)',
                   temporary: 'der Tabelle zur zeitweiligen Arbeitslosigkeit des [LfA](%<temporary>s)',
@@ -386,6 +393,7 @@ module LegalChatbot
         unpublished_withheld: '[no officially indexed amount]',
         quoted: 'The quotation gives the statutory base amounts; indexed: %<list>s.',
         quoted_base: 'The quotation gives the statutory base amounts.',
+        list_heading: 'Daily amounts:',
         tables: { full: "[ONEM's table](%<full>s) (in French)",
                   temporary: "[ONEM's temporary unemployment table](%<temporary>s) (in French)",
                   both: "ONEM's tables for [full](%<full>s) and [temporary unemployment](%<temporary>s) (in French)" },
@@ -607,14 +615,38 @@ module LegalChatbot
 
     # The lines without the answer's claims of a manual check of the amounts (CHECK_CLAIM), each judged in its sentence
     # (without_claim); a quotation stays
+    #
+    # Sol 2026-11-27 20:47:47Z (live 1.1.117): "The displayed minima list starts "Zijn:" on its own." "Please preserve a
+    # grammatical heading (e.g. "Minimale brutodagbedragen") and test the rendered output." Sol 22:15:28Z (review of the
+    # draft): only the damaged final clause is repaired, "without consuming adjacent sentences or an intact one-word
+    # heading". The last sentence of a line that introduces a list or a table (it ends with a colon) becomes the neutral
+    # heading of the reader's language (list_heading) when its claim went with the whole sentence or with its opening
+    # clause; the other sentences of the line, and a lead-in that held no claim, stay as they are.
     def self.without_check_claims(lines, words)
       placeholders = [words[:unpublished_withheld], words[:withheld]]
       lines.filter_map do |line|
         next line if line.match?(BLOCKQUOTE) || !line.match?(CHECK_CLAIM)
 
-        kept = rejoined(sentences(line).map { |sentence| without_claim(sentence, placeholders) })
+        parts = sentences(line)
+        lead_in = line.rstrip.end_with?(':')
+        mapped = parts.each_with_index.map do |sentence, index|
+          next without_claim(sentence, placeholders) unless lead_in && index == parts.length - 1
+
+          claimless_lead_in(sentence, placeholders, words[:list_heading])
+        end
+        kept = rejoined(mapped)
         kept.empty? ? nil : "#{line[/\A[[:space:]]*/]}#{kept.join(' ')}"
       end
+    end
+
+    # A lead-in without its claim; the heading when the claim took the whole sentence or its opening clause (its subject)
+    def self.claimless_lead_in(sentence, placeholders, heading)
+      result = without_claim(sentence, placeholders)
+      return result if result == sentence
+      return heading if result.nil?
+
+      opening = sentence.split(/(?<=[,;])[[:space:]]+/).first
+      opening.match?(CHECK_CLAIM) && !opening.match?(AMOUNT) ? heading : result
     end
 
     # The sentences of a line that stay (nil for each that went), the first after a dropped one capitalized: it may have
@@ -665,7 +697,14 @@ module LegalChatbot
       return unbracketed unless unbracketed.match?(CHECK_CLAIM)
 
       clauses = unbracketed.split(/(?<=[,;])[[:space:]]+/)
-      kept = clauses.reject { |clause| clause.match?(CHECK_CLAIM) && !clause.match?(AMOUNT) }
+      kept = []
+      clauses.each do |clause|
+        next kept << clause unless clause.match?(CHECK_CLAIM) && !clause.match?(AMOUNT)
+
+        # Sol 2026-11-27 20:47:47Z (live 1.1.117): an appositive between commas goes with the comma before it ("De
+        # bedragen, handmatig nagekeken op 22 november 2026, zijn:" reads "De bedragen zijn:", not "De bedragen, zijn:")
+        kept[-1] = kept[-1].sub(/,\z/, '') if kept.any? && clause.end_with?(',')
+      end
       return nil if kept.empty?
 
       joined = kept.join(' ').sub(/[,;]\z/, '')

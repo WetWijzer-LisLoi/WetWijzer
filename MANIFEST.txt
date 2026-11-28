@@ -422,6 +422,7 @@ app/services/legal_chatbot/parliamentary_search.rb
 app/services/legal_chatbot/payment_acceptance_grounding.rb
 app/services/legal_chatbot/platform_moderation_source_scope.rb
 app/services/legal_chatbot/platform_redress_grounding.rb
+app/services/legal_chatbot/pro_deo_answer.rb
 app/services/legal_chatbot/profiles.rb
 app/services/legal_chatbot/prompts.rb
 app/services/legal_chatbot/provider_work_receipt.rb
