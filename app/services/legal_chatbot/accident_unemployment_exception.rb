@@ -39,8 +39,14 @@ module LegalChatbot
   # Version 3 (1.1.118), Sol 2026-11-27 16:52:39Z to 23:00:25Z: the one compensation sentence right after a withheld one
   # goes with it unless it carries a citation link or an official amount; a quotation a retrieved source holds verbatim
   # stays; a guarantee that the compensation stays whole goes wherever it stands (guarantee?); a quotation is never split.
+  #
+  # Version 4 (1.1.119), Sol 2026-11-27 23:30:17Z and 2026-11-28 01:45:42Z to 02:36:22Z: a sentence that denies full or
+  # automatic payment itself in a recognizable form ("niet volledig doorbetaald", "niet automatisch voor 100 %
+  # doorbetaald", "Het is niet gegarandeerd dat ...", "... ist nicht garantiert") is no guarantee and stays, also after a
+  # withheld claim; any other sentence with a payment phrase goes, so certainty ("no doubt") and a denial of something
+  # else ("zolang uw baan niet gegarandeerd is") deny nothing.
   module AccidentUnemploymentException
-    VERSION = 3
+    VERSION = 4
     HREF = '/laws/1991013192#art-61'
     TEXT = {
       'nl' => "**Eerst: hebt u recht op een uitkering? ([art. 61, § 2](#{HREF}))** Wie tijdelijk volledig of gedeeltelijk " \
@@ -129,6 +135,95 @@ module LegalChatbot
              ohne\s+(?:jede\s+|jegliche\s+)?(?:k[üu]rzung|aussetzung|abzug)|(?:nicht|nie)\s+(?:\p{L}+\s+)?(?:gek[üu]rzt|ausgesetzt)|
              in\s+full|fully\s+paid|at\s+100\s?%|unreduced|undiminished|without\s+(?:any\s+)?(?:reduction|suspension|deduction)|
              (?:not|never)\s+(?:be\s+)?(?:reduced|suspended))/iux
+    # Sol 2026-11-28 03:06:13Z (review of 7deed0145): "U ontvangt altijd 100 % van uw arbeidsongevallenvergoeding" (with
+    # an Art. 61 link, right after a withheld claim, in the four languages) stayed: "100 % of" the compensation was no
+    # payment phrase (now HUNDRED_OF), and the link let it stand. "Please handle the active "receive 100% of
+    # [compensation]" guarantee in the same entitlement context ... An Article 61 link on a generated sentence alone should
+    # not establish that 100% is due." A link to art. 61 itself, the article the sourced paragraph states, is no support of
+    # its own for a dependent sentence; a link to another provision is (independent_link?).
+    ARTICLE_61 = %r{\A/laws/1991013192#art-61(?![0-9])}
+    # Sol 03:25:51Z (review of 3dc24a9a7): "Bij tijdelijke algehele arbeidsongeschiktheid bedraagt de dagvergoeding 90 % van
+    # het gemiddelde dagloon, dus minder dan 100 % van dat loon ([Art. 22](/laws/1971041001#art-22))." went whole, its
+    # cited rate with it. "Please scope the new payment marker so a less-than comparison with the wage base preserves the
+    # cited 90% rate. Keep the unsupported full-payment promise suppressed even when it has a citation." Art. 22 of the
+    # occupational accidents act (1971041001, read in full in NL and FR on 2026-11-28): 90 % of the average daily amount
+    # for a temporary and total incapacity. "100 % of" is a payment phrase, except after "less than" or "up to" (BELOW),
+    # where it is a comparison; a negation before that makes it a floor and a promise again ("niet minder dan 100 %").
+    HUNDRED_OF = /(?<![[:alnum:]])100\s?%\s+(?:(?:van|de|du|des|of|der|ihrer|ihres|seiner|seines|vom|von)(?![[:alpha:]])|d['’])/iu
+    BELOW = /(?<![[:alpha:]])(?:(?:minder|lager|kleiner)\s+dan|onder|tot(?:\s+aan)?|maximaal|ten\s+hoogste|hoogstens|niet\s+meer\s+dan|
+             moins\s+d[e'’]|inf[ée]rieure?s?\s+[àa]|en\s+dessous\s+d[e'’]|jusqu['’][àa]|au\s+plus|au\s+maximum|pas\s+plus\s+d[e'’]|
+             weniger\s+als|unter(?:halb)?|bis\s+zu|h[öo]chstens|maximal|nicht\s+mehr\s+als|less\s+than|lower\s+than|below|under|
+             up\s+to|at\s+most|no\s+more\s+than|a\s+maximum\s+of)\s*\z/iux
+    FLOOR = /(?<![[:alpha:]])(?:niet|nooit|pas|nicht|nie|not|no|never)\s*\z/i
+    # Sol 2026-11-27 23:30:17Z (review of 202ce9b05): guarantee? "also deletes the accurate, cited sentence "Uw
+    # arbeidsongevallenvergoeding wordt bij toegelaten arbeid niet automatisch voor 100 % doorbetaald ([Art. 61](...))."" and
+    # "French, German and English denials that payment in full is guaranteed". Sol 2026-11-28 01:45:42Z (review of
+    # 00cfed43b): a nearby negation let "Your compensation is no doubt paid in full" and "niet slechts gedeeltelijk maar
+    # volledig doorbetaald" through, and "Il n’est pas garanti que votre indemnité soit maintenue intégralement", "Eine
+    # Weiterzahlung der Entschädigung in voller Höhe ist nicht garantiert" and "Continued payment of your compensation in
+    # full is not guaranteed" still went. "Prefer identifying an explicit denial of automatic/full payment or of a
+    # guarantee, including a denial after the payment phrase, over treating any nearby 'no/not/niet' as a denial." Sol
+    # 02:05:48Z (review of 3e741967d): "Your compensation is paid in full even when continued employment is not
+    # guaranteed." stayed, and "Bij een tijdelijke vermindering wordt de vergoeding niet volledig doorbetaald" went. "The
+    # relevant distinction is what is denied — retention of employment or full payment of compensation. A comma is a poor
+    # proxy for that distinction."
+    #
+    # Sol 02:36:22Z (review of 0acf7fde8): "Uw arbeidsongevallenvergoeding wordt altijd volledig doorbetaald zolang uw baan
+    # niet gegarandeerd is." stayed, and "Het is niet gegarandeerd dat uw vergoeding tijdens en na de werkhervatting
+    # volledig wordt doorbetaald." went: clause separators decided. "I suggest narrowing retention of candidate guarantee
+    # clauses to recognizable grammatical forms that explicitly deny full payment, with the curated explanation as
+    # fallback where scope is ambiguous. This avoids relying on a growing list of clause separators."
+    #
+    # A sentence on the compensation with a payment phrase (the KEPT and WHOLE markers, overlapping ones as one) is a
+    # guarantee and is withheld, unless the whole sentence has one of three forms that deny the payment itself:
+    # - DIRECT_FORM: a negation right before the payment phrase, with only auxiliaries, payment verbs and
+    #   "automatically", "always", "necessarily" between ("de vergoeding niet volledig doorbetaald", "n’est pas
+    #   intégralement versée", "it is not paid in full"; "no doubt", "niet slechts" and "niet anders dan" deny nothing);
+    # - PRE_FORM: a negated guarantee and its "that" clause, which holds the payment phrase ("Het is niet gegarandeerd dat
+    #   uw vergoeding tijdens en na de werkhervatting volledig wordt doorbetaald"; each language with its own "that"
+    #   words: the English "of" opens an object, "no guarantee of a job");
+    # - POST_FORM: the payment as the subject of a negated "guaranteed" ("Continued payment of your compensation in full is
+    #   not guaranteed").
+    # No payment phrase stands outside the form, and the "that" clause, the subject and what follows the form are plain
+    # (plain?). Any other sentence with a payment phrase goes: the sourced paragraph is the account.
+    PHRASE = "\u0001"
+    NEGATOR = /(?:niet|nooit|geen|(?:ne|n['’])\s*\p{L}+(?:\s+\p{L}+)?\s+(?:pas|jamais|plus)|nicht|nie|kein\p{L}*|not|never|no)/iux
+    BETWEEN = /(?:wordt|worden|werd|werden|is|zijn|was|meer|langer|betaald|uitbetaald|uitgekeerd|gestort|volledige?|integrale|volle|
+               automatisch|altijd|steeds|noodzakelijk\p{L}*|vanzelf\p{L}*|zomaar|[êe]tre|[ée]t[ée]|est|soit|sera|seront|serait|sont|
+               vers[ée]e?s?|pay[ée]e?s?|automatiquement|toujours|forc[ée]ment|n[ée]cessairement|syst[ée]matiquement|mehr|l[äa]nger|
+               wird|ist|sind|wurde|gezahlt|ausgezahlt|ausbezahlt|vollen?|voller|immer|unbedingt|notwendigerweise|zwangsl[äa]ufig|
+               be|been|being|are|were|paid|kept|maintained|continued|longer|any|automatically|always|necessarily|
+               ontvangt|ontvangen|krijgt|krijgen|recevez|re[çc]oit|re[çc]oivent|recevoir|re[çc]ue?s?|touchez|touche|erhalten|
+               erh[äa]lt|bekommen|bekommt|receive[sd]?|gets?)/iux
+    RUN = /(?:\s+(?:#{BETWEEN}(?![[:alpha:]])|#{PHRASE}))+/
+    DIRECT_FORM = /\A(?<lead>[^#{PHRASE}]*?)(?<![[:alpha:]])#{NEGATOR}(?![[:alpha:]])#{RUN}(?<tail>[^#{PHRASE}]*)\z/
+    # A negated guarantee by language, as a participle ("not guaranteed") or a noun ("no guarantee"), each with the words
+    # that open its "that" clause (the Dutch "of" is "whether"; the English "of" opens an object: "no guarantee of a job")
+    NL_GUARANTEED = /(?:niet|nooit)\s+(?:\p{L}+\s+)?(?:gegarandeerd|gewaarborgd|zeker)/i
+    FR_GUARANTEED = /(?:ne|n['’])\s*\p{L}+\s+(?:pas|jamais|plus)\s+(?:\p{L}+\s+)?(?:garanti\p{L}*|assur[ée]\p{L}*|certain\p{L}*)/i
+    DE_GUARANTEED = /nicht\s+(?:\p{L}+\s+)?(?:garantiert|gew[äa]hrleistet|gesichert|sicher)/i
+    EN_GUARANTEED = /(?:not|never)\s+(?:\p{L}+\s+)?(?:guaranteed|assured|certain)/i
+    PRE_DENIAL = /(?<![[:alpha:]])(?:(?:#{NL_GUARANTEED}|geen\s+(?:\p{L}+\s+)?(?:garantie|waarborg|zekerheid))\s*,?\s*(?:dat|of)(?![[:alpha:]])|
+                  (?:#{FR_GUARANTEED}|(?:aucune|pas\s+de|sans)\s+garantie|rien\s+ne\s+garantit)\s*,?\s*(?:que(?![[:alpha:]])|qu['’])|
+                  (?:#{DE_GUARANTEED}|kein\p{L}*\s+(?:\p{L}+\s+)?(?:garantie|gew[äa]hr|sicherheit))\s*,?\s*(?:dass|ob)(?![[:alpha:]])|
+                  (?:#{EN_GUARANTEED}|no\s+(?:\p{L}+\s+)?(?:guarantee|assurance|certainty))\s*,?\s*(?:that|whether)(?![[:alpha:]]))/ix
+    PRE_FORM = /\A[^#{PHRASE}]*?#{PRE_DENIAL}(?<rest>[^#{PHRASE}]*?)#{RUN}(?<tail>[^#{PHRASE}]*)\z/
+    POST_FORM = /\A(?<subject>.*?)\s+(?:(?:is|ist|wordt|est|was|blijft|bleibt|remains|reste)\s+)?(?<![[:alpha:]])
+                 (?:#{NL_GUARANTEED}|#{FR_GUARANTEED}|#{DE_GUARANTEED}|#{EN_GUARANTEED})(?![[:alpha:]])(?:\s+(?:is|wordt))?
+                 (?<tail>[^#{PHRASE}]*)\z/x
+    # What a plain stretch (plain?) has none of: an auxiliary (a clause of its own: "... wordt altijd volledig doorbetaald
+    # zolang ..."), punctuation or a word that opens a clause, or a coordinated new subject ("en uw vergoeding", not
+    # "tijdens en na")
+    AUXILIARY = /(?<![[:alpha:]])(?:wordt|worden|werd|werden|is|zijn|was|waren|blijft|blijven|kan|kunnen|mag|mogen|moet|moeten|zal|
+                 zullen|heeft|hebben|est|sont|soit|soient|sera|seront|serait|[ée]t[ée]|[êe]tre|reste|restent|peut|peuvent|doit|
+                 doivent|ont|wird|wurde|ist|sind|war|bleibt|bleiben|kann|k[öo]nnen|darf|d[üu]rfen|muss|m[üu]ssen|soll|hat|haben|
+                 are|were|be|been|being|remains?|can|may|must|will|would|shall|has|have|had)(?![[:alpha:]])/iux
+    CLAUSE = /[,;:()\[\]]|(?<![[:alpha:]])(?:maar|doch|toch|terwijl|zolang|tenzij|omdat|want|zodat|als|wanneer|indien|mais|cependant|
+              pourtant|tant\s+que|tandis|lorsque|quand|si|sauf|parce|car|afin|aber|jedoch|solange|w[äa]hrend|wenn|falls|weil|damit|
+              au[ßs]er|but|however|while|whereas|as\s+long\s+as|unless|because|if|when|although|though|so\s+that)(?![[:alpha:]])/iux
+    NEW_SUBJECT = /(?<![[:alpha:]])(?:en|and|et|und|or|ou|oder)\s+(?:(?:uw|de|het|een|u|zijn|haar|hun|hij|zij|ze|je|jij|your|the|a|an|
+                   you|it|its|their|they|he|she|votre|vos|la|le|les|un|une|vous|il|elle|ils|elles|son|sa|ses|leur|ihre?n?|die|der|
+                   das|den|dem|ein|eine|einen|sie|es|er|seine)(?![[:alpha:]])|l['’])/iux
     # The same boundary as a sentence end (not after "art." or "nr."), kept as a separator when a line is split
     SENTENCE_SPLIT = /((?<=[.!?;])(?<!\bart\.)(?<!\bartt\.)(?<!\bnr\.)(?<!\bbv\.)\s+)/i
     LINE_PREFIX = /\A[[:space:]]*(?:(?:[-*+•]|\d{1,9}[.)])[[:space:]]+)?/
@@ -224,7 +319,12 @@ module LegalChatbot
     # paragraph (the next sentence of the line, or the first of a plain next line), goes with it when it speaks of the
     # compensation or the benefit and stands on nothing of its own: no citation link and no figure.
     def dependent?(sentence)
-      sentence.match?(COMPENSATION) && !sentence.include?('](') && !official_amount?(sentence)
+      sentence.match?(COMPENSATION) && !independent_link?(sentence) && !official_amount?(sentence) && !denial?(sentence)
+    end
+
+    # A citation link to a provision other than art. 61 itself (Sol 03:06:13Z)
+    def independent_link?(sentence)
+      sentence.scan(/\]\(([^)\s]+)\)/).flatten.any? { |href| !href.match?(ARTICLE_61) }
     end
 
     # Sol 2026-11-27 22:45:44Z (review of the 1.1.118 seal): "Uw arbeidsongevallenvergoeding wordt daarbij altijd voor 100 %
@@ -266,8 +366,52 @@ module LegalChatbot
       claim?(sentence) || guarantee?(sentence) || (after_claim && dependent?(sentence))
     end
 
+    # The compensation and a payment phrase, in a sentence that is not a denial form
     def guarantee?(sentence)
-      sentence.match?(INDEMNITY) && (sentence.match?(KEPT) || sentence.match?(WHOLE))
+      sentence.match?(INDEMNITY) && core(sentence).include?(PHRASE) && !denial?(sentence)
+    end
+
+    # The whole sentence denies the payment itself in one of the three forms ("niet automatisch aangepast", without a
+    # payment phrase, denies nothing). Such a sentence stands on its own, like an official amount: art. 61, § 2 makes the
+    # work subject to suspension or temporary reduction of the right to compensation.
+    def denial?(sentence)
+      core = core(sentence)
+      return false unless core.include?(PHRASE)
+
+      direct = core.match(DIRECT_FORM)
+      pre = core.match(PRE_FORM)
+      post = core.match(POST_FORM)
+      (direct && plain?(direct[:tail])) || (pre && plain?(pre[:rest]) && plain?(pre[:tail])) ||
+        (post && plain?(post[:subject]) && plain?(post[:tail])) || false
+    end
+
+    def plain?(text)
+      !text.match?(AUXILIARY) && !text.match?(CLAUSE) && !text.match?(NEW_SUBJECT)
+    end
+
+    # The sentence with each payment phrase (overlapping markers as one) as PHRASE, less a closing citation link and the
+    # final punctuation
+    def core(sentence)
+      spans = [KEPT, WHOLE].flat_map { |marker| sentence.to_enum(:scan, marker).map { Regexp.last_match.offset(0) } }
+      spans += hundred_spans(sentence)
+      merged = spans.sort.each_with_object([]) do |(from, to), list|
+        if list.any? && from <= list.last[1]
+          list.last[1] = [list.last[1], to].max
+        else
+          list << [from, to]
+        end
+      end
+      skeleton = merged.reverse_each.with_object(sentence.dup) { |(from, to), text| text[from...to] = PHRASE }
+      skeleton.sub(/\s*\(\[[^\]]*\]\([^)]*\)\)(?=[.!?]?\s*\z)/, '').sub(/\s*[.!?]\s*\z/, '').strip
+    end
+
+    # The "100 % of" spans that promise the payment: not after "less than" or "up to", unless a negation makes that a floor
+    # (Sol 03:25:51Z)
+    def hundred_spans(sentence)
+      sentence.to_enum(:scan, HUNDRED_OF).map { Regexp.last_match.offset(0) }.select do |from, _to|
+        below = sentence[0...from].match(BELOW)
+        below.nil? || sentence[0...below.begin(0)].match?(FLOOR)
+      end
     end
 
     # Sol 23:00:25Z: in De bron vermeldt: "Die werknemer kan geen uitkeringen genieten." Uw arbeidsongevallenvergoeding ...

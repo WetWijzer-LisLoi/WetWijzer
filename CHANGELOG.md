@@ -8,6 +8,13 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.119] - 2026-11-28
+
+### Fixed
+
+- In an answer on unemployment benefit after an occupational accident or disease, a sentence that denies the full or automatic payment of the accident compensation itself in a recognizable form (such as "niet volledig doorbetaald", "niet automatisch voor 100 % doorbetaald", "het is niet gegarandeerd dat uw vergoeding volledig wordt doorbetaald" or "continued payment in full is not guaranteed", in the four languages) is no longer left out, also right after a left-out sentence; any other sentence on full or continued payment, such as one of certainty ("no doubt paid in full") or one that only denies something else ("as long as continued employment is not guaranteed"), is still left out.
+- An answer on unemployment benefit after an occupational accident or disease no longer keeps a promise of 100 % of the accident compensation (such as "U ontvangt altijd 100 % van uw arbeidsongevallenvergoeding", in the four languages), and a link to article 61 itself no longer lets a sentence on the compensation stand right after a left-out sentence; a comparison such as "less than 100 % of the wage" is no such promise and keeps its cited rate.
+
 ## [1.1.118] - 2026-11-28
 
 ### Fixed
