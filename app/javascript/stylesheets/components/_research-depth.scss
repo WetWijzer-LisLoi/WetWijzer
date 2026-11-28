@@ -15,6 +15,8 @@
   .research-depth-credit-tick { width: 2px; height: 12px; opacity: 1; }
   .research-depth-credit-tick--active { color: var(--accent-500, #2563eb); opacity: 1; }
   .research-depth-preview { margin-top: 6px; line-height: 1.4; overflow-wrap: anywhere; }
+  .research-depth-wait { margin-top: 2px; font-weight: 400; }
+  .research-depth-wait strong { font-size: .8125rem; font-weight: 700; }
   .research-depth-help { margin: 0; font-size: 11px; }
   .research-depth-help > summary { position: absolute; top: 0; right: 0; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: 1px solid transparent; border-radius: 6px; cursor: pointer; color: var(--text-muted, #64748b); list-style: none; }
   .research-depth-help > summary::-webkit-details-marker { display: none; }

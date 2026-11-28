@@ -27,27 +27,49 @@ class ChatbotAnalytic < AnalyticsRecord
   # Time to a completed answer, in seconds. Keep retries in the mean: the reader
   # waits for them too. A fixed-model selection has no effective effort in its
   # recorded trace; older rows with no trace cannot identify that selection.
-  def self.average_wait_seconds_by_selection
-    Rails.cache.fetch('chatbot/average_wait_seconds_by_selection/v1', expires_in: 15.minutes, race_condition_ttl: 15.seconds) do
+  WAIT_SAMPLE_TARGET = 10
+
+  def self.wait_observations_by_selection
+    Rails.cache.fetch('chatbot/wait_observations_by_selection/v2', expires_in: 15.minutes, race_condition_ttl: 15.seconds) do
+      now = Time.current
       models = LegalChatbot::ModelsConfig::AVAILABLE_MODELS
       # Signed service calls also carry the 'web' label, but only browser asks
       # reserve credits or receive a rating control. A rating is never required.
-      completed = web_queries.where(model_used: models.keys, has_error: false, created_at: 30.days.ago..Time.current)
+      completed = web_queries.where(model_used: models.keys, has_error: false, created_at: (now - 90.days)..now)
                              .where('billing_reservation_token IS NOT NULL OR rating_ui_version IS NOT NULL')
                              .where('citation_guard_outcome IS NULL OR citation_guard_outcome <> ?', 'refusal')
                              .where('response_time > 0 AND (reasoning_effort_used IS NOT NULL OR generation_trace_version IS NOT NULL)')
-      averages = completed.group(:model_used, :reasoning_effort_used).having('COUNT(*) >= ?', 10).average(:response_time)
+      recent_count = Arel.sql('COUNT(CASE WHEN created_at >= ? THEN 1 END)', now - 30.days)
+      recent_mean = Arel.sql('AVG(CASE WHEN created_at >= ? THEN response_time END)', now - 30.days)
+      groups = completed.group(:model_used, :reasoning_effort_used)
+                        .pluck(:model_used, :reasoning_effort_used, recent_count, recent_mean, Arel.sql('COUNT(*)'), Arel.sql('AVG(response_time)'))
 
-      averages.each_with_object({}) do |((model, effort), seconds), selections|
+      groups.each_with_object({}) do |(model, effort, n30, mean30, n90, mean90), selections|
         levels = LegalChatbotService.reasoning_levels_for_model(model)
         next unless levels.empty? ? effort.nil? : levels.include?(effort)
 
-        (selections[model] ||= {})[effort || 'fixed'] = [seconds.round, 1].max
+        # Extend the window when it supplies the target sample size, or when
+        # the last month was empty. Otherwise show the newer small sample.
+        use_recent = n30 >= WAIT_SAMPLE_TARGET || (n90 < WAIT_SAMPLE_TARGET && n30.positive?)
+        count, mean, days = use_recent ? [n30, mean30, 30] : [n90, mean90, 90]
+        (selections[model] ||= {})[effort || 'fixed'] = { seconds: [mean.round, 1].max, count: count, days: days }
       end
     end
   rescue ActiveRecord::ActiveRecordError => e
     Rails.logger.warn("[ChatbotAnalytic] Wait times unavailable: #{e.class}")
     {}
+  end
+
+  # Integer-only consumers keep their original threshold and window. Both
+  # representations share the same single cached database query.
+  def self.average_wait_seconds_by_selection
+    wait_observations_by_selection.each_with_object({}) do |(model, efforts), averages|
+      efforts.each do |effort, observation|
+        next unless observation[:days] == 30 && observation[:count] >= WAIT_SAMPLE_TARGET
+
+        (averages[model] ||= {})[effort] = observation[:seconds]
+      end
+    end
   end
 
   # --- 10-star ratings (RAT-002) --------------------------------------------

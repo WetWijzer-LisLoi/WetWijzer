@@ -8,6 +8,12 @@ A section's date is set when the candidate is sealed for review, and the sealed 
 
 ## [Unreleased]
 
+## [1.1.120] - 2026-11-28
+
+### Changed
+
+- The research-depth control now shows the measured waiting time for each exact model and reasoning mode also when fewer than ten answers were measured: an average over the last 30 days, or over 90 days when that gives ten answers, a preliminary average with the number of answers and the period, or the time of the one measured answer. It never shows the time of another model or mode. On every depth selector the waiting time stands on its own bold line below the selected model, with the number of answers and the period beside it.
+
 ## [1.1.119] - 2026-11-28
 
 ### Fixed

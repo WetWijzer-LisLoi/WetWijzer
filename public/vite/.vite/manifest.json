@@ -6,7 +6,7 @@
     "isDynamicEntry": true
   },
   "entrypoints/application.js": {
-    "file": "assets/application-Co5339E1.js",
+    "file": "assets/application-D9k9zXx4.js",
     "name": "entrypoints\\application.js",
     "src": "entrypoints/application.js",
     "isEntry": true,
@@ -14,7 +14,7 @@
       "../../node_modules/@rails/actioncable/src/index.js"
     ],
     "css": [
-      "assets/application-CgmpfuNz.css"
+      "assets/application-BcS7mJBK.css"
     ]
   }
 }

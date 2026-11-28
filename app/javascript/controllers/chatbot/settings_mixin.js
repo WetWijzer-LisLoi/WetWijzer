@@ -173,6 +173,24 @@ export const researchDepthMethods = {
     this.savePreferences?.()
     this._saveHeroPreferences?.()
   },
+  previewResearchDepthWait(event) {
+    const range = event.currentTarget
+    const scale = range.closest('.research-depth-scale')
+    const ruler = scale?.querySelector('[data-research-depth-credit-ruler]')
+    if (!ruler || range.disabled || event.pointerType !== 'mouse') return
+    const { left, width } = ruler.getBoundingClientRect()
+    if (width <= 0) return
+    const choices = this._researchBarCombinations().filter(option => this._combinationAvailable(option))
+    const fraction = Math.max(0, Math.min(1, (event.clientX - left) / width))
+    const option = choices[Math.round(fraction * (choices.length - 1))]
+    if (!option) return
+    const model = [option.dataset.modelName || option.value, option.dataset.reasoningLabel].filter(Boolean).join(' · ')
+    const title = [model, option.dataset.averageWaitLabel, option.dataset.waitDetail].filter(Boolean).join('\n')
+    if (scale.title !== title) scale.title = title
+  },
+  clearResearchDepthWaitPreview(event) {
+    event.currentTarget.closest('.research-depth-scale')?.removeAttribute('title')
+  },
   handleResearchDepthKeydown(event) {
     const choices = this._researchBarCombinations().filter(option => this._combinationAvailable(option))
     if (choices.length) {
@@ -280,13 +298,19 @@ export const researchDepthMethods = {
       const active = control.querySelector('[data-research-depth="' + depth + '"]')
       const preview = control.querySelector('[data-research-depth-preview]')
       if (!option?.dataset.reasoningOption) this._updateResearchDepthCreditRuler(control, total)
-      if (preview) preview.textContent = (control.dataset.previewTemplate || '')
+      const selectionLabel = (control.dataset?.previewTemplate || '')
         .replace('%{model}', option?.dataset.modelName || option?.value || '')
         .replace('%{reasoning}', option?.dataset.reasoningLabel || '')
         .replace('%{credits}', String(total ?? 0))
-        .replace('%{time}', option?.dataset.averageWaitLabel || '')
         + (option?.dataset.reasoningOption && !this._combinationOnResearchBar(option)
-          && control.dataset.manualSelectionMessage ? ' · ' + control.dataset.manualSelectionMessage : '')
+          && control.dataset?.manualSelectionMessage ? ' · ' + control.dataset.manualSelectionMessage : '')
+      const wait = control.querySelector('[data-research-depth-wait]')
+      const detail = control.querySelector('[data-research-depth-wait-detail]')
+      const waitLabel = option?.dataset.averageWaitLabel || ''
+      const waitDetail = option?.dataset.waitDetail || ''
+      if (preview && preview.textContent !== selectionLabel) preview.textContent = selectionLabel
+      if (wait && wait.textContent !== waitLabel) wait.textContent = waitLabel
+      if (detail && detail.textContent !== waitDetail) detail.textContent = waitDetail
       const capability = control.querySelector('[data-research-depth-capability]')
       if (capability) {
         const desired = option?.dataset.reasoningOption

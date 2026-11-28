@@ -6,7 +6,7 @@
 <% user_model_tier = local_assigns.fetch(:user_model_tier, current_user&.current_tier || :free) %>
 <% option_class = local_assigns.fetch(:option_class, 'model-option') %>
 <% model_configurations = LegalChatbotService::AVAILABLE_MODELS %>
-<% average_waits = ChatbotAnalytic.average_wait_seconds_by_selection %>
+<% wait_observations = ChatbotAnalytic.wait_observations_by_selection %>
 <% tier_ranks = LegalChatbot::ModelsConfig::TIER_HIERARCHY %>
 <% user_tier_rank = tier_ranks[user_model_tier.to_sym] || 0 %>
 <% depths = %w[quick balanced thorough extensive] %>
@@ -36,7 +36,15 @@
     reasoning_surcharges = reasoning_levels.map { |reasoning| "#{reasoning}:#{LegalChatbotService.reasoning_surcharge_for_model(model_id, reasoning)}" }.join(',')
     base_credits = LegalChatbotService.credits_for_model(level_id, model_id)
     total_credits = base_credits + LegalChatbotService.reasoning_surcharge_for_model(model_id, reasoning_option)
-    average_seconds = average_waits.dig(model_id, reasoning_option)
+    observation = wait_observations.dig(model_id, reasoning_option)
+    detail_key = case observation&.dig(:count)
+                 when nil, 0 then nil
+                 when 1 then 'single_wait'
+                 when 2...ChatbotAnalytic::WAIT_SAMPLE_TARGET then 'preliminary_wait'
+                 else 'average_wait'
+                 end
+    wait_label = detail_key ? t('chatbot.research_depth.wait_value', seconds: observation.fetch(:seconds)) : t('chatbot.research_depth.wait_unknown')
+    wait_detail = detail_key && t("chatbot.research_depth.#{detail_key}", **observation)
     depth = LegalChatbotService.research_depth_for_combination(model_id, reasoning_option)
     reasoning_label = reasoning_option == 'fixed' ? t('chatbot.research_depth.fixed_reasoning_label') : t("chatbot.research_depth.variant_reasoning_#{reasoning_option}")
     option_label = t('chatbot.research_depth.variant_label', profile: t("chatbot.research_depth.options.#{depth}.label"), model: model_config[:name], reasoning: reasoning_label, credits: total_credits)
@@ -48,7 +56,8 @@
       <option value="<%= model_id %>"
               data-reasoning-option="<%= reasoning_option %>"
               data-reasoning-label="<%= reasoning_label %>"
-              data-average-wait-label="<%= average_seconds ? t('chatbot.research_depth.average_wait', seconds: average_seconds) : t('chatbot.research_depth.wait_unknown') %>"
+              data-average-wait-label="<%= wait_label %>"
+              data-wait-detail="<%= wait_detail %>"
               data-total-credits="<%= total_credits %>"
               data-option-label="<%= option_label %>"
               data-research-depth="<%= depth %>"

@@ -923,6 +923,7 @@ public/vite/assets/application-BTE2I1Gk.js
 public/vite/assets/application-B_63vS2-.css
 public/vite/assets/application-BaAHO30A.js
 public/vite/assets/application-BbF8z8QX.css
+public/vite/assets/application-BcS7mJBK.css
 public/vite/assets/application-BfJ3aVeg.js
 public/vite/assets/application-BftGVA_w.css
 public/vite/assets/application-Bg72xW3O.css
@@ -980,6 +981,7 @@ public/vite/assets/application-D5oEptVa.js
 public/vite/assets/application-D6iDaEmU.js
 public/vite/assets/application-D7TuB1pu.css
 public/vite/assets/application-D9JiV3Xz.css
+public/vite/assets/application-D9k9zXx4.js
 public/vite/assets/application-DAMLj1vG.js
 public/vite/assets/application-DCwWm_ii.js
 public/vite/assets/application-DEP0LCsQ.js

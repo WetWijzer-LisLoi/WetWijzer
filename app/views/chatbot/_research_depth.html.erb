@@ -46,7 +46,7 @@
    end %>
 <div class="research-depth-control<%= ' research-depth-control--compact' if compact %><%= ' research-depth-control--has-empty' if empty_depths.any? %>" data-research-depth-control
      style="--available-track-scale: <%= available_width.fdiv(100) %>"
-     data-preview-template="<%= t('chatbot.research_depth.preview', model: '%{model}', reasoning: '%{reasoning}', credits: '%{credits}', time: '%{time}') %>"
+     data-preview-template="<%= t('chatbot.research_depth.preview', model: '%{model}', reasoning: '%{reasoning}', credits: '%{credits}') %>"
      data-fixed-reasoning-message="<%= t('chatbot.research_depth.model_fixed_reasoning') %>"
      data-limited-reasoning-message="<%= t('chatbot.research_depth.model_limited_reasoning') %>"
      data-followup-reasoning-message="<%= t('chatbot.research_depth.followup_limited_reasoning') %>"
@@ -78,7 +78,7 @@
          aria-describedby="<%= prefix %>-depth-explanation <%= prefix %>-depth-description <%= prefix %>-depth-quality-model"
          aria-valuetext="<%= t("chatbot.research_depth.options.#{initial_depth}.label") %>"
          data-research-depth-range
-         data-action="input-><%= controller_name %>#updateResearchDepth change-><%= controller_name %>#commitResearchDepth keydown-><%= controller_name %>#handleResearchDepthKeydown"
+         data-action="input-><%= controller_name %>#updateResearchDepth change-><%= controller_name %>#commitResearchDepth keydown-><%= controller_name %>#handleResearchDepthKeydown pointermove-><%= controller_name %>#previewResearchDepthWait pointerleave-><%= controller_name %>#clearResearchDepthWaitPreview"
          class="research-depth-range w-full mt-1" style="--slider-pct: <%= initial_step_index.fdiv(last_step) * 100 %>%">
     <div class="research-depth-credit-ruler" data-research-depth-credit-ruler data-step-count="<%= step_credits.length %>" data-credit-count="<%= credit_prices.length %>" aria-hidden="true">
       <% step_credits.each_index do |index| %>
@@ -102,5 +102,8 @@
               ><span class="research-depth-stop-label"><%= t("chatbot.research_depth.options.#{depth}.label") %></span></button>
     <% end %>
   </div>
-  <p class="research-depth-preview text-xs font-semibold text-gray-800 dark:text-gray-100" data-research-depth-preview aria-live="polite" aria-atomic="true"></p>
+  <div class="research-depth-preview text-xs text-gray-800 dark:text-gray-100" aria-live="polite" aria-atomic="true">
+    <div class="font-semibold" data-research-depth-preview></div>
+    <div class="research-depth-wait"><strong data-research-depth-wait></strong> <span data-research-depth-wait-detail></span></div>
+  </div>
 </div>
